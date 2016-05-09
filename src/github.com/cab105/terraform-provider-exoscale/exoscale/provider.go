@@ -25,6 +25,7 @@ func Provider() terraform.ResourceProvider {
 
 		ResourcesMap: map[string]*schema.Resource{
 			"exoscale_compute": computeResource(),
+			"exoscale_ssh": sshResource(),
 		},
 
 		ConfigureFunc: providerConfigure,

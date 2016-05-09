@@ -2,23 +2,10 @@ package exoscale
 
 import (
 	"fmt"
-	"math/rand"
-	"time"
 
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/runseb/egoscale/src/egoscale"
 )
-
-const endpoint = "https://api.exoscale.ch/compute"
-
-func getClient(meta interface{}) *egoscale.Client {
-	client := meta.(Client)
-	return egoscale.NewClient(endpoint, client.token, client.secret)
-}
-
-func init() {
-	rand.Seed(time.Now().Unix())
-}
 
 func computeResource() *schema.Resource {
 	return &schema.Resource{
@@ -55,6 +42,7 @@ func computeResource() *schema.Resource {
 				Type:		schema.TypeString,
 				Required:	true,
 			},
+
 			"id": &schema.Schema{
 				Type:		schema.TypeString,
 				Computed:	true,
@@ -80,7 +68,7 @@ func computeResource() *schema.Resource {
 }
 
 func resourceCreate(d *schema.ResourceData, meta interface{}) error {
-	client := getClient(meta)
+	client := GetClient(ComputeEndpoint, meta)
 	/* Missing SecurityGroups */
 	profile := egoscale.MachineProfile{
 		Name: d.Get("name").(string),
@@ -102,7 +90,7 @@ func resourceCreate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceRead(d *schema.ResourceData, meta interface{}) error {
-	client := getClient(meta)
+	client := GetClient(ComputeEndpoint, meta)
 	machine, err := client.GetVirtualMachine(d.Get("id").(string))
 
 	if err != nil {
@@ -140,7 +128,7 @@ func resourceUpdate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceDelete(d *schema.ResourceData, meta interface{}) error {
-	client := getClient(meta)
+	client := GetClient(ComputeEndpoint, meta)
 
 	resp, err := client.DestroyVirtualMachine(d.Get("id").(string))
 
