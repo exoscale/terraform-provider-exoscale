@@ -1,2 +1,5 @@
 pkg/
 bin/
+
+src/github.com/runseb
+src/github.com/hashicorp
