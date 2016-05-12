@@ -9,18 +9,22 @@ import (
 
 func sshResource() *schema.Resource {
 	return &schema.Resource{
-		Create: 	sshCreate,
-		Read: 		sshRead,
-		Update:		sshUpdate,
-		Delete: 	sshDelete,
+		Create: sshCreate,
+		Read:   sshRead,
+		Update: sshUpdate,
+		Delete: sshDelete,
 
 		Schema: map[string]*schema.Schema{
 			"name": &schema.Schema{
-				Type:		schema.TypeString,
-				Required:	true,
+				Type:     schema.TypeString,
+				Required: true,
 			},
-			"found": &schema.Schema{
-				Type:		schema.TypeBool,
+			"key": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"fingerprint": &schema.Schema{
+				Type:     	schema.TypeString,
 				Computed:	true,
 			},
 		},
@@ -30,23 +34,36 @@ func sshResource() *schema.Resource {
 func sshCreate(d *schema.ResourceData, meta interface{}) error {
 	client := GetClient(ComputeEndpoint, meta)
 	name := d.Get("name").(string)
-	d.Set("found", false)
-	found, err := findKey(name, client); if err != nil {
+	found, err := findKey(name, client)
+	if err != nil {
 		return err
 	}
 
-	if found {
+	if found != "" {
 		fmt.Printf("Found keypair by name: %s\n", name)
-		d.Set("found", true)
 		return nil
 	}
 
-	_, err = client.CreateKeypair(name); if err != nil {
+	if d.Get("key").(string) != "" {
+		_, err = client.RegisterKeypair(name, d.Get("key").(string))
+		if err != nil {
+			return err
+		}
+
+	} else {
+		_, err = client.CreateKeypair(name)
+		if err != nil {
+			return err
+		}
+	}
+
+	fingerprint, err := findKey(name, client); if err != nil {
 		return err
 	}
 
+	d.Set("fingerprint", fingerprint)
+
 	fmt.Printf("Created keypair by name: %s\n", name)
-	d.Set("found", true)
 
 	return nil
 }
@@ -54,11 +71,12 @@ func sshCreate(d *schema.ResourceData, meta interface{}) error {
 func sshRead(d *schema.ResourceData, meta interface{}) error {
 	client := GetClient(ComputeEndpoint, meta)
 	name := d.Get("name").(string)
-	found, err := findKey(name, client); if err != nil {
+	fingerprint, err := findKey(name, client)
+	if err != nil {
 		return err
 	}
 
-	d.Set("found", found)
+	d.Set("fingerprint", fingerprint)
 
 	return nil
 }
@@ -66,15 +84,17 @@ func sshRead(d *schema.ResourceData, meta interface{}) error {
 func sshDelete(d *schema.ResourceData, meta interface{}) error {
 	client := GetClient(ComputeEndpoint, meta)
 	name := d.Get("name").(string)
-	found, err := findKey(name, client); if err != nil {
+	found, err := findKey(name, client)
+	if err != nil {
 		return err
 	}
 
-	if !found {
+	if found != "" {
 		return fmt.Errorf("Key %s does not exist", name)
 	}
 
-	resp, err := client.DeleteKeypair(name); if err != nil {
+	resp, err := client.DeleteKeypair(name)
+	if err != nil {
 		return err
 	}
 
@@ -82,18 +102,19 @@ func sshDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func findKey(name string, client *egoscale.Client) (bool, error) {
-	keys, err := client.GetKeypairs(); if err != nil {
-		return false, err
+func findKey(name string, client *egoscale.Client) (string, error) {
+	keys, err := client.GetKeypairs()
+	if err != nil {
+		return "", err
 	}
 
 	for _, k := range keys {
-		if k == name {
-			return true, nil
+		if k.Name == name {
+			return k.Fingerprint, nil
 		}
 	}
 
-	return false, nil
+	return "", nil
 }
 
 func sshUpdate(d *schema.ResourceData, meta interface{}) error {

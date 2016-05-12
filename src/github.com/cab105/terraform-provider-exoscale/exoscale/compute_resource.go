@@ -16,51 +16,51 @@ func computeResource() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"name": &schema.Schema{
-				Type:		schema.TypeString,
-				Required:	true,
+				Type:     schema.TypeString,
+				Required: true,
 			},
 			"template": &schema.Schema{
-				Type:		schema.TypeString,
-				Required:	true,
-				ForceNew:	true,
+				Type:     schema.TypeString,
+				Required: true,
+				ForceNew: true,
 			},
 			"size": &schema.Schema{
-				Type:		schema.TypeString,
-				Optional:	true,
-				ForceNew:	true,
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
 			},
 			"zone": &schema.Schema{
-				Type:		schema.TypeString,
-				Required:   true,
-				ForceNew:	true,
+				Type:     schema.TypeString,
+				Required: true,
+				ForceNew: true,
 			},
 			"userdata": &schema.Schema{
-				Type:		schema.TypeString,
-				Optional:	true,
+				Type:     schema.TypeString,
+				Optional: true,
 			},
 			"keypair": &schema.Schema{
-				Type:		schema.TypeString,
-				Required:	true,
+				Type:     schema.TypeString,
+				Required: true,
 			},
 
 			"id": &schema.Schema{
-				Type:		schema.TypeString,
-				Computed:	true,
+				Type:     schema.TypeString,
+				Computed: true,
 			},
 			"state": &schema.Schema{
-				Type:		schema.TypeString,
-				Computed:	true,
+				Type:     schema.TypeString,
+				Computed: true,
 			},
 			"publicIP": &schema.Schema{
-				Type:		schema.TypeString,
-				Computed:	true,
+				Type:     schema.TypeString,
+				Computed: true,
 			},
 			"networks": &schema.Schema{
-				Type:		schema.TypeList,
-				Computed:	true,
-				Elem:		&schema.Schema{
-					Type:		schema.TypeMap,
-					Default:	make(map[string]string),
+				Type:     schema.TypeList,
+				Computed: true,
+				Elem: &schema.Schema{
+					Type:    schema.TypeMap,
+					Default: make(map[string]string),
 				},
 			},
 		},
@@ -71,12 +71,12 @@ func resourceCreate(d *schema.ResourceData, meta interface{}) error {
 	client := GetClient(ComputeEndpoint, meta)
 	/* Missing SecurityGroups */
 	profile := egoscale.MachineProfile{
-		Name: d.Get("name").(string),
-		Keypair: d.Get("keypair").(string),
-		Userdata: d.Get("userdata").(string),
+		Name:            d.Get("name").(string),
+		Keypair:         d.Get("keypair").(string),
+		Userdata:        d.Get("userdata").(string),
 		ServiceOffering: d.Get("size").(string),
-		Template: d.Get("template").(string),
-		Zone: d.Get("zone").(string),
+		Template:        d.Get("template").(string),
+		Zone:            d.Get("zone").(string),
 	}
 
 	id, err := client.CreateVirtualMachine(profile)
