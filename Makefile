@@ -7,7 +7,7 @@ all: deps build
 build:
 	go install github.com/cab105/terraform-provider-exoscale/
 
-deps: src/github.com/hashicorp/terraform src/github.com/runseb/egoscale
+deps:
 	go get github.com/hashicorp/terraform
 	go get github.com/runseb/egoscale/src/egoscale
 
