@@ -1,6 +1,10 @@
 # Provide a simple mechanism to ensure a proper build
 
-GO15VENDOREXPERIMENT=1
+GO15VENDOREXPERIMENT := 1
+export GO15VENDOREXPERIMENT
+
+GOPATH := $(PWD)
+export GOPATH
 
 all: deps build
 
