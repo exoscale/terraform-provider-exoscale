@@ -67,6 +67,13 @@ func computeResource() *schema.Resource {
 					Default: make(map[string]string),
 				},
 			},
+			"affinitygroups": &schema.Schema{
+				Type:		schema.TypeList,
+				Optional:	true,
+				Elem:	&schema.Schema{
+					Type:	schema.TypeString,
+				},
+			},
 		},
 	}
 }
@@ -99,6 +106,16 @@ func resourceCreate(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("Invalid disk size: %d", diskSize)
 	}
 
+	affinityCount := d.Get("affinitygroups.#").(int)
+	var affinityGroups []string
+	if affinityCount > 0 {
+		affinityGroups = make([]string, affinityCount)
+		for i := 0; i < affinityCount; i++ {
+			ag := fmt.Sprintf("affinitygroups.%d", i)
+			affinityGroups[i] = d.Get(ag).(string)
+		}
+	}
+
 	profile := egoscale.MachineProfile{
 		Name:            d.Get("name").(string),
 		Keypair:         d.Get("keypair").(string),
@@ -106,6 +123,7 @@ func resourceCreate(d *schema.ResourceData, meta interface{}) error {
 		ServiceOffering: service,
 		Template:        templateId,
 		Zone:            zone,
+		AffinityGroups:	 affinityGroups,
 	}
 
 	jobId, err := client.CreateVirtualMachine(profile); if err != nil {
