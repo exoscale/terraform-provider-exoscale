@@ -1,6 +1,7 @@
 package exoscale
 
 import (
+	"log"
 	"fmt"
 
 	"github.com/hashicorp/terraform/helper/schema"
@@ -11,17 +12,23 @@ func sshResource() *schema.Resource {
 	return &schema.Resource{
 		Create: sshCreate,
 		Read:   sshRead,
-		Update: sshUpdate,
+		Update: nil,
 		Delete: sshDelete,
 
 		Schema: map[string]*schema.Schema{
+			"id": &schema.Schema{
+				Type:		schema.TypeString,
+				Computed:	true,
+			},
 			"name": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
+				Type:		schema.TypeString,
+				Required:	true,
+				ForceNew:	true,
 			},
 			"key": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:		schema.TypeString,
+				Required:	true,
+				ForceNew:	true,
 			},
 			"fingerprint": &schema.Schema{
 				Type:     	schema.TypeString,
@@ -40,37 +47,24 @@ func sshCreate(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	if found != "" {
-		fmt.Printf("Found keypair by name: %s\n", name)
+		log.Printf("Found keypair by name: %s\n", name)
 		return nil
 	}
 
-	if d.Get("key").(string) != "" {
-		_, err = client.RegisterKeypair(name, d.Get("key").(string))
-		if err != nil {
-			return err
-		}
-
-	} else {
-		_, err = client.CreateKeypair(name)
-		if err != nil {
-			return err
-		}
-	}
-
-	fingerprint, err := findKey(name, client); if err != nil {
+	_, err = client.RegisterKeypair(name, d.Get("key").(string))
+	if err != nil {
 		return err
 	}
 
-	d.Set("fingerprint", fingerprint)
+	d.SetId(name)
+	log.Printf("Created keypair by name: %s\n", name)
 
-	fmt.Printf("Created keypair by name: %s\n", name)
-
-	return nil
+	return sshRead(d, meta)
 }
 
 func sshRead(d *schema.ResourceData, meta interface{}) error {
 	client := GetClient(ComputeEndpoint, meta)
-	name := d.Get("name").(string)
+	name := d.Id()
 	fingerprint, err := findKey(name, client)
 	if err != nil {
 		return err
@@ -83,22 +77,24 @@ func sshRead(d *schema.ResourceData, meta interface{}) error {
 
 func sshDelete(d *schema.ResourceData, meta interface{}) error {
 	client := GetClient(ComputeEndpoint, meta)
-	name := d.Get("name").(string)
+	name := d.Id()
 	found, err := findKey(name, client)
 	if err != nil {
 		return err
 	}
 
-	if found != "" {
+	log.Printf("deleting key: %s (%s)", name, found)
+
+	if found == "" {
 		return fmt.Errorf("Key %s does not exist", name)
 	}
 
-	resp, err := client.DeleteKeypair(name)
+	_, err = client.DeleteKeypair(name)
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("Response: %s\n", resp)
+	d.SetId("")
 	return nil
 }
 
@@ -115,9 +111,4 @@ func findKey(name string, client *egoscale.Client) (string, error) {
 	}
 
 	return "", nil
-}
-
-func sshUpdate(d *schema.ResourceData, meta interface{}) error {
-	/* Required, but is a no-op for now */
-	return nil
 }

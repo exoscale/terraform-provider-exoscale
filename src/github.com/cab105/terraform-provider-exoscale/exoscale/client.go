@@ -3,6 +3,7 @@ package exoscale
 import "github.com/runseb/egoscale/src/egoscale"
 
 const ComputeEndpoint = "https://api.exoscale.ch/compute"
+const DNSEndpoint = "https://api.exoscale.ch/dns"
 
 type Client struct {
 	token  string

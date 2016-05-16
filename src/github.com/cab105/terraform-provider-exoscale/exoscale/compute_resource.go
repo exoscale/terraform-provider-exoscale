@@ -1,7 +1,7 @@
 package exoscale
 
 import (
-	"fmt"
+	"log"
 
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/runseb/egoscale/src/egoscale"
@@ -79,14 +79,16 @@ func resourceCreate(d *schema.ResourceData, meta interface{}) error {
 		Zone:            d.Get("zone").(string),
 	}
 
-	id, err := client.CreateVirtualMachine(profile)
+	id, err := client.CreateVirtualMachine(profile); if err != nil {
+		return err
+	}
 
-	fmt.Printf("## job_id: %s\n", id)
-	d.Set("id", id)
+	log.Printf("## job_id: %s\n", id)
+	d.SetId(id)
 
 	/* CAB: We're creating the resource only and not starting it */
 
-	return err
+	return resourceRead(d, meta)
 }
 
 func resourceRead(d *schema.ResourceData, meta interface{}) error {
@@ -136,6 +138,6 @@ func resourceDelete(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	fmt.Printf("Deleted vm id: %s\n", resp)
+	log.Printf("Deleted vm id: %s\n", resp)
 	return nil
 }
