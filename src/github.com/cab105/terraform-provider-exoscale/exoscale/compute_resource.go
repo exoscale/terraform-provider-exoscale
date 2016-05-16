@@ -1,7 +1,10 @@
 package exoscale
 
 import (
+	"fmt"
 	"log"
+	"strings"
+	"time"
 
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/runseb/egoscale/src/egoscale"
@@ -29,6 +32,11 @@ func computeResource() *schema.Resource {
 				Optional: true,
 				ForceNew: true,
 			},
+			"diskSize": &schema.Schema{
+				Type:		schema.TypeInt,
+				Required:	true,
+				ForceNew:	true,
+			},
 			"zone": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
@@ -51,10 +59,6 @@ func computeResource() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
-			"publicIP": &schema.Schema{
-				Type:     schema.TypeString,
-				Computed: true,
-			},
 			"networks": &schema.Schema{
 				Type:     schema.TypeList,
 				Computed: true,
@@ -69,31 +73,70 @@ func computeResource() *schema.Resource {
 
 func resourceCreate(d *schema.ResourceData, meta interface{}) error {
 	client := GetClient(ComputeEndpoint, meta)
-	/* Missing SecurityGroups */
+	topo, err := client.GetTopology(); if err != nil {
+		return err
+	}
+
+	diskSize := d.Get("diskSize").(int)
+	service := topo.Profiles[strings.ToLower(d.Get("size").(string))]
+
+	if service == "" {
+		return fmt.Errorf("Invalid service: %s", d.Get("size").(string))
+	}
+
+	zone := topo.Zones[strings.ToLower(d.Get("zone").(string))]
+	if zone == "" {
+		return fmt.Errorf("Invalid zone: %s", d.Get("zone").(string))		
+	}
+
+	template := topo.Images[d.Get("template").(string)]
+	if template == nil {
+		return fmt.Errorf("Invalid template: %s", d.Get("template").(string))				
+	}
+
+	templateId := template[diskSize]
+	if templateId == "" {
+		return fmt.Errorf("Invalid disk size: %d", diskSize)
+	}
+
 	profile := egoscale.MachineProfile{
 		Name:            d.Get("name").(string),
 		Keypair:         d.Get("keypair").(string),
 		Userdata:        d.Get("userdata").(string),
-		ServiceOffering: d.Get("size").(string),
-		Template:        d.Get("template").(string),
-		Zone:            d.Get("zone").(string),
+		ServiceOffering: service,
+		Template:        templateId,
+		Zone:            zone,
 	}
 
-	id, err := client.CreateVirtualMachine(profile); if err != nil {
+	jobId, err := client.CreateVirtualMachine(profile); if err != nil {
 		return err
 	}
 
-	log.Printf("## job_id: %s\n", id)
-	d.SetId(id)
+	var resp *egoscale.QueryAsyncJobResultResponse
+	for i := 0; i < 6; i++ {
+		resp, err = client.PollAsyncJob(jobId); if err != nil {
+			return err
+		}
 
-	/* CAB: We're creating the resource only and not starting it */
+		if resp.Jobstatus == 1 {
+			break
+		}
+		time.Sleep(5 * time.Second)
+	}
+
+	vm, err := client.AsyncToVirtualMachine(*resp); if err != nil {
+		return err
+	}
+
+	/* Copy VM to our struct */
+	d.SetId(vm.Id)
 
 	return resourceRead(d, meta)
 }
 
 func resourceRead(d *schema.ResourceData, meta interface{}) error {
 	client := GetClient(ComputeEndpoint, meta)
-	machine, err := client.GetVirtualMachine(d.Get("id").(string))
+	machine, err := client.GetVirtualMachine(d.Id())
 
 	if err != nil {
 		return err
@@ -106,9 +149,9 @@ func resourceRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("template", machine.Templatename)
 	d.Set("zone", machine.Zonename)
 	d.Set("state", machine.State)
-	d.Set("publicIP", machine.Publicip)
 
-	for _, n := range machine.Nic {
+	nicArray := make([]map[string]string, len(machine.Nic))
+	for j, n := range machine.Nic {
 		i := make(map[string]string)
 		i["ip6address"] = n.Ip6address
 		i["ip4address"] = n.Ipaddress
@@ -120,7 +163,10 @@ func resourceRead(d *schema.ResourceData, meta interface{}) error {
 		} else {
 			i["default"] = "false"
 		}
+		nicArray[j] = i
 	}
+
+	d.Set("networks", nicArray)
 
 	return nil
 }
@@ -132,7 +178,7 @@ func resourceUpdate(d *schema.ResourceData, meta interface{}) error {
 func resourceDelete(d *schema.ResourceData, meta interface{}) error {
 	client := GetClient(ComputeEndpoint, meta)
 
-	resp, err := client.DestroyVirtualMachine(d.Get("id").(string))
+	resp, err := client.DestroyVirtualMachine(d.Id())
 
 	if err != nil {
 		return err
