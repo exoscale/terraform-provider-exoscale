@@ -27,6 +27,7 @@ func Provider() terraform.ResourceProvider {
 			"exoscale_compute": 	computeResource(),
 			"exoscale_ssh":     	sshResource(),
 			"exoscale_affinity":	affinityResource(),
+			"exoscale_dns":			dnsResource(),
 		},
 
 		ConfigureFunc: providerConfigure,
