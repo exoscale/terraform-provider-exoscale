@@ -24,10 +24,11 @@ func Provider() terraform.ResourceProvider {
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
-			"exoscale_compute": 	computeResource(),
-			"exoscale_ssh":     	sshResource(),
-			"exoscale_affinity":	affinityResource(),
-			"exoscale_dns":			dnsResource(),
+			"exoscale_compute": 		computeResource(),
+			"exoscale_ssh":     		sshResource(),
+			"exoscale_affinity":		affinityResource(),
+			"exoscale_securitygroup":	securityGroupResource(),
+			"exoscale_dns":				dnsResource(),
 		},
 
 		ConfigureFunc: providerConfigure,
