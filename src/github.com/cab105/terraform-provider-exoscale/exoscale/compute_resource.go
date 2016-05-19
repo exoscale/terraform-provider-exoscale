@@ -74,6 +74,13 @@ func computeResource() *schema.Resource {
 					Type:	schema.TypeString,
 				},
 			},
+			"securitygroups": &schema.Schema{
+				Type:		schema.TypeList,
+				Optional:	true,
+				Elem:	&schema.Schema{
+					Type:	schema.TypeString,
+				},
+			},
 		},
 	}
 }
@@ -116,6 +123,24 @@ func resourceCreate(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
+	sgCount := d.Get("securitygroups.#").(int)
+	var securityGroups []string
+	if sgCount > 0 {
+		securityGroups = make([]string, sgCount)
+		for i := 0; i < sgCount; i++ {
+			sg := fmt.Sprintf("securitygroups.%d", i)
+			sgId, err := client.GetSecurityGroupId(d.Get(sg).(string)); if err != nil {
+				return err
+			}
+
+			if sgId != "" {
+				securityGroups[i] = sgId
+			} else {
+				return fmt.Errorf("Invalid security group: %s\n", d.Get(sg).(string))				
+			}
+		}
+	}
+
 	profile := egoscale.MachineProfile{
 		Name:            d.Get("name").(string),
 		Keypair:         d.Get("keypair").(string),
@@ -124,6 +149,7 @@ func resourceCreate(d *schema.ResourceData, meta interface{}) error {
 		Template:        templateId,
 		Zone:            zone,
 		AffinityGroups:	 affinityGroups,
+		SecurityGroups:	 securityGroups,
 	}
 
 	jobId, err := client.CreateVirtualMachine(profile); if err != nil {
