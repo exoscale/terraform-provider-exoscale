@@ -1,0 +1,18 @@
+provider "exoscale" {
+  token = ""
+  secret = ""
+}
+
+resource "exoscale_securitygroup" "primary" {
+    name = "primarysg"
+    ingressRules = {
+      cidr = "0.0.0.0/0"
+      protocol = "TCP"
+      port = 22
+    }
+    ingressRules = {
+      cidr = "192.168.1.0/24"
+      protocol = "TCP"
+      port = 80
+    }
+}

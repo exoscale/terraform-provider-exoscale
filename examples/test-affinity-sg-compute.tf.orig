@@ -1,0 +1,34 @@
+provider "exoscale" {
+  token = ""
+  secret = ""
+}
+
+resource "exoscale_affinity" "test" {
+    name = "terraform-exoscale-affinity"
+}
+
+resource "exoscale_securitygroup" "primary" {
+    name = "primarysg"
+    ingressRules = {
+      cidr = "0.0.0.0/0"
+      protocol = "TCP"
+      port = 22
+    }
+    ingressRules = {
+      cidr = "192.168.1.0/24"
+      protocol = "TCP"
+      port = 80
+    }
+}
+
+
+resource "exoscale_compute" "test" {
+    template = "ubuntu-16.04"
+    name = "test-1"
+    zone = "ch-gva-2"
+    size = "Micro"
+    diskSize = 10
+    keypair = "kusanagi"
+    affinitygroups = ["terraform-exoscale-affinity"]
+    securitygroups = ["primarysg"]
+}

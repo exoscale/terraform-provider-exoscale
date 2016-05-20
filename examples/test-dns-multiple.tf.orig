@@ -1,0 +1,18 @@
+provider "exoscale" {
+  token = ""
+  secret = ""
+}
+
+resource "exoscale_dns" "test" {
+    name = "cabtest.com"
+    record = {
+		name = "demo"
+		type = "A"
+		content = "192.168.1.15"
+	}
+    record = {
+		name = "doubledemo"
+		type = "A"
+		content = "192.168.1.16"
+	}
+}

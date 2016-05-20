@@ -1,0 +1,8 @@
+provider "exoscale" {
+  token = ""
+  secret = ""
+}
+
+resource "exoscale_affinity" "test_affinity" {
+    name = "terraform-exoscale-affinity"
+}

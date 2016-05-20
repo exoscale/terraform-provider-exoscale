@@ -1,0 +1,13 @@
+provider "exoscale" {
+  token = ""
+  secret = ""
+}
+
+resource "exoscale_compute" "test" {
+    template = "ubuntu-16.04"
+    name = "test-1"
+    zone = "ch-gva-2"
+    size = "Micro"
+    diskSize = 10
+    keypair = "kusanagi"
+}
