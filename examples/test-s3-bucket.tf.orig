@@ -1,0 +1,9 @@
+provider "exoscale" {
+  token = ""
+  secret = ""
+}
+
+resource "exoscale_s3bucket" "tftest" {
+    bucket = "tftest"
+	acl = "private"
+}

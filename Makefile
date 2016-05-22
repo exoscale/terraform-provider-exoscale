@@ -14,6 +14,7 @@ build:
 deps:
 	go get github.com/hashicorp/terraform
 	go get github.com/runseb/egoscale/src/egoscale
+	go get gopkg.in/amz.v2/s3
 
 clean:
 	rm -rf bin/
