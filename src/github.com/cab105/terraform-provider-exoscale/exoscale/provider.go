@@ -30,6 +30,7 @@ func Provider() terraform.ResourceProvider {
 			"exoscale_securitygroup":	securityGroupResource(),
 			"exoscale_dns":				dnsResource(),
 			"exoscale_s3bucket":		s3BucketResource(),
+			"exoscale_s3object":		s3ObjectResource(),
 		},
 
 		ConfigureFunc: providerConfigure,

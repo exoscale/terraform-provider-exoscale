@@ -1,8 +1,6 @@
 package exoscale
 
 import (
-    "gopkg.in/amz.v2/s3"
-
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
@@ -10,13 +8,6 @@ import (
  * For buckets, we'll expect at least a name and acls.
  * exoscale also supports CORS, but unfortunately the
  * canonical go libraries do not support it at this time.
- *
- * Next we'll want to support file/directory creation
- * along with uploading contents.  Same deal with ACLs,
- * but this time we'll want to add in key/value pairs.
- * From what I can tell, Exoscale doesn't support any other
- * form of usage notification or checksumming save for the k/v
- * support.
  **/
 
  func s3BucketResource() *schema.Resource {
