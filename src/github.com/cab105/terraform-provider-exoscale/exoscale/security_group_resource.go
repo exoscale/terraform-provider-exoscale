@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/runseb/egoscale/src/egoscale"
+	"github.com/skippbox/egoscale/src/egoscale"
 )
 
 func securityGroupResource() *schema.Resource {

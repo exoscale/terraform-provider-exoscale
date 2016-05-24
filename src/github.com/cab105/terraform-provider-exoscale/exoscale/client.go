@@ -1,7 +1,7 @@
 package exoscale
 
 import (
-    "github.com/runseb/egoscale/src/egoscale"
+    "github.com/skippbox/egoscale/src/egoscale"
 
     "gopkg.in/amz.v2/aws"
     "gopkg.in/amz.v2/s3"
