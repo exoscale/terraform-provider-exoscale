@@ -3,6 +3,7 @@ package exoscale
 import (
 	"fmt"
 	"log"
+	"regexp"
 	"strings"
 	"time"
 
@@ -103,7 +104,7 @@ func resourceCreate(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("Invalid zone: %s", d.Get("zone").(string))		
 	}
 
-	template := topo.Images[d.Get("template").(string)]
+	template := topo.Images[convertTemplateName(d.Get("template").(string))]
 	if template == nil {
 		return fmt.Errorf("Invalid template: %s", d.Get("template").(string))				
 	}
@@ -186,7 +187,7 @@ func resourceRead(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	d.Set("name", machine.Name)
+	d.Set("name", machine.Displayname)
 	d.Set("keypain", machine.Keypair)
 	d.Set("userdata", "")
 	d.Set("size", machine.Serviceofferingname)
@@ -230,4 +231,22 @@ func resourceDelete(d *schema.ResourceData, meta interface{}) error {
 
 	log.Printf("Deleted vm id: %s\n", resp)
 	return nil
+}
+
+/*
+ * An ancilliary function to ensure that the template string passed in maps to
+ * the string provided by the egoscale driver.
+ */
+func convertTemplateName(t string) string {
+	re := regexp.MustCompile(`^Linux (?P<name>.+?) (?P<version>[0-9.]+).*$`)
+	submatch := re.FindStringSubmatch(t)
+	if len(submatch) > 0 {
+		name := strings.Replace(strings.ToLower(submatch[1]), " ", "-", -1)
+		version := submatch[2]
+		image := fmt.Sprintf("%s-%s", name, version)
+
+		return image
+	} else {
+		return ""
+	}
 }
