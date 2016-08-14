@@ -26,6 +26,10 @@ provider "exoscale" {
 You are required to provide at least the OAuth API token and secret key in order
 to make use of the remaining Terraform resources.
 
+You can specify the environment variables for these using ```EXOSCALE_API_SECRET```
+or ```EXOSCALE_API_KEY```.  You can also use the cloudstack environment variables
+```CLOUDSTACK_(API|SECRET)_KEY```.
+
 ## SSH Resource
 
 Declare an ssh key that will be used for any current/future instances

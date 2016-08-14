@@ -1,6 +1,8 @@
 package exoscale
 
 import (
+	"os"
+
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/terraform"
 )
@@ -41,6 +43,17 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	baseConfig := Client{
 		token:  d.Get("token").(string),
 		secret: d.Get("secret").(string),
+	}
+
+	/*
+	 * Make use of the cloudstack API keys for specifying keys
+	 */
+	if len(os.Getenv("CLOUDSTACK_API_KEY")) > 0 {
+		baseConfig.token = os.Getenv("CLOUDSTACK_API_KEY")
+	}
+
+	if len(os.Getenv("CLOUDSTACK_SECRET_KEY")) > 0 {
+		baseConfig.secret = os.Getenv("CLOUDSTACK_SECRET_KEY")
 	}
 
 	return baseConfig, nil
