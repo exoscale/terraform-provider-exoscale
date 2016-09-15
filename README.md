@@ -28,7 +28,7 @@ to make use of the remaining Terraform resources.
 
 You can specify the environment variables for these using ```EXOSCALE_API_SECRET```
 or ```EXOSCALE_API_KEY```.  You can also use the cloudstack environment variables
-```CLOUDSTACK_(API|SECRET)_KEY```.
+`CLOUDSTACK_(API|SECRET)_KEY`.
 
 ## SSH Resource
 
