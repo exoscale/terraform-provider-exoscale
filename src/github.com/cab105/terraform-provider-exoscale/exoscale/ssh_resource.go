@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/skippbox/egoscale/src/egoscale"
+	"github.com/pyr/egoscale/src/egoscale"
 )
 
 func sshResource() *schema.Resource {

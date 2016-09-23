@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/skippbox/egoscale/src/egoscale"
+	"github.com/pyr/egoscale/src/egoscale"
 )
 
 func securityGroupResource() *schema.Resource {
@@ -152,11 +152,48 @@ func sgCreate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func sgRead(d *schema.ResourceData, meta interface{}) error {
-	/*
-	 * We cannot retrieve the ingress/egress rules at this time, and the only
-	 * thing that could possibly change on the group side is the name so do
-	 * nothing for now.
-	 */
+	client := GetClient(ComputeEndpoint, meta)
+	sgs, err := client.GetSecurityGroups()
+	if err != nil {
+		return err
+	}
+
+	var securityGroups egoscale.SecurityGroup
+	for _,v := range sgs {
+		if d.Id() == v.Id {
+			securityGroups = v
+			break;
+		}
+	}
+
+	d.Set("id", securityGroups.Id)
+	d.Set("name", securityGroups.Name)
+	d.Set("description", securityGroups.Description)
+	d.Set("ingressRules.#", len(securityGroups.IngressRules))
+	d.Set("egressRules.#", len(securityGroups.EgressRules))
+
+	for i := 0; i < len(securityGroups.IngressRules); i++ {
+		key := fmt.Sprintf("ingressRules.%d.", i)
+		d.Set(key + "sgid", securityGroups.IngressRules[i].RuleId)
+		d.Set(key + "port", securityGroups.IngressRules[i].StartPort)
+		d.Set(key + "cidr", securityGroups.IngressRules[i].Cidr)
+		d.Set(key + "protocol", securityGroups.IngressRules[i].Protocol)
+		d.Set(key + "icmpcode", securityGroups.IngressRules[i].IcmpCode)
+		d.Set(key + "icmptype", securityGroups.IngressRules[i].IcmpType)
+	}
+
+	for i := 0; i < len(securityGroups.EgressRules); i++ {
+		key := fmt.Sprintf("egressRules.%d.", i)
+		d.Set(key + "sgid", securityGroups.EgressRules[i].RuleId)
+		d.Set(key + "port", securityGroups.EgressRules[i].StartPort)
+		d.Set(key + "cidr", securityGroups.EgressRules[i].Cidr)
+		d.Set(key + "protocol", securityGroups.EgressRules[i].Protocol)
+		d.Set(key + "icmpcode", securityGroups.EgressRules[i].IcmpCode)
+		d.Set(key + "icmptype", securityGroups.EgressRules[i].IcmpType)
+	}
+
+
+
 	return nil
 }
 

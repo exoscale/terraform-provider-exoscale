@@ -23,7 +23,7 @@ resource "exoscale_securitygroup" "primary" {
 
 
 resource "exoscale_compute" "test" {
-    template = "ubuntu-16.04"
+    template = "Linux Ubuntu 16.04 LTS 64-bit"
     name = "test-1"
     zone = "ch-gva-2"
     size = "Micro"

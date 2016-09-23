@@ -208,7 +208,6 @@ operation to succeed.
 # TODO List/Missing features
 
 ## Security Groups
-* There is currently no API in place to allow for listing what ingress/egress rules are in place for a security group once the group is created
 * Support single port declaration as well as starting/ending port ranges
 
 ## S3 Support
