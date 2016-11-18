@@ -188,7 +188,7 @@ func resourceRead(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	d.Set("name", machine.Displayname)
-	d.Set("keypain", machine.Keypair)
+	d.Set("keypair", machine.Keypair)
 	d.Set("userdata", "")
 	d.Set("size", machine.Serviceofferingname)
 	d.Set("template", machine.Templatename)
