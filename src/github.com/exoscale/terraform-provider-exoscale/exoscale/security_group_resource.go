@@ -23,7 +23,7 @@ func securityGroupResource() *schema.Resource {
 				ForceNew:	true,
 				Required:	true,
 			},
-			"ingressRules": &schema.Schema{
+			"ingress_rules": &schema.Schema{
 				Type:		schema.TypeList,
 				Optional:	true,
 				ForceNew:   true,
@@ -56,7 +56,7 @@ func securityGroupResource() *schema.Resource {
 					},
 				},
 			},
-			"egressRules": &schema.Schema{
+			"egress_rules": &schema.Schema{
 				Type:		schema.TypeList,
 				Optional:	true,
 				ForceNew:	true,
@@ -97,16 +97,16 @@ func sgCreate(d *schema.ResourceData, meta interface{}) error {
 	var i int
 	client := GetClient(ComputeEndpoint, meta)
 
-	ingressLength := d.Get("ingressRules.#").(int)
-	egressLength := d.Get("egressRules.#").(int)
+	ingressLength := d.Get("ingress_rules.#").(int)
+	egressLength := d.Get("egress_rules.#").(int)
 
 	ingressRules := make([]egoscale.SecurityGroupRule, ingressLength)
 	egressRules := make([]egoscale.SecurityGroupRule, egressLength)
 
 	for i = 0; i < ingressLength; i++ {
 		var rule egoscale.SecurityGroupRule
-		key := fmt.Sprintf("ingressRules.%d.", i)
-		
+		key := fmt.Sprintf("ingress_rules.%d.", i)
+
 		rule.SecurityGroupId = ""
 		rule.Cidr = d.Get(key + "cidr").(string)
 		rule.Protocol = d.Get(key + "protocol").(string)
@@ -118,8 +118,8 @@ func sgCreate(d *schema.ResourceData, meta interface{}) error {
 
 	for i = 0; i < egressLength; i++ {
 		var rule egoscale.SecurityGroupRule
-		key := fmt.Sprintf("egressRules.%d.", i)
-		
+		key := fmt.Sprintf("egress_rules.%d.", i)
+
 		rule.SecurityGroupId = ""
 		rule.Cidr = d.Get(key + "cidr").(string)
 		rule.Protocol = d.Get(key + "protocol").(string)
@@ -138,12 +138,12 @@ func sgCreate(d *schema.ResourceData, meta interface{}) error {
 
 	/* Update the sgid field for all of the ingress/egress rules */
 	for i = 0; i < ingressLength; i++ {
-		key := fmt.Sprintf("ingressRules.%d.", i)
+		key := fmt.Sprintf("ingress_rules.%d.", i)
 		d.Set(key + "sgid", resp.Id)
 	}
 
 	for i = 0; i < egressLength; i++ {
-		key := fmt.Sprintf("egressRules.%d.", i)
+		key := fmt.Sprintf("egress_rules.%d.", i)
 		d.Set(key + "sgid", resp.Id)
 	}
 
@@ -169,11 +169,11 @@ func sgRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("id", securityGroups.Id)
 	d.Set("name", securityGroups.Name)
 	d.Set("description", securityGroups.Description)
-	d.Set("ingressRules.#", len(securityGroups.IngressRules))
-	d.Set("egressRules.#", len(securityGroups.EgressRules))
+	d.Set("ingress_rules.#", len(securityGroups.IngressRules))
+	d.Set("egress_rules.#", len(securityGroups.EgressRules))
 
 	for i := 0; i < len(securityGroups.IngressRules); i++ {
-		key := fmt.Sprintf("ingressRules.%d.", i)
+		key := fmt.Sprintf("ingress_rules.%d.", i)
 		d.Set(key + "sgid", securityGroups.IngressRules[i].RuleId)
 		d.Set(key + "port", securityGroups.IngressRules[i].StartPort)
 		d.Set(key + "cidr", securityGroups.IngressRules[i].Cidr)
@@ -183,7 +183,7 @@ func sgRead(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	for i := 0; i < len(securityGroups.EgressRules); i++ {
-		key := fmt.Sprintf("egressRules.%d.", i)
+		key := fmt.Sprintf("egress_rules.%d.", i)
 		d.Set(key + "sgid", securityGroups.EgressRules[i].RuleId)
 		d.Set(key + "port", securityGroups.EgressRules[i].StartPort)
 		d.Set(key + "cidr", securityGroups.EgressRules[i].Cidr)

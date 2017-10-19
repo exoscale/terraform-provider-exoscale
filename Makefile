@@ -9,7 +9,7 @@ export GOPATH
 all: deps build
 
 build:
-	go install github.com/cab105/terraform-provider-exoscale/
+	go install github.com/exoscale/terraform-provider-exoscale/
 
 deps:
 	go get github.com/hashicorp/terraform

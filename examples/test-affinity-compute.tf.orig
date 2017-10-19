@@ -12,7 +12,7 @@ resource "exoscale_compute" "test" {
     name = "test-1"
     zone = "ch-gva-2"
     size = "Micro"
-    diskSize = 10
+    disk_size = 10
     keypair = "kusanagi"
     affinitygroups = ["terraform-exoscale-affinity"]
 }

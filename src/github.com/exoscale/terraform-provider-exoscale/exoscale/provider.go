@@ -23,16 +23,22 @@ func Provider() terraform.ResourceProvider {
 				DefaultFunc: schema.EnvDefaultFunc("EXOSCALE_SECRET", nil),
 				Description: "Exoscale API secret",
 			},
+			"timeout": &schema.Schema{
+				Type:        schema.TypeInt,
+				Required:    true,
+				DefaultFunc: schema.EnvDefaultFunc("EXOSCALE_TIMEOUT", 60),
+				Description: "Timeout in seconds for waiting on compute resources to become available",
+			},
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
-			"exoscale_compute": 		computeResource(),
-			"exoscale_ssh":     		sshResource(),
-			"exoscale_affinity":		affinityResource(),
-			"exoscale_securitygroup":	securityGroupResource(),
-			"exoscale_dns":				dnsResource(),
-			"exoscale_s3bucket":		s3BucketResource(),
-			"exoscale_s3object":		s3ObjectResource(),
+			"exoscale_compute":       computeResource(),
+			"exoscale_ssh":           sshResource(),
+			"exoscale_affinity":      affinityResource(),
+			"exoscale_securitygroup": securityGroupResource(),
+			"exoscale_dns":           dnsResource(),
+			"exoscale_s3bucket":      s3BucketResource(),
+			"exoscale_s3object":      s3ObjectResource(),
 		},
 
 		ConfigureFunc: providerConfigure,
@@ -40,9 +46,10 @@ func Provider() terraform.ResourceProvider {
 }
 
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
-	baseConfig := Client{
+	baseConfig := BaseConfig{
 		token:  d.Get("token").(string),
 		secret: d.Get("secret").(string),
+		timeout: d.Get("timeout").(int),
 	}
 
 	/*

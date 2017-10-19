@@ -9,12 +9,12 @@ resource "exoscale_affinity" "test" {
 
 resource "exoscale_securitygroup" "primary" {
     name = "primarysg"
-    ingressRules = {
+    ingress_rules = {
       cidr = "0.0.0.0/0"
       protocol = "TCP"
       port = 22
     }
-    ingressRules = {
+    ingress_rules = {
       cidr = "192.168.1.0/24"
       protocol = "TCP"
       port = 80
@@ -27,7 +27,7 @@ resource "exoscale_compute" "test" {
     name = "test-1"
     zone = "ch-gva-2"
     size = "Micro"
-    diskSize = 10
+    disk_size = 10
     keypair = "kusanagi"
     affinitygroups = ["terraform-exoscale-affinity"]
     securitygroups = ["primarysg"]

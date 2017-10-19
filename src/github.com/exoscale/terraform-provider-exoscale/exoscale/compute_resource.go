@@ -9,7 +9,10 @@ import (
 
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/pyr/egoscale/src/egoscale"
+	"errors"
 )
+
+const DelayBeforeRetry = 5 // seconds
 
 func computeResource() *schema.Resource {
 	return &schema.Resource{
@@ -33,7 +36,7 @@ func computeResource() *schema.Resource {
 				Optional: true,
 				ForceNew: true,
 			},
-			"diskSize": &schema.Schema{
+			"disk_size": &schema.Schema{
 				Type:		schema.TypeInt,
 				Required:	true,
 				ForceNew:	true,
@@ -92,7 +95,7 @@ func resourceCreate(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	diskSize := d.Get("diskSize").(int)
+	diskSize := d.Get("disk_size").(int)
 	service := topo.Profiles[strings.ToLower(d.Get("size").(string))]
 
 	if service == "" {
@@ -101,12 +104,12 @@ func resourceCreate(d *schema.ResourceData, meta interface{}) error {
 
 	zone := topo.Zones[strings.ToLower(d.Get("zone").(string))]
 	if zone == "" {
-		return fmt.Errorf("Invalid zone: %s", d.Get("zone").(string))		
+		return fmt.Errorf("Invalid zone: %s", d.Get("zone").(string))
 	}
 
 	template := topo.Images[convertTemplateName(d.Get("template").(string))]
 	if template == nil {
-		return fmt.Errorf("Invalid template: %s", d.Get("template").(string))				
+		return fmt.Errorf("Invalid template: %s", d.Get("template").(string))
 	}
 
 	templateId := template[diskSize]
@@ -137,7 +140,7 @@ func resourceCreate(d *schema.ResourceData, meta interface{}) error {
 			if sgId != "" {
 				securityGroups[i] = sgId
 			} else {
-				return fmt.Errorf("Invalid security group: %s\n", d.Get(sg).(string))				
+				return fmt.Errorf("Invalid security group: %s\n", d.Get(sg).(string))
 			}
 		}
 	}
@@ -157,17 +160,29 @@ func resourceCreate(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
+	var timeoutSeconds = meta.(BaseConfig).timeout
+	var retries = timeoutSeconds / DelayBeforeRetry
+
 	var resp *egoscale.QueryAsyncJobResultResponse
-	for i := 0; i < 6; i++ {
+	var succeeded = false
+	for i := 0; i < retries; i++ {
 		resp, err = client.PollAsyncJob(jobId); if err != nil {
 			return err
 		}
 
 		if resp.Jobstatus == 1 {
+			succeeded = true
 			break
 		}
-		time.Sleep(5 * time.Second)
+
+		time.Sleep(DelayBeforeRetry * time.Second)
 	}
+
+	if !succeeded {
+		return errors.New(fmt.Sprintf("Virtual machine creation did not succeed within %d seconds. You may increase " +
+			"the timeout in the provider configuration.", timeoutSeconds))
+	}
+
 
 	vm, err := client.AsyncToVirtualMachine(*resp); if err != nil {
 		return err

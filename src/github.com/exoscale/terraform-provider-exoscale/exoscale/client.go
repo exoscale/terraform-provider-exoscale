@@ -11,18 +11,19 @@ const ComputeEndpoint = "https://api.exoscale.ch/compute"
 const DNSEndpoint = "https://api.exoscale.ch/dns"
 const S3Endpoint = "https://sos.exo.io"
 
-type Client struct {
+type BaseConfig struct {
 	token  string
 	secret string
+	timeout int
 }
 
 func GetClient(endpoint string, meta interface{}) *egoscale.Client {
-	client := meta.(Client)
-	return egoscale.NewClient(endpoint, client.token, client.secret)
+	config := meta.(BaseConfig)
+	return egoscale.NewClient(endpoint, config.token, config.secret)
 }
 
 func GetS3Client(meta interface{}) *s3.S3 {
-    client := meta.(Client)
+    config := meta.(BaseConfig)
     var exo1 = aws.Region{
         Name: "CH-GV1",
         S3Endpoint: S3Endpoint,
@@ -30,8 +31,8 @@ func GetS3Client(meta interface{}) *s3.S3 {
     }
 
     var auth = aws.Auth{
-        AccessKey: client.token,
-        SecretKey: client.secret,
+        AccessKey: config.token,
+        SecretKey: config.secret,
     }
 
     return s3.New(auth, exo1)
