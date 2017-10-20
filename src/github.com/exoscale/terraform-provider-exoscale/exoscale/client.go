@@ -1,7 +1,7 @@
 package exoscale
 
 import (
-    "github.com/pyr/egoscale/src/egoscale"
+    "github.com/exoscale/egoscale"
 
     "gopkg.in/amz.v2/aws"
     "gopkg.in/amz.v2/s3"

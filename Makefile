@@ -13,7 +13,7 @@ build:
 
 deps:
 	go get github.com/hashicorp/terraform
-	go get github.com/pyr/egoscale/src/egoscale
+	go get github.com/exoscale/egoscale
 	go get gopkg.in/amz.v2/s3
 
 clean:
