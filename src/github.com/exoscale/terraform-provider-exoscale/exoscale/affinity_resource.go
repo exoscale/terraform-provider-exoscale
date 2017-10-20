@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/pyr/egoscale/src/egoscale"
+	"github.com/exoscale/egoscale"
 	"errors"
 )
 
