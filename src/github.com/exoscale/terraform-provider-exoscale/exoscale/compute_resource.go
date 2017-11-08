@@ -54,11 +54,6 @@ func computeResource() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
-
-			"id": &schema.Schema{
-				Type:     schema.TypeString,
-				Computed: true,
-			},
 			"state": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,

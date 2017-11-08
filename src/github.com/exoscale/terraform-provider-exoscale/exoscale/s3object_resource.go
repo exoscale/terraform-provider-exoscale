@@ -22,10 +22,6 @@ import (
         Update: s3ObjectUpdate,
 
         Schema: map[string]*schema.Schema{
-            "id": &schema.Schema{
-                Type:       schema.TypeString,
-                Computed:   true,
-            },
             "bucket": &schema.Schema{
                 Type:       schema.TypeString,
                 ForceNew:   true,
