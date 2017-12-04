@@ -16,7 +16,8 @@ What follows below is the usage instructions for fully utilizing the Exoscale
 resource plugin.  Additional documentation can be found in the examples directory.
 
 ## Provider requirements
-```terraform
+
+```hcl
 provider "exoscale" {
     token = ""
     secret = ""
@@ -24,6 +25,7 @@ provider "exoscale" {
 }
 
 ```
+
 You are required to provide at least the OAuth API token and secret key in order
 to make use of the remaining Terraform resources.
 
@@ -38,7 +40,7 @@ or ```EXOSCALE_API_KEY```.  You can also use the cloudstack environment variable
 
 Declare an ssh key that will be used for any current/future instances
 
-```terraform
+```hcl
 resource "exoscale_ssh" "keylabel" {
     name = "keyname"
     key = "keycontents"
@@ -52,7 +54,7 @@ resource "exoscale_ssh" "keylabel" {
 
 Define an affinity group that can be used to group various instances together
 
-```terraform
+```hcl
 resource "exoscale_affinity" "affinitylabel" {
     name = "affinity name"
 }
@@ -65,7 +67,7 @@ resource "exoscale_affinity" "affinitylabel" {
 Provide a named grouping of firewall rules that would be applicable for each
 instance.
 
-```terraform
+```hcl
 resource "exoscale_securitygroup" "sglabel" {
     name = "sgname"
     ingress_rules = {
@@ -105,7 +107,7 @@ resource "exoscale_securitygroup" "sglabel" {
 
 Define a new compute resource.
 
-```terraform
+```hcl
 resource "exoscale_compute" "computelabel" {
     name = "testname"
     template = "ubuntu-16.04"
@@ -122,13 +124,13 @@ resource "exoscale_compute" "computelabel" {
 * ```name``` The compute resource hostname
 * ```template``` The template to use for the specified resource
 * ```size``` Defines the instance configuration size:
- * Micro
- * Tiny
- * Small
- * Medium
- * Large
- * Extra-Large
- * Huge
+   * Micro
+   * Tiny
+   * Small
+   * Medium
+   * Large
+   * Extra-Large
+   * Huge
 * ```disk_size``` Define the size of the root disk: 10GB, 50GB, 100GB, 200GB, 400GB
 * ```zone``` One of the two datacenters: CH-DK-2 and CH-GVA-2
 * ```keypair``` The SSH key used for root access to the host
@@ -141,7 +143,7 @@ resource "exoscale_compute" "computelabel" {
 If the user has an active DNS subscription with Exoscale, allow them the ability
 to manage their DNS information.
 
-```terraform
+```hcl
 resource "exoscale_dns" "testdomain" {
     name = "testdomain.ch"
     record = {
@@ -171,7 +173,7 @@ There are two resources that define the S3 interaction: buckets for the
 creation/management of the bucket name, and objects for the contents of said
 buckets.
 
-```terraform
+```hcl
 resource "exoscale_s3bucket" "testbucket" {
     bucket = "tftest"
     acl = "private"
@@ -181,7 +183,7 @@ resource "exoscale_s3bucket" "testbucket" {
 * ```bucket``` The bucket name that will be referenced in all object references
 * ```acl``` Permission type for the bucket and its contents based off the AWS S3 implementation
 
-```terraform
+```hcl
 resource "exoscale_s3object" "testobj" {
     bucket = "tftest"
     acl = "private"
