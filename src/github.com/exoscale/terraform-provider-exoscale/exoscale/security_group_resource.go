@@ -14,10 +14,6 @@ func securityGroupResource() *schema.Resource {
 		Delete: sgDelete,
 
 		Schema: map[string]*schema.Schema{
-			"id": &schema.Schema{
-				Type:		schema.TypeString,
-				Computed:	true,
-			},
 			"name": &schema.Schema{
 				Type:		schema.TypeString,
 				ForceNew:	true,
@@ -162,11 +158,11 @@ func sgRead(d *schema.ResourceData, meta interface{}) error {
 	for _,v := range sgs {
 		if d.Id() == v.Id {
 			securityGroups = v
-			break;
+			break
 		}
 	}
 
-	d.Set("id", securityGroups.Id)
+	d.SetId(securityGroups.Id)
 	d.Set("name", securityGroups.Name)
 	d.Set("description", securityGroups.Description)
 	d.Set("ingress_rules.#", len(securityGroups.IngressRules))

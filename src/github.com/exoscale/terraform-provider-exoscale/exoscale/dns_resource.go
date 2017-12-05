@@ -16,10 +16,6 @@ func dnsResource() *schema.Resource {
 		Delete: dnsDelete,
 
 		Schema: map[string]*schema.Schema{
-			"id": &schema.Schema{
-				Type:		schema.TypeString,
-				Computed:	true,
-			},
 			"name": &schema.Schema{
 				Type:		schema.TypeString,
 				Required:	true,
@@ -38,10 +34,6 @@ func dnsResource() *schema.Resource {
 				Optional:	true,
 				Elem:		&schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"id": &schema.Schema{
-							Type:		schema.TypeInt,
-							Computed:	true,
-						},
 						"name":	&schema.Schema{
 							Type:		schema.TypeString,
 							Required:	true,
