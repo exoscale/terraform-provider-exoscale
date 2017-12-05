@@ -1,0 +1,18 @@
+language: go
+
+dist: trusty
+
+go:
+- 1.9
+- tip
+
+cache: apt
+
+install:
+  - make devdeps
+
+script:
+  - make
+  - test `gofmt -s -d src/github.com/exoscale/terraform-provider-exoscale | tee -a /dev/fd/2 | wc -l` -eq 0
+  - test `bin/golint github.com/exoscale/terraform-provider-exoscale | tee -a /dev/fd/2 | wc -l` -eq 0
+  - make vet

@@ -3,8 +3,8 @@ package exoscale
 import (
 	"fmt"
 
-	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/exoscale/egoscale"
+	"github.com/hashicorp/terraform/helper/schema"
 )
 
 func securityGroupResource() *schema.Resource {
@@ -14,73 +14,73 @@ func securityGroupResource() *schema.Resource {
 		Delete: sgDelete,
 
 		Schema: map[string]*schema.Schema{
-			"name": &schema.Schema{
-				Type:		schema.TypeString,
-				ForceNew:	true,
-				Required:	true,
+			"name": {
+				Type:     schema.TypeString,
+				ForceNew: true,
+				Required: true,
 			},
-			"ingress_rules": &schema.Schema{
-				Type:		schema.TypeList,
-				Optional:	true,
-				ForceNew:   true,
-				Elem:		&schema.Resource{
+			"ingress_rules": {
+				Type:     schema.TypeList,
+				Optional: true,
+				ForceNew: true,
+				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"sgid": &schema.Schema{
-							Type:		schema.TypeString,
-							Computed:	true,
+						"sgid": {
+							Type:     schema.TypeString,
+							Computed: true,
 						},
-						"cidr": &schema.Schema{
-							Type:		schema.TypeString,
-							Required:	true,
+						"cidr": {
+							Type:     schema.TypeString,
+							Required: true,
 						},
-						"protocol": &schema.Schema{
-							Type:		schema.TypeString,
-							Required:	true,
+						"protocol": {
+							Type:     schema.TypeString,
+							Required: true,
 						},
-						"port": &schema.Schema{
-							Type:		schema.TypeInt,
-							Optional:	true,
+						"port": {
+							Type:     schema.TypeInt,
+							Optional: true,
 						},
-						"icmptype": &schema.Schema{
-							Type:		schema.TypeInt,
-							Optional:	true,
+						"icmptype": {
+							Type:     schema.TypeInt,
+							Optional: true,
 						},
-						"icmpcode": &schema.Schema{
-							Type:		schema.TypeInt,
-							Optional:	true,
+						"icmpcode": {
+							Type:     schema.TypeInt,
+							Optional: true,
 						},
 					},
 				},
 			},
-			"egress_rules": &schema.Schema{
-				Type:		schema.TypeList,
-				Optional:	true,
-				ForceNew:	true,
-				Elem:		&schema.Resource{
+			"egress_rules": {
+				Type:     schema.TypeList,
+				Optional: true,
+				ForceNew: true,
+				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"sgid": &schema.Schema{
-							Type:		schema.TypeString,
-							Computed:	true,
+						"sgid": {
+							Type:     schema.TypeString,
+							Computed: true,
 						},
-						"cidr": &schema.Schema{
-							Type:		schema.TypeString,
-							Required:	true,
+						"cidr": {
+							Type:     schema.TypeString,
+							Required: true,
 						},
-						"protocol": &schema.Schema{
-							Type:		schema.TypeString,
-							Required:	true,
+						"protocol": {
+							Type:     schema.TypeString,
+							Required: true,
 						},
-						"port": &schema.Schema{
-							Type:		schema.TypeInt,
-							Optional:	true,
+						"port": {
+							Type:     schema.TypeInt,
+							Optional: true,
 						},
-						"icmptype": &schema.Schema{
-							Type:		schema.TypeInt,
-							Optional:	true,
+						"icmptype": {
+							Type:     schema.TypeInt,
+							Optional: true,
 						},
-						"icmpcode": &schema.Schema{
-							Type:		schema.TypeInt,
-							Optional:	true,
+						"icmpcode": {
+							Type:     schema.TypeInt,
+							Optional: true,
 						},
 					},
 				},
@@ -126,7 +126,8 @@ func sgCreate(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	resp, err := client.CreateSecurityGroupWithRules(d.Get("name").(string),
-		ingressRules, egressRules); if err != nil {
+		ingressRules, egressRules)
+	if err != nil {
 		return err
 	}
 
@@ -135,14 +136,13 @@ func sgCreate(d *schema.ResourceData, meta interface{}) error {
 	/* Update the sgid field for all of the ingress/egress rules */
 	for i = 0; i < ingressLength; i++ {
 		key := fmt.Sprintf("ingress_rules.%d.", i)
-		d.Set(key + "sgid", resp.Id)
+		d.Set(key+"sgid", resp.Id)
 	}
 
 	for i = 0; i < egressLength; i++ {
 		key := fmt.Sprintf("egress_rules.%d.", i)
-		d.Set(key + "sgid", resp.Id)
+		d.Set(key+"sgid", resp.Id)
 	}
-
 
 	return sgRead(d, meta)
 }
@@ -155,7 +155,7 @@ func sgRead(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	var securityGroups egoscale.SecurityGroup
-	for _,v := range sgs {
+	for _, v := range sgs {
 		if d.Id() == v.Id {
 			securityGroups = v
 			break
@@ -170,32 +170,31 @@ func sgRead(d *schema.ResourceData, meta interface{}) error {
 
 	for i := 0; i < len(securityGroups.IngressRules); i++ {
 		key := fmt.Sprintf("ingress_rules.%d.", i)
-		d.Set(key + "sgid", securityGroups.IngressRules[i].RuleId)
-		d.Set(key + "port", securityGroups.IngressRules[i].StartPort)
-		d.Set(key + "cidr", securityGroups.IngressRules[i].Cidr)
-		d.Set(key + "protocol", securityGroups.IngressRules[i].Protocol)
-		d.Set(key + "icmpcode", securityGroups.IngressRules[i].IcmpCode)
-		d.Set(key + "icmptype", securityGroups.IngressRules[i].IcmpType)
+		d.Set(key+"sgid", securityGroups.IngressRules[i].RuleId)
+		d.Set(key+"port", securityGroups.IngressRules[i].StartPort)
+		d.Set(key+"cidr", securityGroups.IngressRules[i].Cidr)
+		d.Set(key+"protocol", securityGroups.IngressRules[i].Protocol)
+		d.Set(key+"icmpcode", securityGroups.IngressRules[i].IcmpCode)
+		d.Set(key+"icmptype", securityGroups.IngressRules[i].IcmpType)
 	}
 
 	for i := 0; i < len(securityGroups.EgressRules); i++ {
 		key := fmt.Sprintf("egress_rules.%d.", i)
-		d.Set(key + "sgid", securityGroups.EgressRules[i].RuleId)
-		d.Set(key + "port", securityGroups.EgressRules[i].StartPort)
-		d.Set(key + "cidr", securityGroups.EgressRules[i].Cidr)
-		d.Set(key + "protocol", securityGroups.EgressRules[i].Protocol)
-		d.Set(key + "icmpcode", securityGroups.EgressRules[i].IcmpCode)
-		d.Set(key + "icmptype", securityGroups.EgressRules[i].IcmpType)
+		d.Set(key+"sgid", securityGroups.EgressRules[i].RuleId)
+		d.Set(key+"port", securityGroups.EgressRules[i].StartPort)
+		d.Set(key+"cidr", securityGroups.EgressRules[i].Cidr)
+		d.Set(key+"protocol", securityGroups.EgressRules[i].Protocol)
+		d.Set(key+"icmpcode", securityGroups.EgressRules[i].IcmpCode)
+		d.Set(key+"icmptype", securityGroups.EgressRules[i].IcmpType)
 	}
-
-
 
 	return nil
 }
 
 func sgDelete(d *schema.ResourceData, meta interface{}) error {
 	client := GetClient(ComputeEndpoint, meta)
-	err := client.DeleteSecurityGroup(d.Get("name").(string)); if err != nil {
+	err := client.DeleteSecurityGroup(d.Get("name").(string))
+	if err != nil {
 		return err
 	}
 

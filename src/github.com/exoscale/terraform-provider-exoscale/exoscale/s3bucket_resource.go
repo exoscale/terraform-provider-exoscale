@@ -10,60 +10,62 @@ import (
  * canonical go libraries do not support it at this time.
  **/
 
- func s3BucketResource() *schema.Resource {
- 	return &schema.Resource{
- 		Create: s3BucketCreate,
- 		Read:	s3BucketRead,
- 		Delete:	s3BucketDelete,
+func s3BucketResource() *schema.Resource {
+	return &schema.Resource{
+		Create: s3BucketCreate,
+		Read:   s3BucketRead,
+		Delete: s3BucketDelete,
 
- 		Schema: map[string]*schema.Schema{
- 			"bucket": &schema.Schema{
- 				Type:		schema.TypeString,
- 				ForceNew:	true,
- 				Required:	true,
- 			},
- 			"acl": &schema.Schema{
- 				Type:		schema.TypeString,
- 				ForceNew:	true,
- 				Optional:   true,
- 			},
- 		},
- 	}
- }
+		Schema: map[string]*schema.Schema{
+			"bucket": {
+				Type:     schema.TypeString,
+				ForceNew: true,
+				Required: true,
+			},
+			"acl": {
+				Type:     schema.TypeString,
+				ForceNew: true,
+				Optional: true,
+			},
+		},
+	}
+}
 
- func s3BucketCreate(d *schema.ResourceData, meta interface{}) error {
-    session := GetS3Client(meta)
+func s3BucketCreate(d *schema.ResourceData, meta interface{}) error {
+	session := GetS3Client(meta)
 
-    bucket := session.Bucket(d.Get("bucket").(string))
-    acl := ConvertAcl(d.Get("acl").(string))
+	bucket := session.Bucket(d.Get("bucket").(string))
+	acl := ConvertAcl(d.Get("acl").(string))
 
-    err := bucket.PutBucket(acl); if err != nil {
-        return err
-    }
+	err := bucket.PutBucket(acl)
+	if err != nil {
+		return err
+	}
 
-    d.SetId(d.Get("bucket").(string))
+	d.SetId(d.Get("bucket").(string))
 
-    return s3BucketRead(d, meta)
- }
+	return s3BucketRead(d, meta)
+}
 
- func s3BucketRead(d *schema.ResourceData, meta interface{}) error {
-    session := GetS3Client(meta)
+func s3BucketRead(d *schema.ResourceData, meta interface{}) error {
+	session := GetS3Client(meta)
 
-    bucket := session.Bucket(d.Id())
-    d.Set("bucket", bucket.Name)
-    /* Until the amz library supports reading CORS/ACLs return just what we have */
+	bucket := session.Bucket(d.Id())
+	d.Set("bucket", bucket.Name)
+	/* Until the amz library supports reading CORS/ACLs return just what we have */
 
-    return nil    
+	return nil
 }
 
 func s3BucketDelete(d *schema.ResourceData, meta interface{}) error {
-    /* This will fail unless we delete all underlying items */
-    session := GetS3Client(meta)
-    bucket := session.Bucket(d.Id())
+	/* This will fail unless we delete all underlying items */
+	session := GetS3Client(meta)
+	bucket := session.Bucket(d.Id())
 
-    err := bucket.DelBucket(); if err != nil {
-        return err
-    }
+	err := bucket.DelBucket()
+	if err != nil {
+		return err
+	}
 
-    return nil
+	return nil
 }
