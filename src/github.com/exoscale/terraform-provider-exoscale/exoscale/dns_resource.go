@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/exoscale/egoscale"
+	"github.com/hashicorp/terraform/helper/schema"
 )
 
 func dnsResource() *schema.Resource {
@@ -16,47 +16,47 @@ func dnsResource() *schema.Resource {
 		Delete: dnsDelete,
 
 		Schema: map[string]*schema.Schema{
-			"name": &schema.Schema{
-				Type:		schema.TypeString,
-				Required:	true,
-				ForceNew:	true,
+			"name": {
+				Type:     schema.TypeString,
+				Required: true,
+				ForceNew: true,
 			},
-			"state": &schema.Schema{
-				Type:		schema.TypeString,
-				Computed:	true,
+			"state": {
+				Type:     schema.TypeString,
+				Computed: true,
 			},
-			"recordcount": &schema.Schema{
-				Type:		schema.TypeInt,
-				Computed:	true,
+			"recordcount": {
+				Type:     schema.TypeInt,
+				Computed: true,
 			},
-			"record": &schema.Schema{
-				Type:		schema.TypeList,
-				Optional:	true,
-				Elem:		&schema.Resource{
+			"record": {
+				Type:     schema.TypeList,
+				Optional: true,
+				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"name":	&schema.Schema{
-							Type:		schema.TypeString,
-							Required:	true,
+						"name": {
+							Type:     schema.TypeString,
+							Required: true,
 						},
-						"type": &schema.Schema{
-							Type:		schema.TypeString,
-							Required:	true,
+						"type": {
+							Type:     schema.TypeString,
+							Required: true,
 						},
-						"content": &schema.Schema{
-							Type:		schema.TypeString,
-							Required:	true,
+						"content": {
+							Type:     schema.TypeString,
+							Required: true,
 						},
-						"ttl": &schema.Schema{
-							Type:		schema.TypeInt,
-							Optional:	true,
+						"ttl": {
+							Type:     schema.TypeInt,
+							Optional: true,
 						},
-						"prio": &schema.Schema{
-							Type:		schema.TypeInt,
-							Optional:	true,
+						"prio": {
+							Type:     schema.TypeInt,
+							Optional: true,
 						},
-						"provided": &schema.Schema{
-							Type:		schema.TypeBool,
-							Computed:	true,
+						"provided": {
+							Type:     schema.TypeBool,
+							Computed: true,
 						},
 					},
 				},
@@ -68,7 +68,8 @@ func dnsResource() *schema.Resource {
 func dnsCreate(d *schema.ResourceData, meta interface{}) error {
 	client := GetClient(DNSEndpoint, meta)
 
-	domain, err := client.CreateDomain(d.Get("name").(string)); if err != nil {
+	domain, err := client.CreateDomain(d.Get("name").(string))
+	if err != nil {
 		return err
 	}
 
@@ -84,11 +85,12 @@ func dnsCreate(d *schema.ResourceData, meta interface{}) error {
 			rec.Ttl = d.Get(key + "ttl").(int)
 			rec.Prio = d.Get(key + "prio").(int)
 
-			resp, err := client.CreateRecord(d.Get("name").(string), rec); if err != nil {
+			resp, err := client.CreateRecord(d.Get("name").(string), rec)
+			if err != nil {
 				return err
 			}
 
-			d.Set(key + "id", resp.Record.Id)
+			d.Set(key+"id", resp.Record.Id)
 		}
 	}
 
@@ -98,14 +100,16 @@ func dnsCreate(d *schema.ResourceData, meta interface{}) error {
 func dnsRead(d *schema.ResourceData, meta interface{}) error {
 	client := GetClient(DNSEndpoint, meta)
 
-	domain, err := client.GetDomain(d.Get("name").(string)); if err != nil {
+	domain, err := client.GetDomain(d.Get("name").(string))
+	if err != nil {
 		return err
 	}
 
 	d.Set("state", domain.State)
 	d.Set("recordcount", domain.RecordCount)
 
-	recs, err := client.GetRecords(d.Get("name").(string)); if err != nil {
+	recs, err := client.GetRecords(d.Get("name").(string))
+	if err != nil {
 		return err
 	}
 	records := make([]map[string]interface{}, domain.RecordCount)

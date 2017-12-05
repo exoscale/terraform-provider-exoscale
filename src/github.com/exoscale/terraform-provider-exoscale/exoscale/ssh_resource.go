@@ -1,11 +1,11 @@
 package exoscale
 
 import (
-	"log"
 	"fmt"
+	"log"
 
-	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/exoscale/egoscale"
+	"github.com/hashicorp/terraform/helper/schema"
 )
 
 func sshResource() *schema.Resource {
@@ -16,19 +16,19 @@ func sshResource() *schema.Resource {
 		Delete: sshDelete,
 
 		Schema: map[string]*schema.Schema{
-			"name": &schema.Schema{
-				Type:		schema.TypeString,
-				Required:	true,
-				ForceNew:	true,
+			"name": {
+				Type:     schema.TypeString,
+				Required: true,
+				ForceNew: true,
 			},
-			"key": &schema.Schema{
-				Type:		schema.TypeString,
-				Required:	true,
-				ForceNew:	true,
+			"key": {
+				Type:     schema.TypeString,
+				Required: true,
+				ForceNew: true,
 			},
-			"fingerprint": &schema.Schema{
-				Type:     	schema.TypeString,
-				Computed:	true,
+			"fingerprint": {
+				Type:     schema.TypeString,
+				Computed: true,
 			},
 		},
 	}

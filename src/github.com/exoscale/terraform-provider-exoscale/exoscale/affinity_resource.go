@@ -2,13 +2,13 @@ package exoscale
 
 import (
 	"encoding/json"
-	"log"
 	"fmt"
+	"log"
 	"time"
 
-	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/exoscale/egoscale"
 	"errors"
+	"github.com/exoscale/egoscale"
+	"github.com/hashicorp/terraform/helper/schema"
 )
 
 func affinityResource() *schema.Resource {
@@ -19,10 +19,10 @@ func affinityResource() *schema.Resource {
 		Delete: affinityDelete,
 
 		Schema: map[string]*schema.Schema{
-			"name": &schema.Schema{
-				Type:		schema.TypeString,
-				Required:	true,
-				ForceNew:	true,
+			"name": {
+				Type:     schema.TypeString,
+				Required: true,
+				ForceNew: true,
 			},
 		},
 	}
@@ -31,7 +31,8 @@ func affinityResource() *schema.Resource {
 func affinityCreate(d *schema.ResourceData, meta interface{}) error {
 	client := GetClient(ComputeEndpoint, meta)
 
-	jobid, err := client.CreateAffinityGroup(d.Get("name").(string)); if err != nil {
+	jobid, err := client.CreateAffinityGroup(d.Get("name").(string))
+	if err != nil {
 		return err
 	}
 
@@ -42,7 +43,8 @@ func affinityCreate(d *schema.ResourceData, meta interface{}) error {
 	var resp *egoscale.QueryAsyncJobResultResponse
 	var succeeded = false
 	for i := 0; i < retries; i++ {
-		resp, err = client.PollAsyncJob(jobid); if err != nil {
+		resp, err = client.PollAsyncJob(jobid)
+		if err != nil {
 			return err
 		}
 
@@ -55,7 +57,7 @@ func affinityCreate(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	if !succeeded {
-		return errors.New(fmt.Sprintf("Virtual machine creation did not succeed within %d seconds. You may increase " +
+		return errors.New(fmt.Sprintf("Virtual machine creation did not succeed within %d seconds. You may increase "+
 			"the timeout in the provider configuration.", timeoutSeconds))
 	}
 
@@ -74,7 +76,8 @@ func affinityCreate(d *schema.ResourceData, meta interface{}) error {
 
 func affinityRead(d *schema.ResourceData, meta interface{}) error {
 	client := GetClient(ComputeEndpoint, meta)
-	groups, err := client.GetAffinityGroups(); if err != nil {
+	groups, err := client.GetAffinityGroups()
+	if err != nil {
 		return err
 	}
 

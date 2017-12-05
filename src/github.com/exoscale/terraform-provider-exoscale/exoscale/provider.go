@@ -11,19 +11,19 @@ import (
 func Provider() terraform.ResourceProvider {
 	return &schema.Provider{
 		Schema: map[string]*schema.Schema{
-			"token": &schema.Schema{
+			"token": {
 				Type:        schema.TypeString,
 				Required:    true,
 				DefaultFunc: schema.EnvDefaultFunc("EXOSCALE_KEY", nil),
 				Description: "Exoscale API key",
 			},
-			"secret": &schema.Schema{
+			"secret": {
 				Type:        schema.TypeString,
 				Required:    true,
 				DefaultFunc: schema.EnvDefaultFunc("EXOSCALE_SECRET", nil),
 				Description: "Exoscale API secret",
 			},
-			"timeout": &schema.Schema{
+			"timeout": {
 				Type:        schema.TypeInt,
 				Required:    true,
 				DefaultFunc: schema.EnvDefaultFunc("EXOSCALE_TIMEOUT", 60),
@@ -47,8 +47,8 @@ func Provider() terraform.ResourceProvider {
 
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	baseConfig := BaseConfig{
-		token:  d.Get("token").(string),
-		secret: d.Get("secret").(string),
+		token:   d.Get("token").(string),
+		secret:  d.Get("secret").(string),
 		timeout: d.Get("timeout").(int),
 	}
 

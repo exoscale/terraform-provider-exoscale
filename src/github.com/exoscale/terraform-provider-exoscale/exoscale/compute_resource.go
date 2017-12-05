@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/exoscale/egoscale"
 	"errors"
+	"github.com/exoscale/egoscale"
+	"github.com/hashicorp/terraform/helper/schema"
 )
 
 const DelayBeforeRetry = 5 // seconds
@@ -22,43 +22,43 @@ func computeResource() *schema.Resource {
 		Update: resourceUpdate,
 
 		Schema: map[string]*schema.Schema{
-			"name": &schema.Schema{
+			"name": {
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"template": &schema.Schema{
+			"template": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
-			"size": &schema.Schema{
+			"size": {
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
 			},
-			"disk_size": &schema.Schema{
-				Type:		schema.TypeInt,
-				Required:	true,
-				ForceNew:	true,
+			"disk_size": {
+				Type:     schema.TypeInt,
+				Required: true,
+				ForceNew: true,
 			},
-			"zone": &schema.Schema{
+			"zone": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
-			"userdata": &schema.Schema{
+			"userdata": {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
-			"keypair": &schema.Schema{
+			"keypair": {
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"state": &schema.Schema{
+			"state": {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
-			"networks": &schema.Schema{
+			"networks": {
 				Type:     schema.TypeList,
 				Computed: true,
 				Elem: &schema.Schema{
@@ -66,18 +66,18 @@ func computeResource() *schema.Resource {
 					Default: make(map[string]string),
 				},
 			},
-			"affinitygroups": &schema.Schema{
-				Type:		schema.TypeList,
-				Optional:	true,
-				Elem:	&schema.Schema{
-					Type:	schema.TypeString,
+			"affinitygroups": {
+				Type:     schema.TypeList,
+				Optional: true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
 				},
 			},
-			"securitygroups": &schema.Schema{
-				Type:		schema.TypeList,
-				Optional:	true,
-				Elem:	&schema.Schema{
-					Type:	schema.TypeString,
+			"securitygroups": {
+				Type:     schema.TypeList,
+				Optional: true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
 				},
 			},
 		},
@@ -86,7 +86,8 @@ func computeResource() *schema.Resource {
 
 func resourceCreate(d *schema.ResourceData, meta interface{}) error {
 	client := GetClient(ComputeEndpoint, meta)
-	topo, err := client.GetTopology(); if err != nil {
+	topo, err := client.GetTopology()
+	if err != nil {
 		return err
 	}
 
@@ -128,7 +129,8 @@ func resourceCreate(d *schema.ResourceData, meta interface{}) error {
 		securityGroups = make([]string, sgCount)
 		for i := 0; i < sgCount; i++ {
 			sg := fmt.Sprintf("securitygroups.%d", i)
-			sgId, err := client.GetSecurityGroupId(d.Get(sg).(string)); if err != nil {
+			sgId, err := client.GetSecurityGroupId(d.Get(sg).(string))
+			if err != nil {
 				return err
 			}
 
@@ -147,11 +149,12 @@ func resourceCreate(d *schema.ResourceData, meta interface{}) error {
 		ServiceOffering: service,
 		Template:        templateId,
 		Zone:            zone,
-		AffinityGroups:	 affinityGroups,
-		SecurityGroups:	 securityGroups,
+		AffinityGroups:  affinityGroups,
+		SecurityGroups:  securityGroups,
 	}
 
-	jobId, err := client.CreateVirtualMachine(profile); if err != nil {
+	jobId, err := client.CreateVirtualMachine(profile)
+	if err != nil {
 		return err
 	}
 
@@ -161,7 +164,8 @@ func resourceCreate(d *schema.ResourceData, meta interface{}) error {
 	var resp *egoscale.QueryAsyncJobResultResponse
 	var succeeded = false
 	for i := 0; i < retries; i++ {
-		resp, err = client.PollAsyncJob(jobId); if err != nil {
+		resp, err = client.PollAsyncJob(jobId)
+		if err != nil {
 			return err
 		}
 
@@ -174,12 +178,12 @@ func resourceCreate(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	if !succeeded {
-		return errors.New(fmt.Sprintf("Virtual machine creation did not succeed within %d seconds. You may increase " +
+		return errors.New(fmt.Sprintf("Virtual machine creation did not succeed within %d seconds. You may increase "+
 			"the timeout in the provider configuration.", timeoutSeconds))
 	}
 
-
-	vm, err := client.AsyncToVirtualMachine(*resp); if err != nil {
+	vm, err := client.AsyncToVirtualMachine(*resp)
+	if err != nil {
 		return err
 	}
 
