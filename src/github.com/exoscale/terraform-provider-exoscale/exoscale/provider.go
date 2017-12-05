@@ -1,8 +1,6 @@
 package exoscale
 
 import (
-	"os"
-
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/terraform"
 )
@@ -14,13 +12,13 @@ func Provider() terraform.ResourceProvider {
 			"token": {
 				Type:        schema.TypeString,
 				Required:    true,
-				DefaultFunc: schema.EnvDefaultFunc("EXOSCALE_KEY", nil),
+				DefaultFunc: schema.MultiEnvDefaultFunc([]string{"EXOSCALE_KEY", "CLOUDSTACK_API_KEY"}, nil),
 				Description: "Exoscale API key",
 			},
 			"secret": {
 				Type:        schema.TypeString,
 				Required:    true,
-				DefaultFunc: schema.EnvDefaultFunc("EXOSCALE_SECRET", nil),
+				DefaultFunc: schema.MultiEnvDefaultFunc([]string{"EXOSCALE_SECRET", "CLOUDSTACK_SECRET_KEY"}, nil),
 				Description: "Exoscale API secret",
 			},
 			"timeout": {
@@ -50,17 +48,6 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		token:   d.Get("token").(string),
 		secret:  d.Get("secret").(string),
 		timeout: d.Get("timeout").(int),
-	}
-
-	/*
-	 * Make use of the cloudstack API keys for specifying keys
-	 */
-	if len(os.Getenv("CLOUDSTACK_API_KEY")) > 0 {
-		baseConfig.token = os.Getenv("CLOUDSTACK_API_KEY")
-	}
-
-	if len(os.Getenv("CLOUDSTACK_SECRET_KEY")) > 0 {
-		baseConfig.secret = os.Getenv("CLOUDSTACK_SECRET_KEY")
 	}
 
 	return baseConfig, nil
