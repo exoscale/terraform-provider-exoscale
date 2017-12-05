@@ -35,7 +35,7 @@ func sshResource() *schema.Resource {
 }
 
 func sshCreate(d *schema.ResourceData, meta interface{}) error {
-	client := GetClient(ComputeEndpoint, meta)
+	client := GetComputeClient(meta)
 	name := d.Get("name").(string)
 	found, err := findKey(name, client)
 	if err != nil {
@@ -59,7 +59,7 @@ func sshCreate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func sshRead(d *schema.ResourceData, meta interface{}) error {
-	client := GetClient(ComputeEndpoint, meta)
+	client := GetComputeClient(meta)
 	name := d.Id()
 	fingerprint, err := findKey(name, client)
 	if err != nil {
@@ -72,7 +72,7 @@ func sshRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func sshDelete(d *schema.ResourceData, meta interface{}) error {
-	client := GetClient(ComputeEndpoint, meta)
+	client := GetComputeClient(meta)
 	name := d.Id()
 	found, err := findKey(name, client)
 	if err != nil {

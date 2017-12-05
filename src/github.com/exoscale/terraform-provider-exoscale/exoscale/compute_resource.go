@@ -85,7 +85,7 @@ func computeResource() *schema.Resource {
 }
 
 func resourceCreate(d *schema.ResourceData, meta interface{}) error {
-	client := GetClient(ComputeEndpoint, meta)
+	client := GetComputeClient(meta)
 	topo, err := client.GetTopology()
 	if err != nil {
 		return err
@@ -194,7 +194,7 @@ func resourceCreate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceRead(d *schema.ResourceData, meta interface{}) error {
-	client := GetClient(ComputeEndpoint, meta)
+	client := GetComputeClient(meta)
 	machine, err := client.GetVirtualMachine(d.Id())
 
 	if err != nil {
@@ -235,7 +235,7 @@ func resourceUpdate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceDelete(d *schema.ResourceData, meta interface{}) error {
-	client := GetClient(ComputeEndpoint, meta)
+	client := GetComputeClient(meta)
 
 	resp, err := client.DestroyVirtualMachine(d.Id())
 

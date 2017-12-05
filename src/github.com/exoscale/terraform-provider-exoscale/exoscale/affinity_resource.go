@@ -29,7 +29,7 @@ func affinityResource() *schema.Resource {
 }
 
 func affinityCreate(d *schema.ResourceData, meta interface{}) error {
-	client := GetClient(ComputeEndpoint, meta)
+	client := GetComputeClient(meta)
 
 	jobid, err := client.CreateAffinityGroup(d.Get("name").(string))
 	if err != nil {
@@ -75,7 +75,7 @@ func affinityCreate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func affinityRead(d *schema.ResourceData, meta interface{}) error {
-	client := GetClient(ComputeEndpoint, meta)
+	client := GetComputeClient(meta)
 	groups, err := client.GetAffinityGroups()
 	if err != nil {
 		return err
@@ -92,7 +92,7 @@ func affinityRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func affinityDelete(d *schema.ResourceData, meta interface{}) error {
-	client := GetClient(ComputeEndpoint, meta)
+	client := GetComputeClient(meta)
 
 	log.Printf("## name: %s\n", d.Get("name").(string))
 	_, err := client.DeleteAffinityGroup(d.Get("name").(string))

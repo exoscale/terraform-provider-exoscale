@@ -7,26 +7,44 @@ import (
 	"gopkg.in/amz.v2/s3"
 )
 
-const ComputeEndpoint = "https://api.exoscale.ch/compute"
-const DNSEndpoint = "https://api.exoscale.ch/dns"
-const S3Endpoint = "https://sos.exo.io"
+const defaultComputeEndpoint = "https://api.exoscale.ch/compute"
+const defaultDnsEndpoint = "https://api.exoscale.ch/dns"
+const defaultS3Endpoint = "https://sos.exo.io"
+const defaultTimeout = 60
 
+// BaseConfig represents the provider structure
 type BaseConfig struct {
-	token   string
-	secret  string
-	timeout int
+	token            string
+	secret           string
+	timeout          int
+	compute_endpoint string
+	dns_endpoint     string
+	s3_endpoint      string
 }
 
-func GetClient(endpoint string, meta interface{}) *egoscale.Client {
+func getClient(endpoint string, meta interface{}) *egoscale.Client {
 	config := meta.(BaseConfig)
 	return egoscale.NewClient(endpoint, config.token, config.secret)
 }
 
+// GetComputeClient builds a CloudStack client
+func GetComputeClient(meta interface{}) *egoscale.Client {
+	config := meta.(BaseConfig)
+	return getClient(config.compute_endpoint, meta)
+}
+
+// GetDnsClient builds a DNS client
+func GetDnsClient(meta interface{}) *egoscale.Client {
+	config := meta.(BaseConfig)
+	return getClient(config.dns_endpoint, meta)
+}
+
+// GetS3Client builds a S3 client to (CH-GV1 region)
 func GetS3Client(meta interface{}) *s3.S3 {
 	config := meta.(BaseConfig)
 	var exo1 = aws.Region{
 		Name:                 "CH-GV1",
-		S3Endpoint:           S3Endpoint,
+		S3Endpoint:           config.s3_endpoint,
 		S3LocationConstraint: false,
 	}
 

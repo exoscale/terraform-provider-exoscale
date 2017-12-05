@@ -6,8 +6,6 @@ go:
 - 1.9
 - tip
 
-cache: apt
-
 install:
   - make devdeps
 

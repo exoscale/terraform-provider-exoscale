@@ -1,6 +1,7 @@
 package exoscale
 
 import (
+	"fmt"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/terraform"
 )
@@ -24,8 +25,30 @@ func Provider() terraform.ResourceProvider {
 			"timeout": {
 				Type:        schema.TypeInt,
 				Required:    true,
-				DefaultFunc: schema.EnvDefaultFunc("EXOSCALE_TIMEOUT", 60),
-				Description: "Timeout in seconds for waiting on compute resources to become available",
+				DefaultFunc: schema.EnvDefaultFunc("EXOSCALE_TIMEOUT", defaultTimeout),
+				Description: fmt.Sprintf(
+					"Timeout in seconds for waiting on compute resources to become available (by default: %d)",
+					defaultTimeout),
+			},
+			"compute_endpoint": {
+				Type:     schema.TypeString,
+				Required: true,
+				DefaultFunc: schema.MultiEnvDefaultFunc(
+					[]string{"EXOSCALE_COMPUTE_ENDPOINT", "CLOUDSTACK_ENDPOINT"},
+					defaultComputeEndpoint),
+				Description: fmt.Sprintf("Exoscale CloudStack API endpoint (by default: %s)", defaultComputeEndpoint),
+			},
+			"dns_endpoint": {
+				Type:        schema.TypeString,
+				Required:    true,
+				DefaultFunc: schema.EnvDefaultFunc("EXOSCALE_DNS_ENDPOINT", defaultDnsEndpoint),
+				Description: fmt.Sprintf("Exoscale DNS API endpoint (by default: %s)", defaultDnsEndpoint),
+			},
+			"s3_endpoint": {
+				Type:        schema.TypeString,
+				Required:    true,
+				DefaultFunc: schema.EnvDefaultFunc("EXOSCALE_S3_ENDPOINT", defaultS3Endpoint),
+				Description: fmt.Sprintf("Exoscale DNS API endpoint (by default: %s)", defaultS3Endpoint),
 			},
 		},
 
@@ -45,9 +68,12 @@ func Provider() terraform.ResourceProvider {
 
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	baseConfig := BaseConfig{
-		token:   d.Get("token").(string),
-		secret:  d.Get("secret").(string),
-		timeout: d.Get("timeout").(int),
+		token:            d.Get("token").(string),
+		secret:           d.Get("secret").(string),
+		timeout:          d.Get("timeout").(int),
+		compute_endpoint: d.Get("compute_endpoint").(string),
+		dns_endpoint:     d.Get("dns_endpoint").(string),
+		s3_endpoint:      d.Get("s3_endpoint").(string),
 	}
 
 	return baseConfig, nil

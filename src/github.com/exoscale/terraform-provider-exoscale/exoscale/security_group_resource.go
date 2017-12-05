@@ -91,7 +91,7 @@ func securityGroupResource() *schema.Resource {
 
 func sgCreate(d *schema.ResourceData, meta interface{}) error {
 	var i int
-	client := GetClient(ComputeEndpoint, meta)
+	client := GetComputeClient(meta)
 
 	ingressLength := d.Get("ingress_rules.#").(int)
 	egressLength := d.Get("egress_rules.#").(int)
@@ -148,7 +148,7 @@ func sgCreate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func sgRead(d *schema.ResourceData, meta interface{}) error {
-	client := GetClient(ComputeEndpoint, meta)
+	client := GetComputeClient(meta)
 	sgs, err := client.GetSecurityGroups()
 	if err != nil {
 		return err
@@ -192,7 +192,7 @@ func sgRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func sgDelete(d *schema.ResourceData, meta interface{}) error {
-	client := GetClient(ComputeEndpoint, meta)
+	client := GetComputeClient(meta)
 	err := client.DeleteSecurityGroup(d.Get("name").(string))
 	if err != nil {
 		return err

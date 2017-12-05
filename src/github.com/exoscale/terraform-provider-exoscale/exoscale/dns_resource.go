@@ -66,7 +66,7 @@ func dnsResource() *schema.Resource {
 }
 
 func dnsCreate(d *schema.ResourceData, meta interface{}) error {
-	client := GetClient(DNSEndpoint, meta)
+	client := GetDnsClient(meta)
 
 	domain, err := client.CreateDomain(d.Get("name").(string))
 	if err != nil {
@@ -98,7 +98,7 @@ func dnsCreate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func dnsRead(d *schema.ResourceData, meta interface{}) error {
-	client := GetClient(DNSEndpoint, meta)
+	client := GetDnsClient(meta)
 
 	domain, err := client.GetDomain(d.Get("name").(string))
 	if err != nil {
@@ -132,7 +132,7 @@ func dnsRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func dnsUpdate(d *schema.ResourceData, meta interface{}) error {
-	client := GetClient(DNSEndpoint, meta)
+	client := GetDnsClient(meta)
 	err := client.DeleteDomain(d.Get("name").(string))
 	if err != nil {
 		return err
@@ -142,7 +142,7 @@ func dnsUpdate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func dnsDelete(d *schema.ResourceData, meta interface{}) error {
-	client := GetClient(DNSEndpoint, meta)
+	client := GetDnsClient(meta)
 
 	err := client.DeleteDomain(d.Get("name").(string))
 	return err
