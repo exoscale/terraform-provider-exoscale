@@ -97,17 +97,17 @@ resource "exoscale_securitygroup" "sglabel" {
 
 * ```name``` Security Group name as it will be referenced in the instances
 * ```ingress_rules``` One or more rules to describe which ports will be permitted inbound
- * ```cidr``` A network address range to reflect who would be impacted
- * ```protocol``` Indicate the type to look for TCP, UDP, or ICMP
- * ```port``` For TCP/UDP the port number of the service impacted
- * ```icmptype``` ICMP message type
- * ```icmpcode``` ICMP message code
+   * ```cidr``` A network address range to reflect who would be impacted
+   * ```protocol``` Indicate the type to look for TCP, UDP, or ICMP
+   * ```port``` For TCP/UDP the port number of the service impacted
+   * ```icmptype``` ICMP message type
+   * ```icmpcode``` ICMP message code
 * ```egress_rules``` One or more rules to describe which ports will be permitted outbound
- * ```cidr``` A network address range to reflect who would be impacted
- * ```protocol``` Indicate the type to look for TCP, UDP, or ICMP
- * ```port``` For TCP/UDP the port number of the service impacted
- * ```icmptype``` ICMP message type
- * ```icmpcode``` ICMP message code
+   * ```cidr``` A network address range to reflect who would be impacted
+   * ```protocol``` Indicate the type to look for TCP, UDP, or ICMP
+   * ```port``` For TCP/UDP the port number of the service impacted
+   * ```icmptype``` ICMP message type
+   * ```icmpcode``` ICMP message code
 
 ### Compute Instances
 
