@@ -1,23 +1,27 @@
-# Building
+# Terraform provider for Exoscale
 
 [![Build Status](https://travis-ci.org/exoscale/terraform-provider-exoscale.svg?branch=master)](https://travis-ci.org/exoscale/terraform-provider-exoscale)
 
-Set ```GOPATH``` to this directory, and then run ```make```
+## Installation
 
-Ensure that the PATH is set to include the resulting bin directory,
-and then you can run the terraform command that will produce the
-exoscale plugin.
+1. Download `terraform-provider-exoscale` from the [releases page](releases);
+2. Put it into the `terraform.d/plugins/linux_amd64` folder;
+3. Run `terraform init`.
 
-Once built, you can install the terraform-provider-exoscale plugin by copying
-the resulting  binary file into the location where the remaining Terraform
-program and plugins reside.
+```
+$ terraform providers
+.
+└── provider.exoscale
+```
 
-# Terraform Usage
+Go read the article on our weblog [Terraform on Exoscale](https://www.exoscale.ch/syslog/2016/09/14/terraform-with-exoscale/).
+
+## Usage
 
 What follows below is the usage instructions for fully utilizing the Exoscale
 resource plugin.  Additional documentation can be found in the examples directory.
 
-## Provider requirements
+### Provider requirements
 
 ```hcl
 provider "exoscale" {
@@ -38,7 +42,7 @@ You can specify the environment variables for these using ```EXOSCALE_API_SECRET
 or ```EXOSCALE_API_KEY```.  You can also use the cloudstack environment variables
 `CLOUDSTACK_(API|SECRET)_KEY`.
 
-## SSH Resource
+### SSH Resource
 
 Declare an ssh key that will be used for any current/future instances
 
@@ -52,7 +56,7 @@ resource "exoscale_ssh" "keylabel" {
 * ```name``` Defines the label in Exoscale to define the key
 * ```key``` The ssh public key that will be copied into instances declared
 
-## Anti-Affinity Groups
+### Anti-Affinity Groups
 
 Define an affinity group that can be used to group various instances together
 
@@ -64,7 +68,7 @@ resource "exoscale_affinity" "affinitylabel" {
 
 * ```name``` Defines the affinity label that will be used by other declared instances
 
-## Security Groups
+### Security Groups
 
 Provide a named grouping of firewall rules that would be applicable for each
 instance.
@@ -105,7 +109,7 @@ resource "exoscale_securitygroup" "sglabel" {
  * ```icmptype``` ICMP message type
  * ```icmpcode``` ICMP message code
 
-## Compute Instances
+### Compute Instances
 
 Define a new compute resource.
 
@@ -140,7 +144,7 @@ resource "exoscale_compute" "computelabel" {
 * ```securitygroups``` Collection of security groups to indicate which rules will apply
 * ```userdata``` Free form statements used for configuring the instance
 
-## DNS
+### DNS
 
 If the user has an active DNS subscription with Exoscale, allow them the ability
 to manage their DNS information.
@@ -169,7 +173,7 @@ resource "exoscale_dns" "testdomain" {
  * ```ttl``` Optional time to live for the record
  * ```prio``` Optional record priority
 
-## S3
+### S3
 
 There are two resources that define the S3 interaction: buckets for the
 creation/management of the bucket name, and objects for the contents of said
@@ -213,11 +217,23 @@ resource "exoscale_s3object" "testobj" {
 While content and source are mutually exclusive, one of them is required for the
 operation to succeed.
 
-# TODO List/Missing features
+## Building
 
-## Security Groups
+Set ```GOPATH``` to this directory, and then run ```make```
+
+Ensure that the PATH is set to include the resulting bin directory,
+and then you can run the terraform command that will produce the
+exoscale plugin.
+
+Once built, you can install the `terraform-provider-exoscale` plugin by copying
+the resulting  binary file into the location where the remaining Terraform
+program and plugins reside.
+
+## TODO List/Missing features
+
+### Security Groups
 * Support single port declaration as well as starting/ending port ranges
 
-## S3 Support
+### S3 Support
 * Due to the AWS library in use, CORS is not supported
 * Due to the AWS library in use, per-object K/V pairs are not supported

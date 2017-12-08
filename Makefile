@@ -1,5 +1,12 @@
 # Provide a simple mechanism to ensure a proper build
 
+PROVIDER=terraform-provider-exoscale
+DEST=bin
+BIN= $(DEST)/$(PROVIDER)
+BINS=\
+		$(BIN)        \
+		$(BIN)-static
+
 GOPATH := $(PWD)
 export GOPATH
 
@@ -7,8 +14,15 @@ export GOPATH
 all: deps build
 
 .PHONY: build
-build:
+build: $(BIN)
+
+$(BIN):
 	go install github.com/exoscale/terraform-provider-exoscale/
+
+$(BIN)-static:
+	env CGO_ENABLED=0 GOOS=linux go build -ldflags "-s" \
+		-o $@ \
+		github.com/exoscale/terraform-provider-exoscale
 
 .PHONY: deps
 deps:
@@ -28,6 +42,12 @@ lint:
 vet:
 	go tool vet src/github.com/exoscale/terraform-provider-exoscale
 
+.PHONY: release
+release: $(BINS)
+	$(foreach bin,$^,\
+		rm -f $(bin).asc;\
+		gpg -a -u ops@exoscale.ch --output $(bin).asc --detach-sign $(bin);)
+
 .PHONY: clean
 clean:
-	rm -rf bin/
+	rm -rf $(DEST)
