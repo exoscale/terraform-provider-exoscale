@@ -1,13 +1,14 @@
 package exoscale
 
 import (
+	"errors"
 	"fmt"
 	"log"
+	"net/url"
 	"regexp"
 	"strings"
 	"time"
 
-	"errors"
 	"github.com/exoscale/egoscale"
 	"github.com/hashicorp/terraform/helper/schema"
 )
@@ -74,11 +75,12 @@ func computeResource() *schema.Resource {
 				},
 			},
 			"securitygroups": {
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
+				Set: schema.HashString,
 			},
 		},
 	}
@@ -123,21 +125,18 @@ func resourceCreate(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	sgCount := d.Get("securitygroups.#").(int)
 	var securityGroups []string
-	if sgCount > 0 {
-		securityGroups = make([]string, sgCount)
-		for i := 0; i < sgCount; i++ {
-			sg := fmt.Sprintf("securitygroups.%d", i)
-			sgId, err := client.GetSecurityGroupId(d.Get(sg).(string))
-			if err != nil {
-				return err
-			}
+	if securitySet, ok := d.Get("securitygroups").(*schema.Set); ok {
+		securityGroups = make([]string, securitySet.Len())
+		for i, group := range securitySet.List() {
+			groupName := group.(string)
 
-			if sgId != "" {
-				securityGroups[i] = sgId
+			securityGroup, err := getSecurityGroup(client, groupName)
+
+			if err != nil {
+				securityGroups[i] = securityGroup.Id
 			} else {
-				return fmt.Errorf("Invalid security group: %s\n", d.Get(sg).(string))
+				return err
 			}
 		}
 	}
@@ -263,4 +262,31 @@ func convertTemplateName(t string) string {
 	} else {
 		return ""
 	}
+}
+
+// getSecurityGroup finds a SecurityGroup by UUID or name
+func getSecurityGroup(client *egoscale.Client, name string) (*egoscale.SecurityGroup, error) {
+	params := url.Values{}
+	if isUuid(name) {
+		log.Printf("[DEBUG] search Security Group by id: %s", name)
+		params.Set("id", name)
+	} else {
+		log.Printf("[DEBUG] search Security Group by name: %s", name)
+		params.Set("name", name)
+	}
+	sgs, err := client.GetSecurityGroups(params)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(sgs) == 1 {
+		return sgs[0], nil
+	}
+	return nil, fmt.Errorf("Invalid security group: %s. Found %d.", name, len(sgs))
+}
+
+// isUuid matches a UUIDv4
+func isUuid(uuid string) bool {
+	re := regexp.MustCompile(`(?i)^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$`)
+	return re.MatchString(uuid)
 }

@@ -1,7 +1,9 @@
 package exoscale
 
 import (
+	"errors"
 	"fmt"
+	"log"
 
 	"github.com/exoscale/egoscale"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -19,25 +21,43 @@ func securityGroupResource() *schema.Resource {
 				ForceNew: true,
 				Required: true,
 			},
+			"account": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 			"ingress_rules": {
 				Type:     schema.TypeList,
 				Optional: true,
 				ForceNew: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"sgid": {
+						"rule_id": {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
 						"cidr": {
 							Type:     schema.TypeString,
-							Required: true,
+							Optional: true,
+							// XXX TODO
+							// https://github.com/hashicorp/terraform/issues/13016
+							//ConflictsWith: []string{"user_security_group_list"},
 						},
 						"protocol": {
 							Type:     schema.TypeString,
 							Required: true,
+							DefaultFunc: func() (interface{}, error) {
+								return "TCP", nil
+							},
 						},
 						"port": {
+							Type:     schema.TypeInt,
+							Optional: true,
+						},
+						"start_port": {
+							Type:     schema.TypeInt,
+							Optional: true,
+						},
+						"end_port": {
 							Type:     schema.TypeInt,
 							Optional: true,
 						},
@@ -48,6 +68,15 @@ func securityGroupResource() *schema.Resource {
 						"icmpcode": {
 							Type:     schema.TypeInt,
 							Optional: true,
+						},
+						"user_security_group_list": {
+							Type:     schema.TypeSet,
+							Optional: true,
+							//ConflictsWith: []string{"cidr"},
+							Elem: &schema.Schema{
+								Type: schema.TypeString,
+							},
+							Set: schema.HashString,
 						},
 					},
 				},
@@ -64,15 +93,30 @@ func securityGroupResource() *schema.Resource {
 						},
 						"cidr": {
 							Type:     schema.TypeString,
-							Required: true,
+							Optional: true,
+							//ConflictsWith: []string{"user_security_group_list"},
 						},
 						"protocol": {
 							Type:     schema.TypeString,
 							Required: true,
+							DefaultFunc: func() (interface{}, error) {
+								return "TCP", nil
+							},
 						},
 						"port": {
 							Type:     schema.TypeInt,
 							Optional: true,
+							//ConflictsWith: []string{"start_port", "end_port"},
+						},
+						"start_port": {
+							Type:     schema.TypeInt,
+							Optional: true,
+							//ConflictsWith: []string{"start_port", "end_port"},
+						},
+						"end_port": {
+							Type:     schema.TypeInt,
+							Optional: true,
+							//ConflictsWith: []string{"start_port"},
 						},
 						"icmptype": {
 							Type:     schema.TypeInt,
@@ -81,6 +125,15 @@ func securityGroupResource() *schema.Resource {
 						"icmpcode": {
 							Type:     schema.TypeInt,
 							Optional: true,
+						},
+						"user_security_group_list": {
+							Type:     schema.TypeSet,
+							Optional: true,
+							//ConflictsWith: []string{"cidr"},
+							Elem: &schema.Schema{
+								Type: schema.TypeString,
+							},
+							Set: schema.HashString,
 						},
 					},
 				},
@@ -99,30 +152,86 @@ func sgCreate(d *schema.ResourceData, meta interface{}) error {
 	ingressRules := make([]egoscale.SecurityGroupRule, ingressLength)
 	egressRules := make([]egoscale.SecurityGroupRule, egressLength)
 
-	for i = 0; i < ingressLength; i++ {
-		var rule egoscale.SecurityGroupRule
-		key := fmt.Sprintf("ingress_rules.%d.", i)
-
-		rule.SecurityGroupId = ""
-		rule.Cidr = d.Get(key + "cidr").(string)
-		rule.Protocol = d.Get(key + "protocol").(string)
-		rule.Port = d.Get(key + "port").(int)
-		rule.IcmpType = d.Get(key + "icmptype").(int)
-		rule.IcmpCode = d.Get(key + "icmpcode").(int)
-		ingressRules[i] = rule
+	var rules = []struct {
+		length int
+		key    string
+		rules  []egoscale.SecurityGroupRule
+	}{
+		{
+			ingressLength,
+			"ingress_rules",
+			ingressRules,
+		},
+		{
+			egressLength,
+			"egress_rules",
+			egressRules,
+		},
 	}
 
-	for i = 0; i < egressLength; i++ {
-		var rule egoscale.SecurityGroupRule
-		key := fmt.Sprintf("egress_rules.%d.", i)
+	for _, r := range rules {
+		for i = 0; i < r.length; i++ {
+			var rule egoscale.SecurityGroupRule
+			var groupList []*egoscale.UserSecurityGroup
 
-		rule.SecurityGroupId = ""
-		rule.Cidr = d.Get(key + "cidr").(string)
-		rule.Protocol = d.Get(key + "protocol").(string)
-		rule.Port = d.Get(key + "port").(int)
-		rule.IcmpType = d.Get(key + "icmptype").(int)
-		rule.IcmpCode = d.Get(key + "icmpcode").(int)
-		egressRules[i] = rule
+			key := fmt.Sprintf("%s.%d.", r.key, i)
+
+			cidr := d.Get(key + "cidr").(string)
+
+			if groups, ok := d.Get(key + "user_security_group_list").(*schema.Set); ok {
+				groupList = make([]*egoscale.UserSecurityGroup, groups.Len())
+				for i, group := range groups.List() {
+					groupName := group.(string)
+
+					securityGroup, err := getSecurityGroup(client, groupName)
+
+					if err == nil {
+						groupList[i] = &egoscale.UserSecurityGroup{
+							Account: securityGroup.Account,
+							Group:   securityGroup.Name,
+						}
+					} else {
+						return fmt.Errorf("Security Group not found %v", groupName)
+					}
+				}
+			}
+
+			rule.SecurityGroupId = ""
+			// CIDR vs User Security Group
+			log.Printf("[DEBUG] %v vs %d (%v)", cidr, len(groupList), groupList)
+			if cidr != "" && len(groupList) == 0 {
+				log.Printf("[DEBUG] Use the CIDR %v", cidr)
+				rule.Cidr = cidr
+			} else if cidr == "" && len(groupList) > 0 {
+				log.Printf("[DEBUG] Use the groupList %v", groupList)
+				rule.UserSecurityGroupList = groupList
+			} else {
+				return errors.New("Either CIDR or User Security Group List are required")
+			}
+			// Sockets
+			rule.Protocol = d.Get(key + "protocol").(string)
+			if port, ok := d.GetOkExists(key + "port"); ok && port.(int) > 0 {
+				rule.StartPort = port.(int)
+				rule.EndPort = port.(int)
+			} else {
+				sP, startOk := d.GetOkExists(key + "start_port")
+				startPort := sP.(int)
+				eP, endOk := d.GetOkExists(key + "end_port")
+				endPort := eP.(int)
+
+				if startOk && endOk && startPort > 0 && endPort >= startPort {
+					rule.StartPort = startPort
+					rule.EndPort = endPort
+				} else {
+					return errors.New("Either Port or Start/End ports are required")
+				}
+			}
+			// ICMP
+			rule.IcmpType = d.Get(key + "icmptype").(int)
+			rule.IcmpCode = d.Get(key + "icmpcode").(int)
+
+			r.rules[i] = rule
+		}
 	}
 
 	resp, err := client.CreateSecurityGroupWithRules(d.Get("name").(string),
@@ -149,7 +258,7 @@ func sgCreate(d *schema.ResourceData, meta interface{}) error {
 
 func sgRead(d *schema.ResourceData, meta interface{}) error {
 	client := GetComputeClient(meta)
-	sgs, err := client.GetSecurityGroups()
+	sgs, err := client.GetSecurityGroupsByName()
 	if err != nil {
 		return err
 	}
