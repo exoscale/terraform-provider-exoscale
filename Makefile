@@ -16,9 +16,11 @@ all: deps build
 .PHONY: build
 build: $(BIN)
 
+.PHONY: $(BIN)
 $(BIN):
 	go install github.com/exoscale/terraform-provider-exoscale/
 
+.PHONY: $(BIN)-static
 $(BIN)-static:
 	env CGO_ENABLED=0 GOOS=linux go build -ldflags "-s" \
 		-o $@ \
