@@ -46,7 +46,7 @@ vet:
 release: $(BINS)
 	$(foreach bin,$^,\
 		rm -f $(bin).asc;\
-		gpg -a -u operations@exoscale.net --output $(bin).asc --detach-sign $(bin);)
+		gpg -a -u ops@exoscale.ch --output $(bin).asc --detach-sign $(bin);)
 
 .PHONY: clean
 clean:
