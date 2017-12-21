@@ -1,17 +1,20 @@
 package exoscale
 
 import (
-	"fmt"
-
+	"github.com/exoscale/egoscale"
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
-func affinityResource() *schema.Resource {
+func affinityGroupResource() *schema.Resource {
 	return &schema.Resource{
-		Create: affinityCreate,
-		Read:   affinityRead,
-		Update: nil,
-		Delete: affinityDelete,
+		Create: createAffinityGroup,
+		Exists: existsAffinityGroup,
+		Read:   readAffinityGroup,
+		Delete: deleteAffinityGroup,
+
+		Importer: &schema.ResourceImporter{
+			State: importAffinityGroup,
+		},
 
 		Schema: map[string]*schema.Schema{
 			"name": {
@@ -19,49 +22,90 @@ func affinityResource() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
+			"description": {
+				Type:     schema.TypeString,
+				ForceNew: true,
+				Optional: true,
+			},
+			"type": {
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+				Default:  "host anti-affinity",
+			},
 		},
 	}
 }
 
-func affinityCreate(d *schema.ResourceData, meta interface{}) error {
+func createAffinityGroup(d *schema.ResourceData, meta interface{}) error {
 	client := GetComputeClient(meta)
 	async := meta.(BaseConfig).async
 
-	groupName := d.Get("name").(string)
-	affinity, err := client.CreateAffinityGroup(groupName, async)
+	req := &egoscale.CreateAffinityGroup{
+		Name:        d.Get("name").(string),
+		Description: d.Get("description").(string),
+		Type:        d.Get("type").(string),
+	}
+	r, err := client.AsyncRequest(req, async)
 	if err != nil {
 		return err
 	}
 
-	d.SetId(affinity.Id)
+	return applyAffinityGroup(r.(*egoscale.CreateAffinityGroupResponse).AffinityGroup, d)
+}
+
+func existsAffinityGroup(d *schema.ResourceData, meta interface{}) (bool, error) {
+	client := GetComputeClient(meta)
+
+	r, err := client.Request(&egoscale.ListAffinityGroups{
+		ID: d.Id(),
+	})
+
+	if err != nil {
+		return false, err
+	}
+
+	return r.(*egoscale.ListAffinityGroupsResponse).Count == 1, nil
+}
+
+func readAffinityGroup(d *schema.ResourceData, meta interface{}) error {
+	client := GetComputeClient(meta)
+
+	r, err := client.Request(&egoscale.ListAffinityGroups{
+		ID: d.Id(),
+	})
+	if err != nil {
+		return err
+	}
+
+	return applyAffinityGroup(r.(*egoscale.ListAffinityGroupsResponse).AffinityGroup[0], d)
+}
+
+func applyAffinityGroup(affinity *egoscale.AffinityGroup, d *schema.ResourceData) error {
+	d.SetId(affinity.ID)
 	d.Set("name", affinity.Name)
+	d.Set("description", affinity.Description)
+	d.Set("type", affinity.Type)
 
-	return affinityRead(d, meta)
+	return nil
 }
 
-func affinityRead(d *schema.ResourceData, meta interface{}) error {
-	client := GetComputeClient(meta)
-	groups, err := client.GetAffinityGroups()
-	if err != nil {
-		return err
-	}
-
-	for k, v := range groups {
-		if v == d.Id() {
-			d.Set("name", k)
-			return nil
-		}
-	}
-
-	return fmt.Errorf("Affinity Group %s not found", d.Id())
-}
-
-func affinityDelete(d *schema.ResourceData, meta interface{}) error {
+func deleteAffinityGroup(d *schema.ResourceData, meta interface{}) error {
 	client := GetComputeClient(meta)
 	async := meta.(BaseConfig).async
 
-	groupName := d.Get("name").(string)
-	_, err := client.DeleteAffinityGroup(groupName, async)
+	req := &egoscale.DeleteAffinityGroup{
+		ID: d.Id(),
+	}
+	return client.BooleanAsyncRequest(req, async)
+}
 
-	return err
+func importAffinityGroup(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	if err := readAffinityGroup(d, meta); err != nil {
+		return nil, err
+	}
+
+	resources := make([]*schema.ResourceData, 1)
+	resources[0] = d
+	return resources, nil
 }

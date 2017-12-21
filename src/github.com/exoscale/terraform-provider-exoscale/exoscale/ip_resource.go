@@ -3,18 +3,21 @@ package exoscale
 import (
 	"fmt"
 	"log"
-	"net/url"
 
 	"github.com/exoscale/egoscale"
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
-func ipAddressResource() *schema.Resource {
+func elasticIPResource() *schema.Resource {
 	return &schema.Resource{
-		Create: ipCreate,
-		Exists: ipExists,
-		Read:   ipRead,
-		Delete: ipDelete,
+		Create: createElasticIP,
+		Read:   readElasticIP,
+		Exists: existsElasticIP,
+		Delete: deleteElasticIP,
+
+		Importer: &schema.ResourceImporter{
+			State: importElasticIP,
+		},
 
 		Schema: map[string]*schema.Schema{
 			"ip": {
@@ -30,73 +33,98 @@ func ipAddressResource() *schema.Resource {
 	}
 }
 
-func ipCreate(d *schema.ResourceData, meta interface{}) error {
+func createElasticIP(d *schema.ResourceData, meta interface{}) error {
 	client := GetComputeClient(meta)
 	async := meta.(BaseConfig).async
 
 	zoneName := d.Get("zone").(string)
 
-	params := url.Values{}
-	params.Set("name", zoneName)
-	zones, err := client.GetZones(params)
-
-	if len(zones) != 1 {
-		return fmt.Errorf("Invalid zone: %s", zoneName)
-	}
-
-	profile := egoscale.IpAddressProfile{
-		Zone: zones[0].Id,
-	}
-
-	ipAddress, err := client.CreateIpAddress(profile, async)
+	resp, err := client.Request(&egoscale.ListZones{
+		Name: zoneName,
+	})
 	if err != nil {
 		return err
 	}
 
-	d.SetId(ipAddress.Id)
-	d.Set("ip", ipAddress.IpAddress)
+	zones := resp.(*egoscale.ListZonesResponse)
+	if zones.Count != 1 {
+		return fmt.Errorf("Invalid zone: %s", zoneName)
+	}
+
+	req := &egoscale.AssociateIPAddress{
+		ZoneID: zones.Zone[0].ID,
+	}
+	resp, err = client.AsyncRequest(req, async)
+	if err != nil {
+		return err
+	}
+
+	elasticIP := resp.(*egoscale.AssociateIPAddressResponse).IPAddress
+	d.SetId(elasticIP.ID)
+	d.Set("ip", elasticIP.IPAddress)
 
 	return nil
 }
 
-func ipExists(d *schema.ResourceData, meta interface{}) (bool, error) {
+func existsElasticIP(d *schema.ResourceData, meta interface{}) (bool, error) {
 	client := GetComputeClient(meta)
-	params := url.Values{}
-	params.Set("id", d.Id())
-	ipAddresses, err := client.ListPublicIpAddresses(params)
-	return err == nil && len(ipAddresses) == 1, nil
+
+	resp, err := client.Request(&egoscale.ListPublicIPAddresses{
+		ID: d.Id(),
+	})
+	if err != nil {
+		return false, err
+	}
+
+	elasticIPes := resp.(*egoscale.ListPublicIPAddressesResponse)
+	return elasticIPes.Count == 1, nil
 }
 
-func ipRead(d *schema.ResourceData, meta interface{}) error {
+func readElasticIP(d *schema.ResourceData, meta interface{}) error {
 	client := GetComputeClient(meta)
-	params := url.Values{}
-	params.Set("id", d.Id())
-	ipAddress, err := client.ListPublicIpAddresses(params)
+
+	resp, err := client.Request(&egoscale.ListPublicIPAddresses{
+		ID: d.Id(),
+	})
 	if err != nil {
 		return err
 	}
 
-	if len(ipAddress) != 1 {
+	ips := resp.(*egoscale.ListPublicIPAddressesResponse)
+	if ips.Count != 1 {
 		return fmt.Errorf("IP Address not found: %s (%s)", d.Id(), d.Get("ip"))
 	}
 
-	ip := ipAddress[0]
+	ip := ips.PublicIPAddress[0]
 
-	d.Set("ip", ip.IpAddress)
+	d.Set("ip", ip.IPAddress)
 	d.Set("zone", ip.ZoneName)
 
 	return nil
 }
 
-func ipDelete(d *schema.ResourceData, meta interface{}) error {
+func deleteElasticIP(d *schema.ResourceData, meta interface{}) error {
 	client := GetComputeClient(meta)
 	async := meta.(BaseConfig).async
 
-	err := client.DestroyIpAddress(d.Id(), async)
+	req := &egoscale.DisassociateIPAddress{
+		ID: d.Id(),
+	}
+	err := client.BooleanAsyncRequest(req, async)
 	if err != nil {
 		return err
 	}
 
 	log.Printf("Deleted ip id: %s\n", d.Id())
 	return nil
+}
+
+func importElasticIP(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	if err := readElasticIP(d, meta); err != nil {
+		return nil, err
+	}
+
+	resources := make([]*schema.ResourceData, 1)
+	resources[0] = d
+	return resources, nil
 }

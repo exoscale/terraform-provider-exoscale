@@ -1,11 +1,23 @@
-# Provide a simple mechanism to ensure a proper build
+VERSION=0.9.2_x1
+#VERSION=0.9.2_x-$(shell git rev-parse --short HEAD)
+
+GOOS?=linux
+GOARCH?=amd64
 
 PROVIDER=terraform-provider-exoscale
 DEST=bin
-BIN= $(DEST)/$(PROVIDER)
-BINS=\
-		$(BIN)        \
-		$(BIN)-static
+S=_v$(VERSION)
+ifeq ($(GOOS),windows)
+	SUFFIX=$(S).exe
+endif
+ifeq ($(GOOS),darwin)
+	SUFFIX=$(S)_$(GOOS)-$(GOARCH)
+endif
+ifeq ($(GOOS),linux)
+	SUFFIX=$(S)
+endif
+
+BIN= $(DEST)/$(PROVIDER)$(SUFFIX)
 
 GOPATH := $(PWD)
 export GOPATH
@@ -18,11 +30,7 @@ build: $(BIN)
 
 .PHONY: $(BIN)
 $(BIN):
-	go install github.com/exoscale/terraform-provider-exoscale/
-
-.PHONY: $(BIN)-static
-$(BIN)-static:
-	env CGO_ENABLED=0 GOOS=linux go build -ldflags "-s" \
+	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH) go build -ldflags "-s" \
 		-o $@ \
 		github.com/exoscale/terraform-provider-exoscale
 
@@ -30,7 +38,6 @@ $(BIN)-static:
 deps:
 	go get github.com/hashicorp/terraform
 	go get github.com/exoscale/egoscale
-	go get gopkg.in/amz.v2/s3
 
 .PHONY: devdeps
 devdeps: deps
@@ -45,7 +52,7 @@ vet:
 	go tool vet src/github.com/exoscale/terraform-provider-exoscale
 
 .PHONY: release
-release: $(BINS)
+release: $(BIN)
 	$(foreach bin,$^,\
 		rm -f $(bin).asc;\
 		gpg -a -u ops@exoscale.ch --output $(bin).asc --detach-sign $(bin);)

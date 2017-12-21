@@ -1,19 +1,20 @@
 package exoscale
 
 import (
-	"fmt"
-	"strconv"
-
 	"github.com/exoscale/egoscale"
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
-func dnsResource() *schema.Resource {
+func domainResource() *schema.Resource {
 	return &schema.Resource{
-		Create: dnsCreate,
-		Read:   dnsRead,
-		Update: dnsUpdate,
-		Delete: dnsDelete,
+		Create: createDomain,
+		Exists: existsDomain,
+		Read:   readDomain,
+		Delete: deleteDomain,
+
+		Importer: &schema.ResourceImporter{
+			State: importDomain,
+		},
 
 		Schema: map[string]*schema.Schema{
 			"name": {
@@ -21,129 +22,108 @@ func dnsResource() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
+			"token": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 			"state": {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
-			"recordcount": {
-				Type:     schema.TypeInt,
+			"auto_renew": {
+				Type:     schema.TypeBool,
 				Computed: true,
 			},
-			"record": {
-				Type:     schema.TypeList,
-				Optional: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"name": {
-							Type:     schema.TypeString,
-							Required: true,
-						},
-						"type": {
-							Type:     schema.TypeString,
-							Required: true,
-						},
-						"content": {
-							Type:     schema.TypeString,
-							Required: true,
-						},
-						"ttl": {
-							Type:     schema.TypeInt,
-							Optional: true,
-						},
-						"prio": {
-							Type:     schema.TypeInt,
-							Optional: true,
-						},
-						"provided": {
-							Type:     schema.TypeBool,
-							Computed: true,
-						},
-					},
-				},
+			"expires_on": {
+				Type:     schema.TypeString,
+				Computed: true,
 			},
 		},
 	}
 }
 
-func dnsCreate(d *schema.ResourceData, meta interface{}) error {
-	client := GetDnsClient(meta)
+func createDomain(d *schema.ResourceData, meta interface{}) error {
+	client := GetDNSClient(meta)
 
 	domain, err := client.CreateDomain(d.Get("name").(string))
 	if err != nil {
 		return err
 	}
 
-	d.SetId(strconv.FormatInt(domain.Id, 10))
-
-	if d.Get("record.#").(int) > 0 {
-		for i := 0; i < d.Get("record.#").(int); i++ {
-			key := fmt.Sprintf("record.%d.", i)
-			var rec egoscale.DNSRecord
-			rec.Name = d.Get(key + "name").(string)
-			rec.Content = d.Get(key + "content").(string)
-			rec.RecordType = d.Get(key + "type").(string)
-			rec.Ttl = d.Get(key + "ttl").(int)
-			rec.Prio = d.Get(key + "prio").(int)
-
-			resp, err := client.CreateRecord(d.Get("name").(string), rec)
-			if err != nil {
-				return err
-			}
-
-			d.Set(key+"id", resp.Record.Id)
-		}
-	}
-
-	return dnsRead(d, meta)
+	return applyDomain(domain, d)
 }
 
-func dnsRead(d *schema.ResourceData, meta interface{}) error {
-	client := GetDnsClient(meta)
+func existsDomain(d *schema.ResourceData, meta interface{}) (bool, error) {
+	client := GetDNSClient(meta)
 
-	domain, err := client.GetDomain(d.Get("name").(string))
+	_, err := client.GetDomain(d.Id())
+
+	return err == nil, err
+}
+
+func readDomain(d *schema.ResourceData, meta interface{}) error {
+	client := GetDNSClient(meta)
+
+	domain, err := client.GetDomain(d.Id())
 	if err != nil {
+		d.SetId("")
 		return err
 	}
 
+	return applyDomain(domain, d)
+}
+
+func deleteDomain(d *schema.ResourceData, meta interface{}) error {
+	client := GetDNSClient(meta)
+
+	err := client.DeleteDomain(d.Id())
+	if err != nil {
+		d.SetId("")
+	}
+
+	return err
+}
+
+func importDomain(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	client := GetDNSClient(meta)
+	domain, err := client.GetDomain(d.Id())
+	if err != nil {
+		return nil, err
+	}
+
+	applyDomain(domain, d)
+
+	records, err := client.GetRecords(d.Id())
+	if err != nil {
+		return nil, err
+	}
+
+	resources := make([]*schema.ResourceData, 0, 1)
+	resources = append(resources, d)
+
+	for _, record := range records {
+		// Ignore the default NS and SOA entries
+		if record.RecordType == "NS" || record.RecordType == "SOA" {
+			continue
+		}
+		resource := domainRecordResource()
+		d := resource.Data(nil)
+		d.SetType("exoscale_domain_record")
+		d.Set("domain", domain.Name)
+		applyRecord(record, d)
+
+		resources = append(resources, d)
+	}
+
+	return resources, nil
+}
+
+func applyDomain(domain *egoscale.DNSDomain, d *schema.ResourceData) error {
+	d.SetId(domain.Name)
+	d.Set("name", domain.Name)
 	d.Set("state", domain.State)
-	d.Set("recordcount", domain.RecordCount)
-
-	recs, err := client.GetRecords(d.Get("name").(string))
-	if err != nil {
-		return err
-	}
-	records := make([]map[string]interface{}, domain.RecordCount)
-
-	for k, w := range recs {
-		v := w.Record
-		m := make(map[string]interface{})
-		m["id"] = v.Id
-		m["name"] = v.Name
-		m["type"] = v.RecordType
-		m["ttl"] = v.Ttl
-		m["prio"] = v.Prio
-		m["content"] = v.Content
-		records[k] = m
-	}
-
-	d.Set("record", records)
+	d.Set("auto_renew", domain.AutoRenew)
+	d.Set("expires_on", domain.ExpiresOn)
 
 	return nil
-}
-
-func dnsUpdate(d *schema.ResourceData, meta interface{}) error {
-	client := GetDnsClient(meta)
-	err := client.DeleteDomain(d.Get("name").(string))
-	if err != nil {
-		return err
-	}
-
-	return dnsCreate(d, meta)
-}
-
-func dnsDelete(d *schema.ResourceData, meta interface{}) error {
-	client := GetDnsClient(meta)
-
-	err := client.DeleteDomain(d.Get("name").(string))
-	return err
 }

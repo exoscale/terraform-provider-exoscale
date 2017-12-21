@@ -6,13 +6,18 @@ go:
 - 1.9
 - tip
 
+env:
+  - MY_GOOS=linux MY_GOARCH=amd64
+  - MY_GOOS=darwin MY_GOARCH=amd64
+  - MY_GOOS=windows MY_GOARCH=amd64
+
 install:
-  - rm -rf src/github.com/exoscale/egoscale
-  - git clone -b dev --single-branch https://github.com/exoscale/egoscale src/github.com/exoscale/egoscale
   - make devdeps
+  - export GOOS=$(MY_GOOS)
+  - export GOARCH=$(MY_GOARCH)
 
 script:
-  - make
+  - make build
   - test `gofmt -s -d src/github.com/exoscale/terraform-provider-exoscale | tee -a /dev/fd/2 | wc -l` -eq 0
   - test `bin/golint github.com/exoscale/terraform-provider-exoscale | tee -a /dev/fd/2 | wc -l` -eq 0
   - make vet

@@ -5,7 +5,7 @@
 ## Installation
 
 1. Download `terraform-provider-exoscale` from the [releases page](https://github.com/exoscale/terraform-provider-exoscale/releases);
-2. Put it into the `terraform.d/plugins/linux_amd64` folder;
+2. Put it into the `.terraform/plugins/(darwin|linux|windows)_amd64` folder;
 3. Run `terraform init`.
 
 ```
@@ -25,6 +25,7 @@ resource plugin.  Additional documentation can be found in the examples director
 
 ```hcl
 provider "exoscale" {
+    version = "~> 0.9"
     token = ""
     secret = ""
     timeout = 60
@@ -42,6 +43,100 @@ You can specify the environment variables for these using ```EXOSCALE_API_SECRET
 or ```EXOSCALE_API_KEY```.  You can also use the cloudstack environment variables
 `CLOUDSTACK_(API|SECRET)_KEY`.
 
+## Resources
+
+### Compute
+
+```hcl
+resource "exoscale_compute" "keylabel" {
+    display_name = 
+    template = "Linux Debian 9 64-bit" 
+    size = "Medium"
+    disk_size = 10
+    key_pair = "me@mymachine"
+    state = "Running"
+
+    affinity_groups = []
+    security_groups = ["default"]
+
+    tags {
+        production = "true"
+    }
+}
+```
+
+Attributes:
+
+- **`display_name`**: initial `hostname`
+- **`template`**: name from [the template](https://www.exoscale.ch/templates/) 
+- **`size`**: size of [the instances](https://www.exoscale.ch/pricing/#/compute/), e.g. Tiny, Small, Medium, Large, etc.
+- **`disk_size`**: size of the root disk in GiB (at least 10)
+- **`zone`**: name of [the data-center](https://www.exoscale.ch/infrastructure/datacenters/)
+- `user_data`: [cloud-init](http://cloudinit.readthedocs.io/en/latest/) configuration
+- **`key_pair`**: name of the SSH key pair to be installed
+- `keyboard`: keyboard configuration (at creation time only)
+- `state`: state of the virtual machine. E.g. `Running` or `Stopped`
+- `affinity_groups`: list of [Affinity Groups][#affinity-groups]
+- `security_groups`: list of [Security Groups][#security-groups]
+- `tags`: dictionary of tags (key / value)
+
+Values:
+
+- `name`: name of the machine (`hostname`)
+- `ip_address`: IP Address of the main network interface
+
+### Security Groups
+
+```hcl
+resource "exoscale_security_group" "http" {
+  name = "HTTP"
+  description = "Long text"
+}
+
+resource "exoscale_security_group_rule" "http" {
+  security_group_id = "${exoscale_security_group.http.id}"
+  protocol = "TCP"
+  type = "INGRESS"
+  cidr = "0.0.0.0/0"
+  start_port = 80
+  end_port = 80
+}
+```
+
+Attributes:
+
+- **`name`**: name of the security group 
+- `description`: longer description
+
+Rule attributes:
+
+- **`security_group_id`**: which security group the rule applies to
+- **`protocol`**: the protocol, e.g. `TCP`, `UDP`, `ICMP`, etc.
+- **`type`**: traffic type, either `INGRESS` or `EGRESS`
+- `description`: human description
+- `start_port`, `end_port`: for `TCP`, `UDP` traffic
+- `icmp_type`, `icmp_code`: for `ICMP` traffic
+- `cidr`: source/destination of the traffic as an IP subnet (conflicts with `user_security_group`)
+- `user_security_group`: source/destination of the traffic as a security group (conflicts with `cidr`)
+
+### (Anti-)Affinity Groups
+
+Define an affinity group. Anti-affinity groups make sure than the virtual machines are not running on the same physical host.
+
+```hcl
+resource "exoscale_affinity" "affinitylabel" {
+    name = "affinity name"
+    description = "long text"
+    type = "host anti-affinity"
+}
+```
+
+Attributes:
+
+- **`name`**: name of the (anti-)affinity group 
+- `description`: longer descriptions
+- `type`: type of the anti-affinity groups
+
 ### SSH Resource
 
 Declare an ssh key that will be used for any current/future instances
@@ -56,166 +151,64 @@ resource "exoscale_ssh" "keylabel" {
 * ```name``` Defines the label in Exoscale to define the key
 * ```key``` The ssh public key that will be copied into instances declared
 
-### Anti-Affinity Groups
-
-Define an affinity group that can be used to group various instances together
-
-```hcl
-resource "exoscale_affinity" "affinitylabel" {
-    name = "affinity name"
-}
-```
-
-* ```name``` Defines the affinity label that will be used by other declared instances
-
-### Security Groups
-
-Provide a named grouping of firewall rules that would be applicable for each
-instance.
-
-```hcl
-resource "exoscale_securitygroup" "sglabel" {
-    name = "sgname"
-    ingress_rules = {
-      cidr = "0.0.0.0/0"
-      protocol = "TCP"
-      port = 22
-    }
-    egress_rules = {
-      cidr = "192.168.1.0/24"
-      protocol = "TCP"
-      port = 22
-    }
-    egress_rules = {
-      cidr = "192.168.1.0/24"
-      protocol = "ICMP"
-      icmptype = 0
-      icmpcode = 0
-    }
-}
-```
-
-* ```name``` Security Group name as it will be referenced in the instances
-* ```ingress_rules``` One or more rules to describe which ports will be permitted inbound
-   * ```cidr``` A network address range to reflect who would be impacted
-   * ```protocol``` Indicate the type to look for TCP, UDP, or ICMP
-   * ```port``` For TCP/UDP the port number of the service impacted
-   * ```icmptype``` ICMP message type
-   * ```icmpcode``` ICMP message code
-* ```egress_rules``` One or more rules to describe which ports will be permitted outbound
-   * ```cidr``` A network address range to reflect who would be impacted
-   * ```protocol``` Indicate the type to look for TCP, UDP, or ICMP
-   * ```port``` For TCP/UDP the port number of the service impacted
-   * ```icmptype``` ICMP message type
-   * ```icmpcode``` ICMP message code
-
-### Compute Instances
-
-Define a new compute resource.
-
-```hcl
-resource "exoscale_compute" "computelabel" {
-    name = "testname"
-    template = "ubuntu-16.04"
-    zone = "ch-gva-2"
-    size = "Micro"
-    disk_size = 10
-    keypair = "terraformKey"
-    affinitygroups = ["terraformag"]
-    securitygroups = ["sshgroup"]
-    user_data = ""
-}
-```
-
-* ```name``` The compute resource hostname
-* ```template``` The template to use for the specified resource
-* ```size``` Defines the instance configuration size:
-   * Micro
-   * Tiny
-   * Small
-   * Medium
-   * Large
-   * Extra-Large
-   * Huge
-* ```disk_size``` Define the size of the root disk: 10GB, 50GB, 100GB, 200GB, 400GB
-* ```zone``` One of the two datacenters: CH-DK-2 and CH-GVA-2
-* ```keypair``` The SSH key used for root access to the host
-* ```affinitygroups``` Collection of anti-affinity groups the host will belong to
-* ```securitygroups``` Collection of security groups to indicate which rules will apply
-* ```user_data``` Free form statements used for configuring the instance
 
 ### DNS
 
-If the user has an active DNS subscription with Exoscale, allow them the ability
-to manage their DNS information.
-
 ```hcl
-resource "exoscale_dns" "testdomain" {
-    name = "testdomain.ch"
-    record = {
-        name = "test1"
-        type = "A"
-        content = "192.168.1.1"
-    }
-    record = {
-        name = "test2"
-        type = "CNAME"
-        content = "test1"
-    }
+resource "exoscale_domain" "exo" {
+    name = "exo.exo"
+}
+
+resource "exoscale_domain_record" "glop" {
+    domain = "${exoscale_domain.exo.id}"
+    name = "glap"
+    record_type = "CNAME"
+    content = "${exoscale_domain.exo.name}"
 }
 ```
 
-* ```name``` The domain name to be managed
-* ```record``` Collection of records to be included as a part of the name
- * ```name``` The host name to define the record
- * ```type``` The DNS entry type such as the CNAME, MX, or A
- * ```content``` The requisite component for the corresponding record name and type
- * ```ttl``` Optional time to live for the record
- * ```prio``` Optional record priority
+Attributes:
 
-### S3
+- **`name`**: domain name
 
-There are two resources that define the S3 interaction: buckets for the
-creation/management of the bucket name, and objects for the contents of said
-buckets.
+Values:
 
-```hcl
-resource "exoscale_s3bucket" "testbucket" {
-    bucket = "tftest"
-    acl = "private"
-}
-```
+- `token`
+- `state`
+- `auto_renew`
+- `expires_on`
 
-* ```bucket``` The bucket name that will be referenced in all object references
-* ```acl``` Permission type for the bucket and its contents based off the AWS S3 implementation
+Record attributes:
+
+- **`domain`**: domain it's linked to
+- **`name`**: name of the DNS record
+- **`record_type`**: type of the DNS record. E.g. `A`, `CNAME`, `MX`, etc.
+- **`content`**: value of the DNS record
+- `ttl`: time to live
+- `prio`: priority
+
+### Storage on S3
 
 ```hcl
-resource "exoscale_s3object" "testobj" {
-    bucket = "tftest"
-    acl = "private"
-    key "test/path.txt"
-    type = "text/plain"
-    content = "hello world"
-}
+terraform = {
+  backend "s3" {
+    bucket = "..."
+    endpoint = "https://sos-ch-dk-2.exo.io"
+    key = "..."
+    region = "us-east-1" # ignored
+    access_key = "..."
+    secret_key = "..."
 
-resource "exoscale_s3object" "testobj" {
-    bucket = "tftest"
-    acl = "private"
-    key "test/path2.txt"
-    type = "text/plain"
-    source = "/tmp/test.txt"
+    # Deactivate the AWS specific behaviours
+    #
+    # https://www.terraform.io/docs/backends/types/s3.html#skip_credentials_validation
+    skip_credentials_validation = true
+    skip_get_ec2_platforms = true
+    skip_requesting_account_id = true
+    skip_metadata_api_check = true
+  }
 }
 ```
-
-* ```bucket``` The bucket the object will be contained under
-* ```acl``` Permission type for the bucket and its contents based off the AWS S3 implementation
-* ```key``` A directory/file path used to reference the object as its key
-* ```type``` A mime type to indicate the type of file
-* ```content``` Something that can be injected directly into the bucket at the key
-* ```source``` The path to a file that will be uploaded into the bucket at the key
-
-While content and source are mutually exclusive, one of them is required for the
-operation to succeed.
 
 ## Building
 
@@ -228,12 +221,3 @@ exoscale plugin.
 Once built, you can install the `terraform-provider-exoscale` plugin by copying
 the resulting  binary file into the location where the remaining Terraform
 program and plugins reside.
-
-## TODO List/Missing features
-
-### Security Groups
-* Support single port declaration as well as starting/ending port ranges
-
-### S3 Support
-* Due to the AWS library in use, CORS is not supported
-* Due to the AWS library in use, per-object K/V pairs are not supported

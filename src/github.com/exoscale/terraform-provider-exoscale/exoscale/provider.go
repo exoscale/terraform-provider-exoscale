@@ -52,27 +52,21 @@ func Provider() terraform.ResourceProvider {
 			"dns_endpoint": {
 				Type:        schema.TypeString,
 				Required:    true,
-				DefaultFunc: schema.EnvDefaultFunc("EXOSCALE_DNS_ENDPOINT", defaultDnsEndpoint),
-				Description: fmt.Sprintf("Exoscale DNS API endpoint (by default: %s)", defaultDnsEndpoint),
-			},
-			"s3_endpoint": {
-				Type:        schema.TypeString,
-				Required:    true,
-				DefaultFunc: schema.EnvDefaultFunc("EXOSCALE_S3_ENDPOINT", defaultS3Endpoint),
-				Description: fmt.Sprintf("Exoscale DNS API endpoint (by default: %s)", defaultS3Endpoint),
+				DefaultFunc: schema.EnvDefaultFunc("EXOSCALE_DNS_ENDPOINT", defaultDNSEndpoint),
+				Description: fmt.Sprintf("Exoscale DNS API endpoint (by default: %s)", defaultDNSEndpoint),
 			},
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
 			"exoscale_compute":             computeResource(),
-			"exoscale_ssh":                 sshResource(),
-			"exoscale_affinity":            affinityResource(),
-			"exoscale_securitygroup":       securityGroupResource(),
-			"exoscale_dns":                 dnsResource(),
-			"exoscale_s3bucket":            s3BucketResource(),
-			"exoscale_s3object":            s3ObjectResource(),
-			"exoscale_elasticip":           ipAddressResource(),
-			"exoscale_elasticip_associate": ipAssociateResource(),
+			"exoscale_ssh_keypair":         sshResource(),
+			"exoscale_affinity":            affinityGroupResource(),
+			"exoscale_domain":              domainResource(),
+			"exoscale_domain_record":       domainRecordResource(),
+			"exoscale_security_group":      securityGroupResource(),
+			"exoscale_security_group_rule": securityGroupRuleResource(),
+			"exoscale_ipaddress":           elasticIPResource(),
+			"exoscale_secondary_ipaddress": secondaryIPResource(),
 		},
 
 		ConfigureFunc: providerConfigure,
@@ -87,12 +81,11 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	log.Printf("Async calls: timeout %d - delay %d - retries %d\n", timeout, delay, retries)
 
 	baseConfig := BaseConfig{
-		token:            d.Get("token").(string),
-		secret:           d.Get("secret").(string),
-		timeout:          timeout,
-		compute_endpoint: d.Get("compute_endpoint").(string),
-		dns_endpoint:     d.Get("dns_endpoint").(string),
-		s3_endpoint:      d.Get("s3_endpoint").(string),
+		token:           d.Get("token").(string),
+		secret:          d.Get("secret").(string),
+		timeout:         timeout,
+		computeEndpoint: d.Get("compute_endpoint").(string),
+		dnsEndpoint:     d.Get("dns_endpoint").(string),
 		async: egoscale.AsyncInfo{
 			Retries: retries,
 			Delay:   delay,
