@@ -1,23 +1,20 @@
 package exoscale
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"net/url"
 	"regexp"
 	"strings"
-	"time"
 
 	"github.com/exoscale/egoscale"
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
-const DelayBeforeRetry = 5 // seconds
-
 func computeResource() *schema.Resource {
 	return &schema.Resource{
 		Create: resourceCreate,
+		Exists: resourceExists,
 		Read:   resourceRead,
 		Delete: resourceDelete,
 		Update: resourceUpdate,
@@ -47,7 +44,7 @@ func computeResource() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
-			"userdata": {
+			"user_data": {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
@@ -88,6 +85,8 @@ func computeResource() *schema.Resource {
 
 func resourceCreate(d *schema.ResourceData, meta interface{}) error {
 	client := GetComputeClient(meta)
+	async := meta.(BaseConfig).async
+
 	topo, err := client.GetTopology()
 	if err != nil {
 		return err
@@ -100,9 +99,10 @@ func resourceCreate(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("Invalid service: %s", d.Get("size").(string))
 	}
 
-	zone := topo.Zones[strings.ToLower(d.Get("zone").(string))]
-	if zone == "" {
-		return fmt.Errorf("Invalid zone: %s", d.Get("zone").(string))
+	zoneName := d.Get("zone").(string)
+	zone := topo.Zones[strings.ToLower(zoneName)]
+	if zone == nil {
+		return fmt.Errorf("Invalid zone: %s", zoneName)
 	}
 
 	template := topo.Images[convertTemplateName(d.Get("template").(string))]
@@ -110,9 +110,20 @@ func resourceCreate(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("Invalid template: %s", d.Get("template").(string))
 	}
 
+	// If the exact diskSize doesn't exist pick the smallest one and go for it
 	templateId := template[diskSize]
 	if templateId == "" {
-		return fmt.Errorf("Invalid disk size: %d", diskSize)
+		smallestDiskSize := diskSize
+		for s := range template {
+			if s < smallestDiskSize {
+				smallestDiskSize = s
+			}
+		}
+
+		templateId = template[smallestDiskSize]
+		if templateId == "" {
+			return fmt.Errorf("Invalid disk size: %d", diskSize)
+		}
 	}
 
 	affinityCount := d.Get("affinitygroups.#").(int)
@@ -134,89 +145,77 @@ func resourceCreate(d *schema.ResourceData, meta interface{}) error {
 			securityGroup, err := getSecurityGroup(client, groupName)
 
 			if err != nil {
-				securityGroups[i] = securityGroup.Id
-			} else {
 				return err
 			}
+			securityGroups[i] = securityGroup.Id
 		}
 	}
 
-	profile := egoscale.MachineProfile{
+	profile := egoscale.VirtualMachineProfile{
 		Name:            d.Get("name").(string),
+		DiskSize:        uint64(diskSize),
 		Keypair:         d.Get("keypair").(string),
-		Userdata:        d.Get("userdata").(string),
+		UserData:        d.Get("user_data").(string),
 		ServiceOffering: service,
 		Template:        templateId,
-		Zone:            zone,
+		Zone:            zone.Id,
 		AffinityGroups:  affinityGroups,
 		SecurityGroups:  securityGroups,
 	}
 
-	jobId, err := client.CreateVirtualMachine(profile)
-	if err != nil {
-		return err
-	}
-
-	var timeoutSeconds = meta.(BaseConfig).timeout
-	var retries = timeoutSeconds / DelayBeforeRetry
-
-	var resp *egoscale.QueryAsyncJobResultResponse
-	var succeeded = false
-	for i := 0; i < retries; i++ {
-		resp, err = client.PollAsyncJob(jobId)
-		if err != nil {
-			return err
-		}
-
-		if resp.Jobstatus == 1 {
-			succeeded = true
-			break
-		}
-
-		time.Sleep(DelayBeforeRetry * time.Second)
-	}
-
-	if !succeeded {
-		return errors.New(fmt.Sprintf("Virtual machine creation did not succeed within %d seconds. You may increase "+
-			"the timeout in the provider configuration.", timeoutSeconds))
-	}
-
-	vm, err := client.AsyncToVirtualMachine(*resp)
+	vm, err := client.CreateVirtualMachine(profile, async)
 	if err != nil {
 		return err
 	}
 
 	/* Copy VM to our struct */
-	d.SetId(vm.Id)
+	d.SetId(string(vm.Id))
+
+	// Connection info for the provisioners
+	d.SetConnInfo(map[string]string{
+		"host": vm.Nic[0].IpAddress,
+	})
 
 	return resourceRead(d, meta)
+}
+
+func resourceExists(d *schema.ResourceData, meta interface{}) (bool, error) {
+	client := GetComputeClient(meta)
+	_, err := client.GetVirtualMachine(d.Id())
+
+	return err == nil, nil
 }
 
 func resourceRead(d *schema.ResourceData, meta interface{}) error {
 	client := GetComputeClient(meta)
 	machine, err := client.GetVirtualMachine(d.Id())
-
 	if err != nil {
 		return err
 	}
 
-	d.Set("name", machine.Displayname)
-	d.Set("keypair", machine.Keypair)
-	d.Set("userdata", "")
-	d.Set("size", machine.Serviceofferingname)
-	d.Set("template", machine.Templatename)
-	d.Set("zone", machine.Zonename)
+	volume, err := client.GetRootVolumeForVirtualMachine(d.Id())
+	if err != nil {
+		return err
+	}
+
+	d.Set("name", machine.DisplayName)
+	d.Set("keypair", machine.KeyPair)
+	//d.Set("user_data", "")
+	d.Set("size", machine.ServiceOfferingName)
+	d.Set("disk_size", volume.Size>>30) // B to GiB
+	d.Set("template", machine.TemplateName)
+	d.Set("zone", machine.ZoneName)
 	d.Set("state", machine.State)
 
 	nicArray := make([]map[string]string, len(machine.Nic))
 	for j, n := range machine.Nic {
 		i := make(map[string]string)
-		i["ip6address"] = n.Ip6address
-		i["ip4address"] = n.Ipaddress
+		i["ip6address"] = n.Ip6Address
+		i["ip4address"] = n.IpAddress
 		i["type"] = n.Type
-		i["networkname"] = n.Networkname
+		i["networkname"] = n.NetworkName
 
-		if n.Isdefault {
+		if n.IsDefault {
 			i["default"] = "true"
 		} else {
 			i["default"] = "false"
@@ -235,14 +234,15 @@ func resourceUpdate(d *schema.ResourceData, meta interface{}) error {
 
 func resourceDelete(d *schema.ResourceData, meta interface{}) error {
 	client := GetComputeClient(meta)
+	async := meta.(BaseConfig).async
 
-	resp, err := client.DestroyVirtualMachine(d.Id())
+	_, err := client.DestroyVirtualMachine(d.Id(), async)
 
 	if err != nil {
 		return err
 	}
 
-	log.Printf("Deleted vm id: %s\n", resp)
+	log.Printf("Deleted vm id: %s\n", d.Id())
 	return nil
 }
 
@@ -272,7 +272,7 @@ func getSecurityGroup(client *egoscale.Client, name string) (*egoscale.SecurityG
 		params.Set("id", name)
 	} else {
 		log.Printf("[DEBUG] search Security Group by name: %s", name)
-		params.Set("name", name)
+		params.Set("securitygroupname", name)
 	}
 	sgs, err := client.GetSecurityGroups(params)
 	if err != nil {

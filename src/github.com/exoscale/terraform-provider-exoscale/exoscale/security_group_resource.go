@@ -145,6 +145,7 @@ func securityGroupResource() *schema.Resource {
 func sgCreate(d *schema.ResourceData, meta interface{}) error {
 	var i int
 	client := GetComputeClient(meta)
+	async := meta.(BaseConfig).async
 
 	ingressLength := d.Get("ingress_rules.#").(int)
 	egressLength := d.Get("egress_rules.#").(int)
@@ -198,7 +199,6 @@ func sgCreate(d *schema.ResourceData, meta interface{}) error {
 
 			rule.SecurityGroupId = ""
 			// CIDR vs User Security Group
-			log.Printf("[DEBUG] %v vs %d (%v)", cidr, len(groupList), groupList)
 			if cidr != "" && len(groupList) == 0 {
 				log.Printf("[DEBUG] Use the CIDR %v", cidr)
 				rule.Cidr = cidr
@@ -234,8 +234,8 @@ func sgCreate(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	resp, err := client.CreateSecurityGroupWithRules(d.Get("name").(string),
-		ingressRules, egressRules)
+	groupName := d.Get("name").(string)
+	resp, err := client.CreateSecurityGroupWithRules(groupName, ingressRules, egressRules, async)
 	if err != nil {
 		return err
 	}
@@ -258,7 +258,7 @@ func sgCreate(d *schema.ResourceData, meta interface{}) error {
 
 func sgRead(d *schema.ResourceData, meta interface{}) error {
 	client := GetComputeClient(meta)
-	sgs, err := client.GetSecurityGroupsByName()
+	sgs, err := client.GetAllSecurityGroups()
 	if err != nil {
 		return err
 	}

@@ -123,7 +123,7 @@ resource "exoscale_compute" "computelabel" {
     keypair = "terraformKey"
     affinitygroups = ["terraformag"]
     securitygroups = ["sshgroup"]
-    userdata = ""
+    user_data = ""
 }
 ```
 
@@ -142,7 +142,7 @@ resource "exoscale_compute" "computelabel" {
 * ```keypair``` The SSH key used for root access to the host
 * ```affinitygroups``` Collection of anti-affinity groups the host will belong to
 * ```securitygroups``` Collection of security groups to indicate which rules will apply
-* ```userdata``` Free form statements used for configuring the instance
+* ```user_data``` Free form statements used for configuring the instance
 
 ### DNS
 

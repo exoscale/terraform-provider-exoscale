@@ -10,7 +10,8 @@ import (
 const defaultComputeEndpoint = "https://api.exoscale.ch/compute"
 const defaultDnsEndpoint = "https://api.exoscale.ch/dns"
 const defaultS3Endpoint = "https://sos.exo.io"
-const defaultTimeout = 60
+const defaultTimeout = 60         // seconds
+const defaultDelayBeforeRetry = 5 // seconds
 
 // BaseConfig represents the provider structure
 type BaseConfig struct {
@@ -20,6 +21,7 @@ type BaseConfig struct {
 	compute_endpoint string
 	dns_endpoint     string
 	s3_endpoint      string
+	async            egoscale.AsyncInfo
 }
 
 func getClient(endpoint string, meta interface{}) *egoscale.Client {
