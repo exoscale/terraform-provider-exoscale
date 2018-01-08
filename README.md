@@ -4,7 +4,7 @@
 
 ## Installation
 
-1. Download `terraform-provider-exoscale` from the [releases page](releases);
+1. Download `terraform-provider-exoscale` from the [releases page](/exoscale/terraform-provider-exoscale/releases);
 2. Put it into the `terraform.d/plugins/linux_amd64` folder;
 3. Run `terraform init`.
 
