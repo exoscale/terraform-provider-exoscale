@@ -1,9 +1,0 @@
-provider "exoscale" {
-  token = ""
-  secret = ""
-}
-
-resource "exoscale_ssh" "test_key" {
-    name = "terraform-key"
-    key = ""
-}

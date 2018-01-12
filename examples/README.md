@@ -1,9 +1,14 @@
-# Test execution
+# Examples
 
-To run these tests ensure that the terraform binary and plugin are in
-your path.  Then for the appropriate plan, rename it from X.tf.orig to
-X.tf, then run ``$ terraform plan`` to verify, ``$ terraform apply`` to
-apply and ``$ terraform destory`` to clean up.
+## Cloud Init
 
-As a reminder, be sure to update the resource section for each plan to
-include your Exoscale API tokens.
+Being used internally at Exoscale, Cloud-Init is the tool provided to you for
+setting up basic features on your instances at first boot. This demo creates
+a set of three Docker Swarm masters and the security groups between them.
+
+## Import Compute
+
+If creating resources is common task, importing existing becomes very
+convenient when one wants to start managing its infrastructure on Exoscale
+using TerraForm. This demo shows how to import a compute instance and its
+security groups.

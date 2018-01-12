@@ -1,0 +1,2 @@
+variable "token" {}
+variable "secret" {}

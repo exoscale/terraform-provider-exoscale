@@ -1,8 +1,0 @@
-provider "exoscale" {
-  token = ""
-  secret = ""
-}
-
-resource "exoscale_dns" "test" {
-    name = "cabtest.com"
-}

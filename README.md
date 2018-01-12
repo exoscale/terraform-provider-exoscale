@@ -84,6 +84,7 @@ Values:
 
 - `name`: name of the machine (`hostname`)
 - `ip_address`: IP Address of the main network interface
+- `virtual_machines_id`: list of the Compute instance members of the Affinity Group
 
 ### Security Groups
 
