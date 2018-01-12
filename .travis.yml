@@ -12,12 +12,9 @@ env:
   - MY_GOOS=windows MY_GOARCH=amd64
 
 install:
-  - make devdeps
+  - make deps
   - export GOOS=$(MY_GOOS)
   - export GOARCH=$(MY_GOARCH)
 
 script:
   - make build
-  - test `gofmt -s -d src/github.com/exoscale/terraform-provider-exoscale | tee -a /dev/fd/2 | wc -l` -eq 0
-  - test `bin/golint github.com/exoscale/terraform-provider-exoscale | tee -a /dev/fd/2 | wc -l` -eq 0
-  - make vet

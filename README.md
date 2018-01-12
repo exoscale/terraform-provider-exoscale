@@ -212,12 +212,20 @@ terraform = {
 
 ## Building
 
-Set ```GOPATH``` to this directory, and then run ```make```
+```
+$ git clone https://github.com/exoscale/terraform-provider-exoscale
+$ cd terraform-provider-exoscale
+$ make build
 
-Ensure that the PATH is set to include the resulting bin directory,
-and then you can run the terraform command that will produce the
-exoscale plugin.
+# making a release
+$ make release
+```
 
-Once built, you can install the `terraform-provider-exoscale` plugin by copying
-the resulting  binary file into the location where the remaining Terraform
-program and plugins reside.
+### Development
+```
+# quick build of the provider
+$ make
+
+# updating the dependencies
+$ make deps-update
+```

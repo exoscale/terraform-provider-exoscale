@@ -1,6 +1,4 @@
-pkg/
-bin/
-
-src/github.com/pyr
-src/github.com/hashicorp
-src/gopkg.in/amz.v2/s3
+.gopath
+build
+vendor
+terraform-provider-exoscale*

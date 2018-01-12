@@ -4,7 +4,12 @@ GOOS?=linux
 GOARCH?=amd64
 
 PROVIDER=terraform-provider-exoscale
-DEST=bin
+PKG=github.com/exoscale/$(PROVIDER)
+
+SRCS=main.go $(wildcard exoscale/*.go)
+
+DEST=build
+OSES=windows darwin linux
 S=_v$(VERSION)
 ifeq ($(GOOS),windows)
 	SUFFIX=$(S).exe
@@ -17,45 +22,61 @@ ifeq ($(GOOS),linux)
 endif
 
 BIN= $(DEST)/$(PROVIDER)$(SUFFIX)
+DEBUG_BIN = $(PROVIDER)_v$(VERSION)
 
-GOPATH := $(PWD)
+
+GOPATH := $(CURDIR)/.gopath
 export GOPATH
+export PATH := $(PATH):$(GOPATH)/bin
+
+.PHONY: default
+default: $(DEBUG_BIN)
 
 .PHONY: all
-all: deps build
+all: deps ($BIN)
 
 .PHONY: build
-build: $(BIN)
+build: deps $(BIN)
 
-.PHONY: $(BIN)
-$(BIN):
-	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH) go build -ldflags "-s" \
-		-o $@ \
-		github.com/exoscale/terraform-provider-exoscale
+$(DEBUG_BIN): $(SRCS)
+	(cd $(GOPATH)/src/$(PKG) && \
+		go build \
+			-o $@ \
+			$<)
+
+$(BIN): $(SRCS)
+	(cd $(GOPATH)/src/$(PKG) && \
+		CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH) go build -ldflags "-s" \
+			-o $@ \
+			$<)
 
 .PHONY: deps
-deps:
-	go get github.com/hashicorp/terraform
-	go get github.com/exoscale/egoscale
+deps: $(GOPATH)/src/$(PKG)
+	(cd $(GOPATH)/src/$(PKG) && dep ensure)
 
-.PHONY: devdeps
-devdeps: deps
-	go get -u github.com/golang/lint/golint
+$(GOPATH)/src/$(PKG):
+	mkdir -p $(GOPATH)
+	go get -u github.com/golang/dep/cmd/dep
+	mkdir -p $(shell dirname $(GOPATH)/src/$(PKG))
+	ln -sf ../../../.. $(GOPATH)/src/$(PKG)
 
-.PHONY: lint
-lint:
-	bin/golint github.com/exoscale/terraform-provider-exoscale
+.PHONY: deps-update
+deps-update: deps
+	(cd $(GOPATH)/src/$(PKG) && dep ensure -update)
 
-.PHONY: vet
-vet:
-	go tool vet src/github.com/exoscale/terraform-provider-exoscale
+.PHONY: signature
+signature: $(BIN).asc
+
+$(BIN).asc: $(BIN)
+	rm -f $(BIN).asc
+	gpg -a -u ops@exoscale.ch --output $@ --detach-sign $<
 
 .PHONY: release
-release: $(BIN)
-	$(foreach bin,$^,\
-		rm -f $(bin).asc;\
-		gpg -a -u ops@exoscale.ch --output $(bin).asc --detach-sign $(bin);)
+release: deps
+	$(foreach goos, $(OSES), \
+		GOOS=$(goos) $(MAKE) signature;)
 
 .PHONY: clean
 clean:
+	rm -f $(DEBUG_BIN)
 	rm -rf $(DEST)
