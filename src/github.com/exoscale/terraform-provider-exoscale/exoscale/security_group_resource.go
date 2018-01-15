@@ -47,12 +47,12 @@ func createSecurityGroup(d *schema.ResourceData, meta interface{}) error {
 
 func existsSecurityGroup(d *schema.ResourceData, meta interface{}) (bool, error) {
 	client := GetComputeClient(meta)
-	resp, err := client.Request(&egoscale.ListSecurityGroups{
+	_, err := client.Request(&egoscale.ListSecurityGroups{
 		ID: d.Id(),
 	})
 	// The CS API returns an error if it doesn't exist
 	if err != nil {
-		if r, ok := resp.(*egoscale.ErrorResponse); ok {
+		if r, ok := err.(*egoscale.ErrorResponse); ok {
 			if r.ErrorCode == 431 {
 				return false, nil
 			}
@@ -68,6 +68,13 @@ func readSecurityGroup(d *schema.ResourceData, meta interface{}) error {
 		ID: d.Id(),
 	})
 	if err != nil {
+		// Check for already delete security group
+		if r, ok := err.(*egoscale.ErrorResponse); ok {
+			if r.ErrorCode == 431 {
+				d.SetId("")
+				return nil
+			}
+		}
 		return err
 	}
 

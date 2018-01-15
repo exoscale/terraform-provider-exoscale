@@ -101,18 +101,18 @@ func computeResource() *schema.Resource {
 			"affinity_groups": {
 				Type:     schema.TypeSet,
 				Optional: true,
+				Set:      schema.HashString,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
-				Set: schema.HashString,
 			},
 			"security_groups": {
 				Type:     schema.TypeSet,
 				Optional: true,
+				Set:      schema.HashString,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
-				Set: schema.HashString,
 			},
 			"tags": {
 				Type:     schema.TypeMap,
@@ -257,13 +257,13 @@ func createCompute(d *schema.ResourceData, meta interface{}) error {
 
 func existsCompute(d *schema.ResourceData, meta interface{}) (bool, error) {
 	client := GetComputeClient(meta)
-	resp, err := client.Request(&egoscale.ListVirtualMachines{
+	_, err := client.Request(&egoscale.ListVirtualMachines{
 		ID: d.Id(),
 	})
 
 	// The CS API returns an error if it doesn't exist
 	if err != nil {
-		if r, ok := resp.(*egoscale.ErrorResponse); ok {
+		if r, ok := err.(*egoscale.ErrorResponse); ok {
 			if r.ErrorCode == 431 {
 				return false, nil
 			}
@@ -280,6 +280,12 @@ func readCompute(d *schema.ResourceData, meta interface{}) error {
 		ID: d.Id(),
 	})
 	if err != nil {
+		if r, ok := err.(*egoscale.ErrorResponse); ok {
+			if r.ErrorCode == 431 {
+				d.SetId("")
+				return nil
+			}
+		}
 		return err
 	}
 

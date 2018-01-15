@@ -33,6 +33,14 @@ func affinityGroupResource() *schema.Resource {
 				ForceNew: true,
 				Default:  "host anti-affinity",
 			},
+			"virtual_machine_ids": {
+				Type:     schema.TypeSet,
+				Computed: true,
+				Set:      schema.HashString,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+			},
 		},
 	}
 }
@@ -62,10 +70,15 @@ func existsAffinityGroup(d *schema.ResourceData, meta interface{}) (bool, error)
 	})
 
 	if err != nil {
+		if r, ok := err.(*egoscale.ErrorResponse); ok {
+			if r.ErrorCode == 431 {
+				return false, nil
+			}
+		}
 		return false, err
 	}
 
-	return r.(*egoscale.ListAffinityGroupsResponse).Count == 1, nil
+	return r.(*egoscale.ListAffinityGroupsResponse).Count > 0, nil
 }
 
 func readAffinityGroup(d *schema.ResourceData, meta interface{}) error {
@@ -75,6 +88,12 @@ func readAffinityGroup(d *schema.ResourceData, meta interface{}) error {
 		ID: d.Id(),
 	})
 	if err != nil {
+		if r, ok := err.(*egoscale.ErrorResponse); ok {
+			if r.ErrorCode == 431 {
+				d.SetId("")
+				return nil
+			}
+		}
 		return err
 	}
 
@@ -86,6 +105,7 @@ func applyAffinityGroup(affinity *egoscale.AffinityGroup, d *schema.ResourceData
 	d.Set("name", affinity.Name)
 	d.Set("description", affinity.Description)
 	d.Set("type", affinity.Type)
+	d.Set("virtual_machine_ids", affinity.VirtualMachineIDs)
 
 	return nil
 }

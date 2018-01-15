@@ -114,7 +114,7 @@ func createSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	cidrList := make([]string, 0)
-	if cidr, ok := d.GetOk("Cidr"); ok {
+	if cidr, ok := d.GetOk("cidr"); ok {
 		cidrList = append(cidrList, cidr.(string))
 	}
 
