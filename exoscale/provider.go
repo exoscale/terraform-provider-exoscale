@@ -3,6 +3,7 @@ package exoscale
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/exoscale/egoscale"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -67,6 +68,7 @@ func Provider() terraform.ResourceProvider {
 			"exoscale_security_group_rule": securityGroupRuleResource(),
 			"exoscale_ipaddress":           elasticIPResource(),
 			"exoscale_secondary_ipaddress": secondaryIPResource(),
+			"exoscale_network":             networkResource(),
 		},
 
 		ConfigureFunc: providerConfigure,
@@ -93,4 +95,39 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	}
 
 	return baseConfig, nil
+}
+
+func getZoneByName(client *egoscale.Client, zoneName string) (*egoscale.Zone, error) {
+	resp, err := client.Request(&egoscale.ListZones{
+		Name: strings.ToLower(zoneName),
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	zones := resp.(*egoscale.ListZonesResponse)
+	if zones.Count == 0 {
+		return nil, fmt.Errorf("Zone not found %s", zoneName)
+	}
+
+	return zones.Zone[0], nil
+}
+
+func getNetworkOfferingByName(client *egoscale.Client, zoneName string) (*egoscale.NetworkOffering, error) {
+	resp, err := client.Request(&egoscale.ListNetworkOfferings{
+		Name: strings.ToLower(zoneName),
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	networks := resp.(*egoscale.ListNetworkOfferingsResponse)
+	if networks.Count == 0 {
+		return nil, fmt.Errorf("NetworkOffering not found %s", zoneName)
+	}
+
+	return networks.NetworkOffering[0], nil
+
 }

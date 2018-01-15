@@ -151,9 +151,9 @@ func createCompute(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	zoneName := d.Get("zone").(string)
-	zoneID := topo.Zones[strings.ToLower(zoneName)]
-	if zoneID == "" {
-		return fmt.Errorf("Invalid zone: %s", zoneName)
+	zone, err := getZoneByName(client, zoneName)
+	if err != nil {
+		return err
 	}
 
 	template := topo.Images[convertTemplateName(d.Get("template").(string))]
@@ -210,7 +210,7 @@ func createCompute(d *schema.ResourceData, meta interface{}) error {
 		UserData:          []byte(d.Get("user_data").(string)),
 		ServiceOfferingID: service,
 		TemplateID:        templateID,
-		ZoneID:            zoneID,
+		ZoneID:            zone.ID,
 		AffinityGroupIDs:  affinityGroups,
 		SecurityGroupIDs:  securityGroups,
 	}
