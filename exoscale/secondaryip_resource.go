@@ -2,6 +2,7 @@ package exoscale
 
 import (
 	"fmt"
+	"net"
 
 	"github.com/exoscale/egoscale"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -20,17 +21,20 @@ func secondaryIPResource() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
-			"nic_id": {
-				Type:     schema.TypeString,
-				Computed: true,
-				ForceNew: true,
-			},
-			"elasticip": {
+			"ip_address": {
 				Type:         schema.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				Description:  "Elastic IP address",
-				ValidateFunc: StringIPAddress(),
+				ValidateFunc: StringIPv4,
+			},
+			"nic_id": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+			"network_id": {
+				Type:     schema.TypeString,
+				Computed: true,
 			},
 		},
 	}
@@ -41,7 +45,6 @@ func createSecondaryIP(d *schema.ResourceData, meta interface{}) error {
 	async := meta.(BaseConfig).async
 
 	virtualMachineID := d.Get("compute_id").(string)
-	ipAddress := d.Get("elasticip").(string)
 
 	resp, err := client.Request(&egoscale.ListNics{
 		VirtualMachineID: virtualMachineID,
@@ -55,13 +58,18 @@ func createSecondaryIP(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("The VM has no NIC %v", virtualMachineID)
 	}
 
-	secondaryIP, err := client.AddIPToNic(nics.Nic[0].ID, ipAddress, async)
-	if err != nil {
-		return err
-	}
+	// XXX Fragile
+	nic := nics.Nic[0]
+	resp, err = client.AsyncRequest(&egoscale.AddIPToNic{
+		NicID:     nic.ID,
+		IPAddress: net.ParseIP(d.Get("ip_address").(string)),
+	}, async)
+
+	secondaryIP := resp.(*egoscale.AddIPToNicResponse).NicSecondaryIP
 
 	d.SetId(secondaryIP.ID)
-	d.Set("nic_id", nics.Nic[0].ID)
+	// XXX this is fragile
+	d.Set("nic_id", nic.ID)
 	return nil
 }
 
@@ -110,13 +118,15 @@ func readSecondaryIP(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
+	// XXX why Nic[0]?
 	for _, ip := range nics.Nic[0].SecondaryIP {
 		if ip.NicID == nicID {
 			d.SetId(ip.ID)
-			d.Set("elasticip", ip.IPAddress)
+			d.Set("ip_address", ip.IPAddress.String())
 			return nil
 		}
 	}
+
 	d.SetId("")
 	return nil
 }
@@ -128,4 +138,11 @@ func deleteSecondaryIP(d *schema.ResourceData, meta interface{}) error {
 	return client.BooleanAsyncRequest(&egoscale.RemoveIPFromNic{
 		ID: d.Id(),
 	}, async)
+}
+
+func applySecondaryIP(d *schema.ResourceData, secondaryIP egoscale.NicSecondaryIP) {
+	d.SetId(secondaryIP.ID)
+	d.Set("ip_address", secondaryIP.IPAddress.String())
+	d.Set("network_id", secondaryIP.NetworkID)
+	d.Set("nic_id", secondaryIP.NicID)
 }

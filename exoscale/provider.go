@@ -69,6 +69,7 @@ func Provider() terraform.ResourceProvider {
 			"exoscale_ipaddress":           elasticIPResource(),
 			"exoscale_secondary_ipaddress": secondaryIPResource(),
 			"exoscale_network":             networkResource(),
+			"exoscale_nic":                 nicResource(),
 		},
 
 		ConfigureFunc: providerConfigure,
