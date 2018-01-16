@@ -93,8 +93,6 @@ func readRecord(d *schema.ResourceData, meta interface{}) error {
 func updateRecord(d *schema.ResourceData, meta interface{}) error {
 	client := GetDNSClient(meta)
 
-	d.Partial(true)
-
 	id, _ := strconv.ParseInt(d.Id(), 10, 64)
 	record, err := client.UpdateRecord(d.Get("domain").(string), egoscale.DNSRecord{
 		ID:         id,
@@ -108,8 +106,6 @@ func updateRecord(d *schema.ResourceData, meta interface{}) error {
 	if err != nil {
 		return err
 	}
-
-	d.Partial(false)
 
 	return applyRecord(record, d)
 }
