@@ -50,7 +50,7 @@ func createDomain(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	return applyDomain(domain, d)
+	return applyDomain(d, *domain)
 }
 
 func existsDomain(d *schema.ResourceData, meta interface{}) (bool, error) {
@@ -70,7 +70,7 @@ func readDomain(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	return applyDomain(domain, d)
+	return applyDomain(d, *domain)
 }
 
 func deleteDomain(d *schema.ResourceData, meta interface{}) error {
@@ -91,7 +91,7 @@ func importDomain(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceD
 		return nil, err
 	}
 
-	applyDomain(domain, d)
+	applyDomain(d, *domain)
 
 	records, err := client.GetRecords(d.Id())
 	if err != nil {
@@ -110,7 +110,7 @@ func importDomain(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceD
 		d := resource.Data(nil)
 		d.SetType("exoscale_domain_record")
 		d.Set("domain", domain.Name)
-		applyRecord(record, d)
+		applyRecord(d, record)
 
 		resources = append(resources, d)
 	}
@@ -118,7 +118,7 @@ func importDomain(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceD
 	return resources, nil
 }
 
-func applyDomain(domain *egoscale.DNSDomain, d *schema.ResourceData) error {
+func applyDomain(d *schema.ResourceData, domain egoscale.DNSDomain) error {
 	d.SetId(domain.Name)
 	d.Set("name", domain.Name)
 	d.Set("state", domain.State)

@@ -112,7 +112,7 @@ func getZoneByName(client *egoscale.Client, zoneName string) (*egoscale.Zone, er
 		return nil, fmt.Errorf("Zone not found %s", zoneName)
 	}
 
-	return zones.Zone[0], nil
+	return &(zones.Zone[0]), nil
 }
 
 func getNetworkOfferingByName(client *egoscale.Client, zoneName string) (*egoscale.NetworkOffering, error) {
@@ -129,7 +129,7 @@ func getNetworkOfferingByName(client *egoscale.Client, zoneName string) (*egosca
 		return nil, fmt.Errorf("NetworkOffering not found %s", zoneName)
 	}
 
-	return networks.NetworkOffering[0], nil
+	return &(networks.NetworkOffering[0]), nil
 }
 
 // handleNotFound inspects the CloudStack ErrorCode to guess if the resource is missing

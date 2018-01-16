@@ -42,7 +42,8 @@ func createSecurityGroup(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	return applySecurityGroup(resp.(*egoscale.CreateSecurityGroupResponse).SecurityGroup, d)
+	sg := resp.(*egoscale.CreateSecurityGroupResponse).SecurityGroup
+	return applySecurityGroup(d, sg)
 }
 
 func existsSecurityGroup(d *schema.ResourceData, meta interface{}) (bool, error) {
@@ -73,7 +74,7 @@ func readSecurityGroup(d *schema.ResourceData, meta interface{}) error {
 		return nil
 	}
 
-	return applySecurityGroup(groups.SecurityGroup[0], d)
+	return applySecurityGroup(d, groups.SecurityGroup[0])
 }
 
 func deleteSecurityGroup(d *schema.ResourceData, meta interface{}) error {
@@ -100,7 +101,7 @@ func importSecurityGroup(d *schema.ResourceData, meta interface{}) ([]*schema.Re
 	}
 
 	securityGroup := resp.(*egoscale.ListSecurityGroupsResponse).SecurityGroup[0]
-	applySecurityGroup(securityGroup, d)
+	applySecurityGroup(d, securityGroup)
 
 	// Create all the rulez!
 	ruleLength := len(securityGroup.EgressRule) + len(securityGroup.IngressRule)
@@ -112,7 +113,7 @@ func importSecurityGroup(d *schema.ResourceData, meta interface{}) ([]*schema.Re
 		d := resource.Data(nil)
 		d.SetType("exoscale_security_group_rule")
 		d.Set("type", "EGRESS")
-		err := applySecurityGroupRule(securityGroup, rule, d)
+		err := applySecurityGroupRule(d, securityGroup, rule)
 		if err != nil {
 			return nil, err
 		}
@@ -124,7 +125,7 @@ func importSecurityGroup(d *schema.ResourceData, meta interface{}) ([]*schema.Re
 		d := resource.Data(nil)
 		d.SetType("exoscale_security_group_rule")
 		d.Set("type", "INGRESS")
-		err := applySecurityGroupRule(securityGroup, (*egoscale.EgressRule)(rule), d)
+		err := applySecurityGroupRule(d, securityGroup, (egoscale.EgressRule)(rule))
 		if err != nil {
 			return nil, err
 		}
@@ -135,7 +136,7 @@ func importSecurityGroup(d *schema.ResourceData, meta interface{}) ([]*schema.Re
 	return resources, nil
 }
 
-func applySecurityGroup(securityGroup *egoscale.SecurityGroup, d *schema.ResourceData) error {
+func applySecurityGroup(d *schema.ResourceData, securityGroup egoscale.SecurityGroup) error {
 	d.SetId(securityGroup.ID)
 	d.Set("name", securityGroup.Name)
 	d.Set("description", securityGroup.Description)

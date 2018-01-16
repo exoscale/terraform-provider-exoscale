@@ -59,7 +59,8 @@ func createAffinityGroup(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	return applyAffinityGroup(r.(*egoscale.CreateAffinityGroupResponse).AffinityGroup, d)
+	ag := r.(egoscale.CreateAffinityGroupResponse).AffinityGroup
+	return applyAffinityGroup(d, ag)
 }
 
 func existsAffinityGroup(d *schema.ResourceData, meta interface{}) (bool, error) {
@@ -87,10 +88,10 @@ func readAffinityGroup(d *schema.ResourceData, meta interface{}) error {
 		return handleNotFound(d, err)
 	}
 
-	return applyAffinityGroup(r.(*egoscale.ListAffinityGroupsResponse).AffinityGroup[0], d)
+	return applyAffinityGroup(d, r.(egoscale.ListAffinityGroupsResponse).AffinityGroup[0])
 }
 
-func applyAffinityGroup(affinity *egoscale.AffinityGroup, d *schema.ResourceData) error {
+func applyAffinityGroup(d *schema.ResourceData, affinity egoscale.AffinityGroup) error {
 	d.SetId(affinity.ID)
 	d.Set("name", affinity.Name)
 	d.Set("description", affinity.Description)

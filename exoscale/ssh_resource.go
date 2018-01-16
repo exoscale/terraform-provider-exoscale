@@ -49,7 +49,8 @@ func createSSH(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	return applySSH(resp.(*egoscale.RegisterSSHKeyPairResponse).KeyPair, d)
+	keypair := resp.(*egoscale.RegisterSSHKeyPairResponse).KeyPair
+	return applySSH(d, keypair)
 }
 
 func existsSSH(d *schema.ResourceData, meta interface{}) (bool, error) {
@@ -87,7 +88,7 @@ func readSSH(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	keys := resp.(*egoscale.ListSSHKeyPairsResponse)
-	return applySSH(keys.SSHKeyPair[0], d)
+	return applySSH(d, keys.SSHKeyPair[0])
 }
 
 func deleteSSH(d *schema.ResourceData, meta interface{}) error {
@@ -105,7 +106,7 @@ func deleteSSH(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func applySSH(keypair *egoscale.SSHKeyPair, d *schema.ResourceData) error {
+func applySSH(d *schema.ResourceData, keypair egoscale.SSHKeyPair) error {
 	d.SetId(keypair.Name)
 	d.Set("name", keypair.Name)
 	d.Set("fingerprint", keypair.Fingerprint)

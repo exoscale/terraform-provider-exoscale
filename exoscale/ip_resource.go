@@ -39,6 +39,7 @@ func createElasticIP(d *schema.ResourceData, meta interface{}) error {
 
 	zoneName := d.Get("zone").(string)
 
+	// XXX REFACTOR
 	resp, err := client.Request(&egoscale.ListZones{
 		Name: zoneName,
 	})

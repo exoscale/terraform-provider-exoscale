@@ -66,7 +66,7 @@ func createRecord(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	return applyRecord(record, d)
+	return applyRecord(d, *record)
 }
 
 func existsRecord(d *schema.ResourceData, meta interface{}) (bool, error) {
@@ -87,7 +87,7 @@ func readRecord(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	return applyRecord(record, d)
+	return applyRecord(d, *record)
 }
 
 func updateRecord(d *schema.ResourceData, meta interface{}) error {
@@ -107,7 +107,7 @@ func updateRecord(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	return applyRecord(record, d)
+	return applyRecord(d, *record)
 }
 
 func deleteRecord(d *schema.ResourceData, meta interface{}) error {
@@ -122,7 +122,7 @@ func deleteRecord(d *schema.ResourceData, meta interface{}) error {
 	return err
 }
 
-func applyRecord(record *egoscale.DNSRecord, d *schema.ResourceData) error {
+func applyRecord(d *schema.ResourceData, record egoscale.DNSRecord) error {
 	d.SetId(strconv.FormatInt(record.ID, 10))
 	d.Set("name", record.Name)
 	d.Set("record_type", record.RecordType)

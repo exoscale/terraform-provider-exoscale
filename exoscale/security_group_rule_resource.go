@@ -1,6 +1,7 @@
 package exoscale
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/exoscale/egoscale"
@@ -113,24 +114,14 @@ func createSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
+	securityGroup := resp.(*egoscale.ListSecurityGroupsResponse).SecurityGroup[0]
+
 	cidrList := make([]string, 0)
 	if cidr, ok := d.GetOk("cidr"); ok {
 		cidrList = append(cidrList, cidr.(string))
 	}
 
-	securityGroup := resp.(*egoscale.ListSecurityGroupsResponse).SecurityGroup[0]
-	var req egoscale.AsyncCommand
-	req = &egoscale.AuthorizeSecurityGroupIngress{
-		SecurityGroupID: securityGroup.ID,
-		CidrList:        cidrList,
-		Description:     d.Get("description").(string),
-		Protocol:        d.Get("protocol").(string),
-		EndPort:         d.Get("end_port").(int),
-		StartPort:       d.Get("start_port").(int),
-		IcmpType:        d.Get("icmp_type").(int),
-		IcmpCode:        d.Get("icmp_code").(int),
-	}
-
+	groupList := make([]egoscale.UserSecurityGroup, 0)
 	if userSecurityGroup, ok := d.GetOkExists("user_security_group"); ok {
 		userSecurityGroupID, err := getSecurityGroupID(client, userSecurityGroup.(string))
 		if err != nil {
@@ -145,12 +136,23 @@ func createSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
 		}
 
 		group := resp.(*egoscale.ListSecurityGroupsResponse).SecurityGroup[0]
-		groupList := []*egoscale.UserSecurityGroup{{
+		groupList = append(groupList, egoscale.UserSecurityGroup{
 			Account: group.Account,
 			Group:   group.Name,
-		}}
+		})
+	}
 
-		req.(*egoscale.AuthorizeSecurityGroupIngress).UserSecurityGroupList = groupList
+	var req egoscale.AsyncCommand
+	req = &egoscale.AuthorizeSecurityGroupIngress{
+		SecurityGroupID:       securityGroup.ID,
+		CidrList:              cidrList,
+		Description:           d.Get("description").(string),
+		Protocol:              d.Get("protocol").(string),
+		EndPort:               d.Get("end_port").(int),
+		StartPort:             d.Get("start_port").(int),
+		IcmpType:              d.Get("icmp_type").(int),
+		IcmpCode:              d.Get("icmp_code").(int),
+		UserSecurityGroupList: groupList,
 	}
 
 	trafficType := strings.ToUpper(d.Get("type").(string))
@@ -169,30 +171,36 @@ func createSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
 	if trafficType == "EGRESS" {
 		securityGroup := resp.(*egoscale.AuthorizeSecurityGroupEgressResponse).SecurityGroup
 		d.Set("type", trafficType)
-		return applySecurityGroupRule(securityGroup, securityGroup.EgressRule[0], d)
+		return applySecurityGroupRule(d, securityGroup, securityGroup.EgressRule[0])
 	} else {
 		securityGroup := resp.(*egoscale.AuthorizeSecurityGroupIngressResponse).SecurityGroup
-		return applySecurityGroupRule(securityGroup, (*egoscale.EgressRule)(securityGroup.IngressRule[0]), d)
+		return applySecurityGroupRule(d, securityGroup, (egoscale.EgressRule)(securityGroup.IngressRule[0]))
 	}
 }
 
 func existsSecurityGroupRule(d *schema.ResourceData, meta interface{}) (bool, error) {
 	client := GetComputeClient(meta)
 
-	id := d.Id()
-	req := &egoscale.ListSecurityGroups{}
+	securityGroupID := ""
+	securityGroupName := ""
 
-	if securityGroupID, ok := d.GetOkExists("security_group_id"); ok {
-		req.ID = securityGroupID.(string)
-	} else if securityGroupName, ok := d.GetOkExists("security_group_name"); ok {
-		req.SecurityGroupName = securityGroupName.(string)
+	if s, ok := d.GetOkExists("security_group_id"); ok {
+		securityGroupID = s.(string)
+	} else if n, ok := d.GetOkExists("security_group_name"); ok {
+		securityGroupName = n.(string)
+	} else {
+		return false, fmt.Errorf("Missing either Security Group ID or Name")
 	}
 
-	resp, err := client.Request(req)
+	resp, err := client.Request(&egoscale.ListSecurityGroups{
+		ID:                securityGroupID,
+		SecurityGroupName: securityGroupName,
+	})
 	if err != nil {
 		return false, err
 	}
 
+	id := d.Id()
 	groups := resp.(*egoscale.ListSecurityGroupsResponse)
 	for _, sg := range groups.SecurityGroup {
 		for _, rule := range sg.EgressRule {
@@ -215,32 +223,37 @@ func existsSecurityGroupRule(d *schema.ResourceData, meta interface{}) (bool, er
 func readSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
 	client := GetComputeClient(meta)
 
-	id := d.Id()
-	req := &egoscale.ListSecurityGroups{}
-
-	if securityGroupID, ok := d.GetOkExists("security_group_id"); ok {
-		req.ID = securityGroupID.(string)
-	} else if securityGroupName, ok := d.GetOkExists("security_group_name"); ok {
-		req.SecurityGroupName = securityGroupName.(string)
+	securityGroupID := ""
+	securityGroupName := ""
+	if s, ok := d.GetOkExists("security_group_id"); ok {
+		securityGroupID = s.(string)
+	} else if n, ok := d.GetOkExists("security_group_name"); ok {
+		securityGroupName = n.(string)
+	} else {
+		return fmt.Errorf("Missing either Security Group ID or Name")
 	}
 
-	resp, err := client.Request(req)
+	resp, err := client.Request(&egoscale.ListSecurityGroups{
+		ID:                securityGroupID,
+		SecurityGroupName: securityGroupName,
+	})
 	if err != nil {
 		return err
 	}
 
+	id := d.Id()
 	groups := resp.(*egoscale.ListSecurityGroupsResponse)
 	for _, sg := range groups.SecurityGroup {
 		for _, rule := range sg.EgressRule {
 			if rule.RuleID == id {
 				d.Set("type", "EGRESS")
-				return applySecurityGroupRule(sg, rule, d)
+				return applySecurityGroupRule(d, sg, rule)
 			}
 		}
 		for _, rule := range sg.IngressRule {
 			if rule.RuleID == id {
 				d.Set("type", "INGRESS")
-				return applySecurityGroupRule(sg, (*egoscale.EgressRule)(rule), d)
+				return applySecurityGroupRule(d, sg, (egoscale.EgressRule)(rule))
 			}
 		}
 	}
@@ -278,7 +291,7 @@ func importSecurityGroupRule(d *schema.ResourceData, meta interface{}) ([]*schem
 	return resources, nil
 }
 
-func applySecurityGroupRule(group *egoscale.SecurityGroup, rule *egoscale.EgressRule, d *schema.ResourceData) error {
+func applySecurityGroupRule(d *schema.ResourceData, group egoscale.SecurityGroup, rule egoscale.EgressRule) error {
 	d.SetId(rule.RuleID)
 	d.Set("cidr", rule.Cidr)
 	d.Set("icmp_type", rule.IcmpType)

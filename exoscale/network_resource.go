@@ -161,7 +161,7 @@ func readNetwork(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	network := networks.Network[0]
-	return applyNetwork(d, *network)
+	return applyNetwork(d, network)
 }
 
 func existsNetwork(d *schema.ResourceData, meta interface{}) (bool, error) {
@@ -199,7 +199,7 @@ func updateNetwork(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	network := resp.(*egoscale.UpdateNetworkResponse).Network
-	return applyNetwork(d, *network)
+	return applyNetwork(d, network)
 }
 
 func deleteNetwork(d *schema.ResourceData, meta interface{}) error {

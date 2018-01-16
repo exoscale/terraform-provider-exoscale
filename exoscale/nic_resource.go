@@ -98,7 +98,7 @@ func readNic(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	nic := nics.Nic[0]
-	return applyNic(d, *nic)
+	return applyNic(d, nic)
 }
 
 func existsNic(d *schema.ResourceData, meta interface{}) (bool, error) {

@@ -221,14 +221,14 @@ func createCompute(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	/* Copy VM to our struct */
-	machine := r.(*egoscale.DeployVirtualMachineResponse).VirtualMachine
+	machine := r.(egoscale.DeployVirtualMachineResponse).VirtualMachine
 	d.SetId(machine.ID)
 
 	if t, ok := d.GetOk("tags"); ok {
 		m := t.(map[string]interface{})
-		tags := make([]*egoscale.ResourceTag, 0, len(m))
+		tags := make([]egoscale.ResourceTag, 0, len(m))
 		for k, v := range m {
-			tags = append(tags, &egoscale.ResourceTag{
+			tags = append(tags, egoscale.ResourceTag{
 				Key:   k,
 				Value: v.(string),
 			})
@@ -302,7 +302,7 @@ func readCompute(d *schema.ResourceData, meta interface{}) error {
 	}
 	d.Set("tags", tags)
 
-	return applyCompute(machine, d)
+	return applyCompute(d, *machine)
 }
 
 func updateCompute(d *schema.ResourceData, meta interface{}) error {
@@ -454,11 +454,11 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 			deleteTags := &egoscale.DeleteTags{
 				ResourceIDs:  []string{d.Id()},
 				ResourceType: "userVM",
-				Tags:         make([]*egoscale.ResourceTag, len(oldTags)),
+				Tags:         make([]egoscale.ResourceTag, len(oldTags)),
 			}
 			i := 0
 			for k, v := range oldTags {
-				deleteTags.Tags[i] = &egoscale.ResourceTag{
+				deleteTags.Tags[i] = egoscale.ResourceTag{
 					Key:   k,
 					Value: v.(string),
 				}
@@ -470,11 +470,11 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 			createTags := &egoscale.CreateTags{
 				ResourceIDs:  []string{d.Id()},
 				ResourceType: "userVM",
-				Tags:         make([]*egoscale.ResourceTag, len(newTags)),
+				Tags:         make([]egoscale.ResourceTag, len(newTags)),
 			}
 			i := 0
 			for k, v := range newTags {
-				createTags.Tags[i] = &egoscale.ResourceTag{
+				createTags.Tags[i] = egoscale.ResourceTag{
 					Key:   k,
 					Value: v.(string),
 				}
@@ -525,7 +525,8 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 
 	d.Partial(false)
 
-	return applyCompute(resp.(*egoscale.UpdateVirtualMachineResponse).VirtualMachine, d)
+	vm := resp.(*egoscale.UpdateVirtualMachineResponse).VirtualMachine
+	return applyCompute(d, vm)
 }
 
 func deleteCompute(d *schema.ResourceData, meta interface{}) error {
@@ -572,7 +573,7 @@ func importCompute(d *schema.ResourceData, meta interface{}) ([]*schema.Resource
 	return resources, nil
 }
 
-func applyCompute(machine *egoscale.VirtualMachine, d *schema.ResourceData) error {
+func applyCompute(d *schema.ResourceData, machine egoscale.VirtualMachine) error {
 	d.Set("name", machine.Name)
 	d.Set("display_name", machine.DisplayName)
 	d.Set("key_pair", machine.KeyPair)
@@ -606,7 +607,7 @@ func getVirtualMachine(d *schema.ResourceData, meta interface{}) (*egoscale.Virt
 	}
 
 	machine := resp.(*egoscale.ListVirtualMachinesResponse).VirtualMachine[0]
-	return machine, nil
+	return &machine, nil
 }
 
 /*
