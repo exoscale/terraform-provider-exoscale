@@ -151,7 +151,7 @@ func readNetwork(d *schema.ResourceData, meta interface{}) error {
 	})
 
 	if err != nil {
-		return err
+		return handleNotFound(d, err)
 	}
 
 	networks := resp.(*egoscale.ListNetworksResponse)
@@ -170,8 +170,8 @@ func existsNetwork(d *schema.ResourceData, meta interface{}) (bool, error) {
 	})
 
 	if err != nil {
-		// XXX handle 431
-		return false, err
+		e := handleNotFound(d, err)
+		return d.Id() != "", e
 	}
 
 	networks := resp.(*egoscale.ListNetworksResponse)

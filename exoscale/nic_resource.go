@@ -15,10 +15,6 @@ func nicResource() *schema.Resource {
 		Read:   readNic,
 		Delete: deleteNic,
 
-		Importer: &schema.ResourceImporter{
-			State: importNic,
-		},
-
 		Schema: map[string]*schema.Schema{
 			"compute_id": {
 				Type:     schema.TypeString,
@@ -29,10 +25,6 @@ func nicResource() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
-			},
-			"nic_id": {
-				Type:     schema.TypeString,
-				Computed: true,
 			},
 			"ip_address": {
 				Type:         schema.TypeString,
@@ -53,6 +45,7 @@ func nicResource() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
+			// XXX add the IPv6 fields
 		},
 	}
 }
@@ -70,7 +63,7 @@ func createNic(d *schema.ResourceData, meta interface{}) error {
 
 	resp, err := client.AsyncRequest(&egoscale.AddNicToVirtualMachine{
 		NetworkID:        networkID,
-		VirtualMachineID: d.Get("virtual_machine_id").(string),
+		VirtualMachineID: d.Get("compute_id").(string),
 		IPAddress:        ip,
 	}, async)
 
@@ -81,18 +74,19 @@ func createNic(d *schema.ResourceData, meta interface{}) error {
 	vm := resp.(*egoscale.AddNicToVirtualMachineResponse).VirtualMachine
 	nic := vm.NicByNetworkID(networkID)
 
-	d.SetId(nic.ID)
+	d.SetId(nic.MacAddress)
 	return readNic(d, meta)
 }
 
 func readNic(d *schema.ResourceData, meta interface{}) error {
 	client := GetComputeClient(meta)
 	resp, err := client.Request(&egoscale.ListNics{
-		NicID: d.Id(),
+		NicID:            d.Id(),
+		VirtualMachineID: d.Get("compute_id").(string),
 	})
 
 	if err != nil {
-		return err
+		return handleNotFound(d, err)
 	}
 
 	nics := resp.(*egoscale.ListNicsResponse)
@@ -107,12 +101,13 @@ func readNic(d *schema.ResourceData, meta interface{}) error {
 func existsNic(d *schema.ResourceData, meta interface{}) (bool, error) {
 	client := GetComputeClient(meta)
 	resp, err := client.Request(&egoscale.ListNics{
-		NicID: d.Id(),
+		NicID:            d.Id(),
+		VirtualMachineID: d.Get("compute_id").(string),
 	})
 
 	if err != nil {
-		// XXX handle 431
-		return false, err
+		e := handleNotFound(d, err)
+		return d.Id() != "", e
 	}
 
 	nics := resp.(*egoscale.ListNicsResponse)
@@ -130,7 +125,7 @@ func deleteNic(d *schema.ResourceData, meta interface{}) error {
 
 	resp, err := client.AsyncRequest(&egoscale.RemoveNicFromVirtualMachine{
 		NicID:            d.Id(),
-		VirtualMachineID: d.Get("virtual_machine_id").(string),
+		VirtualMachineID: d.Get("compute_id").(string),
 	}, async)
 
 	if err != nil {
@@ -147,19 +142,9 @@ func deleteNic(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func importNic(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-	if err := readNic(d, meta); err != nil {
-		return nil, err
-	}
-
-	resources := make([]*schema.ResourceData, 1)
-	resources[0] = d
-	return resources, nil
-}
-
 func applyNic(d *schema.ResourceData, nic egoscale.Nic) error {
 	d.SetId(nic.ID)
-	d.Set("virtual_machine_id", nic.VirtualMachineID)
+	d.Set("compute_id", nic.VirtualMachineID)
 	d.Set("network_id", nic.NetworkID)
 	d.Set("ip_address", nic.IPAddress.String())
 	d.Set("netmask", nic.Netmask.String())

@@ -50,14 +50,10 @@ func existsSecurityGroup(d *schema.ResourceData, meta interface{}) (bool, error)
 	_, err := client.Request(&egoscale.ListSecurityGroups{
 		ID: d.Id(),
 	})
-	// The CS API returns an error if it doesn't exist
+
 	if err != nil {
-		if r, ok := err.(*egoscale.ErrorResponse); ok {
-			if r.ErrorCode == 431 {
-				return false, nil
-			}
-		}
-		return false, err
+		e := handleNotFound(d, err)
+		return d.Id() != "", e
 	}
 	return true, nil
 }
@@ -68,14 +64,7 @@ func readSecurityGroup(d *schema.ResourceData, meta interface{}) error {
 		ID: d.Id(),
 	})
 	if err != nil {
-		// Check for already delete security group
-		if r, ok := err.(*egoscale.ErrorResponse); ok {
-			if r.ErrorCode == 431 {
-				d.SetId("")
-				return nil
-			}
-		}
-		return err
+		return handleNotFound(d, err)
 	}
 
 	groups := resp.(*egoscale.ListSecurityGroupsResponse)

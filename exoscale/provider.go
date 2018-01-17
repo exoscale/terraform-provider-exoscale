@@ -130,5 +130,17 @@ func getNetworkOfferingByName(client *egoscale.Client, zoneName string) (*egosca
 	}
 
 	return networks.NetworkOffering[0], nil
+}
 
+// handleNotFound inspects the CloudStack ErrorCode to guess if the resource is missing
+// and then removes it (unsetting the ID) and succeeds.
+func handleNotFound(d *schema.ResourceData, err error) error {
+	if r, ok := err.(*egoscale.ErrorResponse); ok {
+		if r.ErrorCode == egoscale.ParamError {
+			d.SetId("")
+			return nil
+		}
+		return r
+	}
+	return err
 }

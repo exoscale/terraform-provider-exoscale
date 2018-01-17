@@ -256,19 +256,12 @@ func createCompute(d *schema.ResourceData, meta interface{}) error {
 }
 
 func existsCompute(d *schema.ResourceData, meta interface{}) (bool, error) {
-	client := GetComputeClient(meta)
-	_, err := client.Request(&egoscale.ListVirtualMachines{
-		ID: d.Id(),
-	})
+	_, err := getVirtualMachine(d, meta)
 
 	// The CS API returns an error if it doesn't exist
 	if err != nil {
-		if r, ok := err.(*egoscale.ErrorResponse); ok {
-			if r.ErrorCode == 431 {
-				return false, nil
-			}
-		}
-		return false, err
+		e := handleNotFound(d, err)
+		return d.Id() != "", e
 	}
 
 	return true, nil
@@ -276,26 +269,10 @@ func existsCompute(d *schema.ResourceData, meta interface{}) (bool, error) {
 
 func readCompute(d *schema.ResourceData, meta interface{}) error {
 	client := GetComputeClient(meta)
-	resp, err := client.Request(&egoscale.ListVirtualMachines{
-		ID: d.Id(),
-	})
+	machine, err := getVirtualMachine(d, meta)
 	if err != nil {
-		if r, ok := err.(*egoscale.ErrorResponse); ok {
-			if r.ErrorCode == 431 {
-				d.SetId("")
-				return nil
-			}
-		}
-		return err
+		return handleNotFound(d, err)
 	}
-
-	vms := resp.(*egoscale.ListVirtualMachinesResponse)
-	if vms.Count == 0 {
-		d.SetId("")
-		return nil
-	}
-
-	machine := vms.VirtualMachine[0]
 
 	// affinity_groups
 	affinitySet := schema.NewSet(schema.HashString, nil)
@@ -570,12 +547,29 @@ func deleteCompute(d *schema.ResourceData, meta interface{}) error {
 }
 
 func importCompute(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-	if err := readCompute(d, meta); err != nil {
-		return nil, err
+	machine, err := getVirtualMachine(d, meta)
+	if err != nil {
+		return nil, handleNotFound(d, err)
 	}
 
-	resources := make([]*schema.ResourceData, 1)
-	resources[0] = d
+	nics := machine.NicsByType("Isolated")
+
+	resources := make([]*schema.ResourceData, 0, 1+len(nics))
+	resources = append(resources, d)
+
+	for _, nic := range nics {
+		resource := nicResource()
+		d := resource.Data(nil)
+		d.SetType("exoscale_nic")
+		log.Printf("[DEBUG] %#v", nic)
+		err := applyNic(d, nic)
+		if err != nil {
+			return nil, err
+		}
+
+		resources = append(resources, d)
+	}
+
 	return resources, nil
 }
 
@@ -602,8 +596,22 @@ func applyCompute(machine *egoscale.VirtualMachine, d *schema.ResourceData) erro
 	return nil
 }
 
+func getVirtualMachine(d *schema.ResourceData, meta interface{}) (*egoscale.VirtualMachine, error) {
+	client := GetComputeClient(meta)
+	resp, err := client.Request(&egoscale.ListVirtualMachines{
+		ID: d.Id(),
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	machine := resp.(*egoscale.ListVirtualMachinesResponse).VirtualMachine[0]
+	return machine, nil
+}
+
 /*
- * An ancilliary function to ensure that the template string passed in maps to
+ * An auxilliary function to ensure that the template string passed in maps to
  * the string provided by the egoscale driver.
  */
 func convertTemplateName(t string) string {
