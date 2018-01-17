@@ -5,8 +5,8 @@ import (
 	"net"
 )
 
-// StringIPv4 validates that the given field is a string representing an IPv4 address
-func StringIPv4(i interface{}, k string) (s []string, es []error) {
+// ValidateIPv4String validates that the given field is a string representing an IPv4 address
+func ValidateIPv4String(i interface{}, k string) (s []string, es []error) {
 	value, ok := i.(string)
 	if !ok {
 		es = append(es, fmt.Errorf("expected type of %s to be string", k))
@@ -26,8 +26,8 @@ func StringIPv4(i interface{}, k string) (s []string, es []error) {
 	return
 }
 
-// StringIPv6 validates that the given field is a string representing an IPv6 address
-func StringIPv6(i interface{}, k string) (s []string, es []error) {
+// ValidateIPv6String validates that the given field is a string representing an IPv6 address
+func ValidateIPv6String(i interface{}, k string) (s []string, es []error) {
 	value, ok := i.(string)
 	if !ok {
 		es = append(es, fmt.Errorf("expected type of %s to be string", k))

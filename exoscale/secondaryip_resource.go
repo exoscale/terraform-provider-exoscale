@@ -26,7 +26,7 @@ func secondaryIPResource() *schema.Resource {
 				Required:     true,
 				ForceNew:     true,
 				Description:  "Elastic IP address",
-				ValidateFunc: StringIPv4,
+				ValidateFunc: ValidateIPv4String,
 			},
 			"nic_id": {
 				Type:     schema.TypeString,

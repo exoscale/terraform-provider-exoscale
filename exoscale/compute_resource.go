@@ -561,7 +561,6 @@ func importCompute(d *schema.ResourceData, meta interface{}) ([]*schema.Resource
 		resource := nicResource()
 		d := resource.Data(nil)
 		d.SetType("exoscale_nic")
-		log.Printf("[DEBUG] %#v", nic)
 		err := applyNic(d, nic)
 		if err != nil {
 			return nil, err

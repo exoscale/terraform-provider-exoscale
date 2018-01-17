@@ -31,7 +31,7 @@ func nicResource() *schema.Resource {
 				Optional:     true,
 				ForceNew:     true,
 				Description:  "IP address",
-				ValidateFunc: StringIPv4,
+				ValidateFunc: ValidateIPv4String,
 			},
 			"netmask": {
 				Type:     schema.TypeString,
