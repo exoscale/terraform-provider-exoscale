@@ -29,6 +29,7 @@ func networkResource() *schema.Resource {
 			"display_text": {
 				Type:     schema.TypeString,
 				Optional: true,
+				Computed: true,
 			},
 			"network_offering": {
 				Type:     schema.TypeString,

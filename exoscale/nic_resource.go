@@ -73,9 +73,12 @@ func createNic(d *schema.ResourceData, meta interface{}) error {
 
 	vm := resp.(*egoscale.AddNicToVirtualMachineResponse).VirtualMachine
 	nic := vm.NicByNetworkID(networkID)
-
-	d.SetId(nic.MacAddress)
-	return readNic(d, meta)
+	if nic != nil {
+		d.SetId(nic.ID)
+		return readNic(d, meta)
+	} else {
+		return fmt.Errorf("Nic addition didn't create a NIC for Network %s", networkID)
+	}
 }
 
 func readNic(d *schema.ResourceData, meta interface{}) error {

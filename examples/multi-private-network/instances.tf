@@ -2,13 +2,6 @@ variable "machines" {
   default = 2
 }
 
-resource "exoscale_network" "intra" {
-  name = "demo-intra"
-  display_text = "demo intra privnet"
-  zone = "${var.zone}"
-  network_offering = "PrivNet"
-}
-
 resource "exoscale_compute" "machine" {
   count = "${var.machines}"
 
@@ -18,11 +11,13 @@ resource "exoscale_compute" "machine" {
   size = "Small"
   disk_size = "10"
   security_groups = ["default"]
-  key_pair = "${var.keypair}"
+  key_pair = "${var.key_pair}"
   zone = "${var.zone}"
+
+  user_data = "${element(data.template_file.user_data.*.rendered, count.index)}"
 }
 
-resource "exoscale_nic" "" {
+resource "exoscale_nic" "eth_intra" {
   count = "${exoscale_compute.machine.count}"
 
   compute_id = "${exoscale_compute.machine.*.id[count.index]}"
