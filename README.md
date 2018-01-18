@@ -48,9 +48,9 @@ or ```EXOSCALE_API_KEY```.  You can also use the cloudstack environment variable
 ### Compute
 
 ```hcl
-resource "exoscale_compute" "keylabel" {
-    display_name = 
-    template = "Linux Debian 9 64-bit" 
+resource "exoscale_compute" "mymachine" {
+    display_name = "mymachine"
+    template = "Linux Debian 9 64-bit"
     size = "Medium"
     disk_size = 10
     key_pair = "me@mymachine"
@@ -76,8 +76,8 @@ Attributes:
 - **`key_pair`**: name of the SSH key pair to be installed
 - `keyboard`: keyboard configuration (at creation time only)
 - `state`: state of the virtual machine. E.g. `Running` or `Stopped`
-- `affinity_groups`: list of [Affinity Groups][#affinity-groups]
-- `security_groups`: list of [Security Groups][#security-groups]
+- `affinity_groups`: list of [Affinity Groups](#affinity-groups)
+- `security_groups`: list of [Security Groups](#security-groups)
 - `tags`: dictionary of tags (key / value)
 
 Values:
@@ -86,7 +86,7 @@ Values:
 - `ip_address`: IP Address of the main network interface
 - `virtual_machines_id`: list of the Compute instance members of the Affinity Group
 
-### Security Groups
+### Security Group
 
 ```hcl
 resource "exoscale_security_group" "http" {
@@ -120,7 +120,7 @@ Rule attributes:
 - `cidr`: source/destination of the traffic as an IP subnet (conflicts with `user_security_group`)
 - `user_security_group`: source/destination of the traffic as a security group (conflicts with `cidr`)
 
-### (Anti-)Affinity Groups
+### (Anti-)Affinity Group
 
 Define an affinity group. Anti-affinity groups make sure than the virtual machines are not running on the same physical host.
 
@@ -152,6 +152,25 @@ resource "exoscale_ssh" "keylabel" {
 * ```name``` Defines the label in Exoscale to define the key
 * ```key``` The ssh public key that will be copied into instances declared
 
+### Elastic IP address
+
+
+```
+resource "exoscale_ipaddress" "myip" {
+    ip_address = "159.100.251.224"
+    zone = "ch-dk-2"
+}
+```
+
+Attributes:
+
+- **`zone`**: name of [the data-center](https://www.exoscale.ch/infrastructure/datacenters/)
+
+Values:
+
+- `ip_address`: IP address
+
+**NB:** it's possible to `import` the IP address resource using the IP itself rather than the ID.
 
 ### DNS
 
