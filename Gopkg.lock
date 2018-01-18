@@ -34,8 +34,8 @@
     "autorest/to",
     "autorest/validation"
   ]
-  revision = "6311d7a76f54cf2b6dea03d737d9bd9a6022ac5f"
-  version = "v9.7.1"
+  revision = "3c16bcd9ea019819c1d7c14055ed74f845f44a8a"
+  version = "v9.8.0"
 
 [[projects]]
   branch = "master"
@@ -215,8 +215,8 @@
     "service/waf",
     "service/wafregional"
   ]
-  revision = "0cebc639926eb91b0192dae4b28bc808417e764c"
-  version = "v1.12.61"
+  revision = "c13a879e75646fe750d21bcb05bf2cabea9791c1"
+  version = "v1.12.65"
 
 [[projects]]
   name = "github.com/beevik/etree"
@@ -301,8 +301,8 @@
 [[projects]]
   name = "github.com/exoscale/egoscale"
   packages = ["."]
-  revision = "54bd9a6e1554ed58952c07d886ebc7c31d5141e9"
-  version = "v0.9.1"
+  revision = "5ed32bbb3e8941158d0433926c8694caff03df44"
+  version = "v0.9.2"
 
 [[projects]]
   name = "github.com/go-ini/ini"
@@ -399,13 +399,13 @@
     "openstack/utils",
     "pagination"
   ]
-  revision = "7e80bca56edbda494d00ab082547c16086269bac"
+  revision = "382b4ca61357c6d9523b4c299cd222cecc51b423"
 
 [[projects]]
   branch = "master"
   name = "github.com/gophercloud/utils"
   packages = ["openstack/clientconfig"]
-  revision = "7a266544d77b69a9581f9d9314e17d6ddfcf45da"
+  revision = "a04aa36f4783a2625161e3c38cc35a173b890aed"
 
 [[projects]]
   branch = "master"
@@ -470,7 +470,7 @@
   branch = "master"
   name = "github.com/hashicorp/go-plugin"
   packages = ["."]
-  revision = "e37881a3f1a07fce82b3d99ce0342a72e53386bc"
+  revision = "4b3b29102a1e16e60f22e79904ef3490f210f58d"
 
 [[projects]]
   branch = "master"
@@ -749,7 +749,7 @@
   branch = "master"
   name = "github.com/mitchellh/cli"
   packages = ["."]
-  revision = "33edc47170b5df54d2588696d590c5e20ee583fe"
+  revision = "518dc677a1e1222682f4e7db06721942cb8e9e4c"
 
 [[projects]]
   branch = "master"
@@ -822,6 +822,12 @@
   name = "github.com/nu7hatch/gouuid"
   packages = ["."]
   revision = "179d4d0c4d8d407a32af483c2354df1d2c91e6c3"
+
+[[projects]]
+  name = "github.com/oklog/run"
+  packages = ["."]
+  revision = "4dadeb3030eda0273a12382bb2348ffc7c9d1a39"
+  version = "v1.0.0"
 
 [[projects]]
   branch = "master"
@@ -963,13 +969,13 @@
     "jws",
     "jwt"
   ]
-  revision = "30785a2c434e431ef7c507b54617d6a951d5f2b4"
+  revision = "b28fcf2b08a19742b43084fb40ab78ac6c3d8067"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "810d7000345868fc619eb81f46307107118f4ae1"
+  revision = "2c42eef0765b9837fbdab12011af7830f55f88f0"
 
 [[projects]]
   branch = "master"
@@ -1018,7 +1024,7 @@
     "storage/v1",
     "transport/http"
   ]
-  revision = "8124d1ac69f14d76f852b3c28a59418989a4bdbe"
+  revision = "fa74edab4387514996aa08b9bc287882c18cb79a"
 
 [[projects]]
   name = "google.golang.org/appengine"
@@ -1087,6 +1093,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "3cdc5f4f81028712e4eb9dfd69b0affee52eefe8a737b92261fc5472e1a582b6"
+  inputs-digest = "1b892c375992ebd601d10584aa6c4d7133bd5e553883158dd2689d6ae4f4dc61"
   solver-name = "gps-cdcl"
   solver-version = 1
