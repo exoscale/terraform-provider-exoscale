@@ -12,3 +12,7 @@ If creating resources is common task, importing existing becomes very
 convenient when one wants to start managing its infrastructure on Exoscale
 using TerraForm. This demo shows how to import a compute instance and its
 security groups.
+
+## External examples
+
+- Oliver Moser's: [Prometheus Service Discovery Demo](https://github.com/olmoser/infracoders-reloaded)
