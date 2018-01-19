@@ -207,7 +207,7 @@ func createCompute(d *schema.ResourceData, meta interface{}) error {
 		RootDiskSize:      int64(diskSize),
 		KeyPair:           d.Get("key_pair").(string),
 		Keyboard:          d.Get("keyboard").(string),
-		UserData:          []byte(d.Get("user_data").(string)),
+		UserData:          d.Get("user_data").(string),
 		ServiceOfferingID: service,
 		TemplateID:        templateID,
 		ZoneID:            zone.ID,

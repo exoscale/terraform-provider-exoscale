@@ -301,8 +301,8 @@
 [[projects]]
   name = "github.com/exoscale/egoscale"
   packages = ["."]
-  revision = "5ed32bbb3e8941158d0433926c8694caff03df44"
-  version = "v0.9.2"
+  revision = "3cf8a3ee78851964570c15824eceb376295b87bf"
+  version = "v0.9.3"
 
 [[projects]]
   name = "github.com/go-ini/ini"
@@ -358,6 +358,7 @@
     "openstack/compute/v2/flavors",
     "openstack/compute/v2/images",
     "openstack/compute/v2/servers",
+    "openstack/db/v1/configurations",
     "openstack/db/v1/databases",
     "openstack/db/v1/datastores",
     "openstack/db/v1/instances",
@@ -399,7 +400,7 @@
     "openstack/utils",
     "pagination"
   ]
-  revision = "382b4ca61357c6d9523b4c299cd222cecc51b423"
+  revision = "8ca2d18cc1409027815e2a5085152d8a224ffa00"
 
 [[projects]]
   branch = "master"
@@ -470,7 +471,7 @@
   branch = "master"
   name = "github.com/hashicorp/go-plugin"
   packages = ["."]
-  revision = "4b3b29102a1e16e60f22e79904ef3490f210f58d"
+  revision = "1fc09c47b843b73705f51ffb0520e3ac1bfecf99"
 
 [[projects]]
   branch = "master"
@@ -526,7 +527,7 @@
     "hclparse",
     "hcltest"
   ]
-  revision = "883a81b4902ecdc60cd9d77eae4c228792827c13"
+  revision = "0daeda39ffb73a40072a733deeaddca0eb46c9c4"
 
 [[projects]]
   branch = "master"
@@ -873,8 +874,8 @@
 [[projects]]
   name = "github.com/terraform-providers/terraform-provider-openstack"
   packages = ["openstack"]
-  revision = "ae7bddde4c9f3d6b349797157c5e2e65475973a1"
-  version = "v1.1.0"
+  revision = "e342d5211b37d782d63b85ba00c36dd4eb25a706"
+  version = "v1.2.0"
 
 [[projects]]
   branch = "master"
@@ -929,6 +930,7 @@
     "curve25519",
     "ed25519",
     "ed25519/internal/edwards25519",
+    "internal/chacha20",
     "md4",
     "openpgp",
     "openpgp/armor",
@@ -936,10 +938,11 @@
     "openpgp/errors",
     "openpgp/packet",
     "openpgp/s2k",
+    "poly1305",
     "ssh",
     "ssh/agent"
   ]
-  revision = "13931e22f9e72ea58bb73048bc752b48c6d4d4ac"
+  revision = "ee41a25c63fb5b74abf2213abb6dee3751e6ac4a"
 
 [[projects]]
   branch = "master"
@@ -1024,7 +1027,7 @@
     "storage/v1",
     "transport/http"
   ]
-  revision = "fa74edab4387514996aa08b9bc287882c18cb79a"
+  revision = "db3b6348f7ea599ee2baacceab2d04633d3bb2eb"
 
 [[projects]]
   name = "google.golang.org/appengine"
