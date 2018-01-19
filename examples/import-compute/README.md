@@ -1,5 +1,8 @@
 # Importing existing infrastructure
 
+Based on the [weblog post: Managing your existing infrastructure with
+Terraform](https://www.exoscale.ch/syslog/2018/01/18/managing-your-existing-infrastructure-with-terraform/)
+
 ## Setup
 
 1. Adapt the `terraform.tfvars.example` to `terraform.tfvars`

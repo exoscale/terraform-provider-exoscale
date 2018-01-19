@@ -13,6 +13,11 @@ convenient when one wants to start managing its infrastructure on Exoscale
 using TerraForm. This demo shows how to import a compute instance and its
 security groups.
 
+## (Multi-)Private Network
+
+An example showing how the [Private networks](https://www.exoscale.ch/syslog/2018/01/17/introducing-multiple-private-networks/)
+API support can be used to create a private network between compute instances.
+
 ## External examples
 
 - Oliver Moser's: [Prometheus Service Discovery Demo](https://github.com/olmoser/infracoders-reloaded)
