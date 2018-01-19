@@ -215,13 +215,13 @@ func createCompute(d *schema.ResourceData, meta interface{}) error {
 		SecurityGroupIDs:  securityGroups,
 	}
 
-	r, err := client.AsyncRequest(req, async)
+	resp, err := client.AsyncRequest(req, async)
 	if err != nil {
 		return err
 	}
 
 	/* Copy VM to our struct */
-	machine := r.(egoscale.DeployVirtualMachineResponse).VirtualMachine
+	machine := resp.(*egoscale.DeployVirtualMachineResponse).VirtualMachine
 	d.SetId(machine.ID)
 
 	if t, ok := d.GetOk("tags"); ok {

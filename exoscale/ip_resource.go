@@ -21,9 +21,8 @@ func elasticIPResource() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"ip_address": {
-				Type:         schema.TypeString,
-				Computed:     true,
-				ValidateFunc: ValidateIPv4String,
+				Type:     schema.TypeString,
+				Computed: true,
 			},
 			"zone": {
 				Type:        schema.TypeString,

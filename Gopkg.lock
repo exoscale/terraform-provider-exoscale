@@ -11,8 +11,8 @@
     "internal/version",
     "storage"
   ]
-  revision = "050b16d2314d5fc3d4c9a51e4cd5c7468e77f162"
-  version = "v0.17.0"
+  revision = "767c40d6a2e058483c25fa193e963a22da17236d"
+  version = "v0.18.0"
 
 [[projects]]
   name = "github.com/Azure/azure-sdk-for-go"
@@ -301,8 +301,8 @@
 [[projects]]
   name = "github.com/exoscale/egoscale"
   packages = ["."]
-  revision = "3cf8a3ee78851964570c15824eceb376295b87bf"
-  version = "v0.9.3"
+  revision = "934352beca5631422ddc8a9294571a8e24e6cd23"
+  version = "v0.9.5"
 
 [[projects]]
   name = "github.com/go-ini/ini"
@@ -527,7 +527,7 @@
     "hclparse",
     "hcltest"
   ]
-  revision = "0daeda39ffb73a40072a733deeaddca0eb46c9c4"
+  revision = "83451bb547db5e521b21cdf02fc0018c5790f6d5"
 
 [[projects]]
   branch = "master"
@@ -1096,6 +1096,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "1b892c375992ebd601d10584aa6c4d7133bd5e553883158dd2689d6ae4f4dc61"
+  inputs-digest = "11e64c60b17eedff0c760fd85f0faa780eab06905538cd78e6090f4ee56683b7"
   solver-name = "gps-cdcl"
   solver-version = 1

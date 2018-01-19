@@ -54,19 +54,19 @@ func createAffinityGroup(d *schema.ResourceData, meta interface{}) error {
 		Description: d.Get("description").(string),
 		Type:        d.Get("type").(string),
 	}
-	r, err := client.AsyncRequest(req, async)
+	resp, err := client.AsyncRequest(req, async)
 	if err != nil {
 		return err
 	}
 
-	ag := r.(egoscale.CreateAffinityGroupResponse).AffinityGroup
+	ag := resp.(*egoscale.CreateAffinityGroupResponse).AffinityGroup
 	return applyAffinityGroup(d, ag)
 }
 
 func existsAffinityGroup(d *schema.ResourceData, meta interface{}) (bool, error) {
 	client := GetComputeClient(meta)
 
-	r, err := client.Request(&egoscale.ListAffinityGroups{
+	resp, err := client.Request(&egoscale.ListAffinityGroups{
 		ID: d.Id(),
 	})
 
@@ -75,20 +75,20 @@ func existsAffinityGroup(d *schema.ResourceData, meta interface{}) (bool, error)
 		return d.Id() != "", e
 	}
 
-	return r.(*egoscale.ListAffinityGroupsResponse).Count > 0, nil
+	return resp.(*egoscale.ListAffinityGroupsResponse).Count > 0, nil
 }
 
 func readAffinityGroup(d *schema.ResourceData, meta interface{}) error {
 	client := GetComputeClient(meta)
 
-	r, err := client.Request(&egoscale.ListAffinityGroups{
+	resp, err := client.Request(&egoscale.ListAffinityGroups{
 		ID: d.Id(),
 	})
 	if err != nil {
 		return handleNotFound(d, err)
 	}
 
-	return applyAffinityGroup(d, r.(egoscale.ListAffinityGroupsResponse).AffinityGroup[0])
+	return applyAffinityGroup(d, resp.(*egoscale.ListAffinityGroupsResponse).AffinityGroup[0])
 }
 
 func applyAffinityGroup(d *schema.ResourceData, affinity egoscale.AffinityGroup) error {
