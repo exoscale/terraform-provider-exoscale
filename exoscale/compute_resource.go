@@ -582,8 +582,8 @@ func applyCompute(d *schema.ResourceData, machine egoscale.VirtualMachine) error
 	d.Set("zone", machine.ZoneName)
 	d.Set("state", machine.State)
 
-	if len(machine.Nic) > 0 {
-		d.Set("ip_address", machine.Nic[0].IPAddress)
+	if len(machine.Nic) > 0 && machine.Nic[0].IPAddress != nil {
+		d.Set("ip_address", machine.Nic[0].IPAddress.String())
 	} else {
 		d.Set("ip_address", "")
 	}

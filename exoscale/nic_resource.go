@@ -149,10 +149,25 @@ func applyNic(d *schema.ResourceData, nic egoscale.Nic) error {
 	d.SetId(nic.ID)
 	d.Set("compute_id", nic.VirtualMachineID)
 	d.Set("network_id", nic.NetworkID)
-	d.Set("ip_address", nic.IPAddress.String())
-	d.Set("netmask", nic.Netmask.String())
-	d.Set("gateway", nic.Gateway.String())
 	d.Set("mac_address", nic.MacAddress)
+
+	if nic.IPAddress != nil {
+		d.Set("ip_address", nic.IPAddress.String())
+	} else {
+		d.Set("ip_address", "")
+	}
+
+	if nic.Netmask != nil {
+		d.Set("netmask", nic.Netmask.String())
+	} else {
+		d.Set("netmask", "")
+	}
+
+	if nic.Gateway != nil {
+		d.Set("gateway", nic.Gateway.String())
+	} else {
+		d.Set("gateway", nic.Gateway.String())
+	}
 
 	return nil
 }

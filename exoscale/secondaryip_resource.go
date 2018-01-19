@@ -122,7 +122,12 @@ func readSecondaryIP(d *schema.ResourceData, meta interface{}) error {
 	for _, ip := range nics.Nic[0].SecondaryIP {
 		if ip.NicID == nicID {
 			d.SetId(ip.ID)
-			d.Set("ip_address", ip.IPAddress.String())
+			if ip.IPAddress != nil {
+				d.Set("ip_address", ip.IPAddress.String())
+			} else {
+				d.Set("ip_address", "")
+			}
+
 			return nil
 		}
 	}
