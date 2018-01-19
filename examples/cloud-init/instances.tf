@@ -5,7 +5,7 @@ resource "exoscale_affinity" "swarm_manager" {
 
 resource "exoscale_compute" "master" {
   count = "${var.master}"
-  display_name = "master-${count.index}"
+  display_name = "${element(var.hostnames, count.index)}"
   template = "${var.template}"
   zone = "${var.zone}"
   size = "Medium"
@@ -15,7 +15,7 @@ resource "exoscale_compute" "master" {
   affinity_groups = ["${exoscale_affinity.swarm_manager.name}"]
   security_groups = ["default", "${exoscale_security_group.swarm.name}"]
 
-  user_data = "${data.template_file.cloud_init.rendered}"
+  user_data = "${element(data.template_cloudinit_config.config.*.rendered, count.index)}"
 }
 
 output "master_ips" {

@@ -7,6 +7,10 @@ configuration in `init.tpl` to bootstrap the machines.
 
 ```
 $ terraform apply
+
+Outputs:
+
+master_ips = 10.0.0.1,10.0.0.2,10.0.0.3
 ```
 
 The IP address of the machines will be part of the `output` variable
@@ -18,17 +22,17 @@ The IP address of the machines will be part of the `output` variable
 $ terraform output master_ips
 
 $ ssh ubuntu@...
-ubuntu@swarm-0: $ sudo docker swarm init --advertise-addr <ip>
-ubuntu@swarm-0: $ sudo docker swarm join-token manager
+ubuntu@huey: $ sudo docker swarm init --advertise-addr <ip>
+ubuntu@huey: $ sudo docker swarm join-token manager
 
 * copy *
 
 $ ssh ubuntu@...
-ubuntu@swarm-1: $ sudo *paste*
+ubuntu@dewey: $ sudo *paste*
 
 $ ssh ubuntu@...
-ubuntu@swarm-2: $ sudo *paste*
-ubuntu@swarm-2: $ sudo docker node ls
+ubuntu@louie: $ sudo *paste*
+ubuntu@louie: $ sudo docker node ls
 
 * lists the three machines *
 ```
