@@ -299,6 +299,8 @@ func applySecurityGroupRule(d *schema.ResourceData, group egoscale.SecurityGroup
 	d.Set("start_port", rule.StartPort)
 	d.Set("end_port", rule.EndPort)
 	d.Set("protocol", strings.ToUpper(rule.Protocol))
+	d.Set("user_security_group", rule.SecurityGroupName)
+
 	d.Set("security_group_id", group.ID)
 	d.Set("security_group_name", group.Name)
 

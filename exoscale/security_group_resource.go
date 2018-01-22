@@ -93,8 +93,18 @@ func deleteSecurityGroup(d *schema.ResourceData, meta interface{}) error {
 
 func importSecurityGroup(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	client := GetComputeClient(meta)
+
+	// This permits to import a resource using the security group name rather than using the ID.
+	id := d.Id()
+	name := ""
+	if !isUUID(id) {
+		id = ""
+		name = id
+	}
+
 	resp, err := client.Request(&egoscale.ListSecurityGroups{
-		ID: d.Id(),
+		ID:                id,
+		SecurityGroupName: name,
 	})
 	if err != nil {
 		return nil, err
