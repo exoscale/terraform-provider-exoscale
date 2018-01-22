@@ -125,6 +125,7 @@ func deleteRecord(d *schema.ResourceData, meta interface{}) error {
 func applyRecord(d *schema.ResourceData, record egoscale.DNSRecord) error {
 	d.SetId(strconv.FormatInt(record.ID, 10))
 	d.Set("name", record.Name)
+	d.Set("content", record.Content)
 	d.Set("record_type", record.RecordType)
 	d.Set("ttl", record.TTL)
 	d.Set("prio", record.Prio)
