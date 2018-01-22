@@ -17,13 +17,13 @@ func Provider() terraform.ResourceProvider {
 			"token": {
 				Type:        schema.TypeString,
 				Required:    true,
-				DefaultFunc: schema.MultiEnvDefaultFunc([]string{"EXOSCALE_KEY", "CLOUDSTACK_API_KEY"}, nil),
+				DefaultFunc: schema.MultiEnvDefaultFunc([]string{"EXOSCALE_KEY", "EXOSCALE_API_KEY", "CLOUDSTACK_API_KEY"}, nil),
 				Description: "Exoscale API key",
 			},
 			"secret": {
 				Type:        schema.TypeString,
 				Required:    true,
-				DefaultFunc: schema.MultiEnvDefaultFunc([]string{"EXOSCALE_SECRET", "CLOUDSTACK_SECRET_KEY"}, nil),
+				DefaultFunc: schema.MultiEnvDefaultFunc([]string{"EXOSCALE_SECRET", "EXOSCALE_SECRET_KEY", "CLOUDSTACK_SECRET_KEY"}, nil),
 				Description: "Exoscale API secret",
 			},
 			"timeout": {
@@ -43,11 +43,9 @@ func Provider() terraform.ResourceProvider {
 					defaultDelayBeforeRetry),
 			},
 			"compute_endpoint": {
-				Type:     schema.TypeString,
-				Required: true,
-				DefaultFunc: schema.MultiEnvDefaultFunc(
-					[]string{"EXOSCALE_COMPUTE_ENDPOINT", "CLOUDSTACK_ENDPOINT"},
-					defaultComputeEndpoint),
+				Type:        schema.TypeString,
+				Required:    true,
+				DefaultFunc: schema.MultiEnvDefaultFunc([]string{"EXOSCALE_COMPUTE_ENDPOINT", "CLOUDSTACK_ENDPOINT"}, defaultComputeEndpoint),
 				Description: fmt.Sprintf("Exoscale CloudStack API endpoint (by default: %s)", defaultComputeEndpoint),
 			},
 			"dns_endpoint": {
