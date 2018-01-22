@@ -4,7 +4,7 @@ resource "exoscale_affinity" "swarm_manager" {
 }
 
 resource "exoscale_compute" "master" {
-  count = "${var.master}"
+  count = "${length(var.hostnames)}"
   display_name = "${element(var.hostnames, count.index)}"
   template = "${var.template}"
   zone = "${var.zone}"

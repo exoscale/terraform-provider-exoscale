@@ -239,7 +239,7 @@ $ git clone https://github.com/exoscale/terraform-provider-exoscale
 $ cd terraform-provider-exoscale
 $ make build
 
-# making a release
+# making a release (for Exoscale staff)
 $ make release
 ```
 

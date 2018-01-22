@@ -1,6 +1,6 @@
 data "template_file" "init" {
   template = "${file("init.tpl")}"
-  count = "${var.master}"
+  count = "${length(var.hostnames)}"
 
   vars {
     ubuntu = "artful"
@@ -12,7 +12,7 @@ data "template_cloudinit_config" "config" {
   gzip = true
   base64_encode = true
 
-  count = "${var.master}"
+  count = "${length(var.hostnames)}"
 
   part {
     filename = "init.cfg"
