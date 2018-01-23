@@ -1,14 +1,32 @@
 package exoscale
 
 import (
+	"log"
+
 	"github.com/exoscale/egoscale"
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
 func securityGroupResource() *schema.Resource {
+	s := map[string]*schema.Schema{
+		"name": {
+			Type:     schema.TypeString,
+			ForceNew: true,
+			Required: true,
+		},
+		"description": {
+			Type:     schema.TypeString,
+			ForceNew: true,
+			Optional: true,
+		},
+	}
+
+	addTags(s, "tags")
+
 	return &schema.Resource{
 		Create: createSecurityGroup,
 		Exists: existsSecurityGroup,
+		Update: updateSecurityGroup,
 		Read:   readSecurityGroup,
 		Delete: deleteSecurityGroup,
 
@@ -16,23 +34,13 @@ func securityGroupResource() *schema.Resource {
 			State: importSecurityGroup,
 		},
 
-		Schema: map[string]*schema.Schema{
-			"name": {
-				Type:     schema.TypeString,
-				ForceNew: true,
-				Required: true,
-			},
-			"description": {
-				Type:     schema.TypeString,
-				ForceNew: true,
-				Optional: true,
-			},
-		},
+		Schema: s,
 	}
 }
 
 func createSecurityGroup(d *schema.ResourceData, meta interface{}) error {
 	client := GetComputeClient(meta)
+	async := meta.(BaseConfig).async
 
 	resp, err := client.Request(&egoscale.CreateSecurityGroup{
 		Name:        d.Get("name").(string),
@@ -43,6 +51,23 @@ func createSecurityGroup(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	sg := resp.(*egoscale.CreateSecurityGroupResponse).SecurityGroup
+
+	d.SetId(sg.ID)
+	if cmd := createTags(d, "tags", sg.ResourceType()); cmd != nil {
+		if err := client.BooleanAsyncRequest(cmd, async); err != nil {
+			// Attempting to destroy the freshly created machine
+			e := client.BooleanRequest(&egoscale.DeleteSecurityGroup{
+				Name: sg.Name,
+			})
+
+			if e != nil {
+				log.Printf("[WARNING] Failure to create the tags, but the security group was created. %v", e)
+			}
+
+			return err
+		}
+	}
+
 	return applySecurityGroup(d, sg)
 }
 
@@ -57,6 +82,35 @@ func existsSecurityGroup(d *schema.ResourceData, meta interface{}) (bool, error)
 		return d.Id() != "", e
 	}
 	return true, nil
+}
+
+func updateSecurityGroup(d *schema.ResourceData, meta interface{}) error {
+	client := GetComputeClient(meta)
+	async := meta.(BaseConfig).async
+
+	d.Partial(true)
+
+	requests, err := updateTags(d, "tags", new(egoscale.SecurityGroup).ResourceType())
+	if err != nil {
+		return err
+	}
+
+	for _, req := range requests {
+		_, err := client.AsyncRequest(req, async)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = readSecurityGroup(d, meta)
+	if err != nil {
+		return err
+	}
+
+	d.SetPartial("tags")
+	d.Partial(false)
+
+	return err
 }
 
 func readSecurityGroup(d *schema.ResourceData, meta interface{}) error {
@@ -150,6 +204,13 @@ func applySecurityGroup(d *schema.ResourceData, securityGroup egoscale.SecurityG
 	d.SetId(securityGroup.ID)
 	d.Set("name", securityGroup.Name)
 	d.Set("description", securityGroup.Description)
+
+	// tags
+	tags := make(map[string]interface{})
+	for _, tag := range securityGroup.Tags {
+		tags[tag.Key] = tag.Value
+	}
+	d.Set("tags", tags)
 
 	return nil
 }

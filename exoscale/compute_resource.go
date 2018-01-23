@@ -17,6 +17,99 @@ import (
 )
 
 func computeResource() *schema.Resource {
+	s := map[string]*schema.Schema{
+		"name": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"display_name": {
+			Type:     schema.TypeString,
+			Optional: true,
+			Computed: true,
+		},
+		"template": {
+			Type:     schema.TypeString,
+			Required: true,
+			ForceNew: true,
+		},
+		"size": {
+			Type:     schema.TypeString,
+			Optional: true,
+			Default:  "Medium",
+			ValidateFunc: validation.StringInSlice([]string{
+				"Micro", "Tiny", "Small", "Medium", "Large", "Extra-Large", "Huge",
+				"Mega", "Titan",
+			}, true),
+		},
+		"disk_size": {
+			Type:         schema.TypeInt,
+			Required:     true,
+			ValidateFunc: validation.IntAtLeast(10),
+		},
+		"zone": {
+			Type:     schema.TypeString,
+			Required: true,
+			ForceNew: true,
+		},
+		"user_data": {
+			Type:     schema.TypeString,
+			Optional: true,
+			StateFunc: func(v interface{}) string {
+				switch v.(type) {
+				case string:
+					return strconv.FormatInt(int64(hashcode.String(v.(string))), 10)
+				default:
+					return ""
+				}
+			},
+		},
+		"key_pair": {
+			Type:     schema.TypeString,
+			Required: true,
+		},
+		"keyboard": {
+			Type:     schema.TypeString,
+			Optional: true,
+			ForceNew: true,
+			ValidateFunc: validation.StringInSlice([]string{
+				"de", "de-ch", "es", "fi", "fr", "fr-be", "fr-ch", "is",
+				"it", "jp", "nl-be", "no", "pt", "uk", "us",
+			}, true),
+		},
+		"state": {
+			Type:     schema.TypeString,
+			Optional: true,
+			Computed: true,
+			ValidateFunc: validation.StringInSlice([]string{
+				"Starting", "Running", "Stopped", "Destroyed",
+				"Expunging", "Migrating", "Error", "Unknown",
+				"Shutdowned",
+			}, true),
+		},
+		"ip_address": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"affinity_groups": {
+			Type:     schema.TypeSet,
+			Optional: true,
+			Set:      schema.HashString,
+			Elem: &schema.Schema{
+				Type: schema.TypeString,
+			},
+		},
+		"security_groups": {
+			Type:     schema.TypeSet,
+			Optional: true,
+			Set:      schema.HashString,
+			Elem: &schema.Schema{
+				Type: schema.TypeString,
+			},
+		},
+	}
+
+	addTags(s, "tags")
+
 	return &schema.Resource{
 		Create: createCompute,
 		Exists: existsCompute,
@@ -28,104 +121,7 @@ func computeResource() *schema.Resource {
 			State: importCompute,
 		},
 
-		Schema: map[string]*schema.Schema{
-			"name": {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
-			"display_name": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-			"template": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
-			},
-			"size": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Default:  "Medium",
-				ValidateFunc: validation.StringInSlice([]string{
-					"Micro", "Tiny", "Small", "Medium", "Large", "Extra-Large", "Huge",
-					"Mega", "Titan",
-				}, true),
-			},
-			"disk_size": {
-				Type:         schema.TypeInt,
-				Required:     true,
-				ValidateFunc: validation.IntAtLeast(10),
-			},
-			"zone": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
-			},
-			"user_data": {
-				Type:     schema.TypeString,
-				Optional: true,
-				StateFunc: func(v interface{}) string {
-					switch v.(type) {
-					case string:
-						return strconv.FormatInt(int64(hashcode.String(v.(string))), 10)
-					default:
-						return ""
-					}
-				},
-			},
-			"key_pair": {
-				Type:     schema.TypeString,
-				Required: true,
-			},
-			"keyboard": {
-				Type:     schema.TypeString,
-				Optional: true,
-				ForceNew: true,
-				ValidateFunc: validation.StringInSlice([]string{
-					"de", "de-ch", "es", "fi", "fr", "fr-be", "fr-ch", "is",
-					"it", "jp", "nl-be", "no", "pt", "uk", "us",
-				}, true),
-			},
-			"state": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-				ValidateFunc: validation.StringInSlice([]string{
-					"Starting", "Running", "Stopped", "Destroyed",
-					"Expunging", "Migrating", "Error", "Unknown",
-					"Shutdowned",
-				}, true),
-			},
-			"ip_address": {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
-			"affinity_groups": {
-				Type:     schema.TypeSet,
-				Optional: true,
-				Set:      schema.HashString,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
-				},
-			},
-			"security_groups": {
-				Type:     schema.TypeSet,
-				Optional: true,
-				Set:      schema.HashString,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
-				},
-			},
-			"tags": {
-				Type:     schema.TypeMap,
-				Optional: true,
-				Computed: true,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
-				},
-			},
-		},
+		Schema: s,
 	}
 }
 
@@ -232,30 +228,17 @@ func createCompute(d *schema.ResourceData, meta interface{}) error {
 	machine := resp.(*egoscale.DeployVirtualMachineResponse).VirtualMachine
 	d.SetId(machine.ID)
 
-	if t, ok := d.GetOk("tags"); ok {
-		m := t.(map[string]interface{})
-		tags := make([]egoscale.ResourceTag, 0, len(m))
-		for k, v := range m {
-			tags = append(tags, egoscale.ResourceTag{
-				Key:   k,
-				Value: v.(string),
-			})
-		}
-
-		err := client.BooleanAsyncRequest(&egoscale.CreateTags{
-			ResourceIDs:  []string{machine.ID},
-			ResourceType: "userVM",
-			Tags:         tags,
-		}, async)
-
-		if err != nil {
+	if cmd := createTags(d, "tags", machine.ResourceType()); cmd != nil {
+		if err := client.BooleanAsyncRequest(cmd, async); err != nil {
 			// Attempting to destroy the freshly created machine
 			_, e := client.AsyncRequest(&egoscale.DestroyVirtualMachine{
 				ID: machine.ID,
 			}, async)
+
 			if e != nil {
 				log.Printf("[WARNING] Failure to create the tags, but the machine was deployed. %v", e)
 			}
+
 			return err
 		}
 	}
@@ -317,8 +300,6 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 	client := GetComputeClient(meta)
 	async := meta.(BaseConfig).async
 
-	requests := make([]egoscale.AsyncCommand, 0)
-
 	initialState := d.Get("state").(string)
 	if initialState != "Running" && initialState != "Stopped" {
 		return fmt.Errorf("VM %s must be either Running or Stopped. got %s", d.Id(), initialState)
@@ -330,13 +311,23 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 
 	d.Partial(true)
 
+	// partialCommand represents an update command, it's made of
+	// the partial key which is expected to change and the
+	// request that has to be run.
+	type partialCommand struct {
+		partial string
+		request egoscale.AsyncCommand
+	}
+
+	commands := make([]partialCommand, 0)
+
+	// Update command is synchronous, hence it won't be put with the others
 	req := &egoscale.UpdateVirtualMachine{
 		ID: d.Id(),
 	}
 
 	if d.HasChange("display_name") {
 		req.DisplayName = d.Get("display_name").(string)
-		d.SetPartial("display_name")
 	}
 
 	if d.HasChange("user_data") {
@@ -348,65 +339,7 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 		rebootRequired = true
 	}
 
-	if d.HasChange("key_pair") {
-		d.SetPartial("key_pair")
-		keyPair := d.Get("key_pair").(string)
-		resp, err := client.Request(&egoscale.ListSSHKeyPairs{
-			Name: keyPair,
-		})
-		if err != nil {
-			return err
-		}
-
-		if resp.(*egoscale.ListSSHKeyPairsResponse).Count == 0 {
-			return fmt.Errorf("New SSH KeyPair doesn't exist, aborting. Got %s", keyPair)
-		}
-
-		rebootRequired = true
-		requests = append(requests, &egoscale.ResetSSHKeyForVirtualMachine{
-			ID:      d.Id(),
-			KeyPair: keyPair,
-		})
-	}
-
-	if d.HasChange("disk_size") {
-		o, n := d.GetChange("disk_size")
-		oldSize := o.(int)
-		newSize := n.(int)
-
-		if oldSize > newSize {
-			return fmt.Errorf("A volume can only be expanded. From %dG to %dG is not allowed", oldSize, newSize)
-		}
-
-		d.SetPartial("disk_size")
-		rebootRequired = true
-		volume, err := client.GetRootVolumeForVirtualMachine(d.Id())
-		if err != nil {
-			return err
-		}
-		requests = append(requests, &egoscale.ResizeVolume{
-			ID:   volume.ID,
-			Size: int64(d.Get("disk_size").(int)),
-		})
-	}
-
-	if d.HasChange("size") {
-		d.SetPartial("size")
-		rebootRequired = true
-		services, err := client.Request(&egoscale.ListServiceOfferings{
-			Name: d.Get("size").(string),
-		})
-		if err != nil {
-			return err
-		}
-		requests = append(requests, &egoscale.ScaleVirtualMachine{
-			ID:                d.Id(),
-			ServiceOfferingID: services.(*egoscale.ListServiceOfferingsResponse).ServiceOffering[0].ID,
-		})
-	}
-
 	if d.HasChange("security_groups") {
-		d.SetPartial("security_groups")
 		rebootRequired = true
 
 		securityGroups := make([]string, 0)
@@ -427,9 +360,70 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 		req.SecurityGroupIDs = securityGroups
 	}
 
-	if d.HasChange("affinity_groups") {
-		d.SetPartial("affinity_groups")
+	if d.HasChange("key_pair") {
+		keyPair := d.Get("key_pair").(string)
+		resp, err := client.Request(&egoscale.ListSSHKeyPairs{
+			Name: keyPair,
+		})
+		if err != nil {
+			return err
+		}
 
+		if resp.(*egoscale.ListSSHKeyPairsResponse).Count == 0 {
+			return fmt.Errorf("New SSH KeyPair doesn't exist, aborting. Got %s", keyPair)
+		}
+
+		rebootRequired = true
+		commands = append(commands, partialCommand{
+			partial: "key_pair",
+			request: &egoscale.ResetSSHKeyForVirtualMachine{
+				ID:      d.Id(),
+				KeyPair: keyPair,
+			},
+		})
+	}
+
+	if d.HasChange("disk_size") {
+		o, n := d.GetChange("disk_size")
+		oldSize := o.(int)
+		newSize := n.(int)
+
+		if oldSize > newSize {
+			return fmt.Errorf("A volume can only be expanded. From %dG to %dG is not allowed", oldSize, newSize)
+		}
+
+		rebootRequired = true
+		volume, err := client.GetRootVolumeForVirtualMachine(d.Id())
+		if err != nil {
+			return err
+		}
+		commands = append(commands, partialCommand{
+			partial: "disk_size",
+			request: &egoscale.ResizeVolume{
+				ID:   volume.ID,
+				Size: int64(d.Get("disk_size").(int)),
+			},
+		})
+	}
+
+	if d.HasChange("size") {
+		rebootRequired = true
+		services, err := client.Request(&egoscale.ListServiceOfferings{
+			Name: d.Get("size").(string),
+		})
+		if err != nil {
+			return err
+		}
+		commands = append(commands, partialCommand{
+			partial: "size",
+			request: &egoscale.ScaleVirtualMachine{
+				ID:                d.Id(),
+				ServiceOfferingID: services.(*egoscale.ListServiceOfferingsResponse).ServiceOffering[0].ID,
+			},
+		})
+	}
+
+	if d.HasChange("affinity_groups") {
 		rebootRequired = true
 		if affinitySet, ok := d.Get("affinity_groups").(*schema.Set); ok {
 			affinityGroups := make([]string, affinitySet.Len())
@@ -440,63 +434,28 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 				}
 				affinityGroups[i] = id
 			}
-			requests = append(requests, &egoscale.UpdateVMAffinityGroup{
-				ID:               d.Id(),
-				AffinityGroupIDs: affinityGroups,
+			commands = append(commands, partialCommand{
+				partial: "affinity_groups",
+				request: &egoscale.UpdateVMAffinityGroup{
+					ID:               d.Id(),
+					AffinityGroupIDs: affinityGroups,
+				},
 			})
 		}
 	}
 
-	if d.HasChange("tags") {
-		d.SetPartial("tags")
-		o, n := d.GetChange("tags")
-
-		oldTags := o.(map[string]interface{})
-		newTags := n.(map[string]interface{})
-		// Remove the intersection between the two sets of tag
-		for k, v := range oldTags {
-			if value, ok := newTags[k]; ok && v == value {
-				delete(oldTags, k)
-				delete(newTags, k)
-			}
-		}
-
-		if len(oldTags) > 0 {
-			deleteTags := &egoscale.DeleteTags{
-				ResourceIDs:  []string{d.Id()},
-				ResourceType: "userVM",
-				Tags:         make([]egoscale.ResourceTag, len(oldTags)),
-			}
-			i := 0
-			for k, v := range oldTags {
-				deleteTags.Tags[i] = egoscale.ResourceTag{
-					Key:   k,
-					Value: v.(string),
-				}
-				i++
-			}
-			requests = append(requests, deleteTags)
-		}
-		if len(newTags) > 0 {
-			createTags := &egoscale.CreateTags{
-				ResourceIDs:  []string{d.Id()},
-				ResourceType: "userVM",
-				Tags:         make([]egoscale.ResourceTag, len(newTags)),
-			}
-			i := 0
-			for k, v := range newTags {
-				createTags.Tags[i] = egoscale.ResourceTag{
-					Key:   k,
-					Value: v.(string),
-				}
-				i++
-			}
-			requests = append(requests, createTags)
-		}
+	updates, err := updateTags(d, "tags", "userVM")
+	if err != nil {
+		return err
+	}
+	for _, update := range updates {
+		commands = append(commands, partialCommand{
+			partial: "tags",
+			request: update,
+		})
 	}
 
 	if d.HasChange("state") {
-		d.SetPartial("state")
 		switch d.Get("state").(string) {
 		case "Running":
 			startRequired = true
@@ -507,38 +466,57 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
+	// Stop (Async)
 	if initialState != "Stopped" && (rebootRequired || stopRequired) {
-		_, err := client.AsyncRequest(&egoscale.StopVirtualMachine{
+		resp, err := client.AsyncRequest(&egoscale.StopVirtualMachine{
 			ID: d.Id(),
 		}, async)
 		if err != nil {
 			return err
 		}
+
+		m := resp.(*egoscale.StopVirtualMachineResponse).VirtualMachine
+		applyCompute(d, m)
+		d.SetPartial("state")
 	}
 
+	// Update (Sync)
 	resp, err := client.Request(req)
 	if err != nil {
 		return err
 	}
 	d.SetPartial("user_data")
 
+	m := resp.(*egoscale.UpdateVirtualMachineResponse).VirtualMachine
+	applyCompute(d, m)
+	d.SetPartial("user_data")
+	d.SetPartial("display_name")
+	d.SetPartial("security_groups")
+
+	// The rest of the calls are Async
 	if initialState == "Running" && (rebootRequired || startRequired) {
-		requests = append(requests, &egoscale.StartVirtualMachine{
-			ID: d.Id(),
+		commands = append(commands, partialCommand{
+			partial: "state",
+			request: &egoscale.StartVirtualMachine{
+				ID: d.Id(),
+			},
 		})
 	}
 
-	for _, req := range requests {
-		_, err := client.AsyncRequest(req, async)
+	for _, cmd := range commands {
+		resp, err := client.AsyncRequest(cmd.request, async)
 		if err != nil {
 			return err
 		}
+
+		m = resp.(*egoscale.VirtualMachineResponse).VirtualMachine
+		applyCompute(d, m)
+		d.SetPartial(cmd.partial)
 	}
 
 	d.Partial(false)
 
-	vm := resp.(*egoscale.UpdateVirtualMachineResponse).VirtualMachine
-	return applyCompute(d, vm)
+	return nil
 }
 
 func deleteCompute(d *schema.ResourceData, meta interface{}) error {
