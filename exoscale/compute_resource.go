@@ -638,7 +638,13 @@ func getSecurityGroupID(client *egoscale.Client, name string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return resp.(*egoscale.ListSecurityGroupsResponse).SecurityGroup[0].ID, nil
+
+	securityGroups := resp.(*egoscale.ListSecurityGroupsResponse)
+	if securityGroups.Count == 0 {
+		return "", fmt.Errorf("SecurityGroup not found %s", name)
+	}
+
+	return securityGroups.SecurityGroup[0].ID, nil
 }
 
 func getAffinityGroupID(client *egoscale.Client, name string) (string, error) {
@@ -652,7 +658,13 @@ func getAffinityGroupID(client *egoscale.Client, name string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return resp.(*egoscale.ListAffinityGroupsResponse).AffinityGroup[0].ID, nil
+
+	affinityGroups := resp.(*egoscale.ListAffinityGroupsResponse)
+	if affinityGroups.Count == 0 {
+		return "", fmt.Errorf("AffinityGroup not found %s", name)
+	}
+
+	return affinityGroups.AffinityGroup[0].ID, nil
 }
 
 // isUuid matches a UUIDv4
