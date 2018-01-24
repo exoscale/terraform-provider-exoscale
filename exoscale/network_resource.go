@@ -2,6 +2,7 @@ package exoscale
 
 import (
 	"fmt"
+	"log"
 	"net"
 
 	"github.com/exoscale/egoscale"
@@ -10,6 +11,54 @@ import (
 )
 
 func networkResource() *schema.Resource {
+	s := map[string]*schema.Schema{
+		"name": {
+			Type:     schema.TypeString,
+			Required: true,
+		},
+		"display_text": {
+			Type:     schema.TypeString,
+			Optional: true,
+			Computed: true,
+		},
+		"network_offering": {
+			Type:     schema.TypeString,
+			Required: true,
+		},
+		"zone": {
+			Type:     schema.TypeString,
+			Required: true,
+			ForceNew: true,
+		},
+		"cidr": {
+			Type:         schema.TypeString,
+			Optional:     true,
+			ValidateFunc: validation.CIDRNetwork(0, 32),
+		},
+		"netmask": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"gateway": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"dns1": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"dns2": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"network_domain": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+	}
+
+	addTags(s, "tags")
+
 	return &schema.Resource{
 		Create: createNetwork,
 		Exists: existsNetwork,
@@ -21,56 +70,13 @@ func networkResource() *schema.Resource {
 			State: importNetwork,
 		},
 
-		Schema: map[string]*schema.Schema{
-			"name": {
-				Type:     schema.TypeString,
-				Required: true,
-			},
-			"display_text": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-			"network_offering": {
-				Type:     schema.TypeString,
-				Required: true,
-			},
-			"zone": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
-			},
-			"cidr": {
-				Type:         schema.TypeString,
-				Optional:     true,
-				ValidateFunc: validation.CIDRNetwork(0, 32),
-			},
-			"netmask": {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
-			"gateway": {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
-			"dns1": {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
-			"dns2": {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
-			"network_domain": {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
-		},
+		Schema: s,
 	}
 }
 
 func createNetwork(d *schema.ResourceData, meta interface{}) error {
 	client := GetComputeClient(meta)
+	async := meta.(BaseConfig).async
 
 	name := d.Get("name").(string)
 	displayText := d.Get("display_text").(string)
@@ -139,8 +145,22 @@ func createNetwork(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	network := resp.(*egoscale.CreateNetworkResponse).Network
-
 	d.SetId(network.ID)
+
+	if cmd := createTags(d, "tags", network.ResourceType()); cmd != nil {
+		if err := client.BooleanAsyncRequest(cmd, async); err != nil {
+			// Attempting to destroy the freshly created network
+			e := client.BooleanAsyncRequest(&egoscale.DeleteNetwork{
+				ID: network.ID,
+			}, async)
+
+			if e != nil {
+				log.Printf("[WARNING] Failure to create the tags, but the network was created. %v", e)
+			}
+
+			return err
+		}
+	}
 
 	return readNetwork(d, meta)
 }
@@ -188,6 +208,9 @@ func updateNetwork(d *schema.ResourceData, meta interface{}) error {
 	client := GetComputeClient(meta)
 	async := meta.(BaseConfig).async
 
+	d.Partial(true)
+
+	// Update name and display_text
 	resp, err := client.AsyncRequest(&egoscale.UpdateNetwork{
 		ID:          d.Id(),
 		Name:        d.Get("name").(string),
@@ -199,7 +222,37 @@ func updateNetwork(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	network := resp.(*egoscale.UpdateNetworkResponse).Network
-	return applyNetwork(d, network)
+
+	err = applyNetwork(d, network)
+	if err != nil {
+		return err
+	}
+
+	d.SetPartial("name")
+	d.SetPartial("display_text")
+
+	// Update tags
+	requests, err := updateTags(d, "tags", network.ResourceType())
+	if err != nil {
+		return err
+	}
+
+	for _, req := range requests {
+		_, err := client.AsyncRequest(req, async)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = readNetwork(d, meta)
+	if err != nil {
+		return err
+	}
+
+	d.SetPartial("tags")
+
+	d.Partial(false)
+	return nil
 }
 
 func deleteNetwork(d *schema.ResourceData, meta interface{}) error {
