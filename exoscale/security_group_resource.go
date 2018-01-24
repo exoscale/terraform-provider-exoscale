@@ -55,7 +55,7 @@ func createSecurityGroup(d *schema.ResourceData, meta interface{}) error {
 	d.SetId(sg.ID)
 	if cmd := createTags(d, "tags", sg.ResourceType()); cmd != nil {
 		if err := client.BooleanAsyncRequest(cmd, async); err != nil {
-			// Attempting to destroy the freshly created machine
+			// Attempting to destroy the freshly created security group
 			e := client.BooleanRequest(&egoscale.DeleteSecurityGroup{
 				Name: sg.Name,
 			})

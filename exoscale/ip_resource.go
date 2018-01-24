@@ -2,6 +2,7 @@ package exoscale
 
 import (
 	"fmt"
+	"log"
 	"net"
 
 	"github.com/exoscale/egoscale"
@@ -9,9 +10,25 @@ import (
 )
 
 func elasticIPResource() *schema.Resource {
+	s := map[string]*schema.Schema{
+		"ip_address": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"zone": {
+			Type:        schema.TypeString,
+			Required:    true,
+			ForceNew:    true,
+			Description: "Name of the Data-Center",
+		},
+	}
+
+	addTags(s, "tags")
+
 	return &schema.Resource{
 		Create: createElasticIP,
 		Read:   readElasticIP,
+		Update: updateElasticIP,
 		Exists: existsElasticIP,
 		Delete: deleteElasticIP,
 
@@ -19,18 +36,7 @@ func elasticIPResource() *schema.Resource {
 			State: importElasticIP,
 		},
 
-		Schema: map[string]*schema.Schema{
-			"ip_address": {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
-			"zone": {
-				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true,
-				Description: "Name of the Data-Center",
-			},
-		},
+		Schema: s,
 	}
 }
 
@@ -40,28 +46,38 @@ func createElasticIP(d *schema.ResourceData, meta interface{}) error {
 
 	zoneName := d.Get("zone").(string)
 
-	// XXX REFACTOR
-	resp, err := client.Request(&egoscale.ListZones{
-		Name: zoneName,
-	})
+	zone, err := getZoneByName(client, zoneName)
 	if err != nil {
 		return err
 	}
 
-	zones := resp.(*egoscale.ListZonesResponse)
-	if zones.Count != 1 {
-		return fmt.Errorf("Invalid zone: %s", zoneName)
+	req := &egoscale.AssociateIPAddress{
+		ZoneID: zone.ID,
 	}
 
-	req := &egoscale.AssociateIPAddress{
-		ZoneID: zones.Zone[0].ID,
-	}
-	resp, err = client.AsyncRequest(req, async)
+	resp, err := client.AsyncRequest(req, async)
 	if err != nil {
 		return err
 	}
 
 	elasticIP := resp.(*egoscale.AssociateIPAddressResponse).IPAddress
+	d.SetId(elasticIP.ID)
+
+	if cmd := createTags(d, "tags", elasticIP.ResourceType()); cmd != nil {
+		if err := client.BooleanAsyncRequest(cmd, async); err != nil {
+			// Attempting to destroy the freshly created ip address
+			e := client.BooleanAsyncRequest(&egoscale.DisassociateIPAddress{
+				ID: elasticIP.ID,
+			}, async)
+
+			if e != nil {
+				log.Printf("[WARNING] Failure to create the tags, but the ip address was created. %v", e)
+			}
+
+			return err
+		}
+	}
+
 	return applyElasticIP(d, elasticIP)
 }
 
@@ -106,6 +122,35 @@ func readElasticIP(d *schema.ResourceData, meta interface{}) error {
 	return applyElasticIP(d, ipAddress)
 }
 
+func updateElasticIP(d *schema.ResourceData, meta interface{}) error {
+	client := GetComputeClient(meta)
+	async := meta.(BaseConfig).async
+
+	d.Partial(true)
+
+	requests, err := updateTags(d, "tags", new(egoscale.IPAddress).ResourceType())
+	if err != nil {
+		return err
+	}
+
+	for _, req := range requests {
+		_, err := client.AsyncRequest(req, async)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = readElasticIP(d, meta)
+	if err != nil {
+		return err
+	}
+
+	d.SetPartial("tags")
+	d.Partial(false)
+
+	return err
+}
+
 func deleteElasticIP(d *schema.ResourceData, meta interface{}) error {
 	client := GetComputeClient(meta)
 	async := meta.(BaseConfig).async
@@ -135,6 +180,13 @@ func applyElasticIP(d *schema.ResourceData, ip egoscale.IPAddress) error {
 	d.SetId(ip.ID)
 	d.Set("ip_address", ip.IPAddress.String())
 	d.Set("zone", ip.ZoneName)
+
+	// tags
+	tags := make(map[string]interface{})
+	for _, tag := range ip.Tags {
+		tags[tag.Key] = tag.Value
+	}
+	d.Set("tags", tags)
 
 	return nil
 }
