@@ -94,6 +94,10 @@ Values:
 resource "exoscale_security_group" "http" {
   name = "HTTP"
   description = "Long text"
+
+  tags {
+    kind = "web"
+  }
 }
 
 resource "exoscale_security_group_rule" "http" {
@@ -110,6 +114,7 @@ Attributes:
 
 - **`name`**: name of the security group 
 - `description`: longer description
+- `tags`: dictionary of tags (key / value)
 
 Rule attributes:
 
@@ -156,23 +161,67 @@ resource "exoscale_ssh" "keylabel" {
 
 ### Elastic IP address
 
-
 ```
 resource "exoscale_ipaddress" "myip" {
     ip_address = "159.100.251.224"
     zone = "ch-dk-2"
+
+    tags {
+        usage = "load-balancer"
+    }
 }
 ```
 
 Attributes:
 
 - **`zone`**: name of [the data-center](https://www.exoscale.ch/infrastructure/datacenters/)
+- `tags`: dictionary of tags (key / value)
 
 Values:
 
 - `ip_address`: IP address
 
 **NB:** it's possible to `import` the IP address resource using the IP itself rather than the ID.
+
+### Network
+
+```hcl
+resource "exoscale_network" "privNet" {
+    name = "myPrivNet"
+    display_text = "description"
+    zone = "ch-dk-2"
+    network_offering = "privNet"
+
+    tags {
+        # ...
+    }
+}
+
+```
+
+Attributes:
+
+- **`name`** name of the network
+- **`display_text`** description of the network
+- `tags`: dictionary of tags (key / value)
+
+## NIC
+
+```hcl
+resource "exoscale_nic" "eth1" {
+    compute_id = "${exoscale_compute.mymachine.id}"
+    network_id = "${exoscale_network.privNet.id}"
+}
+```
+
+Attributes:
+
+- **`compute_id`**: ID of the compute instance
+- **`network_id`**: ID of the network instance
+
+Values:
+
+- `mac_address`: physical address of the network interface
 
 ### DNS
 
@@ -208,6 +257,7 @@ Record attributes:
 - **`content`**: value of the DNS record
 - `ttl`: time to live
 - `prio`: priority
+
 
 ### Storage on S3
 

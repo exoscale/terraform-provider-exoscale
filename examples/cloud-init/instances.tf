@@ -16,6 +16,11 @@ resource "exoscale_compute" "master" {
   security_groups = ["default", "${exoscale_security_group.swarm.name}"]
 
   user_data = "${element(data.template_cloudinit_config.config.*.rendered, count.index)}"
+
+  tags {
+    managedby = "terraform"
+    swarm = "master"
+  }
 }
 
 output "master_ips" {
