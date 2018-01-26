@@ -1,6 +1,9 @@
 package exoscale
 
 import (
+	"bytes"
+	"compress/gzip"
+	"encoding/base64"
 	"fmt"
 	"log"
 	"regexp"
@@ -201,13 +204,18 @@ func createCompute(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
+	userData, err := prepareUserData(d, "user_data")
+	if err != nil {
+		return err
+	}
+
 	req := &egoscale.DeployVirtualMachine{
 		Name:              displayName,
 		DisplayName:       displayName,
 		RootDiskSize:      int64(diskSize),
 		KeyPair:           d.Get("key_pair").(string),
 		Keyboard:          d.Get("keyboard").(string),
-		UserData:          d.Get("user_data").(string),
+		UserData:          userData,
 		ServiceOfferingID: service,
 		TemplateID:        templateID,
 		ZoneID:            zone.ID,
@@ -332,8 +340,11 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	if d.HasChange("user_data") {
-		req.UserData = []byte(d.Get("user_data").(string))
-		d.SetPartial("user_data")
+		userData, err := prepareUserData(d, "user_data")
+		if err != nil {
+			return err
+		}
+		req.UserData = userData
 		rebootRequired = true
 	}
 
@@ -509,6 +520,7 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 	if err != nil {
 		return err
 	}
+	d.SetPartial("user_data")
 
 	if initialState == "Running" && (rebootRequired || startRequired) {
 		requests = append(requests, &egoscale.StartVirtualMachine{
@@ -606,7 +618,17 @@ func getVirtualMachine(d *schema.ResourceData, meta interface{}) (*egoscale.Virt
 		return nil, err
 	}
 
-	machine := resp.(*egoscale.ListVirtualMachinesResponse).VirtualMachine[0]
+	vms := resp.(*egoscale.ListVirtualMachinesResponse)
+	if vms.Count == 0 {
+		// Ugly... this reproduces the CS behavior
+		err := &egoscale.ErrorResponse{
+			ErrorCode: egoscale.ParamError,
+			ErrorText: fmt.Sprintf("VirtualMachine not found %s", d.Id()),
+		}
+		return nil, err
+	}
+
+	machine := vms.VirtualMachine[0]
 	return &machine, nil
 }
 
@@ -671,4 +693,27 @@ func getAffinityGroupID(client *egoscale.Client, name string) (string, error) {
 func isUUID(uuid string) bool {
 	re := regexp.MustCompile(`(?i)^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$`)
 	return re.MatchString(uuid)
+}
+
+func prepareUserData(d *schema.ResourceData, key string) (string, error) {
+	userData := d.Get(key).(string)
+	if strings.HasPrefix(userData, "#cloud-config") || strings.HasPrefix(userData, "Content-Type: multipart/mixed;") {
+		log.Printf("[DEBUG] cloud-config detected, gzipping")
+
+		b := new(bytes.Buffer)
+		gz := gzip.NewWriter(b)
+		if _, err := gz.Write([]byte(userData)); err != nil {
+			return "", err
+		}
+		if err := gz.Flush(); err != nil {
+			return "", err
+		}
+		if err := gz.Close(); err != nil {
+			return "", err
+		}
+
+		return base64.StdEncoding.EncodeToString(b.Bytes()), nil
+	}
+
+	return userData, nil
 }
