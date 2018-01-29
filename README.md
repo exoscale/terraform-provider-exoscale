@@ -217,7 +217,7 @@ terraform = {
     bucket = "..."
     endpoint = "https://sos-ch-dk-2.exo.io"
     key = "..."
-    region = "us-east-1" # ignored
+    region = "ch-dk-2"
     access_key = "..."
     secret_key = "..."
 
@@ -228,6 +228,7 @@ terraform = {
     skip_get_ec2_platforms = true
     skip_requesting_account_id = true
     skip_metadata_api_check = true
+    skip_region_validation = true
   }
 }
 ```
