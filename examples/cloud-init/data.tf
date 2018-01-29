@@ -9,8 +9,8 @@ data "template_file" "init" {
 }
 
 data "template_cloudinit_config" "config" {
-  gzip = true
-  base64_encode = true
+  gzip = false
+  base64_encode = false
 
   count = "${length(var.hostnames)}"
 
