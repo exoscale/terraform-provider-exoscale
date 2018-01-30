@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/exoscale/egoscale"
+	"github.com/go-ini/ini"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/terraform"
 )
@@ -15,24 +16,71 @@ func Provider() terraform.ResourceProvider {
 	return &schema.Provider{
 		Schema: map[string]*schema.Schema{
 			"token": {
-				Type:        schema.TypeString,
-				Required:    true,
-				DefaultFunc: schema.MultiEnvDefaultFunc([]string{"EXOSCALE_KEY", "EXOSCALE_API_KEY", "CLOUDSTACK_API_KEY"}, nil),
-				Description: "Exoscale API key",
+				Type:          schema.TypeString,
+				Optional:      true,
+				Description:   "Exoscale API key",
+				ConflictsWith: []string{"config", "profile"},
+				DefaultFunc: schema.MultiEnvDefaultFunc([]string{
+					"EXOSCALE_KEY",
+					"EXOSCALE_API_KEY",
+					"CLOUDSTACK_KEY",
+					"CLOUDSTACK_API_KEY",
+				}, nil),
 			},
 			"secret": {
+				Type:          schema.TypeString,
+				Optional:      true,
+				Description:   "Exoscale API secret",
+				ConflictsWith: []string{"config", "profile"},
+				DefaultFunc: schema.MultiEnvDefaultFunc([]string{
+					"EXOSCALE_SECRET",
+					"EXOSCALE_SECRET_KEY",
+					"CLOUDSTACK_SECRET",
+					"CLOUDSTACK_SECRET_KEY",
+				}, nil),
+			},
+			"config": {
+				Type:          schema.TypeString,
+				Optional:      true,
+				Description:   fmt.Sprintf("CloudStack ini configuration filename (by default: %s)", defaultConfig),
+				ConflictsWith: []string{"token", "secret", "compute_endpoint"},
+				DefaultFunc: schema.MultiEnvDefaultFunc([]string{
+					"EXOSCALE_CONFIG",
+					"CLOUDSTACK_CONFIG",
+				}, defaultConfig),
+			},
+			"profile": {
+				Type:          schema.TypeString,
+				Optional:      true,
+				Description:   fmt.Sprintf("CloudStack ini configuration section name (by default: %s)", defaultProfile),
+				ConflictsWith: []string{"token", "secret", "compute_endpoint"},
+				DefaultFunc: schema.MultiEnvDefaultFunc([]string{
+					"EXOSCALE_PROFILE",
+					"CLOUDSTACK_PROFILE",
+				}, defaultProfile),
+			},
+			"compute_endpoint": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: fmt.Sprintf("Exoscale CloudStack API endpoint (by default: %s)", defaultComputeEndpoint),
+				DefaultFunc: schema.MultiEnvDefaultFunc([]string{
+					"EXOSCALE_COMPUTE_ENDPOINT",
+					"CLOUDSTACK_ENDPOINT",
+				}, defaultComputeEndpoint),
+			},
+			"dns_endpoint": {
 				Type:        schema.TypeString,
 				Required:    true,
-				DefaultFunc: schema.MultiEnvDefaultFunc([]string{"EXOSCALE_SECRET", "EXOSCALE_SECRET_KEY", "CLOUDSTACK_SECRET_KEY"}, nil),
-				Description: "Exoscale API secret",
+				Description: fmt.Sprintf("Exoscale DNS API endpoint (by default: %s)", defaultDNSEndpoint),
+				DefaultFunc: schema.EnvDefaultFunc("EXOSCALE_DNS_ENDPOINT", defaultDNSEndpoint),
 			},
 			"timeout": {
-				Type:        schema.TypeInt,
-				Required:    true,
-				DefaultFunc: schema.EnvDefaultFunc("EXOSCALE_TIMEOUT", defaultTimeout),
+				Type:     schema.TypeInt,
+				Required: true,
 				Description: fmt.Sprintf(
 					"Timeout in seconds for waiting on compute resources to become available (by default: %d)",
 					defaultTimeout),
+				DefaultFunc: schema.EnvDefaultFunc("EXOSCALE_TIMEOUT", defaultTimeout),
 			},
 			"delay": {
 				Type:        schema.TypeInt,
@@ -41,18 +89,6 @@ func Provider() terraform.ResourceProvider {
 				Description: fmt.Sprintf(
 					"Delay in seconds representing the polling time interval (by default: %d)",
 					defaultDelayBeforeRetry),
-			},
-			"compute_endpoint": {
-				Type:        schema.TypeString,
-				Required:    true,
-				DefaultFunc: schema.MultiEnvDefaultFunc([]string{"EXOSCALE_COMPUTE_ENDPOINT", "CLOUDSTACK_ENDPOINT"}, defaultComputeEndpoint),
-				Description: fmt.Sprintf("Exoscale CloudStack API endpoint (by default: %s)", defaultComputeEndpoint),
-			},
-			"dns_endpoint": {
-				Type:        schema.TypeString,
-				Required:    true,
-				DefaultFunc: schema.EnvDefaultFunc("EXOSCALE_DNS_ENDPOINT", defaultDNSEndpoint),
-				Description: fmt.Sprintf("Exoscale DNS API endpoint (by default: %s)", defaultDNSEndpoint),
 			},
 		},
 
@@ -75,17 +111,55 @@ func Provider() terraform.ResourceProvider {
 }
 
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
+	token, tokenOK := d.GetOk("token")
+	secret, secretOK := d.GetOk("secret")
+	endpoint := d.Get("compute_endpoint").(string)
+
+	if tokenOK || secretOK {
+		if !tokenOK || !secretOK {
+			return nil, fmt.Errorf("token (%#v) and secret (%#v) must be set", token.(string), secret.(string))
+		}
+	} else {
+		config := d.Get("config").(string)
+		profile := d.Get("profile").(string)
+
+		cfg, err := ini.LooseLoad(config, "cloudstack.ini", "~/.cloudstack.ini")
+		if err != nil {
+			return nil, err
+		}
+		section, err := cfg.GetSection(profile)
+		if err != nil {
+			return nil, err
+		}
+
+		t, err := section.GetKey("key")
+		if err != nil {
+			return nil, err
+		}
+		token = t.String()
+
+		s, err := section.GetKey("secret")
+		if err != nil {
+			return nil, err
+		}
+		secret = s.String()
+
+		e, err := section.GetKey("endpoint")
+		if err == nil {
+			endpoint = e.String()
+		}
+	}
+
 	timeout := d.Get("timeout").(int)
 	delay := d.Get("delay").(int)
 	retries := timeout/delay - 1 // the first try is free
-
 	log.Printf("Async calls: timeout %d - delay %d - retries %d\n", timeout, delay, retries)
 
 	baseConfig := BaseConfig{
-		token:           d.Get("token").(string),
-		secret:          d.Get("secret").(string),
+		token:           token.(string),
+		secret:          secret.(string),
 		timeout:         timeout,
-		computeEndpoint: d.Get("compute_endpoint").(string),
+		computeEndpoint: endpoint,
 		dnsEndpoint:     d.Get("dns_endpoint").(string),
 		async: egoscale.AsyncInfo{
 			Retries: retries,

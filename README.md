@@ -25,25 +25,51 @@ resource plugin.  Additional documentation can be found in the examples director
 
 ```hcl
 provider "exoscale" {
-    version = "~> 0.9"
-    token = ""
-    secret = ""
-    timeout = 60
+  version = "~> 0.9"
+  token = "EXO..."
+  secret = "..."
+
+  timeout = 60  # default: waits 60 seconds in total for a resource
+  delay = 5     # default: waits 5 seconds between each poll request
 }
 
+# or
+
+provider "exoscale" {
+  version = "~> 0.9"
+
+  config = "cloudstack.ini"   # default: filename
+  profile = "cloudstack"      # default: section name
+}
 ```
 
-You are required to provide at least the OAuth API token and secret key in order
+You are required to provide at least the API token and secret key in order
 to make use of the remaining Terraform resources.
 
 The `timeout` is the maximum amount of time (in seconds, default: `60`) to wait
 for async tasks to complete. Currently, this is used during the creation of
 `compute` and `anti-affinity` resources.
 
+### `cloudstack.ini`
+
+```ini
+[cloudstack]
+
+endpoint = "https://api.exoscale.ch/compute"
+key = "EXO..."
+token = "..."
+```
+
+### Environment variables
+
 You can specify the environment variables for these using
-```EXOSCALE_API_SECRET``` or ```EXOSCALE_API_KEY```. `EXOSCALE_TIMEOUT` and
-`EXOSCALE_DELAY` manages the asynchronous calls. You can also use the
-cloudstack environment variables `CLOUDSTACK_(API|SECRET)_KEY`.
+- **`token`**: ```EXOSCALE_KEY```, ```EXOSCALE_API_KEY```, ```CLOUDSTACK_KEY```, or ```CLOUDSTACK_API_KEY```;
+- **`secret`**: ```EXOSCALE_SECRET```, ```EXOSCALE_SECRET_KEY```, ```CLOUDSTACK_SECRET```, or ```CLOUDSTACK_SECRET_KEY```;
+- **`config`**: ```EXOSCALE_CONFIG```, or ```CLOUDSTACK_CONFIG```;
+- **`profile`**: ```EXOSCALE_PROFILE```, or ```CLOUDSTACK_PROFILE```;
+- **`timeout`** and **`delay`**: `EXOSCALE_TIMEOUT` and `EXOSCALE_DELAY` manages the asynchronous calls.
+- **`compute_endpoint`**: ```EXOSCALE_COMPUTE_ENDPOINT```, or ```CLOUDSTACK_ENDPOINT```;
+- **`dns_endpoint`**: ```EXOSCALE_DNS_ENDPOINT```.
 
 ## Resources
 
@@ -51,19 +77,19 @@ cloudstack environment variables `CLOUDSTACK_(API|SECRET)_KEY`.
 
 ```hcl
 resource "exoscale_compute" "mymachine" {
-    display_name = "mymachine"
-    template = "Linux Debian 9 64-bit"
-    size = "Medium"
-    disk_size = 10
-    key_pair = "me@mymachine"
-    state = "Running"
+  display_name = "mymachine"
+  template = "Linux Debian 9 64-bit"
+  size = "Medium"
+  disk_size = 10
+  key_pair = "me@mymachine"
+  state = "Running"
 
-    affinity_groups = []
-    security_groups = ["default"]
+  affinity_groups = []
+  security_groups = ["default"]
 
-    tags {
-        production = "true"
-    }
+  tags {
+    production = "true"
+  }
 }
 ```
 
@@ -133,9 +159,9 @@ Define an affinity group. Anti-affinity groups make sure than the virtual machin
 
 ```hcl
 resource "exoscale_affinity" "affinitylabel" {
-    name = "affinity name"
-    description = "long text"
-    type = "host anti-affinity"
+  name = "affinity name"
+  description = "long text"
+  type = "host anti-affinity"
 }
 ```
 
@@ -151,8 +177,8 @@ Declare an ssh key that will be used for any current/future instances
 
 ```hcl
 resource "exoscale_ssh" "keylabel" {
-    name = "keyname"
-    key = "keycontents"
+  name = "keyname"
+  key = "keycontents"
 }
 ```
 
@@ -163,12 +189,11 @@ resource "exoscale_ssh" "keylabel" {
 
 ```
 resource "exoscale_ipaddress" "myip" {
-    ip_address = "159.100.251.224"
-    zone = "ch-dk-2"
-
-    tags {
-        usage = "load-balancer"
-    }
+  ip_address = "159.100.251.224"
+  zone = "ch-dk-2"
+  tags {
+    usage = "load-balancer"
+  }
 }
 ```
 
@@ -187,14 +212,14 @@ Values:
 
 ```hcl
 resource "exoscale_network" "privNet" {
-    name = "myPrivNet"
-    display_text = "description"
-    zone = "ch-dk-2"
-    network_offering = "privNet"
+  name = "myPrivNet"
+  display_text = "description"
+  zone = "ch-dk-2"
+  network_offering = "privNet"
 
-    tags {
-        # ...
-    }
+  tags {
+    # ...
+  }
 }
 
 ```
@@ -209,8 +234,8 @@ Attributes:
 
 ```hcl
 resource "exoscale_nic" "eth1" {
-    compute_id = "${exoscale_compute.mymachine.id}"
-    network_id = "${exoscale_network.privNet.id}"
+  compute_id = "${exoscale_compute.mymachine.id}"
+  network_id = "${exoscale_network.privNet.id}"
 }
 ```
 
@@ -227,14 +252,14 @@ Values:
 
 ```hcl
 resource "exoscale_domain" "exo" {
-    name = "exo.exo"
+  name = "exo.exo"
 }
 
 resource "exoscale_domain_record" "glop" {
-    domain = "${exoscale_domain.exo.id}"
-    name = "glap"
-    record_type = "CNAME"
-    content = "${exoscale_domain.exo.name}"
+  domain = "${exoscale_domain.exo.id}"
+  name = "glap"
+  record_type = "CNAME"
+  content = "${exoscale_domain.exo.name}"
 }
 ```
 
