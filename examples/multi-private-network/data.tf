@@ -1,5 +1,5 @@
 data "template_file" "user_data" {
-  template = "${file("cloud-config.tpl")}"
+  template = "${file("cloud-config.yaml")}"
   count = "${var.machines}"
 
   vars {
