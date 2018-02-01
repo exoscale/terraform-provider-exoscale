@@ -505,19 +505,20 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	for _, cmd := range commands {
-		resp, err := client.AsyncRequest(cmd.request, async)
+		_, err := client.AsyncRequest(cmd.request, async)
 		if err != nil {
 			return err
 		}
 
-		m = resp.(*egoscale.VirtualMachineResponse).VirtualMachine
-		applyCompute(d, m)
 		d.SetPartial(cmd.partial)
 	}
 
+	// Update oneself
+	err = readCompute(d, meta)
+
 	d.Partial(false)
 
-	return nil
+	return err
 }
 
 func deleteCompute(d *schema.ResourceData, meta interface{}) error {
