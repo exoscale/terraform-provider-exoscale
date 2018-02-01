@@ -49,8 +49,8 @@ Profit!
 
 ## Documentation
 
-To understand the ins and outs of what is a [Private network][] in
-the CloudStack work, consult out documentation on [Community][].
+To better understand the concept of [Private network][] in
+the CloudStack world, consult [our documentation][Community].
 
 [Community]: https://community.exoscale.ch/
 [Private network]: https://community.exoscale.ch/documentation/compute/privnet/
