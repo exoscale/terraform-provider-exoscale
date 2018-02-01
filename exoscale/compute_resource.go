@@ -540,9 +540,15 @@ func deleteCompute(d *schema.ResourceData, meta interface{}) error {
 }
 
 func importCompute(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	id := d.Id()
 	machine, err := getVirtualMachine(d, meta)
 	if err != nil {
-		return nil, handleNotFound(d, err)
+		if e := handleNotFound(d, err); e != nil {
+			return nil, e
+		}
+		if d.Id() == "" {
+			return nil, fmt.Errorf("Failure to import the compute resource: %s", id)
+		}
 	}
 
 	nics := machine.NicsByType("Isolated")
