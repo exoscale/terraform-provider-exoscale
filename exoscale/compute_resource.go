@@ -260,6 +260,7 @@ func existsCompute(d *schema.ResourceData, meta interface{}) (bool, error) {
 
 func readCompute(d *schema.ResourceData, meta interface{}) error {
 	client := GetComputeClient(meta)
+
 	machine, err := getVirtualMachine(d, meta)
 	if err != nil {
 		return handleNotFound(d, err)
@@ -588,8 +589,18 @@ func applyCompute(d *schema.ResourceData, machine egoscale.VirtualMachine) error
 
 func getVirtualMachine(d *schema.ResourceData, meta interface{}) (*egoscale.VirtualMachine, error) {
 	client := GetComputeClient(meta)
+
+	// Permit to search for a VM by its name (useful when doing imports
+	id := d.Id()
+	name := ""
+	if !isUUID(id) {
+		name = id
+		id = ""
+	}
+
 	resp, err := client.Request(&egoscale.ListVirtualMachines{
-		ID: d.Id(),
+		ID:   id,
+		Name: name,
 	})
 
 	if err != nil {
@@ -604,9 +615,12 @@ func getVirtualMachine(d *schema.ResourceData, meta interface{}) (*egoscale.Virt
 			ErrorText: fmt.Sprintf("VirtualMachine not found %s", d.Id()),
 		}
 		return nil, err
+	} else if vms.Count > 1 {
+		return nil, fmt.Errorf("More than one VM found. Query: %s", d.Id())
 	}
 
 	machine := vms.VirtualMachine[0]
+	d.SetId(machine.ID)
 	return &machine, nil
 }
 
