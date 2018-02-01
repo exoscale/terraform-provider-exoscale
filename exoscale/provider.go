@@ -16,10 +16,9 @@ func Provider() terraform.ResourceProvider {
 	return &schema.Provider{
 		Schema: map[string]*schema.Schema{
 			"token": {
-				Type:          schema.TypeString,
-				Optional:      true,
-				Description:   "Exoscale API key",
-				ConflictsWith: []string{"config", "profile"},
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Exoscale API key",
 				DefaultFunc: schema.MultiEnvDefaultFunc([]string{
 					"EXOSCALE_KEY",
 					"EXOSCALE_API_KEY",
@@ -28,10 +27,9 @@ func Provider() terraform.ResourceProvider {
 				}, nil),
 			},
 			"secret": {
-				Type:          schema.TypeString,
-				Optional:      true,
-				Description:   "Exoscale API secret",
-				ConflictsWith: []string{"config", "profile"},
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Exoscale API secret",
 				DefaultFunc: schema.MultiEnvDefaultFunc([]string{
 					"EXOSCALE_SECRET",
 					"EXOSCALE_SECRET_KEY",
@@ -40,20 +38,18 @@ func Provider() terraform.ResourceProvider {
 				}, nil),
 			},
 			"config": {
-				Type:          schema.TypeString,
-				Optional:      true,
-				Description:   fmt.Sprintf("CloudStack ini configuration filename (by default: %s)", defaultConfig),
-				ConflictsWith: []string{"token", "secret", "compute_endpoint"},
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: fmt.Sprintf("CloudStack ini configuration filename (by default: %s)", defaultConfig),
 				DefaultFunc: schema.MultiEnvDefaultFunc([]string{
 					"EXOSCALE_CONFIG",
 					"CLOUDSTACK_CONFIG",
 				}, defaultConfig),
 			},
 			"profile": {
-				Type:          schema.TypeString,
-				Optional:      true,
-				Description:   fmt.Sprintf("CloudStack ini configuration section name (by default: %s)", defaultProfile),
-				ConflictsWith: []string{"token", "secret", "compute_endpoint"},
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: fmt.Sprintf("CloudStack ini configuration section name (by default: %s)", defaultProfile),
 				DefaultFunc: schema.MultiEnvDefaultFunc([]string{
 					"EXOSCALE_PROFILE",
 					"CLOUDSTACK_PROFILE",
