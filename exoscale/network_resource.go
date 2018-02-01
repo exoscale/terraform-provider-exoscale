@@ -294,5 +294,12 @@ func applyNetwork(d *schema.ResourceData, network egoscale.Network) error {
 	d.Set("dns1", network.DNS1)
 	d.Set("dns2", network.DNS2)
 
+	// tags
+	tags := make(map[string]interface{})
+	for _, tag := range network.Tags {
+		tags[tag.Key] = tag.Value
+	}
+	d.Set("tags", tags)
+
 	return nil
 }
