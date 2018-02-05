@@ -93,6 +93,7 @@ func computeResource() *schema.Resource {
 		"affinity_groups": {
 			Type:     schema.TypeSet,
 			Optional: true,
+			Computed: true,
 			Set:      schema.HashString,
 			Elem: &schema.Schema{
 				Type: schema.TypeString,
@@ -101,6 +102,7 @@ func computeResource() *schema.Resource {
 		"security_groups": {
 			Type:     schema.TypeSet,
 			Optional: true,
+			Computed: true,
 			Set:      schema.HashString,
 			Elem: &schema.Schema{
 				Type: schema.TypeString,
@@ -286,13 +288,6 @@ func readCompute(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 	d.Set("disk_size", volume.Size>>30) // B to GiB
-
-	// tags
-	tags := make(map[string]interface{})
-	for _, tag := range machine.Tags {
-		tags[tag.Key] = tag.Value
-	}
-	d.Set("tags", tags)
 
 	return applyCompute(d, *machine)
 }
@@ -585,6 +580,27 @@ func applyCompute(d *schema.ResourceData, machine egoscale.VirtualMachine) error
 	} else {
 		d.Set("ip_address", "")
 	}
+
+	// affinity groups
+	affinityGroups := make([]string, len(machine.AffinityGroup))
+	for i, ag := range machine.AffinityGroup {
+		affinityGroups[i] = ag.Name
+	}
+	d.Set("affinity_groups", affinityGroups)
+
+	// security groups
+	securityGroups := make([]string, len(machine.SecurityGroup))
+	for i, sg := range machine.SecurityGroup {
+		securityGroups[i] = sg.Name
+	}
+	d.Set("security_groups", securityGroups)
+
+	// tags
+	tags := make(map[string]interface{})
+	for _, tag := range machine.Tags {
+		tags[tag.Key] = tag.Value
+	}
+	d.Set("tags", tags)
 
 	// Connection info for the provisioners
 	d.SetConnInfo(map[string]string{
