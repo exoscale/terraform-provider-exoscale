@@ -32,9 +32,9 @@ func securityGroupRuleResource() *schema.Resource {
 				Optional:      true,
 				Computed:      true,
 				ForceNew:      true,
-				ConflictsWith: []string{"security_group_name"},
+				ConflictsWith: []string{"security_group"},
 			},
-			"security_group_name": {
+			"security_group": {
 				Type:          schema.TypeString,
 				Optional:      true,
 				Computed:      true,
@@ -88,11 +88,18 @@ func securityGroupRuleResource() *schema.Resource {
 				ValidateFunc:  validation.IntBetween(0, 255),
 				ConflictsWith: []string{"start_port", "end_port"},
 			},
-			"user_security_group": {
+			"user_security_group_id": {
 				Type:          schema.TypeString,
 				Optional:      true,
 				ForceNew:      true,
-				ConflictsWith: []string{"cidr"},
+				ConflictsWith: []string{"cidr", "user_security_group"},
+			},
+			"user_security_group": {
+				Type:          schema.TypeString,
+				Optional:      true,
+				Computed:      true,
+				ForceNew:      true,
+				ConflictsWith: []string{"cidr", "user_security_group_id"},
 			},
 		},
 	}
@@ -106,7 +113,7 @@ func createSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
 	if ok {
 		r.ID = securityGroupID.(string)
 	} else {
-		r.SecurityGroupName = d.Get("security_group_name").(string)
+		r.SecurityGroupName = d.Get("security_group").(string)
 	}
 
 	resp, err := client.Request(r)
@@ -117,25 +124,34 @@ func createSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
 	securityGroup := resp.(*egoscale.ListSecurityGroupsResponse).SecurityGroup[0]
 
 	cidrList := make([]string, 0)
-	if cidr, ok := d.GetOk("cidr"); ok {
-		cidrList = append(cidrList, cidr.(string))
-	}
-
 	groupList := make([]egoscale.UserSecurityGroup, 0)
-	if userSecurityGroup, ok := d.GetOkExists("user_security_group"); ok {
-		userSecurityGroupID, err := getSecurityGroupID(client, userSecurityGroup.(string))
-		if err != nil {
-			return err
+
+	cidr, cidrOk := d.GetOk("cidr")
+	if cidrOk {
+		cidrList = append(cidrList, cidr.(string))
+	} else {
+		userSecurityGroupID, idOk := d.GetOk("user_security_group_id")
+		userSecurityGroupName, nameOk := d.GetOk("user_security_group")
+
+		if !idOk && !nameOk {
+			return fmt.Errorf("No CIDR, User Security Group ID or Name were provided")
 		}
 
 		resp, err := client.Request(&egoscale.ListSecurityGroups{
-			ID: userSecurityGroupID,
+			ID:                userSecurityGroupID.(string),
+			SecurityGroupName: userSecurityGroupName.(string),
 		})
+
 		if err != nil {
 			return err
 		}
 
-		group := resp.(*egoscale.ListSecurityGroupsResponse).SecurityGroup[0]
+		groups := resp.(*egoscale.ListSecurityGroupsResponse)
+		if len(groups.SecurityGroup) == 0 {
+			return fmt.Errorf("No groups found for id: %s or name: %s", userSecurityGroupID, userSecurityGroupName)
+		}
+
+		group := groups.SecurityGroup[0]
 		groupList = append(groupList, egoscale.UserSecurityGroup{
 			Account: group.Account,
 			Group:   group.Name,
@@ -186,7 +202,7 @@ func existsSecurityGroupRule(d *schema.ResourceData, meta interface{}) (bool, er
 
 	if s, ok := d.GetOkExists("security_group_id"); ok {
 		securityGroupID = s.(string)
-	} else if n, ok := d.GetOkExists("security_group_name"); ok {
+	} else if n, ok := d.GetOkExists("security_group"); ok {
 		securityGroupName = n.(string)
 	} else {
 		return false, fmt.Errorf("Missing either Security Group ID or Name")
@@ -227,7 +243,7 @@ func readSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
 	securityGroupName := ""
 	if s, ok := d.GetOkExists("security_group_id"); ok {
 		securityGroupID = s.(string)
-	} else if n, ok := d.GetOkExists("security_group_name"); ok {
+	} else if n, ok := d.GetOkExists("security_group"); ok {
 		securityGroupName = n.(string)
 	} else {
 		return fmt.Errorf("Missing either Security Group ID or Name")
@@ -299,10 +315,11 @@ func applySecurityGroupRule(d *schema.ResourceData, group egoscale.SecurityGroup
 	d.Set("start_port", rule.StartPort)
 	d.Set("end_port", rule.EndPort)
 	d.Set("protocol", strings.ToUpper(rule.Protocol))
+
 	d.Set("user_security_group", rule.SecurityGroupName)
 
 	d.Set("security_group_id", group.ID)
-	d.Set("security_group_name", group.Name)
+	d.Set("security_group", group.Name)
 
 	return nil
 }
