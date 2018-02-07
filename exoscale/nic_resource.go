@@ -76,9 +76,8 @@ func createNic(d *schema.ResourceData, meta interface{}) error {
 	if nic != nil {
 		d.SetId(nic.ID)
 		return readNic(d, meta)
-	} else {
-		return fmt.Errorf("Nic addition didn't create a NIC for Network %s", networkID)
 	}
+	return fmt.Errorf("Nic addition didn't create a NIC for Network %s", networkID)
 }
 
 func readNic(d *schema.ResourceData, meta interface{}) error {

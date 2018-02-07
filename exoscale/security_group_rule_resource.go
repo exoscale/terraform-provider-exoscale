@@ -185,13 +185,13 @@ func createSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
 	// The rule allowed for creation produces only one rule!
 	d.Set("type", trafficType)
 	if trafficType == "EGRESS" {
-		securityGroup := resp.(*egoscale.AuthorizeSecurityGroupEgressResponse).SecurityGroup
+		securityGroup = resp.(*egoscale.AuthorizeSecurityGroupEgressResponse).SecurityGroup
 		d.Set("type", trafficType)
 		return applySecurityGroupRule(d, securityGroup, securityGroup.EgressRule[0])
-	} else {
-		securityGroup := resp.(*egoscale.AuthorizeSecurityGroupIngressResponse).SecurityGroup
-		return applySecurityGroupRule(d, securityGroup, (egoscale.EgressRule)(securityGroup.IngressRule[0]))
 	}
+
+	securityGroup = resp.(*egoscale.AuthorizeSecurityGroupIngressResponse).SecurityGroup
+	return applySecurityGroupRule(d, securityGroup, (egoscale.EgressRule)(securityGroup.IngressRule[0]))
 }
 
 func existsSecurityGroupRule(d *schema.ResourceData, meta interface{}) (bool, error) {

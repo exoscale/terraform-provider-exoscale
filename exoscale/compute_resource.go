@@ -648,7 +648,7 @@ func getVirtualMachine(d *schema.ResourceData, meta interface{}) (*egoscale.Virt
 }
 
 /*
- * An auxilliary function to ensure that the template string passed in maps to
+ * An auxiliary function to ensure that the template string passed in maps to
  * the string provided by the egoscale driver.
  */
 func convertTemplateName(t string) string {

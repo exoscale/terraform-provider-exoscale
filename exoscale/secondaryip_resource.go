@@ -64,6 +64,9 @@ func createSecondaryIP(d *schema.ResourceData, meta interface{}) error {
 		NicID:     nic.ID,
 		IPAddress: net.ParseIP(d.Get("ip_address").(string)),
 	}, async)
+	if err != nil {
+		return err
+	}
 
 	secondaryIP := resp.(*egoscale.AddIPToNicResponse).NicSecondaryIP
 
