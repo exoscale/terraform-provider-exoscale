@@ -14,7 +14,7 @@ $ terraform providers
 └── provider.exoscale
 ```
 
-Go read the article on our weblog [Terraform on Exoscale](https://www.exoscale.ch/syslog/2016/09/14/terraform-with-exoscale/).
+Go read the article on our weblog [Terraform on Exoscale](https://www.exoscale.com/syslog/2016/09/14/terraform-with-exoscale/).
 
 ## Usage
 
@@ -96,10 +96,10 @@ resource "exoscale_compute" "mymachine" {
 Attributes:
 
 - **`display_name`**: initial `hostname`
-- **`template`**: name from [the template](https://www.exoscale.ch/templates/) 
-- **`size`**: size of [the instances](https://www.exoscale.ch/pricing/#/compute/), e.g. Tiny, Small, Medium, Large, etc.
+- **`template`**: name from [the template](https://www.exoscale.com/templates/) 
+- **`size`**: size of [the instances](https://www.exoscale.com/pricing/#/compute/), e.g. Tiny, Small, Medium, Large, etc.
 - **`disk_size`**: size of the root disk in GiB (at least 10)
-- **`zone`**: name of [the data-center](https://www.exoscale.ch/infrastructure/datacenters/)
+- **`zone`**: name of [the data-center](https://www.exoscale.com/datacenters/)
 - `user_data`: [cloud-init](http://cloudinit.readthedocs.io/en/latest/) configuration
 - **`key_pair`**: name of the SSH key pair to be installed
 - `keyboard`: keyboard configuration (at creation time only)
@@ -199,7 +199,7 @@ resource "exoscale_ipaddress" "myip" {
 
 Attributes:
 
-- **`zone`**: name of [the data-center](https://www.exoscale.ch/infrastructure/datacenters/)
+- **`zone`**: name of [the data-center](https://www.exoscale.com/datacenters/)
 - `tags`: dictionary of tags (key / value)
 
 Values:
