@@ -40,7 +40,6 @@ func securityGroupResource() *schema.Resource {
 
 func createSecurityGroup(d *schema.ResourceData, meta interface{}) error {
 	client := GetComputeClient(meta)
-	async := meta.(BaseConfig).async
 
 	resp, err := client.Request(&egoscale.CreateSecurityGroup{
 		Name:        d.Get("name").(string),
@@ -54,7 +53,7 @@ func createSecurityGroup(d *schema.ResourceData, meta interface{}) error {
 
 	d.SetId(sg.ID)
 	if cmd := createTags(d, "tags", sg.ResourceType()); cmd != nil {
-		if err := client.BooleanAsyncRequest(cmd, async); err != nil {
+		if err := client.BooleanRequest(cmd); err != nil {
 			// Attempting to destroy the freshly created security group
 			e := client.BooleanRequest(&egoscale.DeleteSecurityGroup{
 				Name: sg.Name,
@@ -86,7 +85,6 @@ func existsSecurityGroup(d *schema.ResourceData, meta interface{}) (bool, error)
 
 func updateSecurityGroup(d *schema.ResourceData, meta interface{}) error {
 	client := GetComputeClient(meta)
-	async := meta.(BaseConfig).async
 
 	d.Partial(true)
 
@@ -96,7 +94,7 @@ func updateSecurityGroup(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	for _, req := range requests {
-		_, err := client.AsyncRequest(req, async)
+		_, err := client.Request(req)
 		if err != nil {
 			return err
 		}

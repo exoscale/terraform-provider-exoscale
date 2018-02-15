@@ -46,7 +46,6 @@ func secondaryIPResource() *schema.Resource {
 
 func createSecondaryIP(d *schema.ResourceData, meta interface{}) error {
 	client := GetComputeClient(meta)
-	async := meta.(BaseConfig).async
 
 	virtualMachineID := d.Get("compute_id").(string)
 
@@ -64,10 +63,10 @@ func createSecondaryIP(d *schema.ResourceData, meta interface{}) error {
 
 	// XXX Fragile
 	nic := nics.Nic[0]
-	resp, err = client.AsyncRequest(&egoscale.AddIPToNic{
+	resp, err = client.Request(&egoscale.AddIPToNic{
 		NicID:     nic.ID,
 		IPAddress: net.ParseIP(d.Get("ip_address").(string)),
-	}, async)
+	})
 	if err != nil {
 		return err
 	}
@@ -145,11 +144,10 @@ func readSecondaryIP(d *schema.ResourceData, meta interface{}) error {
 
 func deleteSecondaryIP(d *schema.ResourceData, meta interface{}) error {
 	client := GetComputeClient(meta)
-	async := meta.(BaseConfig).async
 
-	return client.BooleanAsyncRequest(&egoscale.RemoveIPFromNic{
+	return client.BooleanRequest(&egoscale.RemoveIPFromNic{
 		ID: d.Id(),
-	}, async)
+	})
 }
 
 func importSecondaryIP(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {

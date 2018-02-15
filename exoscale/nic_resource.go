@@ -52,7 +52,6 @@ func nicResource() *schema.Resource {
 
 func createNic(d *schema.ResourceData, meta interface{}) error {
 	client := GetComputeClient(meta)
-	async := meta.(BaseConfig).async
 
 	var ip net.IP
 	if i, ok := d.GetOk("ip_address"); ok {
@@ -61,11 +60,11 @@ func createNic(d *schema.ResourceData, meta interface{}) error {
 
 	networkID := d.Get("network_id").(string)
 
-	resp, err := client.AsyncRequest(&egoscale.AddNicToVirtualMachine{
+	resp, err := client.Request(&egoscale.AddNicToVirtualMachine{
 		NetworkID:        networkID,
 		VirtualMachineID: d.Get("compute_id").(string),
 		IPAddress:        ip,
-	}, async)
+	})
 
 	if err != nil {
 		return err
@@ -123,12 +122,11 @@ func existsNic(d *schema.ResourceData, meta interface{}) (bool, error) {
 
 func deleteNic(d *schema.ResourceData, meta interface{}) error {
 	client := GetComputeClient(meta)
-	async := meta.(BaseConfig).async
 
-	resp, err := client.AsyncRequest(&egoscale.RemoveNicFromVirtualMachine{
+	resp, err := client.Request(&egoscale.RemoveNicFromVirtualMachine{
 		NicID:            d.Id(),
 		VirtualMachineID: d.Get("compute_id").(string),
-	}, async)
+	})
 
 	if err != nil {
 		return err

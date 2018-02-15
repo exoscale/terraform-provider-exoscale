@@ -47,14 +47,13 @@ func affinityGroupResource() *schema.Resource {
 
 func createAffinityGroup(d *schema.ResourceData, meta interface{}) error {
 	client := GetComputeClient(meta)
-	async := meta.(BaseConfig).async
 
 	req := &egoscale.CreateAffinityGroup{
 		Name:        d.Get("name").(string),
 		Description: d.Get("description").(string),
 		Type:        d.Get("type").(string),
 	}
-	resp, err := client.AsyncRequest(req, async)
+	resp, err := client.Request(req)
 	if err != nil {
 		return err
 	}
@@ -103,12 +102,11 @@ func applyAffinityGroup(d *schema.ResourceData, affinity egoscale.AffinityGroup)
 
 func deleteAffinityGroup(d *schema.ResourceData, meta interface{}) error {
 	client := GetComputeClient(meta)
-	async := meta.(BaseConfig).async
 
 	req := &egoscale.DeleteAffinityGroup{
 		ID: d.Id(),
 	}
-	return client.BooleanAsyncRequest(req, async)
+	return client.BooleanRequest(req)
 }
 
 func importAffinityGroup(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {

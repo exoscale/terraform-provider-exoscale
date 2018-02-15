@@ -19,7 +19,7 @@ func addTags(s map[string]*schema.Schema, key string) {
 }
 
 // createTags create the tags for the given resource (provide a resource type)
-func createTags(d *schema.ResourceData, key, resourceType string) egoscale.AsyncCommand {
+func createTags(d *schema.ResourceData, key, resourceType string) egoscale.Command {
 	if t, ok := d.GetOk(key); ok {
 		m := t.(map[string]interface{})
 		tags := make([]egoscale.ResourceTag, 0, len(m))
@@ -41,8 +41,8 @@ func createTags(d *schema.ResourceData, key, resourceType string) egoscale.Async
 }
 
 // updateTags create the commands to delete / create the tags for a resource
-func updateTags(d *schema.ResourceData, key, resourceType string) ([]egoscale.AsyncCommand, error) {
-	requests := make([]egoscale.AsyncCommand, 0)
+func updateTags(d *schema.ResourceData, key, resourceType string) ([]egoscale.Command, error) {
+	requests := make([]egoscale.Command, 0)
 
 	if d.HasChange(key) {
 		d.SetPartial(key)

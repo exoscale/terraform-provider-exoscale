@@ -138,6 +138,7 @@
     "aws/request",
     "aws/session",
     "aws/signer/v4",
+    "internal/sdkio",
     "internal/sdkrand",
     "internal/shareddefaults",
     "private/protocol",
@@ -204,6 +205,7 @@
     "service/mediastore",
     "service/mq",
     "service/opsworks",
+    "service/organizations",
     "service/rds",
     "service/redshift",
     "service/route53",
@@ -220,8 +222,8 @@
     "service/waf",
     "service/wafregional"
   ]
-  revision = "aace5875a5c3b85a3902c6d72b9caed301d64cce"
-  version = "v1.13.8"
+  revision = "1f8fb9d0919e5a58992207db9512a03f76ab0274"
+  version = "v1.13.12"
 
 [[projects]]
   name = "github.com/beevik/etree"
@@ -270,8 +272,8 @@
     "pkg/types",
     "version"
   ]
-  revision = "28f3f26c0e303392556035b694f75768d449d33d"
-  version = "v3.3.1"
+  revision = "c9d46ab3799b7f2174268e75f72d01e6d6aac953"
+  version = "v3.3.2"
 
 [[projects]]
   name = "github.com/coreos/go-semver"
@@ -288,8 +290,8 @@
 [[projects]]
   name = "github.com/dgrijalva/jwt-go"
   packages = ["."]
-  revision = "dbeaa9332f19a944acb5736b4456cfcc02140e29"
-  version = "v3.1.0"
+  revision = "06ea1031745cb8b3dab3f6a236daf2b0aa468b7e"
+  version = "v3.2.0"
 
 [[projects]]
   branch = "master"
@@ -312,14 +314,14 @@
 [[projects]]
   name = "github.com/exoscale/egoscale"
   packages = ["."]
-  revision = "401e52c49deedb261ddf0e2432a645abbb66bb4e"
-  version = "v0.9.10"
+  revision = "951e1a270aa8538b3c83238766ecd29b0d3fdb35"
+  version = "v0.9.11"
 
 [[projects]]
   name = "github.com/go-ini/ini"
   packages = ["."]
-  revision = "32e4c1e6bc4e7d0d8451aa6b75200d19e37a536a"
-  version = "v1.32.0"
+  revision = "6333e38ac20b8949a8dd68baa3650f4dee8f39f0"
+  version = "v1.33.0"
 
 [[projects]]
   name = "github.com/gogo/protobuf"
@@ -421,7 +423,7 @@
     "openstack/utils",
     "pagination"
   ]
-  revision = "afbf0422412f5dc726fa12be280fa0c3cb31fcbd"
+  revision = "d2fe5bf4e65410df3bcca179f80aa84a3fc7fb98"
 
 [[projects]]
   branch = "master"
@@ -548,7 +550,7 @@
     "hclparse",
     "hcltest"
   ]
-  revision = "998a3053e207853cf21b90e451772fbecfd1d1bc"
+  revision = "5f8ed954abd873b2c09616ba0aa607892bbca7e9"
 
 [[projects]]
   branch = "master"
@@ -615,6 +617,7 @@
     "helper/acctest",
     "helper/config",
     "helper/copy",
+    "helper/customdiff",
     "helper/encryption",
     "helper/experiment",
     "helper/hashcode",
@@ -686,8 +689,8 @@
     "errors",
     "storage"
   ]
-  revision = "7a5e4727e9de8989379d31715c81e7fa405008d3"
-  version = "1.0.0"
+  revision = "d8f9c031492688b4b62b7fd29b1edd9897400c4e"
+  version = "1.1.1"
 
 [[projects]]
   branch = "master"
@@ -719,7 +722,7 @@
   branch = "master"
   name = "github.com/lusis/go-artifactory"
   packages = ["src/artifactory.v401"]
-  revision = "8412115b180e013db982a6dfa4ec5eeb45ffa676"
+  revision = "a47f63f234b2a2c87e52d7f1c72a9a7f87bd7880"
 
 [[projects]]
   name = "github.com/marstr/guid"
@@ -862,7 +865,7 @@
   branch = "master"
   name = "github.com/pkg/errors"
   packages = ["."]
-  revision = "30136e27e2ac8d167177e8a583aa4c3fea5be833"
+  revision = "816c9085562cd7ee03e7f8188a1cfd942858cded"
 
 [[projects]]
   name = "github.com/posener/complete"
@@ -872,8 +875,8 @@
     "cmd/install",
     "match"
   ]
-  revision = "dc2bc5a81accba8782bebea28628224643a8286a"
-  version = "v1.1"
+  revision = "98eb9847f27ba2008d380a32c98be474dea55bdf"
+  version = "v1.1.1"
 
 [[projects]]
   name = "github.com/ryanuber/columnize"
@@ -890,8 +893,8 @@
 [[projects]]
   name = "github.com/terraform-providers/terraform-provider-aws"
   packages = ["aws"]
-  revision = "684291f45b87da88f39a8b4050ebc1c5e6c2f6e0"
-  version = "v1.10.0"
+  revision = "7d072affbaeefb47e3874371a1e0e7e06782eab1"
+  version = "v1.11.0"
 
 [[projects]]
   name = "github.com/terraform-providers/terraform-provider-openstack"
@@ -940,7 +943,25 @@
     "cty/json",
     "cty/set"
   ]
-  revision = "307ae587e007cc89e826a574fff8f5a1c0de97bb"
+  revision = "49fa5e03c418f95f78684c91e155af06aa901a32"
+
+[[projects]]
+  name = "go.opencensus.io"
+  packages = [
+    "internal",
+    "internal/tagencoding",
+    "plugin/ochttp",
+    "plugin/ochttp/propagation/b3",
+    "plugin/ochttp/propagation/google",
+    "stats",
+    "stats/internal",
+    "stats/view",
+    "tag",
+    "trace",
+    "trace/propagation"
+  ]
+  revision = "52b12e1eb8fdf769ad0bf5fd73a2af9484e6b196"
+  version = "v0.4.0"
 
 [[projects]]
   branch = "master"
@@ -964,7 +985,7 @@
     "ssh",
     "ssh/agent"
   ]
-  revision = "91a49db82a88618983a78a06c1cbd4e00ab749ab"
+  revision = "182114d582623c1caa54f73de9c7224e23a48487"
 
 [[projects]]
   branch = "master"
@@ -982,7 +1003,7 @@
     "lex/httplex",
     "trace"
   ]
-  revision = "22ae77b79946ea320088417e4d50825671d82d57"
+  revision = "803fdb99c0f72e493c28ef2099d250a9c989d8ff"
 
 [[projects]]
   branch = "master"
@@ -994,13 +1015,13 @@
     "jws",
     "jwt"
   ]
-  revision = "2f32c3ac0fa4fb807a0fcefb0b6f2468a0d99bd0"
+  revision = "7af32f14d0a25aec7873e0683e8e48dcead159a8"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "dd2ff4accc098aceecb86b36eaa7829b2a17b1c9"
+  revision = "8c0ece68c28377f4c326d85b94f8df0dace46f80"
 
 [[projects]]
   name = "golang.org/x/text"
@@ -1049,7 +1070,7 @@
     "storage/v1",
     "transport/http"
   ]
-  revision = "ab90adb3efa287b869ecb698db42f923cc734972"
+  revision = "eab136d752cf3aa6d6e43b60fa3d23f1e6c2c30e"
 
 [[projects]]
   name = "google.golang.org/appengine"
@@ -1076,7 +1097,7 @@
     "googleapis/iam/v1",
     "googleapis/rpc/status"
   ]
-  revision = "2c5e7ac708aaa719366570dd82bda44541ca2a63"
+  revision = "df60624c1e9b9d2973e889c7a1cff73155da81c4"
 
 [[projects]]
   name = "google.golang.org/grpc"
@@ -1119,6 +1140,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "a7b863ef081ea82d418726d49bf2830a71e45c13c8f43e8d4ca0703ce038d9f5"
+  inputs-digest = "f3c436731bb90d62eb4b8dc12b86e6b7e685e6a0ce216f8a7b80cc9500ad24f6"
   solver-name = "gps-cdcl"
   solver-version = 1

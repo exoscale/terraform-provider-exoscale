@@ -42,7 +42,6 @@ func elasticIPResource() *schema.Resource {
 
 func createElasticIP(d *schema.ResourceData, meta interface{}) error {
 	client := GetComputeClient(meta)
-	async := meta.(BaseConfig).async
 
 	zoneName := d.Get("zone").(string)
 
@@ -55,7 +54,7 @@ func createElasticIP(d *schema.ResourceData, meta interface{}) error {
 		ZoneID: zone.ID,
 	}
 
-	resp, err := client.AsyncRequest(req, async)
+	resp, err := client.Request(req)
 	if err != nil {
 		return err
 	}
@@ -64,11 +63,11 @@ func createElasticIP(d *schema.ResourceData, meta interface{}) error {
 	d.SetId(elasticIP.ID)
 
 	if cmd := createTags(d, "tags", elasticIP.ResourceType()); cmd != nil {
-		if err := client.BooleanAsyncRequest(cmd, async); err != nil {
+		if err := client.BooleanRequest(cmd); err != nil {
 			// Attempting to destroy the freshly created ip address
-			e := client.BooleanAsyncRequest(&egoscale.DisassociateIPAddress{
+			e := client.BooleanRequest(&egoscale.DisassociateIPAddress{
 				ID: elasticIP.ID,
-			}, async)
+			})
 
 			if e != nil {
 				log.Printf("[WARNING] Failure to create the tags, but the ip address was created. %v", e)
@@ -127,7 +126,6 @@ func readElasticIP(d *schema.ResourceData, meta interface{}) error {
 
 func updateElasticIP(d *schema.ResourceData, meta interface{}) error {
 	client := GetComputeClient(meta)
-	async := meta.(BaseConfig).async
 
 	d.Partial(true)
 
@@ -137,7 +135,7 @@ func updateElasticIP(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	for _, req := range requests {
-		_, err := client.AsyncRequest(req, async)
+		_, err := client.Request(req)
 		if err != nil {
 			return err
 		}
@@ -156,12 +154,11 @@ func updateElasticIP(d *schema.ResourceData, meta interface{}) error {
 
 func deleteElasticIP(d *schema.ResourceData, meta interface{}) error {
 	client := GetComputeClient(meta)
-	async := meta.(BaseConfig).async
 
 	req := &egoscale.DisassociateIPAddress{
 		ID: d.Id(),
 	}
-	err := client.BooleanAsyncRequest(req, async)
+	err := client.BooleanRequest(req)
 	if err != nil {
 		return err
 	}

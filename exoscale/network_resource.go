@@ -76,7 +76,6 @@ func networkResource() *schema.Resource {
 
 func createNetwork(d *schema.ResourceData, meta interface{}) error {
 	client := GetComputeClient(meta)
-	async := meta.(BaseConfig).async
 
 	name := d.Get("name").(string)
 	displayText := d.Get("display_text").(string)
@@ -148,11 +147,11 @@ func createNetwork(d *schema.ResourceData, meta interface{}) error {
 	d.SetId(network.ID)
 
 	if cmd := createTags(d, "tags", network.ResourceType()); cmd != nil {
-		if err := client.BooleanAsyncRequest(cmd, async); err != nil {
+		if err := client.BooleanRequest(cmd); err != nil {
 			// Attempting to destroy the freshly created network
-			e := client.BooleanAsyncRequest(&egoscale.DeleteNetwork{
+			e := client.BooleanRequest(&egoscale.DeleteNetwork{
 				ID: network.ID,
-			}, async)
+			})
 
 			if e != nil {
 				log.Printf("[WARNING] Failure to create the tags, but the network was created. %v", e)
@@ -206,16 +205,15 @@ func existsNetwork(d *schema.ResourceData, meta interface{}) (bool, error) {
 
 func updateNetwork(d *schema.ResourceData, meta interface{}) error {
 	client := GetComputeClient(meta)
-	async := meta.(BaseConfig).async
 
 	d.Partial(true)
 
 	// Update name and display_text
-	resp, err := client.AsyncRequest(&egoscale.UpdateNetwork{
+	resp, err := client.Request(&egoscale.UpdateNetwork{
 		ID:          d.Id(),
 		Name:        d.Get("name").(string),
 		DisplayText: d.Get("display_text").(string),
-	}, async)
+	})
 
 	if err != nil {
 		return err
@@ -238,7 +236,7 @@ func updateNetwork(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	for _, req := range requests {
-		_, err := client.AsyncRequest(req, async)
+		_, err := client.Request(req)
 		if err != nil {
 			return err
 		}
@@ -257,11 +255,10 @@ func updateNetwork(d *schema.ResourceData, meta interface{}) error {
 
 func deleteNetwork(d *schema.ResourceData, meta interface{}) error {
 	client := GetComputeClient(meta)
-	async := meta.(BaseConfig).async
 
-	err := client.BooleanAsyncRequest(&egoscale.DeleteNetwork{
+	err := client.BooleanRequest(&egoscale.DeleteNetwork{
 		ID: d.Id(),
-	}, async)
+	})
 
 	if err != nil {
 		return err

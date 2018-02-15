@@ -2,7 +2,6 @@ package exoscale
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -194,21 +193,12 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		}
 	}
 
-	timeout := d.Get("timeout").(int)
-	delay := d.Get("delay").(int)
-	retries := timeout/delay - 1 // the first try is free
-	log.Printf("Async calls: timeout %d - delay %d - retries %d\n", timeout, delay, retries)
-
 	baseConfig := BaseConfig{
 		key:             key.(string),
 		secret:          secret.(string),
-		timeout:         timeout,
+		timeout:         d.Get("timeout").(int),
 		computeEndpoint: endpoint,
 		dnsEndpoint:     d.Get("dns_endpoint").(string),
-		async: egoscale.AsyncInfo{
-			Retries: retries,
-			Delay:   delay,
-		},
 	}
 
 	return baseConfig, nil

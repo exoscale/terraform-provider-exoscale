@@ -131,7 +131,6 @@ func computeResource() *schema.Resource {
 
 func createCompute(d *schema.ResourceData, meta interface{}) error {
 	client := GetComputeClient(meta)
-	async := meta.(BaseConfig).async
 
 	displayName := d.Get("display_name").(string)
 	hostName := regexp.MustCompile("^[a-zA-Z0-9][a-zA-Z0-9\\-]+$")
@@ -229,7 +228,7 @@ func createCompute(d *schema.ResourceData, meta interface{}) error {
 		StartVM:           &startVM,
 	}
 
-	resp, err := client.AsyncRequest(req, async)
+	resp, err := client.Request(req)
 	if err != nil {
 		return err
 	}
@@ -239,11 +238,11 @@ func createCompute(d *schema.ResourceData, meta interface{}) error {
 	d.SetId(machine.ID)
 
 	if cmd := createTags(d, "tags", machine.ResourceType()); cmd != nil {
-		if err := client.BooleanAsyncRequest(cmd, async); err != nil {
+		if err := client.BooleanRequest(cmd); err != nil {
 			// Attempting to destroy the freshly created machine
-			_, e := client.AsyncRequest(&egoscale.DestroyVirtualMachine{
+			_, e := client.Request(&egoscale.DestroyVirtualMachine{
 				ID: machine.ID,
-			}, async)
+			})
 
 			if e != nil {
 				log.Printf("[WARNING] Failure to create the tags, but the machine was deployed. %v", e)
@@ -302,7 +301,6 @@ func readCompute(d *schema.ResourceData, meta interface{}) error {
 
 func updateCompute(d *schema.ResourceData, meta interface{}) error {
 	client := GetComputeClient(meta)
-	async := meta.(BaseConfig).async
 
 	initialState := d.Get("state").(string)
 	if initialState != "Running" && initialState != "Stopped" {
@@ -320,7 +318,7 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 	// request that has to be run.
 	type partialCommand struct {
 		partial string
-		request egoscale.AsyncCommand
+		request egoscale.Command
 	}
 
 	commands := make([]partialCommand, 0)
@@ -438,11 +436,11 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	// Stop (Async)
+	// Stop
 	if initialState != "Stopped" && (rebootRequired || stopRequired) {
-		resp, err := client.AsyncRequest(&egoscale.StopVirtualMachine{
+		resp, err := client.Request(&egoscale.StopVirtualMachine{
 			ID: d.Id(),
-		}, async)
+		})
 		if err != nil {
 			return err
 		}
@@ -452,7 +450,7 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 		d.SetPartial("state")
 	}
 
-	// Update (Sync)
+	// Update
 	resp, err := client.Request(req)
 	if err != nil {
 		return err
@@ -463,7 +461,6 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 	d.SetPartial("display_name")
 	d.SetPartial("security_groups")
 
-	// The rest of the calls are Async
 	if initialState == "Running" && (rebootRequired || startRequired) {
 		commands = append(commands, partialCommand{
 			partial: "state",
@@ -474,7 +471,7 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	for _, cmd := range commands {
-		_, err := client.AsyncRequest(cmd.request, async)
+		_, err := client.Request(cmd.request)
 		if err != nil {
 			return err
 		}
@@ -492,12 +489,11 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 
 func deleteCompute(d *schema.ResourceData, meta interface{}) error {
 	client := GetComputeClient(meta)
-	async := meta.(BaseConfig).async
 
 	req := &egoscale.DestroyVirtualMachine{
 		ID: d.Id(),
 	}
-	_, err := client.AsyncRequest(req, async)
+	_, err := client.Request(req)
 
 	if err != nil {
 		return err

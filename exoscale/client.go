@@ -1,6 +1,8 @@
 package exoscale
 
 import (
+	"time"
+
 	"github.com/exoscale/egoscale"
 )
 
@@ -19,12 +21,12 @@ type BaseConfig struct {
 	computeEndpoint string
 	dnsEndpoint     string
 	s3Endpoint      string
-	async           egoscale.AsyncInfo
 }
 
 func getClient(endpoint string, meta interface{}) *egoscale.Client {
 	config := meta.(BaseConfig)
-	return egoscale.NewClient(endpoint, config.key, config.secret)
+	timeout := time.Duration(config.timeout) * time.Second
+	return egoscale.NewClientWithTimeout(endpoint, config.key, config.secret, timeout)
 }
 
 // GetComputeClient builds a CloudStack client

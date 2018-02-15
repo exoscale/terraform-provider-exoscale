@@ -107,7 +107,7 @@ func securityGroupRuleResource() *schema.Resource {
 
 func createSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
 	client := GetComputeClient(meta)
-	async := meta.(BaseConfig).async
+
 	r := &egoscale.ListSecurityGroups{}
 	securityGroupID, ok := d.GetOkExists("security_group_id")
 	if ok {
@@ -158,7 +158,7 @@ func createSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
 		})
 	}
 
-	var req egoscale.AsyncCommand
+	var req egoscale.Command
 	req = &egoscale.AuthorizeSecurityGroupIngress{
 		SecurityGroupID:       securityGroup.ID,
 		CidrList:              cidrList,
@@ -177,7 +177,7 @@ func createSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
 		req = (*egoscale.AuthorizeSecurityGroupEgress)(req.(*egoscale.AuthorizeSecurityGroupIngress))
 	}
 
-	resp, err = client.AsyncRequest(req, async)
+	resp, err = client.Request(req)
 	if err != nil {
 		return err
 	}
@@ -280,10 +280,9 @@ func readSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
 
 func deleteSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
 	client := GetComputeClient(meta)
-	async := meta.(BaseConfig).async
 
 	id := d.Id()
-	var req egoscale.AsyncCommand
+	var req egoscale.Command
 	if d.Get("type").(string) == "EGRESS" {
 		req = &egoscale.RevokeSecurityGroupEgress{
 			ID: id,
@@ -294,7 +293,7 @@ func deleteSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	return client.BooleanAsyncRequest(req, async)
+	return client.BooleanRequest(req)
 }
 
 func importSecurityGroupRule(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
