@@ -272,8 +272,13 @@ func deleteNetwork(d *schema.ResourceData, meta interface{}) error {
 }
 
 func importNetwork(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	id := d.Id()
 	if err := readNetwork(d, meta); err != nil {
 		return nil, err
+	}
+
+	if d.Id() == "" {
+		return nil, fmt.Errorf("Network not found. %v", id)
 	}
 
 	resources := make([]*schema.ResourceData, 1)
