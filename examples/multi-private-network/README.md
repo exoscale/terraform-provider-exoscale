@@ -52,6 +52,6 @@ Profit!
 To better understand the concept of [Private network][] in
 the CloudStack world, consult [our documentation][Community].
 
-[Community]: https://community.exoscale.ch/
-[Private network]: https://community.exoscale.ch/documentation/compute/privnet/
-[Cloud-Init]: https://community.exoscale.ch/documentation/compute/cloud-init/
+[Community]: https://community.exoscale.com/
+[Private network]: https://community.exoscale.com/documentation/compute/privnet/
+[Cloud-Init]: https://community.exoscale.com/documentation/compute/cloud-init/
