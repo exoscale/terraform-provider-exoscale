@@ -89,7 +89,31 @@ func computeResource() *schema.Resource {
 				"Shutdowned",
 			}, true),
 		},
+		"ip4": {
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Default:     true,
+			Description: "Request an IPv4 address on the default NIC",
+		},
+		"ip6": {
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Default:     false,
+			Description: "Request an IPv6 address on the default NIC",
+		},
 		"ip_address": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"gateway": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"ip6_address": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"ip6_cidr": {
 			Type:     schema.TypeString,
 			Computed: true,
 		},
@@ -282,6 +306,8 @@ func createCompute(d *schema.ResourceData, meta interface{}) error {
 		startVM = false
 	}
 
+	ip4 := d.Get("ip4").(bool)
+	ip6 := d.Get("ip6").(bool)
 	req := &egoscale.DeployVirtualMachine{
 		Name:               displayName,
 		DisplayName:        displayName,
@@ -296,6 +322,8 @@ func createCompute(d *schema.ResourceData, meta interface{}) error {
 		AffinityGroupNames: affinityGroups,
 		SecurityGroupIDs:   securityGroupIDs,
 		SecurityGroupNames: securityGroups,
+		IP4:                &ip4,
+		IP6:                &ip6,
 		StartVM:            &startVM,
 	}
 
@@ -567,6 +595,39 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 		})
 	}
 
+	if d.HasChange("ip4") {
+		activateIP4 := d.Get("ip4").(bool)
+		if !activateIP4 {
+			return fmt.Errorf("The IPv4 address cannot be deactivated")
+		}
+	}
+
+	if d.HasChange("ip6") {
+		activateIP6 := d.Get("ip6").(bool)
+		if activateIP6 {
+			resp, err := client.Request(&egoscale.ListNics{
+				VirtualMachineID: d.Id(),
+			})
+			if err != nil {
+				return err
+			}
+
+			nics := resp.(*egoscale.ListNicsResponse)
+			if len(nics.Nic) == 0 {
+				return fmt.Errorf("The VM has no NIC %v", d.Id())
+			}
+
+			commands = append(commands, partialCommand{
+				partials: []string{"ip6", "ip6_address", "ip6_cidr"},
+				request: &egoscale.ActivateIP6{
+					NicID: nics.Nic[0].ID,
+				},
+			})
+		} else {
+			return fmt.Errorf("The IPv6 address cannot be deactivated")
+		}
+	}
+
 	if d.HasChange("state") {
 		switch d.Get("state").(string) {
 		case "Running":
@@ -728,10 +789,25 @@ func applyCompute(d *schema.ResourceData, machine *egoscale.VirtualMachine) erro
 	d.Set("zone", machine.ZoneName)
 	d.Set("state", machine.State)
 
-	if len(machine.Nic) > 0 && machine.Nic[0].IPAddress != nil {
-		d.Set("ip_address", machine.Nic[0].IPAddress.String())
-	} else {
-		d.Set("ip_address", "")
+	d.Set("ip4", false)
+	d.Set("ip6", false)
+	d.Set("ip_address", "")
+	d.Set("gateway", "")
+	d.Set("ip6_address", "")
+	d.Set("ip6_cidr", "")
+	if nic := machine.DefaultNic(); nic != nil {
+		if nic.IPAddress != nil {
+			d.Set("ip4", true)
+			d.Set("ip_address", nic.IPAddress.String())
+		}
+		if nic.Gateway != nil {
+			d.Set("gateway", nic.Gateway.String())
+		}
+		if nic.IP6Address != nil {
+			d.Set("ip6", true)
+			d.Set("ip6_address", nic.IP6Address.String())
+		}
+		d.Set("ip6_cidr", nic.IP6Cidr)
 	}
 
 	// affinity groups

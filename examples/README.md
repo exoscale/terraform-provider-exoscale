@@ -17,6 +17,10 @@ convenient when one wants to start managing its infrastructure on Exoscale
 using TerraForm. This demo shows how to import a compute instance and its
 security groups.
 
+## IPv6
+
+A machine experimenting with the IPv6 support.
+
 ## (Multi-)Private Network
 
 An example showing how the [Private networks](https://www.exoscale.com/syslog/2018/01/17/introducing-multiple-private-networks/)

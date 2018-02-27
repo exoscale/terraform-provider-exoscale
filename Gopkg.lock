@@ -8,11 +8,12 @@
     "iam",
     "internal",
     "internal/optional",
+    "internal/trace",
     "internal/version",
     "storage"
   ]
-  revision = "20d4028b8a750c2aca76bf9fefa8ed2d0109b573"
-  version = "v0.19.0"
+  revision = "4b98a6370e36d7a85192e7bad08a4ebd82eac2a8"
+  version = "v0.20.0"
 
 [[projects]]
   name = "github.com/Azure/azure-sdk-for-go"
@@ -222,8 +223,8 @@
     "service/waf",
     "service/wafregional"
   ]
-  revision = "f0872da8a448f8cb10f4f0c95c2100e4f7356448"
-  version = "v1.13.16"
+  revision = "c0ea8ae46aeed5902eeebe10d0d5cdf54b258526"
+  version = "v1.13.19"
 
 [[projects]]
   name = "github.com/beevik/etree"
@@ -314,8 +315,8 @@
 [[projects]]
   name = "github.com/exoscale/egoscale"
   packages = ["."]
-  revision = "5c191f1d82540498eb0552346f4a4db03a63e657"
-  version = "v0.9.14"
+  revision = "ab8a9bee9fdfc593675860b7699335389a6e293e"
+  version = "v0.9.15"
 
 [[projects]]
   name = "github.com/go-ini/ini"
@@ -425,7 +426,7 @@
     "openstack/utils",
     "pagination"
   ]
-  revision = "35000af2a7c3e47bd4fa48897dbb38444ac44e70"
+  revision = "b4d283c2476d19b0624c0a25c10bc663ec80dd5c"
 
 [[projects]]
   branch = "master"
@@ -520,7 +521,7 @@
   branch = "master"
   name = "github.com/hashicorp/go-version"
   packages = ["."]
-  revision = "4fe82ae3040f80a03d04d2cccb5606a626b8e1ee"
+  revision = "23480c0665776210b5fbbac6eaaee40e3e6a96b7"
 
 [[projects]]
   branch = "master"
@@ -538,7 +539,7 @@
     "json/scanner",
     "json/token"
   ]
-  revision = "23c074d0eceb2b8a5bfdbb271ab780cde70f05a8"
+  revision = "f40e974e75af4e271d97ce0fc917af5898ae7bda"
 
 [[projects]]
   branch = "master"
@@ -663,8 +664,8 @@
     "helper/jsonutil",
     "helper/pgpkeys"
   ]
-  revision = "36edb4d42380d89a897e7f633046423240b710d9"
-  version = "v0.9.5"
+  revision = "7e1fbde40afee241f81ef08700e7987d86fc7242"
+  version = "v0.9.6"
 
 [[projects]]
   branch = "master"
@@ -698,8 +699,8 @@
     "errors",
     "storage"
   ]
-  revision = "d8f9c031492688b4b62b7fd29b1edd9897400c4e"
-  version = "1.1.1"
+  revision = "f9375d2183ed70c9ca96e15e7a6869e0cea77e1f"
+  version = "1.2.0"
 
 [[projects]]
   branch = "master"
@@ -957,11 +958,11 @@
 [[projects]]
   name = "go.opencensus.io"
   packages = [
+    "exporter/stackdriver/propagation",
     "internal",
     "internal/tagencoding",
     "plugin/ochttp",
     "plugin/ochttp/propagation/b3",
-    "plugin/ochttp/propagation/google",
     "stats",
     "stats/internal",
     "stats/view",
@@ -969,8 +970,8 @@
     "trace",
     "trace/propagation"
   ]
-  revision = "983446b8dae3871316dc8610f7aa61e160b50b31"
-  version = "v0.5.0"
+  revision = "6e3f034057826b530038d93267906ec3c012183f"
+  version = "v0.6.0"
 
 [[projects]]
   branch = "master"
@@ -995,7 +996,7 @@
     "ssh/agent",
     "ssh/knownhosts"
   ]
-  revision = "c3a3ad6d03f7a915c0f7e194b7152974bb73d287"
+  revision = "88942b9c40a4c9d203b82b3731787b672d6e809b"
 
 [[projects]]
   branch = "master"
@@ -1031,7 +1032,7 @@
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "f8f1a95d4d780e4e1a82ed8289c8806e4dba7733"
+  revision = "91ee8cde435411ca3f1cd365e8f20131aed4d0a1"
 
 [[projects]]
   name = "golang.org/x/text"
@@ -1080,7 +1081,7 @@
     "storage/v1",
     "transport/http"
   ]
-  revision = "00840100d732f946c263bfd7bc26b17890f47fe7"
+  revision = "24928b980e6919be4c72647aacd53ebcbb8c4bab"
 
 [[projects]]
   name = "google.golang.org/appengine"
@@ -1105,6 +1106,7 @@
   packages = [
     "googleapis/api/annotations",
     "googleapis/iam/v1",
+    "googleapis/rpc/code",
     "googleapis/rpc/status"
   ]
   revision = "f8c8703595236ae70fdf8789ecb656ea0bcdcf46"
@@ -1150,6 +1152,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "19c5c899ffc2b9f7a50813c1ad31a9e594f6a9ff1e9fdd07551a4c9a1682c57d"
+  inputs-digest = "e66322b33d01fab645b9b660c61c98a8a2d0ab7d54762fe7456581e2583fc128"
   solver-name = "gps-cdcl"
   solver-version = 1
