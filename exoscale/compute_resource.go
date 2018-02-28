@@ -546,17 +546,31 @@ func importCompute(d *schema.ResourceData, meta interface{}) ([]*schema.Resource
 		}
 	}
 
+	// XXX simple, yet not complete
+	secondaryIPs := machine.Nic[0].SecondaryIP
 	nics := machine.NicsByType("Isolated")
 
-	resources := make([]*schema.ResourceData, 0, 1+len(nics))
+	resources := make([]*schema.ResourceData, 0, 1+len(nics)+len(secondaryIPs))
 	resources = append(resources, d)
+
+	if secondaryIPs != nil {
+		for _, secondaryIP := range secondaryIPs {
+			resource := secondaryIPResource()
+			d := resource.Data(nil)
+			d.SetType("exoscale_secondary_ipaddress")
+			if err := applySecondaryIP(d, secondaryIP); err != nil {
+				return nil, err
+			}
+
+			resources = append(resources, d)
+		}
+	}
 
 	for _, nic := range nics {
 		resource := nicResource()
 		d := resource.Data(nil)
 		d.SetType("exoscale_nic")
-		err := applyNic(d, nic)
-		if err != nil {
+		if err := applyNic(d, nic); err != nil {
 			return nil, err
 		}
 

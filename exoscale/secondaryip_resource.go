@@ -124,14 +124,7 @@ func readSecondaryIP(d *schema.ResourceData, meta interface{}) error {
 	// XXX why Nic[0]?
 	for _, ip := range nics.Nic[0].SecondaryIP {
 		if ip.NicID == nicID {
-			d.SetId(ip.ID)
-			if ip.IPAddress != nil {
-				d.Set("ip_address", ip.IPAddress.String())
-			} else {
-				d.Set("ip_address", "")
-			}
-
-			return nil
+			return applySecondaryIP(d, ip)
 		}
 	}
 
@@ -148,9 +141,15 @@ func deleteSecondaryIP(d *schema.ResourceData, meta interface{}) error {
 	}, async)
 }
 
-func applySecondaryIP(d *schema.ResourceData, secondaryIP egoscale.NicSecondaryIP) {
+func applySecondaryIP(d *schema.ResourceData, secondaryIP egoscale.NicSecondaryIP) error {
 	d.SetId(secondaryIP.ID)
-	d.Set("ip_address", secondaryIP.IPAddress.String())
+	if secondaryIP.IPAddress != nil {
+		d.Set("ip_address", secondaryIP.IPAddress.String())
+	} else {
+		d.Set("ip_address", "")
+	}
 	d.Set("network_id", secondaryIP.NetworkID)
 	d.Set("nic_id", secondaryIP.NicID)
+
+	return nil
 }
