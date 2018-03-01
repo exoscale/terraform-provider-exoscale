@@ -208,6 +208,25 @@ Values:
 
 **NB:** it's possible to `import` the IP address resource using the IP itself rather than the ID.
 
+### Secondary IP Address
+
+```hcl
+resource "exoscale_secondary_ipaddress" "" {
+  compute_id = "${exoscale_compute.mymachine.id}"
+  ip_address = "${exoscale_ipaddress.myip.ip_address}"
+}
+```
+
+Attributes:
+
+- **`compute_id`**: id of the [compute resource](#compute)
+- **`ip_address`**: IP address to use, preferably this comes from an [elastic IP](#elastic-ip-address)
+
+Values:
+
+- `nic_id`: id of the NIC
+- `network_id`: id of the Network (of the NIC)
+
 ### Network
 
 ```hcl
