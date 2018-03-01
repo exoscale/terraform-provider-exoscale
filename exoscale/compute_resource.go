@@ -558,9 +558,12 @@ func importCompute(d *schema.ResourceData, meta interface{}) ([]*schema.Resource
 			resource := secondaryIPResource()
 			d := resource.Data(nil)
 			d.SetType("exoscale_secondary_ipaddress")
+			d.Set("compute_id", id)
 			if err := applySecondaryIP(d, secondaryIP); err != nil {
 				return nil, err
 			}
+			d.Set("nic_id", machine.Nic[0].ID)
+			d.Set("network_id", machine.Nic[0].NetworkID)
 
 			resources = append(resources, d)
 		}
@@ -645,14 +648,14 @@ func getVirtualMachine(d *schema.ResourceData, meta interface{}) (*egoscale.Virt
 	}
 
 	vms := resp.(*egoscale.ListVirtualMachinesResponse)
-	if vms.Count == 0 {
+	if len(vms.VirtualMachine) == 0 {
 		// Ugly... this reproduces the CS behavior
 		err := &egoscale.ErrorResponse{
 			ErrorCode: egoscale.ParamError,
 			ErrorText: fmt.Sprintf("VirtualMachine not found %s", d.Id()),
 		}
 		return nil, err
-	} else if vms.Count > 1 {
+	} else if len(vms.VirtualMachine) > 1 {
 		return nil, fmt.Errorf("More than one VM found. Query: %s", d.Id())
 	}
 

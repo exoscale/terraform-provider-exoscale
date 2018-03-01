@@ -15,6 +15,10 @@ func secondaryIPResource() *schema.Resource {
 		Read:   readSecondaryIP,
 		Delete: deleteSecondaryIP,
 
+		Importer: &schema.ResourceImporter{
+			State: importSecondaryIP,
+		},
+
 		Schema: map[string]*schema.Schema{
 			"compute_id": {
 				Type:     schema.TypeString,
@@ -110,21 +114,28 @@ func readSecondaryIP(d *schema.ResourceData, meta interface{}) error {
 		VirtualMachineID: virtualMachineID,
 	})
 
+	if err != nil {
+		return err
+	}
+
 	nics := resp.(*egoscale.ListNicsResponse)
-	if nics.Count == 0 {
+	if len(nics.Nic) == 0 {
 		// No nics, means the VM is gone.
 		d.SetId("")
 		return nil
 	}
 
-	if err != nil {
-		return err
-	}
-
-	// XXX why Nic[0]?
-	for _, ip := range nics.Nic[0].SecondaryIP {
-		if ip.NicID == nicID {
-			return applySecondaryIP(d, ip)
+	nic := nics.Nic[0]
+	for _, ip := range nic.SecondaryIP {
+		if d.Id() == "" || ip.ID == d.Id() {
+			err := applySecondaryIP(d, ip)
+			if err != nil {
+				return err
+			}
+			// fix fix
+			d.Set("nic_id", nic.ID)
+			d.Set("network_id", nic.NetworkID)
+			return nil
 		}
 	}
 
@@ -139,6 +150,16 @@ func deleteSecondaryIP(d *schema.ResourceData, meta interface{}) error {
 	return client.BooleanAsyncRequest(&egoscale.RemoveIPFromNic{
 		ID: d.Id(),
 	}, async)
+}
+
+func importSecondaryIP(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	if err := readSecondaryIP(d, meta); err != nil {
+		return nil, err
+	}
+
+	resources := make([]*schema.ResourceData, 1)
+	resources[0] = d
+	return resources, nil
 }
 
 func applySecondaryIP(d *schema.ResourceData, secondaryIP egoscale.NicSecondaryIP) error {
