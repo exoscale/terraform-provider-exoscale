@@ -96,7 +96,7 @@ resource "exoscale_compute" "mymachine" {
 Attributes:
 
 - **`display_name`**: initial `hostname`
-- **`template`**: name from [the template](https://www.exoscale.com/templates/) 
+- **`template`**: name from [the template](https://www.exoscale.com/templates/)
 - **`size`**: size of [the instances](https://www.exoscale.com/pricing/#/compute/), e.g. Tiny, Small, Medium, Large, etc.
 - **`disk_size`**: size of the root disk in GiB (at least 10)
 - **`zone`**: name of [the data-center](https://www.exoscale.com/datacenters/)

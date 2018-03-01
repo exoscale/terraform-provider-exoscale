@@ -54,6 +54,7 @@ func computeResource() *schema.Resource {
 		"user_data": {
 			Type:     schema.TypeString,
 			Optional: true,
+			ForceNew: true,
 			StateFunc: func(v interface{}) string {
 				switch v.(type) {
 				case string:
@@ -66,6 +67,7 @@ func computeResource() *schema.Resource {
 		"key_pair": {
 			Type:     schema.TypeString,
 			Required: true,
+			ForceNew: true,
 		},
 		"keyboard": {
 			Type:     schema.TypeString,
@@ -326,15 +328,6 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 		req.DisplayName = d.Get("display_name").(string)
 	}
 
-	if d.HasChange("user_data") {
-		userData, err := prepareUserData(d, "user_data")
-		if err != nil {
-			return err
-		}
-		req.UserData = userData
-		rebootRequired = true
-	}
-
 	if d.HasChange("security_groups") {
 		rebootRequired = true
 
@@ -354,29 +347,6 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 		}
 
 		req.SecurityGroupIDs = securityGroups
-	}
-
-	if d.HasChange("key_pair") {
-		keyPair := d.Get("key_pair").(string)
-		resp, err := client.Request(&egoscale.ListSSHKeyPairs{
-			Name: keyPair,
-		})
-		if err != nil {
-			return err
-		}
-
-		if resp.(*egoscale.ListSSHKeyPairsResponse).Count == 0 {
-			return fmt.Errorf("New SSH KeyPair doesn't exist, aborting. Got %s", keyPair)
-		}
-
-		rebootRequired = true
-		commands = append(commands, partialCommand{
-			partial: "key_pair",
-			request: &egoscale.ResetSSHKeyForVirtualMachine{
-				ID:      d.Id(),
-				KeyPair: keyPair,
-			},
-		})
 	}
 
 	if d.HasChange("disk_size") {
@@ -481,11 +451,9 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 	if err != nil {
 		return err
 	}
-	d.SetPartial("user_data")
 
 	m := resp.(*egoscale.UpdateVirtualMachineResponse).VirtualMachine
 	applyCompute(d, m)
-	d.SetPartial("user_data")
 	d.SetPartial("display_name")
 	d.SetPartial("security_groups")
 
