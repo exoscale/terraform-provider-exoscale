@@ -19,6 +19,7 @@ Outputs:
 
 ip6_address = 2a04:c46:c00:a07:45e:42ff:fe00:13
 ip_address = 89.145.160.14
+username = centos
 
 $ ssh -6 centos@2a04:c46:c00:a07:45e:42ff:fe00:13
 [centos@test-ipv6 ~] $

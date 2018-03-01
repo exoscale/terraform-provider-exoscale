@@ -86,6 +86,8 @@ resource "exoscale_compute" "mymachine" {
   affinity_groups = []
   security_groups = ["default"]
 
+  ip6 = true
+
   tags {
     production = "true"
   }
@@ -111,12 +113,13 @@ Attributes:
 - `affinity_groups`: list of [Affinity Groups](#affinity-groups)
 - `security_groups`: list of [Security Groups](#security-groups)
 - `tags`: dictionary of tags (key / value)
+- `ip6`: enable IPv6 on the main network interface controller
 
 Values:
 
 - `name`: name of the machine (`hostname`)
 - `ip_address`: IP Address of the main network interface
-- `virtual_machines_id`: list of the Compute instance members of the Affinity Group
+- `ip6_address`: IPv6 Address of the main network interface
 
 ### Security Group
 

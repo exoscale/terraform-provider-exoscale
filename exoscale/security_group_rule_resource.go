@@ -57,7 +57,7 @@ func securityGroupRuleResource() *schema.Resource {
 				Type:          schema.TypeString,
 				Optional:      true,
 				ForceNew:      true,
-				ValidateFunc:  validation.CIDRNetwork(0, 32),
+				ValidateFunc:  validation.CIDRNetwork(0, 128),
 				ConflictsWith: []string{"user_security_group"},
 			},
 			"protocol": {
@@ -65,7 +65,7 @@ func securityGroupRuleResource() *schema.Resource {
 				Optional:     true,
 				Default:      "tcp",
 				ForceNew:     true,
-				ValidateFunc: validation.StringInSlice([]string{"TCP", "UDP", "ICMP", "AH", "ESP", "GRE"}, true),
+				ValidateFunc: validation.StringInSlice([]string{"TCP", "UDP", "ICMP", "ICMPv6", "AH", "ESP", "GRE"}, true),
 			},
 			"start_port": {
 				Type:          schema.TypeInt,
