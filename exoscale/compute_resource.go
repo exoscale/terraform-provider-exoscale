@@ -81,7 +81,7 @@ func computeResource() *schema.Resource {
 		"state": {
 			Type:     schema.TypeString,
 			Optional: true,
-			Computed: true,
+			Default:  "Running",
 			ValidateFunc: validation.StringInSlice([]string{
 				"Starting", "Running", "Stopped", "Destroyed",
 				"Expunging", "Migrating", "Error", "Unknown",
@@ -209,6 +209,11 @@ func createCompute(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
+	startVM := true
+	if d.Get("state").(string) != "Running" {
+		startVM = false
+	}
+
 	req := &egoscale.DeployVirtualMachine{
 		Name:              displayName,
 		DisplayName:       displayName,
@@ -221,6 +226,7 @@ func createCompute(d *schema.ResourceData, meta interface{}) error {
 		ZoneID:            zone.ID,
 		AffinityGroupIDs:  affinityGroups,
 		SecurityGroupIDs:  securityGroups,
+		StartVM:           &startVM,
 	}
 
 	resp, err := client.AsyncRequest(req, async)
