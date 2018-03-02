@@ -3,6 +3,8 @@ package exoscale
 import (
 	"fmt"
 	"log"
+	"os/user"
+	"path/filepath"
 	"strings"
 
 	"github.com/exoscale/egoscale"
@@ -119,13 +121,24 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		config := d.Get("config").(string)
 		profile := d.Get("profile").(string)
 
-		cfg, err := ini.LooseLoad(config, "cloudstack.ini", "~/.cloudstack.ini")
+		// Convert
+		usr, _ := user.Current()
+		if strings.HasPrefix(config, "~/") {
+			config = filepath.Join(usr.HomeDir, config[2:])
+		}
+
+		cfg, err := ini.LooseLoad(
+			config,
+			"cloudstack.ini",
+			filepath.Join(usr.HomeDir, ".cloudstack.ini"),
+		)
 		if err != nil {
 			return nil, err
 		}
 		section, err := cfg.GetSection(profile)
 		if err != nil {
-			return nil, err
+			sections := strings.Join(cfg.SectionStrings(), ", ")
+			return nil, fmt.Errorf("%s. Existing sections: %s", err, sections)
 		}
 
 		t, err := section.GetKey("key")
