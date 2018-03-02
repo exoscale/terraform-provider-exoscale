@@ -165,7 +165,7 @@ func applyNic(d *schema.ResourceData, nic egoscale.Nic) error {
 	if nic.Gateway != nil {
 		d.Set("gateway", nic.Gateway.String())
 	} else {
-		d.Set("gateway", nic.Gateway.String())
+		d.Set("gateway", "")
 	}
 
 	return nil

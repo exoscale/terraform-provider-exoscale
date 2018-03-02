@@ -294,10 +294,30 @@ func applyNetwork(d *schema.ResourceData, network egoscale.Network) error {
 	d.Set("network_offering", network.NetworkOfferingName)
 	d.Set("zone", network.ZoneName)
 	d.Set("cidr", network.Cidr)
-	d.Set("gateway", network.Gateway.String())
-	d.Set("netmask", network.Netmask.String())
-	d.Set("dns1", network.DNS1)
-	d.Set("dns2", network.DNS2)
+
+	if network.Gateway != nil {
+		d.Set("gateway", network.Gateway.String())
+	} else {
+		d.Set("gateway", "")
+	}
+
+	if network.Netmask != nil {
+		d.Set("netmask", network.Netmask.String())
+	} else {
+		d.Set("netmask", "")
+	}
+
+	if network.DNS1 != nil {
+		d.Set("dns1", network.DNS1.String())
+	} else {
+		d.Set("dns1", "")
+	}
+
+	if network.DNS2 != nil {
+		d.Set("dns2", network.DNS2.String())
+	} else {
+		d.Set("dns2", "")
+	}
 
 	// tags
 	tags := make(map[string]interface{})
