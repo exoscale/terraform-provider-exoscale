@@ -220,8 +220,8 @@
     "service/waf",
     "service/wafregional"
   ]
-  revision = "9a79087b1148376f4dd860c188c948479e2def3b"
-  version = "v1.13.7"
+  revision = "aace5875a5c3b85a3902c6d72b9caed301d64cce"
+  version = "v1.13.8"
 
 [[projects]]
   name = "github.com/beevik/etree"
@@ -312,8 +312,8 @@
 [[projects]]
   name = "github.com/exoscale/egoscale"
   packages = ["."]
-  revision = "4bdcd3dd93249420eb420e122ea98e1488c3aaa1"
-  version = "v0.9.9"
+  revision = "401e52c49deedb261ddf0e2432a645abbb66bb4e"
+  version = "v0.9.10"
 
 [[projects]]
   name = "github.com/go-ini/ini"
@@ -982,7 +982,7 @@
     "lex/httplex",
     "trace"
   ]
-  revision = "cbe0f9307d0156177f9dd5dc85da1a31abc5f2fb"
+  revision = "22ae77b79946ea320088417e4d50825671d82d57"
 
 [[projects]]
   branch = "master"
@@ -1000,7 +1000,7 @@
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "f6cff0780e542efa0c8e864dc8fa522808f6a598"
+  revision = "dd2ff4accc098aceecb86b36eaa7829b2a17b1c9"
 
 [[projects]]
   name = "golang.org/x/text"
@@ -1076,7 +1076,7 @@
     "googleapis/iam/v1",
     "googleapis/rpc/status"
   ]
-  revision = "2d9486acae19cf9bd0c093d7dc236a323726a9e4"
+  revision = "2c5e7ac708aaa719366570dd82bda44541ca2a63"
 
 [[projects]]
   name = "google.golang.org/grpc"
@@ -1119,6 +1119,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "9c6176e382800b21d5973a4a10d340b97d3381e4a4c99b0ea604198599ea87af"
+  inputs-digest = "a7b863ef081ea82d418726d49bf2830a71e45c13c8f43e8d4ca0703ce038d9f5"
   solver-name = "gps-cdcl"
   solver-version = 1
