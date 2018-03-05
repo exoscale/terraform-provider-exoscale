@@ -302,6 +302,9 @@ Record attributes:
 - `ttl`: time to live
 - `prio`: priority
 
+Record values:
+
+- `hostname`: full name, useful for linking `A` records into `CNAME`.
 
 ### Storage on S3
 

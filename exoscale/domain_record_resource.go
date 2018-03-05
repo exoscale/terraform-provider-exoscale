@@ -1,6 +1,7 @@
 package exoscale
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/exoscale/egoscale"
@@ -45,6 +46,10 @@ func domainRecordResource() *schema.Resource {
 			"prio": {
 				Type:     schema.TypeInt,
 				Optional: true,
+				Computed: true,
+			},
+			"hostname": {
+				Type:     schema.TypeString,
 				Computed: true,
 			},
 		},
@@ -129,6 +134,13 @@ func applyRecord(d *schema.ResourceData, record egoscale.DNSRecord) error {
 	d.Set("record_type", record.RecordType)
 	d.Set("ttl", record.TTL)
 	d.Set("prio", record.Prio)
+
+	domain := d.Get("domain").(string)
+	if record.Name == "" {
+		d.Set("hostname", domain)
+	} else {
+		d.Set("hostname", fmt.Sprintf("%s.%s", record.Name, domain))
+	}
 
 	return nil
 }
