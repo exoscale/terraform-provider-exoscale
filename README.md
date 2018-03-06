@@ -5,7 +5,7 @@
 ## Installation
 
 1. Download `terraform-provider-exoscale` from the [releases page](https://github.com/exoscale/terraform-provider-exoscale/releases);
-2. Put it into the `.terraform/plugins/(darwin|linux|windows)_amd64` folder;
+2. Put it into the `.terraform/plugins/(darwin|linux|windows)_amd64` folder and make it executable;
 3. Run `terraform init`.
 
 ```
@@ -57,7 +57,7 @@ for async tasks to complete. Currently, this is used during the creation of
 
 endpoint = "https://api.exoscale.ch/compute"
 key = "EXO..."
-token = "..."
+secret = "..."
 ```
 
 ### Environment variables
