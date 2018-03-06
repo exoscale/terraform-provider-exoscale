@@ -3,6 +3,7 @@ package exoscale
 import (
 	"fmt"
 	"log"
+	"os"
 	"os/user"
 	"path/filepath"
 	"strings"
@@ -17,7 +18,7 @@ import (
 func Provider() terraform.ResourceProvider {
 	return &schema.Provider{
 		Schema: map[string]*schema.Schema{
-			"token": {
+			"key": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Description: "Exoscale API key",
@@ -28,9 +29,15 @@ func Provider() terraform.ResourceProvider {
 					"CLOUDSTACK_API_KEY",
 				}, nil),
 			},
+			"token": {
+				Type:       schema.TypeString,
+				Optional:   true,
+				Deprecated: "Use key instead",
+			},
 			"secret": {
 				Type:        schema.TypeString,
 				Optional:    true,
+				Sensitive:   true,
 				Description: "Exoscale API secret",
 				DefaultFunc: schema.MultiEnvDefaultFunc([]string{
 					"EXOSCALE_SECRET",
@@ -109,32 +116,60 @@ func Provider() terraform.ResourceProvider {
 }
 
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
-	token, tokenOK := d.GetOk("token")
+	key, keyOK := d.GetOk("key")
 	secret, secretOK := d.GetOk("secret")
 	endpoint := d.Get("compute_endpoint").(string)
 
-	if tokenOK || secretOK {
-		if !tokenOK || !secretOK {
-			return nil, fmt.Errorf("token (%#v) and secret (%#v) must be set", token.(string), secret.(string))
+	// deprecation support
+	token, tokenOK := d.GetOk("token")
+	if tokenOK && !keyOK {
+		keyOK = tokenOK
+		key = token
+	}
+
+	if keyOK || secretOK {
+		if !keyOK || !secretOK {
+			return nil, fmt.Errorf("key (%#v) and secret (%#v) must be set", key.(string), secret.(string))
 		}
 	} else {
 		config := d.Get("config").(string)
 		profile := d.Get("profile").(string)
 
-		// Convert
+		// Support `~/`
 		usr, _ := user.Current()
 		if strings.HasPrefix(config, "~/") {
 			config = filepath.Join(usr.HomeDir, config[2:])
 		}
 
-		cfg, err := ini.LooseLoad(
+		// Convert relative path to absolute
+		config, _ = filepath.Abs(config)
+		localConfig, _ := filepath.Abs("cloudstack.ini")
+
+		inis := []string{
 			config,
-			"cloudstack.ini",
+			localConfig,
 			filepath.Join(usr.HomeDir, ".cloudstack.ini"),
-		)
-		if err != nil {
-			return nil, err
 		}
+
+		// Stops at the first file that exists
+		config = ""
+		for _, i := range inis {
+			if _, err := os.Stat(i); err != nil {
+				continue
+			}
+			config = i
+			break
+		}
+
+		if config == "" {
+			return nil, fmt.Errorf("Config file not found within: %s", strings.Join(inis, ", "))
+		}
+
+		cfg, err := ini.LoadSources(ini.LoadOptions{IgnoreInlineComment: true}, config)
+		if err != nil {
+			return nil, fmt.Errorf("Config file not loaded: %s", err)
+		}
+
 		section, err := cfg.GetSection(profile)
 		if err != nil {
 			sections := strings.Join(cfg.SectionStrings(), ", ")
@@ -145,7 +180,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		if err != nil {
 			return nil, err
 		}
-		token = t.String()
+		key = t.String()
 
 		s, err := section.GetKey("secret")
 		if err != nil {
@@ -165,7 +200,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	log.Printf("Async calls: timeout %d - delay %d - retries %d\n", timeout, delay, retries)
 
 	baseConfig := BaseConfig{
-		token:           token.(string),
+		key:             key.(string),
 		secret:          secret.(string),
 		timeout:         timeout,
 		computeEndpoint: endpoint,

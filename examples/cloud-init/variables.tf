@@ -1,4 +1,4 @@
-variable "token" {}
+variable "key" {}
 variable "secret" {}
 variable "key_pair" {}
 

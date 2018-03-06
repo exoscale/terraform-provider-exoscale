@@ -1,2 +1,2 @@
-variable "token" {}
+variable "key" {}
 variable "secret" {}

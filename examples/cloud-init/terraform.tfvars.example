@@ -1,5 +1,5 @@
 # API Key
-token = "EXO..."
+key = "EXO..."
 # Secret Key
 secret = "..."
 # SSH Key pair

@@ -13,7 +13,7 @@ const defaultDelayBeforeRetry = 5 // seconds
 
 // BaseConfig represents the provider structure
 type BaseConfig struct {
-	token           string
+	key             string
 	secret          string
 	timeout         int
 	computeEndpoint string
@@ -24,7 +24,7 @@ type BaseConfig struct {
 
 func getClient(endpoint string, meta interface{}) *egoscale.Client {
 	config := meta.(BaseConfig)
-	return egoscale.NewClient(endpoint, config.token, config.secret)
+	return egoscale.NewClient(endpoint, config.key, config.secret)
 }
 
 // GetComputeClient builds a CloudStack client

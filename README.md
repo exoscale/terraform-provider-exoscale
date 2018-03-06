@@ -26,7 +26,7 @@ resource plugin.  Additional documentation can be found in the examples director
 ```hcl
 provider "exoscale" {
   version = "~> 0.9"
-  token = "EXO..."
+  key = "EXO..."
   secret = "..."
 
   timeout = 60  # default: waits 60 seconds in total for a resource
@@ -43,7 +43,7 @@ provider "exoscale" {
 }
 ```
 
-You are required to provide at least the API token and secret key in order
+You are required to provide at least the API key and secret in order
 to make use of the remaining Terraform resources.
 
 The `timeout` is the maximum amount of time (in seconds, default: `60`) to wait
@@ -63,7 +63,7 @@ secret = "..."
 ### Environment variables
 
 You can specify the environment variables for these using
-- **`token`**: ```EXOSCALE_KEY```, ```EXOSCALE_API_KEY```, ```CLOUDSTACK_KEY```, or ```CLOUDSTACK_API_KEY```;
+- **`key`**: ```EXOSCALE_KEY```, ```EXOSCALE_API_KEY```, ```CLOUDSTACK_KEY```, or ```CLOUDSTACK_API_KEY```;
 - **`secret`**: ```EXOSCALE_SECRET```, ```EXOSCALE_SECRET_KEY```, ```CLOUDSTACK_SECRET```, or ```CLOUDSTACK_SECRET_KEY```;
 - **`config`**: ```EXOSCALE_CONFIG```, or ```CLOUDSTACK_CONFIG```;
 - **`profile`**: ```EXOSCALE_PROFILE```, or ```CLOUDSTACK_PROFILE```;
