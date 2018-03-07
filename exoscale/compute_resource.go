@@ -760,30 +760,17 @@ func getVirtualMachine(ctx context.Context, d *schema.ResourceData, meta interfa
 		id = ""
 	}
 
-	resp, err := client.RequestWithContext(ctx, &egoscale.ListVirtualMachines{
+	machine := &egoscale.VirtualMachine{
 		ID:   id,
 		Name: name,
-	})
+	}
 
-	if err != nil {
+	if err := client.GetWithContext(ctx, machine); err != nil {
 		return nil, err
 	}
 
-	vms := resp.(*egoscale.ListVirtualMachinesResponse)
-	if len(vms.VirtualMachine) == 0 {
-		// Ugly... this reproduces the CS behavior
-		err := &egoscale.ErrorResponse{
-			ErrorCode: egoscale.ParamError,
-			ErrorText: fmt.Sprintf("VirtualMachine not found %s", d.Id()),
-		}
-		return nil, err
-	} else if len(vms.VirtualMachine) > 1 {
-		return nil, fmt.Errorf("More than one VM found. Query: %s", d.Id())
-	}
-
-	machine := vms.VirtualMachine[0]
 	d.SetId(machine.ID)
-	return &machine, nil
+	return machine, nil
 }
 
 /*
