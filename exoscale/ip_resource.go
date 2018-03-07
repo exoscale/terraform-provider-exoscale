@@ -87,8 +87,10 @@ func existsElasticIP(d *schema.ResourceData, meta interface{}) (bool, error) {
 	resp, err := client.Request(&egoscale.ListPublicIPAddresses{
 		ID: d.Id(),
 	})
+
 	if err != nil {
-		return false, err
+		e := handleNotFound(d, err)
+		return d.Id() != "", e
 	}
 
 	elasticIPes := resp.(*egoscale.ListPublicIPAddressesResponse)
@@ -109,8 +111,9 @@ func readElasticIP(d *schema.ResourceData, meta interface{}) error {
 		ID:        id,
 		IPAddress: ip,
 	})
+
 	if err != nil {
-		return err
+		return handleNotFound(d, err)
 	}
 
 	ips := resp.(*egoscale.ListPublicIPAddressesResponse)
