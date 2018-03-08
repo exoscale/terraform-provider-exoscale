@@ -23,7 +23,7 @@ A machine experimenting with the IPv6 support.
 
 ## (Multi-)Private Network
 
-An example showing how the [Private networks](https://www.exoscale.com/syslog/2018/01/17/introducing-multiple-private-networks/)
+An example showing how the [Private networks](https://www.exoscale.com/syslog/introducing-multiple-private-networks/)
 API support can be used to create a private network between compute instances.
 
 ## External examples

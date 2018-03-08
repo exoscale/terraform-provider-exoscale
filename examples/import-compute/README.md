@@ -1,7 +1,7 @@
 # Importing existing infrastructure
 
 Based on the [weblog post: Managing your existing infrastructure with
-Terraform](https://www.exoscale.com/syslog/2018/01/18/managing-your-existing-infrastructure-with-terraform/)
+Terraform](https://www.exoscale.com/syslog/managing-your-existing-infrastructure-with-terraform/)
 
 ## Setup
 

@@ -14,7 +14,7 @@ $ terraform providers
 └── provider.exoscale
 ```
 
-Go read the article on our weblog [Terraform on Exoscale](https://www.exoscale.com/syslog/2016/09/14/terraform-with-exoscale/).
+Go read the article on our weblog [Terraform on Exoscale](https://www.exoscale.com/syslog/terraform-with-exoscale/).
 
 
 ## Resources
