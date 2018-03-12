@@ -791,21 +791,13 @@ func convertTemplateName(t string) string {
 }
 
 func getSecurityGroup(ctx context.Context, client *egoscale.Client, name string) (*egoscale.SecurityGroup, error) {
-	req := &egoscale.ListSecurityGroups{
-		SecurityGroupName: name,
-	}
-	resp, err := client.RequestWithContext(ctx, req)
+	sg := &egoscale.SecurityGroup{Name: name}
+	err := client.GetWithContext(ctx, sg)
 	if err != nil {
 		return nil, err
 	}
 
-	sgs := resp.(*egoscale.ListSecurityGroupsResponse)
-	if len(sgs.SecurityGroup) == 0 {
-		return nil, fmt.Errorf("SecurityGroup not found %s", name)
-	}
-
-	sg := sgs.SecurityGroup[0]
-	return &sg, nil
+	return sg, nil
 }
 
 // isUuid matches a UUIDv4
