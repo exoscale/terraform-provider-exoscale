@@ -92,20 +92,42 @@ func computeResource() *schema.Resource {
 			Type:     schema.TypeString,
 			Computed: true,
 		},
+		"affinity_group_ids": {
+			Type:          schema.TypeSet,
+			Optional:      true,
+			Computed:      true,
+			Set:           schema.HashString,
+			ConflictsWith: []string{"affinity_groups"},
+			Elem: &schema.Schema{
+				Type: schema.TypeString,
+			},
+		},
 		"affinity_groups": {
-			Type:     schema.TypeSet,
-			Optional: true,
-			Computed: true,
-			Set:      schema.HashString,
+			Type:          schema.TypeSet,
+			Optional:      true,
+			Computed:      true,
+			Set:           schema.HashString,
+			ConflictsWith: []string{"affinity_group_ids"},
+			Elem: &schema.Schema{
+				Type: schema.TypeString,
+			},
+		},
+		"security_group_ids": {
+			Type:          schema.TypeSet,
+			Optional:      true,
+			Computed:      true,
+			Set:           schema.HashString,
+			ConflictsWith: []string{"security_groups"},
 			Elem: &schema.Schema{
 				Type: schema.TypeString,
 			},
 		},
 		"security_groups": {
-			Type:     schema.TypeSet,
-			Optional: true,
-			Computed: true,
-			Set:      schema.HashString,
+			Type:          schema.TypeSet,
+			Optional:      true,
+			Computed:      true,
+			Set:           schema.HashString,
+			ConflictsWith: []string{"security_group_ids"},
 			Elem: &schema.Schema{
 				Type: schema.TypeString,
 			},
@@ -179,27 +201,38 @@ func createCompute(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
+	// Affinity Groups
 	var affinityGroups []string
 	if affinitySet, ok := d.Get("affinity_groups").(*schema.Set); ok {
-		affinityGroups = make([]string, affinitySet.Len())
-		for i, group := range affinitySet.List() {
-			ag, err := getAffinityGroupID(client, group.(string))
-			if err != nil {
-				return err
-			}
-			affinityGroups[i] = ag
+		affinityGroups = make([]string, 0, affinitySet.Len())
+		for _, group := range affinitySet.List() {
+			affinityGroups = append(affinityGroups, group.(string))
+		}
+
+	}
+
+	var affinityGroupIDs []string
+	if affinityIDSet, ok := d.Get("affinity_group_ids").(*schema.Set); ok {
+		affinityGroupIDs = make([]string, 0, affinityIDSet.Len())
+		for _, group := range affinityIDSet.List() {
+			affinityGroupIDs = append(affinityGroupIDs, group.(string))
 		}
 	}
 
+	// Security Groups
 	var securityGroups []string
 	if securitySet, ok := d.Get("security_groups").(*schema.Set); ok {
-		securityGroups = make([]string, securitySet.Len())
-		for i, group := range securitySet.List() {
-			sg, err := getSecurityGroupID(client, group.(string))
-			if err != nil {
-				return err
-			}
-			securityGroups[i] = sg
+		securityGroups = make([]string, 0, securitySet.Len())
+		for _, group := range securitySet.List() {
+			securityGroups = append(securityGroups, group.(string))
+		}
+	}
+
+	var securityGroupIDs []string
+	if securityIDSet, ok := d.Get("security_group_ids").(*schema.Set); ok {
+		securityGroupIDs = make([]string, 0, securityIDSet.Len())
+		for _, group := range securityIDSet.List() {
+			securityGroupIDs = append(securityGroupIDs, group.(string))
 		}
 	}
 
@@ -214,18 +247,20 @@ func createCompute(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	req := &egoscale.DeployVirtualMachine{
-		Name:              displayName,
-		DisplayName:       displayName,
-		RootDiskSize:      int64(diskSize),
-		KeyPair:           d.Get("key_pair").(string),
-		Keyboard:          d.Get("keyboard").(string),
-		UserData:          userData,
-		ServiceOfferingID: service,
-		TemplateID:        templateID,
-		ZoneID:            zone.ID,
-		AffinityGroupIDs:  affinityGroups,
-		SecurityGroupIDs:  securityGroups,
-		StartVM:           &startVM,
+		Name:               displayName,
+		DisplayName:        displayName,
+		RootDiskSize:       int64(diskSize),
+		KeyPair:            d.Get("key_pair").(string),
+		Keyboard:           d.Get("keyboard").(string),
+		UserData:           userData,
+		ServiceOfferingID:  service,
+		TemplateID:         templateID,
+		ZoneID:             zone.ID,
+		AffinityGroupIDs:   affinityGroupIDs,
+		AffinityGroupNames: affinityGroups,
+		SecurityGroupIDs:   securityGroupIDs,
+		SecurityGroupNames: securityGroups,
+		StartVM:            &startVM,
 	}
 
 	resp, err := client.Request(req)
@@ -317,8 +352,9 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 	// the partial key which is expected to change and the
 	// request that has to be run.
 	type partialCommand struct {
-		partial string
-		request egoscale.Command
+		partial  string
+		partials []string
+		request  egoscale.Command
 	}
 
 	commands := make([]partialCommand, 0)
@@ -335,22 +371,37 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 	if d.HasChange("security_groups") {
 		rebootRequired = true
 
-		securityGroups := make([]string, 0)
+		securityGroupIDs := make([]string, 0)
 		if securitySet, ok := d.Get("security_groups").(*schema.Set); ok {
 			for _, group := range securitySet.List() {
-				id, err := getSecurityGroupID(client, group.(string))
+				sg, err := getSecurityGroup(client, group.(string))
 				if err != nil {
 					return err
 				}
-				securityGroups = append(securityGroups, id)
+				securityGroupIDs = append(securityGroupIDs, sg.ID)
 			}
 		}
 
-		if len(securityGroups) == 0 {
+		if len(securityGroupIDs) == 0 {
 			return fmt.Errorf("A VM must have at least one Security Group, none found")
 		}
 
-		req.SecurityGroupIDs = securityGroups
+		req.SecurityGroupIDs = securityGroupIDs
+	} else if d.HasChange("security_group_ids") {
+		rebootRequired = true
+
+		securityGroupIDs := make([]string, 0)
+		if securitySet, ok := d.Get("security_group_ids").(*schema.Set); ok {
+			for _, group := range securitySet.List() {
+				securityGroupIDs = append(securityGroupIDs, group.(string))
+			}
+		}
+
+		if len(securityGroupIDs) == 0 {
+			return fmt.Errorf("A VM must have at least one Security Group, none found")
+		}
+
+		req.SecurityGroupIDs = securityGroupIDs
 	}
 
 	if d.HasChange("disk_size") {
@@ -395,17 +446,44 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 
 	if d.HasChange("affinity_groups") {
 		rebootRequired = true
+		o, n := d.GetChange("affinity_groups")
+		if o.(*schema.Set).Len() >= n.(*schema.Set).Len() {
+			return fmt.Errorf("Affinity Groups cannot be added.")
+		}
+		if n.(*schema.Set).Difference(o.(*schema.Set)).Len() > 0 {
+			return fmt.Errorf("No new Affinity Groups can be added.")
+		}
+
 		if affinitySet, ok := d.Get("affinity_groups").(*schema.Set); ok {
 			affinityGroups := make([]string, affinitySet.Len())
 			for i, group := range affinitySet.List() {
-				id, err := getAffinityGroupID(client, group.(string))
-				if err != nil {
-					return err
-				}
-				affinityGroups[i] = id
+				affinityGroups[i] = group.(string)
 			}
 			commands = append(commands, partialCommand{
-				partial: "affinity_groups",
+				partials: []string{"affinity_groups", "affinity_group_ids"},
+				request: &egoscale.UpdateVMAffinityGroup{
+					ID:                 d.Id(),
+					AffinityGroupNames: affinityGroups,
+				},
+			})
+		}
+	} else if d.HasChange("affinity_group_ids") {
+		rebootRequired = true
+		o, n := d.GetChange("affinity_group_ids")
+		if o.(*schema.Set).Len() >= n.(*schema.Set).Len() {
+			return fmt.Errorf("Affinity Groups cannot be added.")
+		}
+		if n.(*schema.Set).Difference(o.(*schema.Set)).Len() > 0 {
+			return fmt.Errorf("No new Affinity Groups can be added.")
+		}
+
+		if affinitySet, ok := d.Get("affinity_group_ids").(*schema.Set); ok {
+			affinityGroups := make([]string, affinitySet.Len())
+			for i, group := range affinitySet.List() {
+				affinityGroups[i] = group.(string)
+			}
+			commands = append(commands, partialCommand{
+				partials: []string{"affinity_groups", "affinity_group_ids"},
 				request: &egoscale.UpdateVMAffinityGroup{
 					ID:               d.Id(),
 					AffinityGroupIDs: affinityGroups,
@@ -477,6 +555,11 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 		}
 
 		d.SetPartial(cmd.partial)
+		if cmd.partials != nil {
+			for _, partial := range cmd.partials {
+				d.SetPartial(partial)
+			}
+		}
 	}
 
 	// Update oneself
@@ -516,8 +599,11 @@ func importCompute(d *schema.ResourceData, meta interface{}) ([]*schema.Resource
 		}
 	}
 
-	// XXX simple, yet not complete
-	secondaryIPs := machine.Nic[0].SecondaryIP
+	defaultNic := machine.DefaultNic()
+	if defaultNic == nil {
+		return nil, fmt.Errorf("VM %v has no default NIC", d.Id())
+	}
+	secondaryIPs := defaultNic.SecondaryIP
 	nics := machine.NicsByType("Isolated")
 
 	resources := make([]*schema.ResourceData, 0, 1+len(nics)+len(secondaryIPs))
@@ -570,17 +656,23 @@ func applyCompute(d *schema.ResourceData, machine egoscale.VirtualMachine) error
 
 	// affinity groups
 	affinityGroups := make([]string, len(machine.AffinityGroup))
+	affinityGroupIDs := make([]string, len(machine.AffinityGroup))
 	for i, ag := range machine.AffinityGroup {
 		affinityGroups[i] = ag.Name
+		affinityGroupIDs[i] = ag.ID
 	}
 	d.Set("affinity_groups", affinityGroups)
+	d.Set("affinity_group_ids", affinityGroupIDs)
 
 	// security groups
 	securityGroups := make([]string, len(machine.SecurityGroup))
+	securityGroupIDs := make([]string, len(machine.SecurityGroup))
 	for i, sg := range machine.SecurityGroup {
 		securityGroups[i] = sg.Name
+		securityGroupIDs[i] = sg.ID
 	}
 	d.Set("security_groups", securityGroups)
+	d.Set("security_group_ids", securityGroupIDs)
 
 	// tags
 	tags := make(map[string]interface{})
@@ -651,44 +743,40 @@ func convertTemplateName(t string) string {
 	return ""
 }
 
-func getSecurityGroupID(client *egoscale.Client, name string) (string, error) {
-	if isUUID(name) {
-		return name, nil
-	}
+func getSecurityGroup(client *egoscale.Client, name string) (*egoscale.SecurityGroup, error) {
 	req := &egoscale.ListSecurityGroups{
 		SecurityGroupName: name,
 	}
 	resp, err := client.Request(req)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	securityGroups := resp.(*egoscale.ListSecurityGroupsResponse)
-	if securityGroups.Count == 0 {
-		return "", fmt.Errorf("SecurityGroup not found %s", name)
+	sgs := resp.(*egoscale.ListSecurityGroupsResponse)
+	if len(sgs.SecurityGroup) == 0 {
+		return nil, fmt.Errorf("SecurityGroup not found %s", name)
 	}
 
-	return securityGroups.SecurityGroup[0].ID, nil
+	sg := sgs.SecurityGroup[0]
+	return &sg, nil
 }
 
-func getAffinityGroupID(client *egoscale.Client, name string) (string, error) {
-	if isUUID(name) {
-		return name, nil
-	}
+func getAffinityGroup(client *egoscale.Client, name string) (*egoscale.AffinityGroup, error) {
 	req := &egoscale.ListAffinityGroups{
 		Name: name,
 	}
 	resp, err := client.Request(req)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	affinityGroups := resp.(*egoscale.ListAffinityGroupsResponse)
-	if affinityGroups.Count == 0 {
-		return "", fmt.Errorf("AffinityGroup not found %s", name)
+	ags := resp.(*egoscale.ListAffinityGroupsResponse)
+	if len(ags.AffinityGroup) == 0 {
+		return nil, fmt.Errorf("AffinityGroup not found %s", name)
 	}
 
-	return affinityGroups.AffinityGroup[0].ID, nil
+	ag := ags.AffinityGroup[0]
+	return &ag, nil
 }
 
 // isUuid matches a UUIDv4

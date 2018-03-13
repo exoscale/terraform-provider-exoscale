@@ -1,6 +1,7 @@
 package exoscale
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/exoscale/egoscale"
@@ -150,8 +151,8 @@ func importSecurityGroup(d *schema.ResourceData, meta interface{}) ([]*schema.Re
 	id := d.Id()
 	name := ""
 	if !isUUID(id) {
-		id = ""
 		name = id
+		id = ""
 	}
 
 	resp, err := client.Request(&egoscale.ListSecurityGroups{
@@ -162,7 +163,13 @@ func importSecurityGroup(d *schema.ResourceData, meta interface{}) ([]*schema.Re
 		return nil, err
 	}
 
-	securityGroup := resp.(*egoscale.ListSecurityGroupsResponse).SecurityGroup[0]
+	sgs := resp.(*egoscale.ListSecurityGroupsResponse)
+	if len(sgs.SecurityGroup) > 1 {
+		return nil, fmt.Errorf("More than one security group found.")
+	} else if len(sgs.SecurityGroup) == 0 {
+		return nil, fmt.Errorf("No security groups found with: id: %#v, name: %#v", id, name)
+	}
+	securityGroup := sgs.SecurityGroup[0]
 	applySecurityGroup(d, securityGroup)
 
 	// Create all the rulez!
