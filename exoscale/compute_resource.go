@@ -286,11 +286,7 @@ func createCompute(d *schema.ResourceData, meta interface{}) error {
 	if cmd := createTags(d, "tags", machine.ResourceType()); cmd != nil {
 		if err := client.BooleanRequestWithContext(ctx, cmd); err != nil {
 			// Attempting to destroy the freshly created machine
-			_, e := client.RequestWithContext(ctx, &egoscale.DestroyVirtualMachine{
-				ID: machine.ID,
-			})
-
-			if e != nil {
+			if e := client.DeleteWithContext(ctx, &machine); e != nil {
 				log.Printf("[WARNING] Failure to create the tags, but the machine was deployed. %v", e)
 			}
 
@@ -305,10 +301,12 @@ func existsCompute(d *schema.ResourceData, meta interface{}) (bool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
 	defer cancel()
 
-	_, err := getVirtualMachine(ctx, d, meta)
+	client := GetComputeClient(meta)
+
+	machine := &egoscale.VirtualMachine{ID: d.Id()}
 
 	// The CS API returns an error if it doesn't exist
-	if err != nil {
+	if err := client.GetWithContext(ctx, machine); err != nil {
 		e := handleNotFound(d, err)
 		return d.Id() != "", e
 	}
@@ -322,9 +320,8 @@ func readCompute(d *schema.ResourceData, meta interface{}) error {
 
 	client := GetComputeClient(meta)
 
-	// XXX apply context
-	machine, err := getVirtualMachine(ctx, d, meta)
-	if err != nil {
+	machine := &egoscale.VirtualMachine{ID: d.Id()}
+	if err := client.GetWithContext(ctx, machine); err != nil {
 		return handleNotFound(d, err)
 	}
 
@@ -598,10 +595,9 @@ func deleteCompute(d *schema.ResourceData, meta interface{}) error {
 
 	client := GetComputeClient(meta)
 
-	req := &egoscale.DestroyVirtualMachine{
+	err := client.DeleteWithContext(ctx, &egoscale.VirtualMachine{
 		ID: d.Id(),
-	}
-	_, err := client.RequestWithContext(ctx, req)
+	})
 
 	if err != nil {
 		return err
@@ -616,9 +612,20 @@ func importCompute(d *schema.ResourceData, meta interface{}) ([]*schema.Resource
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
 	defer cancel()
 
+	client := GetComputeClient(meta)
+
 	id := d.Id()
-	machine, err := getVirtualMachine(ctx, d, meta)
-	if err != nil {
+	name := ""
+	if !isUUID(id) {
+		name = id
+		id = ""
+	}
+	machine := &egoscale.VirtualMachine{
+		ID:   id,
+		Name: name,
+	}
+
+	if err := client.GetWithContext(ctx, machine); err != nil {
 		if e := handleNotFound(d, err); e != nil {
 			return nil, e
 		}
@@ -747,30 +754,6 @@ func getSSHUsername(template string) string {
 	}
 
 	return "root"
-}
-
-func getVirtualMachine(ctx context.Context, d *schema.ResourceData, meta interface{}) (*egoscale.VirtualMachine, error) {
-	client := GetComputeClient(meta)
-
-	// Permit to search for a VM by its name (useful when doing imports
-	id := d.Id()
-	name := ""
-	if !isUUID(id) {
-		name = id
-		id = ""
-	}
-
-	machine := &egoscale.VirtualMachine{
-		ID:   id,
-		Name: name,
-	}
-
-	if err := client.GetWithContext(ctx, machine); err != nil {
-		return nil, err
-	}
-
-	d.SetId(machine.ID)
-	return machine, nil
 }
 
 /*
