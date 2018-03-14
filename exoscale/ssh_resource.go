@@ -1,6 +1,8 @@
 package exoscale
 
 import (
+	"context"
+
 	"github.com/exoscale/egoscale"
 	"github.com/hashicorp/terraform/helper/schema"
 )
@@ -14,6 +16,12 @@ func sshResource() *schema.Resource {
 
 		Importer: &schema.ResourceImporter{
 			State: importSSH,
+		},
+
+		Timeouts: &schema.ResourceTimeout{
+			Create: schema.DefaultTimeout(defaultTimeout),
+			Read:   schema.DefaultTimeout(defaultTimeout),
+			Delete: schema.DefaultTimeout(defaultTimeout),
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -41,12 +49,15 @@ func sshResource() *schema.Resource {
 }
 
 func createSSH(d *schema.ResourceData, meta interface{}) error {
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutCreate))
+	defer cancel()
+
 	client := GetComputeClient(meta)
 
 	name := d.Get("name").(string)
 	publicKey, publicKeyOk := d.GetOk("public_key")
 	if publicKeyOk {
-		resp, err := client.Request(&egoscale.RegisterSSHKeyPair{
+		resp, err := client.RequestWithContext(ctx, &egoscale.RegisterSSHKeyPair{
 			Name:      name,
 			PublicKey: publicKey.(string),
 		})
@@ -58,20 +69,24 @@ func createSSH(d *schema.ResourceData, meta interface{}) error {
 		return applySSH(d, keypair)
 	}
 
-	resp, err := client.Request(&egoscale.CreateSSHKeyPair{
+	resp, err := client.RequestWithContext(ctx, &egoscale.CreateSSHKeyPair{
 		Name: name,
 	})
 	if err != nil {
 		return err
 	}
+
 	keypair := resp.(*egoscale.CreateSSHKeyPairResponse).KeyPair
 	return applySSH(d, keypair)
 }
 
 func existsSSH(d *schema.ResourceData, meta interface{}) (bool, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
+	defer cancel()
+
 	client := GetComputeClient(meta)
 
-	resp, err := client.Request(&egoscale.ListSSHKeyPairs{
+	resp, err := client.RequestWithContext(ctx, &egoscale.ListSSHKeyPairs{
 		Name: d.Id(),
 	})
 	if err != nil {
@@ -93,9 +108,12 @@ func importSSH(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData
 }
 
 func readSSH(d *schema.ResourceData, meta interface{}) error {
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
+	defer cancel()
+
 	client := GetComputeClient(meta)
 
-	resp, err := client.Request(&egoscale.ListSSHKeyPairs{
+	resp, err := client.RequestWithContext(ctx, &egoscale.ListSSHKeyPairs{
 		Name: d.Id(),
 	})
 	if err != nil {
@@ -107,12 +125,15 @@ func readSSH(d *schema.ResourceData, meta interface{}) error {
 }
 
 func deleteSSH(d *schema.ResourceData, meta interface{}) error {
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutDelete))
+	defer cancel()
+
 	client := GetComputeClient(meta)
 
 	req := &egoscale.DeleteSSHKeyPair{
 		Name: d.Id(),
 	}
-	err := client.BooleanRequest(req)
+	err := client.BooleanRequestWithContext(ctx, req)
 	if err != nil {
 		return err
 	}

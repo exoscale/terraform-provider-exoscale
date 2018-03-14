@@ -1,6 +1,7 @@
 package exoscale
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net"
@@ -70,11 +71,21 @@ func networkResource() *schema.Resource {
 			State: importNetwork,
 		},
 
+		Timeouts: &schema.ResourceTimeout{
+			Create: schema.DefaultTimeout(defaultTimeout),
+			Read:   schema.DefaultTimeout(defaultTimeout),
+			Update: schema.DefaultTimeout(defaultTimeout),
+			Delete: schema.DefaultTimeout(defaultTimeout),
+		},
+
 		Schema: s,
 	}
 }
 
 func createNetwork(d *schema.ResourceData, meta interface{}) error {
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutCreate))
+	defer cancel()
+
 	client := GetComputeClient(meta)
 
 	name := d.Get("name").(string)
@@ -84,13 +95,13 @@ func createNetwork(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	zoneName := d.Get("zone").(string)
-	zone, err := getZoneByName(client, zoneName)
+	zone, err := getZoneByName(ctx, client, zoneName)
 	if err != nil {
 		return err
 	}
 
 	networkName := d.Get("network_offering").(string)
-	networkOffering, err := getNetworkOfferingByName(client, networkName)
+	networkOffering, err := getNetworkOfferingByName(ctx, client, networkName)
 	if err != nil {
 		return err
 	}
@@ -130,7 +141,7 @@ func createNetwork(d *schema.ResourceData, meta interface{}) error {
 			subnetIP[3]+^ipnet.Mask[3])
 	}
 
-	resp, err := client.Request(&egoscale.CreateNetwork{
+	resp, err := client.RequestWithContext(ctx, &egoscale.CreateNetwork{
 		Name:              name,
 		DisplayText:       displayText,
 		NetworkOfferingID: networkOffering.ID,
@@ -147,9 +158,9 @@ func createNetwork(d *schema.ResourceData, meta interface{}) error {
 	d.SetId(network.ID)
 
 	if cmd := createTags(d, "tags", network.ResourceType()); cmd != nil {
-		if err := client.BooleanRequest(cmd); err != nil {
+		if err := client.BooleanRequestWithContext(ctx, cmd); err != nil {
 			// Attempting to destroy the freshly created network
-			e := client.BooleanRequest(&egoscale.DeleteNetwork{
+			e := client.BooleanRequestWithContext(ctx, &egoscale.DeleteNetwork{
 				ID: network.ID,
 			})
 
@@ -165,8 +176,11 @@ func createNetwork(d *schema.ResourceData, meta interface{}) error {
 }
 
 func readNetwork(d *schema.ResourceData, meta interface{}) error {
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
+	defer cancel()
+
 	client := GetComputeClient(meta)
-	resp, err := client.Request(&egoscale.ListNetworks{
+	resp, err := client.RequestWithContext(ctx, &egoscale.ListNetworks{
 		ID: d.Id(),
 	})
 
@@ -184,8 +198,11 @@ func readNetwork(d *schema.ResourceData, meta interface{}) error {
 }
 
 func existsNetwork(d *schema.ResourceData, meta interface{}) (bool, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
+	defer cancel()
+
 	client := GetComputeClient(meta)
-	resp, err := client.Request(&egoscale.ListNetworks{
+	resp, err := client.RequestWithContext(ctx, &egoscale.ListNetworks{
 		ID: d.Id(),
 	})
 
@@ -204,12 +221,15 @@ func existsNetwork(d *schema.ResourceData, meta interface{}) (bool, error) {
 }
 
 func updateNetwork(d *schema.ResourceData, meta interface{}) error {
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutUpdate))
+	defer cancel()
+
 	client := GetComputeClient(meta)
 
 	d.Partial(true)
 
 	// Update name and display_text
-	resp, err := client.Request(&egoscale.UpdateNetwork{
+	resp, err := client.RequestWithContext(ctx, &egoscale.UpdateNetwork{
 		ID:          d.Id(),
 		Name:        d.Get("name").(string),
 		DisplayText: d.Get("display_text").(string),
@@ -236,7 +256,7 @@ func updateNetwork(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	for _, req := range requests {
-		_, err := client.Request(req)
+		_, err := client.RequestWithContext(ctx, req)
 		if err != nil {
 			return err
 		}
@@ -254,9 +274,12 @@ func updateNetwork(d *schema.ResourceData, meta interface{}) error {
 }
 
 func deleteNetwork(d *schema.ResourceData, meta interface{}) error {
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutDelete))
+	defer cancel()
+
 	client := GetComputeClient(meta)
 
-	err := client.BooleanRequest(&egoscale.DeleteNetwork{
+	err := client.BooleanRequestWithContext(ctx, &egoscale.DeleteNetwork{
 		ID: d.Id(),
 	})
 

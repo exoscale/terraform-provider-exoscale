@@ -1,6 +1,7 @@
 package exoscale
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/user"
@@ -87,12 +88,9 @@ func Provider() terraform.ResourceProvider {
 				DefaultFunc: schema.EnvDefaultFunc("EXOSCALE_TIMEOUT", defaultTimeout),
 			},
 			"delay": {
-				Type:        schema.TypeInt,
-				Required:    true,
-				DefaultFunc: schema.EnvDefaultFunc("EXOSCALE_DELAY", defaultDelayBeforeRetry),
-				Description: fmt.Sprintf(
-					"Delay in seconds representing the polling time interval (by default: %d)",
-					defaultDelayBeforeRetry),
+				Type:       schema.TypeInt,
+				Optional:   true,
+				Deprecated: "Does nothing",
 			},
 		},
 
@@ -204,8 +202,8 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	return baseConfig, nil
 }
 
-func getZoneByName(client *egoscale.Client, zoneName string) (*egoscale.Zone, error) {
-	resp, err := client.Request(&egoscale.ListZones{
+func getZoneByName(ctx context.Context, client *egoscale.Client, zoneName string) (*egoscale.Zone, error) {
+	resp, err := client.RequestWithContext(ctx, &egoscale.ListZones{
 		Name: strings.ToLower(zoneName),
 	})
 
@@ -221,8 +219,8 @@ func getZoneByName(client *egoscale.Client, zoneName string) (*egoscale.Zone, er
 	return &(zones.Zone[0]), nil
 }
 
-func getNetworkOfferingByName(client *egoscale.Client, zoneName string) (*egoscale.NetworkOffering, error) {
-	resp, err := client.Request(&egoscale.ListNetworkOfferings{
+func getNetworkOfferingByName(ctx context.Context, client *egoscale.Client, zoneName string) (*egoscale.NetworkOffering, error) {
+	resp, err := client.RequestWithContext(ctx, &egoscale.ListNetworkOfferings{
 		Name: strings.ToLower(zoneName),
 	})
 

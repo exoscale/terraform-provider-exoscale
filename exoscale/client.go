@@ -10,8 +10,7 @@ const defaultConfig = "cloudstack.ini"
 const defaultProfile = "cloudstack"
 const defaultComputeEndpoint = "https://api.exoscale.ch/compute"
 const defaultDNSEndpoint = "https://api.exoscale.ch/dns"
-const defaultTimeout = 60         // seconds
-const defaultDelayBeforeRetry = 5 // seconds
+const defaultTimeout = 60 // seconds
 
 // BaseConfig represents the provider structure
 type BaseConfig struct {

@@ -30,7 +30,6 @@ provider "exoscale" {
   secret = "..."
 
   timeout = 60  # default: waits 60 seconds in total for a resource
-  delay = 5     # default: waits 5 seconds between each poll request
 }
 
 # or
@@ -67,7 +66,7 @@ You can specify the environment variables for these using
 - **`secret`**: ```EXOSCALE_SECRET```, ```EXOSCALE_SECRET_KEY```, ```CLOUDSTACK_SECRET```, or ```CLOUDSTACK_SECRET_KEY```;
 - **`config`**: ```EXOSCALE_CONFIG```, or ```CLOUDSTACK_CONFIG```;
 - **`profile`**: ```EXOSCALE_PROFILE```, or ```CLOUDSTACK_PROFILE```;
-- **`timeout`** and **`delay`**: `EXOSCALE_TIMEOUT` and `EXOSCALE_DELAY` manages the asynchronous calls.
+- **`timeout`**: `EXOSCALE_TIMEOUT` default timeout.
 - **`compute_endpoint`**: ```EXOSCALE_COMPUTE_ENDPOINT```, or ```CLOUDSTACK_ENDPOINT```;
 - **`dns_endpoint`**: ```EXOSCALE_DNS_ENDPOINT```.
 
@@ -89,6 +88,11 @@ resource "exoscale_compute" "mymachine" {
 
   tags {
     production = "true"
+  }
+
+  timeouts {
+    create = "60m"
+    delete = "2h"
   }
 }
 ```

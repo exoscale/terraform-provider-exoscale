@@ -1,6 +1,7 @@
 package exoscale
 
 import (
+	"context"
 	"fmt"
 	"net"
 
@@ -17,6 +18,12 @@ func secondaryIPResource() *schema.Resource {
 
 		Importer: &schema.ResourceImporter{
 			State: importSecondaryIP,
+		},
+
+		Timeouts: &schema.ResourceTimeout{
+			Create: schema.DefaultTimeout(defaultTimeout),
+			Read:   schema.DefaultTimeout(defaultTimeout),
+			Delete: schema.DefaultTimeout(defaultTimeout),
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -45,11 +52,14 @@ func secondaryIPResource() *schema.Resource {
 }
 
 func createSecondaryIP(d *schema.ResourceData, meta interface{}) error {
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutCreate))
+	defer cancel()
+
 	client := GetComputeClient(meta)
 
 	virtualMachineID := d.Get("compute_id").(string)
 
-	resp, err := client.Request(&egoscale.ListNics{
+	resp, err := client.RequestWithContext(ctx, &egoscale.ListNics{
 		VirtualMachineID: virtualMachineID,
 	})
 	if err != nil {
@@ -63,7 +73,7 @@ func createSecondaryIP(d *schema.ResourceData, meta interface{}) error {
 
 	// XXX Fragile
 	nic := nics.Nic[0]
-	resp, err = client.Request(&egoscale.AddIPToNic{
+	resp, err = client.RequestWithContext(ctx, &egoscale.AddIPToNic{
 		NicID:     nic.ID,
 		IPAddress: net.ParseIP(d.Get("ip_address").(string)),
 	})
@@ -80,11 +90,14 @@ func createSecondaryIP(d *schema.ResourceData, meta interface{}) error {
 }
 
 func existsSecondaryIP(d *schema.ResourceData, meta interface{}) (bool, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
+	defer cancel()
+
 	client := GetComputeClient(meta)
 
 	nicID := d.Get("nic_id").(string)
 	virtualMachineID := d.Get("compute_id").(string)
-	resp, err := client.Request(&egoscale.ListNics{
+	resp, err := client.RequestWithContext(ctx, &egoscale.ListNics{
 		NicID:            nicID,
 		VirtualMachineID: virtualMachineID,
 	})
@@ -104,11 +117,14 @@ func existsSecondaryIP(d *schema.ResourceData, meta interface{}) (bool, error) {
 }
 
 func readSecondaryIP(d *schema.ResourceData, meta interface{}) error {
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
+	defer cancel()
+
 	client := GetComputeClient(meta)
 
 	nicID := d.Get("nic_id").(string)
 	virtualMachineID := d.Get("compute_id").(string)
-	resp, err := client.Request(&egoscale.ListNics{
+	resp, err := client.RequestWithContext(ctx, &egoscale.ListNics{
 		NicID:            nicID,
 		VirtualMachineID: virtualMachineID,
 	})
@@ -143,9 +159,12 @@ func readSecondaryIP(d *schema.ResourceData, meta interface{}) error {
 }
 
 func deleteSecondaryIP(d *schema.ResourceData, meta interface{}) error {
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutDelete))
+	defer cancel()
+
 	client := GetComputeClient(meta)
 
-	return client.BooleanRequest(&egoscale.RemoveIPFromNic{
+	return client.BooleanRequestWithContext(ctx, &egoscale.RemoveIPFromNic{
 		ID: d.Id(),
 	})
 }

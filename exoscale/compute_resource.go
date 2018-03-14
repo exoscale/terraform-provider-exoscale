@@ -3,6 +3,7 @@ package exoscale
 import (
 	"bytes"
 	"compress/gzip"
+	"context"
 	"encoding/base64"
 	"fmt"
 	"log"
@@ -147,11 +148,21 @@ func computeResource() *schema.Resource {
 			State: importCompute,
 		},
 
+		Timeouts: &schema.ResourceTimeout{
+			Create: schema.DefaultTimeout(defaultTimeout),
+			Read:   schema.DefaultTimeout(defaultTimeout),
+			Update: schema.DefaultTimeout(defaultTimeout),
+			Delete: schema.DefaultTimeout(defaultTimeout),
+		},
+
 		Schema: s,
 	}
 }
 
 func createCompute(d *schema.ResourceData, meta interface{}) error {
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutCreate))
+	defer cancel()
+
 	client := GetComputeClient(meta)
 
 	displayName := d.Get("display_name").(string)
@@ -175,7 +186,7 @@ func createCompute(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	zoneName := d.Get("zone").(string)
-	zone, err := getZoneByName(client, zoneName)
+	zone, err := getZoneByName(ctx, client, zoneName)
 	if err != nil {
 		return err
 	}
@@ -263,7 +274,7 @@ func createCompute(d *schema.ResourceData, meta interface{}) error {
 		StartVM:            &startVM,
 	}
 
-	resp, err := client.Request(req)
+	resp, err := client.RequestWithContext(ctx, req)
 	if err != nil {
 		return err
 	}
@@ -273,9 +284,9 @@ func createCompute(d *schema.ResourceData, meta interface{}) error {
 	d.SetId(machine.ID)
 
 	if cmd := createTags(d, "tags", machine.ResourceType()); cmd != nil {
-		if err := client.BooleanRequest(cmd); err != nil {
+		if err := client.BooleanRequestWithContext(ctx, cmd); err != nil {
 			// Attempting to destroy the freshly created machine
-			_, e := client.Request(&egoscale.DestroyVirtualMachine{
+			_, e := client.RequestWithContext(ctx, &egoscale.DestroyVirtualMachine{
 				ID: machine.ID,
 			})
 
@@ -291,7 +302,10 @@ func createCompute(d *schema.ResourceData, meta interface{}) error {
 }
 
 func existsCompute(d *schema.ResourceData, meta interface{}) (bool, error) {
-	_, err := getVirtualMachine(d, meta)
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
+	defer cancel()
+
+	_, err := getVirtualMachine(ctx, d, meta)
 
 	// The CS API returns an error if it doesn't exist
 	if err != nil {
@@ -303,9 +317,13 @@ func existsCompute(d *schema.ResourceData, meta interface{}) (bool, error) {
 }
 
 func readCompute(d *schema.ResourceData, meta interface{}) error {
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
+	defer cancel()
+
 	client := GetComputeClient(meta)
 
-	machine, err := getVirtualMachine(d, meta)
+	// XXX apply context
+	machine, err := getVirtualMachine(ctx, d, meta)
 	if err != nil {
 		return handleNotFound(d, err)
 	}
@@ -325,6 +343,7 @@ func readCompute(d *schema.ResourceData, meta interface{}) error {
 	d.Set("security_groups", securitySet)
 
 	// disk_size
+	// XXX apply context
 	volume, err := client.GetRootVolumeForVirtualMachine(d.Id())
 	if err != nil {
 		return err
@@ -335,6 +354,9 @@ func readCompute(d *schema.ResourceData, meta interface{}) error {
 }
 
 func updateCompute(d *schema.ResourceData, meta interface{}) error {
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutUpdate))
+	defer cancel()
+
 	client := GetComputeClient(meta)
 
 	initialState := d.Get("state").(string)
@@ -374,7 +396,7 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 		securityGroupIDs := make([]string, 0)
 		if securitySet, ok := d.Get("security_groups").(*schema.Set); ok {
 			for _, group := range securitySet.List() {
-				sg, err := getSecurityGroup(client, group.(string))
+				sg, err := getSecurityGroup(ctx, client, group.(string))
 				if err != nil {
 					return err
 				}
@@ -429,7 +451,7 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 
 	if d.HasChange("size") {
 		rebootRequired = true
-		services, err := client.Request(&egoscale.ListServiceOfferings{
+		services, err := client.RequestWithContext(ctx, &egoscale.ListServiceOfferings{
 			Name: d.Get("size").(string),
 		})
 		if err != nil {
@@ -516,7 +538,7 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 
 	// Stop
 	if initialState != "Stopped" && (rebootRequired || stopRequired) {
-		resp, err := client.Request(&egoscale.StopVirtualMachine{
+		resp, err := client.RequestWithContext(ctx, &egoscale.StopVirtualMachine{
 			ID: d.Id(),
 		})
 		if err != nil {
@@ -529,7 +551,7 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	// Update
-	resp, err := client.Request(req)
+	resp, err := client.RequestWithContext(ctx, req)
 	if err != nil {
 		return err
 	}
@@ -549,7 +571,7 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	for _, cmd := range commands {
-		_, err := client.Request(cmd.request)
+		_, err := client.RequestWithContext(ctx, cmd.request)
 		if err != nil {
 			return err
 		}
@@ -571,12 +593,15 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 }
 
 func deleteCompute(d *schema.ResourceData, meta interface{}) error {
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutDelete))
+	defer cancel()
+
 	client := GetComputeClient(meta)
 
 	req := &egoscale.DestroyVirtualMachine{
 		ID: d.Id(),
 	}
-	_, err := client.Request(req)
+	_, err := client.RequestWithContext(ctx, req)
 
 	if err != nil {
 		return err
@@ -588,8 +613,11 @@ func deleteCompute(d *schema.ResourceData, meta interface{}) error {
 }
 
 func importCompute(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
+	defer cancel()
+
 	id := d.Id()
-	machine, err := getVirtualMachine(d, meta)
+	machine, err := getVirtualMachine(ctx, d, meta)
 	if err != nil {
 		if e := handleNotFound(d, err); e != nil {
 			return nil, e
@@ -721,7 +749,7 @@ func getSSHUsername(template string) string {
 	return "root"
 }
 
-func getVirtualMachine(d *schema.ResourceData, meta interface{}) (*egoscale.VirtualMachine, error) {
+func getVirtualMachine(ctx context.Context, d *schema.ResourceData, meta interface{}) (*egoscale.VirtualMachine, error) {
 	client := GetComputeClient(meta)
 
 	// Permit to search for a VM by its name (useful when doing imports
@@ -732,7 +760,7 @@ func getVirtualMachine(d *schema.ResourceData, meta interface{}) (*egoscale.Virt
 		id = ""
 	}
 
-	resp, err := client.Request(&egoscale.ListVirtualMachines{
+	resp, err := client.RequestWithContext(ctx, &egoscale.ListVirtualMachines{
 		ID:   id,
 		Name: name,
 	})
@@ -775,11 +803,11 @@ func convertTemplateName(t string) string {
 	return ""
 }
 
-func getSecurityGroup(client *egoscale.Client, name string) (*egoscale.SecurityGroup, error) {
+func getSecurityGroup(ctx context.Context, client *egoscale.Client, name string) (*egoscale.SecurityGroup, error) {
 	req := &egoscale.ListSecurityGroups{
 		SecurityGroupName: name,
 	}
-	resp, err := client.Request(req)
+	resp, err := client.RequestWithContext(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -791,24 +819,6 @@ func getSecurityGroup(client *egoscale.Client, name string) (*egoscale.SecurityG
 
 	sg := sgs.SecurityGroup[0]
 	return &sg, nil
-}
-
-func getAffinityGroup(client *egoscale.Client, name string) (*egoscale.AffinityGroup, error) {
-	req := &egoscale.ListAffinityGroups{
-		Name: name,
-	}
-	resp, err := client.Request(req)
-	if err != nil {
-		return nil, err
-	}
-
-	ags := resp.(*egoscale.ListAffinityGroupsResponse)
-	if len(ags.AffinityGroup) == 0 {
-		return nil, fmt.Errorf("AffinityGroup not found %s", name)
-	}
-
-	ag := ags.AffinityGroup[0]
-	return &ag, nil
 }
 
 // isUuid matches a UUIDv4

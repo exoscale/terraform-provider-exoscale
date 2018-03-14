@@ -1,6 +1,7 @@
 package exoscale
 
 import (
+	"context"
 	"fmt"
 	"net"
 
@@ -14,6 +15,12 @@ func nicResource() *schema.Resource {
 		Exists: existsNic,
 		Read:   readNic,
 		Delete: deleteNic,
+
+		Timeouts: &schema.ResourceTimeout{
+			Create: schema.DefaultTimeout(defaultTimeout),
+			Read:   schema.DefaultTimeout(defaultTimeout),
+			Delete: schema.DefaultTimeout(defaultTimeout),
+		},
 
 		Schema: map[string]*schema.Schema{
 			"compute_id": {
@@ -51,6 +58,9 @@ func nicResource() *schema.Resource {
 }
 
 func createNic(d *schema.ResourceData, meta interface{}) error {
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutCreate))
+	defer cancel()
+
 	client := GetComputeClient(meta)
 
 	var ip net.IP
@@ -60,7 +70,7 @@ func createNic(d *schema.ResourceData, meta interface{}) error {
 
 	networkID := d.Get("network_id").(string)
 
-	resp, err := client.Request(&egoscale.AddNicToVirtualMachine{
+	resp, err := client.RequestWithContext(ctx, &egoscale.AddNicToVirtualMachine{
 		NetworkID:        networkID,
 		VirtualMachineID: d.Get("compute_id").(string),
 		IPAddress:        ip,
@@ -80,8 +90,11 @@ func createNic(d *schema.ResourceData, meta interface{}) error {
 }
 
 func readNic(d *schema.ResourceData, meta interface{}) error {
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
+	defer cancel()
+
 	client := GetComputeClient(meta)
-	resp, err := client.Request(&egoscale.ListNics{
+	resp, err := client.RequestWithContext(ctx, &egoscale.ListNics{
 		NicID:            d.Id(),
 		VirtualMachineID: d.Get("compute_id").(string),
 	})
@@ -100,8 +113,11 @@ func readNic(d *schema.ResourceData, meta interface{}) error {
 }
 
 func existsNic(d *schema.ResourceData, meta interface{}) (bool, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
+	defer cancel()
+
 	client := GetComputeClient(meta)
-	resp, err := client.Request(&egoscale.ListNics{
+	resp, err := client.RequestWithContext(ctx, &egoscale.ListNics{
 		NicID:            d.Id(),
 		VirtualMachineID: d.Get("compute_id").(string),
 	})
@@ -121,9 +137,12 @@ func existsNic(d *schema.ResourceData, meta interface{}) (bool, error) {
 }
 
 func deleteNic(d *schema.ResourceData, meta interface{}) error {
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutDelete))
+	defer cancel()
+
 	client := GetComputeClient(meta)
 
-	resp, err := client.Request(&egoscale.RemoveNicFromVirtualMachine{
+	resp, err := client.RequestWithContext(ctx, &egoscale.RemoveNicFromVirtualMachine{
 		NicID:            d.Id(),
 		VirtualMachineID: d.Get("compute_id").(string),
 	})

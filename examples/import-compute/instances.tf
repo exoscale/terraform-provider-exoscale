@@ -6,5 +6,10 @@ resource "exoscale_compute" "ada" {
   template = "Linux Debian 9 64-bit"
   zone = "ch-dk-2"
 
+  timeouts {
+    create = "30s"
+    delete = "2h"
+  }
+
   security_groups = ["${exoscale_security_group.default.name}"]
 }

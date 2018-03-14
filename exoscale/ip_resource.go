@@ -1,6 +1,7 @@
 package exoscale
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net"
@@ -36,16 +37,26 @@ func elasticIPResource() *schema.Resource {
 			State: importElasticIP,
 		},
 
+		Timeouts: &schema.ResourceTimeout{
+			Create: schema.DefaultTimeout(defaultTimeout),
+			Read:   schema.DefaultTimeout(defaultTimeout),
+			Update: schema.DefaultTimeout(defaultTimeout),
+			Delete: schema.DefaultTimeout(defaultTimeout),
+		},
+
 		Schema: s,
 	}
 }
 
 func createElasticIP(d *schema.ResourceData, meta interface{}) error {
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutCreate))
+	defer cancel()
+
 	client := GetComputeClient(meta)
 
 	zoneName := d.Get("zone").(string)
 
-	zone, err := getZoneByName(client, zoneName)
+	zone, err := getZoneByName(ctx, client, zoneName)
 	if err != nil {
 		return err
 	}
@@ -54,7 +65,7 @@ func createElasticIP(d *schema.ResourceData, meta interface{}) error {
 		ZoneID: zone.ID,
 	}
 
-	resp, err := client.Request(req)
+	resp, err := client.RequestWithContext(ctx, req)
 	if err != nil {
 		return err
 	}
@@ -63,9 +74,9 @@ func createElasticIP(d *schema.ResourceData, meta interface{}) error {
 	d.SetId(elasticIP.ID)
 
 	if cmd := createTags(d, "tags", elasticIP.ResourceType()); cmd != nil {
-		if err := client.BooleanRequest(cmd); err != nil {
+		if err := client.BooleanRequestWithContext(ctx, cmd); err != nil {
 			// Attempting to destroy the freshly created ip address
-			e := client.BooleanRequest(&egoscale.DisassociateIPAddress{
+			e := client.BooleanRequestWithContext(ctx, &egoscale.DisassociateIPAddress{
 				ID: elasticIP.ID,
 			})
 
@@ -81,9 +92,12 @@ func createElasticIP(d *schema.ResourceData, meta interface{}) error {
 }
 
 func existsElasticIP(d *schema.ResourceData, meta interface{}) (bool, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
+	defer cancel()
+
 	client := GetComputeClient(meta)
 
-	resp, err := client.Request(&egoscale.ListPublicIPAddresses{
+	resp, err := client.RequestWithContext(ctx, &egoscale.ListPublicIPAddresses{
 		ID: d.Id(),
 	})
 
@@ -97,6 +111,9 @@ func existsElasticIP(d *schema.ResourceData, meta interface{}) (bool, error) {
 }
 
 func readElasticIP(d *schema.ResourceData, meta interface{}) error {
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
+	defer cancel()
+
 	client := GetComputeClient(meta)
 
 	// This permits to import a resource using the IP Address rather than using the ID.
@@ -106,7 +123,7 @@ func readElasticIP(d *schema.ResourceData, meta interface{}) error {
 		id = ""
 	}
 
-	resp, err := client.Request(&egoscale.ListPublicIPAddresses{
+	resp, err := client.RequestWithContext(ctx, &egoscale.ListPublicIPAddresses{
 		ID:        id,
 		IPAddress: ip,
 	})
@@ -125,6 +142,9 @@ func readElasticIP(d *schema.ResourceData, meta interface{}) error {
 }
 
 func updateElasticIP(d *schema.ResourceData, meta interface{}) error {
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutUpdate))
+	defer cancel()
+
 	client := GetComputeClient(meta)
 
 	d.Partial(true)
@@ -135,7 +155,7 @@ func updateElasticIP(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	for _, req := range requests {
-		_, err := client.Request(req)
+		_, err := client.RequestWithContext(ctx, req)
 		if err != nil {
 			return err
 		}
@@ -153,12 +173,15 @@ func updateElasticIP(d *schema.ResourceData, meta interface{}) error {
 }
 
 func deleteElasticIP(d *schema.ResourceData, meta interface{}) error {
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutDelete))
+	defer cancel()
+
 	client := GetComputeClient(meta)
 
 	req := &egoscale.DisassociateIPAddress{
 		ID: d.Id(),
 	}
-	err := client.BooleanRequest(req)
+	err := client.BooleanRequestWithContext(ctx, req)
 	if err != nil {
 		return err
 	}

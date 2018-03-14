@@ -1,6 +1,8 @@
 package exoscale
 
 import (
+	"context"
+
 	"github.com/exoscale/egoscale"
 	"github.com/hashicorp/terraform/helper/schema"
 )
@@ -14,6 +16,12 @@ func affinityGroupResource() *schema.Resource {
 
 		Importer: &schema.ResourceImporter{
 			State: importAffinityGroup,
+		},
+
+		Timeouts: &schema.ResourceTimeout{
+			Create: schema.DefaultTimeout(defaultTimeout),
+			Read:   schema.DefaultTimeout(defaultTimeout),
+			Delete: schema.DefaultTimeout(defaultTimeout),
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -46,6 +54,9 @@ func affinityGroupResource() *schema.Resource {
 }
 
 func createAffinityGroup(d *schema.ResourceData, meta interface{}) error {
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutCreate))
+	defer cancel()
+
 	client := GetComputeClient(meta)
 
 	req := &egoscale.CreateAffinityGroup{
@@ -53,7 +64,7 @@ func createAffinityGroup(d *schema.ResourceData, meta interface{}) error {
 		Description: d.Get("description").(string),
 		Type:        d.Get("type").(string),
 	}
-	resp, err := client.Request(req)
+	resp, err := client.RequestWithContext(ctx, req)
 	if err != nil {
 		return err
 	}
@@ -63,9 +74,12 @@ func createAffinityGroup(d *schema.ResourceData, meta interface{}) error {
 }
 
 func existsAffinityGroup(d *schema.ResourceData, meta interface{}) (bool, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
+	defer cancel()
+
 	client := GetComputeClient(meta)
 
-	resp, err := client.Request(&egoscale.ListAffinityGroups{
+	resp, err := client.RequestWithContext(ctx, &egoscale.ListAffinityGroups{
 		ID: d.Id(),
 	})
 
@@ -78,9 +92,12 @@ func existsAffinityGroup(d *schema.ResourceData, meta interface{}) (bool, error)
 }
 
 func readAffinityGroup(d *schema.ResourceData, meta interface{}) error {
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
+	defer cancel()
+
 	client := GetComputeClient(meta)
 
-	resp, err := client.Request(&egoscale.ListAffinityGroups{
+	resp, err := client.RequestWithContext(ctx, &egoscale.ListAffinityGroups{
 		ID: d.Id(),
 	})
 	if err != nil {
@@ -101,12 +118,15 @@ func applyAffinityGroup(d *schema.ResourceData, affinity egoscale.AffinityGroup)
 }
 
 func deleteAffinityGroup(d *schema.ResourceData, meta interface{}) error {
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutDelete))
+	defer cancel()
+
 	client := GetComputeClient(meta)
 
 	req := &egoscale.DeleteAffinityGroup{
 		ID: d.Id(),
 	}
-	return client.BooleanRequest(req)
+	return client.BooleanRequestWithContext(ctx, req)
 }
 
 func importAffinityGroup(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {

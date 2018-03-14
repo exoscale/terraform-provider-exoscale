@@ -1,6 +1,7 @@
 package exoscale
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -18,6 +19,12 @@ func securityGroupRuleResource() *schema.Resource {
 
 		Importer: &schema.ResourceImporter{
 			State: importSecurityGroupRule,
+		},
+
+		Timeouts: &schema.ResourceTimeout{
+			Create: schema.DefaultTimeout(defaultTimeout),
+			Read:   schema.DefaultTimeout(defaultTimeout),
+			Delete: schema.DefaultTimeout(defaultTimeout),
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -106,6 +113,9 @@ func securityGroupRuleResource() *schema.Resource {
 }
 
 func createSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutCreate))
+	defer cancel()
+
 	client := GetComputeClient(meta)
 
 	r := &egoscale.ListSecurityGroups{}
@@ -116,7 +126,7 @@ func createSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
 		r.SecurityGroupName = d.Get("security_group").(string)
 	}
 
-	resp, err := client.Request(r)
+	resp, err := client.RequestWithContext(ctx, r)
 	if err != nil {
 		return err
 	}
@@ -137,7 +147,7 @@ func createSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
 			return fmt.Errorf("No CIDR, User Security Group ID or Name were provided")
 		}
 
-		resp, err := client.Request(&egoscale.ListSecurityGroups{
+		resp, err := client.RequestWithContext(ctx, &egoscale.ListSecurityGroups{
 			ID:                userSecurityGroupID.(string),
 			SecurityGroupName: userSecurityGroupName.(string),
 		})
@@ -177,7 +187,7 @@ func createSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
 		req = (*egoscale.AuthorizeSecurityGroupEgress)(req.(*egoscale.AuthorizeSecurityGroupIngress))
 	}
 
-	resp, err = client.Request(req)
+	resp, err = client.RequestWithContext(ctx, req)
 	if err != nil {
 		return err
 	}
@@ -195,6 +205,9 @@ func createSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
 }
 
 func existsSecurityGroupRule(d *schema.ResourceData, meta interface{}) (bool, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
+	defer cancel()
+
 	client := GetComputeClient(meta)
 
 	securityGroupID := ""
@@ -208,7 +221,7 @@ func existsSecurityGroupRule(d *schema.ResourceData, meta interface{}) (bool, er
 		return false, fmt.Errorf("Missing either Security Group ID or Name")
 	}
 
-	resp, err := client.Request(&egoscale.ListSecurityGroups{
+	resp, err := client.RequestWithContext(ctx, &egoscale.ListSecurityGroups{
 		ID:                securityGroupID,
 		SecurityGroupName: securityGroupName,
 	})
@@ -237,6 +250,9 @@ func existsSecurityGroupRule(d *schema.ResourceData, meta interface{}) (bool, er
 }
 
 func readSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
+	defer cancel()
+
 	client := GetComputeClient(meta)
 
 	securityGroupID := ""
@@ -249,7 +265,7 @@ func readSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("Missing either Security Group ID or Name")
 	}
 
-	resp, err := client.Request(&egoscale.ListSecurityGroups{
+	resp, err := client.RequestWithContext(ctx, &egoscale.ListSecurityGroups{
 		ID:                securityGroupID,
 		SecurityGroupName: securityGroupName,
 	})
@@ -279,6 +295,9 @@ func readSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
 }
 
 func deleteSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutDelete))
+	defer cancel()
+
 	client := GetComputeClient(meta)
 
 	id := d.Id()
@@ -293,7 +312,7 @@ func deleteSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	return client.BooleanRequest(req)
+	return client.BooleanRequestWithContext(ctx, req)
 }
 
 func importSecurityGroupRule(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {

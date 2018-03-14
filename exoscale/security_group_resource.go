@@ -1,6 +1,7 @@
 package exoscale
 
 import (
+	"context"
 	"fmt"
 	"log"
 
@@ -35,14 +36,24 @@ func securityGroupResource() *schema.Resource {
 			State: importSecurityGroup,
 		},
 
+		Timeouts: &schema.ResourceTimeout{
+			Create: schema.DefaultTimeout(defaultTimeout),
+			Read:   schema.DefaultTimeout(defaultTimeout),
+			Update: schema.DefaultTimeout(defaultTimeout),
+			Delete: schema.DefaultTimeout(defaultTimeout),
+		},
+
 		Schema: s,
 	}
 }
 
 func createSecurityGroup(d *schema.ResourceData, meta interface{}) error {
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutCreate))
+	defer cancel()
+
 	client := GetComputeClient(meta)
 
-	resp, err := client.Request(&egoscale.CreateSecurityGroup{
+	resp, err := client.RequestWithContext(ctx, &egoscale.CreateSecurityGroup{
 		Name:        d.Get("name").(string),
 		Description: d.Get("description").(string),
 	})
@@ -54,9 +65,9 @@ func createSecurityGroup(d *schema.ResourceData, meta interface{}) error {
 
 	d.SetId(sg.ID)
 	if cmd := createTags(d, "tags", sg.ResourceType()); cmd != nil {
-		if err := client.BooleanRequest(cmd); err != nil {
+		if err := client.BooleanRequestWithContext(ctx, cmd); err != nil {
 			// Attempting to destroy the freshly created security group
-			e := client.BooleanRequest(&egoscale.DeleteSecurityGroup{
+			e := client.BooleanRequestWithContext(ctx, &egoscale.DeleteSecurityGroup{
 				Name: sg.Name,
 			})
 
@@ -72,8 +83,11 @@ func createSecurityGroup(d *schema.ResourceData, meta interface{}) error {
 }
 
 func existsSecurityGroup(d *schema.ResourceData, meta interface{}) (bool, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
+	defer cancel()
+
 	client := GetComputeClient(meta)
-	_, err := client.Request(&egoscale.ListSecurityGroups{
+	_, err := client.RequestWithContext(ctx, &egoscale.ListSecurityGroups{
 		ID: d.Id(),
 	})
 
@@ -85,6 +99,9 @@ func existsSecurityGroup(d *schema.ResourceData, meta interface{}) (bool, error)
 }
 
 func updateSecurityGroup(d *schema.ResourceData, meta interface{}) error {
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutUpdate))
+	defer cancel()
+
 	client := GetComputeClient(meta)
 
 	d.Partial(true)
@@ -95,7 +112,7 @@ func updateSecurityGroup(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	for _, req := range requests {
-		_, err := client.Request(req)
+		_, err := client.RequestWithContext(ctx, req)
 		if err != nil {
 			return err
 		}
@@ -113,8 +130,11 @@ func updateSecurityGroup(d *schema.ResourceData, meta interface{}) error {
 }
 
 func readSecurityGroup(d *schema.ResourceData, meta interface{}) error {
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
+	defer cancel()
+
 	client := GetComputeClient(meta)
-	resp, err := client.Request(&egoscale.ListSecurityGroups{
+	resp, err := client.RequestWithContext(ctx, &egoscale.ListSecurityGroups{
 		ID: d.Id(),
 	})
 	if err != nil {
@@ -131,8 +151,11 @@ func readSecurityGroup(d *schema.ResourceData, meta interface{}) error {
 }
 
 func deleteSecurityGroup(d *schema.ResourceData, meta interface{}) error {
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutDelete))
+	defer cancel()
+
 	client := GetComputeClient(meta)
-	err := client.BooleanRequest(&egoscale.DeleteSecurityGroup{
+	err := client.BooleanRequestWithContext(ctx, &egoscale.DeleteSecurityGroup{
 		Name: d.Get("name").(string),
 	})
 
@@ -145,6 +168,9 @@ func deleteSecurityGroup(d *schema.ResourceData, meta interface{}) error {
 }
 
 func importSecurityGroup(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
+	defer cancel()
+
 	client := GetComputeClient(meta)
 
 	// This permits to import a resource using the security group name rather than using the ID.
@@ -155,7 +181,7 @@ func importSecurityGroup(d *schema.ResourceData, meta interface{}) ([]*schema.Re
 		id = ""
 	}
 
-	resp, err := client.Request(&egoscale.ListSecurityGroups{
+	resp, err := client.RequestWithContext(ctx, &egoscale.ListSecurityGroups{
 		ID:                id,
 		SecurityGroupName: name,
 	})
