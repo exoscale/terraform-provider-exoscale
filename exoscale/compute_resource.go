@@ -683,10 +683,42 @@ func applyCompute(d *schema.ResourceData, machine egoscale.VirtualMachine) error
 
 	// Connection info for the provisioners
 	d.SetConnInfo(map[string]string{
+		"type": "ssh",
+		"user": getSSHUsername(machine.TemplateName),
 		"host": d.Get("ip_address").(string),
 	})
 
 	return nil
+}
+
+func getSSHUsername(template string) string {
+	name := strings.ToLower(template)
+
+	if strings.Contains(name, "ubuntu") {
+		return "ubuntu"
+	}
+
+	if strings.Contains(name, "centos") {
+		return "centos"
+	}
+
+	if strings.Contains(name, "redhat") {
+		return "cloud-user"
+	}
+
+	if strings.Contains(name, "fedora") {
+		return "fedora"
+	}
+
+	if strings.Contains(name, "coreos") {
+		return "core"
+	}
+
+	if strings.Contains(name, "debian") {
+		return "debian"
+	}
+
+	return "root"
 }
 
 func getVirtualMachine(d *schema.ResourceData, meta interface{}) (*egoscale.VirtualMachine, error) {

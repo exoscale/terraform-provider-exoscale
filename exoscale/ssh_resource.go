@@ -23,9 +23,13 @@ func sshResource() *schema.Resource {
 				ForceNew: true,
 			},
 			"public_key": {
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+			},
+			"private_key": {
 				Type:      schema.TypeString,
-				Optional:  true,
-				ForceNew:  true,
+				Computed:  true,
 				Sensitive: true,
 			},
 			"fingerprint": {
@@ -39,17 +43,28 @@ func sshResource() *schema.Resource {
 func createSSH(d *schema.ResourceData, meta interface{}) error {
 	client := GetComputeClient(meta)
 
-	// XXX Could use CreateSSHKeyPairRequest if public_key wasn't set.
-	req := &egoscale.RegisterSSHKeyPair{
-		Name:      d.Get("name").(string),
-		PublicKey: d.Get("public_key").(string),
+	name := d.Get("name").(string)
+	publicKey, publicKeyOk := d.GetOk("public_key")
+	if publicKeyOk {
+		resp, err := client.Request(&egoscale.RegisterSSHKeyPair{
+			Name:      name,
+			PublicKey: publicKey.(string),
+		})
+		if err != nil {
+			return err
+		}
+
+		keypair := resp.(*egoscale.RegisterSSHKeyPairResponse).KeyPair
+		return applySSH(d, keypair)
 	}
-	resp, err := client.Request(req)
+
+	resp, err := client.Request(&egoscale.CreateSSHKeyPair{
+		Name: name,
+	})
 	if err != nil {
 		return err
 	}
-
-	keypair := resp.(*egoscale.RegisterSSHKeyPairResponse).KeyPair
+	keypair := resp.(*egoscale.CreateSSHKeyPairResponse).KeyPair
 	return applySSH(d, keypair)
 }
 
@@ -110,6 +125,10 @@ func applySSH(d *schema.ResourceData, keypair egoscale.SSHKeyPair) error {
 	d.SetId(keypair.Name)
 	d.Set("name", keypair.Name)
 	d.Set("fingerprint", keypair.Fingerprint)
+
+	if keypair.PrivateKey != "" {
+		d.Set("private_key", keypair.PrivateKey)
+	}
 
 	return nil
 }
