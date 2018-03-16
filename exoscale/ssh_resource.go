@@ -86,15 +86,15 @@ func existsSSH(d *schema.ResourceData, meta interface{}) (bool, error) {
 
 	client := GetComputeClient(meta)
 
-	resp, err := client.RequestWithContext(ctx, &egoscale.ListSSHKeyPairs{
+	key := &egoscale.SSHKeyPair{
 		Name: d.Id(),
-	})
-	if err != nil {
+	}
+
+	if err := client.GetWithContext(ctx, key); err != nil {
 		return false, err
 	}
 
-	keys := resp.(*egoscale.ListSSHKeyPairsResponse)
-	return keys.Count == 1, nil
+	return true, nil
 }
 
 func importSSH(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
@@ -113,15 +113,15 @@ func readSSH(d *schema.ResourceData, meta interface{}) error {
 
 	client := GetComputeClient(meta)
 
-	resp, err := client.RequestWithContext(ctx, &egoscale.ListSSHKeyPairs{
+	key := &egoscale.SSHKeyPair{
 		Name: d.Id(),
-	})
-	if err != nil {
+	}
+
+	if err := client.GetWithContext(ctx, key); err != nil {
 		return err
 	}
 
-	keys := resp.(*egoscale.ListSSHKeyPairsResponse)
-	return applySSH(d, keys.SSHKeyPair[0])
+	return applySSH(d, *key)
 }
 
 func deleteSSH(d *schema.ResourceData, meta interface{}) error {
@@ -130,11 +130,10 @@ func deleteSSH(d *schema.ResourceData, meta interface{}) error {
 
 	client := GetComputeClient(meta)
 
-	req := &egoscale.DeleteSSHKeyPair{
+	key := &egoscale.SSHKeyPair{
 		Name: d.Id(),
 	}
-	err := client.BooleanRequestWithContext(ctx, req)
-	if err != nil {
+	if err := client.DeleteWithContext(ctx, key); err != nil {
 		return err
 	}
 
