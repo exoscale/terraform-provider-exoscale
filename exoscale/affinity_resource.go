@@ -70,7 +70,7 @@ func createAffinityGroup(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	ag := resp.(*egoscale.CreateAffinityGroupResponse).AffinityGroup
-	return applyAffinityGroup(d, ag)
+	return applyAffinityGroup(d, &ag)
 }
 
 func existsAffinityGroup(d *schema.ResourceData, meta interface{}) (bool, error) {
@@ -79,16 +79,15 @@ func existsAffinityGroup(d *schema.ResourceData, meta interface{}) (bool, error)
 
 	client := GetComputeClient(meta)
 
-	resp, err := client.RequestWithContext(ctx, &egoscale.ListAffinityGroups{
+	ag := &egoscale.AffinityGroup{
 		ID: d.Id(),
-	})
-
-	if err != nil {
+	}
+	if err := client.GetWithContext(ctx, ag); err != nil {
 		e := handleNotFound(d, err)
 		return d.Id() != "", e
 	}
 
-	return resp.(*egoscale.ListAffinityGroupsResponse).Count > 0, nil
+	return true, nil
 }
 
 func readAffinityGroup(d *schema.ResourceData, meta interface{}) error {
@@ -97,17 +96,17 @@ func readAffinityGroup(d *schema.ResourceData, meta interface{}) error {
 
 	client := GetComputeClient(meta)
 
-	resp, err := client.RequestWithContext(ctx, &egoscale.ListAffinityGroups{
+	ag := &egoscale.AffinityGroup{
 		ID: d.Id(),
-	})
-	if err != nil {
+	}
+	if err := client.GetWithContext(ctx, ag); err != nil {
 		return handleNotFound(d, err)
 	}
 
-	return applyAffinityGroup(d, resp.(*egoscale.ListAffinityGroupsResponse).AffinityGroup[0])
+	return applyAffinityGroup(d, ag)
 }
 
-func applyAffinityGroup(d *schema.ResourceData, affinity egoscale.AffinityGroup) error {
+func applyAffinityGroup(d *schema.ResourceData, affinity *egoscale.AffinityGroup) error {
 	d.SetId(affinity.ID)
 	d.Set("name", affinity.Name)
 	d.Set("description", affinity.Description)
@@ -123,10 +122,9 @@ func deleteAffinityGroup(d *schema.ResourceData, meta interface{}) error {
 
 	client := GetComputeClient(meta)
 
-	req := &egoscale.DeleteAffinityGroup{
+	return client.DeleteWithContext(ctx, &egoscale.AffinityGroup{
 		ID: d.Id(),
-	}
-	return client.BooleanRequestWithContext(ctx, req)
+	})
 }
 
 func importAffinityGroup(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
