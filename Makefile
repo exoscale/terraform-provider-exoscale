@@ -68,6 +68,14 @@ deps-status: $(GOPATH)/src/$(PKG)
 deps-update: deps
 	(cd $(GOPATH)/src/$(PKG) && dep ensure -update)
 
+.PHONY: test
+test:
+	(cd $(GOPATH)/src/$(PKG)/exoscale && go test -v)
+
+.PHONY: testacc
+testacc:
+	(cd $(GOPATH)/src/$(PKG)/exoscale && TF_ACC=1 go test -v)
+
 .PHONY: signature
 signature: $(BIN).asc
 

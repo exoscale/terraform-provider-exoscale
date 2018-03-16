@@ -24,7 +24,7 @@ type BaseConfig struct {
 
 func getClient(endpoint string, meta interface{}) *egoscale.Client {
 	config := meta.(BaseConfig)
-	timeout := time.Duration(config.timeout) * time.Second
+	timeout := config.timeout
 	return egoscale.NewClientWithTimeout(endpoint, config.key, config.secret, timeout)
 }
 
