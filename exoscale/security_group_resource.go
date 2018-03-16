@@ -2,7 +2,6 @@ package exoscale
 
 import (
 	"context"
-	"fmt"
 	"log"
 
 	"github.com/exoscale/egoscale"
@@ -79,7 +78,7 @@ func createSecurityGroup(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	return applySecurityGroup(d, sg)
+	return applySecurityGroup(d, &sg)
 }
 
 func existsSecurityGroup(d *schema.ResourceData, meta interface{}) (bool, error) {
@@ -87,11 +86,10 @@ func existsSecurityGroup(d *schema.ResourceData, meta interface{}) (bool, error)
 	defer cancel()
 
 	client := GetComputeClient(meta)
-	_, err := client.RequestWithContext(ctx, &egoscale.ListSecurityGroups{
+	sg := &egoscale.SecurityGroup{
 		ID: d.Id(),
-	})
-
-	if err != nil {
+	}
+	if err := client.GetWithContext(ctx, sg); err != nil {
 		e := handleNotFound(d, err)
 		return d.Id() != "", e
 	}
@@ -134,20 +132,14 @@ func readSecurityGroup(d *schema.ResourceData, meta interface{}) error {
 	defer cancel()
 
 	client := GetComputeClient(meta)
-	resp, err := client.RequestWithContext(ctx, &egoscale.ListSecurityGroups{
+	sg := &egoscale.SecurityGroup{
 		ID: d.Id(),
-	})
-	if err != nil {
+	}
+	if err := client.GetWithContext(ctx, sg); err != nil {
 		return handleNotFound(d, err)
 	}
 
-	groups := resp.(*egoscale.ListSecurityGroupsResponse)
-	if groups.Count == 0 {
-		d.SetId("")
-		return nil
-	}
-
-	return applySecurityGroup(d, groups.SecurityGroup[0])
+	return applySecurityGroup(d, sg)
 }
 
 func deleteSecurityGroup(d *schema.ResourceData, meta interface{}) error {
@@ -181,21 +173,14 @@ func importSecurityGroup(d *schema.ResourceData, meta interface{}) ([]*schema.Re
 		id = ""
 	}
 
-	resp, err := client.RequestWithContext(ctx, &egoscale.ListSecurityGroups{
-		ID:                id,
-		SecurityGroupName: name,
-	})
-	if err != nil {
+	securityGroup := &egoscale.SecurityGroup{
+		ID:   id,
+		Name: name,
+	}
+	if err := client.GetWithContext(ctx, securityGroup); err != nil {
 		return nil, err
 	}
 
-	sgs := resp.(*egoscale.ListSecurityGroupsResponse)
-	if len(sgs.SecurityGroup) > 1 {
-		return nil, fmt.Errorf("More than one security group found.")
-	} else if len(sgs.SecurityGroup) == 0 {
-		return nil, fmt.Errorf("No security groups found with: id: %#v, name: %#v", id, name)
-	}
-	securityGroup := sgs.SecurityGroup[0]
 	applySecurityGroup(d, securityGroup)
 
 	// Create all the rulez!
@@ -231,7 +216,7 @@ func importSecurityGroup(d *schema.ResourceData, meta interface{}) ([]*schema.Re
 	return resources, nil
 }
 
-func applySecurityGroup(d *schema.ResourceData, securityGroup egoscale.SecurityGroup) error {
+func applySecurityGroup(d *schema.ResourceData, securityGroup *egoscale.SecurityGroup) error {
 	d.SetId(securityGroup.ID)
 	d.Set("name", securityGroup.Name)
 	d.Set("description", securityGroup.Description)
