@@ -3,9 +3,7 @@ language: go
 dist: trusty
 
 go:
-- "1.9"
 - "1.10"
-- tip
 
 env:
   - MY_GOOS=linux MY_GOARCH=amd64 DEP_VERSION=0.4.1
@@ -28,3 +26,9 @@ install:
 
 script:
   - go build -ldflags "-s" github.com/exoscale/terraform-provider-exoscale
+  - >
+    if [ "${MY_GOOS}" = "linux" ] &&
+       [ "${TRAVIS_GO_VERSION}" = "1.10" ] &&
+       [ "${TRAVIS_PULL_REQUEST}" != "false" ]; then
+      TF_ACC=1 go test -v;
+    fi
