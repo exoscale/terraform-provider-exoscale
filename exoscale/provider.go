@@ -7,6 +7,7 @@ import (
 	"os/user"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/exoscale/egoscale"
 	"github.com/go-ini/ini"
@@ -80,12 +81,12 @@ func Provider() terraform.ResourceProvider {
 				DefaultFunc: schema.EnvDefaultFunc("EXOSCALE_DNS_ENDPOINT", defaultDNSEndpoint),
 			},
 			"timeout": {
-				Type:     schema.TypeInt,
+				Type:     schema.TypeFloat,
 				Required: true,
 				Description: fmt.Sprintf(
-					"Timeout in seconds for waiting on compute resources to become available (by default: %d)",
-					defaultTimeout),
-				DefaultFunc: schema.EnvDefaultFunc("EXOSCALE_TIMEOUT", defaultTimeout),
+					"Timeout in seconds for waiting on compute resources to become available (by default: %.0f)",
+					defaultTimeout.Seconds()),
+				DefaultFunc: schema.EnvDefaultFunc("EXOSCALE_TIMEOUT", defaultTimeout.Seconds()),
 			},
 			"delay": {
 				Type:       schema.TypeInt,
@@ -194,7 +195,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	baseConfig := BaseConfig{
 		key:             key.(string),
 		secret:          secret.(string),
-		timeout:         d.Get("timeout").(int),
+		timeout:         time.Duration(int64(d.Get("timeout").(float64)) * int64(time.Second)),
 		computeEndpoint: endpoint,
 		dnsEndpoint:     d.Get("dns_endpoint").(string),
 	}
