@@ -45,7 +45,7 @@ func computeResource() *schema.Resource {
 		"disk_size": {
 			Type:         schema.TypeInt,
 			Required:     true,
-			ValidateFunc: validation.IntAtLeast(10),
+			ValidateFunc: validation.IntAtLeast(1),
 		},
 		"zone": {
 			Type:     schema.TypeString,
@@ -180,45 +180,61 @@ func createCompute(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("At creation time, the `display_name` must match a value compatible with the `hostname` (alpha-numeric and hyphens")
 	}
 
-	// check that the name doesn't already exists!!
-
-	topo, err := client.GetTopology()
+	// ServiceOffering
+	size := d.Get("size").(string)
+	resp, err := client.RequestWithContext(ctx, &egoscale.ListServiceOfferings{
+		Name: size,
+	})
 	if err != nil {
 		return err
 	}
 
-	diskSize := int64(d.Get("disk_size").(int))
-	service := topo.Profiles[strings.ToLower(d.Get("size").(string))]
-
-	if service == "" {
-		return fmt.Errorf("Invalid service: %s", d.Get("size").(string))
+	services := resp.(*egoscale.ListServiceOfferingsResponse)
+	if len(services.ServiceOffering) != 1 {
+		return fmt.Errorf("Unable to find the size: %#v", size)
 	}
+	service := services.ServiceOffering[0].ID
 
+	// XXX Use Generic Get...
 	zoneName := d.Get("zone").(string)
 	zone, err := getZoneByName(ctx, client, zoneName)
 	if err != nil {
 		return err
 	}
 
-	template := topo.Images[convertTemplateName(d.Get("template").(string))]
-	if template == nil {
-		return fmt.Errorf("Invalid template: %s", d.Get("template").(string))
+	diskSize := int64(d.Get("disk_size").(int))
+	resp, err = client.RequestWithContext(ctx, &egoscale.ListTemplates{
+		TemplateFilter: "featured",
+		ZoneID:         zone.ID,
+	})
+	if err != nil {
+		return err
 	}
 
-	// If the exact diskSize doesn't exist pick the smallest one and go for it
-	templateID := template[diskSize]
-	if templateID == "" {
-		smallestDiskSize := diskSize
-		for s := range template {
-			if s < smallestDiskSize {
-				smallestDiskSize = s
-			}
+	templateID := ""
+	currentDiskSize := diskSize << 30 // Gib to B
+	image := strings.ToLower(d.Get("template").(string))
+	for _, template := range resp.(*egoscale.ListTemplatesResponse).Template {
+		// Skip non-machine images
+		if strings.ToLower(template.Name) != image {
+			continue
 		}
 
-		templateID = template[smallestDiskSize]
-		if templateID == "" {
-			return fmt.Errorf("Invalid disk size: %d", diskSize)
+		if template.Size == diskSize<<30 {
+			templateID = template.ID
+			break
 		}
+
+		// Pick the smallest disk size
+		if template.Size < currentDiskSize {
+			currentDiskSize = template.Size
+			templateID = template.ID
+			continue
+		}
+	}
+
+	if templateID == "" {
+		return fmt.Errorf("Template not found: %s (%dGB Disk)", d.Get("template").(string), d.Get("disk_size").(int))
 	}
 
 	// Affinity Groups
@@ -283,7 +299,7 @@ func createCompute(d *schema.ResourceData, meta interface{}) error {
 		StartVM:            &startVM,
 	}
 
-	resp, err := client.RequestWithContext(ctx, req)
+	resp, err = client.RequestWithContext(ctx, req)
 	if err != nil {
 		return err
 	}
@@ -789,23 +805,6 @@ func getSSHUsername(template string) string {
 	}
 
 	return "root"
-}
-
-/*
- * An auxiliary function to ensure that the template string passed in maps to
- * the string provided by the egoscale driver.
- */
-func convertTemplateName(t string) string {
-	re := regexp.MustCompile(`^Linux (?P<name>.+?) (?P<version>[0-9.]+).*$`)
-	submatch := re.FindStringSubmatch(t)
-	if len(submatch) > 0 {
-		name := strings.Replace(strings.ToLower(submatch[1]), " ", "-", -1)
-		version := submatch[2]
-		image := fmt.Sprintf("%s-%s", name, version)
-
-		return image
-	}
-	return ""
 }
 
 func getSecurityGroup(ctx context.Context, client *egoscale.Client, name string) (*egoscale.SecurityGroup, error) {
