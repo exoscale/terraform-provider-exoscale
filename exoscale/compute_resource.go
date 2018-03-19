@@ -133,6 +133,15 @@ func computeResource() *schema.Resource {
 				Type: schema.TypeString,
 			},
 		},
+		"username": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"password": {
+			Type:      schema.TypeString,
+			Computed:  true,
+			Sensitive: true,
+		},
 	}
 
 	addTags(s, "tags")
@@ -293,6 +302,16 @@ func createCompute(d *schema.ResourceData, meta interface{}) error {
 			return err
 		}
 	}
+
+	// Connection info
+	username := getSSHUsername(machine.TemplateName)
+	password := ""
+	if machine.PasswordEnabled {
+		password = machine.Password
+	}
+
+	d.Set("username", username)
+	d.Set("password", password)
 
 	return readCompute(d, meta)
 }
@@ -717,11 +736,17 @@ func applyCompute(d *schema.ResourceData, machine egoscale.VirtualMachine) error
 	d.Set("tags", tags)
 
 	// Connection info for the provisioners
-	d.SetConnInfo(map[string]string{
+	connInfo := map[string]string{
 		"type": "ssh",
-		"user": getSSHUsername(machine.TemplateName),
+		"user": d.Get("username").(string),
 		"host": d.Get("ip_address").(string),
-	})
+	}
+
+	if d.Get("password").(string) != "" {
+		connInfo["password"] = d.Get("password").(string)
+	}
+
+	d.SetConnInfo(connInfo)
 
 	return nil
 }
