@@ -385,9 +385,9 @@ func readCompute(d *schema.ResourceData, meta interface{}) error {
 				return err
 			}
 		} else {
-			encryptedPassword := resp.(*egoscale.GetVMPasswordResponse).EncryptedPassword
+			pwd := resp.(*egoscale.GetVMPasswordResponse).Password
 			// XXX https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=34014652
-			password = fmt.Sprintf("base64:%s", encryptedPassword)
+			password = fmt.Sprintf("base64:%s", pwd.EncryptedPassword)
 			d.Set("password", password)
 		}
 	}
