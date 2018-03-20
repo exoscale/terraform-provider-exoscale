@@ -313,7 +313,7 @@ func createCompute(d *schema.ResourceData, meta interface{}) error {
 	d.Set("username", username)
 	d.Set("password", password)
 
-	return readCompute(d, meta)
+	return applyCompute(d, &machine)
 }
 
 func existsCompute(d *schema.ResourceData, meta interface{}) (bool, error) {
@@ -344,20 +344,6 @@ func readCompute(d *schema.ResourceData, meta interface{}) error {
 		return handleNotFound(d, err)
 	}
 
-	// affinity_groups
-	affinitySet := schema.NewSet(schema.HashString, nil)
-	for _, affinityGroup := range machine.AffinityGroup {
-		affinitySet.Add(affinityGroup.Name)
-	}
-	d.Set("affinity_groups", affinitySet)
-
-	// security_group
-	securitySet := schema.NewSet(schema.HashString, nil)
-	for _, securityGroup := range machine.SecurityGroup {
-		securitySet.Add(securityGroup.Name)
-	}
-	d.Set("security_groups", securitySet)
-
 	// disk_size
 	// XXX apply context
 	volume, err := client.GetRootVolumeForVirtualMachine(d.Id())
@@ -366,7 +352,35 @@ func readCompute(d *schema.ResourceData, meta interface{}) error {
 	}
 	d.Set("disk_size", volume.Size>>30) // B to GiB
 
-	return applyCompute(d, *machine)
+	// connection info
+	username := getSSHUsername(machine.TemplateName)
+	password := ""
+	if machine.PasswordEnabled {
+		resp, err := client.RequestWithContext(ctx, &egoscale.GetVMPassword{
+			ID: machine.ID,
+		})
+		if err != nil {
+			if r, ok := err.(*egoscale.ErrorResponse); ok {
+				if r.ErrorCode != egoscale.ParamError && r.ErrorCode != 4350 {
+					return err
+				}
+			} else {
+				return err
+			}
+		} else {
+			encryptedPassword := resp.(*egoscale.GetVMPasswordResponse).EncryptedPassword
+			data, err := base64.StdEncoding.DecodeString(encryptedPassword)
+			if err != nil {
+				return err
+			}
+			password = fmt.Sprintf("%s", data)
+		}
+	}
+
+	d.Set("username", username)
+	d.Set("password", password)
+
+	return applyCompute(d, machine)
 }
 
 func updateCompute(d *schema.ResourceData, meta interface{}) error {
@@ -562,7 +576,7 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 		}
 
 		m := resp.(*egoscale.StopVirtualMachineResponse).VirtualMachine
-		applyCompute(d, m)
+		applyCompute(d, &m)
 		d.SetPartial("state")
 	}
 
@@ -573,7 +587,7 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	m := resp.(*egoscale.UpdateVirtualMachineResponse).VirtualMachine
-	applyCompute(d, m)
+	applyCompute(d, &m)
 	d.SetPartial("display_name")
 	d.SetPartial("security_groups")
 
@@ -693,7 +707,7 @@ func importCompute(d *schema.ResourceData, meta interface{}) ([]*schema.Resource
 	return resources, nil
 }
 
-func applyCompute(d *schema.ResourceData, machine egoscale.VirtualMachine) error {
+func applyCompute(d *schema.ResourceData, machine *egoscale.VirtualMachine) error {
 	d.Set("name", machine.Name)
 	d.Set("display_name", machine.DisplayName)
 	d.Set("key_pair", machine.KeyPair)
