@@ -354,8 +354,9 @@ func readCompute(d *schema.ResourceData, meta interface{}) error {
 
 	// connection info
 	username := getSSHUsername(machine.TemplateName)
-	password := ""
-	if machine.PasswordEnabled {
+	d.Set("username", username)
+	password := d.Get("password").(string)
+	if machine.PasswordEnabled && password == "" {
 		resp, err := client.RequestWithContext(ctx, &egoscale.GetVMPassword{
 			ID: machine.ID,
 		})
@@ -369,16 +370,11 @@ func readCompute(d *schema.ResourceData, meta interface{}) error {
 			}
 		} else {
 			encryptedPassword := resp.(*egoscale.GetVMPasswordResponse).EncryptedPassword
-			data, err := base64.StdEncoding.DecodeString(encryptedPassword)
-			if err != nil {
-				return err
-			}
-			password = fmt.Sprintf("%s", data)
+			// XXX https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=34014652
+			password = fmt.Sprintf("base64:%s", encryptedPassword)
+			d.Set("password", password)
 		}
 	}
-
-	d.Set("username", username)
-	d.Set("password", password)
 
 	return applyCompute(d, machine)
 }
