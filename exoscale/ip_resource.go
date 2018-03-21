@@ -2,7 +2,6 @@ package exoscale
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net"
 
@@ -123,21 +122,15 @@ func readElasticIP(d *schema.ResourceData, meta interface{}) error {
 		id = ""
 	}
 
-	resp, err := client.RequestWithContext(ctx, &egoscale.ListPublicIPAddresses{
+	ipAddress := &egoscale.IPAddress{
 		ID:        id,
 		IPAddress: ip,
-	})
+	}
 
-	if err != nil {
+	if err := client.GetWithContext(ctx, ipAddress); err != nil {
 		return handleNotFound(d, err)
 	}
 
-	ips := resp.(*egoscale.ListPublicIPAddressesResponse)
-	if ips.Count != 1 {
-		return fmt.Errorf("IP Address not found: %s (%s)", id, ip)
-	}
-
-	ipAddress := ips.PublicIPAddress[0]
 	return applyElasticIP(d, ipAddress)
 }
 
@@ -178,18 +171,12 @@ func deleteElasticIP(d *schema.ResourceData, meta interface{}) error {
 
 	client := GetComputeClient(meta)
 
-	req := &egoscale.DisassociateIPAddress{
+	return client.DeleteWithContext(ctx, &egoscale.IPAddress{
 		ID: d.Id(),
-	}
-	err := client.BooleanRequestWithContext(ctx, req)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	})
 }
 
-func applyElasticIP(d *schema.ResourceData, ip egoscale.IPAddress) error {
+func applyElasticIP(d *schema.ResourceData, ip *egoscale.IPAddress) error {
 	d.SetId(ip.ID)
 	d.Set("ip_address", ip.IPAddress.String())
 	d.Set("zone", ip.ZoneName)
