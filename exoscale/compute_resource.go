@@ -329,7 +329,7 @@ func createCompute(d *schema.ResourceData, meta interface{}) error {
 	d.Set("username", username)
 	d.Set("password", password)
 
-	return applyCompute(d, &machine)
+	return readCompute(d, meta)
 }
 
 func existsCompute(d *schema.ResourceData, meta interface{}) (bool, error) {
@@ -654,7 +654,7 @@ func deleteCompute(d *schema.ResourceData, meta interface{}) error {
 }
 
 func importCompute(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
 
 	client := GetComputeClient(meta)

@@ -88,7 +88,7 @@ func createElasticIP(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	return applyElasticIP(d, elasticIP)
+	return readElasticIP(d, meta)
 }
 
 func existsElasticIP(d *schema.ResourceData, meta interface{}) (bool, error) {

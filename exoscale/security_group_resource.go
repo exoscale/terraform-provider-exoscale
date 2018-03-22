@@ -78,7 +78,7 @@ func createSecurityGroup(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	return applySecurityGroup(d, &sg)
+	return readSecurityGroup(d, meta)
 }
 
 func existsSecurityGroup(d *schema.ResourceData, meta interface{}) (bool, error) {
@@ -160,7 +160,9 @@ func deleteSecurityGroup(d *schema.ResourceData, meta interface{}) error {
 }
 
 func importSecurityGroup(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
+	// XXX d.Timeout will result in a null pointer exception
+	// https://github.com/hashicorp/terraform/issues/17672
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
 
 	client := GetComputeClient(meta)
