@@ -78,7 +78,7 @@ func testAccCheckAffinityGroupCreateAttributes(name string) resource.TestCheckFu
 			return nil
 		}
 
-		return fmt.Errorf("Could not find affinity group ip %s", name)
+		return fmt.Errorf("Could not find affinity group name: %s", name)
 	}
 }
 
