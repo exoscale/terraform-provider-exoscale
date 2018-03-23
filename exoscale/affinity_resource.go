@@ -15,7 +15,7 @@ func affinityGroupResource() *schema.Resource {
 		Delete: deleteAffinityGroup,
 
 		Importer: &schema.ResourceImporter{
-			State: importAffinityGroup,
+			State: schema.ImportStatePassthrough,
 		},
 
 		Timeouts: &schema.ResourceTimeout{
@@ -125,14 +125,4 @@ func deleteAffinityGroup(d *schema.ResourceData, meta interface{}) error {
 	return client.DeleteWithContext(ctx, &egoscale.AffinityGroup{
 		ID: d.Id(),
 	})
-}
-
-func importAffinityGroup(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-	if err := readAffinityGroup(d, meta); err != nil {
-		return nil, err
-	}
-
-	resources := make([]*schema.ResourceData, 1)
-	resources[0] = d
-	return resources, nil
 }

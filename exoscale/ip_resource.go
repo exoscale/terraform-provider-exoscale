@@ -34,7 +34,7 @@ func elasticIPResource() *schema.Resource {
 		Delete: deleteElasticIP,
 
 		Importer: &schema.ResourceImporter{
-			State: importElasticIP,
+			State: schema.ImportStatePassthrough,
 		},
 
 		Timeouts: &schema.ResourceTimeout{
@@ -187,16 +187,6 @@ func deleteElasticIP(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	return nil
-}
-
-func importElasticIP(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-	if err := readElasticIP(d, meta); err != nil {
-		return nil, err
-	}
-
-	resources := make([]*schema.ResourceData, 1)
-	resources[0] = d
-	return resources, nil
 }
 
 func applyElasticIP(d *schema.ResourceData, ip egoscale.IPAddress) error {

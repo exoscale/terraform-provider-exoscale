@@ -15,7 +15,7 @@ func sshResource() *schema.Resource {
 		Delete: deleteSSH,
 
 		Importer: &schema.ResourceImporter{
-			State: importSSH,
+			State: schema.ImportStatePassthrough,
 		},
 
 		Timeouts: &schema.ResourceTimeout{
@@ -95,16 +95,6 @@ func existsSSH(d *schema.ResourceData, meta interface{}) (bool, error) {
 	}
 
 	return true, nil
-}
-
-func importSSH(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-	if err := readSSH(d, meta); err != nil {
-		return nil, err
-	}
-
-	resources := make([]*schema.ResourceData, 1)
-	resources[0] = d
-	return resources, nil
 }
 
 func readSSH(d *schema.ResourceData, meta interface{}) error {

@@ -17,7 +17,7 @@ func secondaryIPResource() *schema.Resource {
 		Delete: deleteSecondaryIP,
 
 		Importer: &schema.ResourceImporter{
-			State: importSecondaryIP,
+			State: schema.ImportStatePassthrough,
 		},
 
 		Timeouts: &schema.ResourceTimeout{
@@ -167,16 +167,6 @@ func deleteSecondaryIP(d *schema.ResourceData, meta interface{}) error {
 	return client.BooleanRequestWithContext(ctx, &egoscale.RemoveIPFromNic{
 		ID: d.Id(),
 	})
-}
-
-func importSecondaryIP(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-	if err := readSecondaryIP(d, meta); err != nil {
-		return nil, err
-	}
-
-	resources := make([]*schema.ResourceData, 1)
-	resources[0] = d
-	return resources, nil
 }
 
 func applySecondaryIP(d *schema.ResourceData, secondaryIP egoscale.NicSecondaryIP) error {

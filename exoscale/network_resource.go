@@ -68,7 +68,7 @@ func networkResource() *schema.Resource {
 		Delete: deleteNetwork,
 
 		Importer: &schema.ResourceImporter{
-			State: importNetwork,
+			State: schema.ImportStatePassthrough,
 		},
 
 		Timeouts: &schema.ResourceTimeout{
@@ -289,21 +289,6 @@ func deleteNetwork(d *schema.ResourceData, meta interface{}) error {
 
 	d.SetId("")
 	return nil
-}
-
-func importNetwork(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-	id := d.Id()
-	if err := readNetwork(d, meta); err != nil {
-		return nil, err
-	}
-
-	if d.Id() == "" {
-		return nil, fmt.Errorf("Network not found. %v", id)
-	}
-
-	resources := make([]*schema.ResourceData, 1)
-	resources[0] = d
-	return resources, nil
 }
 
 func applyNetwork(d *schema.ResourceData, network egoscale.Network) error {
