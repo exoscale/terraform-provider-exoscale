@@ -1,4 +1,4 @@
-VERSION=0.9.15_x-$(shell git rev-parse --short HEAD)
+VERSION=0.9.15_x1
 
 GOOS?=linux
 GOARCH?=amd64
@@ -78,5 +78,5 @@ release: deps
 
 .PHONY: clean
 clean:
-	rm -f $(DEBUG_BIN)
+	rm -f $(PROVIDER)_v*
 	rm -rf $(DEST)
