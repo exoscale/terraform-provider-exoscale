@@ -4,7 +4,8 @@
 
 [[constraint]]
   name = "github.com/hashicorp/terraform"
-  version = "0.11.4"
+  #version = "0.11.6"
+  branch = "master"
 
 [[constraint]]
   name = "github.com/go-ini/ini"

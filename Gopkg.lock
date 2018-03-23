@@ -578,6 +578,7 @@
   version = "v0.8.1"
 
 [[projects]]
+  branch = "master"
   name = "github.com/hashicorp/terraform"
   packages = [
     "backend",
@@ -653,8 +654,7 @@
     "tfdiags",
     "version"
   ]
-  revision = "7878d66b386e5474102b5047722c2de2b3237278"
-  version = "v0.11.4"
+  revision = "0c39b69d50ad6d54c4fe61d310cd45183dbf9b8c"
 
 [[projects]]
   name = "github.com/hashicorp/vault"
@@ -1150,6 +1150,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "0c8da80a69e4b32113f1366e656d636c320cda11db6630dd52442a32ae942b09"
+  inputs-digest = "19c5c899ffc2b9f7a50813c1ad31a9e594f6a9ff1e9fdd07551a4c9a1682c57d"
   solver-name = "gps-cdcl"
   solver-version = 1

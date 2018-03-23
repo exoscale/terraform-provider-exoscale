@@ -160,9 +160,7 @@ func deleteSecurityGroup(d *schema.ResourceData, meta interface{}) error {
 }
 
 func importSecurityGroup(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-	// XXX d.Timeout will result in a null pointer exception
-	// https://github.com/hashicorp/terraform/issues/17672
-	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
 	defer cancel()
 
 	client := GetComputeClient(meta)

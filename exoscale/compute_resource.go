@@ -654,7 +654,7 @@ func deleteCompute(d *schema.ResourceData, meta interface{}) error {
 }
 
 func importCompute(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
 	defer cancel()
 
 	client := GetComputeClient(meta)
