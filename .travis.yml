@@ -32,3 +32,6 @@ script:
        [ "${TRAVIS_PULL_REQUEST}" != "false" ]; then
       TF_ACC=1 go test -v;
     fi
+
+matrix:
+  fast_finish: true
