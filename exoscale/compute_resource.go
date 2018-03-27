@@ -82,7 +82,7 @@ func computeResource() *schema.Resource {
 		"state": {
 			Type:     schema.TypeString,
 			Optional: true,
-			Default:  "Running",
+			Computed: true,
 			ValidateFunc: validation.StringInSlice([]string{
 				"Starting", "Running", "Stopped", "Destroyed",
 				"Expunging", "Migrating", "Error", "Unknown",
@@ -301,10 +301,7 @@ func createCompute(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	startVM := true
-	if d.Get("state").(string) != "Running" {
-		startVM = false
-	}
+	startVM := d.Get("state").(string) != "Stopped"
 
 	ip4 := d.Get("ip4").(bool)
 	ip6 := d.Get("ip6").(bool)
@@ -429,7 +426,13 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 
 	client := GetComputeClient(meta)
 
+	// Get() gives us the new state
 	initialState := d.Get("state").(string)
+	if d.HasChange("state") {
+		o, _ := d.GetChange("state")
+		initialState = o.(string)
+	}
+
 	if initialState != "Running" && initialState != "Stopped" {
 		return fmt.Errorf("VM %s must be either Running or Stopped. got %s", d.Id(), initialState)
 	}
@@ -634,6 +637,8 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 			startRequired = true
 		case "Stopped":
 			stopRequired = true
+			rebootRequired = false
+			startRequired = false
 		default:
 			return fmt.Errorf("The new state cannot applied, %s. Do it manually", d.Get("state").(string))
 		}
@@ -664,7 +669,7 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 	d.SetPartial("display_name")
 	d.SetPartial("security_groups")
 
-	if initialState == "Running" && (rebootRequired || startRequired) {
+	if (initialState == "Running" && rebootRequired) || startRequired {
 		commands = append(commands, partialCommand{
 			partial: "state",
 			request: &egoscale.StartVirtualMachine{
@@ -789,15 +794,13 @@ func applyCompute(d *schema.ResourceData, machine *egoscale.VirtualMachine) erro
 	d.Set("zone", machine.ZoneName)
 	d.Set("state", machine.State)
 
-	d.Set("ip4", false)
-	d.Set("ip6", false)
 	d.Set("ip_address", "")
 	d.Set("gateway", "")
 	d.Set("ip6_address", "")
 	d.Set("ip6_cidr", "")
 	if nic := machine.DefaultNic(); nic != nil {
+		d.Set("ip4", true)
 		if nic.IPAddress != nil {
-			d.Set("ip4", true)
 			d.Set("ip_address", nic.IPAddress.String())
 		}
 		if nic.Gateway != nil {
@@ -808,6 +811,9 @@ func applyCompute(d *schema.ResourceData, machine *egoscale.VirtualMachine) erro
 			d.Set("ip6_address", nic.IP6Address.String())
 		}
 		d.Set("ip6_cidr", nic.IP6Cidr)
+	} else {
+		d.Set("ip4", false)
+		d.Set("ip6", false)
 	}
 
 	// affinity groups
