@@ -223,8 +223,8 @@
     "service/waf",
     "service/wafregional"
   ]
-  revision = "c0ea8ae46aeed5902eeebe10d0d5cdf54b258526"
-  version = "v1.13.19"
+  revision = "fb28e64a158b01377883badcc176216ac0fde3dd"
+  version = "v1.13.21"
 
 [[projects]]
   name = "github.com/beevik/etree"
@@ -315,8 +315,8 @@
 [[projects]]
   name = "github.com/exoscale/egoscale"
   packages = ["."]
-  revision = "ab8a9bee9fdfc593675860b7699335389a6e293e"
-  version = "v0.9.15"
+  revision = "0bccec570ade1946bca48cdedc9d2a1dbe31f8b9"
+  version = "v0.9.16"
 
 [[projects]]
   name = "github.com/go-ini/ini"
@@ -426,7 +426,7 @@
     "openstack/utils",
     "pagination"
   ]
-  revision = "b4d283c2476d19b0624c0a25c10bc663ec80dd5c"
+  revision = "2b0354debf8c26defaa09cad57d2e148b7dcaf3a"
 
 [[projects]]
   branch = "master"
@@ -655,7 +655,7 @@
     "tfdiags",
     "version"
   ]
-  revision = "0c39b69d50ad6d54c4fe61d310cd45183dbf9b8c"
+  revision = "1e2bb075048cc575fddf119b92d96e6666c818c4"
 
 [[projects]]
   name = "github.com/hashicorp/vault"
@@ -903,8 +903,8 @@
 [[projects]]
   name = "github.com/terraform-providers/terraform-provider-aws"
   packages = ["aws"]
-  revision = "7d072affbaeefb47e3874371a1e0e7e06782eab1"
-  version = "v1.11.0"
+  revision = "a11f675898dba55ee8ef4538e4a30aca43ecee14"
+  version = "v1.12.0"
 
 [[projects]]
   name = "github.com/terraform-providers/terraform-provider-openstack"
@@ -939,7 +939,7 @@
   branch = "master"
   name = "github.com/xlab/treeprint"
   packages = ["."]
-  revision = "f3a15cfd24bf976c724324cb6846a8b54b88b639"
+  revision = "505f0eee75dcba5ccb00cf81eea7f5b836b28e7c"
 
 [[projects]]
   branch = "master"
@@ -953,7 +953,7 @@
     "cty/json",
     "cty/set"
   ]
-  revision = "148e502b8632c6f32ca9a41b96bbe858b5e2582b"
+  revision = "b7d1e828d86e99040528ce06ce970382c7813f96"
 
 [[projects]]
   name = "go.opencensus.io"
@@ -1032,7 +1032,7 @@
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "91ee8cde435411ca3f1cd365e8f20131aed4d0a1"
+  revision = "13d03a9a82fba647c21a0ef8fba44a795d0f0835"
 
 [[projects]]
   name = "golang.org/x/text"
@@ -1081,7 +1081,7 @@
     "storage/v1",
     "transport/http"
   ]
-  revision = "24928b980e6919be4c72647aacd53ebcbb8c4bab"
+  revision = "e4126357c891acdef6dcd7805daa4c6533be6544"
 
 [[projects]]
   name = "google.golang.org/appengine"
@@ -1109,7 +1109,7 @@
     "googleapis/rpc/code",
     "googleapis/rpc/status"
   ]
-  revision = "f8c8703595236ae70fdf8789ecb656ea0bcdcf46"
+  revision = "ab0870e398d5dd054b868c0db1481ab029b9a9f2"
 
 [[projects]]
   name = "google.golang.org/grpc"
@@ -1146,12 +1146,12 @@
 [[projects]]
   name = "gopkg.in/yaml.v2"
   packages = ["."]
-  revision = "7f97868eec74b32b0982dd158a51a446d1da7eb5"
-  version = "v2.1.1"
+  revision = "86f5ed62f8a0ee96bd888d2efdfd6d4fb100a4eb"
+  version = "v2.2.0"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "e66322b33d01fab645b9b660c61c98a8a2d0ab7d54762fe7456581e2583fc128"
+  inputs-digest = "2886f27141d36480e3eeaed5268e24cf836db5e9cc706d440206edef6d7b3232"
   solver-name = "gps-cdcl"
   solver-version = 1

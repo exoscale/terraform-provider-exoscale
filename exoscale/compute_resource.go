@@ -386,11 +386,19 @@ func readCompute(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	// disk_size
-	// XXX apply context
-	volume, err := client.GetRootVolumeForVirtualMachine(d.Id())
+	volumes, err := client.ListWithContext(ctx, &egoscale.Volume{
+		VirtualMachineID: d.Id(),
+		Type:             "ROOT",
+	})
+
 	if err != nil {
 		return err
 	}
+
+	if len(volumes) != 1 {
+		return fmt.Errorf("ROOT volume not found for the VM %s", d.Id())
+	}
+	volume := volumes[0].(egoscale.Volume)
 	d.Set("disk_size", volume.Size>>30) // B to GiB
 
 	// connection info
@@ -509,10 +517,18 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 		}
 
 		rebootRequired = true
-		volume, err := client.GetRootVolumeForVirtualMachine(d.Id())
+
+		volumes, err := client.ListWithContext(ctx, &egoscale.Volume{
+			VirtualMachineID: d.Id(),
+			Type:             "ROOT",
+		})
 		if err != nil {
 			return err
 		}
+		if len(volumes) != 1 {
+			return fmt.Errorf("ROOT volume not found for the VM %s", d.Id())
+		}
+		volume := volumes[0].(egoscale.Volume)
 		commands = append(commands, partialCommand{
 			partial: "disk_size",
 			request: &egoscale.ResizeVolume{

@@ -1,6 +1,6 @@
 [[constraint]]
   name = "github.com/exoscale/egoscale"
-  version = "0.9.15"
+  version = "0.9.16"
 
 [[constraint]]
   name = "github.com/hashicorp/terraform"
@@ -10,3 +10,7 @@
 [[constraint]]
   name = "github.com/go-ini/ini"
   version = "1.33.0"
+
+[prune]
+  go-tests = true
+  unused-packages = true
