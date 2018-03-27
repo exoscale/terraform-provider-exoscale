@@ -71,14 +71,14 @@ func securityGroupRuleResource() *schema.Resource {
 				Type:          schema.TypeInt,
 				Optional:      true,
 				ForceNew:      true,
-				ValidateFunc:  validation.IntBetween(1, 65535),
+				ValidateFunc:  validation.IntBetween(0, 65535),
 				ConflictsWith: []string{"icmp_type", "icmp_code"},
 			},
 			"end_port": {
 				Type:          schema.TypeInt,
 				Optional:      true,
 				ForceNew:      true,
-				ValidateFunc:  validation.IntBetween(1, 65535),
+				ValidateFunc:  validation.IntBetween(0, 65535),
 				ConflictsWith: []string{"icmp_type", "icmp_code"},
 			},
 			"icmp_type": {
