@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/exoscale/egoscale"
@@ -304,8 +305,10 @@ func createCompute(d *schema.ResourceData, meta interface{}) error {
 
 	startVM := d.Get("state").(string) != "Stopped"
 
-	ip4 := d.Get("ip4").(bool)
-	ip6 := d.Get("ip6").(bool)
+	details := make(map[string]string)
+	details["ip4"] = strconv.FormatBool(d.Get("ip4").(bool))
+	details["ip6"] = strconv.FormatBool(d.Get("ip6").(bool))
+
 	req := &egoscale.DeployVirtualMachine{
 		Name:               displayName,
 		DisplayName:        displayName,
@@ -320,8 +323,7 @@ func createCompute(d *schema.ResourceData, meta interface{}) error {
 		AffinityGroupNames: affinityGroups,
 		SecurityGroupIDs:   securityGroupIDs,
 		SecurityGroupNames: securityGroups,
-		IP4:                &ip4,
-		IP6:                &ip6,
+		Details:            details,
 		StartVM:            &startVM,
 	}
 
