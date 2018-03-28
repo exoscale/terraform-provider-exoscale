@@ -1,0 +1,15 @@
+# API Key
+key = "EXO..."
+# Secret Key
+secret = "..."
+# SSH Key pair
+key_pair = "..."
+
+# How many Docker Swarm masters
+# master = 3
+
+# Which zone
+# zone = "ch-dk-2"
+
+# Template to use
+# template = "Linux Ubuntu 17.10 64-bit"

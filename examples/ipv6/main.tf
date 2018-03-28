@@ -2,8 +2,6 @@ provider "exoscale" {
   version = "~> 0.9.15"
   key = "${var.key}"
   secret = "${var.secret}"
-
-  compute_endpoint = "https://ppapi.exoscale.ch/compute"
 }
 
 resource "exoscale_security_group" "default" {
