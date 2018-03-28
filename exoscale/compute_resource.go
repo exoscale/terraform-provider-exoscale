@@ -810,6 +810,8 @@ func applyCompute(d *schema.ResourceData, machine *egoscale.VirtualMachine) erro
 	d.Set("zone", machine.ZoneName)
 	d.Set("state", machine.State)
 
+	d.Set("ip4", false)
+	d.Set("ip6", false)
 	d.Set("ip_address", "")
 	d.Set("gateway", "")
 	d.Set("ip6_address", "")
@@ -827,9 +829,6 @@ func applyCompute(d *schema.ResourceData, machine *egoscale.VirtualMachine) erro
 			d.Set("ip6_address", nic.IP6Address.String())
 		}
 		d.Set("ip6_cidr", nic.IP6Cidr)
-	} else {
-		d.Set("ip4", false)
-		d.Set("ip6", false)
 	}
 
 	// affinity groups
