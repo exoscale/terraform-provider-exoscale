@@ -22,8 +22,8 @@
     "arm/storage",
     "storage"
   ]
-  revision = "21b68149ccf7c16b3f028bb4c7fd0ab458fe308f"
-  version = "v12.5.0-beta"
+  revision = "2d1d76c9013c4feb6695a2346f0e66ea0ef77aa6"
+  version = "v11.3.0-beta"
 
 [[projects]]
   name = "github.com/Azure/go-autorest"
@@ -35,8 +35,8 @@
     "autorest/to",
     "autorest/validation"
   ]
-  revision = "fc3b03a2d2d1f43fad3007038bd16f044f870722"
-  version = "v9.10.0"
+  revision = "9ad9326b278af8fa5cc67c30c0ce9a58cc0862b2"
+  version = "v10.6.0"
 
 [[projects]]
   branch = "master"
@@ -202,6 +202,7 @@
     "service/kinesis",
     "service/kms",
     "service/lambda",
+    "service/lexmodelbuildingservice",
     "service/lightsail",
     "service/mediastore",
     "service/mq",
@@ -223,8 +224,8 @@
     "service/waf",
     "service/wafregional"
   ]
-  revision = "fb28e64a158b01377883badcc176216ac0fde3dd"
-  version = "v1.13.21"
+  revision = "61ac2e639a3e5f940b62693f2f1db515e4f0325e"
+  version = "v1.13.30"
 
 [[projects]]
   name = "github.com/beevik/etree"
@@ -273,8 +274,8 @@
     "pkg/types",
     "version"
   ]
-  revision = "c9d46ab3799b7f2174268e75f72d01e6d6aac953"
-  version = "v3.3.2"
+  revision = "e348b1aedd9167360c466ae98f7343d3e22281f8"
+  version = "v3.3.3"
 
 [[projects]]
   name = "github.com/coreos/go-semver"
@@ -315,14 +316,20 @@
 [[projects]]
   name = "github.com/exoscale/egoscale"
   packages = ["."]
-  revision = "54a8c2c8761b7a822290d7223f7b63be8ae54ddc"
-  version = "v0.9.17"
+  revision = "4e94c083554a7135ec2d23adb10d614b33a5c6c3"
+  version = "v0.9.18"
+
+[[projects]]
+  name = "github.com/fatih/color"
+  packages = ["."]
+  revision = "507f6050b8568533fb3f5504de8e5205fa62a114"
+  version = "v1.6.0"
 
 [[projects]]
   name = "github.com/go-ini/ini"
   packages = ["."]
-  revision = "6333e38ac20b8949a8dd68baa3650f4dee8f39f0"
-  version = "v1.33.0"
+  revision = "5e9692864e22d02ac79e2fa499cffb00520b4fea"
+  version = "v1.34.0"
 
 [[projects]]
   name = "github.com/gogo/protobuf"
@@ -426,7 +433,7 @@
     "openstack/utils",
     "pagination"
   ]
-  revision = "2b0354debf8c26defaa09cad57d2e148b7dcaf3a"
+  revision = "a4e7a3c166e65467175587d71d485e048c7b8513"
 
 [[projects]]
   branch = "master"
@@ -479,13 +486,13 @@
     ".",
     "helper/url"
   ]
-  revision = "64040d90d4ab861e7e833d689dc76a0f176d8dec"
+  revision = "90bb99a48d86cf1d327cee9968f7428f90ba13c1"
 
 [[projects]]
   branch = "master"
   name = "github.com/hashicorp/go-hclog"
   packages = ["."]
-  revision = "5bcb0f17e36442247290887cc914a6e507afa5c4"
+  revision = "69ff559dc25f3b435631604f573a5fa1efdb6433"
 
 [[projects]]
   branch = "master"
@@ -497,7 +504,7 @@
   branch = "master"
   name = "github.com/hashicorp/go-plugin"
   packages = ["."]
-  revision = "8068b0bdcfb702b4ab69d0e42c6023b4996c3026"
+  revision = "e8d22c780116115ae5624720c9af0c97afe4f551"
 
 [[projects]]
   branch = "master"
@@ -510,6 +517,12 @@
   name = "github.com/hashicorp/go-rootcerts"
   packages = ["."]
   revision = "6bb64b370b90e7ef1fa532be9e591a81c3493e00"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/hashicorp/go-safetemp"
+  packages = ["."]
+  revision = "b1a1dbde6fdc11e3ae79efd9039009e22d4ae240"
 
 [[projects]]
   branch = "master"
@@ -539,7 +552,7 @@
     "json/scanner",
     "json/token"
   ]
-  revision = "f40e974e75af4e271d97ce0fc917af5898ae7bda"
+  revision = "ef8a98b0bbce4a65b5aa4c368430a80ddc533168"
 
 [[projects]]
   branch = "master"
@@ -553,7 +566,7 @@
     "hclparse",
     "hcltest"
   ]
-  revision = "5f8ed954abd873b2c09616ba0aa607892bbca7e9"
+  revision = "9db880accff19d9bd953958df738ef0c02b4a311"
 
 [[projects]]
   branch = "master"
@@ -579,7 +592,6 @@
   version = "v0.8.1"
 
 [[projects]]
-  branch = "master"
   name = "github.com/hashicorp/terraform"
   packages = [
     "backend",
@@ -655,7 +667,8 @@
     "tfdiags",
     "version"
   ]
-  revision = "1e2bb075048cc575fddf119b92d96e6666c818c4"
+  revision = "dbce85d85ff0beebc660b3d1805b4ef15361af00"
+  version = "v0.11.6"
 
 [[projects]]
   name = "github.com/hashicorp/vault"
@@ -726,18 +739,13 @@
     "openpgp/s2k",
     "rsa"
   ]
-  revision = "c86609b27f9eaa80962974009eb5472d58bb4043"
+  revision = "d11a37f123888ff060339f516e392032dfcb98ff"
 
 [[projects]]
   branch = "master"
   name = "github.com/lusis/go-artifactory"
   packages = ["src/artifactory.v401"]
   revision = "a47f63f234b2a2c87e52d7f1c72a9a7f87bd7880"
-
-[[projects]]
-  name = "github.com/marstr/guid"
-  packages = ["."]
-  revision = "8bdf7d1a087ccc975cf37dd6507da50698fd19ca"
 
 [[projects]]
   name = "github.com/masterzen/azure-sdk-for-go"
@@ -785,7 +793,7 @@
   branch = "master"
   name = "github.com/mitchellh/cli"
   packages = ["."]
-  revision = "b068abc08c994321eafd9fd500d0704cb6defcb1"
+  revision = "c54c85e9bd492bdba226ffdda55d4e293b79f8e8"
 
 [[projects]]
   branch = "master"
@@ -901,10 +909,16 @@
   version = "v1.2.0"
 
 [[projects]]
+  name = "github.com/satori/uuid"
+  packages = ["."]
+  revision = "f58768cc1a7a7e77a3bd49e98cdd21419399b6a3"
+  version = "v1.2.0"
+
+[[projects]]
   name = "github.com/terraform-providers/terraform-provider-aws"
   packages = ["aws"]
-  revision = "a11f675898dba55ee8ef4538e4a30aca43ecee14"
-  version = "v1.12.0"
+  revision = "b3fb3db28c722c145398c7080746e035ec307165"
+  version = "v1.14.0"
 
 [[projects]]
   name = "github.com/terraform-providers/terraform-provider-openstack"
@@ -953,7 +967,7 @@
     "cty/json",
     "cty/set"
   ]
-  revision = "b7d1e828d86e99040528ce06ce970382c7813f96"
+  revision = "d006e4534bc4fbc512383aa98d04d641ea951ba5"
 
 [[projects]]
   name = "go.opencensus.io"
@@ -968,10 +982,11 @@
     "stats/view",
     "tag",
     "trace",
+    "trace/internal",
     "trace/propagation"
   ]
-  revision = "6e3f034057826b530038d93267906ec3c012183f"
-  version = "v0.6.0"
+  revision = "0095aec66ae14801c6711210f6f0716411cefdd3"
+  version = "v0.8.0"
 
 [[projects]]
   branch = "master"
@@ -996,7 +1011,7 @@
     "ssh/agent",
     "ssh/knownhosts"
   ]
-  revision = "88942b9c40a4c9d203b82b3731787b672d6e809b"
+  revision = "b2aa35443fbc700ab74c586ae79b81c171851023"
 
 [[projects]]
   branch = "master"
@@ -1014,7 +1029,7 @@
     "lex/httplex",
     "trace"
   ]
-  revision = "6078986fec03a1dcc236c34816c71b0e05018fda"
+  revision = "61147c48b25b599e5b561d2e9c4f3e1ef489ca41"
 
 [[projects]]
   branch = "master"
@@ -1026,13 +1041,13 @@
     "jws",
     "jwt"
   ]
-  revision = "fdc9e635145ae97e6c2cb777c48305600cf515cb"
+  revision = "921ae394b9430ed4fb549668d7b087601bd60a81"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "13d03a9a82fba647c21a0ef8fba44a795d0f0835"
+  revision = "3b87a42e500a6dc65dae1a55d0b641295971163e"
 
 [[projects]]
   name = "golang.org/x/text"
@@ -1081,7 +1096,7 @@
     "storage/v1",
     "transport/http"
   ]
-  revision = "e4126357c891acdef6dcd7805daa4c6533be6544"
+  revision = "d4bfb8783945fe985beea2cb0fedffc2d020979c"
 
 [[projects]]
   name = "google.golang.org/appengine"
@@ -1109,7 +1124,7 @@
     "googleapis/rpc/code",
     "googleapis/rpc/status"
   ]
-  revision = "ab0870e398d5dd054b868c0db1481ab029b9a9f2"
+  revision = "ce84044298496ef4b54b4a0a0909ba593cc60e30"
 
 [[projects]]
   name = "google.golang.org/grpc"
@@ -1140,18 +1155,18 @@
     "tap",
     "transport"
   ]
-  revision = "8e4536a86ab602859c20df5ebfd0bd4228d08655"
-  version = "v1.10.0"
+  revision = "d89cded64628466c4ab532d1f0ba5c220459ebe8"
+  version = "v1.11.2"
 
 [[projects]]
   name = "gopkg.in/yaml.v2"
   packages = ["."]
-  revision = "86f5ed62f8a0ee96bd888d2efdfd6d4fb100a4eb"
-  version = "v2.2.0"
+  revision = "5420a8b6744d3b0345ab293f6fcba19c978f1183"
+  version = "v2.2.1"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "6624980e2142d6d9c064deea260168d746a0e5d84ed2e9b411d757d3946715bb"
+  inputs-digest = "7010b11dde0299eb690ac7c5613d2bed23cb99ae71e5fe4386824247eaa18380"
   solver-name = "gps-cdcl"
   solver-version = 1
