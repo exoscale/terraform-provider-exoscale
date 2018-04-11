@@ -236,12 +236,18 @@ func createCompute(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	templateID := ""
+	username := ""
 	currentDiskSize := diskSize << 30 // Gib to B
 	image := strings.ToLower(d.Get("template").(string))
+
 	for _, template := range resp.(*egoscale.ListTemplatesResponse).Template {
 		// Skip non-machine images
 		if strings.ToLower(template.Name) != image {
 			continue
+		}
+
+		if name, ok := template.Details["username"]; username == "" && ok {
+			username = name
 		}
 
 		if template.Size == diskSize<<30 {
@@ -259,6 +265,11 @@ func createCompute(d *schema.ResourceData, meta interface{}) error {
 
 	if templateID == "" {
 		return fmt.Errorf("Template not found: %s (%dGB Disk)", d.Get("template").(string), d.Get("disk_size").(int))
+	}
+
+	if username == "" {
+		log.Printf("[INFO] Username not found in the template details, falling back to root.")
+		username = "root"
 	}
 
 	// Affinity Groups
@@ -345,7 +356,6 @@ func createCompute(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	// Connection info
-	username := getSSHUsername(machine.TemplateName)
 	password := ""
 	if machine.PasswordEnabled {
 		password = machine.Password
@@ -402,8 +412,12 @@ func readCompute(d *schema.ResourceData, meta interface{}) error {
 	d.Set("disk_size", volume.Size>>30) // B to GiB
 
 	// connection info
-	username := getSSHUsername(machine.TemplateName)
-	d.Set("username", username)
+	username := d.Get("username").(string)
+	if username == "" {
+		username = getSSHUsername(machine.TemplateName)
+		d.Set("username", username)
+	}
+
 	password := d.Get("password").(string)
 	if machine.PasswordEnabled && password == "" {
 		resp, err := client.RequestWithContext(ctx, &egoscale.GetVMPassword{
