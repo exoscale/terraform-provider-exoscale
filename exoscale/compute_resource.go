@@ -408,7 +408,7 @@ func readCompute(d *schema.ResourceData, meta interface{}) error {
 	if len(volumes) != 1 {
 		return fmt.Errorf("ROOT volume not found for the VM %s", d.Id())
 	}
-	volume := volumes[0].(egoscale.Volume)
+	volume := volumes[0].(*egoscale.Volume)
 	d.Set("disk_size", volume.Size>>30) // B to GiB
 
 	// connection info
@@ -542,7 +542,7 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 		if len(volumes) != 1 {
 			return fmt.Errorf("ROOT volume not found for the VM %s", d.Id())
 		}
-		volume := volumes[0].(egoscale.Volume)
+		volume := volumes[0].(*egoscale.Volume)
 		commands = append(commands, partialCommand{
 			partial: "disk_size",
 			request: &egoscale.ResizeVolume{
