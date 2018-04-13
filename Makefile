@@ -50,16 +50,20 @@ $(BIN): $(SRCS)
 			-o $@ \
 			$<)
 
-.PHONY: deps
-deps: $(GOPATH)/src/$(PKG)
-	(cd $(GOPATH)/src/$(PKG) && dep ensure)
-
 $(GOPATH)/src/$(PKG):
 	mkdir -p $(GOPATH)
 	go get -u github.com/golang/dep/cmd/dep
 	mkdir -p $(shell dirname $(GOPATH)/src/$(PKG))
 	ln -sf ../../../.. $(GOPATH)/src/$(PKG)
 
+.PHONY: deps
+deps: $(GOPATH)/src/$(PKG)
+	(cd $(GOPATH)/src/$(PKG) && dep ensure)
+
+.PHONY: deps-status
+deps-status: $(GOPATH)/src/$(PKG)
+	(cd $(GOPATH)/src/$(PKG) && dep status)
+	
 .PHONY: deps-update
 deps-update: deps
 	(cd $(GOPATH)/src/$(PKG) && dep ensure -update)

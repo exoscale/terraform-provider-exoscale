@@ -12,8 +12,8 @@
     "internal/version",
     "storage"
   ]
-  revision = "4b98a6370e36d7a85192e7bad08a4ebd82eac2a8"
-  version = "v0.20.0"
+  revision = "29f476ffa9c4cd4fd14336b6043090ac1ad76733"
+  version = "v0.21.0"
 
 [[projects]]
   name = "github.com/Azure/azure-sdk-for-go"
@@ -22,8 +22,8 @@
     "arm/storage",
     "storage"
   ]
-  revision = "2d1d76c9013c4feb6695a2346f0e66ea0ef77aa6"
-  version = "v11.3.0-beta"
+  revision = "21b68149ccf7c16b3f028bb4c7fd0ab458fe308f"
+  version = "v12.5.0-beta"
 
 [[projects]]
   name = "github.com/Azure/go-autorest"
@@ -35,8 +35,8 @@
     "autorest/to",
     "autorest/validation"
   ]
-  revision = "9ad9326b278af8fa5cc67c30c0ce9a58cc0862b2"
-  version = "v10.6.0"
+  revision = "fc3b03a2d2d1f43fad3007038bd16f044f870722"
+  version = "v9.10.0"
 
 [[projects]]
   branch = "master"
@@ -224,8 +224,8 @@
     "service/waf",
     "service/wafregional"
   ]
-  revision = "61ac2e639a3e5f940b62693f2f1db515e4f0325e"
-  version = "v1.13.30"
+  revision = "9b0098a71f6d4d473a26ec8ad3c2feaac6eb1da6"
+  version = "v1.13.32"
 
 [[projects]]
   name = "github.com/beevik/etree"
@@ -316,8 +316,8 @@
 [[projects]]
   name = "github.com/exoscale/egoscale"
   packages = ["."]
-  revision = "4e94c083554a7135ec2d23adb10d614b33a5c6c3"
-  version = "v0.9.18"
+  revision = "59e238e86558c4e2845b13f87c967ddc12549601"
+  version = "v0.9.20"
 
 [[projects]]
   name = "github.com/fatih/color"
@@ -328,8 +328,8 @@
 [[projects]]
   name = "github.com/go-ini/ini"
   packages = ["."]
-  revision = "5e9692864e22d02ac79e2fa499cffb00520b4fea"
-  version = "v1.34.0"
+  revision = "ace140f73450505f33e8b8418216792275ae82a7"
+  version = "v1.35.0"
 
 [[projects]]
   name = "github.com/gogo/protobuf"
@@ -433,13 +433,13 @@
     "openstack/utils",
     "pagination"
   ]
-  revision = "a4e7a3c166e65467175587d71d485e048c7b8513"
+  revision = "bce5d4bb471c7e501b38cd69477172bd2e40b0c8"
 
 [[projects]]
   branch = "master"
   name = "github.com/gophercloud/utils"
   packages = ["openstack/clientconfig"]
-  revision = "8abfa9d4f2ca86695976d143b8e9078d09cd0777"
+  revision = "8d81ee0a73b6818a70aea522224d6ba4f2cb7e43"
 
 [[projects]]
   branch = "master"
@@ -486,7 +486,7 @@
     ".",
     "helper/url"
   ]
-  revision = "90bb99a48d86cf1d327cee9968f7428f90ba13c1"
+  revision = "b345bfcec894fb7ff3fdf9b21baf2f56ea423d98"
 
 [[projects]]
   branch = "master"
@@ -667,8 +667,8 @@
     "tfdiags",
     "version"
   ]
-  revision = "dbce85d85ff0beebc660b3d1805b4ef15361af00"
-  version = "v0.11.6"
+  revision = "41e50bd32a8825a84535e353c3674af8ce799161"
+  version = "v0.11.7"
 
 [[projects]]
   name = "github.com/hashicorp/vault"
@@ -677,8 +677,8 @@
     "helper/jsonutil",
     "helper/pgpkeys"
   ]
-  revision = "7e1fbde40afee241f81ef08700e7987d86fc7242"
-  version = "v0.9.6"
+  revision = "5dd7f25f5c4b541f2da62d70075b6f82771a650d"
+  version = "v0.10.0"
 
 [[projects]]
   branch = "master"
@@ -746,6 +746,11 @@
   name = "github.com/lusis/go-artifactory"
   packages = ["src/artifactory.v401"]
   revision = "a47f63f234b2a2c87e52d7f1c72a9a7f87bd7880"
+
+[[projects]]
+  name = "github.com/marstr/guid"
+  packages = ["."]
+  revision = "8bdf7d1a087ccc975cf37dd6507da50698fd19ca"
 
 [[projects]]
   name = "github.com/masterzen/azure-sdk-for-go"
@@ -909,16 +914,10 @@
   version = "v1.2.0"
 
 [[projects]]
-  name = "github.com/satori/uuid"
-  packages = ["."]
-  revision = "f58768cc1a7a7e77a3bd49e98cdd21419399b6a3"
-  version = "v1.2.0"
-
-[[projects]]
   name = "github.com/terraform-providers/terraform-provider-aws"
   packages = ["aws"]
-  revision = "b3fb3db28c722c145398c7080746e035ec307165"
-  version = "v1.14.0"
+  revision = "6b76cd7527bb204337dc23a3254b345f3cfe4ef8"
+  version = "v1.14.1"
 
 [[projects]]
   name = "github.com/terraform-providers/terraform-provider-openstack"
@@ -929,8 +928,8 @@
 [[projects]]
   name = "github.com/ugorji/go"
   packages = ["codec"]
-  revision = "9831f2c3ac1068a78f50999a30db84270f647af6"
-  version = "v1.1"
+  revision = "b4c50a2b199d93b13dc15e78929cfb23bfdf21ab"
+  version = "v1.1.1"
 
 [[projects]]
   name = "github.com/ulikunitz/xz"
@@ -1011,7 +1010,7 @@
     "ssh/agent",
     "ssh/knownhosts"
   ]
-  revision = "b2aa35443fbc700ab74c586ae79b81c171851023"
+  revision = "d6449816ce06963d9d136eee5a56fca5b0616e7e"
 
 [[projects]]
   branch = "master"
@@ -1096,7 +1095,7 @@
     "storage/v1",
     "transport/http"
   ]
-  revision = "d4bfb8783945fe985beea2cb0fedffc2d020979c"
+  revision = "fca24fcb41126b846105a93fb9e30f416bdd55ce"
 
 [[projects]]
   name = "google.golang.org/appengine"
@@ -1124,7 +1123,7 @@
     "googleapis/rpc/code",
     "googleapis/rpc/status"
   ]
-  revision = "ce84044298496ef4b54b4a0a0909ba593cc60e30"
+  revision = "51d0944304c3cbce4afe9e5247e21100037bff78"
 
 [[projects]]
   name = "google.golang.org/grpc"
@@ -1155,8 +1154,8 @@
     "tap",
     "transport"
   ]
-  revision = "d89cded64628466c4ab532d1f0ba5c220459ebe8"
-  version = "v1.11.2"
+  revision = "d11072e7ca9811b1100b80ca0269ac831f06d024"
+  version = "v1.11.3"
 
 [[projects]]
   name = "gopkg.in/yaml.v2"
@@ -1167,6 +1166,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "7010b11dde0299eb690ac7c5613d2bed23cb99ae71e5fe4386824247eaa18380"
+  inputs-digest = "ac96f8ca87490dab6f14cab81743c703f9dd1fce444782e51987ef2cd89e5212"
   solver-name = "gps-cdcl"
   solver-version = 1
