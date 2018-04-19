@@ -165,10 +165,10 @@ func createSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
 		CidrList:              cidrList,
 		Description:           d.Get("description").(string),
 		Protocol:              d.Get("protocol").(string),
-		EndPort:               d.Get("end_port").(int),
-		StartPort:             d.Get("start_port").(int),
-		IcmpType:              d.Get("icmp_type").(int),
-		IcmpCode:              d.Get("icmp_code").(int),
+		EndPort:               (uint16)(d.Get("end_port").(int)),
+		StartPort:             (uint16)(d.Get("start_port").(int)),
+		IcmpType:              (uint8)(d.Get("icmp_type").(int)),
+		IcmpCode:              (uint8)(d.Get("icmp_code").(int)),
 		UserSecurityGroupList: groupList,
 	}
 
