@@ -63,6 +63,7 @@ func computeResource() *schema.Resource {
 					return ""
 				}
 			},
+			Description: "cloud-init configuration",
 		},
 		"key_pair": {
 			Type:     schema.TypeString,
@@ -491,6 +492,7 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 		}
 
 		req.UserData = userData
+		rebootRequired = true
 	}
 
 	if d.HasChange("security_groups") {
