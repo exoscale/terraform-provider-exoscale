@@ -55,7 +55,6 @@ func computeResource() *schema.Resource {
 		"user_data": {
 			Type:     schema.TypeString,
 			Optional: true,
-			ForceNew: true,
 			StateFunc: func(v interface{}) string {
 				switch v.(type) {
 				case string:
@@ -483,6 +482,15 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 
 	if d.HasChange("display_name") {
 		req.DisplayName = d.Get("display_name").(string)
+	}
+
+	if d.HasChange("user_data") {
+		userData, err := prepareUserData(d, "user_data")
+		if err != nil {
+			return err
+		}
+
+		req.UserData = userData
 	}
 
 	if d.HasChange("security_groups") {
