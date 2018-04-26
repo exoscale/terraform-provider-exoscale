@@ -16,7 +16,7 @@ resource "exoscale_network" "privNet" {
   name = "myPrivNet"
   display_text = "description"
   zone = "ch-dk-2"
-  network_offering = "privNet"
+  network_offering = "PrivNet"
 
   tags {
     # ...
