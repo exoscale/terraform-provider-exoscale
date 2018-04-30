@@ -119,5 +119,10 @@ resource "exoscale_compute" "vm" {
   tags {
     test = "terraform"
   }
+
+  timeouts {
+    create = "10m"
+    delete = "30m"
+  }
 }
 `

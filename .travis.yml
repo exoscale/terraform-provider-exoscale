@@ -30,7 +30,7 @@ script:
     if [ "${MY_GOOS}" = "linux" ] &&
        [ "${TRAVIS_GO_VERSION}" = "1.10" ] &&
        [ "${TRAVIS_PULL_REQUEST}" != "false" ]; then
-      TF_ACC=1 go test -v;
+      TF_ACC=1 go test -v github.com/exoscale/terraform-provider-exoscale/exoscale;
     fi
 
 matrix:
