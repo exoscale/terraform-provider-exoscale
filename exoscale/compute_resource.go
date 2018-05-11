@@ -8,11 +8,9 @@ import (
 	"fmt"
 	"log"
 	"regexp"
-	"strconv"
 	"strings"
 
 	"github.com/exoscale/egoscale"
-	"github.com/hashicorp/terraform/helper/hashcode"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
 )
@@ -53,16 +51,8 @@ func computeResource() *schema.Resource {
 			ForceNew: true,
 		},
 		"user_data": {
-			Type:     schema.TypeString,
-			Optional: true,
-			StateFunc: func(v interface{}) string {
-				switch v.(type) {
-				case string:
-					return strconv.FormatInt(int64(hashcode.String(v.(string))), 10)
-				default:
-					return ""
-				}
-			},
+			Type:        schema.TypeString,
+			Optional:    true,
 			Description: "cloud-init configuration",
 		},
 		"key_pair": {
@@ -395,6 +385,19 @@ func readCompute(d *schema.ResourceData, meta interface{}) error {
 		return handleNotFound(d, err)
 	}
 
+	// user_data
+	resp, err := client.RequestWithContext(ctx, &egoscale.GetVirtualMachineUserData{
+		VirtualMachineID: d.Id(),
+	})
+	if err != nil {
+		return err
+	}
+	userData, err := resp.(*egoscale.GetVirtualMachineUserDataResponse).VirtualMachineUserData.Decode()
+	if err != nil {
+		return err
+	}
+	d.Set("user_data", string(userData))
+
 	// disk_size
 	volumes, err := client.ListWithContext(ctx, &egoscale.Volume{
 		VirtualMachineID: d.Id(),
@@ -698,14 +701,16 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 		d.SetPartial("state")
 	}
 
-	// Update
-	resp, err := client.RequestWithContext(ctx, req)
+	// Update, we ignore the result as a full read is require for the user-data/volume
+	_, err = client.RequestWithContext(ctx, req)
 	if err != nil {
 		return err
 	}
 
-	m := resp.(*egoscale.UpdateVirtualMachineResponse).VirtualMachine
-	applyCompute(d, &m)
+	if err := readCompute(d, meta); err != nil {
+		return err
+	}
+	d.SetPartial("user_data")
 	d.SetPartial("display_name")
 	d.SetPartial("security_groups")
 

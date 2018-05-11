@@ -27,6 +27,11 @@ resource "exoscale_compute" "mymachine" {
 
   ip6 = false
 
+  user_data = <<EOF
+#cloud-config
+manage_etc_hosts: localhost
+EOF
+
   tags {
     production = "true"
   }
@@ -83,7 +88,7 @@ resource "exoscale_compute" "mymachine" {
 
 ## Import
 
-Importing Compute resource imports the compute has well as the
+Importing Compute resource imports the compute as well as the
 [`exoscale_secondary_ipaddress`](secondary_ipaddress.html) and
 [`exoscale_nic`](nic.html).
 

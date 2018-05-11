@@ -1,6 +1,6 @@
 [[constraint]]
   name = "github.com/exoscale/egoscale"
-  version = "0.9.23"
+  version = "0.9.25"
 
 [[constraint]]
   name = "github.com/hashicorp/terraform"
