@@ -65,7 +65,7 @@ func securityGroupRuleResource() *schema.Resource {
 				Optional:     true,
 				Default:      "tcp",
 				ForceNew:     true,
-				ValidateFunc: validation.StringInSlice([]string{"TCP", "UDP", "ICMP", "ICMPv6", "AH", "ESP", "GRE"}, true),
+				ValidateFunc: validation.StringInSlice([]string{"TCP", "UDP", "ICMP", "ICMPv6", "AH", "ESP", "GRE", "ALL"}, true),
 			},
 			"start_port": {
 				Type:          schema.TypeInt,

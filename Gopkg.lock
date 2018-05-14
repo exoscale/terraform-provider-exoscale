@@ -22,8 +22,8 @@
     "arm/storage",
     "storage"
   ]
-  revision = "2d1d76c9013c4feb6695a2346f0e66ea0ef77aa6"
-  version = "v11.3.0-beta"
+  revision = "21b68149ccf7c16b3f028bb4c7fd0ab458fe308f"
+  version = "v12.5.0-beta"
 
 [[projects]]
   name = "github.com/Azure/go-autorest"
@@ -35,8 +35,8 @@
     "autorest/to",
     "autorest/validation"
   ]
-  revision = "eaa7994b2278094c904d31993d26f56324db3052"
-  version = "v10.8.1"
+  revision = "fc3b03a2d2d1f43fad3007038bd16f044f870722"
+  version = "v9.10.0"
 
 [[projects]]
   branch = "master"
@@ -312,10 +312,10 @@
   revision = "c2fbb09e6c084fe3ebe95fce0f1cc5297c152026"
 
 [[projects]]
-  branch = "fix-userdata"
   name = "github.com/exoscale/egoscale"
   packages = ["."]
   revision = "a79de89b500dd3459e5a24518fab132be6f41a95"
+  version = "v0.9.25"
 
 [[projects]]
   name = "github.com/fatih/color"
@@ -746,6 +746,11 @@
   revision = "a47f63f234b2a2c87e52d7f1c72a9a7f87bd7880"
 
 [[projects]]
+  name = "github.com/marstr/guid"
+  packages = ["."]
+  revision = "8bdf7d1a087ccc975cf37dd6507da50698fd19ca"
+
+[[projects]]
   name = "github.com/masterzen/azure-sdk-for-go"
   packages = [
     "core/http",
@@ -902,12 +907,6 @@
 
 [[projects]]
   name = "github.com/satori/go.uuid"
-  packages = ["."]
-  revision = "f58768cc1a7a7e77a3bd49e98cdd21419399b6a3"
-  version = "v1.2.0"
-
-[[projects]]
-  name = "github.com/satori/uuid"
   packages = ["."]
   revision = "f58768cc1a7a7e77a3bd49e98cdd21419399b6a3"
   version = "v1.2.0"

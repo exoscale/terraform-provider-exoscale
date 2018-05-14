@@ -18,7 +18,7 @@ resource "exoscale_security_group_rule" "http" {
   security_group_id = "${exoscale_security_group.http.id}"
   protocol = "TCP"
   type = "INGRESS"
-  cidr = "0.0.0.0/0"
+  cidr = "0.0.0.0/0"  # "::/0" for IPv6
   start_port = 80
   end_port = 80
 }
@@ -30,7 +30,7 @@ resource "exoscale_security_group_rule" "http" {
 
 - `security_group` - (Required) which security group by id the rule applies to
 
-- `protocol` - (Required) the protocol, e.g. `TCP`, `UDP`, `ICMP`, etc.
+- `protocol` - (Required) the protocol, e.g. `TCP`, `UDP`, `ICMP`, ..., or 'ALL'
 
 - `type` - (Required) traffic type, either `INGRESS` or `EGRESS`
 
