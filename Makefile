@@ -1,4 +1,4 @@
-VERSION=0.9.22_x1
+VERSION=0.9.23_x-$(shell git rev-parse --short HEAD)
 
 GOOS?=linux
 GOARCH?=amd64
