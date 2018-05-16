@@ -122,6 +122,7 @@ func applyDomain(d *schema.ResourceData, domain egoscale.DNSDomain) error {
 	d.SetId(domain.Name)
 	d.Set("name", domain.Name)
 	d.Set("state", domain.State)
+	d.Set("token", domain.Token)
 	d.Set("auto_renew", domain.AutoRenew)
 	d.Set("expires_on", domain.ExpiresOn)
 
