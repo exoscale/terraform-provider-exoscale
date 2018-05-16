@@ -32,6 +32,10 @@ configuration file built from a template.
 An example showing how the [Private networks](https://www.exoscale.com/syslog/introducing-multiple-private-networks/)
 API support can be used to create a private network between compute instances.
 
+## [DNS](dns)
+
+Managing DNS resources: domains and its associated records (`A`, `AAAA`, `CNAME`, `TXT`, etc.).
+
 ## External examples
 
 - Oliver Moser's: [Prometheus Service Discovery Demo](https://github.com/olmoser/infracoders-reloaded)
