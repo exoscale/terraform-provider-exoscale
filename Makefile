@@ -32,21 +32,9 @@ export PATH := $(PATH):$(GOPATH)/bin
 .PHONY: default
 default: $(DEBUG_BIN)
 
-.PHONY: all
-all: deps ($BIN)
-
-.PHONY: build
-build: deps $(BIN)
-
 $(DEBUG_BIN): $(SRCS)
 	(cd $(GOPATH)/src/$(PKG) && \
 		go build \
-			-o $@ \
-			$<)
-
-$(BIN): $(SRCS)
-	(cd $(GOPATH)/src/$(PKG) && \
-		CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH) go build -ldflags "-s" \
 			-o $@ \
 			$<)
 
@@ -75,18 +63,6 @@ test:
 .PHONY: testacc
 testacc:
 	(cd $(GOPATH)/src/$(PKG)/exoscale && TF_ACC=1 go test -v)
-
-.PHONY: signature
-signature: $(BIN).asc
-
-$(BIN).asc: $(BIN)
-	rm -f $(BIN).asc
-	gpg -a -u ops@exoscale.ch --output $@ --detach-sign $<
-
-.PHONY: release
-release: deps
-	$(foreach goos, $(OSES), \
-		GOOS=$(goos) $(MAKE) signature;)
 
 .PHONY: clean
 clean:
