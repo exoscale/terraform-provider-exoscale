@@ -1,0 +1,20 @@
+builds:
+  - main: main.go
+    binary: "terraform-provider-exoscale_{{.Tag}}-{{.Commit}}"
+    goos:
+      - darwin
+      - linux
+      - windows
+    goarch:
+      - amd64
+
+sign:
+  cmd: gpg
+  args: ["-a", "-u", "ops@exoscale.ch", "--detach-sign", "${artifact}"]
+  artifacts: all
+
+
+dist: build
+
+git:
+  short_hash: true
