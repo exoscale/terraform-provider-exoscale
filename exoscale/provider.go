@@ -148,7 +148,10 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		inis := []string{
 			config,
 			localConfig,
-			filepath.Join(usr.HomeDir, ".cloudstack.ini"),
+		}
+
+		if usr != nil {
+			inis = append(inis, filepath.Join(usr.HomeDir, ".cloudstack.ini"))
 		}
 
 		// Stops at the first file that exists
