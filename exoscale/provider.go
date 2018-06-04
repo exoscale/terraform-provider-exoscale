@@ -165,7 +165,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		}
 
 		if config == "" {
-			return nil, fmt.Errorf("Config file not found within: %s", strings.Join(inis, ", "))
+			return nil, fmt.Errorf("key (%s), secret are missing, or config file not found within: %s", key, strings.Join(inis, ", "))
 		}
 
 		cfg, err := ini.LoadSources(ini.LoadOptions{IgnoreInlineComment: true}, config)
