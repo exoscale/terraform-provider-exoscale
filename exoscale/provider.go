@@ -134,9 +134,11 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		profile := d.Get("profile").(string)
 
 		// Support `~/`
-		usr, _ := user.Current()
-		if strings.HasPrefix(config, "~/") {
-			config = filepath.Join(usr.HomeDir, config[2:])
+		usr, err := user.Current()
+		if err == nil {
+			if strings.HasPrefix(config, "~/") {
+				config = filepath.Join(usr.HomeDir, config[2:])
+			}
 		}
 
 		// Convert relative path to absolute
