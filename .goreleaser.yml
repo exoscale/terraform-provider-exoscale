@@ -1,6 +1,6 @@
 builds:
   - main: main.go
-    binary: "terraform-provider-exoscale_{{.Tag}}-{{.Commit}}"
+    binary: "terraform-provider-exoscale_{{.Tag}}_x{{.Commit}}"
     goos:
       - darwin
       - linux
@@ -10,7 +10,7 @@ builds:
 
 sign:
   cmd: gpg
-  args: ["-a", "-u", "ops@exoscale.ch", "--detach-sign", "${artifact}"]
+  args: ["-u", "ops@exoscale.ch", "--detach-sign", "${artifact}"]
   artifacts: all
 
 
