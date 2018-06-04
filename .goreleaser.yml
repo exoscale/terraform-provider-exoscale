@@ -1,12 +1,14 @@
 builds:
   - main: main.go
-    binary: "terraform-provider-exoscale_{{.Tag}}_x{{.Commit}}"
+    binary: "terraform-provider-exoscale_{{.Tag}}"
     goos:
       - darwin
       - linux
       - windows
     goarch:
       - amd64
+    env:
+      - CGO_ENABLED=0
 
 sign:
   cmd: gpg
