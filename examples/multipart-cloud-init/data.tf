@@ -19,6 +19,9 @@ data "external" "terraform_version" {
 data "template_cloudinit_config" "config" {
   count = "${length(var.hostnames)}"
 
+  gzip = false
+  base64_encode = false
+
   part {
     filename = "cloud-init.yml"
     content_type = "text/cloud-config"

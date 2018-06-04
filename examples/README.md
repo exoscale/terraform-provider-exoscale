@@ -36,6 +36,10 @@ API support can be used to create a private network between compute instances.
 
 Managing DNS resources: domains and its associated records (`A`, `AAAA`, `CNAME`, `TXT`, etc.).
 
+## [Rancher Kubernetes Engine](rke)
+
+Setting up a Kubernetes cluster using the Rancher 2.0 facilities.
+
 ## External examples
 
 - Oliver Moser's: [Prometheus Service Discovery Demo](https://github.com/olmoser/infracoders-reloaded)
