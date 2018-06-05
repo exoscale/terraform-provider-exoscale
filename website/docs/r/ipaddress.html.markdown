@@ -9,7 +9,7 @@ description: |-
 # exoscale_ipaddress
 
 The elastic IP address is an address that belongs to a specific zone and may be
-attributed to many compute. See [public_ipaddress](public_ipaddress.html).
+attributed to many compute. See [secondary_ipaddress](secondary_ipaddress.html).
 
 ### Usage example
 
