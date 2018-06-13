@@ -1,72 +1,66 @@
-# Terraform provider for Exoscale
+Terraform Provider
+==================
 
-[![Build Status](https://travis-ci.org/exoscale/terraform-provider-exoscale.svg?branch=master)](https://travis-ci.org/exoscale/terraform-provider-exoscale)
+- Website: https://www.terraform.io
+- [![Build Status](https://travis-ci.org/exoscale/terraform-provider-exoscale.svg?branch=master)](https://travis-ci.org/exoscale/terraform-provider-exoscale)
+- [![Gitter chat](https://badges.gitter.im/hashicorp-terraform/Lobby.png)](https://gitter.im/hashicorp-terraform/Lobby)
+- Mailing list: [Google Groups](http://groups.google.com/group/terraform-tool)
 
-## Installation
+<img src="https://cdn.rawgit.com/hashicorp/terraform-website/master/content/source/assets/images/logo-hashicorp.svg" width="600px">
 
-1. Download `terraform-provider-exoscale` from the [releases page](https://github.com/exoscale/terraform-provider-exoscale/releases);
-2. Put it into the `.terraform/plugins/(darwin|linux|windows)_amd64` folder and make it executable;
-3. Run `terraform init`.
+Requirements
+------------
 
-```
-$ terraform providers
-.
-└── provider.exoscale
-```
+-   [Terraform](https://www.terraform.io/downloads.html) 0.10.x
+-   [Go](https://golang.org/doc/install) 1.9 (to build the provider plugin)
 
-Go read the article on our weblog [Terraform on Exoscale](https://www.exoscale.com/syslog/terraform-with-exoscale/).
+Building The Provider
+---------------------
 
+Clone repository to: `$GOPATH/src/github.com/terraform-providers/terraform-provider-exoscale`
 
-## Resources
-
-The documentation has moved into `website`.
-
-## Storage on S3
-
-```hcl
-terraform = {
-  backend "s3" {
-    bucket = "..."
-    endpoint = "https://sos-ch-dk-2.exo.io"
-    key = "..."
-    region = "ch-dk-2"
-    access_key = "..."
-    secret_key = "..."
-
-    # Deactivate the AWS specific behaviours
-    #
-    # https://www.terraform.io/docs/backends/types/s3.html#skip_credentials_validation
-    skip_credentials_validation = true
-    skip_get_ec2_platforms = true
-    skip_requesting_account_id = true
-    skip_metadata_api_check = true
-    skip_region_validation = true
-  }
-}
+```sh
+$ mkdir -p $GOPATH/src/github.com/terraform-providers; cd $GOPATH/src/github.com/terraform-providers
+$ git clone git@github.com:terraform-providers/terraform-provider-exoscale
 ```
 
-## Contributing
+Enter the provider directory and build the provider
 
-Contributions are welcome and we encourage you to build the provider locally
-before sending a pull request.
-
-### Building
-
-```
-$ git clone https://github.com/exoscale/terraform-provider-exoscale
-$ cd terraform-provider-exoscale
+```sh
+$ cd $GOPATH/src/github.com/terraform-providers/terraform-provider-exoscale
 $ make build
-
-# making a release (for Exoscale staff only)
-$ make release
 ```
 
-### Development
+Using the provider
+----------------------
+If you're building the provider, follow the instructions to [install it as a plugin.](https://www.terraform.io/docs/plugins/basics.html#installing-a-plugin) After placing it into your plugins directory,  run `terraform init` to initialize it.
 
+Developing the Provider
+---------------------------
+
+If you wish to work on the provider, you'll first need [Go](http://www.golang.org) installed on your machine (version 1.9+ is *required*). You'll also need to correctly setup a [GOPATH](http://golang.org/doc/code.html#GOPATH), as well as adding `$GOPATH/bin` to your `$PATH`.
+
+To compile the provider, run `make build`. This will build the provider and put the provider binary in the `$GOPATH/bin` directory.
+
+```sh
+$ make build
+...
+$ $GOPATH/bin/terraform-provider-provider
+...
 ```
-# quick build of the provider
-$ make
 
-# updating the dependencies
-$ make deps-update
+In order to test the provider, you can simply run `make test`.
+
+*Note:* Make sure no `CLOUDSTACK_KEY` or `CLOUDSTACK_SECRET` variables are set, and there's no `[cloudstack]` section in the AWS credentials file `~/.cloudstack.ini`.
+
+```sh
+$ make test
+```
+
+In order to run the full suite of Acceptance tests, run `make testacc`.
+
+*Note:* Acceptance tests create real resources, and often cost money to run.
+
+```sh
+$ make testacc
 ```
