@@ -1,4 +1,1 @@
-.gopath
 build
-vendor
-terraform-provider-exoscale*

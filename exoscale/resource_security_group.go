@@ -181,7 +181,9 @@ func importSecurityGroup(d *schema.ResourceData, meta interface{}) ([]*schema.Re
 		return nil, err
 	}
 
-	applySecurityGroup(d, securityGroup)
+	if err := applySecurityGroup(d, securityGroup); err != nil {
+		return nil, err
+	}
 
 	// Create all the rulez!
 	ruleLength := len(securityGroup.EgressRule) + len(securityGroup.IngressRule)

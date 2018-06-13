@@ -91,7 +91,9 @@ func importDomain(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceD
 		return nil, err
 	}
 
-	applyDomain(d, *domain)
+	if err := applyDomain(d, *domain); err != nil {
+		return nil, err
+	}
 
 	records, err := client.GetRecords(d.Id())
 	if err != nil {
@@ -110,7 +112,9 @@ func importDomain(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceD
 		d := resource.Data(nil)
 		d.SetType("exoscale_domain_record")
 		d.Set("domain", domain.Name)
-		applyRecord(d, record)
+		if err := applyRecord(d, record); err != nil {
+			continue
+		}
 
 		resources = append(resources, d)
 	}

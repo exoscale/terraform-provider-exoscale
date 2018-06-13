@@ -699,7 +699,10 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 		}
 
 		m := resp.(*egoscale.StopVirtualMachineResponse).VirtualMachine
-		applyCompute(d, &m)
+		err = applyCompute(d, &m)
+		if err != nil {
+			return err
+		}
 		d.SetPartial("state")
 	}
 
