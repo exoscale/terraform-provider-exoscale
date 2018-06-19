@@ -40,6 +40,10 @@ Managing DNS resources: domains and its associated records (`A`, `AAAA`, `CNAME`
 
 Setting up a Kubernetes cluster using the Rancher 2.0 facilities.
 
+## [Elastic IP](elastic-ip)
+
+Having one elastic IP address linked to two (or more) instances.
+
 ## External examples
 
 - Oliver Moser's: [Prometheus Service Discovery Demo](https://github.com/olmoser/infracoders-reloaded)

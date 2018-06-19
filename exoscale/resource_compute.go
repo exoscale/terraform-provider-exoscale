@@ -811,11 +811,11 @@ func importCompute(d *schema.ResourceData, meta interface{}) ([]*schema.Resource
 			d := resource.Data(nil)
 			d.SetType("exoscale_secondary_ipaddress")
 			d.Set("compute_id", id)
-			if err := applySecondaryIP(d, secondaryIP); err != nil {
+			secondaryIP.NicID = defaultNic.ID
+			secondaryIP.NetworkID = defaultNic.NetworkID
+			if err := applySecondaryIP(d, &secondaryIP); err != nil {
 				return nil, err
 			}
-			d.Set("nic_id", machine.Nic[0].ID)
-			d.Set("network_id", machine.Nic[0].NetworkID)
 
 			resources = append(resources, d)
 		}

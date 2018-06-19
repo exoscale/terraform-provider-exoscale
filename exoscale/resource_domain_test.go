@@ -22,7 +22,7 @@ func TestAccDomain(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckDNSDomainExists("exoscale_domain.exo", domain),
 					testAccCheckDNSDomainAttributes(domain),
-					testAccCheckDNSDomainCreateAttributes("exo.exo"),
+					testAccCheckDNSDomainCreateAttributes("acceptance.exo"),
 				),
 			},
 		},
@@ -94,16 +94,20 @@ func testAccCheckDNSDomainDestroy(s *terraform.State) error {
 			continue
 		}
 
-		_, err := client.GetDomain(rs.Primary.Attributes["name"])
+		d, err := client.GetDomain(rs.Primary.Attributes["name"])
 		if err != nil {
+			return err
+		}
+		if d == nil {
 			return nil
 		}
+		return fmt.Errorf("DNS Domain: still exists")
 	}
-	return fmt.Errorf("DNS Domain: still exists")
+	return nil
 }
 
 var testAccDNSDomainCreate = `
 resource "exoscale_domain" "exo" {
-  name = "exo.exo"
+  name = "acceptance.exo"
 }
 `

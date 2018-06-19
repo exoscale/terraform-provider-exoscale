@@ -57,12 +57,19 @@ func Provider() terraform.ResourceProvider {
 				}, defaultConfig),
 			},
 			"profile": {
+				Type:       schema.TypeString,
+				Optional:   true,
+				Deprecated: "Use region instead",
+			},
+			"region": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Description: fmt.Sprintf("CloudStack ini configuration section name (by default: %s)", defaultProfile),
 				DefaultFunc: schema.MultiEnvDefaultFunc([]string{
 					"EXOSCALE_PROFILE",
+					"EXOSCALE_REGION",
 					"CLOUDSTACK_PROFILE",
+					"CLOUDSTACK_REGION",
 				}, defaultProfile),
 			},
 			"compute_endpoint": {
@@ -131,7 +138,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		}
 	} else {
 		config := d.Get("config").(string)
-		profile := d.Get("profile").(string)
+		region := d.Get("region").(string)
 
 		// Support `~/`
 		usr, err := user.Current()
@@ -173,7 +180,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 			return nil, fmt.Errorf("Config file not loaded: %s", err)
 		}
 
-		section, err := cfg.GetSection(profile)
+		section, err := cfg.GetSection(region)
 		if err != nil {
 			sections := strings.Join(cfg.SectionStrings(), ", ")
 			return nil, fmt.Errorf("%s. Existing sections: %s", err, sections)

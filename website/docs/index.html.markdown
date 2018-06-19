@@ -31,7 +31,7 @@ provider "exoscale" {
   version = "~> 0.9"
 
   config = "cloudstack.ini"   # default: filename
-  profile = "cloudstack"      # default: section name
+  region = "cloudstack"      # default: section name
 }
 ```
 
@@ -62,7 +62,7 @@ You can specify the following keys using those environment variables.
 
 - `config` - `EXOSCALE_CONFIG`, or `CLOUDSTACK_CONFIG`;
 
-- `profile` - `EXOSCALE_PROFILE`, or `CLOUDSTACK_PROFILE`;
+- `region` - `EXOSCALE_REGION`, `EXOSCALE_REGION`, `CLOUDSTACK_PROFILE`, or `CLOUDSTACK_PROFILE`;
 
 - `timeout` - `EXOSCALE_TIMEOUT` global timeout;
 

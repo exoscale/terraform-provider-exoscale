@@ -71,111 +71,145 @@ func createSecondaryIP(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("The VM has no NIC %v", virtualMachineID)
 	}
 
-	// XXX Fragile
-	nic := nics.Nic[0]
-	resp, err = client.RequestWithContext(ctx, &egoscale.AddIPToNic{
-		NicID:     nic.ID,
-		IPAddress: net.ParseIP(d.Get("ip_address").(string)),
-	})
-	if err != nil {
-		return err
+	for i := range nics.Nic {
+		nic := nics.Nic[i]
+
+		if !nic.IsDefault {
+			continue
+		}
+
+		resp, err = client.RequestWithContext(ctx, &egoscale.AddIPToNic{
+			NicID:     nic.ID,
+			IPAddress: net.ParseIP(d.Get("ip_address").(string)),
+		})
+
+		if err != nil {
+			return err
+		}
+
+		ip := resp.(*egoscale.AddIPToNicResponse).NicSecondaryIP
+		ip.NicID = nic.ID
+		ip.NetworkID = nic.NetworkID
+
+		return applySecondaryIP(d, &ip)
 	}
 
-	secondaryIP := resp.(*egoscale.AddIPToNicResponse).NicSecondaryIP
-
-	d.SetId(secondaryIP.ID)
-	// XXX this is fragile
-	d.Set("nic_id", nic.ID)
-	return nil
+	return fmt.Errorf("No default NIC found for %v", virtualMachineID)
 }
 
 func existsSecondaryIP(d *schema.ResourceData, meta interface{}) (bool, error) {
+	ip, err := getSecondaryIP(d, meta)
+	if err != nil {
+		e := handleNotFound(d, err)
+		return d.Id() != "", e
+	}
+
+	return ip != nil, nil
+}
+
+func readSecondaryIP(d *schema.ResourceData, meta interface{}) error {
+	ip, err := getSecondaryIP(d, meta)
+	if err != nil {
+		return handleNotFound(d, err)
+	}
+
+	if ip != nil {
+		err = applySecondaryIP(d, ip)
+		if err != nil {
+			return err
+		}
+	} else {
+		d.SetId("")
+	}
+	return nil
+}
+
+func getSecondaryIP(d *schema.ResourceData, meta interface{}) (*egoscale.NicSecondaryIP, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
 	defer cancel()
 
 	client := GetComputeClient(meta)
 
-	nicID := d.Get("nic_id").(string)
+	ipAddress := d.Get("ip_address").(string)
 	virtualMachineID := d.Get("compute_id").(string)
-	resp, err := client.RequestWithContext(ctx, &egoscale.ListNics{
-		NicID:            nicID,
+	nicID := d.Get("nic_id").(string)
+
+	ns, err := client.ListWithContext(ctx, &egoscale.Nic{
+		ID:               nicID,
 		VirtualMachineID: virtualMachineID,
 	})
 
 	if err != nil {
-		// XXX Check the root cause of that error to tell
-		//     using pkg/errors.
-		return err != nil, err
+		// XXX fugly hack in case the VM doesn't exist anymore
+		if r, ok := err.(*egoscale.ErrorResponse); ok {
+			if r.ErrorCode == egoscale.InternalError && r.ErrorText == "Virtual machine id does not exist" {
+				return nil, nil
+			}
+		}
+
+		e := handleNotFound(d, err)
+		return nil, e
 	}
 
-	nics := resp.(*egoscale.ListNicsResponse)
-	if nics.Count == 0 {
-		return false, nil
+	if len(ns) == 0 {
+		// No nics, means the VM is gone.
+		return nil, nil
 	}
 
-	return true, nil
+	for _, n := range ns {
+		nic, ok := n.(*egoscale.Nic)
+		if !ok {
+			continue
+		}
+
+		if !nic.IsDefault {
+			continue
+		}
+
+		for _, ip := range nic.SecondaryIP {
+			if ip.IPAddress != nil && ipAddress == ip.IPAddress.String() {
+				ip.NicID = nic.ID
+				ip.NetworkID = nic.NetworkID
+
+				return &ip, nil
+			}
+		}
+	}
+
+	return nil, nil
 }
 
-func readSecondaryIP(d *schema.ResourceData, meta interface{}) error {
-	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
-	defer cancel()
-
-	client := GetComputeClient(meta)
-
-	nicID := d.Get("nic_id").(string)
-	virtualMachineID := d.Get("compute_id").(string)
-	resp, err := client.RequestWithContext(ctx, &egoscale.ListNics{
-		NicID:            nicID,
-		VirtualMachineID: virtualMachineID,
-	})
-
+func deleteSecondaryIP(d *schema.ResourceData, meta interface{}) error {
+	ip, err := getSecondaryIP(d, meta)
 	if err != nil {
 		return err
 	}
 
-	nics := resp.(*egoscale.ListNicsResponse)
-	if len(nics.Nic) == 0 {
-		// No nics, means the VM is gone.
-		d.SetId("")
+	// ip is already gone
+	if ip == nil {
 		return nil
 	}
 
-	nic := nics.Nic[0]
-	for _, ip := range nic.SecondaryIP {
-		if d.Id() == "" || ip.ID == d.Id() {
-			err := applySecondaryIP(d, ip)
-			if err != nil {
-				return err
-			}
-			// fix fix
-			d.Set("nic_id", nic.ID)
-			d.Set("network_id", nic.NetworkID)
-			return nil
-		}
-	}
-
-	d.SetId("")
-	return nil
-}
-
-func deleteSecondaryIP(d *schema.ResourceData, meta interface{}) error {
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutDelete))
 	defer cancel()
 
 	client := GetComputeClient(meta)
 
 	return client.BooleanRequestWithContext(ctx, &egoscale.RemoveIPFromNic{
-		ID: d.Id(),
+		ID: ip.ID,
 	})
 }
 
-func applySecondaryIP(d *schema.ResourceData, secondaryIP egoscale.NicSecondaryIP) error {
-	d.SetId(secondaryIP.ID)
+func applySecondaryIP(d *schema.ResourceData, secondaryIP *egoscale.NicSecondaryIP) error {
+
+	d.SetId(fmt.Sprintf("%s_%s", secondaryIP.NicID, secondaryIP.IPAddress.String()))
+
 	if secondaryIP.IPAddress != nil {
 		d.Set("ip_address", secondaryIP.IPAddress.String())
 	} else {
 		d.Set("ip_address", "")
 	}
+
 	d.Set("network_id", secondaryIP.NetworkID)
 	d.Set("nic_id", secondaryIP.NicID)
 

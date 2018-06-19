@@ -17,7 +17,7 @@ to be configured accordingly.
 ### Secondary IP Address
 
 ```hcl
-resource "exoscale_secondary_ipaddress" "" {
+resource "exoscale_secondary_ipaddress" "ingress_ip" {
   compute_id = "${exoscale_compute.mymachine.id}"
   ip_address = "${exoscale_ipaddress.myip.ip_address}"
 }
