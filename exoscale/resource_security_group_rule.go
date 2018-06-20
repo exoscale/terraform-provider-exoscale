@@ -217,7 +217,8 @@ func existsSecurityGroupRule(d *schema.ResourceData, meta interface{}) (bool, er
 		Name: securityGroupName,
 	}
 	if err := client.GetWithContext(ctx, sg); err != nil {
-		return false, err
+		e := handleNotFound(d, err)
+		return d.Id() != "", e
 	}
 
 	switch d.Get("type") {
@@ -258,7 +259,7 @@ func readSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
 		Name: securityGroupName,
 	}
 	if err := client.GetWithContext(ctx, sg); err != nil {
-		return err
+		return handleNotFound(d, err)
 	}
 
 	id := d.Id()
