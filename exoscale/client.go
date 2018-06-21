@@ -11,6 +11,7 @@ const defaultProfile = "cloudstack"
 const defaultComputeEndpoint = "https://api.exoscale.ch/compute"
 const defaultDNSEndpoint = "https://api.exoscale.ch/dns"
 const defaultTimeout = time.Duration(60) * time.Second
+const defaultGzipUserData = true
 
 // BaseConfig represents the provider structure
 type BaseConfig struct {
@@ -20,6 +21,7 @@ type BaseConfig struct {
 	computeEndpoint string
 	dnsEndpoint     string
 	s3Endpoint      string
+	gzipUserData    bool
 }
 
 func getClient(endpoint string, meta interface{}) *egoscale.Client {

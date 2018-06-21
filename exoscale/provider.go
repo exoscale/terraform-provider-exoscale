@@ -95,6 +95,14 @@ func Provider() terraform.ResourceProvider {
 					defaultTimeout.Seconds()),
 				DefaultFunc: schema.EnvDefaultFunc("EXOSCALE_TIMEOUT", defaultTimeout.Seconds()),
 			},
+			"gzip_user_data": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Description: fmt.Sprintf(
+					"Defines if the user-data of compute instances should be gzipped (by default: %t)",
+					defaultGzipUserData),
+				DefaultFunc: schema.EnvDefaultFunc("EXOSCALE_GZIP_USER_DATA", defaultGzipUserData),
+			},
 			"delay": {
 				Type:       schema.TypeInt,
 				Optional:   true,
@@ -210,6 +218,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		timeout:         time.Duration(int64(d.Get("timeout").(float64)) * int64(time.Second)),
 		computeEndpoint: endpoint,
 		dnsEndpoint:     d.Get("dns_endpoint").(string),
+		gzipUserData:    d.Get("gzip_user_data").(bool),
 	}
 
 	return baseConfig, nil

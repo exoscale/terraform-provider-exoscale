@@ -298,7 +298,7 @@ func createCompute(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	userData, err := prepareUserData(d, "user_data")
+	userData, err := prepareUserData(d, meta, "user_data")
 	if err != nil {
 		return err
 	}
@@ -491,7 +491,7 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	if d.HasChange("user_data") {
-		userData, err := prepareUserData(d, "user_data")
+		userData, err := prepareUserData(d, meta, "user_data")
 		if err != nil {
 			return err
 		}
@@ -954,25 +954,31 @@ func isUUID(uuid string) bool {
 	return re.MatchString(uuid)
 }
 
-func prepareUserData(d *schema.ResourceData, key string) (string, error) {
+func prepareUserData(d *schema.ResourceData, meta interface{}, key string) (string, error) {
 	userData := d.Get(key).(string)
+	byteUserData := []byte(userData)
 	if strings.HasPrefix(userData, "#cloud-config") || strings.HasPrefix(userData, "Content-Type: multipart/mixed;") {
-		log.Printf("[DEBUG] cloud-config detected, gzipping")
+		config := meta.(BaseConfig)
+		if config.gzipUserData {
+			log.Printf("[DEBUG] cloud-config detected, gzipping")
 
-		b := new(bytes.Buffer)
-		gz := gzip.NewWriter(b)
-		if _, err := gz.Write([]byte(userData)); err != nil {
-			return "", err
-		}
-		if err := gz.Flush(); err != nil {
-			return "", err
-		}
-		if err := gz.Close(); err != nil {
-			return "", err
-		}
+			b := new(bytes.Buffer)
+			gz := gzip.NewWriter(b)
+			if _, err := gz.Write(byteUserData); err != nil {
+				return "", err
+			}
+			if err := gz.Flush(); err != nil {
+				return "", err
+			}
+			if err := gz.Close(); err != nil {
+				return "", err
+			}
 
-		return base64.StdEncoding.EncodeToString(b.Bytes()), nil
+			byteUserData = b.Bytes()
+		} else {
+			log.Printf("[DEBUG] cloud-config detected, no gzipping requested")
+		}
 	}
 
-	return userData, nil
+	return base64.StdEncoding.EncodeToString(byteUserData), nil
 }

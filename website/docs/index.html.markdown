@@ -21,8 +21,9 @@ provider "exoscale" {
   key = "EXO..."
   secret = "..."
 
-  timeout = 60  # default: waits 60 seconds in total for a resource
-  delay = 5     # default: waits 5 seconds between each poll request
+  timeout = 60          # default: waits 60 seconds in total for a resource
+  delay = 5             # default: waits 5 seconds between each poll request
+  gzip_user_data = true # default: gzip user-data of compute instances
 }
 
 # or
@@ -31,7 +32,7 @@ provider "exoscale" {
   version = "~> 0.9"
 
   config = "cloudstack.ini"   # default: filename
-  region = "cloudstack"      # default: section name
+  region = "cloudstack"       # default: section name
 }
 ```
 
@@ -69,6 +70,8 @@ You can specify the following keys using those environment variables.
 - `compute_endpoint` - `EXOSCALE_COMPUTE_ENDPOINT`, or `CLOUDSTACK_ENDPOINT`;
 
 - `dns_endpoint` - `EXOSCALE_DNS_ENDPOINT`.
+
+- `gzip_user_data` - `EXOSCALE_GZIP_USER_DATA`.
 
 ## Timeouts
 
