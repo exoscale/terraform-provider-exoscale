@@ -954,16 +954,17 @@ func isUUID(uuid string) bool {
 	return re.MatchString(uuid)
 }
 
+// prepareUserData base64 encode the user-data and gzip it if supported
 func prepareUserData(d *schema.ResourceData, meta interface{}, key string) (string, error) {
 	userData := d.Get(key).(string)
-	byteUserData := []byte(userData)
-	if strings.HasPrefix(userData, "#cloud-config") || strings.HasPrefix(userData, "Content-Type: multipart/mixed;") {
-		config := meta.(BaseConfig)
-		if config.gzipUserData {
-			log.Printf("[DEBUG] cloud-config detected, gzipping")
 
+	if strings.HasPrefix(userData, "#cloud-config") || strings.HasPrefix(userData, "Content-Type: multipart/mixed;") {
+		byteUserData := []byte(userData)
+
+		if meta.(BaseConfig).gzipUserData {
 			b := new(bytes.Buffer)
 			gz := gzip.NewWriter(b)
+
 			if _, err := gz.Write(byteUserData); err != nil {
 				return "", err
 			}
@@ -975,10 +976,9 @@ func prepareUserData(d *schema.ResourceData, meta interface{}, key string) (stri
 			}
 
 			byteUserData = b.Bytes()
-		} else {
-			log.Printf("[DEBUG] cloud-config detected, no gzipping requested")
 		}
+		return base64.StdEncoding.EncodeToString(byteUserData), nil
 	}
 
-	return base64.StdEncoding.EncodeToString(byteUserData), nil
+	return userData, nil
 }

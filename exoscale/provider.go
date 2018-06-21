@@ -146,7 +146,14 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		}
 	} else {
 		config := d.Get("config").(string)
-		region := d.Get("region").(string)
+		region, regionOK := d.GetOk("region")
+
+		// deprecation support
+		profile, profileOK := d.GetOk("profile")
+		if profileOK && !regionOK {
+			regionOK = profileOK
+			region = profile
+		}
 
 		// Support `~/`
 		usr, err := user.Current()
@@ -188,7 +195,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 			return nil, fmt.Errorf("Config file not loaded: %s", err)
 		}
 
-		section, err := cfg.GetSection(region)
+		section, err := cfg.GetSection(region.(string))
 		if err != nil {
 			sections := strings.Join(cfg.SectionStrings(), ", ")
 			return nil, fmt.Errorf("%s. Existing sections: %s", err, sections)
