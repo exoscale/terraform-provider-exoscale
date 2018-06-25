@@ -132,6 +132,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	key, keyOK := d.GetOk("key")
 	secret, secretOK := d.GetOk("secret")
 	endpoint := d.Get("compute_endpoint").(string)
+	dnsEndpoint := d.Get("dns_endpoint").(string)
 
 	// deprecation support
 	token, tokenOK := d.GetOk("token")
@@ -216,6 +217,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		e, err := section.GetKey("endpoint")
 		if err == nil {
 			endpoint = e.String()
+			dnsEndpoint = strings.Replace(endpoint, "/compute", "/dns", 1)
 		}
 	}
 
@@ -224,7 +226,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		secret:          secret.(string),
 		timeout:         time.Duration(int64(d.Get("timeout").(float64)) * int64(time.Second)),
 		computeEndpoint: endpoint,
-		dnsEndpoint:     d.Get("dns_endpoint").(string),
+		dnsEndpoint:     dnsEndpoint,
 		gzipUserData:    d.Get("gzip_user_data").(bool),
 	}
 
