@@ -44,6 +44,10 @@ Setting up a Kubernetes cluster using the Rancher 2.0 facilities.
 
 Having one elastic IP address linked to two (or more) instances.
 
+## [S3](s3)
+
+Using the [Terraform AWS Provider](https://www.terraform.io/docs/providers/aws/) with the [Exoscale Object Storage](https://www.exoscale.com/object-storage/) to manage a bucket.
+
 ## External examples
 
 - Oliver Moser's: [Prometheus Service Discovery Demo](https://github.com/olmoser/infracoders-reloaded)
