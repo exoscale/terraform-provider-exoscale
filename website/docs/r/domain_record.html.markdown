@@ -41,4 +41,9 @@ resource "exoscale_domain_record" "glop" {
 
 ## Import
 
-A record is imported with its domain resource.
+A record is imported with its domain resource. Importing an Domain Record resource is also possible by id.
+
+```shell
+# by id
+$ terraform import exoscale_domain_record.www 12480484
+```

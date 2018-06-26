@@ -89,8 +89,8 @@
 [[projects]]
   name = "github.com/exoscale/egoscale"
   packages = ["."]
-  revision = "43703f86849566a547e8f1812508ab873e8d12dd"
-  version = "v0.9.27"
+  revision = "a4fd19ea38e8b10c58a7663c09aa4eb62df1b397"
+  version = "v0.9.29"
 
 [[projects]]
   name = "github.com/fatih/color"
@@ -408,7 +408,7 @@
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "63fc586f45fe72d95d5240a5d5eb95e6503907d3"
+  revision = "a200a19cb90b19de298170992778b1fda7217bd6"
 
 [[projects]]
   name = "golang.org/x/text"
@@ -474,6 +474,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "54537182708175738c51bd45e81b196594c7a2bde50bcc42bb358b8589dcc8ba"
+  inputs-digest = "793c86efbadc8334f9f8d0f7712f5be706984babcf5e15d1553f1e717c39e161"
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -147,12 +147,11 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		}
 	} else {
 		config := d.Get("config").(string)
-		region, regionOK := d.GetOk("region")
+		region := d.Get("region")
 
 		// deprecation support
 		profile, profileOK := d.GetOk("profile")
-		if profileOK && !regionOK {
-			regionOK = profileOK
+		if profileOK && profile.(string) != "" {
 			region = profile
 		}
 

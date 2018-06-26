@@ -17,6 +17,10 @@ func domainRecordResource() *schema.Resource {
 		Update: updateRecord,
 		Delete: deleteRecord,
 
+		Importer: &schema.ResourceImporter{
+			State: schema.ImportStatePassthrough,
+		},
+
 		Schema: map[string]*schema.Schema{
 			"domain": {
 				Type:     schema.TypeString,
@@ -78,28 +82,79 @@ func existsRecord(d *schema.ResourceData, meta interface{}) (bool, error) {
 	client := GetDNSClient(meta)
 
 	id, _ := strconv.ParseInt(d.Id(), 10, 64)
-	_, err := client.GetRecord(d.Get("domain").(string), id)
+	domain := d.Get("domain").(string)
 
-	return err == nil, err
+	if domain != "" {
+		record, err := client.GetRecord(domain, id)
+		if err != nil {
+			return false, err
+		}
+		return record != nil, nil
+	}
+
+	domains, err := client.GetDomains()
+	if err != nil {
+		return false, err
+	}
+
+	for _, domain := range domains {
+		record, err := client.GetRecord(domain.Name, id)
+		if err != nil {
+			if _, ok := err.(*egoscale.DNSErrorResponse); !ok {
+				return false, err
+			}
+		}
+
+		if record != nil {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
 
 func readRecord(d *schema.ResourceData, meta interface{}) error {
 	client := GetDNSClient(meta)
 
 	id, _ := strconv.ParseInt(d.Id(), 10, 64)
-	record, err := client.GetRecord(d.Get("domain").(string), id)
+	domain := d.Get("domain").(string)
+
+	if domain != "" {
+		record, err := client.GetRecord(domain, id)
+		if err != nil {
+			return err
+		}
+
+		return applyRecord(d, *record)
+	}
+
+	domains, err := client.GetDomains()
 	if err != nil {
 		return err
 	}
 
-	return applyRecord(d, *record)
+	for _, domain := range domains {
+		record, err := client.GetRecord(domain.Name, id)
+		if err != nil {
+			if _, ok := err.(*egoscale.DNSErrorResponse); !ok {
+				return err
+			}
+		}
+
+		if record != nil {
+			d.Set("domain", domain.Name)
+			return applyRecord(d, *record)
+		}
+	}
+
+	return fmt.Errorf("domain record %s not found", d.Id())
 }
 
 func updateRecord(d *schema.ResourceData, meta interface{}) error {
 	client := GetDNSClient(meta)
 
 	id, _ := strconv.ParseInt(d.Id(), 10, 64)
-	record, err := client.UpdateRecord(d.Get("domain").(string), egoscale.DNSRecord{
+	record, err := client.UpdateRecord(d.Get("domain").(string), egoscale.UpdateDNSRecord{
 		ID:         id,
 		Name:       d.Get("name").(string),
 		Content:    d.Get("content").(string),

@@ -1,6 +1,17 @@
 Changelog
 =========
 
+0.9.29
+------
+
+- change: `DNSErrorResponse` is a proper `error`
+
+0.9.28
+------
+
+- feat: addition of `GetDomains`
+- fix: `UpdateDomain` may contain more empty fields than `CreateDomain`
+
 0.9.27
 ------
 
