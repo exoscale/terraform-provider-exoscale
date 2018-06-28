@@ -89,8 +89,8 @@
 [[projects]]
   name = "github.com/exoscale/egoscale"
   packages = ["."]
-  revision = "a4fd19ea38e8b10c58a7663c09aa4eb62df1b397"
-  version = "v0.9.29"
+  revision = "bfd98d0cd87375b33a49198fe61d96c2668fc5bc"
+  version = "v0.9.30"
 
 [[projects]]
   name = "github.com/fatih/color"
@@ -474,6 +474,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "793c86efbadc8334f9f8d0f7712f5be706984babcf5e15d1553f1e717c39e161"
+  inputs-digest = "2ecbfab46bef3cfa080c63dc65010fee825c15628e223baf0105258c2120cf3f"
   solver-name = "gps-cdcl"
   solver-version = 1
