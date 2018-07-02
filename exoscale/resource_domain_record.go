@@ -75,7 +75,8 @@ func createRecord(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	return applyRecord(d, *record)
+	d.SetId(strconv.FormatInt(record.ID, 10))
+	return readRecord(d, meta)
 }
 
 func existsRecord(d *schema.ResourceData, meta interface{}) (bool, error) {
@@ -87,7 +88,9 @@ func existsRecord(d *schema.ResourceData, meta interface{}) (bool, error) {
 	if domain != "" {
 		record, err := client.GetRecord(domain, id)
 		if err != nil {
-			return false, err
+			if _, ok := err.(*egoscale.DNSErrorResponse); !ok {
+				return false, err
+			}
 		}
 		return record != nil, nil
 	}
@@ -136,9 +139,7 @@ func readRecord(d *schema.ResourceData, meta interface{}) error {
 	for _, domain := range domains {
 		record, err := client.GetRecord(domain.Name, id)
 		if err != nil {
-			if _, ok := err.(*egoscale.DNSErrorResponse); !ok {
-				return err
-			}
+			return err
 		}
 
 		if record != nil {

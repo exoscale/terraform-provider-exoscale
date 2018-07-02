@@ -50,13 +50,19 @@ func createDomain(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	return applyDomain(d, *domain)
+	d.SetId(domain.Name)
+	return readDomain(d, meta)
 }
 
 func existsDomain(d *schema.ResourceData, meta interface{}) (bool, error) {
 	client := GetDNSClient(meta)
 
 	_, err := client.GetDomain(d.Id())
+	if err != nil {
+		if _, ok := err.(*egoscale.DNSErrorResponse); ok {
+			return false, nil
+		}
+	}
 
 	return err == nil, err
 }
@@ -66,7 +72,6 @@ func readDomain(d *schema.ResourceData, meta interface{}) error {
 
 	domain, err := client.GetDomain(d.Id())
 	if err != nil {
-		d.SetId("")
 		return err
 	}
 
@@ -95,13 +100,13 @@ func importDomain(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceD
 		return nil, err
 	}
 
+	resources := make([]*schema.ResourceData, 0, 1)
+	resources = append(resources, d)
+
 	records, err := client.GetRecords(d.Id())
 	if err != nil {
 		return nil, err
 	}
-
-	resources := make([]*schema.ResourceData, 0, 1)
-	resources = append(resources, d)
 
 	for _, record := range records {
 		// Ignore the default NS and SOA entries
