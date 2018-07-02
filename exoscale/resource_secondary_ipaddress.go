@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"strings"
 
 	"github.com/exoscale/egoscale"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -88,10 +89,8 @@ func createSecondaryIP(d *schema.ResourceData, meta interface{}) error {
 		}
 
 		ip := resp.(*egoscale.AddIPToNicResponse).NicSecondaryIP
-		ip.NicID = nic.ID
-		ip.NetworkID = nic.NetworkID
-
-		return applySecondaryIP(d, &ip)
+		d.SetId(fmt.Sprintf("%s_%s", ip.NicID, ip.IPAddress.String()))
+		return readSecondaryIP(d, meta)
 	}
 
 	return fmt.Errorf("No default NIC found for %v", virtualMachineID)
@@ -134,6 +133,53 @@ func getSecondaryIP(d *schema.ResourceData, meta interface{}) (*egoscale.NicSeco
 	virtualMachineID := d.Get("compute_id").(string)
 	nicID := d.Get("nic_id").(string)
 
+	if virtualMachineID == "" {
+		id := d.Id()
+		infos := strings.SplitN(id, "_", 2)
+		if len(infos) != 2 {
+			return nil, fmt.Errorf("import requires <nicid>_<ipaddress>")
+		}
+
+		nicID = infos[0]
+		ipAddress = infos[1]
+		addr := net.ParseIP(ipAddress)
+		if addr == nil {
+			return nil, fmt.Errorf("not a valid ipaddress, got %q", ipAddress)
+		}
+
+		ip := &egoscale.IPAddress{
+			IPAddress: addr,
+			IsElastic: true,
+		}
+
+		if err := client.GetWithContext(ctx, ip); err != nil {
+			return nil, err
+		}
+
+		// This is a hack for importing a VM
+		reqVms := &egoscale.ListVirtualMachines{
+			ZoneID: ip.ZoneID,
+		}
+		var err error
+		var nic *egoscale.Nic
+		client.PaginateWithContext(ctx, reqVms, func(v interface{}, e error) bool {
+			if e != nil {
+				err = e
+				return false
+			}
+
+			vm := v.(*egoscale.VirtualMachine)
+			nic = vm.NicByID(nicID)
+			return nic == nil
+		})
+
+		if err != nil {
+			return nil, err
+		}
+
+		virtualMachineID = nic.VirtualMachineID
+	}
+
 	ns, err := client.ListWithContext(ctx, &egoscale.Nic{
 		ID:               nicID,
 		VirtualMachineID: virtualMachineID,
@@ -170,6 +216,7 @@ func getSecondaryIP(d *schema.ResourceData, meta interface{}) (*egoscale.NicSeco
 			if ip.IPAddress != nil && ipAddress == ip.IPAddress.String() {
 				ip.NicID = nic.ID
 				ip.NetworkID = nic.NetworkID
+				ip.VirtualMachineID = virtualMachineID
 
 				return &ip, nil
 			}
@@ -203,6 +250,10 @@ func deleteSecondaryIP(d *schema.ResourceData, meta interface{}) error {
 func applySecondaryIP(d *schema.ResourceData, secondaryIP *egoscale.NicSecondaryIP) error {
 
 	d.SetId(fmt.Sprintf("%s_%s", secondaryIP.NicID, secondaryIP.IPAddress.String()))
+
+	if secondaryIP.VirtualMachineID != "" {
+		d.Set("compute_id", secondaryIP.VirtualMachineID)
+	}
 
 	if secondaryIP.IPAddress != nil {
 		d.Set("ip_address", secondaryIP.IPAddress.String())
