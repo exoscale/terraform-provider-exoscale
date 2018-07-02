@@ -15,7 +15,8 @@ install:
 - go get github.com/golang/dep/cmd/dep
 
 script:
-- make test
+- test "${TRAVIS_PULL_REQUEST}" != "false" && make test || echo "skipping test"
+- test "${TRAVIS_PULL_REQUEST}" = "false" && make testacc || echo "skipping testacc"
 - make vet
 - make vendor-status || echo ":-)"
 # it requires changes in hashicorp/terraform-website

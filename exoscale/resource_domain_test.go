@@ -96,6 +96,9 @@ func testAccCheckDNSDomainDestroy(s *terraform.State) error {
 
 		d, err := client.GetDomain(rs.Primary.Attributes["name"])
 		if err != nil {
+			if _, ok := err.(*egoscale.DNSErrorResponse); ok {
+				return nil
+			}
 			return err
 		}
 		if d == nil {
