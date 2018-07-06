@@ -59,8 +59,8 @@
     "service/s3",
     "service/sts"
   ]
-  revision = "8f7d1442888a1f96115869cec4af9855018ece98"
-  version = "v1.14.18"
+  revision = "554c8763b0d746658fe356cf368f5bee064aba09"
+  version = "v1.14.20"
 
 [[projects]]
   branch = "master"
@@ -200,7 +200,7 @@
     "hcldec",
     "hclparse"
   ]
-  revision = "36446359d27574bf110611001414da561731b62d"
+  revision = "6558d83419b8415adbcc4df88fd6c8b56fbbaf5f"
 
 [[projects]]
   branch = "master"
@@ -402,13 +402,13 @@
     "internal/timeseries",
     "trace"
   ]
-  revision = "ed29d75add3d7c4bf7ca65aac0c6df3d1420216f"
+  revision = "32a936f46389aa10549d60bd7833e54b01685d09"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "7138fd3d9dc8335c567ca206f4333fb75eb05d56"
+  revision = "ce36f3865eeb42541ce3f87f32f8462c5687befa"
 
 [[projects]]
   name = "golang.org/x/text"
@@ -474,6 +474,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "86a16ce2a3d9bb80dccd97bc880e7621d8d373998a5ef4fca2a505b03a6248d9"
+  inputs-digest = "f50934a57f56e7994435efae3f68994a0530080ea835b37d2dd279821d01cea0"
   solver-name = "gps-cdcl"
   solver-version = 1
