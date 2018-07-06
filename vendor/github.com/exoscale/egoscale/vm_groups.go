@@ -10,62 +10,33 @@ type InstanceGroup struct {
 	Name     string `json:"name,omitempty" doc:"the name of the instance group"`
 }
 
-// InstanceGroupResponse represents a VM group
-type InstanceGroupResponse struct {
-	InstanceGroup InstanceGroup `json:"instancegroup"`
-}
-
 // CreateInstanceGroup creates a VM group
-//
-// CloudStack API: http://cloudstack.apache.org/api/apidocs-4.10/apis/createInstanceGroup.html
 type CreateInstanceGroup struct {
 	Name     string `json:"name" doc:"the name of the instance group"`
 	Account  string `json:"account,omitempty" doc:"the account of the instance group. The account parameter must be used with the domainId parameter."`
 	DomainID string `json:"domainid,omitempty" doc:"the domain ID of account owning the instance group"`
-}
-
-// name returns the CloudStack API command name
-func (*CreateInstanceGroup) name() string {
-	return "createInstanceGroup"
+	_        bool   `name:"createInstanceGroup" description:"Creates a vm group"`
 }
 
 func (*CreateInstanceGroup) response() interface{} {
-	return new(CreateInstanceGroupResponse)
+	return new(InstanceGroup)
 }
 
-// CreateInstanceGroupResponse represents a freshly created VM group
-type CreateInstanceGroupResponse InstanceGroupResponse
-
 // UpdateInstanceGroup updates a VM group
-//
-// CloudStack API: http://cloudstack.apache.org/api/apidocs-4.10/apis/updateInstanceGroup.html
 type UpdateInstanceGroup struct {
 	ID   string `json:"id" doc:"Instance group ID"`
 	Name string `json:"name,omitempty" doc:"new instance group name"`
-}
-
-// name returns the CloudStack API command name
-func (*UpdateInstanceGroup) name() string {
-	return "updateInstanceGroup"
+	_    bool   `name:"updateInstanceGroup" description:"Updates a vm group"`
 }
 
 func (*UpdateInstanceGroup) response() interface{} {
-	return new(UpdateInstanceGroupResponse)
+	return new(InstanceGroup)
 }
-
-// UpdateInstanceGroupResponse represents an updated VM group
-type UpdateInstanceGroupResponse InstanceGroupResponse
 
 // DeleteInstanceGroup deletes a VM group
-//
-// CloudStack API: http://cloudstack.apache.org/api/apidocs-4.10/apis/deleteInstanceGroup.html
 type DeleteInstanceGroup struct {
 	ID string `json:"id" doc:"the ID of the instance group"`
-}
-
-// name returns the CloudStack API command name
-func (*DeleteInstanceGroup) name() string {
-	return "deleteInstanceGroup"
+	_  bool   `name:"deleteInstanceGroup" description:"Deletes a vm group"`
 }
 
 func (*DeleteInstanceGroup) response() interface{} {
@@ -73,8 +44,6 @@ func (*DeleteInstanceGroup) response() interface{} {
 }
 
 // ListInstanceGroups lists VM groups
-//
-// CloudStack API: http://cloudstack.apache.org/api/apidocs-4.10/apis/listInstanceGroups.html
 type ListInstanceGroups struct {
 	Account     string `json:"account,omitempty" doc:"list resources by account. Must be used with the domainId parameter."`
 	DomainID    string `json:"domainid,omitempty" doc:"list only resources belonging to the domain specified"`
@@ -85,19 +54,15 @@ type ListInstanceGroups struct {
 	Name        string `json:"name,omitempty" doc:"list instance groups by name"`
 	Page        int    `json:"page,omitempty"`
 	PageSize    int    `json:"pagesize,omitempty"`
-}
-
-// name returns the CloudStack API command name
-func (*ListInstanceGroups) name() string {
-	return "listInstanceGroups"
-}
-
-func (*ListInstanceGroups) response() interface{} {
-	return new(ListInstanceGroupsResponse)
+	_           bool   `name:"listInstanceGroups" description:"Lists vm groups"`
 }
 
 // ListInstanceGroupsResponse represents a list of instance groups
 type ListInstanceGroupsResponse struct {
 	Count         int             `json:"count"`
 	InstanceGroup []InstanceGroup `json:"instancegroup"`
+}
+
+func (*ListInstanceGroups) response() interface{} {
+	return new(ListInstanceGroupsResponse)
 }

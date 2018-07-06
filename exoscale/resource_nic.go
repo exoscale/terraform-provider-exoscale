@@ -80,7 +80,7 @@ func createNic(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	vm := resp.(*egoscale.AddNicToVirtualMachineResponse).VirtualMachine
+	vm := resp.(*egoscale.VirtualMachine)
 	nic := vm.NicByNetworkID(networkID)
 	if nic != nil {
 		d.SetId(nic.ID)
@@ -151,7 +151,7 @@ func deleteNic(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	vm := resp.(*egoscale.RemoveNicFromVirtualMachineResponse).VirtualMachine
+	vm := resp.(*egoscale.VirtualMachine)
 	nic := vm.NicByNetworkID(d.Get("network_id").(string))
 	if nic != nil {
 		return fmt.Errorf("Failed removing NIC %s from instance %s", d.Id(), vm.ID)

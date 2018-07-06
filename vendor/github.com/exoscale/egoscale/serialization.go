@@ -2,7 +2,6 @@ package egoscale
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net"
@@ -23,26 +22,35 @@ func csEncode(s string) string {
 	return csQuotePlus(url.QueryEscape(s))
 }
 
-func rawValue(b json.RawMessage) (json.RawMessage, error) {
-	var m map[string]json.RawMessage
+// info returns the meta info of a command
+//
+// command is not a Command so it's easier to Test
+func info(command interface{}) (*CommandInfo, error) {
+	typeof := reflect.TypeOf(command)
 
-	if err := json.Unmarshal(b, &m); err != nil {
-		return nil, err
-	}
-	for _, v := range m {
-		return v, nil
-	}
-	return nil, nil
-}
-
-func rawValues(b json.RawMessage) (json.RawMessage, error) {
-	var i []json.RawMessage
-
-	if err := json.Unmarshal(b, &i); err != nil {
-		return nil, nil
+	// Going up the pointer chain to find the underlying struct
+	for typeof.Kind() == reflect.Ptr {
+		typeof = typeof.Elem()
 	}
 
-	return i[0], nil
+	field, ok := typeof.FieldByName("_")
+	if !ok {
+		return nil, fmt.Errorf(`missing meta ("_") field in %#v`, command)
+	}
+
+	name, nameOk := field.Tag.Lookup("name")
+	description, _ := field.Tag.Lookup("description")
+
+	if !nameOk {
+		return nil, fmt.Errorf(`missing "name" key in the tag string of %#v`, command)
+	}
+
+	info := &CommandInfo{
+		Name:        name,
+		Description: description,
+	}
+
+	return info, nil
 }
 
 // prepareValues uses a command to build a POST request
@@ -60,10 +68,14 @@ func prepareValues(prefix string, params *url.Values, command interface{}) error
 
 	for i := 0; i < typeof.NumField(); i++ {
 		field := typeof.Field(i)
+		if field.Name == "_" {
+			continue
+		}
+
 		val := value.Field(i)
 		tag := field.Tag
 		if json, ok := tag.Lookup("json"); ok {
-			n, required := extractJSONTag(field.Name, json)
+			n, required := ExtractJSONTag(field.Name, json)
 			name := prefix + n
 
 			switch val.Kind() {
@@ -71,7 +83,7 @@ func prepareValues(prefix string, params *url.Values, command interface{}) error
 				v := val.Int()
 				if v == 0 {
 					if required {
-						return fmt.Errorf("%s.%s (%v) is required, got 0", typeof.Name(), field.Name, val.Kind())
+						return fmt.Errorf("%s.%s (%v) is required, got 0", typeof.Name(), n, val.Kind())
 					}
 				} else {
 					(*params).Set(name, strconv.FormatInt(v, 10))
@@ -80,7 +92,7 @@ func prepareValues(prefix string, params *url.Values, command interface{}) error
 				v := val.Uint()
 				if v == 0 {
 					if required {
-						return fmt.Errorf("%s.%s (%v) is required, got 0", typeof.Name(), field.Name, val.Kind())
+						return fmt.Errorf("%s.%s (%v) is required, got 0", typeof.Name(), n, val.Kind())
 					}
 				} else {
 					(*params).Set(name, strconv.FormatUint(v, 10))
@@ -89,7 +101,7 @@ func prepareValues(prefix string, params *url.Values, command interface{}) error
 				v := val.Float()
 				if v == 0 {
 					if required {
-						return fmt.Errorf("%s.%s (%v) is required, got 0", typeof.Name(), field.Name, val.Kind())
+						return fmt.Errorf("%s.%s (%v) is required, got 0", typeof.Name(), n, val.Kind())
 					}
 				} else {
 					(*params).Set(name, strconv.FormatFloat(v, 'f', -1, 64))
@@ -98,7 +110,7 @@ func prepareValues(prefix string, params *url.Values, command interface{}) error
 				v := val.String()
 				if v == "" {
 					if required {
-						return fmt.Errorf("%s.%s (%v) is required, got \"\"", typeof.Name(), field.Name, val.Kind())
+						return fmt.Errorf("%s.%s (%v) is required, got \"\"", typeof.Name(), n, val.Kind())
 					}
 				} else {
 					(*params).Set(name, v)
@@ -115,14 +127,14 @@ func prepareValues(prefix string, params *url.Values, command interface{}) error
 			case reflect.Ptr:
 				if val.IsNil() {
 					if required {
-						return fmt.Errorf("%s.%s (%v) is required, got tempty ptr", typeof.Name(), field.Name, val.Kind())
+						return fmt.Errorf("%s.%s (%v) is required, got tempty ptr", typeof.Name(), n, val.Kind())
 					}
 				} else {
 					switch field.Type.Elem().Kind() {
 					case reflect.Bool:
 						params.Set(name, strconv.FormatBool(val.Elem().Bool()))
 					default:
-						log.Printf("[SKIP] %s.%s (%v) not supported", typeof.Name(), field.Name, field.Type.Elem().Kind())
+						log.Printf("[SKIP] %s.%s (%v) not supported", typeof.Name(), n, field.Type.Elem().Kind())
 					}
 				}
 			case reflect.Slice:
@@ -133,7 +145,7 @@ func prepareValues(prefix string, params *url.Values, command interface{}) error
 						ip := (net.IP)(val.Bytes())
 						if ip == nil || ip.Equal(net.IPv4zero) {
 							if required {
-								return fmt.Errorf("%s.%s (%v) is required, got zero IPv4 address", typeof.Name(), field.Name, val.Kind())
+								return fmt.Errorf("%s.%s (%v) is required, got zero IPv4 address", typeof.Name(), n, val.Kind())
 							}
 						} else {
 							(*params).Set(name, ip.String())
@@ -141,7 +153,7 @@ func prepareValues(prefix string, params *url.Values, command interface{}) error
 					default:
 						if val.Len() == 0 {
 							if required {
-								return fmt.Errorf("%s.%s (%v) is required, got empty slice", typeof.Name(), field.Name, val.Kind())
+								return fmt.Errorf("%s.%s (%v) is required, got empty slice", typeof.Name(), n, val.Kind())
 							}
 						} else {
 							v := val.Bytes()
@@ -152,7 +164,7 @@ func prepareValues(prefix string, params *url.Values, command interface{}) error
 					{
 						if val.Len() == 0 {
 							if required {
-								return fmt.Errorf("%s.%s (%v) is required, got empty slice", typeof.Name(), field.Name, val.Kind())
+								return fmt.Errorf("%s.%s (%v) is required, got empty slice", typeof.Name(), n, val.Kind())
 							}
 						} else {
 							elems := make([]string, 0, val.Len())
@@ -167,7 +179,7 @@ func prepareValues(prefix string, params *url.Values, command interface{}) error
 				default:
 					if val.Len() == 0 {
 						if required {
-							return fmt.Errorf("%s.%s (%v) is required, got empty slice", typeof.Name(), field.Name, val.Kind())
+							return fmt.Errorf("%s.%s (%v) is required, got empty slice", typeof.Name(), n, val.Kind())
 						}
 					} else {
 						err := prepareList(name, params, val.Interface())
@@ -189,7 +201,7 @@ func prepareValues(prefix string, params *url.Values, command interface{}) error
 				}
 			default:
 				if required {
-					return fmt.Errorf("Unsupported type %s.%s (%v)", typeof.Name(), field.Name, val.Kind())
+					return fmt.Errorf("unsupported type %s.%s (%v)", typeof.Name(), n, val.Kind())
 				}
 			}
 		} else {
@@ -224,7 +236,7 @@ func prepareMap(prefix string, params *url.Values, m interface{}) error {
 		case reflect.String:
 			keyName = key.String()
 		default:
-			return fmt.Errorf("Only map[string]string are supported (XXX)")
+			return fmt.Errorf("only map[string]string are supported (XXX)")
 		}
 
 		val := value.MapIndex(key)
@@ -232,15 +244,15 @@ func prepareMap(prefix string, params *url.Values, m interface{}) error {
 		case reflect.String:
 			keyValue = val.String()
 		default:
-			return fmt.Errorf("Only map[string]string are supported (XXX)")
+			return fmt.Errorf("only map[string]string are supported (XXX)")
 		}
 		params.Set(fmt.Sprintf("%s[%d].%s", prefix, i, keyName), keyValue)
 	}
 	return nil
 }
 
-// extractJSONTag returns the variable name or defaultName as well as if the field is required (!omitempty)
-func extractJSONTag(defaultName, jsonTag string) (string, bool) {
+// ExtractJSONTag returns the variable name or defaultName as well as if the field is required (!omitempty)
+func ExtractJSONTag(defaultName, jsonTag string) (string, bool) {
 	tags := strings.Split(jsonTag, ",")
 	name := tags[0]
 	required := true

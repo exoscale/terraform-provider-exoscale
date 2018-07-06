@@ -69,8 +69,7 @@ func createAffinityGroup(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	ag := resp.(*egoscale.CreateAffinityGroupResponse).AffinityGroup
-	return applyAffinityGroup(d, &ag)
+	return applyAffinityGroup(d, resp.(*egoscale.AffinityGroup))
 }
 
 func existsAffinityGroup(d *schema.ResourceData, meta interface{}) (bool, error) {

@@ -60,7 +60,7 @@ func createSecurityGroup(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	sg := resp.(*egoscale.CreateSecurityGroupResponse).SecurityGroup
+	sg := resp.(*egoscale.SecurityGroup)
 
 	d.SetId(sg.ID)
 	if cmd := createTags(d, "tags", sg.ResourceType()); cmd != nil {

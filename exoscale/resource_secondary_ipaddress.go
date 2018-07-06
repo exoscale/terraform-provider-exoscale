@@ -88,7 +88,10 @@ func createSecondaryIP(d *schema.ResourceData, meta interface{}) error {
 			return err
 		}
 
-		ip := resp.(*egoscale.AddIPToNicResponse).NicSecondaryIP
+		ip, ok := resp.(*egoscale.NicSecondaryIP)
+		if !ok {
+			return fmt.Errorf("wrong type, expected NicSecondaryIP but got %T", resp)
+		}
 		d.SetId(fmt.Sprintf("%s_%s", ip.NicID, ip.IPAddress.String()))
 		return readSecondaryIP(d, meta)
 	}

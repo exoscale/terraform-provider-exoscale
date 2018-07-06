@@ -7,14 +7,6 @@ import (
 
 // Command represents a CloudStack request
 type Command interface {
-	// CloudStack API command name
-	name() string
-}
-
-// SyncCommand represents a CloudStack synchronous request
-type syncCommand interface {
-	Command
-	// Response interface to Unmarshal the JSON into
 	response() interface{}
 }
 
@@ -42,6 +34,13 @@ type ListCommand interface {
 // `omitempty` may make sense in some cases but not all the time.
 type onBeforeHook interface {
 	onBeforeSend(params *url.Values) error
+}
+
+// CommandInfo represents the meta data related to a Command
+type CommandInfo struct {
+	Name        string
+	Description string
+	RootOnly    bool
 }
 
 // JobStatusType represents the status of a Job

@@ -65,8 +65,8 @@ func createSSH(d *schema.ResourceData, meta interface{}) error {
 			return err
 		}
 
-		keypair := resp.(*egoscale.RegisterSSHKeyPairResponse).KeyPair
-		return applySSH(d, &keypair)
+		keypair := resp.(*egoscale.SSHKeyPair)
+		return applySSH(d, keypair)
 	}
 
 	resp, err := client.RequestWithContext(ctx, &egoscale.CreateSSHKeyPair{
@@ -76,8 +76,8 @@ func createSSH(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	keypair := resp.(*egoscale.CreateSSHKeyPairResponse).KeyPair
-	return applySSH(d, &keypair)
+	keypair := resp.(*egoscale.SSHKeyPair)
+	return applySSH(d, keypair)
 }
 
 func existsSSH(d *schema.ResourceData, meta interface{}) (bool, error) {

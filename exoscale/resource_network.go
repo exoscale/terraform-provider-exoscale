@@ -154,7 +154,7 @@ func createNetwork(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	network := resp.(*egoscale.CreateNetworkResponse).Network
+	network := resp.(*egoscale.Network)
 	d.SetId(network.ID)
 
 	if cmd := createTags(d, "tags", network.ResourceType()); cmd != nil {
@@ -194,7 +194,7 @@ func readNetwork(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	network := networks.Network[0]
-	return applyNetwork(d, network)
+	return applyNetwork(d, &network)
 }
 
 func existsNetwork(d *schema.ResourceData, meta interface{}) (bool, error) {
@@ -239,7 +239,7 @@ func updateNetwork(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	network := resp.(*egoscale.UpdateNetworkResponse).Network
+	network := resp.(*egoscale.Network)
 
 	err = applyNetwork(d, network)
 	if err != nil {
@@ -291,7 +291,7 @@ func deleteNetwork(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func applyNetwork(d *schema.ResourceData, network egoscale.Network) error {
+func applyNetwork(d *schema.ResourceData, network *egoscale.Network) error {
 	d.SetId(network.ID)
 	d.Set("name", network.Name)
 	d.Set("display_text", network.DisplayText)

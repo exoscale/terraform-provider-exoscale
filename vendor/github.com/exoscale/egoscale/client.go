@@ -5,7 +5,10 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
+
+	"github.com/jinzhu/copier"
 )
 
 // Get populates the given resource or fails
@@ -18,7 +21,36 @@ func (client *Client) Get(g Gettable) error {
 
 // GetWithContext populates the given resource or fails
 func (client *Client) GetWithContext(ctx context.Context, g Gettable) error {
-	return g.Get(ctx, client)
+	gs, err := client.ListWithContext(ctx, g)
+	if err != nil {
+		return err
+	}
+
+	count := len(gs)
+	if count != 1 {
+		req, err := g.ListRequest()
+		if err != nil {
+			return err
+		}
+		payload, err := client.Payload(req)
+		if err != nil {
+			return err
+		}
+
+		// formatting the query string nicely
+		payload = strings.Replace(payload, "&", ", ", -1)
+
+		if count == 0 {
+			return &ErrorResponse{
+				ErrorCode: ParamError,
+				ErrorText: fmt.Sprintf("not found, query: %s", payload),
+			}
+		}
+		return fmt.Errorf("more than one element found: %s", payload)
+	}
+
+	return copier.Copy(g, gs[0])
+
 }
 
 // Delete removes the given resource of fails
@@ -171,18 +203,29 @@ func (client *Client) PaginateWithContext(ctx context.Context, req ListCommand, 
 
 // APIName returns the CloudStack name of the given command
 func (client *Client) APIName(request Command) string {
-	return request.name()
+	info, err := info(request)
+	if err != nil {
+		panic(err)
+	}
+	return info.Name
+}
+
+// APIDescription returns the description of the given CloudStack command
+func (client *Client) APIDescription(request Command) string {
+	info, err := info(request)
+	if err != nil {
+		panic(err)
+	}
+	return info.Description
 }
 
 // Response returns the response structure of the given command
 func (client *Client) Response(request Command) interface{} {
 	switch request.(type) {
-	case syncCommand:
-		return (request.(syncCommand)).response()
 	case AsyncCommand:
 		return (request.(AsyncCommand)).asyncResponse()
 	default:
-		panic(fmt.Errorf("The command %s is not a proper Sync or Async command", request.name()))
+		return request.response()
 	}
 }
 

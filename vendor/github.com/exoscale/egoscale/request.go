@@ -7,6 +7,7 @@ import (
 	"crypto/sha1"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -26,7 +27,7 @@ func (e *ErrorResponse) Error() string {
 // Success computes the values based on the RawMessage, either string or bool
 func (e *booleanResponse) IsSuccess() (bool, error) {
 	if e.Success == nil {
-		return false, fmt.Errorf("Not a valid booleanResponse")
+		return false, errors.New("not a valid booleanResponse, Success is missing")
 	}
 
 	str := ""
@@ -52,14 +53,14 @@ func (e *booleanResponse) Error() error {
 		return nil
 	}
 
-	fmt.Printf("%#v", e)
 	return fmt.Errorf("API error: %s", e.DisplayText)
 }
 
-func (exo *Client) parseResponse(resp *http.Response) (json.RawMessage, error) {
+func (client *Client) parseResponse(resp *http.Response, key string) (json.RawMessage, error) {
 	contentType := resp.Header.Get("content-type")
+
 	if !strings.Contains(contentType, "application/json") {
-		return nil, fmt.Errorf(`body content-type response expected "application/json", got %q`, contentType)
+		return nil, fmt.Errorf("body content-type response expected \"application/json\", got %q", contentType)
 	}
 
 	b, err := ioutil.ReadAll(resp.Body)
@@ -67,32 +68,60 @@ func (exo *Client) parseResponse(resp *http.Response) (json.RawMessage, error) {
 		return nil, err
 	}
 
-	a, _ := rawValues(b)
+	m := map[string]json.RawMessage{}
+	if err := json.Unmarshal(b, &m); err != nil {
+		return nil, err
+	}
 
-	if a == nil {
-		b, err = rawValue(b)
-		if err != nil {
-			return nil, err
+	response, ok := m[key]
+	if !ok {
+		if resp.StatusCode >= 400 {
+			response, ok = m["errorresponse"]
+		}
+		if !ok {
+			for k := range m {
+				return nil, fmt.Errorf("malformed JSON response, %q was expected, got %q", key, k)
+			}
 		}
 	}
 
 	if resp.StatusCode >= 400 {
 		errorResponse := new(ErrorResponse)
-		if e := json.Unmarshal(b, errorResponse); e == nil && errorResponse.ErrorCode > 0 {
-			return nil, errorResponse
+		if e := json.Unmarshal(response, errorResponse); e != nil && errorResponse.ErrorCode <= 0 {
+			return nil, fmt.Errorf("%d %s", resp.StatusCode, b)
 		}
-		return nil, fmt.Errorf("%d %s", resp.StatusCode, b)
+		return nil, errorResponse
 	}
 
-	return b, nil
+	n := map[string]json.RawMessage{}
+	if err := json.Unmarshal(response, &n); err != nil {
+		return nil, err
+	}
+
+	if len(n) > 1 {
+		return response, nil
+	}
+
+	if len(n) == 1 {
+		for k := range n {
+			// boolean response and asyncjob result may also contain
+			// only one key
+			if k == "success" || k == "jobid" {
+				return response, nil
+			}
+			return n[k], nil
+		}
+	}
+
+	return response, nil
 }
 
 // asyncRequest perform an asynchronous job with a context
-func (exo *Client) asyncRequest(ctx context.Context, request AsyncCommand) (interface{}, error) {
+func (client *Client) asyncRequest(ctx context.Context, request AsyncCommand) (interface{}, error) {
 	var err error
 
 	res := request.asyncResponse()
-	exo.AsyncRequestWithContext(ctx, request, func(j *AsyncJobResult, er error) bool {
+	client.AsyncRequestWithContext(ctx, request, func(j *AsyncJobResult, er error) bool {
 		if er != nil {
 			err = er
 			return false
@@ -109,8 +138,8 @@ func (exo *Client) asyncRequest(ctx context.Context, request AsyncCommand) (inte
 }
 
 // syncRequest performs a sync request with a context
-func (exo *Client) syncRequest(ctx context.Context, request syncCommand) (interface{}, error) {
-	body, err := exo.request(ctx, request)
+func (client *Client) syncRequest(ctx context.Context, request Command) (interface{}, error) {
+	body, err := client.request(ctx, request)
 	if err != nil {
 		return nil, err
 	}
@@ -126,7 +155,7 @@ func (exo *Client) syncRequest(ctx context.Context, request syncCommand) (interf
 				return nil, e
 			}
 			if !success {
-				err = fmt.Errorf("Not a valid booleanResponse")
+				err = errors.New("not a valid booleanResponse")
 			}
 		}
 	}
@@ -143,8 +172,8 @@ func (exo *Client) syncRequest(ctx context.Context, request syncCommand) (interf
 }
 
 // BooleanRequest performs the given boolean command
-func (exo *Client) BooleanRequest(req Command) error {
-	resp, err := exo.Request(req)
+func (client *Client) BooleanRequest(req Command) error {
+	resp, err := client.Request(req)
 	if err != nil {
 		return err
 	}
@@ -153,12 +182,12 @@ func (exo *Client) BooleanRequest(req Command) error {
 		return b.Error()
 	}
 
-	panic(fmt.Errorf("The command %s is not a proper boolean response. %#v", req.name(), resp))
+	panic(fmt.Errorf("command %q is not a proper boolean response. %#v", client.APIName(req), resp))
 }
 
 // BooleanRequestWithContext performs the given boolean command
-func (exo *Client) BooleanRequestWithContext(ctx context.Context, req Command) error {
-	resp, err := exo.RequestWithContext(ctx, req)
+func (client *Client) BooleanRequestWithContext(ctx context.Context, req Command) error {
+	resp, err := client.RequestWithContext(ctx, req)
 	if err != nil {
 		return err
 	}
@@ -167,46 +196,42 @@ func (exo *Client) BooleanRequestWithContext(ctx context.Context, req Command) e
 		return b.Error()
 	}
 
-	panic(fmt.Errorf("The command %s is not a proper boolean response. %#v", req.name(), resp))
+	panic(fmt.Errorf("command %q is not a proper boolean response. %#v", client.APIName(req), resp))
 }
 
 // Request performs the given command
-func (exo *Client) Request(request Command) (interface{}, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), exo.Timeout)
+func (client *Client) Request(request Command) (interface{}, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), client.Timeout)
 	defer cancel()
 
 	switch request.(type) {
-	case syncCommand:
-		return exo.syncRequest(ctx, request.(syncCommand))
 	case AsyncCommand:
-		return exo.asyncRequest(ctx, request.(AsyncCommand))
+		return client.asyncRequest(ctx, request.(AsyncCommand))
 	default:
-		panic(fmt.Errorf("The command %s is not a proper Sync or Async command", request.name()))
+		return client.syncRequest(ctx, request)
 	}
 }
 
 // RequestWithContext preforms a request with a context
-func (exo *Client) RequestWithContext(ctx context.Context, request Command) (interface{}, error) {
+func (client *Client) RequestWithContext(ctx context.Context, request Command) (interface{}, error) {
 	switch request.(type) {
-	case syncCommand:
-		return exo.syncRequest(ctx, request.(syncCommand))
 	case AsyncCommand:
-		return exo.asyncRequest(ctx, request.(AsyncCommand))
+		return client.asyncRequest(ctx, request.(AsyncCommand))
 	default:
-		panic(fmt.Errorf("The command %s is not a proper Sync or Async command", request.name()))
+		return client.syncRequest(ctx, request)
 	}
 }
 
 // AsyncRequest performs the given command
-func (exo *Client) AsyncRequest(request AsyncCommand, callback WaitAsyncJobResultFunc) {
-	ctx, cancel := context.WithTimeout(context.Background(), exo.Timeout)
+func (client *Client) AsyncRequest(request AsyncCommand, callback WaitAsyncJobResultFunc) {
+	ctx, cancel := context.WithTimeout(context.Background(), client.Timeout)
 	defer cancel()
-	exo.AsyncRequestWithContext(ctx, request, callback)
+	client.AsyncRequestWithContext(ctx, request, callback)
 }
 
 // AsyncRequestWithContext preforms a request with a context
-func (exo *Client) AsyncRequestWithContext(ctx context.Context, request AsyncCommand, callback WaitAsyncJobResultFunc) {
-	body, err := exo.request(ctx, request)
+func (client *Client) AsyncRequestWithContext(ctx context.Context, request AsyncCommand, callback WaitAsyncJobResultFunc) {
+	body, err := client.request(ctx, request)
 	if err != nil {
 		callback(nil, err)
 		return
@@ -233,27 +258,27 @@ func (exo *Client) AsyncRequestWithContext(ctx context.Context, request AsyncCom
 	}
 
 	for iteration := 0; ; iteration++ {
-		time.Sleep(exo.RetryStrategy(int64(iteration)))
+		time.Sleep(client.RetryStrategy(int64(iteration)))
 
 		req := &QueryAsyncJobResult{JobID: jobResult.JobID}
-		resp, err := exo.syncRequest(ctx, req)
+		resp, err := client.syncRequest(ctx, req)
 		if err != nil && !callback(nil, err) {
 			return
 		}
 
-		result, ok := resp.(*QueryAsyncJobResultResponse)
-		if !ok && !callback(nil, fmt.Errorf("AsyncJobResult expected, got %t", resp)) {
-			return
+		result, ok := resp.(*AsyncJobResult)
+		if !ok {
+			if !callback(nil, fmt.Errorf("wrong type. AsyncJobResult expected, got %T", resp)) {
+				return
+			}
 		}
 
-		res := (*AsyncJobResult)(result)
-
-		if res.JobStatus == Failure {
-			if !callback(nil, res.Error()) {
+		if result.JobStatus == Failure {
+			if !callback(nil, result.Error()) {
 				return
 			}
 		} else {
-			if !callback(res, nil) {
+			if !callback(result, nil) {
 				return
 			}
 		}
@@ -261,7 +286,7 @@ func (exo *Client) AsyncRequestWithContext(ctx context.Context, request AsyncCom
 }
 
 // Payload builds the HTTP request from the given command
-func (exo *Client) Payload(request Command) (string, error) {
+func (client *Client) Payload(request Command) (string, error) {
 	params := url.Values{}
 	err := prepareValues("", &params, request)
 	if err != nil {
@@ -272,8 +297,8 @@ func (exo *Client) Payload(request Command) (string, error) {
 			return "", err
 		}
 	}
-	params.Set("apikey", exo.APIKey)
-	params.Set("command", request.name())
+	params.Set("apikey", client.APIKey)
+	params.Set("command", client.APIName(request))
 	params.Set("response", "json")
 
 	// This code is borrowed from net/url/url.go
@@ -301,8 +326,8 @@ func (exo *Client) Payload(request Command) (string, error) {
 }
 
 // Sign signs the HTTP request and return it
-func (exo *Client) Sign(query string) (string, error) {
-	mac := hmac.New(sha1.New, []byte(exo.apiSecret))
+func (client *Client) Sign(query string) (string, error) {
+	mac := hmac.New(sha1.New, []byte(client.apiSecret))
 	_, err := mac.Write([]byte(strings.ToLower(query)))
 	if err != nil {
 		return "", err
@@ -313,23 +338,23 @@ func (exo *Client) Sign(query string) (string, error) {
 }
 
 // request makes a Request while being close to the metal
-func (exo *Client) request(ctx context.Context, req Command) (json.RawMessage, error) {
-	payload, err := exo.Payload(req)
+func (client *Client) request(ctx context.Context, req Command) (json.RawMessage, error) {
+	payload, err := client.Payload(req)
 	if err != nil {
 		return nil, err
 	}
-	query, err := exo.Sign(payload)
+	query, err := client.Sign(payload)
 	if err != nil {
 		return nil, err
 	}
 
 	method := "GET"
-	url := fmt.Sprintf("%s?%s", exo.Endpoint, query)
+	url := fmt.Sprintf("%s?%s", client.Endpoint, query)
 
 	var body io.Reader
 	// respect Internet Explorer limit of 2048
 	if len(url) > 1<<11 {
-		url = exo.Endpoint
+		url = client.Endpoint
 		method = "POST"
 		body = strings.NewReader(query)
 	}
@@ -346,13 +371,19 @@ func (exo *Client) request(ctx context.Context, req Command) (json.RawMessage, e
 		request.Header.Add("Content-Length", strconv.Itoa(len(query)))
 	}
 
-	resp, err := exo.HTTPClient.Do(request)
+	resp, err := client.HTTPClient.Do(request)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close() // nolint: errcheck
 
-	text, err := exo.parseResponse(resp)
+	// XXX: addIpToNic is kind of special
+	key := fmt.Sprintf("%sresponse", strings.ToLower(client.APIName(req)))
+	if key == "addiptonicresponse" {
+		key = "addiptovmnicresponse"
+	}
+
+	text, err := client.parseResponse(resp, key)
 	if err != nil {
 		return nil, err
 	}

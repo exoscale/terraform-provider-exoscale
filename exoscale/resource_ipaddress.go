@@ -2,6 +2,7 @@ package exoscale
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net"
 
@@ -69,8 +70,12 @@ func createElasticIP(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	elasticIP := resp.(*egoscale.AssociateIPAddressResponse).IPAddress
+	elasticIP, ok := resp.(*egoscale.IPAddress)
+	if !ok {
+		return fmt.Errorf("wrong type: an IPAddress was expected, got %T", resp)
+	}
 	d.SetId(elasticIP.ID)
+	d.Set("ip_address", elasticIP.IPAddress.String())
 
 	if cmd := createTags(d, "tags", elasticIP.ResourceType()); cmd != nil {
 		if err := client.BooleanRequestWithContext(ctx, cmd); err != nil {
@@ -125,6 +130,7 @@ func readElasticIP(d *schema.ResourceData, meta interface{}) error {
 	ipAddress := &egoscale.IPAddress{
 		ID:        id,
 		IPAddress: ip,
+		IsElastic: true,
 	}
 
 	if err := client.GetWithContext(ctx, ipAddress); err != nil {

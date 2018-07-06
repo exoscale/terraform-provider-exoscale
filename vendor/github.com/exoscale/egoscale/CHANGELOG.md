@@ -1,6 +1,18 @@
 Changelog
 =========
 
+0.10.0 (unreleased)
+------
+
+- global: cloudstack documentation links are moved into cs
+- global: removal of all the `...Response` types
+- feat: `Network` is `Listable`
+- feat: addition of `deleteUser`
+- feat: addition of `listHosts`
+- feat: addition of `updateHost`
+- feat: exo cmd (kudos to @pierre-emmanuelJ)
+- change: refactor `Gettable` to use `ListRequest`
+
 0.9.31
 ------
 
@@ -27,7 +39,7 @@ Changelog
 0.9.27
 ------
 
-- fix: checks that the Content-Type is correctly set to `application/json`
+- fix: expects body to be `application/json`
 
 0.9.26
 ------
