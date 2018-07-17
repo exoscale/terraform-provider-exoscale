@@ -57,21 +57,19 @@ token = "..."
 
 You can specify the following keys using those environment variables.
 
-- `key` - `EXOSCALE_KEY`, `EXOSCALE_API_KEY`, `CLOUDSTACK_KEY`, or `CLOUDSTACK_API_KEY`;
+- `key` - `EXOSCALE_KEY`, or `EXOSCALE_API_KEY`;
 
-- `secret` - `EXOSCALE_SECRET`, `EXOSCALE_SECRET_KEY`, `CLOUDSTACK_SECRET`, or `CLOUDSTACK_SECRET_KEY`;
+- `secret` - `EXOSCALE_SECRET`, or `EXOSCALE_API_SECRET`;
 
-- `config` - `EXOSCALE_CONFIG`, or `CLOUDSTACK_CONFIG`;
+- `config` - `EXOSCALE_CONFIG`;
 
-- `region` - `EXOSCALE_REGION`, `EXOSCALE_REGION`, `CLOUDSTACK_PROFILE`, or `CLOUDSTACK_PROFILE`;
+- `region` - `EXOSCALE_REGION`;
 
 - `timeout` - `EXOSCALE_TIMEOUT` global timeout;
 
-- `compute_endpoint` - `EXOSCALE_COMPUTE_ENDPOINT`, or `CLOUDSTACK_ENDPOINT`;
+- `compute_endpoint` - `EXOSCALE_ENDPOINT`, or `EXOSCALE_COMPUTE_ENDPOINT`;
 
 - `dns_endpoint` - `EXOSCALE_DNS_ENDPOINT`.
-
-- `gzip_user_data` - `EXOSCALE_GZIP_USER_DATA`.
 
 ## Timeouts
 

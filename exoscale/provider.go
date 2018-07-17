@@ -43,6 +43,7 @@ func Provider() terraform.ResourceProvider {
 				DefaultFunc: schema.MultiEnvDefaultFunc([]string{
 					"EXOSCALE_SECRET",
 					"EXOSCALE_SECRET_KEY",
+					"EXOSCALE_API_SECRET",
 					"CLOUDSTACK_SECRET",
 					"CLOUDSTACK_SECRET_KEY",
 				}, nil),
@@ -77,6 +78,7 @@ func Provider() terraform.ResourceProvider {
 				Optional:    true,
 				Description: fmt.Sprintf("Exoscale CloudStack API endpoint (by default: %s)", defaultComputeEndpoint),
 				DefaultFunc: schema.MultiEnvDefaultFunc([]string{
+					"EXOSCALE_ENDPOINT",
 					"EXOSCALE_COMPUTE_ENDPOINT",
 					"CLOUDSTACK_ENDPOINT",
 				}, defaultComputeEndpoint),
