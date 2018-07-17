@@ -36,15 +36,11 @@ func computeResource() *schema.Resource {
 			Type:     schema.TypeString,
 			Optional: true,
 			Default:  "Medium",
-			ValidateFunc: validation.StringInSlice([]string{
-				"Micro", "Tiny", "Small", "Medium", "Large", "Extra-Large", "Huge",
-				"Mega", "Titan",
-			}, true),
 		},
 		"disk_size": {
 			Type:         schema.TypeInt,
 			Required:     true,
-			ValidateFunc: validation.IntAtLeast(1),
+			ValidateFunc: validation.IntAtLeast(10),
 		},
 		"zone": {
 			Type:     schema.TypeString,
@@ -75,9 +71,7 @@ func computeResource() *schema.Resource {
 			Optional: true,
 			Computed: true,
 			ValidateFunc: validation.StringInSlice([]string{
-				"Starting", "Running", "Stopped", "Destroyed",
-				"Expunging", "Migrating", "Error", "Unknown",
-				"Shutdowned",
+				"Running", "Stopped",
 			}, true),
 		},
 		"ip4": {
