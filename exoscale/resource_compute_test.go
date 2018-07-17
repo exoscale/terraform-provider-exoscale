@@ -90,8 +90,8 @@ func testAccCheckComputeDestroy(s *terraform.State) error {
 			continue
 		}
 
-		key := &egoscale.VirtualMachine{ID: rs.Primary.ID}
-		if err := client.Get(key); err != nil {
+		vm := &egoscale.VirtualMachine{ID: rs.Primary.ID}
+		if err := client.Get(vm); err != nil {
 			if r, ok := err.(*egoscale.ErrorResponse); ok {
 				if r.ErrorCode == egoscale.ParamError {
 					return nil
@@ -100,18 +100,18 @@ func testAccCheckComputeDestroy(s *terraform.State) error {
 			return err
 		}
 	}
-	return fmt.Errorf("Compute: still exists")
+	return fmt.Errorf("compute still exists")
 }
 
-var testAccComputeCreate = `
+var testAccComputeCreate = fmt.Sprintf(`
 resource "exoscale_ssh_keypair" "key" {
   name = "terraform-test-keypair"
 }
 
 resource "exoscale_compute" "vm" {
   display_name = "terraform-test-compute"
-  template = "Linux Ubuntu 17.10 64-bit"
-  zone = "ch-dk-2"
+  template = %q
+  zone = %q
   size = "Micro"
   disk_size = "12"
   key_pair = "${exoscale_ssh_keypair.key.name}"
@@ -125,4 +125,7 @@ resource "exoscale_compute" "vm" {
     delete = "30m"
   }
 }
-`
+`,
+	EXOSCALE_TEMPLATE,
+	EXOSCALE_ZONE,
+)

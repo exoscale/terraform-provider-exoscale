@@ -35,3 +35,7 @@ func testAccPreCheck(t *testing.T) {
 		t.Fatal("CLOUDSTACK_KEY and CLOUDSTACK_SECRET must be set for acceptance tests")
 	}
 }
+
+var EXOSCALE_ZONE = "ch-dk-2"
+var EXOSCALE_TEMPLATE = "Linux Ubuntu 17.10 64-bit"
+var EXOSCALE_NETWORK_OFFERING = "PrivNet"

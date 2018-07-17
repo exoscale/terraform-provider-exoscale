@@ -103,15 +103,18 @@ func testAccCheckNetworkDestroy(s *terraform.State) error {
 	return fmt.Errorf("Network: still exists")
 }
 
-var testAccNetworkCreate = `
+var testAccNetworkCreate = fmt.Sprintf(`
 resource "exoscale_network" "net" {
   name = "terraform-test-network"
   display_text = "Terraform Acceptance Test"
-  zone = "ch-dk-2"
-  network_offering = "PrivNet"
+  zone = %q
+  network_offering = %q
 
   tags {
     managedby = "terraform"
   }
 }
-`
+`,
+	EXOSCALE_ZONE,
+	EXOSCALE_NETWORK_OFFERING,
+)
