@@ -22,7 +22,7 @@ func TestAccElasticIP(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckElasticIPExists("exoscale_ipaddress.eip", eip),
 					testAccCheckElasticIPAttributes(eip),
-					testAccCheckElasticIPCreateAttributes("ch-dk-2"),
+					testAccCheckElasticIPCreateAttributes(EXOSCALE_ZONE),
 				),
 			},
 		},
