@@ -71,6 +71,15 @@ resource "exoscale_security_group_rule" "rke_external_tls" {
   end_port = 443
 }
 
+resource "exoscale_security_group_rule" "rke_logs_metrics" {
+  security_group_id = "${exoscale_security_group.rke.id}"
+  protocol = "TCP"
+  type = "INGRESS"
+  user_security_group_id = "${exoscale_security_group.rke.id}"
+  start_port = 10250
+  end_port = 10250
+}
+
 
 resource "exoscale_compute" "node" {
   count = "${length(var.hostnames)}"
