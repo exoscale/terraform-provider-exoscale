@@ -46,9 +46,7 @@ func testAccCheckDNSDomainExists(n string, domain *egoscale.DNSDomain) resource.
 			return err
 		}
 
-		domain.Token = d.Token
-		domain.Name = d.Name
-		domain.ID = d.ID
+		*domain = *d
 
 		return nil
 	}
