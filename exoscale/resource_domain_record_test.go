@@ -98,10 +98,8 @@ func testAccCheckDNSRecordDestroy(s *terraform.State) error {
 		}
 
 		id, _ := strconv.ParseInt(rs.Primary.ID, 10, 64)
-		fmt.Printf("%#v\n", rs.Primary)
 		d, err := client.GetRecord(rs.Primary.Attributes["domain"], id)
 		if err != nil {
-			fmt.Printf("%#v\n", err)
 			if _, ok := err.(*egoscale.DNSErrorResponse); ok {
 				return nil
 			}
