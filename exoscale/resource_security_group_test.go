@@ -17,8 +17,16 @@ func TestAccSecurityGroup(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckSecurityGroupDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccSecurityGroupCreate,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckSecurityGroupExists("exoscale_security_group.sg", sg),
+					testAccCheckSecurityGroupAttributes(sg),
+					testAccCheckSecurityGroupCreateAttributes("terraform-test-security-group"),
+				),
+			},
+			{
+				Config: testAccSecurityGroupUpdateTags,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckSecurityGroupExists("exoscale_security_group.sg", sg),
 					testAccCheckSecurityGroupAttributes(sg),
@@ -110,6 +118,19 @@ resource "exoscale_security_group" "sg" {
 
   tags {
     test = "terraform"
+    acceptance = "true"
+  }
+}
+`
+
+var testAccSecurityGroupUpdateTags = `
+resource "exoscale_security_group" "sg" {
+  name = "terraform-test-security-group"
+  description = "Terraform Security Group Test"
+
+  tags {
+    test = "hashicorp terraform"
+    this = "is not a tag"
   }
 }
 `
