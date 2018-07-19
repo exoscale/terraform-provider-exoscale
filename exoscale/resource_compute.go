@@ -562,20 +562,35 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	if d.HasChange("size") {
-		rebootRequired = true
-		services, err := client.RequestWithContext(ctx, &egoscale.ListServiceOfferings{
-			Name: d.Get("size").(string),
-		})
-		if err != nil {
-			return err
+		o, n := d.GetChange("size")
+		oldSize := o.(string)
+		newSize := n.(string)
+		if strings.ToLower(oldSize) != strings.ToLower(newSize) {
+			rebootRequired = true
+			resp, err := client.RequestWithContext(ctx, &egoscale.ListServiceOfferings{
+				Name: newSize,
+			})
+			if err != nil {
+				return err
+			}
+
+			services, ok := resp.(*egoscale.ListServiceOfferingsResponse)
+			if !ok {
+				return fmt.Errorf("wrong type, a ListServiceOfferingsResponse was expected, got %T", resp)
+			}
+
+			if len(services.ServiceOffering) != 1 {
+				return fmt.Errorf("size %q was not found", newSize)
+			}
+
+			commands = append(commands, partialCommand{
+				partial: "size",
+				request: &egoscale.ScaleVirtualMachine{
+					ID:                d.Id(),
+					ServiceOfferingID: services.ServiceOffering[0].ID,
+				},
+			})
 		}
-		commands = append(commands, partialCommand{
-			partial: "size",
-			request: &egoscale.ScaleVirtualMachine{
-				ID:                d.Id(),
-				ServiceOfferingID: services.(*egoscale.ListServiceOfferingsResponse).ServiceOffering[0].ID,
-			},
-		})
 	}
 
 	if d.HasChange("affinity_groups") {
