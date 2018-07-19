@@ -3,6 +3,7 @@ package exoscale
 import (
 	"fmt"
 	"net"
+	"strings"
 )
 
 // ValidateIPv4String validates that the given field is a string representing an IPv4 address
@@ -19,7 +20,7 @@ func ValidateIPv4String(i interface{}, k string) (s []string, es []error) {
 		return
 	}
 
-	if address.To4() == nil {
+	if strings.Contains(value, ":") {
 		es = append(es, fmt.Errorf("expected %s to be an IPv4 address", k))
 	}
 
@@ -40,8 +41,8 @@ func ValidateIPv6String(i interface{}, k string) (s []string, es []error) {
 		return
 	}
 
-	if address.To16() == nil {
-		es = append(es, fmt.Errorf("expected %s to be an IPv16 address", k))
+	if strings.Contains(value, ".") {
+		es = append(es, fmt.Errorf("expected %s to be an IPv6 address", k))
 	}
 
 	return
