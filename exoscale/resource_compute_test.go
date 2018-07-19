@@ -17,12 +17,20 @@ func TestAccCompute(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckComputeDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccComputeCreate,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckComputeExists("exoscale_compute.vm", vm),
 					testAccCheckComputeAttributes(vm),
 					testAccCheckComputeCreateAttributes("terraform-test-compute"),
+				),
+			},
+			{
+				Config: testAccComputeUpdate,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckComputeExists("exoscale_compute.vm", vm),
+					testAccCheckComputeAttributes(vm),
+					testAccCheckComputeCreateAttributes("hello"),
 				),
 			},
 		},
@@ -67,7 +75,7 @@ func testAccCheckComputeCreateAttributes(name string) resource.TestCheckFunc {
 				continue
 			}
 
-			if rs.Primary.Attributes["name"] != name {
+			if rs.Primary.Attributes["display_name"] != name {
 				continue
 			}
 
@@ -122,6 +130,29 @@ resource "exoscale_compute" "vm" {
 
   timeouts {
     create = "10m"
+  }
+}
+`,
+	EXOSCALE_TEMPLATE,
+	EXOSCALE_ZONE,
+)
+
+var testAccComputeUpdate = fmt.Sprintf(`
+resource "exoscale_ssh_keypair" "key" {
+  name = "terraform-test-keypair"
+}
+
+resource "exoscale_compute" "vm" {
+  display_name = "hello"
+  template = %q
+  zone = %q
+  size = "Small"
+  disk_size = "18"
+  key_pair = "${exoscale_ssh_keypair.key.name}"
+
+  ip6 = true
+
+  timeouts {
     delete = "30m"
   }
 }

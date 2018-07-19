@@ -48,7 +48,7 @@ type Volume struct {
 	StorageID                  string        `json:"storageid,omitempty" doc:"id of the primary storage hosting the disk volume; returned to admin user only"`
 	StorageType                string        `json:"storagetype,omitempty" doc:"shared or local storage"`
 	Tags                       []ResourceTag `json:"tags,omitempty" doc:"the list of resource tags associated with volume"`
-	TemplateDisplayText        string        `json:"templatedisplaytext,omitempty" doc:" an alternate display text of the template for the virtual machine"`
+	TemplateDisplayText        string        `json:"templatedisplaytext,omitempty" doc:"an alternate display text of the template for the virtual machine"`
 	TemplateID                 string        `json:"templateid,omitempty" doc:"the ID of the template for the virtual machine. A -1 is returned if the virtual machine was created from an ISO file."`
 	TemplateName               string        `json:"templatename,omitempty" doc:"the name of the template for the virtual machine"`
 	Type                       string        `json:"type,omitempty" doc:"type of the disk volume (ROOT or DATADISK)"`
@@ -61,12 +61,12 @@ type Volume struct {
 }
 
 // ResourceType returns the type of the resource
-func (*Volume) ResourceType() string {
+func (Volume) ResourceType() string {
 	return "Volume"
 }
 
 // ListRequest builds the ListVolumes request
-func (vol *Volume) ListRequest() (ListCommand, error) {
+func (vol Volume) ListRequest() (ListCommand, error) {
 	req := &ListVolumes{
 		Account:          vol.Account,
 		DomainID:         vol.DomainID,
@@ -88,11 +88,11 @@ type ResizeVolume struct {
 	_              bool   `name:"resizeVolume" description:"Resizes a volume"`
 }
 
-func (*ResizeVolume) response() interface{} {
+func (ResizeVolume) response() interface{} {
 	return new(AsyncJobResult)
 }
 
-func (*ResizeVolume) asyncResponse() interface{} {
+func (ResizeVolume) asyncResponse() interface{} {
 	return new(Volume)
 }
 
@@ -125,7 +125,7 @@ type ListVolumesResponse struct {
 	Volume []Volume `json:"volume"`
 }
 
-func (*ListVolumes) response() interface{} {
+func (ListVolumes) response() interface{} {
 	return new(ListVolumesResponse)
 }
 
@@ -139,7 +139,7 @@ func (ls *ListVolumes) SetPageSize(pageSize int) {
 	ls.PageSize = pageSize
 }
 
-func (*ListVolumes) each(resp interface{}, callback IterateItemFunc) {
+func (ListVolumes) each(resp interface{}, callback IterateItemFunc) {
 	volumes, ok := resp.(*ListVolumesResponse)
 	if !ok {
 		callback(nil, fmt.Errorf("wrong type. ListVolumesResponse expected, got %T", resp))

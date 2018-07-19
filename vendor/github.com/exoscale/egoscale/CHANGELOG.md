@@ -1,7 +1,14 @@
 Changelog
 =========
 
-0.10.0 (unreleased)
+0.10.1 (unreleased)
+------
+
+- feat: expose `SyncRequest` and `SyncRequestWithContext`
+- feat: addition of reverse DNS calls
+- feat: addition of `SecurityGroup.UserSecurityGroup`
+
+0.10.0
 ------
 
 - global: cloudstack documentation links are moved into cs

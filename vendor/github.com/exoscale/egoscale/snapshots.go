@@ -30,7 +30,8 @@ const (
 // Snapshot represents a volume snapshot
 type Snapshot struct {
 	Account      string        `json:"account,omitempty" doc:"the account associated with the snapshot"`
-	Created      string        `json:"created,omitempty" doc:"  the date the snapshot was created"`
+	AccountID    string        `json:"accountid,omitempty" doc:"the account ID associated with the snapshot"`
+	Created      string        `json:"created,omitempty" doc:"the date the snapshot was created"`
 	Domain       string        `json:"domain,omitempty" doc:"the domain name of the snapshot's account"`
 	DomainID     string        `json:"domainid,omitempty" doc:"the domain ID of the snapshot's account"`
 	ID           string        `json:"id,omitempty" doc:"ID of the snapshot"`
@@ -49,7 +50,7 @@ type Snapshot struct {
 }
 
 // ResourceType returns the type of the resource
-func (*Snapshot) ResourceType() string {
+func (Snapshot) ResourceType() string {
 	return "Snapshot"
 }
 
@@ -57,18 +58,16 @@ func (*Snapshot) ResourceType() string {
 type CreateSnapshot struct {
 	VolumeID  string `json:"volumeid" doc:"The ID of the disk volume"`
 	Account   string `json:"account,omitempty" doc:"The account of the snapshot. The account parameter must be used with the domainId parameter."`
-	Name      string `json:"name,omitempty" doc:"the name of the snapshot"`
 	DomainID  string `json:"domainid,omitempty" doc:"The domain ID of the snapshot. If used with the account parameter, specifies a domain for the account associated with the disk volume."`
-	PolicyID  string `json:"policyid,omitempty" doc:"policy id of the snapshot, if this is null, then use MANUAL_POLICY."`
 	QuiesceVM *bool  `json:"quiescevm,omitempty" doc:"quiesce vm if true"`
 	_         bool   `name:"createSnapshot" description:"Creates an instant snapshot of a volume."`
 }
 
-func (*CreateSnapshot) response() interface{} {
+func (CreateSnapshot) response() interface{} {
 	return new(AsyncJobResult)
 }
 
-func (*CreateSnapshot) asyncResponse() interface{} {
+func (CreateSnapshot) asyncResponse() interface{} {
 	return new(Snapshot)
 }
 
@@ -77,7 +76,6 @@ type ListSnapshots struct {
 	Account      string        `json:"account,omitempty" doc:"list resources by account. Must be used with the domainId parameter."`
 	DomainID     string        `json:"domainid,omitempty" doc:"list only resources belonging to the domain specified"`
 	ID           string        `json:"id,omitempty" doc:"lists snapshot by snapshot ID"`
-	IDs          []string      `json:"ids,omitempty" doc:"the IDs of the snapshots, mutually exclusive with id"`
 	IntervalType string        `json:"intervaltype,omitempty" doc:"valid values are HOURLY, DAILY, WEEKLY, and MONTHLY."`
 	IsRecursive  *bool         `json:"isrecursive,omitempty" doc:"defaults to false, but if true, lists all resources from the parent specified by the domainId till leaves."`
 	Keyword      string        `json:"keyword,omitempty" doc:"List by keyword"`
@@ -98,7 +96,7 @@ type ListSnapshotsResponse struct {
 	Snapshot []Snapshot `json:"snapshot"`
 }
 
-func (*ListSnapshots) response() interface{} {
+func (ListSnapshots) response() interface{} {
 	return new(ListSnapshotsResponse)
 }
 
@@ -108,11 +106,11 @@ type DeleteSnapshot struct {
 	_  bool   `name:"deleteSnapshot" description:"Deletes a snapshot of a disk volume."`
 }
 
-func (*DeleteSnapshot) response() interface{} {
+func (DeleteSnapshot) response() interface{} {
 	return new(AsyncJobResult)
 }
 
-func (*DeleteSnapshot) asyncResponse() interface{} {
+func (DeleteSnapshot) asyncResponse() interface{} {
 	return new(booleanResponse)
 }
 
@@ -122,10 +120,10 @@ type RevertSnapshot struct {
 	_  bool   `name:"revertSnapshot" description:"revert a volume snapshot."`
 }
 
-func (*RevertSnapshot) response() interface{} {
+func (RevertSnapshot) response() interface{} {
 	return new(AsyncJobResult)
 }
 
-func (*RevertSnapshot) asyncResponse() interface{} {
+func (RevertSnapshot) asyncResponse() interface{} {
 	return new(booleanResponse)
 }

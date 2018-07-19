@@ -23,6 +23,7 @@ type Nic struct {
 	Netmask          net.IP           `json:"netmask,omitempty" doc:"the netmask of the nic"`
 	NetworkID        string           `json:"networkid,omitempty" doc:"the ID of the corresponding network"`
 	NetworkName      string           `json:"networkname,omitempty" doc:"the name of the corresponding network"`
+	ReverseDNS       []ReverseDNS     `json:"reversedns,omitempty" doc:"the list of PTR record(s) associated with the virtual machine"`
 	SecondaryIP      []NicSecondaryIP `json:"secondaryip,omitempty" doc:"the Secondary ipv4 addr of nic"`
 	TrafficType      string           `json:"traffictype,omitempty" doc:"the traffic type of the nic"`
 	Type             string           `json:"type,omitempty" doc:"the type of the nic"`
@@ -30,7 +31,7 @@ type Nic struct {
 }
 
 // ListRequest build a ListNics request from the given Nic
-func (nic *Nic) ListRequest() (ListCommand, error) {
+func (nic Nic) ListRequest() (ListCommand, error) {
 	if nic.VirtualMachineID == "" {
 		return nil, errors.New("command ListNics requires the VirtualMachineID field to be set")
 	}
@@ -71,7 +72,7 @@ type ListNicsResponse struct {
 	Nic   []Nic `json:"nic"`
 }
 
-func (*ListNics) response() interface{} {
+func (ListNics) response() interface{} {
 	return new(ListNicsResponse)
 }
 
@@ -85,7 +86,7 @@ func (ls *ListNics) SetPageSize(pageSize int) {
 	ls.PageSize = pageSize
 }
 
-func (*ListNics) each(resp interface{}, callback IterateItemFunc) {
+func (ListNics) each(resp interface{}, callback IterateItemFunc) {
 	nics := resp.(*ListNicsResponse)
 	for i := range nics.Nic {
 		if !callback(&(nics.Nic[i]), nil) {
@@ -101,11 +102,11 @@ type AddIPToNic struct {
 	_         bool   `name:"addIpToNic" description:"Assigns secondary IP to NIC"`
 }
 
-func (*AddIPToNic) response() interface{} {
+func (AddIPToNic) response() interface{} {
 	return new(AsyncJobResult)
 }
 
-func (*AddIPToNic) asyncResponse() interface{} {
+func (AddIPToNic) asyncResponse() interface{} {
 	return new(NicSecondaryIP)
 }
 
@@ -115,11 +116,11 @@ type RemoveIPFromNic struct {
 	_  bool   `name:"removeIpFromNic" description:"Removes secondary IP from the NIC."`
 }
 
-func (*RemoveIPFromNic) response() interface{} {
+func (RemoveIPFromNic) response() interface{} {
 	return new(AsyncJobResult)
 }
 
-func (*RemoveIPFromNic) asyncResponse() interface{} {
+func (RemoveIPFromNic) asyncResponse() interface{} {
 	return new(booleanResponse)
 }
 
@@ -131,10 +132,10 @@ type ActivateIP6 struct {
 	_     bool   `name:"activateIp6" description:"Activate the IPv6 on the VM's nic"`
 }
 
-func (*ActivateIP6) response() interface{} {
+func (ActivateIP6) response() interface{} {
 	return new(AsyncJobResult)
 }
 
-func (*ActivateIP6) asyncResponse() interface{} {
+func (ActivateIP6) asyncResponse() interface{} {
 	return new(Nic)
 }

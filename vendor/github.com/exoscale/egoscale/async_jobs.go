@@ -2,7 +2,7 @@ package egoscale
 
 import (
 	"encoding/json"
-	"fmt"
+	"errors"
 )
 
 // AsyncJobResult represents an asynchronous job result
@@ -21,7 +21,7 @@ type AsyncJobResult struct {
 	JobID           string           `json:"jobid"`
 }
 
-func (a *AsyncJobResult) Error() error {
+func (a AsyncJobResult) Error() error {
 	r := new(ErrorResponse)
 	if e := json.Unmarshal(*a.JobResult, r); e != nil {
 		return e
@@ -35,7 +35,7 @@ type QueryAsyncJobResult struct {
 	_     bool   `name:"queryAsyncJobResult" description:"Retrieves the current status of asynchronous job."`
 }
 
-func (*QueryAsyncJobResult) response() interface{} {
+func (QueryAsyncJobResult) response() interface{} {
 	return new(AsyncJobResult)
 }
 
@@ -58,38 +58,38 @@ type ListAsyncJobsResponse struct {
 	AsyncJobs []AsyncJobResult `json:"asyncjobs"`
 }
 
-func (*ListAsyncJobs) response() interface{} {
+func (ListAsyncJobs) response() interface{} {
 	return new(ListAsyncJobsResponse)
 }
 
-//Response return response of AsyncJobResult from a given type
-func (a *AsyncJobResult) Response(i interface{}) error {
+// Result unmarshals the result of an AsyncJobResult into the given interface
+func (a AsyncJobResult) Result(i interface{}) error {
 	if a.JobStatus == Failure {
 		return a.Error()
 	}
 
-	var err error
 	if a.JobStatus == Success {
 		m := map[string]json.RawMessage{}
-		err = json.Unmarshal(*(a.JobResult), &m)
+		err := json.Unmarshal(*(a.JobResult), &m)
 
 		if err == nil {
-			if len(m) > 1 {
-				err = json.Unmarshal(*(a.JobResult), i)
-			} else if len(m) == 1 {
-				for k := range m {
-					if k == "success" {
-						err = json.Unmarshal(*(a.JobResult), i)
-					}
-					if e := json.Unmarshal(m[k], i); e != nil {
-						return e
-					}
+			if len(m) >= 1 {
+				if _, ok := m["success"]; ok {
+					return json.Unmarshal(*(a.JobResult), i)
 				}
-			} else {
-				return fmt.Errorf("empty response")
+
+				// more than one keys are list...response
+				if len(m) > 1 {
+					return json.Unmarshal(*(a.JobResult), i)
+				}
+				// otherwise, pick the first key
+				for k := range m {
+					return json.Unmarshal(m[k], i)
+				}
 			}
+			return errors.New("empty response")
 		}
 	}
 
-	return err
+	return nil
 }
