@@ -101,8 +101,8 @@
 [[projects]]
   name = "github.com/go-ini/ini"
   packages = ["."]
-  revision = "06f5f3d67269ccec1fe5fe4134ba6e982984f7f5"
-  version = "v1.37.0"
+  revision = "358ee7663966325963d4e8b2e1fbd570c5195153"
+  version = "v1.38.1"
 
 [[projects]]
   name = "github.com/golang/protobuf"
@@ -474,6 +474,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "2eb533f1519f04b7f9004dc475c3bc2289dfe10ade017fabb08709f5600fa1cc"
+  inputs-digest = "2c0ee857de08f4961d4c5173b020dff4cfbc523b27fd290ef8df5b35a8f181cf"
   solver-name = "gps-cdcl"
   solver-version = 1
