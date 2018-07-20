@@ -1,7 +1,6 @@
 [[constraint]]
   name = "github.com/exoscale/egoscale"
-  #version = "0.10.2"
-  branch = "fix-activate-ip6"
+  version = "0.10.2"
 
 [[constraint]]
   name = "github.com/hashicorp/terraform"

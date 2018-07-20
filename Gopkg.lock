@@ -87,10 +87,10 @@
   version = "v1.1.0"
 
 [[projects]]
-  branch = "fix-activate-ip6"
   name = "github.com/exoscale/egoscale"
   packages = ["."]
-  revision = "dbad7aa8debc8cadf24b0aa4459d463c455668d5"
+  revision = "5d2d65b1a3664623251aac575acc4588aae4ecfd"
+  version = "v0.10.2"
 
 [[projects]]
   name = "github.com/fatih/color"
@@ -474,6 +474,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "2c0ee857de08f4961d4c5173b020dff4cfbc523b27fd290ef8df5b35a8f181cf"
+  inputs-digest = "a763cbee2c56e44d023adbdddc7185bce872987158fd66c76c2dbbd9c9283207"
   solver-name = "gps-cdcl"
   solver-version = 1
