@@ -82,11 +82,12 @@ func createNic(d *schema.ResourceData, meta interface{}) error {
 
 	vm := resp.(*egoscale.VirtualMachine)
 	nic := vm.NicByNetworkID(networkID)
-	if nic != nil {
-		d.SetId(nic.ID)
-		return readNic(d, meta)
+	if nic == nil {
+		return fmt.Errorf("Nic addition didn't create a NIC for Network %s", networkID)
 	}
-	return fmt.Errorf("Nic addition didn't create a NIC for Network %s", networkID)
+
+	d.SetId(nic.ID)
+	return readNic(d, meta)
 }
 
 func readNic(d *schema.ResourceData, meta interface{}) error {
@@ -165,7 +166,7 @@ func applyNic(d *schema.ResourceData, nic egoscale.Nic) error {
 	d.SetId(nic.ID)
 	d.Set("compute_id", nic.VirtualMachineID)
 	d.Set("network_id", nic.NetworkID)
-	d.Set("mac_address", nic.MacAddress)
+	d.Set("mac_address", nic.MACAddress.String())
 
 	if nic.IPAddress != nil {
 		d.Set("ip_address", nic.IPAddress.String())
