@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/exoscale/egoscale"
+	"github.com/hashicorp/terraform/helper/logging"
 )
 
 const defaultConfig = "cloudstack.ini"
@@ -22,6 +23,8 @@ type BaseConfig struct {
 	dnsEndpoint     string
 	s3Endpoint      string
 	gzipUserData    bool
+	computeClient   *egoscale.Client
+	dnsClient       *egoscale.Client
 }
 
 func getClient(endpoint string, meta interface{}) *egoscale.Client {
@@ -30,17 +33,31 @@ func getClient(endpoint string, meta interface{}) *egoscale.Client {
 
 	cs.Timeout = config.timeout
 	cs.HTTPClient.Timeout = config.timeout
+
+	if logging.IsDebugOrHigher() {
+		cs.HTTPClient.Transport = logging.NewTransport(
+			"exoscale",
+			cs.HTTPClient.Transport,
+		)
+	}
+
 	return cs
 }
 
 // GetComputeClient builds a CloudStack client
 func GetComputeClient(meta interface{}) *egoscale.Client {
 	config := meta.(BaseConfig)
-	return getClient(config.computeEndpoint, meta)
+	if config.computeClient == nil {
+		config.computeClient = getClient(config.computeEndpoint, meta)
+	}
+	return config.computeClient
 }
 
 // GetDNSClient builds a DNS client
 func GetDNSClient(meta interface{}) *egoscale.Client {
 	config := meta.(BaseConfig)
-	return getClient(config.dnsEndpoint, meta)
+	if config.dnsClient == nil {
+		config.dnsClient = getClient(config.dnsEndpoint, meta)
+	}
+	return config.dnsClient
 }
