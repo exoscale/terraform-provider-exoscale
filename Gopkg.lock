@@ -60,8 +60,8 @@
     "service/s3",
     "service/sts"
   ]
-  revision = "bc3f534c19ffdf835e524e11f0f825b3eaf541c3"
-  version = "v1.14.31"
+  revision = "8475c414b1bd58b8cc214873a8854e3a621e67d7"
+  version = "v1.15.0"
 
 [[projects]]
   branch = "master"
@@ -88,10 +88,10 @@
   version = "v1.1.0"
 
 [[projects]]
-  branch = "master"
   name = "github.com/exoscale/egoscale"
   packages = ["."]
-  revision = "8dc4d6e2c2fc970475f5c29da7deed86cb6ae4de"
+  revision = "d0b97c5313da1645585ba6c860e29161299849e1"
+  version = "v0.10.5"
 
 [[projects]]
   name = "github.com/fatih/color"
@@ -261,12 +261,6 @@
   revision = "3520598351bb3500a49ae9563f5539666ae0a27c"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/jinzhu/copier"
-  packages = ["."]
-  revision = "7e38e58719c33e0d44d585c4ab477a30f8cb82dd"
-
-[[projects]]
   name = "github.com/jmespath/go-jmespath"
   packages = ["."]
   revision = "0b12d6b5"
@@ -387,7 +381,7 @@
     "openpgp/packet",
     "openpgp/s2k"
   ]
-  revision = "a2144134853fc9a27a7b1e3eb4f19f1a76df13c9"
+  revision = "c126467f60eb25f8f27e5a981f32a87e3965053f"
 
 [[projects]]
   branch = "master"
@@ -403,13 +397,13 @@
     "internal/timeseries",
     "trace"
   ]
-  revision = "a680a1efc54dd51c040b3b5ce4939ea3cf2ea0d1"
+  revision = "3673e40ba22529d22c3fd7c93e97b0ce50fa7bdd"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "ac767d655b305d4e9612f5f6e33120b9176c4ad4"
+  revision = "e072cadbbdc8dd3d3ffa82b8b4b9304c261d9311"
 
 [[projects]]
   name = "golang.org/x/text"
@@ -436,7 +430,7 @@
   branch = "master"
   name = "google.golang.org/genproto"
   packages = ["googleapis/rpc/status"]
-  revision = "02b4e95473316948020af0b7a4f0f22c73929b0e"
+  revision = "2a72893556e4d1f6c795a4c039314c9fa751eedb"
 
 [[projects]]
   name = "google.golang.org/grpc"
@@ -475,6 +469,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "3655966bbf729995128401d48b06f249f9d69cfea5c307c1f171298f1687177e"
+  inputs-digest = "90a9b8da8ab3df48698da582b3fc098b67f450a23f808094725ba21b5a06776e"
   solver-name = "gps-cdcl"
   solver-version = 1

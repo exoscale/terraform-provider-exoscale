@@ -298,7 +298,10 @@ func applyNetwork(d *schema.ResourceData, network *egoscale.Network) error {
 	d.Set("network_domain", network.NetworkDomain)
 	d.Set("network_offering", network.NetworkOfferingName)
 	d.Set("zone", network.ZoneName)
-	d.Set("cidr", network.Cidr)
+	d.Set("cidr", "")
+	if network.CIDR != nil {
+		d.Set("cidr", network.CIDR.String())
+	}
 
 	if network.Gateway != nil {
 		d.Set("gateway", network.Gateway.String())

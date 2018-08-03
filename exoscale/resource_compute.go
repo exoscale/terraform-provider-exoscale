@@ -870,7 +870,9 @@ func applyCompute(d *schema.ResourceData, machine *egoscale.VirtualMachine) erro
 			d.Set("ip6", true)
 			d.Set("ip6_address", nic.IP6Address.String())
 		}
-		d.Set("ip6_cidr", nic.IP6Cidr)
+		if nic.IP6CIDR != nil {
+			d.Set("ip6_cidr", nic.IP6CIDR.String())
+		}
 	}
 
 	// affinity groups

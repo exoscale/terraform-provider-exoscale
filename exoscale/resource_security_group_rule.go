@@ -130,12 +130,16 @@ func createSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	cidrList := make([]string, 0)
+	cidrList := make([]egoscale.CIDR, 0)
 	groupList := make([]egoscale.UserSecurityGroup, 0)
 
 	cidr, cidrOk := d.GetOk("cidr")
 	if cidrOk {
-		cidrList = append(cidrList, cidr.(string))
+		c, err := egoscale.ParseCIDR(cidr.(string))
+		if err != nil {
+			return err
+		}
+		cidrList = append(cidrList, *c)
 	} else {
 		userSecurityGroupID, idOk := d.GetOk("user_security_group_id")
 		userSecurityGroupName, nameOk := d.GetOk("user_security_group")
@@ -162,7 +166,7 @@ func createSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
 	var req egoscale.Command
 	req = &egoscale.AuthorizeSecurityGroupIngress{
 		SecurityGroupID:       securityGroup.ID,
-		CidrList:              cidrList,
+		CIDRList:              cidrList,
 		Description:           d.Get("description").(string),
 		Protocol:              d.Get("protocol").(string),
 		EndPort:               (uint16)(d.Get("end_port").(int)),
@@ -313,7 +317,10 @@ func importSecurityGroupRule(d *schema.ResourceData, meta interface{}) ([]*schem
 
 func applySecurityGroupRule(d *schema.ResourceData, group *egoscale.SecurityGroup, rule egoscale.EgressRule) error {
 	d.SetId(rule.RuleID)
-	d.Set("cidr", rule.Cidr)
+	d.Set("cidr", "")
+	if rule.CIDR != nil {
+		d.Set("cidr", rule.CIDR.String())
+	}
 	d.Set("icmp_type", rule.IcmpType)
 	d.Set("icmp_code", rule.IcmpCode)
 	d.Set("start_port", rule.StartPort)

@@ -26,8 +26,11 @@ type BaseConfig struct {
 
 func getClient(endpoint string, meta interface{}) *egoscale.Client {
 	config := meta.(BaseConfig)
-	timeout := config.timeout
-	return egoscale.NewClientWithTimeout(endpoint, config.key, config.secret, timeout)
+	cs := egoscale.NewClient(endpoint, config.key, config.secret)
+
+	cs.Timeout = config.timeout
+	cs.HTTPClient.Timeout = config.timeout
+	return cs
 }
 
 // GetComputeClient builds a CloudStack client
