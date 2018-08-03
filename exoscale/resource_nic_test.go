@@ -58,7 +58,7 @@ func testAccCheckNicExists(n string, vm *egoscale.VirtualMachine, nic *egoscale.
 
 func testAccCheckNicAttributes(nic *egoscale.Nic) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		if nic.MacAddress == "" {
+		if nic.MACAddress == nil {
 			return fmt.Errorf("nic is nil")
 		}
 
