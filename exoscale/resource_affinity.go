@@ -78,8 +78,13 @@ func existsAffinityGroup(d *schema.ResourceData, meta interface{}) (bool, error)
 
 	client := GetComputeClient(meta)
 
+	id, err := egoscale.ParseUUID(d.Id())
+	if err != nil {
+		return false, err
+	}
+
 	ag := &egoscale.AffinityGroup{
-		ID: d.Id(),
+		ID: id,
 	}
 	if err := client.GetWithContext(ctx, ag); err != nil {
 		e := handleNotFound(d, err)
@@ -95,8 +100,13 @@ func readAffinityGroup(d *schema.ResourceData, meta interface{}) error {
 
 	client := GetComputeClient(meta)
 
+	id, err := egoscale.ParseUUID(d.Id())
+	if err != nil {
+		return err
+	}
+
 	ag := &egoscale.AffinityGroup{
-		ID: d.Id(),
+		ID: id,
 	}
 	if err := client.GetWithContext(ctx, ag); err != nil {
 		return handleNotFound(d, err)
@@ -106,7 +116,7 @@ func readAffinityGroup(d *schema.ResourceData, meta interface{}) error {
 }
 
 func applyAffinityGroup(d *schema.ResourceData, affinity *egoscale.AffinityGroup) error {
-	d.SetId(affinity.ID)
+	d.SetId(affinity.ID.String())
 	d.Set("name", affinity.Name)
 	d.Set("description", affinity.Description)
 	d.Set("type", affinity.Type)
@@ -121,7 +131,12 @@ func deleteAffinityGroup(d *schema.ResourceData, meta interface{}) error {
 
 	client := GetComputeClient(meta)
 
+	id, err := egoscale.ParseUUID(d.Id())
+	if err != nil {
+		return err
+	}
+
 	return client.DeleteWithContext(ctx, &egoscale.AffinityGroup{
-		ID: d.Id(),
+		ID: id,
 	})
 }

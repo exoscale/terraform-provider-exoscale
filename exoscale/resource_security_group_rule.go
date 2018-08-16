@@ -120,8 +120,13 @@ func createSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
 
 	securityGroup := &egoscale.SecurityGroup{}
 	securityGroupID, ok := d.GetOkExists("security_group_id")
+
 	if ok {
-		securityGroup.ID = securityGroupID.(string)
+		id, err := egoscale.ParseUUID(securityGroupID.(string))
+		if err != nil {
+			return err
+		}
+		securityGroup.ID = id
 	} else {
 		securityGroup.Name = d.Get("security_group").(string)
 	}
@@ -141,16 +146,23 @@ func createSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
 		}
 		cidrList = append(cidrList, *c)
 	} else {
-		userSecurityGroupID, idOk := d.GetOk("user_security_group_id")
-		userSecurityGroupName, nameOk := d.GetOk("user_security_group")
+		userSecurityGroupID := d.Get("user_security_group_id").(string)
+		userSecurityGroupName := d.Get("user_security_group").(string)
 
-		if !idOk && !nameOk {
+		if userSecurityGroupID == "" && userSecurityGroupName == "" {
 			return fmt.Errorf("No CIDR, User Security Group ID or Name were provided")
 		}
 
 		group := &egoscale.SecurityGroup{
-			ID:   userSecurityGroupID.(string),
-			Name: userSecurityGroupName.(string),
+			Name: userSecurityGroupName,
+		}
+
+		if userSecurityGroupID != "" {
+			id, err := egoscale.ParseUUID(userSecurityGroupID)
+			if err != nil {
+				return err
+			}
+			group.ID = id
 		}
 
 		if err := client.GetWithContext(ctx, group); err != nil {
@@ -205,11 +217,15 @@ func existsSecurityGroupRule(d *schema.ResourceData, meta interface{}) (bool, er
 
 	client := GetComputeClient(meta)
 
-	securityGroupID := ""
-	securityGroupName := ""
+	var securityGroupID *egoscale.UUID
+	var securityGroupName string
 
 	if s, ok := d.GetOkExists("security_group_id"); ok {
-		securityGroupID = s.(string)
+		var err error
+		securityGroupID, err = egoscale.ParseUUID(s.(string))
+		if err != nil {
+			return false, err
+		}
 	} else if n, ok := d.GetOkExists("security_group"); ok {
 		securityGroupName = n.(string)
 	} else {
@@ -228,13 +244,13 @@ func existsSecurityGroupRule(d *schema.ResourceData, meta interface{}) (bool, er
 	switch d.Get("type") {
 	case "EGRESS":
 		for _, rule := range sg.EgressRule {
-			if rule.RuleID == d.Id() {
+			if rule.RuleID.String() == d.Id() {
 				return true, nil
 			}
 		}
 	case "INGRESS":
 		for _, rule := range sg.IngressRule {
-			if rule.RuleID == d.Id() {
+			if rule.RuleID.String() == d.Id() {
 				return true, nil
 			}
 		}
@@ -248,10 +264,14 @@ func readSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
 
 	client := GetComputeClient(meta)
 
-	securityGroupID := ""
-	securityGroupName := ""
+	var securityGroupID *egoscale.UUID
+	var securityGroupName string
 	if s, ok := d.GetOkExists("security_group_id"); ok {
-		securityGroupID = s.(string)
+		var err error
+		securityGroupID, err = egoscale.ParseUUID(s.(string))
+		if err != nil {
+			return err
+		}
 	} else if n, ok := d.GetOkExists("security_group"); ok {
 		securityGroupName = n.(string)
 	} else {
@@ -268,13 +288,13 @@ func readSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
 
 	id := d.Id()
 	for _, rule := range sg.EgressRule {
-		if rule.RuleID == id {
+		if rule.RuleID.String() == id {
 			d.Set("type", "EGRESS")
 			return applySecurityGroupRule(d, sg, rule)
 		}
 	}
 	for _, rule := range sg.IngressRule {
-		if rule.RuleID == id {
+		if rule.RuleID.String() == id {
 			d.Set("type", "INGRESS")
 			return applySecurityGroupRule(d, sg, (egoscale.EgressRule)(rule))
 		}
@@ -290,7 +310,11 @@ func deleteSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
 
 	client := GetComputeClient(meta)
 
-	id := d.Id()
+	id, err := egoscale.ParseUUID(d.Id())
+	if err != nil {
+		return err
+	}
+
 	var req egoscale.Command
 	if d.Get("type").(string) == "EGRESS" {
 		req = &egoscale.RevokeSecurityGroupEgress{
@@ -316,7 +340,7 @@ func importSecurityGroupRule(d *schema.ResourceData, meta interface{}) ([]*schem
 }
 
 func applySecurityGroupRule(d *schema.ResourceData, group *egoscale.SecurityGroup, rule egoscale.EgressRule) error {
-	d.SetId(rule.RuleID)
+	d.SetId(rule.RuleID.String())
 	d.Set("cidr", "")
 	if rule.CIDR != nil {
 		d.Set("cidr", rule.CIDR.String())

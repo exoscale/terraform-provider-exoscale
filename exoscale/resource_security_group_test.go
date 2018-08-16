@@ -48,8 +48,13 @@ func testAccCheckSecurityGroupExists(n string, sg *egoscale.SecurityGroup) resou
 			return fmt.Errorf("No Security Group ID is set")
 		}
 
+		id, err := egoscale.ParseUUID(rs.Primary.ID)
+		if err != nil {
+			return err
+		}
+
 		client := GetComputeClient(testAccProvider.Meta())
-		sg.ID = rs.Primary.ID
+		sg.ID = id
 		if err := client.Get(sg); err != nil {
 			return err
 		}
@@ -60,7 +65,7 @@ func testAccCheckSecurityGroupExists(n string, sg *egoscale.SecurityGroup) resou
 
 func testAccCheckSecurityGroupAttributes(sg *egoscale.SecurityGroup) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		if sg.ID == "" {
+		if sg.ID == nil {
 			return fmt.Errorf("security group is nil")
 		}
 
@@ -98,7 +103,12 @@ func testAccCheckSecurityGroupDestroy(s *terraform.State) error {
 			continue
 		}
 
-		key := &egoscale.SecurityGroup{ID: rs.Primary.ID}
+		id, err := egoscale.ParseUUID(rs.Primary.ID)
+		if err != nil {
+			return err
+		}
+
+		key := &egoscale.SecurityGroup{ID: id}
 		if err := client.Get(key); err != nil {
 			if r, ok := err.(*egoscale.ErrorResponse); ok {
 				if r.ErrorCode == egoscale.ParamError {

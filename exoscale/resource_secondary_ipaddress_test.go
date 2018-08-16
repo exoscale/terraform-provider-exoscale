@@ -92,7 +92,12 @@ func testAccCheckSecondaryIPDestroy(s *terraform.State) error {
 			continue
 		}
 
-		vm := &egoscale.VirtualMachine{ID: rs.Primary.Attributes["compute_id"]}
+		vmID, err := egoscale.ParseUUID(rs.Primary.Attributes["compute_id"])
+		if err != nil {
+			return err
+		}
+
+		vm := &egoscale.VirtualMachine{ID: vmID}
 		if err := client.Get(vm); err != nil {
 			if r, ok := err.(*egoscale.ErrorResponse); ok {
 				if r.ErrorCode == egoscale.ParamError {
@@ -101,14 +106,34 @@ func testAccCheckSecondaryIPDestroy(s *terraform.State) error {
 			}
 			return err
 		}
+
+		nic := vm.DefaultNic()
+		if nic == nil {
+			return nil
+		}
+
+		ipAddress := net.ParseIP(rs.Primary.Attributes["ip_address"])
+		if ipAddress == nil {
+			return fmt.Errorf("not a valid IP address")
+		}
+
+		for _, ip := range nic.SecondaryIP {
+			if ip.IPAddress.Equal(ipAddress) {
+				return fmt.Errorf("secondary ip still exists")
+			}
+		}
 	}
 
-	return fmt.Errorf("secondary ip still exists")
+	return nil
 }
 
 var testAccSecondaryIPCreate = fmt.Sprintf(`
 resource "exoscale_ssh_keypair" "key" {
   name = "terraform-test-keypair"
+}
+
+resource "exoscale_ipaddress" "eip" {
+  zone = %q
 }
 
 resource "exoscale_compute" "vm" {
@@ -119,14 +144,13 @@ resource "exoscale_compute" "vm" {
   disk_size = "12"
   key_pair = "${exoscale_ssh_keypair.key.name}"
 
+  # prevents bad ordering during the deletion
+  depends_on = ["exoscale_ipaddress.eip"]
+
   timeouts {
     create = "10m"
     delete = "30m"
   }
-}
-
-resource "exoscale_ipaddress" "eip" {
-  zone = %q
 }
 
 resource "exoscale_secondary_ipaddress" "ip" {
@@ -134,7 +158,7 @@ resource "exoscale_secondary_ipaddress" "ip" {
   ip_address = "${exoscale_ipaddress.eip.ip_address}"
 }
 `,
-	EXOSCALE_TEMPLATE,
 	EXOSCALE_ZONE,
+	EXOSCALE_TEMPLATE,
 	EXOSCALE_ZONE,
 )

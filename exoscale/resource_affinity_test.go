@@ -40,8 +40,14 @@ func testAccCheckAffinityGroupExists(n string, ag *egoscale.AffinityGroup) resou
 			return fmt.Errorf("No Affinity Group ID is set")
 		}
 
+		id, err := egoscale.ParseUUID(rs.Primary.ID)
+		if err != nil {
+			return err
+		}
+
 		client := GetComputeClient(testAccProvider.Meta())
-		ag.ID = rs.Primary.ID
+
+		ag.ID = id
 		if err := client.Get(ag); err != nil {
 			return err
 		}
@@ -52,7 +58,7 @@ func testAccCheckAffinityGroupExists(n string, ag *egoscale.AffinityGroup) resou
 
 func testAccCheckAffinityGroupAttributes(ag *egoscale.AffinityGroup) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		if ag.ID == "" {
+		if ag.ID == nil {
 			return fmt.Errorf("affinity group is nil")
 		}
 
@@ -90,7 +96,12 @@ func testAccCheckAffinityGroupDestroy(s *terraform.State) error {
 			continue
 		}
 
-		key := &egoscale.AffinityGroup{ID: rs.Primary.ID}
+		id, err := egoscale.ParseUUID(rs.Primary.ID)
+		if err != nil {
+			return err
+		}
+
+		key := &egoscale.AffinityGroup{ID: id}
 		if err := client.Get(key); err != nil {
 			if r, ok := err.(*egoscale.ErrorResponse); ok {
 				if r.ErrorCode == egoscale.ParamError {

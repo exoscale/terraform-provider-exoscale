@@ -74,10 +74,15 @@ func createElasticIP(d *schema.ResourceData, meta interface{}) error {
 	if !ok {
 		return fmt.Errorf("wrong type: an IPAddress was expected, got %T", resp)
 	}
-	d.SetId(elasticIP.ID)
+	d.SetId(elasticIP.ID.String())
 	d.Set("ip_address", elasticIP.IPAddress.String())
 
-	if cmd := createTags(d, "tags", elasticIP.ResourceType()); cmd != nil {
+	cmd, err := createTags(d, "tags", elasticIP.ResourceType())
+	if err != nil {
+		return err
+	}
+
+	if cmd != nil {
 		if err := client.BooleanRequestWithContext(ctx, cmd); err != nil {
 			// Attempting to destroy the freshly created ip address
 			e := client.BooleanRequestWithContext(ctx, &egoscale.DisassociateIPAddress{
@@ -101,8 +106,13 @@ func existsElasticIP(d *schema.ResourceData, meta interface{}) (bool, error) {
 
 	client := GetComputeClient(meta)
 
+	id, err := egoscale.ParseUUID(d.Id())
+	if err != nil {
+		return false, err
+	}
+
 	resp, err := client.RequestWithContext(ctx, &egoscale.ListPublicIPAddresses{
-		ID: d.Id(),
+		ID: id,
 	})
 
 	if err != nil {
@@ -120,17 +130,19 @@ func readElasticIP(d *schema.ResourceData, meta interface{}) error {
 
 	client := GetComputeClient(meta)
 
-	// This permits to import a resource using the IP Address rather than using the ID.
-	id := d.Id()
-	ip := net.ParseIP(id)
-	if ip != nil {
-		id = ""
+	ipAddress := &egoscale.IPAddress{
+		IsElastic: true,
 	}
 
-	ipAddress := &egoscale.IPAddress{
-		ID:        id,
-		IPAddress: ip,
-		IsElastic: true,
+	id, err := egoscale.ParseUUID(d.Id())
+	if err != nil {
+		ip := net.ParseIP(d.Id())
+		if ip == nil {
+			return fmt.Errorf("%q is neither a valid ID or IP address", d.Id())
+		}
+		ipAddress.IPAddress = ip
+	} else {
+		ipAddress.ID = id
 	}
 
 	if err := client.GetWithContext(ctx, ipAddress); err != nil {
@@ -177,13 +189,18 @@ func deleteElasticIP(d *schema.ResourceData, meta interface{}) error {
 
 	client := GetComputeClient(meta)
 
+	id, err := egoscale.ParseUUID(d.Id())
+	if err != nil {
+		return err
+	}
+
 	return client.DeleteWithContext(ctx, &egoscale.IPAddress{
-		ID: d.Id(),
+		ID: id,
 	})
 }
 
 func applyElasticIP(d *schema.ResourceData, ip *egoscale.IPAddress) error {
-	d.SetId(ip.ID)
+	d.SetId(ip.ID.String())
 	d.Set("ip_address", ip.IPAddress.String())
 	d.Set("zone", ip.ZoneName)
 

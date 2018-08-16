@@ -17,8 +17,16 @@ func TestAccElasticIP(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckElasticIPDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccElasticIPCreate,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckElasticIPExists("exoscale_ipaddress.eip", eip),
+					testAccCheckElasticIPAttributes(eip),
+					testAccCheckElasticIPCreateAttributes(EXOSCALE_ZONE),
+				),
+			},
+			{
+				Config: testAccElasticIPUpdate,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckElasticIPExists("exoscale_ipaddress.eip", eip),
 					testAccCheckElasticIPAttributes(eip),
@@ -40,8 +48,13 @@ func testAccCheckElasticIPExists(n string, eip *egoscale.IPAddress) resource.Tes
 			return fmt.Errorf("No elastic IP ID is set")
 		}
 
+		id, err := egoscale.ParseUUID(rs.Primary.ID)
+		if err != nil {
+			return err
+		}
+
 		client := GetComputeClient(testAccProvider.Meta())
-		eip.ID = rs.Primary.ID
+		eip.ID = id
 		if err := client.Get(eip); err != nil {
 			return err
 		}
@@ -90,8 +103,13 @@ func testAccCheckElasticIPDestroy(s *terraform.State) error {
 			continue
 		}
 
+		id, err := egoscale.ParseUUID(rs.Primary.ID)
+		if err != nil {
+			return err
+		}
+
 		key := &egoscale.IPAddress{
-			ID:        rs.Primary.ID,
+			ID:        id,
 			IsElastic: true,
 		}
 		if err := client.Get(key); err != nil {
@@ -113,6 +131,14 @@ resource "exoscale_ipaddress" "eip" {
   tags {
     test = "acceptance"
   }
+}
+`,
+	EXOSCALE_ZONE,
+)
+
+var testAccElasticIPUpdate = fmt.Sprintf(`
+resource "exoscale_ipaddress" "eip" {
+  zone = %q
 }
 `,
 	EXOSCALE_ZONE,

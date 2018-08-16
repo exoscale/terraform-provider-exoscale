@@ -220,7 +220,7 @@ func createCompute(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	templateID := ""
+	var templateID *egoscale.UUID
 	username := ""
 	currentDiskSize := diskSize << 30 // Gib to B
 	image := strings.ToLower(d.Get("template").(string))
@@ -248,7 +248,7 @@ func createCompute(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	if templateID == "" {
+	if templateID == nil {
 		return fmt.Errorf("Template not found: %s (%dGB Disk)", d.Get("template").(string), d.Get("disk_size").(int))
 	}
 
@@ -260,35 +260,43 @@ func createCompute(d *schema.ResourceData, meta interface{}) error {
 	// Affinity Groups
 	var affinityGroups []string
 	if affinitySet, ok := d.Get("affinity_groups").(*schema.Set); ok {
-		affinityGroups = make([]string, 0, affinitySet.Len())
-		for _, group := range affinitySet.List() {
-			affinityGroups = append(affinityGroups, group.(string))
+		affinityGroups = make([]string, affinitySet.Len())
+		for i, group := range affinitySet.List() {
+			affinityGroups[i] = group.(string)
 		}
 
 	}
 
-	var affinityGroupIDs []string
+	var affinityGroupIDs []egoscale.UUID
 	if affinityIDSet, ok := d.Get("affinity_group_ids").(*schema.Set); ok {
-		affinityGroupIDs = make([]string, 0, affinityIDSet.Len())
-		for _, group := range affinityIDSet.List() {
-			affinityGroupIDs = append(affinityGroupIDs, group.(string))
+		affinityGroupIDs = make([]egoscale.UUID, affinityIDSet.Len())
+		for i, group := range affinityIDSet.List() {
+			id, err := egoscale.ParseUUID(group.(string))
+			if err != nil {
+				return err
+			}
+			affinityGroupIDs[i] = *id
 		}
 	}
 
 	// Security Groups
 	var securityGroups []string
 	if securitySet, ok := d.Get("security_groups").(*schema.Set); ok {
-		securityGroups = make([]string, 0, securitySet.Len())
-		for _, group := range securitySet.List() {
-			securityGroups = append(securityGroups, group.(string))
+		securityGroups = make([]string, securitySet.Len())
+		for i, group := range securitySet.List() {
+			securityGroups[i] = group.(string)
 		}
 	}
 
-	var securityGroupIDs []string
+	var securityGroupIDs []egoscale.UUID
 	if securityIDSet, ok := d.Get("security_group_ids").(*schema.Set); ok {
-		securityGroupIDs = make([]string, 0, securityIDSet.Len())
-		for _, group := range securityIDSet.List() {
-			securityGroupIDs = append(securityGroupIDs, group.(string))
+		securityGroupIDs = make([]egoscale.UUID, securityIDSet.Len())
+		for i, group := range securityIDSet.List() {
+			id, err := egoscale.ParseUUID(group.(string))
+			if err != nil {
+				return err
+			}
+			securityGroupIDs[i] = *id
 		}
 	}
 
@@ -328,9 +336,14 @@ func createCompute(d *schema.ResourceData, meta interface{}) error {
 
 	/* Copy VM to our struct */
 	machine := resp.(*egoscale.VirtualMachine)
-	d.SetId(machine.ID)
+	d.SetId(machine.ID.String())
 
-	if cmd := createTags(d, "tags", machine.ResourceType()); cmd != nil {
+	cmd, err := createTags(d, "tags", machine.ResourceType())
+	if err != nil {
+		return err
+	}
+
+	if cmd != nil {
 		if err := client.BooleanRequestWithContext(ctx, cmd); err != nil {
 			// Attempting to destroy the freshly created machine
 			if e := client.DeleteWithContext(ctx, machine); e != nil {
@@ -359,7 +372,12 @@ func existsCompute(d *schema.ResourceData, meta interface{}) (bool, error) {
 
 	client := GetComputeClient(meta)
 
-	machine := &egoscale.VirtualMachine{ID: d.Id()}
+	id, err := egoscale.ParseUUID(d.Id())
+	if err != nil {
+		return false, err
+	}
+
+	machine := &egoscale.VirtualMachine{ID: id}
 
 	// The CS API returns an error if it doesn't exist
 	if err := client.GetWithContext(ctx, machine); err != nil {
@@ -376,14 +394,19 @@ func readCompute(d *schema.ResourceData, meta interface{}) error {
 
 	client := GetComputeClient(meta)
 
-	machine := &egoscale.VirtualMachine{ID: d.Id()}
+	id, err := egoscale.ParseUUID(d.Id())
+	if err != nil {
+		return err
+	}
+
+	machine := &egoscale.VirtualMachine{ID: id}
 	if err := client.GetWithContext(ctx, machine); err != nil {
 		return handleNotFound(d, err)
 	}
 
 	// user_data
 	resp, err := client.RequestWithContext(ctx, &egoscale.GetVirtualMachineUserData{
-		VirtualMachineID: d.Id(),
+		VirtualMachineID: id,
 	})
 	if err != nil {
 		return err
@@ -396,7 +419,7 @@ func readCompute(d *schema.ResourceData, meta interface{}) error {
 
 	// disk_size
 	volumes, err := client.ListWithContext(ctx, &egoscale.Volume{
-		VirtualMachineID: d.Id(),
+		VirtualMachineID: id,
 		Type:             "ROOT",
 	})
 
@@ -447,6 +470,11 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 
 	client := GetComputeClient(meta)
 
+	id, err := egoscale.ParseUUID(d.Id())
+	if err != nil {
+		return err
+	}
+
 	// Get() gives us the new state
 	initialState := d.Get("state").(string)
 	if d.HasChange("state") {
@@ -477,7 +505,7 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 
 	// Update command is synchronous, hence it won't be put with the others
 	req := &egoscale.UpdateVirtualMachine{
-		ID: d.Id(),
+		ID: id,
 	}
 
 	if d.HasChange("display_name") {
@@ -497,14 +525,14 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 	if d.HasChange("security_groups") {
 		rebootRequired = true
 
-		securityGroupIDs := make([]string, 0)
+		securityGroupIDs := make([]egoscale.UUID, 0)
 		if securitySet, ok := d.Get("security_groups").(*schema.Set); ok {
 			for _, group := range securitySet.List() {
 				sg, err := getSecurityGroup(ctx, client, group.(string))
 				if err != nil {
 					return err
 				}
-				securityGroupIDs = append(securityGroupIDs, sg.ID)
+				securityGroupIDs = append(securityGroupIDs, *sg.ID)
 			}
 		}
 
@@ -516,10 +544,14 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 	} else if d.HasChange("security_group_ids") {
 		rebootRequired = true
 
-		securityGroupIDs := make([]string, 0)
+		securityGroupIDs := make([]egoscale.UUID, 0)
 		if securitySet, ok := d.Get("security_group_ids").(*schema.Set); ok {
 			for _, group := range securitySet.List() {
-				securityGroupIDs = append(securityGroupIDs, group.(string))
+				id, err := egoscale.ParseUUID(group.(string))
+				if err != nil {
+					return err
+				}
+				securityGroupIDs = append(securityGroupIDs, *id)
 			}
 		}
 
@@ -542,7 +574,7 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 		rebootRequired = true
 
 		volumes, err := client.ListWithContext(ctx, &egoscale.Volume{
-			VirtualMachineID: d.Id(),
+			VirtualMachineID: id,
 			Type:             "ROOT",
 		})
 		if err != nil {
@@ -586,7 +618,7 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 			commands = append(commands, partialCommand{
 				partial: "size",
 				request: &egoscale.ScaleVirtualMachine{
-					ID:                d.Id(),
+					ID:                id,
 					ServiceOfferingID: services.ServiceOffering[0].ID,
 				},
 			})
@@ -611,7 +643,7 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 			commands = append(commands, partialCommand{
 				partials: []string{"affinity_groups", "affinity_group_ids"},
 				request: &egoscale.UpdateVMAffinityGroup{
-					ID:                 d.Id(),
+					ID:                 id,
 					AffinityGroupNames: affinityGroups,
 				},
 			})
@@ -627,14 +659,18 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 		}
 
 		if affinitySet, ok := d.Get("affinity_group_ids").(*schema.Set); ok {
-			affinityGroups := make([]string, affinitySet.Len())
+			affinityGroups := make([]egoscale.UUID, affinitySet.Len())
 			for i, group := range affinitySet.List() {
-				affinityGroups[i] = group.(string)
+				id, err := egoscale.ParseUUID(group.(string))
+				if err != nil {
+					return err
+				}
+				affinityGroups[i] = *id
 			}
 			commands = append(commands, partialCommand{
 				partials: []string{"affinity_groups", "affinity_group_ids"},
 				request: &egoscale.UpdateVMAffinityGroup{
-					ID:               d.Id(),
+					ID:               id,
 					AffinityGroupIDs: affinityGroups,
 				},
 			})
@@ -663,7 +699,7 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 		activateIP6 := d.Get("ip6").(bool)
 		if activateIP6 {
 			resp, err := client.Request(&egoscale.ListNics{
-				VirtualMachineID: d.Id(),
+				VirtualMachineID: id,
 			})
 			if err != nil {
 				return err
@@ -701,7 +737,7 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 	// Stop
 	if initialState != "Stopped" && (rebootRequired || stopRequired) {
 		resp, err := client.RequestWithContext(ctx, &egoscale.StopVirtualMachine{
-			ID: d.Id(),
+			ID: id,
 		})
 		if err != nil {
 			return err
@@ -731,7 +767,7 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 		commands = append(commands, partialCommand{
 			partial: "state",
 			request: &egoscale.StartVirtualMachine{
-				ID: d.Id(),
+				ID: id,
 			},
 		})
 	}
@@ -764,8 +800,13 @@ func deleteCompute(d *schema.ResourceData, meta interface{}) error {
 
 	client := GetComputeClient(meta)
 
-	err := client.DeleteWithContext(ctx, &egoscale.VirtualMachine{
-		ID: d.Id(),
+	id, err := egoscale.ParseUUID(d.Id())
+	if err != nil {
+		return err
+	}
+
+	err = client.DeleteWithContext(ctx, &egoscale.VirtualMachine{
+		ID: id,
 	})
 
 	if err != nil {
@@ -783,15 +824,13 @@ func importCompute(d *schema.ResourceData, meta interface{}) ([]*schema.Resource
 
 	client := GetComputeClient(meta)
 
-	id := d.Id()
-	name := ""
-	if !isUUID(id) {
-		name = id
-		id = ""
-	}
-	machine := &egoscale.VirtualMachine{
-		ID:   id,
-		Name: name,
+	machine := &egoscale.VirtualMachine{}
+
+	id, err := egoscale.ParseUUID(d.Id())
+	if err != nil {
+		machine.Name = d.Id()
+	} else {
+		machine.ID = id
 	}
 
 	if err := client.GetWithContext(ctx, machine); err != nil {
@@ -877,20 +916,20 @@ func applyCompute(d *schema.ResourceData, machine *egoscale.VirtualMachine) erro
 
 	// affinity groups
 	affinityGroups := make([]string, len(machine.AffinityGroup))
-	affinityGroupIDs := make([]string, len(machine.AffinityGroup))
+	affinityGroupIDs := make([]egoscale.UUID, len(machine.AffinityGroup))
 	for i, ag := range machine.AffinityGroup {
 		affinityGroups[i] = ag.Name
-		affinityGroupIDs[i] = ag.ID
+		affinityGroupIDs[i] = *ag.ID
 	}
 	d.Set("affinity_groups", affinityGroups)
 	d.Set("affinity_group_ids", affinityGroupIDs)
 
 	// security groups
 	securityGroups := make([]string, len(machine.SecurityGroup))
-	securityGroupIDs := make([]string, len(machine.SecurityGroup))
+	securityGroupIDs := make([]egoscale.UUID, len(machine.SecurityGroup))
 	for i, sg := range machine.SecurityGroup {
 		securityGroups[i] = sg.Name
-		securityGroupIDs[i] = sg.ID
+		securityGroupIDs[i] = *sg.ID
 	}
 	d.Set("security_groups", securityGroups)
 	d.Set("security_group_ids", securityGroupIDs)

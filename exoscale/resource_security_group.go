@@ -62,8 +62,12 @@ func createSecurityGroup(d *schema.ResourceData, meta interface{}) error {
 
 	sg := resp.(*egoscale.SecurityGroup)
 
-	d.SetId(sg.ID)
-	if cmd := createTags(d, "tags", sg.ResourceType()); cmd != nil {
+	d.SetId(sg.ID.String())
+	cmd, err := createTags(d, "tags", sg.ResourceType())
+	if err != nil {
+		return err
+	}
+	if cmd != nil {
 		if err := client.BooleanRequestWithContext(ctx, cmd); err != nil {
 			// Attempting to destroy the freshly created security group
 			e := client.BooleanRequestWithContext(ctx, &egoscale.DeleteSecurityGroup{
@@ -86,8 +90,14 @@ func existsSecurityGroup(d *schema.ResourceData, meta interface{}) (bool, error)
 	defer cancel()
 
 	client := GetComputeClient(meta)
+
+	id, err := egoscale.ParseUUID(d.Id())
+	if err != nil {
+		return false, err
+	}
+
 	sg := &egoscale.SecurityGroup{
-		ID: d.Id(),
+		ID: id,
 	}
 	if err := client.GetWithContext(ctx, sg); err != nil {
 		e := handleNotFound(d, err)
@@ -132,8 +142,14 @@ func readSecurityGroup(d *schema.ResourceData, meta interface{}) error {
 	defer cancel()
 
 	client := GetComputeClient(meta)
+
+	id, err := egoscale.ParseUUID(d.Id())
+	if err != nil {
+		return err
+	}
+
 	sg := &egoscale.SecurityGroup{
-		ID: d.Id(),
+		ID: id,
 	}
 	if err := client.GetWithContext(ctx, sg); err != nil {
 		return handleNotFound(d, err)
@@ -165,18 +181,15 @@ func importSecurityGroup(d *schema.ResourceData, meta interface{}) ([]*schema.Re
 
 	client := GetComputeClient(meta)
 
-	// This permits to import a resource using the security group name rather than using the ID.
-	id := d.Id()
-	name := ""
-	if !isUUID(id) {
-		name = id
-		id = ""
+	securityGroup := &egoscale.SecurityGroup{}
+
+	id, err := egoscale.ParseUUID(d.Id())
+	if err != nil {
+		securityGroup.Name = d.Id()
+	} else {
+		securityGroup.ID = id
 	}
 
-	securityGroup := &egoscale.SecurityGroup{
-		ID:   id,
-		Name: name,
-	}
 	if err := client.GetWithContext(ctx, securityGroup); err != nil {
 		return nil, err
 	}
@@ -219,7 +232,7 @@ func importSecurityGroup(d *schema.ResourceData, meta interface{}) ([]*schema.Re
 }
 
 func applySecurityGroup(d *schema.ResourceData, securityGroup *egoscale.SecurityGroup) error {
-	d.SetId(securityGroup.ID)
+	d.SetId(securityGroup.ID.String())
 	d.Set("name", securityGroup.Name)
 	d.Set("description", securityGroup.Description)
 

@@ -48,8 +48,14 @@ func testAccCheckComputeExists(n string, vm *egoscale.VirtualMachine) resource.T
 			return fmt.Errorf("No Compute ID is set")
 		}
 
+		id, err := egoscale.ParseUUID(rs.Primary.ID)
+		if err != nil {
+			return err
+		}
+
 		client := GetComputeClient(testAccProvider.Meta())
-		vm.ID = rs.Primary.ID
+
+		vm.ID = id
 		if err := client.Get(vm); err != nil {
 			return err
 		}
@@ -60,7 +66,7 @@ func testAccCheckComputeExists(n string, vm *egoscale.VirtualMachine) resource.T
 
 func testAccCheckComputeAttributes(vm *egoscale.VirtualMachine) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		if vm.ID == "" {
+		if vm.ID == nil {
 			return fmt.Errorf("compute is nil")
 		}
 
@@ -98,7 +104,12 @@ func testAccCheckComputeDestroy(s *terraform.State) error {
 			continue
 		}
 
-		vm := &egoscale.VirtualMachine{ID: rs.Primary.ID}
+		id, err := egoscale.ParseUUID(rs.Primary.ID)
+		if err != nil {
+			return err
+		}
+
+		vm := &egoscale.VirtualMachine{ID: id}
 		if err := client.Get(vm); err != nil {
 			if r, ok := err.(*egoscale.ErrorResponse); ok {
 				if r.ErrorCode == egoscale.ParamError {

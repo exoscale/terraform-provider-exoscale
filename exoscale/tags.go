@@ -19,7 +19,7 @@ func addTags(s map[string]*schema.Schema, key string) {
 }
 
 // createTags create the tags for the given resource (provide a resource type)
-func createTags(d *schema.ResourceData, key, resourceType string) egoscale.Command {
+func createTags(d *schema.ResourceData, key, resourceType string) (egoscale.Command, error) {
 	if t, ok := d.GetOk(key); ok {
 		m := t.(map[string]interface{})
 		tags := make([]egoscale.ResourceTag, 0, len(m))
@@ -30,14 +30,19 @@ func createTags(d *schema.ResourceData, key, resourceType string) egoscale.Comma
 			})
 		}
 
+		id, err := egoscale.ParseUUID(d.Id())
+		if err != nil {
+			return nil, err
+		}
+
 		return &egoscale.CreateTags{
-			ResourceIDs:  []string{d.Id()},
+			ResourceIDs:  []egoscale.UUID{*id},
 			ResourceType: resourceType,
 			Tags:         tags,
-		}
+		}, nil
 	}
 
-	return nil
+	return nil, nil
 }
 
 // updateTags create the commands to delete / create the tags for a resource
@@ -59,9 +64,14 @@ func updateTags(d *schema.ResourceData, key, resourceType string) ([]egoscale.Co
 			}
 		}
 
+		id, err := egoscale.ParseUUID(d.Id())
+		if err != nil {
+			return requests, err
+		}
+
 		if len(oldTags) > 0 {
 			deleteTags := &egoscale.DeleteTags{
-				ResourceIDs:  []string{d.Id()},
+				ResourceIDs:  []egoscale.UUID{*id},
 				ResourceType: resourceType,
 				Tags:         make([]egoscale.ResourceTag, len(oldTags)),
 			}
@@ -78,7 +88,7 @@ func updateTags(d *schema.ResourceData, key, resourceType string) ([]egoscale.Co
 
 		if len(newTags) > 0 {
 			createTags := &egoscale.CreateTags{
-				ResourceIDs:  []string{d.Id()},
+				ResourceIDs:  []egoscale.UUID{*id},
 				ResourceType: resourceType,
 				Tags:         make([]egoscale.ResourceTag, len(newTags)),
 			}

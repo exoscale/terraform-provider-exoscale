@@ -155,9 +155,13 @@ func createNetwork(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	network := resp.(*egoscale.Network)
-	d.SetId(network.ID)
+	d.SetId(network.ID.String())
 
-	if cmd := createTags(d, "tags", network.ResourceType()); cmd != nil {
+	cmd, err := createTags(d, "tags", network.ResourceType())
+	if err != nil {
+		return err
+	}
+	if cmd != nil {
 		if err := client.BooleanRequestWithContext(ctx, cmd); err != nil {
 			// Attempting to destroy the freshly created network
 			e := client.BooleanRequestWithContext(ctx, &egoscale.DeleteNetwork{
@@ -180,8 +184,14 @@ func readNetwork(d *schema.ResourceData, meta interface{}) error {
 	defer cancel()
 
 	client := GetComputeClient(meta)
+
+	id, err := egoscale.ParseUUID(d.Id())
+	if err != nil {
+		return err
+	}
+
 	resp, err := client.RequestWithContext(ctx, &egoscale.ListNetworks{
-		ID: d.Id(),
+		ID: id,
 	})
 
 	if err != nil {
@@ -202,8 +212,14 @@ func existsNetwork(d *schema.ResourceData, meta interface{}) (bool, error) {
 	defer cancel()
 
 	client := GetComputeClient(meta)
+
+	id, err := egoscale.ParseUUID(d.Id())
+	if err != nil {
+		return false, err
+	}
+
 	resp, err := client.RequestWithContext(ctx, &egoscale.ListNetworks{
-		ID: d.Id(),
+		ID: id,
 	})
 
 	if err != nil {
@@ -228,9 +244,14 @@ func updateNetwork(d *schema.ResourceData, meta interface{}) error {
 
 	d.Partial(true)
 
+	id, err := egoscale.ParseUUID(d.Id())
+	if err != nil {
+		return err
+	}
+
 	// Update name and display_text
 	resp, err := client.RequestWithContext(ctx, &egoscale.UpdateNetwork{
-		ID:          d.Id(),
+		ID:          id,
 		Name:        d.Get("name").(string),
 		DisplayText: d.Get("display_text").(string),
 	})
@@ -279,11 +300,12 @@ func deleteNetwork(d *schema.ResourceData, meta interface{}) error {
 
 	client := GetComputeClient(meta)
 
-	err := client.BooleanRequestWithContext(ctx, &egoscale.DeleteNetwork{
-		ID: d.Id(),
-	})
-
+	id, err := egoscale.ParseUUID(d.Id())
 	if err != nil {
+		return err
+	}
+
+	if err = client.BooleanRequestWithContext(ctx, &egoscale.DeleteNetwork{ID: id}); err != nil {
 		return err
 	}
 
@@ -292,7 +314,7 @@ func deleteNetwork(d *schema.ResourceData, meta interface{}) error {
 }
 
 func applyNetwork(d *schema.ResourceData, network *egoscale.Network) error {
-	d.SetId(network.ID)
+	d.SetId(network.ID.String())
 	d.Set("name", network.Name)
 	d.Set("display_text", network.DisplayText)
 	d.Set("network_domain", network.NetworkDomain)

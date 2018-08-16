@@ -78,7 +78,7 @@ func testAccCheckIngressRuleExists(n string, sg *egoscale.SecurityGroup, rule *e
 }
 func testAccCheckSecurityGroupRuleAttributes(r *egoscale.EgressRule) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		if r.RuleID == "" {
+		if r.RuleID == nil {
 			return fmt.Errorf("security group rule id is nil")
 		}
 
@@ -117,7 +117,12 @@ func testAccCheckSecurityGroupRuleDestroy(s *terraform.State) error {
 			continue
 		}
 
-		sg := &egoscale.SecurityGroup{ID: rs.Primary.Attributes["security_group_id"]}
+		sgID, err := egoscale.ParseUUID(rs.Primary.Attributes["security_group_id"])
+		if err != nil {
+			return err
+		}
+
+		sg := &egoscale.SecurityGroup{ID: sgID}
 		if err := client.Get(sg); err != nil {
 			if r, ok := err.(*egoscale.ErrorResponse); ok {
 				if r.ErrorCode == egoscale.ParamError {

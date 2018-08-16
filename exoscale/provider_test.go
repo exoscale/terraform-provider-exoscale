@@ -29,10 +29,10 @@ func TestProvider_impl(t *testing.T) {
 }
 
 func testAccPreCheck(t *testing.T) {
-	key := os.Getenv("CLOUDSTACK_KEY")
-	secret := os.Getenv("CLOUDSTACK_SECRET")
+	key := os.Getenv("EXOSCALE_API_KEY")
+	secret := os.Getenv("EXOSCALE_API_SECRET")
 	if key == "" || secret == "" {
-		t.Fatal("CLOUDSTACK_KEY and CLOUDSTACK_SECRET must be set for acceptance tests")
+		t.Fatal("EXOSCALE_API_KEY and EXOSCALE_API_SECRET must be set for acceptance tests")
 	}
 }
 

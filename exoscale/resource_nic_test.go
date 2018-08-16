@@ -45,9 +45,14 @@ func testAccCheckNicExists(n string, vm *egoscale.VirtualMachine, nic *egoscale.
 			return fmt.Errorf("no nic ID is set")
 		}
 
+		id, err := egoscale.ParseUUID(rs.Primary.ID)
+		if err != nil {
+			return err
+		}
+
 		client := GetComputeClient(testAccProvider.Meta())
 		nic.VirtualMachineID = vm.ID
-		nic.ID = rs.Primary.ID
+		nic.ID = id
 		if err := client.Get(nic); err != nil {
 			return err
 		}
@@ -92,7 +97,12 @@ func testAccCheckNicDestroy(s *terraform.State) error {
 			continue
 		}
 
-		nic := &egoscale.Nic{VirtualMachineID: rs.Primary.Attributes["compute_id"]}
+		vmID, err := egoscale.ParseUUID(rs.Primary.Attributes["compute_id"])
+		if err != nil {
+			return err
+		}
+
+		nic := &egoscale.Nic{VirtualMachineID: vmID}
 		if err := client.Get(nic); err != nil {
 			if r, ok := err.(*egoscale.ErrorResponse); ok {
 				if r.ErrorText == "Virtual machine id does not exist" {

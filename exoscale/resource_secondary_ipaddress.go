@@ -58,7 +58,10 @@ func createSecondaryIP(d *schema.ResourceData, meta interface{}) error {
 
 	client := GetComputeClient(meta)
 
-	virtualMachineID := d.Get("compute_id").(string)
+	virtualMachineID, err := egoscale.ParseUUID(d.Get("compute_id").(string))
+	if err != nil {
+		return err
+	}
 
 	resp, err := client.RequestWithContext(ctx, &egoscale.ListNics{
 		VirtualMachineID: virtualMachineID,
@@ -93,6 +96,9 @@ func createSecondaryIP(d *schema.ResourceData, meta interface{}) error {
 			return fmt.Errorf("wrong type, expected NicSecondaryIP but got %T", resp)
 		}
 		d.SetId(fmt.Sprintf("%s_%s", ip.NicID, ip.IPAddress.String()))
+		d.Set("compute_id", virtualMachineID)
+		d.Set("nic_id", ip.NicID.String())
+
 		return readSecondaryIP(d, meta)
 	}
 
@@ -133,17 +139,26 @@ func getSecondaryIP(d *schema.ResourceData, meta interface{}) (*egoscale.NicSeco
 	client := GetComputeClient(meta)
 
 	ipAddress := d.Get("ip_address").(string)
-	virtualMachineID := d.Get("compute_id").(string)
-	nicID := d.Get("nic_id").(string)
+	virtualMachine := d.Get("compute_id").(string)
+	nic := d.Get("nic_id").(string)
 
-	if virtualMachineID == "" {
+	var virtualMachineID *egoscale.UUID
+	var nicID *egoscale.UUID
+
+	if virtualMachine == "" {
 		id := d.Id()
 		infos := strings.SplitN(id, "_", 2)
 		if len(infos) != 2 {
 			return nil, fmt.Errorf("import requires <nicid>_<ipaddress>")
 		}
 
-		nicID = infos[0]
+		var errUUID error
+		nic = infos[0]
+		nicID, errUUID := egoscale.ParseUUID(infos[0])
+		if errUUID != nil {
+			return nil, errUUID
+		}
+
 		ipAddress = infos[1]
 		addr := net.ParseIP(ipAddress)
 		if addr == nil {
@@ -163,8 +178,9 @@ func getSecondaryIP(d *schema.ResourceData, meta interface{}) (*egoscale.NicSeco
 		reqVms := &egoscale.ListVirtualMachines{
 			ZoneID: ip.ZoneID,
 		}
+
 		var err error
-		var nic *egoscale.Nic
+		var n *egoscale.Nic
 		client.PaginateWithContext(ctx, reqVms, func(v interface{}, e error) bool {
 			if e != nil {
 				err = e
@@ -172,15 +188,30 @@ func getSecondaryIP(d *schema.ResourceData, meta interface{}) (*egoscale.NicSeco
 			}
 
 			vm := v.(*egoscale.VirtualMachine)
-			nic = vm.NicByID(nicID)
-			return nic == nil
+			n = vm.NicByID(*nicID)
+			return n == nil
 		})
 
 		if err != nil {
 			return nil, err
 		}
 
-		virtualMachineID = nic.VirtualMachineID
+		virtualMachineID = n.VirtualMachineID
+	} else {
+		var err error
+		virtualMachineID, err = egoscale.ParseUUID(virtualMachine)
+		if err != nil {
+			return nil, err
+		}
+
+		if nic == "" {
+			return nil, nil
+		}
+
+		nicID, err = egoscale.ParseUUID(nic)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	ns, err := client.ListWithContext(ctx, &egoscale.Nic{
@@ -254,8 +285,8 @@ func applySecondaryIP(d *schema.ResourceData, secondaryIP *egoscale.NicSecondary
 
 	d.SetId(fmt.Sprintf("%s_%s", secondaryIP.NicID, secondaryIP.IPAddress.String()))
 
-	if secondaryIP.VirtualMachineID != "" {
-		d.Set("compute_id", secondaryIP.VirtualMachineID)
+	if secondaryIP.VirtualMachineID != nil {
+		d.Set("compute_id", secondaryIP.VirtualMachineID.String())
 	}
 
 	if secondaryIP.IPAddress != nil {
@@ -264,8 +295,8 @@ func applySecondaryIP(d *schema.ResourceData, secondaryIP *egoscale.NicSecondary
 		d.Set("ip_address", "")
 	}
 
-	d.Set("network_id", secondaryIP.NetworkID)
-	d.Set("nic_id", secondaryIP.NicID)
+	d.Set("network_id", secondaryIP.NetworkID.String())
+	d.Set("nic_id", secondaryIP.NicID.String())
 
 	return nil
 }

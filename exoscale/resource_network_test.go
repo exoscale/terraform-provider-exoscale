@@ -40,8 +40,13 @@ func testAccCheckNetworkExists(n string, net *egoscale.Network) resource.TestChe
 			return fmt.Errorf("No Network ID is set")
 		}
 
+		id, err := egoscale.ParseUUID(rs.Primary.ID)
+		if err != nil {
+			return err
+		}
+
 		client := GetComputeClient(testAccProvider.Meta())
-		net.ID = rs.Primary.ID
+		net.ID = id
 		if err := client.Get(net); err != nil {
 			return err
 		}
@@ -52,7 +57,7 @@ func testAccCheckNetworkExists(n string, net *egoscale.Network) resource.TestChe
 
 func testAccCheckNetworkAttributes(net *egoscale.Network) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		if net.ID == "" {
+		if net.ID == nil {
 			return fmt.Errorf("Network is nil")
 		}
 
@@ -90,7 +95,12 @@ func testAccCheckNetworkDestroy(s *terraform.State) error {
 			continue
 		}
 
-		key := &egoscale.Network{ID: rs.Primary.ID}
+		id, err := egoscale.ParseUUID(rs.Primary.ID)
+		if err != nil {
+			return err
+		}
+
+		key := &egoscale.Network{ID: id}
 		if err := client.Get(key); err != nil {
 			if r, ok := err.(*egoscale.ErrorResponse); ok {
 				if r.ErrorCode == egoscale.ParamError {

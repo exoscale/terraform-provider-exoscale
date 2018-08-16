@@ -68,11 +68,19 @@ func createNic(d *schema.ResourceData, meta interface{}) error {
 		ip = net.ParseIP(i.(string))
 	}
 
-	networkID := d.Get("network_id").(string)
+	networkID, err := egoscale.ParseUUID(d.Get("network_id").(string))
+	if err != nil {
+		return err
+	}
+
+	vmID, err := egoscale.ParseUUID(d.Get("compute_id").(string))
+	if err != nil {
+		return err
+	}
 
 	resp, err := client.RequestWithContext(ctx, &egoscale.AddNicToVirtualMachine{
 		NetworkID:        networkID,
-		VirtualMachineID: d.Get("compute_id").(string),
+		VirtualMachineID: vmID,
 		IPAddress:        ip,
 	})
 
@@ -81,12 +89,12 @@ func createNic(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	vm := resp.(*egoscale.VirtualMachine)
-	nic := vm.NicByNetworkID(networkID)
+	nic := vm.NicByNetworkID(*networkID)
 	if nic == nil {
 		return fmt.Errorf("Nic addition didn't create a NIC for Network %s", networkID)
 	}
 
-	d.SetId(nic.ID)
+	d.SetId(nic.ID.String())
 	return readNic(d, meta)
 }
 
@@ -95,9 +103,20 @@ func readNic(d *schema.ResourceData, meta interface{}) error {
 	defer cancel()
 
 	client := GetComputeClient(meta)
+
+	id, err := egoscale.ParseUUID(d.Id())
+	if err != nil {
+		return err
+	}
+
+	vmID, err := egoscale.ParseUUID(d.Get("compute_id").(string))
+	if err != nil {
+		return err
+	}
+
 	resp, err := client.RequestWithContext(ctx, &egoscale.ListNics{
-		NicID:            d.Id(),
-		VirtualMachineID: d.Get("compute_id").(string),
+		NicID:            id,
+		VirtualMachineID: vmID,
 	})
 
 	if err != nil {
@@ -118,9 +137,20 @@ func existsNic(d *schema.ResourceData, meta interface{}) (bool, error) {
 	defer cancel()
 
 	client := GetComputeClient(meta)
+
+	id, err := egoscale.ParseUUID(d.Id())
+	if err != nil {
+		return false, err
+	}
+
+	vmID, err := egoscale.ParseUUID(d.Get("compute_id").(string))
+	if err != nil {
+		return false, err
+	}
+
 	resp, err := client.RequestWithContext(ctx, &egoscale.ListNics{
-		NicID:            d.Id(),
-		VirtualMachineID: d.Get("compute_id").(string),
+		NicID:            id,
+		VirtualMachineID: vmID,
 	})
 
 	if err != nil {
@@ -143,9 +173,24 @@ func deleteNic(d *schema.ResourceData, meta interface{}) error {
 
 	client := GetComputeClient(meta)
 
+	id, err := egoscale.ParseUUID(d.Id())
+	if err != nil {
+		return err
+	}
+
+	vmID, err := egoscale.ParseUUID(d.Get("compute_id").(string))
+	if err != nil {
+		return err
+	}
+
+	networkID, err := egoscale.ParseUUID(d.Get("network_id").(string))
+	if err != nil {
+		return err
+	}
+
 	resp, err := client.RequestWithContext(ctx, &egoscale.RemoveNicFromVirtualMachine{
-		NicID:            d.Id(),
-		VirtualMachineID: d.Get("compute_id").(string),
+		NicID:            id,
+		VirtualMachineID: vmID,
 	})
 
 	if err != nil {
@@ -153,7 +198,7 @@ func deleteNic(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	vm := resp.(*egoscale.VirtualMachine)
-	nic := vm.NicByNetworkID(d.Get("network_id").(string))
+	nic := vm.NicByNetworkID(*networkID)
 	if nic != nil {
 		return fmt.Errorf("Failed removing NIC %s from instance %s", d.Id(), vm.ID)
 	}
@@ -163,9 +208,9 @@ func deleteNic(d *schema.ResourceData, meta interface{}) error {
 }
 
 func applyNic(d *schema.ResourceData, nic egoscale.Nic) error {
-	d.SetId(nic.ID)
-	d.Set("compute_id", nic.VirtualMachineID)
-	d.Set("network_id", nic.NetworkID)
+	d.SetId(nic.ID.String())
+	d.Set("compute_id", nic.VirtualMachineID.String())
+	d.Set("network_id", nic.NetworkID.String())
 	d.Set("mac_address", nic.MACAddress.String())
 
 	if nic.IPAddress != nil {
