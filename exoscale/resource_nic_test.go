@@ -105,7 +105,7 @@ func testAccCheckNicDestroy(s *terraform.State) error {
 		nic := &egoscale.Nic{VirtualMachineID: vmID}
 		if err := client.Get(nic); err != nil {
 			if r, ok := err.(*egoscale.ErrorResponse); ok {
-				if r.ErrorText == "Virtual machine id does not exist" {
+				if r.ErrorCode == egoscale.ParamError {
 					return nil
 				}
 			}

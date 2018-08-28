@@ -18,6 +18,6 @@ variable "zone" {
 }
 
 variable "template" {
-  default = "Linux Ubuntu 17.10 64-bit"
+  default = "Linux Ubuntu 18.04 64-bit"
 }
 

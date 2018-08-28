@@ -12,4 +12,4 @@ key_pair = "..."
 # zone = "ch-dk-2"
 
 # Template to use
-# template = "Linux Ubuntu 17.10 64-bit"
+# template = "Linux Ubuntu 18.04 LTS 64-bit"

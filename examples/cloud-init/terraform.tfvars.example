@@ -5,11 +5,8 @@ secret = "..."
 # SSH Key pair
 key_pair = "..."
 
-# How many Docker Swarm masters
-# master = 3
-
 # Which zone
 # zone = "ch-dk-2"
 
 # Template to use
-# template = "Linux Ubuntu 17.10 64-bit"
+# template = "Linux Ubuntu 18.04 64-bit"

@@ -7,7 +7,7 @@ resource "exoscale_compute" "machine" {
 
   display_name = "demo-machine-${count.index}"
 
-  template = "Linux Ubuntu 17.10 64-bit"
+  template = "Linux Ubuntu 18.04 LTS 64-bit"
   size = "Small"
   disk_size = "10"
   security_groups = ["default"]
