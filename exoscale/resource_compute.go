@@ -235,11 +235,6 @@ func createCompute(d *schema.ResourceData, meta interface{}) error {
 			username = name
 		}
 
-		if template.Size == diskSize<<30 {
-			templateID = template.ID
-			break
-		}
-
 		// Pick the smallest disk size
 		if template.Size < currentDiskSize {
 			currentDiskSize = template.Size
