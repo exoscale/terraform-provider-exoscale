@@ -1,9 +1,5 @@
 resource "exoscale_security_group" "swarm" {
   name = "docker-swarm"
-
-  tags {
-    docker = "swarm"
-  }
 }
 
 resource "exoscale_security_group_rule" "docker_client" {
