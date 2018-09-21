@@ -2,33 +2,17 @@ package exoscale
 
 import (
 	"context"
-	"log"
 
 	"github.com/exoscale/egoscale"
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
 func securityGroupResource() *schema.Resource {
-	s := map[string]*schema.Schema{
-		"name": {
-			Type:     schema.TypeString,
-			ForceNew: true,
-			Required: true,
-		},
-		"description": {
-			Type:     schema.TypeString,
-			ForceNew: true,
-			Optional: true,
-		},
-	}
-
-	addTags(s, "tags")
-
 	return &schema.Resource{
 		Create: createSecurityGroup,
 		Exists: existsSecurityGroup,
-		Update: updateSecurityGroup,
 		Read:   readSecurityGroup,
+		Update: updateSecurityGroup,
 		Delete: deleteSecurityGroup,
 
 		Importer: &schema.ResourceImporter{
@@ -42,7 +26,23 @@ func securityGroupResource() *schema.Resource {
 			Delete: schema.DefaultTimeout(defaultTimeout),
 		},
 
-		Schema: s,
+		Schema: map[string]*schema.Schema{
+			"name": {
+				Type:     schema.TypeString,
+				ForceNew: true,
+				Required: true,
+			},
+			"description": {
+				Type:     schema.TypeString,
+				ForceNew: true,
+				Optional: true,
+			},
+			"tags": {
+				Type:     schema.TypeMap,
+				Optional: true,
+				Removed:  "Tags cannot be set on security groups for the time being",
+			},
+		},
 	}
 }
 
@@ -63,25 +63,6 @@ func createSecurityGroup(d *schema.ResourceData, meta interface{}) error {
 	sg := resp.(*egoscale.SecurityGroup)
 
 	d.SetId(sg.ID.String())
-	cmd, err := createTags(d, "tags", sg.ResourceType())
-	if err != nil {
-		return err
-	}
-	if cmd != nil {
-		if err := client.BooleanRequestWithContext(ctx, cmd); err != nil {
-			// Attempting to destroy the freshly created security group
-			e := client.BooleanRequestWithContext(ctx, &egoscale.DeleteSecurityGroup{
-				Name: sg.Name,
-			})
-
-			if e != nil {
-				log.Printf("[WARNING] Failure to create the tags, but the security group was created. %v", e)
-			}
-
-			return err
-		}
-	}
-
 	return readSecurityGroup(d, meta)
 }
 
@@ -106,37 +87,6 @@ func existsSecurityGroup(d *schema.ResourceData, meta interface{}) (bool, error)
 	return true, nil
 }
 
-func updateSecurityGroup(d *schema.ResourceData, meta interface{}) error {
-	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutUpdate))
-	defer cancel()
-
-	client := GetComputeClient(meta)
-
-	d.Partial(true)
-
-	requests, err := updateTags(d, "tags", new(egoscale.SecurityGroup).ResourceType())
-	if err != nil {
-		return err
-	}
-
-	for _, req := range requests {
-		_, err := client.RequestWithContext(ctx, req)
-		if err != nil {
-			return err
-		}
-	}
-
-	err = readSecurityGroup(d, meta)
-	if err != nil {
-		return err
-	}
-
-	d.SetPartial("tags")
-	d.Partial(false)
-
-	return err
-}
-
 func readSecurityGroup(d *schema.ResourceData, meta interface{}) error {
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
 	defer cancel()
@@ -156,6 +106,10 @@ func readSecurityGroup(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	return applySecurityGroup(d, sg)
+}
+
+func updateSecurityGroup(d *schema.ResourceData, meta interface{}) error {
+	return readSecurityGroup(d, meta)
 }
 
 func deleteSecurityGroup(d *schema.ResourceData, meta interface{}) error {
@@ -235,13 +189,5 @@ func applySecurityGroup(d *schema.ResourceData, securityGroup *egoscale.Security
 	d.SetId(securityGroup.ID.String())
 	d.Set("name", securityGroup.Name)
 	d.Set("description", securityGroup.Description)
-
-	// tags
-	tags := make(map[string]interface{})
-	for _, tag := range securityGroup.Tags {
-		tags[tag.Key] = tag.Value
-	}
-	d.Set("tags", tags)
-
 	return nil
 }

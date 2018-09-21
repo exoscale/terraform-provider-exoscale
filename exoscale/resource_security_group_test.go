@@ -125,11 +125,6 @@ var testAccSecurityGroupCreate = `
 resource "exoscale_security_group" "sg" {
   name = "terraform-test-security-group"
   description = "Terraform Security Group Test"
-
-  tags {
-    test = "terraform"
-    acceptance = "true"
-  }
 }
 `
 
@@ -137,10 +132,5 @@ var testAccSecurityGroupUpdateTags = `
 resource "exoscale_security_group" "sg" {
   name = "terraform-test-security-group"
   description = "Terraform Security Group Test"
-
-  tags {
-    test = "hashicorp terraform"
-    this = "is not a tag"
-  }
 }
 `
