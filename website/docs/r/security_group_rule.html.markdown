@@ -30,15 +30,15 @@ resource "exoscale_security_group_rule" "http" {
 
 - `security_group` - (Required) which security group by id the rule applies to
 
-- `protocol` - (Required) the protocol, e.g. `TCP`, `UDP`, `ICMP`, ..., or 'ALL'
+- `protocol` - (Required) the protocol, e.g. `TCP`, `UDP`, `ICMP`, ..., or `ALL`
 
 - `type` - (Required) traffic type, either `INGRESS` or `EGRESS`
 
 - `description` - human description
 
-- `start_port`, `end_port` - for `TCP`, `UDP` traffic
+- `start_port` and `end_port` - for `TCP`, `UDP` traffic
 
-- `icmp_type`, `icmp_code` - for `ICMP` traffic
+- `icmp_type` and `icmp_code` - for `ICMP` traffic
 
 - `cidr` - source/destination of the traffic as an IP subnet (conflicts with `user_security_group`)
 
