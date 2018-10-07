@@ -51,7 +51,7 @@ $ $GOPATH/bin/terraform-provider-exoscale
 
 In order to test the provider, you can simply run `make test`.
 
-*Note:* Make sure no `CLOUDSTACK_KEY` or `CLOUDSTACK_SECRET` variables are set, and there's no `[cloudstack]` section in the AWS credentials file `~/.cloudstack.ini`.
+*Note:* Make sure no `CLOUDSTACK_KEY` or `CLOUDSTACK_SECRET` variables are set, and there's no `[cloudstack]` section in the CloudStack credentials file `~/.cloudstack.ini`.
 
 ```sh
 $ make test
