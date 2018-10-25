@@ -911,20 +911,20 @@ func applyCompute(d *schema.ResourceData, machine *egoscale.VirtualMachine) erro
 
 	// affinity groups
 	affinityGroups := make([]string, len(machine.AffinityGroup))
-	affinityGroupIDs := make([]egoscale.UUID, len(machine.AffinityGroup))
+	affinityGroupIDs := make([]string, len(machine.AffinityGroup))
 	for i, ag := range machine.AffinityGroup {
 		affinityGroups[i] = ag.Name
-		affinityGroupIDs[i] = *ag.ID
+		affinityGroupIDs[i] = ag.ID.String()
 	}
 	d.Set("affinity_groups", affinityGroups)
 	d.Set("affinity_group_ids", affinityGroupIDs)
 
 	// security groups
 	securityGroups := make([]string, len(machine.SecurityGroup))
-	securityGroupIDs := make([]egoscale.UUID, len(machine.SecurityGroup))
+	securityGroupIDs := make([]string, len(machine.SecurityGroup))
 	for i, sg := range machine.SecurityGroup {
 		securityGroups[i] = sg.Name
-		securityGroupIDs[i] = *sg.ID
+		securityGroupIDs[i] = sg.ID.String()
 	}
 	d.Set("security_groups", securityGroups)
 	d.Set("security_group_ids", securityGroupIDs)

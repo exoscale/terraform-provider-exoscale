@@ -18,7 +18,7 @@ func securityGroupRuleResource() *schema.Resource {
 		Delete: deleteSecurityGroupRule,
 
 		Importer: &schema.ResourceImporter{
-			State: importSecurityGroupRule,
+			State: schema.ImportStatePassthrough,
 		},
 
 		Timeouts: &schema.ResourceTimeout{
@@ -199,15 +199,22 @@ func createSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
+	sg := resp.(*egoscale.SecurityGroup)
+
 	// The rule allowed for creation produces only one rule!
 	d.Set("type", trafficType)
 	if trafficType == "EGRESS" {
-		sg := resp.(*egoscale.SecurityGroup)
-		d.Set("type", trafficType)
+		if len(sg.EgressRule) != 1 {
+			return fmt.Errorf("no security group rules were created, aborting.")
+		}
+
 		return applySecurityGroupRule(d, securityGroup, sg.EgressRule[0])
 	}
 
-	sg := resp.(*egoscale.SecurityGroup)
+	if len(sg.IngressRule) != 1 {
+		return fmt.Errorf("no security group rules were created, aborting.")
+	}
+
 	return applySecurityGroupRule(d, securityGroup, (egoscale.EgressRule)(sg.IngressRule[0]))
 }
 
@@ -228,33 +235,61 @@ func existsSecurityGroupRule(d *schema.ResourceData, meta interface{}) (bool, er
 		}
 	} else if n, ok := d.GetOkExists("security_group"); ok {
 		securityGroupName = n.(string)
-	} else {
-		return false, fmt.Errorf("Missing either Security Group ID or Name")
 	}
 
 	sg := &egoscale.SecurityGroup{
 		ID:   securityGroupID,
 		Name: securityGroupName,
 	}
-	if err := client.GetWithContext(ctx, sg); err != nil {
+
+	var err error
+	var ingressRule egoscale.IngressRule
+	var egressRule egoscale.EgressRule
+
+	id := d.Id()
+	req, err := sg.ListRequest()
+	if err != nil {
+		return false, err
+	}
+	client.PaginateWithContext(ctx, req, func(i interface{}, e error) bool {
+		if e != nil {
+			err = e
+			return false
+		}
+
+		s, ok := i.(*egoscale.SecurityGroup)
+		if !ok {
+			err = fmt.Errorf("type SecurityGroup was expected got %T", i)
+			return false
+		}
+
+		for _, rule := range s.EgressRule {
+			if rule.RuleID.String() == id {
+				sg = s
+				egressRule = rule
+				return false
+			}
+		}
+		for _, rule := range s.IngressRule {
+			if rule.RuleID.String() == id {
+				sg = s
+				ingressRule = rule
+				return false
+			}
+		}
+
+		return true
+	})
+
+	if err != nil {
 		e := handleNotFound(d, err)
 		return d.Id() != "", e
 	}
 
-	switch d.Get("type") {
-	case "EGRESS":
-		for _, rule := range sg.EgressRule {
-			if rule.RuleID.String() == d.Id() {
-				return true, nil
-			}
-		}
-	case "INGRESS":
-		for _, rule := range sg.IngressRule {
-			if rule.RuleID.String() == d.Id() {
-				return true, nil
-			}
-		}
+	if egressRule.RuleID != nil || ingressRule.RuleID != nil {
+		return true, nil
 	}
+
 	return false, nil
 }
 
@@ -274,30 +309,64 @@ func readSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
 		}
 	} else if n, ok := d.GetOkExists("security_group"); ok {
 		securityGroupName = n.(string)
-	} else {
-		return fmt.Errorf("Missing either Security Group ID or Name")
 	}
 
 	sg := &egoscale.SecurityGroup{
 		ID:   securityGroupID,
 		Name: securityGroupName,
 	}
-	if err := client.GetWithContext(ctx, sg); err != nil {
+
+	var err error
+	var ingressRule egoscale.IngressRule
+	var egressRule egoscale.EgressRule
+
+	id := d.Id()
+	req, err := sg.ListRequest()
+	if err != nil {
+		return err
+	}
+	client.PaginateWithContext(ctx, req, func(i interface{}, e error) bool {
+		if e != nil {
+			err = e
+			return false
+		}
+
+		s, ok := i.(*egoscale.SecurityGroup)
+		if !ok {
+			err = fmt.Errorf("type SecurityGroup was expected got %T", i)
+			return false
+		}
+
+		for _, rule := range s.EgressRule {
+			if rule.RuleID.String() == id {
+				sg = s
+				egressRule = rule
+				return false
+			}
+		}
+		for _, rule := range s.IngressRule {
+			if rule.RuleID.String() == id {
+				sg = s
+				ingressRule = rule
+				return false
+			}
+		}
+
+		return true
+	})
+
+	if err != nil {
 		return handleNotFound(d, err)
 	}
 
-	id := d.Id()
-	for _, rule := range sg.EgressRule {
-		if rule.RuleID.String() == id {
-			d.Set("type", "EGRESS")
-			return applySecurityGroupRule(d, sg, rule)
-		}
+	if egressRule.RuleID != nil {
+		d.Set("type", "EGRESS")
+		return applySecurityGroupRule(d, sg, egressRule)
 	}
-	for _, rule := range sg.IngressRule {
-		if rule.RuleID.String() == id {
-			d.Set("type", "INGRESS")
-			return applySecurityGroupRule(d, sg, (egoscale.EgressRule)(rule))
-		}
+
+	if ingressRule.RuleID != nil {
+		d.Set("type", "INGRESS")
+		return applySecurityGroupRule(d, sg, (egoscale.EgressRule)(ingressRule))
 	}
 
 	d.SetId("")
@@ -329,16 +398,6 @@ func deleteSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
 	return client.BooleanRequestWithContext(ctx, req)
 }
 
-func importSecurityGroupRule(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-	if err := readSecurityGroupRule(d, meta); err != nil {
-		return nil, err
-	}
-
-	resources := make([]*schema.ResourceData, 1)
-	resources[0] = d
-	return resources, nil
-}
-
 func applySecurityGroupRule(d *schema.ResourceData, group *egoscale.SecurityGroup, rule egoscale.EgressRule) error {
 	d.SetId(rule.RuleID.String())
 	d.Set("cidr", "")
@@ -353,7 +412,7 @@ func applySecurityGroupRule(d *schema.ResourceData, group *egoscale.SecurityGrou
 
 	d.Set("user_security_group", rule.SecurityGroupName)
 
-	d.Set("security_group_id", group.ID)
+	d.Set("security_group_id", group.ID.String())
 	d.Set("security_group", group.Name)
 
 	return nil
