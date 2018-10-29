@@ -21,7 +21,6 @@ type BaseConfig struct {
 	timeout         time.Duration
 	computeEndpoint string
 	dnsEndpoint     string
-	s3Endpoint      string
 	gzipUserData    bool
 	computeClient   *egoscale.Client
 	dnsClient       *egoscale.Client

@@ -175,7 +175,7 @@ func createSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
 		})
 	}
 
-	var req egoscale.Command
+	var req egoscale.Command // nolint: megacheck
 	req = &egoscale.AuthorizeSecurityGroupIngress{
 		SecurityGroupID:       securityGroup.ID,
 		CIDRList:              cidrList,

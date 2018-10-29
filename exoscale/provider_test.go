@@ -36,6 +36,6 @@ func testAccPreCheck(t *testing.T) {
 	}
 }
 
-var EXOSCALE_ZONE = "ch-dk-2"
+var EXOSCALE_ZONE = "ch-gva-2"
 var EXOSCALE_TEMPLATE = "Linux Ubuntu 18.04 LTS 64-bit"
 var EXOSCALE_NETWORK_OFFERING = "PrivNet"

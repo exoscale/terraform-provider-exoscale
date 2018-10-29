@@ -24,6 +24,8 @@ resource "exoscale_nic" "eth1" {
 
 - `network_id` - (Required) identifier of the private network
 
+- `ip_address` - IP address to use as a static DHCP lease (see the `exoscale_network` resource)
+
 ## Attributes Reference
 
 - `mac_address` - physical address of the network interface

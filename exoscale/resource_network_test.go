@@ -2,6 +2,7 @@ package exoscale
 
 import (
 	"fmt"
+	"net"
 	"testing"
 
 	"github.com/exoscale/egoscale"
@@ -17,11 +18,18 @@ func TestAccNetwork(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckNetworkDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccNetworkCreate,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckNetworkExists("exoscale_network.net", net),
 					testAccCheckNetworkAttributes(net),
+					testAccCheckNetworkCreateAttributes("terraform-test-network"),
+				),
+			}, {
+				Config: testAccNetworkUpdate,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckNetworkExists("exoscale_network.net", net),
+					testAccCheckManagedNetworkAttributes(net),
 					testAccCheckNetworkCreateAttributes("terraform-test-network"),
 				),
 			},
@@ -59,6 +67,24 @@ func testAccCheckNetworkAttributes(net *egoscale.Network) resource.TestCheckFunc
 	return func(s *terraform.State) error {
 		if net.ID == nil {
 			return fmt.Errorf("Network is nil")
+		}
+
+		if net.StartIP != nil {
+			return fmt.Errorf("StartIP is not nil, got %s", net.StartIP)
+		}
+
+		return nil
+	}
+}
+
+func testAccCheckManagedNetworkAttributes(nw *egoscale.Network) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		if nw.ID == nil {
+			return fmt.Errorf("Network is nil")
+		}
+
+		if !nw.StartIP.Equal(net.ParseIP("10.0.0.1")) {
+			return fmt.Errorf("StartIP doesn't match, got %s", nw.StartIP)
 		}
 
 		return nil
@@ -123,6 +149,22 @@ resource "exoscale_network" "net" {
   tags {
     managedby = "terraform"
   }
+}
+`,
+	EXOSCALE_ZONE,
+	EXOSCALE_NETWORK_OFFERING,
+)
+
+var testAccNetworkUpdate = fmt.Sprintf(`
+resource "exoscale_network" "net" {
+  name = "terraform-test-network"
+  display_text = "Terraform Acceptance Test"
+  zone = %q
+  network_offering = %q
+
+  start_ip = "10.0.0.1"
+  end_ip = "10.0.0.5"
+  netmask = "255.255.255.248"
 }
 `,
 	EXOSCALE_ZONE,

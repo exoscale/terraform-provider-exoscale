@@ -1,0 +1,9 @@
+# API Key
+key = "EXO..."
+# Secret Key
+secret = "..."
+# SSH Key pair
+key_pair = "..."
+
+# Which zone
+# zone = "ch-gva-2"

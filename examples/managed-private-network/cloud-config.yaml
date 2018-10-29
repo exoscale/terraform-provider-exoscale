@@ -1,0 +1,19 @@
+#cloud-config
+---
+manage_etc_hosts: true
+
+package_update: true
+package_upgrade: true
+
+write_files:
+- path: /etc/netplan/01-privnet.yaml
+  content: |
+    network:
+      version: 2
+      renderer: networkd
+      ethernets:
+        eth1:
+          dhcp4: true
+
+runcmd:
+- [ sh, -c, "sudo netplan apply" ]

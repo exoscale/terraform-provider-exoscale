@@ -184,7 +184,7 @@ func createCompute(d *schema.ResourceData, meta interface{}) error {
 	client := GetComputeClient(meta)
 
 	displayName := d.Get("display_name").(string)
-	hostName := regexp.MustCompile("^[a-zA-Z0-9][a-zA-Z0-9\\-]+$")
+	hostName := regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9\-]+$`)
 	if !hostName.MatchString(displayName) {
 		return fmt.Errorf("At creation time, the `display_name` must match a value compatible with the `hostname` (alpha-numeric and hyphens")
 	}
@@ -847,20 +847,18 @@ func importCompute(d *schema.ResourceData, meta interface{}) ([]*schema.Resource
 	resources := make([]*schema.ResourceData, 0, 1+len(nics)+len(secondaryIPs))
 	resources = append(resources, d)
 
-	if secondaryIPs != nil {
-		for _, secondaryIP := range secondaryIPs {
-			resource := secondaryIPResource()
-			d := resource.Data(nil)
-			d.SetType("exoscale_secondary_ipaddress")
-			d.Set("compute_id", id)
-			secondaryIP.NicID = defaultNic.ID
-			secondaryIP.NetworkID = defaultNic.NetworkID
-			if err := applySecondaryIP(d, &secondaryIP); err != nil {
-				return nil, err
-			}
-
-			resources = append(resources, d)
+	for _, secondaryIP := range secondaryIPs {
+		resource := secondaryIPResource()
+		d := resource.Data(nil)
+		d.SetType("exoscale_secondary_ipaddress")
+		d.Set("compute_id", id)
+		secondaryIP.NicID = defaultNic.ID
+		secondaryIP.NetworkID = defaultNic.NetworkID
+		if err := applySecondaryIP(d, &secondaryIP); err != nil {
+			return nil, err
 		}
+
+		resources = append(resources, d)
 	}
 
 	for _, nic := range nics {
@@ -990,12 +988,6 @@ func getSecurityGroup(ctx context.Context, client *egoscale.Client, name string)
 	}
 
 	return sg, nil
-}
-
-// isUuid matches a UUIDv4
-func isUUID(uuid string) bool {
-	re := regexp.MustCompile(`(?i)^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$`)
-	return re.MatchString(uuid)
 }
 
 // prepareUserData base64 encode the user-data and gzip it if supported

@@ -34,18 +34,19 @@ ubuntu@demo-machine-0 $ ip addr
        valid_lft forever preferred_lft forever
 
 
-ubuntu@demo-machine-0 $ ping -c 3 192.168.0.2
-PING 192.168.0.2 (192.168.0.2) 56(84) bytes of data.
-64 bytes from 192.168.0.2: icmp_seq=1 ttl=64 time=0.767 ms
-64 bytes from 192.168.0.2: icmp_seq=2 ttl=64 time=0.590 ms
-64 bytes from 192.168.0.2: icmp_seq=3 ttl=64 time=0.632 ms
+ubuntu@demo-machine-0 $ sudo apt install nmap
 
---- 192.168.0.2 ping statistics ---
-3 packets transmitted, 3 received, 0% packet loss, time 2011ms
-rtt min/avg/max/mdev = 0.590/0.663/0.767/0.075 ms
+ubuntu@demo-machine-0 $ nmap -sP "192.168.0.*"
+
+Starting Nmap 7.60 ( https://nmap.org ) at 2018-09-24 14:25 UTC
+Nmap scan report for demo-machine-0 (192.168.0.1)
+Host is up (0.00032s latency).
+Nmap scan report for 192.168.0.2
+Host is up (0.0018s latency).
+Nmap done: 256 IP addresses (2 hosts up) scanned in 2.92 seconds
 ```
 
-Profit!
+Let's go!
 
 ## Documentation
 

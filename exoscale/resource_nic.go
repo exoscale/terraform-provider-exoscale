@@ -14,11 +14,13 @@ func nicResource() *schema.Resource {
 		Create: createNic,
 		Exists: existsNic,
 		Read:   readNic,
+		Update: updateNic,
 		Delete: deleteNic,
 
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(defaultTimeout),
 			Read:   schema.DefaultTimeout(defaultTimeout),
+			Update: schema.DefaultTimeout(defaultTimeout),
 			Delete: schema.DefaultTimeout(defaultTimeout),
 		},
 
@@ -36,7 +38,6 @@ func nicResource() *schema.Resource {
 			"ip_address": {
 				Type:         schema.TypeString,
 				Optional:     true,
-				ForceNew:     true,
 				Description:  "IP address",
 				ValidateFunc: ValidateIPv4String,
 			},
@@ -52,7 +53,6 @@ func nicResource() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
-			// XXX add the IPv6 fields
 		},
 	}
 }
@@ -109,27 +109,15 @@ func readNic(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	vmID, err := egoscale.ParseUUID(d.Get("compute_id").(string))
-	if err != nil {
-		return err
+	nic := &egoscale.Nic{ID: id}
+
+	if err := client.GetWithContext(ctx, nic); err != nil {
+		if err != nil {
+			return handleNotFound(d, err)
+		}
 	}
 
-	resp, err := client.RequestWithContext(ctx, &egoscale.ListNics{
-		NicID:            id,
-		VirtualMachineID: vmID,
-	})
-
-	if err != nil {
-		return handleNotFound(d, err)
-	}
-
-	nics := resp.(*egoscale.ListNicsResponse)
-	if nics.Count == 0 {
-		return fmt.Errorf("No nic found for ID: %s", d.Id())
-	}
-
-	nic := nics.Nic[0]
-	return applyNic(d, nic)
+	return applyNic(d, *nic)
 }
 
 func existsNic(d *schema.ResourceData, meta interface{}) (bool, error) {
@@ -143,28 +131,53 @@ func existsNic(d *schema.ResourceData, meta interface{}) (bool, error) {
 		return false, err
 	}
 
-	vmID, err := egoscale.ParseUUID(d.Get("compute_id").(string))
-	if err != nil {
-		return false, err
-	}
+	nic := &egoscale.Nic{ID: id}
 
-	resp, err := client.RequestWithContext(ctx, &egoscale.ListNics{
-		NicID:            id,
-		VirtualMachineID: vmID,
-	})
-
-	if err != nil {
+	if err := client.GetWithContext(ctx, nic); err != nil {
 		e := handleNotFound(d, err)
 		return d.Id() != "", e
 	}
 
-	nics := resp.(*egoscale.ListNicsResponse)
-	if nics.Count == 0 {
-		d.SetId("")
-		return false, nil
+	return true, nil
+}
+
+func updateNic(d *schema.ResourceData, meta interface{}) error {
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutUpdate))
+	defer cancel()
+
+	client := GetComputeClient(meta)
+
+	id, err := egoscale.ParseUUID(d.Id())
+	if err != nil {
+		return err
 	}
 
-	return true, nil
+	if d.HasChange("ip_address") {
+		o, n := d.GetChange("ip_address")
+
+		if o.(string) != "" && n.(string) == "" {
+			return fmt.Errorf("[ERROR] new value of %q cannot be empty. old value was %s. The resource must be recreated instead.", "ip_address", o.(string))
+		}
+
+		ipAddress := net.ParseIP(n.(string))
+
+		d.SetPartial("ip_address")
+
+		_, err := client.RequestWithContext(ctx, egoscale.UpdateVMNicIP{
+			NicID:     id,
+			IPAddress: ipAddress,
+		})
+
+		if err != nil {
+			return err
+		}
+	}
+
+	err = readNic(d, meta)
+
+	d.Partial(false)
+
+	return err
 }
 
 func deleteNic(d *schema.ResourceData, meta interface{}) error {

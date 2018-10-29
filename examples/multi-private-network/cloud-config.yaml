@@ -6,20 +6,16 @@ fqdn: ${hostname}
 package_update: true
 package_upgrade: true
 
-packages:
-- ifupdown
-
 write_files:
-- path: /etc/network/interfaces
+- path: /etc/netplan/01-privnet.yaml
   content: |
-    source /etc/network/interfaces.d/*.cfg
-- path: /etc/network/interfaces.d/60-eth1.cfg
-  content: |
-    auto eth1
-    iface eth1 inet static
-      address ${ip_address}
-      netmask ${netmask}
-      gateway ${gateway}
+    network:
+      version: 2
+      renderer: networkd
+      ethernets:
+        eth1:
+          addresses:
+            - ${ip_address}
 
 runcmd:
-- [ sh, -c, "sudo ifup eth1" ]
+- [ sh, -c, "sudo netplan apply" ]

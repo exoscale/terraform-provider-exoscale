@@ -11,6 +11,8 @@ import (
 	"github.com/hashicorp/terraform/helper/validation"
 )
 
+const defaultNetmask = "255.255.255.0"
+
 func networkResource() *schema.Resource {
 	s := map[string]*schema.Schema{
 		"name": {
@@ -31,30 +33,21 @@ func networkResource() *schema.Resource {
 			Required: true,
 			ForceNew: true,
 		},
-		"cidr": {
+		"start_ip": {
 			Type:         schema.TypeString,
 			Optional:     true,
-			ValidateFunc: validation.CIDRNetwork(0, 32),
+			ValidateFunc: validation.SingleIP(),
+		},
+		"end_ip": {
+			Type:         schema.TypeString,
+			Optional:     true,
+			ValidateFunc: validation.SingleIP(),
 		},
 		"netmask": {
-			Type:     schema.TypeString,
-			Computed: true,
-		},
-		"gateway": {
-			Type:     schema.TypeString,
-			Computed: true,
-		},
-		"dns1": {
-			Type:     schema.TypeString,
-			Computed: true,
-		},
-		"dns2": {
-			Type:     schema.TypeString,
-			Computed: true,
-		},
-		"network_domain": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Type:         schema.TypeString,
+			Optional:     true,
+			Description:  fmt.Sprintf("Network mask (default to %s)", defaultNetmask),
+			ValidateFunc: validation.SingleIP(),
 		},
 	}
 
@@ -106,49 +99,26 @@ func createNetwork(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	if networkOffering.SpecifyIPRanges {
-		return fmt.Errorf("SpecifyIPRanges is not yet supported.")
+	startIP := net.ParseIP(d.Get("start_ip").(string))
+	endIP := net.ParseIP(d.Get("end_ip").(string))
+	netmask := net.ParseIP(d.Get("netmask").(string))
+	if startIP == nil && endIP == nil {
+		netmask = nil
+	} else if netmask == nil {
+		netmask = net.ParseIP(defaultNetmask)
 	}
 
-	netmask := net.IPv4zero
-	gateway := net.IPv4zero
-
-	if cidr, ok := d.GetOk("cidr"); ok {
-		c := cidr.(string)
-		ip, ipnet, err := net.ParseCIDR(c)
-		if err != nil {
-			return err
-		}
-
-		if ip.To4() == nil {
-			return fmt.Errorf("Provided cidr %s is not an IPv4 address", c)
-		}
-
-		// subnet address
-		subnetIP := ip.Mask(ipnet.Mask)
-		// netmask
-		netmask = net.IPv4(
-			ipnet.Mask[0],
-			ipnet.Mask[1],
-			ipnet.Mask[2],
-			ipnet.Mask[3])
-
-		// last address
-		gateway = net.IPv4(
-			subnetIP[0]+^ipnet.Mask[0],
-			subnetIP[1]+^ipnet.Mask[1],
-			subnetIP[2]+^ipnet.Mask[2],
-			subnetIP[3]+^ipnet.Mask[3])
-	}
-
-	resp, err := client.RequestWithContext(ctx, &egoscale.CreateNetwork{
+	req := &egoscale.CreateNetwork{
 		Name:              name,
 		DisplayText:       displayText,
 		NetworkOfferingID: networkOffering.ID,
 		ZoneID:            zone.ID,
+		StartIP:           startIP,
+		EndIP:             endIP,
 		Netmask:           netmask,
-		Gateway:           gateway,
-	})
+	}
+
+	resp, err := client.RequestWithContext(ctx, req)
 
 	if err != nil {
 		return err
@@ -242,39 +212,37 @@ func updateNetwork(d *schema.ResourceData, meta interface{}) error {
 
 	client := GetComputeClient(meta)
 
-	d.Partial(true)
-
 	id, err := egoscale.ParseUUID(d.Id())
 	if err != nil {
 		return err
 	}
 
+	if d.HasChange("start_ip") || d.HasChange("end_ip") {
+		for _, key := range []string{"start_ip", "end_ip"} {
+			o, n := d.GetChange(key)
+			if o.(string) != "" && n.(string) == "" {
+				return fmt.Errorf("[ERROR] new value of %q cannot be empty. old value was %s. The resource must be recreated instead.", key, o.(string))
+			}
+		}
+	}
+
 	// Update name and display_text
-	resp, err := client.RequestWithContext(ctx, &egoscale.UpdateNetwork{
+	updateNetwork := &egoscale.UpdateNetwork{
 		ID:          id,
 		Name:        d.Get("name").(string),
 		DisplayText: d.Get("display_text").(string),
-	})
-
-	if err != nil {
-		return err
+		StartIP:     net.ParseIP(d.Get("start_ip").(string)),
+		EndIP:       net.ParseIP(d.Get("end_ip").(string)),
+		Netmask:     net.ParseIP(d.Get("netmask").(string)),
 	}
-
-	network := resp.(*egoscale.Network)
-
-	err = applyNetwork(d, network)
-	if err != nil {
-		return err
-	}
-
-	d.SetPartial("name")
-	d.SetPartial("display_text")
 
 	// Update tags
-	requests, err := updateTags(d, "tags", network.ResourceType())
+	requests, err := updateTags(d, "tags", egoscale.Network{}.ResourceType())
 	if err != nil {
 		return err
 	}
+
+	requests = append(requests, updateNetwork)
 
 	for _, req := range requests {
 		_, err := client.RequestWithContext(ctx, req)
@@ -288,9 +256,6 @@ func updateNetwork(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	d.SetPartial("tags")
-
-	d.Partial(false)
 	return nil
 }
 
@@ -317,36 +282,17 @@ func applyNetwork(d *schema.ResourceData, network *egoscale.Network) error {
 	d.SetId(network.ID.String())
 	d.Set("name", network.Name)
 	d.Set("display_text", network.DisplayText)
-	d.Set("network_domain", network.NetworkDomain)
 	d.Set("network_offering", network.NetworkOfferingName)
 	d.Set("zone", network.ZoneName)
-	d.Set("cidr", "")
-	if network.CIDR != nil {
-		d.Set("cidr", network.CIDR.String())
-	}
 
-	if network.Gateway != nil {
-		d.Set("gateway", network.Gateway.String())
-	} else {
-		d.Set("gateway", "")
-	}
-
-	if network.Netmask != nil {
+	if network.StartIP != nil && network.EndIP != nil && network.Netmask != nil {
+		d.Set("start_ip", network.StartIP.String())
+		d.Set("end_ip", network.EndIP.String())
 		d.Set("netmask", network.Netmask.String())
 	} else {
-		d.Set("netmask", "")
-	}
-
-	if network.DNS1 != nil {
-		d.Set("dns1", network.DNS1.String())
-	} else {
-		d.Set("dns1", "")
-	}
-
-	if network.DNS2 != nil {
-		d.Set("dns2", network.DNS2.String())
-	} else {
-		d.Set("dns2", "")
+		d.Set("start_ip", nil)
+		d.Set("end_ip", nil)
+		d.Set("netmask", nil)
 	}
 
 	// tags
