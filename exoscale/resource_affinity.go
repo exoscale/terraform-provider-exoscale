@@ -117,10 +117,18 @@ func readAffinityGroup(d *schema.ResourceData, meta interface{}) error {
 
 func applyAffinityGroup(d *schema.ResourceData, affinity *egoscale.AffinityGroup) error {
 	d.SetId(affinity.ID.String())
-	d.Set("name", affinity.Name)
-	d.Set("description", affinity.Description)
-	d.Set("type", affinity.Type)
-	d.Set("virtual_machine_ids", affinity.VirtualMachineIDs)
+	if err := d.Set("name", affinity.Name); err != nil {
+		return err
+	}
+	if err := d.Set("description", affinity.Description); err != nil {
+		return err
+	}
+	if err := d.Set("type", affinity.Type); err != nil {
+		return err
+	}
+	if err := d.Set("virtual_machine_ids", affinity.VirtualMachineIDs); err != nil {
+		return err
+	}
 
 	return nil
 }

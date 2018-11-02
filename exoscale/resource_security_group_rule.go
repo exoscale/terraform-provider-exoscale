@@ -202,7 +202,9 @@ func createSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
 	sg := resp.(*egoscale.SecurityGroup)
 
 	// The rule allowed for creation produces only one rule!
-	d.Set("type", trafficType)
+	if err := d.Set("type", trafficType); err != nil {
+		return err
+	}
 	if trafficType == "EGRESS" {
 		if len(sg.EgressRule) != 1 {
 			return fmt.Errorf("no security group rules were created, aborting.")
@@ -360,12 +362,12 @@ func readSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	if egressRule.RuleID != nil {
-		d.Set("type", "EGRESS")
+		d.Set("type", "EGRESS") // nolint: errcheck
 		return applySecurityGroupRule(d, sg, egressRule)
 	}
 
 	if ingressRule.RuleID != nil {
-		d.Set("type", "INGRESS")
+		d.Set("type", "INGRESS") // nolint: errcheck
 		return applySecurityGroupRule(d, sg, (egoscale.EgressRule)(ingressRule))
 	}
 
@@ -400,20 +402,39 @@ func deleteSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
 
 func applySecurityGroupRule(d *schema.ResourceData, group *egoscale.SecurityGroup, rule egoscale.EgressRule) error {
 	d.SetId(rule.RuleID.String())
-	d.Set("cidr", "")
+	cidr := ""
 	if rule.CIDR != nil {
-		d.Set("cidr", rule.CIDR.String())
+		cidr = rule.CIDR.String()
 	}
-	d.Set("icmp_type", rule.IcmpType)
-	d.Set("icmp_code", rule.IcmpCode)
-	d.Set("start_port", rule.StartPort)
-	d.Set("end_port", rule.EndPort)
-	d.Set("protocol", strings.ToUpper(rule.Protocol))
+	if err := d.Set("cidr", cidr); err != nil {
+		return err
+	}
+	if err := d.Set("icmp_type", rule.IcmpType); err != nil {
+		return err
+	}
+	if err := d.Set("icmp_code", rule.IcmpCode); err != nil {
+		return err
+	}
+	if err := d.Set("start_port", rule.StartPort); err != nil {
+		return err
+	}
+	if err := d.Set("end_port", rule.EndPort); err != nil {
+		return err
+	}
+	if err := d.Set("protocol", strings.ToUpper(rule.Protocol)); err != nil {
+		return err
+	}
 
-	d.Set("user_security_group", rule.SecurityGroupName)
+	if err := d.Set("user_security_group", rule.SecurityGroupName); err != nil {
+		return err
+	}
 
-	d.Set("security_group_id", group.ID.String())
-	d.Set("security_group", group.Name)
+	if err := d.Set("security_group_id", group.ID.String()); err != nil {
+		return err
+	}
+	if err := d.Set("security_group", group.Name); err != nil {
+		return err
+	}
 
 	return nil
 }

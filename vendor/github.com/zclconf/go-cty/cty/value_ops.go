@@ -14,14 +14,15 @@ func (val Value) GoString() string {
 		return "cty.NilVal"
 	}
 
-	if val.IsNull() {
-		return fmt.Sprintf("cty.NullVal(%#v)", val.ty)
-	}
-	if val == DynamicVal { // is unknown, so must be before the IsKnown check below
+	if val.ty == DynamicPseudoType {
 		return "cty.DynamicVal"
 	}
+
 	if !val.IsKnown() {
 		return fmt.Sprintf("cty.UnknownVal(%#v)", val.ty)
+	}
+	if val.IsNull() {
+		return fmt.Sprintf("cty.NullVal(%#v)", val.ty)
 	}
 
 	// By the time we reach here we've dealt with all of the exceptions around
@@ -757,7 +758,7 @@ func (val Value) HasElement(elem Value) Value {
 	if val.IsNull() {
 		panic("can't call HasElement on a nil value")
 	}
-	if !ty.ElementType().Equals(elem.Type()) {
+	if ty.ElementType() != elem.Type() {
 		return False
 	}
 

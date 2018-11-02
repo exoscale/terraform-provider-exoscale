@@ -3,11 +3,12 @@ TEST?=./...
 GOFMT_FILES?=$$(find . -name '*.go' |grep -v vendor)
 PKG_NAME=exoscale
 WEBSITE_REPO=github.com/hashicorp/terraform-website
+GOLANGCI_LINT_VERSION=1.11.1
 
 default: build
 
 build: fmtcheck
-	go install
+	go install -mod vendor
 
 sweep:
 	@echo "WARNING: This will destroy infrastructure. Use only in development accounts."
@@ -19,26 +20,25 @@ test: fmtcheck
 testacc: fmtcheck
 	TF_ACC=1 go test $(TEST) -v $(TESTARGS) -timeout 120m
 
-vet:
-	@echo "go vet ."
-	@go vet $$(go list ./... | grep -v vendor/) ; if [ $$? -eq 1 ]; then \
-		echo ""; \
-		echo "Vet found suspicious constructs. Please check the reported constructs"; \
-		echo "and fix them if necessary before submitting the code for review."; \
-		exit 1; \
-	fi
-
 fmt:
-	gofmt -w $(GOFMT_FILES)
+	@echo "==> Fixing source code with gofmt..."
+	gofmt -s -w $(GOFMT_FILES)
 
 fmtcheck:
 	@sh -c "'$(CURDIR)/scripts/gofmtcheck.sh'"
+
+lint:
+	@echo "==> Checking source code against linters..."
+	@bin/golangci-lint run ./$(PKG_NAME)
+
+tools:
+	curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s v$(GOLANGCI_LINT_VERSION)
 
 errcheck:
 	@sh -c "'$(CURDIR)/scripts/errcheck.sh'"
 
 vendor-status:
-	@dep status
+	@go mod verify
 
 test-compile:
 	@if [ "$(TEST)" = "./..." ]; then \

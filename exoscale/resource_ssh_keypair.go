@@ -133,11 +133,17 @@ func deleteSSH(d *schema.ResourceData, meta interface{}) error {
 
 func applySSH(d *schema.ResourceData, keypair *egoscale.SSHKeyPair) error {
 	d.SetId(keypair.Name)
-	d.Set("name", keypair.Name)
-	d.Set("fingerprint", keypair.Fingerprint)
+	if err := d.Set("name", keypair.Name); err != nil {
+		return err
+	}
+	if err := d.Set("fingerprint", keypair.Fingerprint); err != nil {
+		return err
+	}
 
 	if keypair.PrivateKey != "" {
-		d.Set("private_key", keypair.PrivateKey)
+		if err := d.Set("private_key", keypair.PrivateKey); err != nil {
+			return err
+		}
 	}
 
 	return nil

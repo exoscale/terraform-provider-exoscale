@@ -143,7 +143,9 @@ func readRecord(d *schema.ResourceData, meta interface{}) error {
 		}
 
 		if record != nil {
-			d.Set("domain", domain.Name)
+			if err := d.Set("domain", domain.Name); err != nil {
+				return err
+			}
 			return applyRecord(d, *record)
 		}
 	}
@@ -185,17 +187,29 @@ func deleteRecord(d *schema.ResourceData, meta interface{}) error {
 
 func applyRecord(d *schema.ResourceData, record egoscale.DNSRecord) error {
 	d.SetId(strconv.FormatInt(record.ID, 10))
-	d.Set("name", record.Name)
-	d.Set("content", record.Content)
-	d.Set("record_type", record.RecordType)
-	d.Set("ttl", record.TTL)
-	d.Set("prio", record.Prio)
+	if err := d.Set("name", record.Name); err != nil {
+		return err
+	}
+	if err := d.Set("content", record.Content); err != nil {
+		return err
+	}
+	if err := d.Set("record_type", record.RecordType); err != nil {
+		return err
+	}
+	if err := d.Set("ttl", record.TTL); err != nil {
+		return err
+	}
+	if err := d.Set("prio", record.Prio); err != nil {
+		return err
+	}
 
 	domain := d.Get("domain").(string)
-	if record.Name == "" {
-		d.Set("hostname", domain)
-	} else {
-		d.Set("hostname", fmt.Sprintf("%s.%s", record.Name, domain))
+	if record.Name != "" {
+		domain = fmt.Sprintf("%s.%s", record.Name, domain)
+	}
+
+	if err := d.Set("hostname", domain); err != nil {
+		return nil
 	}
 
 	return nil

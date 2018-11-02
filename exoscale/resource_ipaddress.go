@@ -75,7 +75,9 @@ func createElasticIP(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("wrong type: an IPAddress was expected, got %T", resp)
 	}
 	d.SetId(elasticIP.ID.String())
-	d.Set("ip_address", elasticIP.IPAddress.String())
+	if err := d.Set("ip_address", elasticIP.IPAddress.String()); err != nil {
+		return err
+	}
 
 	cmd, err := createTags(d, "tags", elasticIP.ResourceType())
 	if err != nil {
@@ -201,15 +203,21 @@ func deleteElasticIP(d *schema.ResourceData, meta interface{}) error {
 
 func applyElasticIP(d *schema.ResourceData, ip *egoscale.IPAddress) error {
 	d.SetId(ip.ID.String())
-	d.Set("ip_address", ip.IPAddress.String())
-	d.Set("zone", ip.ZoneName)
+	if err := d.Set("ip_address", ip.IPAddress.String()); err != nil {
+		return err
+	}
+	if err := d.Set("zone", ip.ZoneName); err != nil {
+		return err
+	}
 
 	// tags
 	tags := make(map[string]interface{})
 	for _, tag := range ip.Tags {
 		tags[tag.Key] = tag.Value
 	}
-	d.Set("tags", tags)
+	if err := d.Set("tags", tags); err != nil {
+		return err
+	}
 
 	return nil
 }

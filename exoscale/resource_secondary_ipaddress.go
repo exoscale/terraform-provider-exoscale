@@ -96,8 +96,12 @@ func createSecondaryIP(d *schema.ResourceData, meta interface{}) error {
 			return fmt.Errorf("wrong type, expected NicSecondaryIP but got %T", resp)
 		}
 		d.SetId(fmt.Sprintf("%s_%s", ip.NicID, ip.IPAddress.String()))
-		d.Set("compute_id", virtualMachineID)
-		d.Set("nic_id", ip.NicID.String())
+		if err := d.Set("compute_id", virtualMachineID); err != nil {
+			return err
+		}
+		if err := d.Set("nic_id", ip.NicID.String()); err != nil {
+			return err
+		}
 
 		return readSecondaryIP(d, meta)
 	}
@@ -153,8 +157,7 @@ func getSecondaryIP(d *schema.ResourceData, meta interface{}) (*egoscale.NicSeco
 		}
 
 		var errUUID error
-		nic = infos[0]
-		nicID, errUUID := egoscale.ParseUUID(nic)
+		nicID, errUUID := egoscale.ParseUUID(infos[0])
 		if errUUID != nil {
 			return nil, errUUID
 		}
@@ -286,17 +289,26 @@ func applySecondaryIP(d *schema.ResourceData, secondaryIP *egoscale.NicSecondary
 	d.SetId(fmt.Sprintf("%s_%s", secondaryIP.NicID, secondaryIP.IPAddress.String()))
 
 	if secondaryIP.VirtualMachineID != nil {
-		d.Set("compute_id", secondaryIP.VirtualMachineID.String())
+		if err := d.Set("compute_id", secondaryIP.VirtualMachineID.String()); err != nil {
+			return err
+		}
 	}
+
+	ipAddress := ""
 
 	if secondaryIP.IPAddress != nil {
-		d.Set("ip_address", secondaryIP.IPAddress.String())
-	} else {
-		d.Set("ip_address", "")
+		ipAddress = secondaryIP.IPAddress.String()
+	}
+	if err := d.Set("ip_address", ipAddress); err != nil {
+		return err
 	}
 
-	d.Set("network_id", secondaryIP.NetworkID.String())
-	d.Set("nic_id", secondaryIP.NicID.String())
+	if err := d.Set("network_id", secondaryIP.NetworkID.String()); err != nil {
+		return err
+	}
+	if err := d.Set("nic_id", secondaryIP.NicID.String()); err != nil {
+		return err
+	}
 
 	return nil
 }

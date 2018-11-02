@@ -222,26 +222,38 @@ func deleteNic(d *schema.ResourceData, meta interface{}) error {
 
 func applyNic(d *schema.ResourceData, nic egoscale.Nic) error {
 	d.SetId(nic.ID.String())
-	d.Set("compute_id", nic.VirtualMachineID.String())
-	d.Set("network_id", nic.NetworkID.String())
-	d.Set("mac_address", nic.MACAddress.String())
+	if err := d.Set("compute_id", nic.VirtualMachineID.String()); err != nil {
+		return err
+	}
+	if err := d.Set("network_id", nic.NetworkID.String()); err != nil {
+		return err
+	}
+	if err := d.Set("mac_address", nic.MACAddress.String()); err != nil {
+		return err
+	}
 
+	ipAddress := ""
 	if nic.IPAddress != nil {
-		d.Set("ip_address", nic.IPAddress.String())
-	} else {
-		d.Set("ip_address", "")
+		ipAddress = nic.IPAddress.String()
+	}
+	if err := d.Set("ip_address", ipAddress); err != nil {
+		return err
 	}
 
+	netmask := ""
 	if nic.Netmask != nil {
-		d.Set("netmask", nic.Netmask.String())
-	} else {
-		d.Set("netmask", "")
+		netmask = nic.Netmask.String()
+	}
+	if err := d.Set("netmask", netmask); err != nil {
+		return err
 	}
 
+	gateway := ""
 	if nic.Gateway != nil {
-		d.Set("gateway", nic.Gateway.String())
-	} else {
-		d.Set("gateway", "")
+		gateway = nic.Gateway.String()
+	}
+	if err := d.Set("gateway", gateway); err != nil {
+		return err
 	}
 
 	return nil

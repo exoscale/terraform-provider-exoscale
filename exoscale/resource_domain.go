@@ -116,7 +116,10 @@ func importDomain(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceD
 		resource := domainRecordResource()
 		d := resource.Data(nil)
 		d.SetType("exoscale_domain_record")
-		d.Set("domain", domain.Name)
+		if err := d.Set("domain", domain.Name); err != nil {
+			return nil, err
+		}
+
 		if err := applyRecord(d, record); err != nil {
 			continue
 		}
@@ -129,11 +132,21 @@ func importDomain(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceD
 
 func applyDomain(d *schema.ResourceData, domain egoscale.DNSDomain) error {
 	d.SetId(domain.Name)
-	d.Set("name", domain.Name)
-	d.Set("state", domain.State)
-	d.Set("token", domain.Token)
-	d.Set("auto_renew", domain.AutoRenew)
-	d.Set("expires_on", domain.ExpiresOn)
+	if err := d.Set("name", domain.Name); err != nil {
+		return err
+	}
+	if err := d.Set("state", domain.State); err != nil {
+		return err
+	}
+	if err := d.Set("token", domain.Token); err != nil {
+		return err
+	}
+	if err := d.Set("auto_renew", domain.AutoRenew); err != nil {
+		return err
+	}
+	if err := d.Set("expires_on", domain.ExpiresOn); err != nil {
+		return err
+	}
 
 	return nil
 }

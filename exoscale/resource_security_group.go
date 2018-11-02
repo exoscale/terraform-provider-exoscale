@@ -161,7 +161,7 @@ func importSecurityGroup(d *schema.ResourceData, meta interface{}) ([]*schema.Re
 		resource := securityGroupRuleResource()
 		d := resource.Data(nil)
 		d.SetType("exoscale_security_group_rule")
-		d.Set("type", "EGRESS")
+		d.Set("type", "EGRESS") // nolint: errcheck
 		err := applySecurityGroupRule(d, securityGroup, rule)
 		if err != nil {
 			return nil, err
@@ -173,7 +173,7 @@ func importSecurityGroup(d *schema.ResourceData, meta interface{}) ([]*schema.Re
 		resource := securityGroupRuleResource()
 		d := resource.Data(nil)
 		d.SetType("exoscale_security_group_rule")
-		d.Set("type", "INGRESS")
+		d.Set("type", "INGRESS") // nolint: errcheck
 		err := applySecurityGroupRule(d, securityGroup, (egoscale.EgressRule)(rule))
 		if err != nil {
 			return nil, err
@@ -187,7 +187,11 @@ func importSecurityGroup(d *schema.ResourceData, meta interface{}) ([]*schema.Re
 
 func applySecurityGroup(d *schema.ResourceData, securityGroup *egoscale.SecurityGroup) error {
 	d.SetId(securityGroup.ID.String())
-	d.Set("name", securityGroup.Name)
-	d.Set("description", securityGroup.Description)
+	if err := d.Set("name", securityGroup.Name); err != nil {
+		return err
+	}
+	if err := d.Set("description", securityGroup.Description); err != nil {
+		return err
+	}
 	return nil
 }

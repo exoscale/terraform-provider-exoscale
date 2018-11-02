@@ -4,8 +4,14 @@ services:
 - docker
 language: go
 go:
-- "1.9"
-- "1.10"
+- "1.11.x"
+- tip
+
+env:
+  - GO111MODULE=off
+
+git:
+  depth: 1
 
 install:
 # This script is used by the Travis build to install a cookie for
@@ -13,14 +19,16 @@ install:
 # packages that live there.
 # See: https://github.com/golang/go/issues/12933
 - bash scripts/gogetcookie.sh
-- go get github.com/golang/dep/cmd/dep
+- make tools
 
 script:
+- make lint
 - test "${TRAVIS_PULL_REQUEST}" != "false" && make test || echo "skipping test"
 - test "${TRAVIS_PULL_REQUEST}" = "false" && make testacc || echo "skipping testacc"
-- make vet
-- make vendor-status || echo ":-)"
+  # it fails on TravisCI
+# - GO111MODULE=on make vendor-status
 # it requires changes in hashicorp/terraform-website
+# - make website-lint
 # - make website-test
 
 branches:

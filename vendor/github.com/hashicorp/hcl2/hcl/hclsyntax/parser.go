@@ -273,10 +273,7 @@ Token:
 			return &Block{
 				Type:   blockType,
 				Labels: labels,
-				Body:   &Body{
-					SrcRange: ident.Range,
-					EndRange: ident.Range,
-				},
+				Body:   nil,
 
 				TypeRange:       ident.Range,
 				LabelRanges:     labelRanges,

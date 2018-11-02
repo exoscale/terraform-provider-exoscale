@@ -132,7 +132,7 @@ type RelativeTraversalExpr struct {
 }
 
 func (e *RelativeTraversalExpr) walkChildNodes(w internalWalkFunc) {
-	w(e.Source)
+	// Scope traversals have no child nodes
 }
 
 func (e *RelativeTraversalExpr) Value(ctx *hcl.EvalContext) (cty.Value, hcl.Diagnostics) {
@@ -181,8 +181,8 @@ type FunctionCallExpr struct {
 }
 
 func (e *FunctionCallExpr) walkChildNodes(w internalWalkFunc) {
-	for _, arg := range e.Args {
-		w(arg)
+	for i, arg := range e.Args {
+		e.Args[i] = w(arg).(Expression)
 	}
 }
 
@@ -463,9 +463,9 @@ type ConditionalExpr struct {
 }
 
 func (e *ConditionalExpr) walkChildNodes(w internalWalkFunc) {
-	w(e.Condition)
-	w(e.TrueResult)
-	w(e.FalseResult)
+	e.Condition = w(e.Condition).(Expression)
+	e.TrueResult = w(e.TrueResult).(Expression)
+	e.FalseResult = w(e.FalseResult).(Expression)
 }
 
 func (e *ConditionalExpr) Value(ctx *hcl.EvalContext) (cty.Value, hcl.Diagnostics) {
@@ -593,8 +593,8 @@ type IndexExpr struct {
 }
 
 func (e *IndexExpr) walkChildNodes(w internalWalkFunc) {
-	w(e.Collection)
-	w(e.Key)
+	e.Collection = w(e.Collection).(Expression)
+	e.Key = w(e.Key).(Expression)
 }
 
 func (e *IndexExpr) Value(ctx *hcl.EvalContext) (cty.Value, hcl.Diagnostics) {
@@ -625,8 +625,8 @@ type TupleConsExpr struct {
 }
 
 func (e *TupleConsExpr) walkChildNodes(w internalWalkFunc) {
-	for _, expr := range e.Exprs {
-		w(expr)
+	for i, expr := range e.Exprs {
+		e.Exprs[i] = w(expr).(Expression)
 	}
 }
 
@@ -674,9 +674,9 @@ type ObjectConsItem struct {
 }
 
 func (e *ObjectConsExpr) walkChildNodes(w internalWalkFunc) {
-	for _, item := range e.Items {
-		w(item.KeyExpr)
-		w(item.ValueExpr)
+	for i, item := range e.Items {
+		e.Items[i].KeyExpr = w(item.KeyExpr).(Expression)
+		e.Items[i].ValueExpr = w(item.ValueExpr).(Expression)
 	}
 }
 
@@ -792,7 +792,7 @@ func (e *ObjectConsKeyExpr) walkChildNodes(w internalWalkFunc) {
 	// We only treat our wrapped expression as a real expression if we're
 	// not going to interpret it as a literal.
 	if e.literalName() == "" {
-		w(e.Wrapped)
+		e.Wrapped = w(e.Wrapped).(Expression)
 	}
 }
 
@@ -1157,7 +1157,7 @@ func (e *ForExpr) Value(ctx *hcl.EvalContext) (cty.Value, hcl.Diagnostics) {
 }
 
 func (e *ForExpr) walkChildNodes(w internalWalkFunc) {
-	w(e.CollExpr)
+	e.CollExpr = w(e.CollExpr).(Expression)
 
 	scopeNames := map[string]struct{}{}
 	if e.KeyVar != "" {
@@ -1170,17 +1170,17 @@ func (e *ForExpr) walkChildNodes(w internalWalkFunc) {
 	if e.KeyExpr != nil {
 		w(ChildScope{
 			LocalNames: scopeNames,
-			Expr:       e.KeyExpr,
+			Expr:       &e.KeyExpr,
 		})
 	}
 	w(ChildScope{
 		LocalNames: scopeNames,
-		Expr:       e.ValExpr,
+		Expr:       &e.ValExpr,
 	})
 	if e.CondExpr != nil {
 		w(ChildScope{
 			LocalNames: scopeNames,
-			Expr:       e.CondExpr,
+			Expr:       &e.CondExpr,
 		})
 	}
 }
@@ -1266,8 +1266,8 @@ func (e *SplatExpr) Value(ctx *hcl.EvalContext) (cty.Value, hcl.Diagnostics) {
 }
 
 func (e *SplatExpr) walkChildNodes(w internalWalkFunc) {
-	w(e.Source)
-	w(e.Each)
+	e.Source = w(e.Source).(Expression)
+	e.Each = w(e.Each).(Expression)
 }
 
 func (e *SplatExpr) Range() hcl.Range {

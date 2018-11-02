@@ -355,8 +355,12 @@ func createCompute(d *schema.ResourceData, meta interface{}) error {
 		password = machine.Password
 	}
 
-	d.Set("username", username)
-	d.Set("password", password)
+	if err := d.Set("username", username); err != nil {
+		return err
+	}
+	if err := d.Set("password", password); err != nil {
+		return err
+	}
 
 	return readCompute(d, meta)
 }
@@ -410,7 +414,10 @@ func readCompute(d *schema.ResourceData, meta interface{}) error {
 	if err != nil {
 		return err
 	}
-	d.Set("user_data", string(userData))
+
+	if err := d.Set("user_data", string(userData)); err != nil {
+		return err
+	}
 
 	// disk_size
 	volumes, err := client.ListWithContext(ctx, &egoscale.Volume{
@@ -426,13 +433,18 @@ func readCompute(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("ROOT volume not found for the VM %s", d.Id())
 	}
 	volume := volumes[0].(*egoscale.Volume)
-	d.Set("disk_size", volume.Size>>30) // B to GiB
+	volumeGib := volume.Size >> 30 // B to GiB
+	if err := d.Set("disk_size", volumeGib); err != nil {
+		return err
+	}
 
 	// connection info
 	username := d.Get("username").(string)
 	if username == "" {
 		username = getSSHUsername(machine.TemplateName)
-		d.Set("username", username)
+		if err := d.Set("username", username); err != nil {
+			return err
+		}
 	}
 
 	password := d.Get("password").(string)
@@ -452,7 +464,9 @@ func readCompute(d *schema.ResourceData, meta interface{}) error {
 			pwd := resp.(*egoscale.Password)
 			// XXX https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=34014652
 			password = fmt.Sprintf("base64:%s", pwd.EncryptedPassword)
-			d.Set("password", password)
+			if err := d.Set("password", password); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -851,7 +865,9 @@ func importCompute(d *schema.ResourceData, meta interface{}) ([]*schema.Resource
 		resource := secondaryIPResource()
 		d := resource.Data(nil)
 		d.SetType("exoscale_secondary_ipaddress")
-		d.Set("compute_id", id)
+		if err := d.Set("compute_id", id); err != nil {
+			return nil, err
+		}
 		secondaryIP.NicID = defaultNic.ID
 		secondaryIP.NetworkID = defaultNic.NetworkID
 		if err := applySecondaryIP(d, &secondaryIP); err != nil {
@@ -876,34 +892,56 @@ func importCompute(d *schema.ResourceData, meta interface{}) ([]*schema.Resource
 }
 
 func applyCompute(d *schema.ResourceData, machine *egoscale.VirtualMachine) error {
-	d.Set("name", machine.Name)
-	d.Set("display_name", machine.DisplayName)
-	d.Set("key_pair", machine.KeyPair)
-	d.Set("size", machine.ServiceOfferingName)
-	d.Set("template", machine.TemplateName)
-	d.Set("zone", machine.ZoneName)
-	d.Set("state", machine.State)
+	if err := d.Set("name", machine.Name); err != nil {
+		return err
+	}
+	if err := d.Set("display_name", machine.DisplayName); err != nil {
+		return err
+	}
+	if err := d.Set("key_pair", machine.KeyPair); err != nil {
+		return err
+	}
+	if err := d.Set("size", machine.ServiceOfferingName); err != nil {
+		return err
+	}
+	if err := d.Set("template", machine.TemplateName); err != nil {
+		return err
+	}
+	if err := d.Set("zone", machine.ZoneName); err != nil {
+		return err
+	}
+	if err := d.Set("state", machine.State); err != nil {
+		return err
+	}
 
-	d.Set("ip4", false)
-	d.Set("ip6", false)
-	d.Set("ip_address", "")
-	d.Set("gateway", "")
-	d.Set("ip6_address", "")
-	d.Set("ip6_cidr", "")
+	d.Set("ip4", false)      // nolint: errcheck
+	d.Set("ip6", false)      // nolint: errcheck
+	d.Set("ip_address", "")  // nolint: errcheck
+	d.Set("gateway", "")     // nolint: errcheck
+	d.Set("ip6_address", "") // nolint: errcheck
+	d.Set("ip6_cidr", "")    // nolint: errcheck
 	if nic := machine.DefaultNic(); nic != nil {
-		d.Set("ip4", true)
+		d.Set("ip4", true) // nolint: errcheck
 		if nic.IPAddress != nil {
-			d.Set("ip_address", nic.IPAddress.String())
+			if err := d.Set("ip_address", nic.IPAddress.String()); err != nil {
+				return err
+			}
 		}
 		if nic.Gateway != nil {
-			d.Set("gateway", nic.Gateway.String())
+			if err := d.Set("gateway", nic.Gateway.String()); err != nil {
+				return err
+			}
 		}
 		if nic.IP6Address != nil {
-			d.Set("ip6", true)
-			d.Set("ip6_address", nic.IP6Address.String())
+			d.Set("ip6", true) // nolint: errcheck
+			if err := d.Set("ip6_address", nic.IP6Address.String()); err != nil {
+				return err
+			}
 		}
 		if nic.IP6CIDR != nil {
-			d.Set("ip6_cidr", nic.IP6CIDR.String())
+			if err := d.Set("ip6_cidr", nic.IP6CIDR.String()); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -914,8 +952,12 @@ func applyCompute(d *schema.ResourceData, machine *egoscale.VirtualMachine) erro
 		affinityGroups[i] = ag.Name
 		affinityGroupIDs[i] = ag.ID.String()
 	}
-	d.Set("affinity_groups", affinityGroups)
-	d.Set("affinity_group_ids", affinityGroupIDs)
+	if err := d.Set("affinity_groups", affinityGroups); err != nil {
+		return err
+	}
+	if err := d.Set("affinity_group_ids", affinityGroupIDs); err != nil {
+		return err
+	}
 
 	// security groups
 	securityGroups := make([]string, len(machine.SecurityGroup))
@@ -924,15 +966,21 @@ func applyCompute(d *schema.ResourceData, machine *egoscale.VirtualMachine) erro
 		securityGroups[i] = sg.Name
 		securityGroupIDs[i] = sg.ID.String()
 	}
-	d.Set("security_groups", securityGroups)
-	d.Set("security_group_ids", securityGroupIDs)
+	if err := d.Set("security_groups", securityGroups); err != nil {
+		return err
+	}
+	if err := d.Set("security_group_ids", securityGroupIDs); err != nil {
+		return err
+	}
 
 	// tags
 	tags := make(map[string]interface{})
 	for _, tag := range machine.Tags {
 		tags[tag.Key] = tag.Value
 	}
-	d.Set("tags", tags)
+	if err := d.Set("tags", tags); err != nil {
+		return err
+	}
 
 	// Connection info for the provisioners
 	connInfo := map[string]string{

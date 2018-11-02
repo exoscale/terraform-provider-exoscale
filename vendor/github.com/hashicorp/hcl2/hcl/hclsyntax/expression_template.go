@@ -16,8 +16,8 @@ type TemplateExpr struct {
 }
 
 func (e *TemplateExpr) walkChildNodes(w internalWalkFunc) {
-	for _, part := range e.Parts {
-		w(part)
+	for i, part := range e.Parts {
+		e.Parts[i] = w(part).(Expression)
 	}
 }
 
@@ -98,7 +98,7 @@ type TemplateJoinExpr struct {
 }
 
 func (e *TemplateJoinExpr) walkChildNodes(w internalWalkFunc) {
-	w(e.Tuple)
+	e.Tuple = w(e.Tuple).(Expression)
 }
 
 func (e *TemplateJoinExpr) Value(ctx *hcl.EvalContext) (cty.Value, hcl.Diagnostics) {
@@ -184,7 +184,7 @@ type TemplateWrapExpr struct {
 }
 
 func (e *TemplateWrapExpr) walkChildNodes(w internalWalkFunc) {
-	w(e.Wrapped)
+	e.Wrapped = w(e.Wrapped).(Expression)
 }
 
 func (e *TemplateWrapExpr) Value(ctx *hcl.EvalContext) (cty.Value, hcl.Diagnostics) {

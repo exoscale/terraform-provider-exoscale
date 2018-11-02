@@ -280,19 +280,44 @@ func deleteNetwork(d *schema.ResourceData, meta interface{}) error {
 
 func applyNetwork(d *schema.ResourceData, network *egoscale.Network) error {
 	d.SetId(network.ID.String())
-	d.Set("name", network.Name)
-	d.Set("display_text", network.DisplayText)
-	d.Set("network_offering", network.NetworkOfferingName)
-	d.Set("zone", network.ZoneName)
+	if err := d.Set("name", network.Name); err != nil {
+		return err
+	}
+
+	if err := d.Set("display_text", network.DisplayText); err != nil {
+		return err
+	}
+
+	if err := d.Set("network_offering", network.NetworkOfferingName); err != nil {
+		return err
+	}
+
+	if err := d.Set("zone", network.ZoneName); err != nil {
+		return err
+	}
+
+	cidr := ""
+	if network.CIDR != nil {
+		cidr = network.CIDR.String()
+	}
+	if err := d.Set("cidr", cidr); err != nil {
+		return err
+	}
 
 	if network.StartIP != nil && network.EndIP != nil && network.Netmask != nil {
-		d.Set("start_ip", network.StartIP.String())
-		d.Set("end_ip", network.EndIP.String())
-		d.Set("netmask", network.Netmask.String())
+		if err := d.Set("start_ip", network.StartIP.String()); err != nil {
+			return err
+		}
+		if err := d.Set("end_ip", network.EndIP.String()); err != nil {
+			return err
+		}
+		if err := d.Set("netmask", network.Netmask.String()); err != nil {
+			return err
+		}
 	} else {
-		d.Set("start_ip", nil)
-		d.Set("end_ip", nil)
-		d.Set("netmask", nil)
+		d.Set("start_ip", "") // nolint: errcheck
+		d.Set("end_ip", "")   // nolint: errcheck
+		d.Set("netmask", "")  // nolint: errcheck
 	}
 
 	// tags
@@ -300,7 +325,9 @@ func applyNetwork(d *schema.ResourceData, network *egoscale.Network) error {
 	for _, tag := range network.Tags {
 		tags[tag.Key] = tag.Value
 	}
-	d.Set("tags", tags)
+	if err := d.Set("tags", tags); err != nil {
+		return err
+	}
 
 	return nil
 }
