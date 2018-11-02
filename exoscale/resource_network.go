@@ -296,14 +296,6 @@ func applyNetwork(d *schema.ResourceData, network *egoscale.Network) error {
 		return err
 	}
 
-	cidr := ""
-	if network.CIDR != nil {
-		cidr = network.CIDR.String()
-	}
-	if err := d.Set("cidr", cidr); err != nil {
-		return err
-	}
-
 	if network.StartIP != nil && network.EndIP != nil && network.Netmask != nil {
 		if err := d.Set("start_ip", network.StartIP.String()); err != nil {
 			return err
