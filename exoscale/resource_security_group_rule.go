@@ -169,10 +169,7 @@ func createSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
 			return err
 		}
 
-		groupList = append(groupList, egoscale.UserSecurityGroup{
-			Account: group.Account,
-			Group:   group.Name,
-		})
+		groupList = append(groupList, group.UserSecurityGroup())
 	}
 
 	var req egoscale.Command // nolint: megacheck

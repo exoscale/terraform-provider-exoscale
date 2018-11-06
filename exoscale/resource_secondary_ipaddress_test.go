@@ -134,6 +134,10 @@ resource "exoscale_ssh_keypair" "key" {
 
 resource "exoscale_ipaddress" "eip" {
   zone = %q
+
+  tags {
+    terraform = "acceptance"
+  }
 }
 
 resource "exoscale_compute" "vm" {
@@ -150,6 +154,10 @@ resource "exoscale_compute" "vm" {
   timeouts {
     create = "10m"
     delete = "30m"
+  }
+
+  tags {
+    terraform = "acceptance"
   }
 }
 
