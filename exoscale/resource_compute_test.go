@@ -30,7 +30,7 @@ func TestAccCompute(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckComputeExists("exoscale_compute.vm", vm),
 					testAccCheckComputeAttributes(vm),
-					testAccCheckComputeCreateAttributes("hello"),
+					testAccCheckComputeCreateAttributes("acceptance-hello"),
 				),
 			},
 		},
@@ -154,7 +154,7 @@ resource "exoscale_ssh_keypair" "key" {
 }
 
 resource "exoscale_compute" "vm" {
-  display_name = "hello"
+  display_name = "acceptance-hello"
   template = %q
   zone = %q
   size = "Small"

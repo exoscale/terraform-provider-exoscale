@@ -96,7 +96,7 @@ func createSecondaryIP(d *schema.ResourceData, meta interface{}) error {
 			return fmt.Errorf("wrong type, expected NicSecondaryIP but got %T", resp)
 		}
 		d.SetId(fmt.Sprintf("%s_%s", ip.NicID, ip.IPAddress.String()))
-		if err := d.Set("compute_id", virtualMachineID); err != nil {
+		if err := d.Set("compute_id", virtualMachineID.String()); err != nil {
 			return err
 		}
 		if err := d.Set("nic_id", ip.NicID.String()); err != nil {
