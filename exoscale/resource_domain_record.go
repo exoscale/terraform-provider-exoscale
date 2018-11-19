@@ -91,7 +91,10 @@ func existsRecord(d *schema.ResourceData, meta interface{}) (bool, error) {
 			if _, ok := err.(*egoscale.DNSErrorResponse); !ok {
 				return false, err
 			}
+
+			return true, err
 		}
+
 		return record != nil, nil
 	}
 
@@ -106,6 +109,8 @@ func existsRecord(d *schema.ResourceData, meta interface{}) (bool, error) {
 			if _, ok := err.(*egoscale.DNSErrorResponse); !ok {
 				return false, err
 			}
+
+			return true, err
 		}
 
 		if record != nil {
