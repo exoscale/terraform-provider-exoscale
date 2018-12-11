@@ -201,7 +201,7 @@ func createSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	securityGroup = resp.(*egoscale.SecurityGroup)
+	sg = resp.(*egoscale.SecurityGroup)
 
 	// The rule allowed for creation produces only one rule!
 	if err := d.Set("type", trafficType); err != nil {
@@ -209,14 +209,14 @@ func createSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
 	}
 	if trafficType == "EGRESS" {
 		if len(sg.EgressRule) != 1 {
-			return fmt.Errorf("no security group rules were created, aborting.")
+			return fmt.Errorf("no security group rules were created, aborting")
 		}
 
 		return applySecurityGroupRule(d, securityGroup, sg.EgressRule[0])
 	}
 
 	if len(sg.IngressRule) != 1 {
-		return fmt.Errorf("no security group rules were created, aborting.")
+		return fmt.Errorf("no security group rules were created, aborting")
 	}
 
 	return applySecurityGroupRule(d, securityGroup, (egoscale.EgressRule)(sg.IngressRule[0]))

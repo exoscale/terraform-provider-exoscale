@@ -157,7 +157,7 @@ func updateNic(d *schema.ResourceData, meta interface{}) error {
 		o, n := d.GetChange("ip_address")
 
 		if o.(string) != "" && n.(string) == "" {
-			return fmt.Errorf("[ERROR] new value of %q cannot be empty. old value was %s. The resource must be recreated instead.", "ip_address", o.(string))
+			return fmt.Errorf("[ERROR] new value of %q cannot be empty. old value was %s. The resource must be recreated instead", "ip_address", o.(string))
 		}
 
 		ipAddress := net.ParseIP(n.(string))

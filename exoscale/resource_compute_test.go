@@ -55,12 +55,14 @@ func testAccCheckComputeExists(n string, vm *egoscale.VirtualMachine) resource.T
 
 		client := GetComputeClient(testAccProvider.Meta())
 
-		vm.ID = id
-		if err := client.Get(vm); err != nil {
+		resp, err := client.Get(&egoscale.VirtualMachine{
+			ID: id,
+		})
+		if err != nil {
 			return err
 		}
 
-		return nil
+		return Copy(vm, resp.(*egoscale.VirtualMachine))
 	}
 }
 
@@ -110,7 +112,8 @@ func testAccCheckComputeDestroy(s *terraform.State) error {
 		}
 
 		vm := &egoscale.VirtualMachine{ID: id}
-		if err := client.Get(vm); err != nil {
+		_, err = client.Get(vm)
+		if err != nil {
 			if r, ok := err.(*egoscale.ErrorResponse); ok {
 				if r.ErrorCode == egoscale.ParamError {
 					return nil
@@ -144,8 +147,8 @@ resource "exoscale_compute" "vm" {
   }
 }
 `,
-	EXOSCALE_TEMPLATE,
-	EXOSCALE_ZONE,
+	defaultExoscaleTemplate,
+	defaultExoscaleZone,
 )
 
 var testAccComputeUpdate = fmt.Sprintf(`
@@ -168,6 +171,6 @@ resource "exoscale_compute" "vm" {
   }
 }
 `,
-	EXOSCALE_TEMPLATE,
-	EXOSCALE_ZONE,
+	defaultExoscaleTemplate,
+	defaultExoscaleZone,
 )

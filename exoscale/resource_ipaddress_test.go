@@ -22,7 +22,7 @@ func TestAccElasticIP(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckElasticIPExists("exoscale_ipaddress.eip", eip),
 					testAccCheckElasticIPAttributes(eip),
-					testAccCheckElasticIPCreateAttributes(EXOSCALE_ZONE),
+					testAccCheckElasticIPCreateAttributes(defaultExoscaleZone),
 				),
 			},
 			{
@@ -30,7 +30,7 @@ func TestAccElasticIP(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckElasticIPExists("exoscale_ipaddress.eip", eip),
 					testAccCheckElasticIPAttributes(eip),
-					testAccCheckElasticIPCreateAttributes(EXOSCALE_ZONE),
+					testAccCheckElasticIPCreateAttributes(defaultExoscaleZone),
 				),
 			},
 		},
@@ -55,11 +55,12 @@ func testAccCheckElasticIPExists(n string, eip *egoscale.IPAddress) resource.Tes
 
 		client := GetComputeClient(testAccProvider.Meta())
 		eip.ID = id
-		if err := client.Get(eip); err != nil {
+		resp, err := client.Get(eip)
+		if err != nil {
 			return err
 		}
 
-		return nil
+		return Copy(eip, resp.(*egoscale.IPAddress))
 	}
 }
 
@@ -112,7 +113,8 @@ func testAccCheckElasticIPDestroy(s *terraform.State) error {
 			ID:        id,
 			IsElastic: true,
 		}
-		if err := client.Get(key); err != nil {
+		_, err = client.Get(key)
+		if err != nil {
 			if r, ok := err.(*egoscale.ErrorResponse); ok {
 				if r.ErrorCode == egoscale.ParamError {
 					return nil
@@ -133,7 +135,7 @@ resource "exoscale_ipaddress" "eip" {
   }
 }
 `,
-	EXOSCALE_ZONE,
+	defaultExoscaleZone,
 )
 
 var testAccElasticIPUpdate = fmt.Sprintf(`
@@ -141,5 +143,5 @@ resource "exoscale_ipaddress" "eip" {
   zone = %q
 }
 `,
-	EXOSCALE_ZONE,
+	defaultExoscaleZone,
 )

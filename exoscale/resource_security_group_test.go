@@ -54,12 +54,14 @@ func testAccCheckSecurityGroupExists(n string, sg *egoscale.SecurityGroup) resou
 		}
 
 		client := GetComputeClient(testAccProvider.Meta())
-		sg.ID = id
-		if err := client.Get(sg); err != nil {
+		resp, err := client.Get(&egoscale.SecurityGroup{
+			ID: id,
+		})
+		if err != nil {
 			return err
 		}
 
-		return nil
+		return Copy(sg, resp.(*egoscale.SecurityGroup))
 	}
 }
 
@@ -109,7 +111,8 @@ func testAccCheckSecurityGroupDestroy(s *terraform.State) error {
 		}
 
 		key := &egoscale.SecurityGroup{ID: id}
-		if err := client.Get(key); err != nil {
+		_, err = client.Get(key)
+		if err != nil {
 			if r, ok := err.(*egoscale.ErrorResponse); ok {
 				if r.ErrorCode == egoscale.ParamError {
 					return nil

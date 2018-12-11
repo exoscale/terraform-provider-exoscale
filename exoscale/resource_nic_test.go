@@ -62,11 +62,12 @@ func testAccCheckNicExists(n string, vm *egoscale.VirtualMachine, nic *egoscale.
 		client := GetComputeClient(testAccProvider.Meta())
 		nic.VirtualMachineID = vm.ID
 		nic.ID = id
-		if err := client.Get(nic); err != nil {
+		resp, err := client.Get(nic)
+		if err != nil {
 			return err
 		}
 
-		return nil
+		return Copy(nic, resp.(*egoscale.Nic))
 	}
 }
 
@@ -116,7 +117,8 @@ func testAccCheckNicDestroy(s *terraform.State) error {
 		}
 
 		nic := &egoscale.Nic{VirtualMachineID: vmID}
-		if err := client.Get(nic); err != nil {
+		_, err = client.Get(nic)
+		if err != nil {
 			if r, ok := err.(*egoscale.ErrorResponse); ok {
 				if r.ErrorCode == egoscale.ParamError {
 					return nil
@@ -165,10 +167,10 @@ resource "exoscale_nic" "nic" {
   ip_address = "10.0.0.1"
 }
 `,
-	EXOSCALE_TEMPLATE,
-	EXOSCALE_ZONE,
-	EXOSCALE_ZONE,
-	EXOSCALE_NETWORK_OFFERING,
+	defaultExoscaleTemplate,
+	defaultExoscaleZone,
+	defaultExoscaleZone,
+	defaultExoscaleNetworkOffering,
 )
 
 var testAccNicUpdate = fmt.Sprintf(`
@@ -208,8 +210,8 @@ resource "exoscale_nic" "nic" {
   ip_address = "10.0.0.3"
 }
 `,
-	EXOSCALE_TEMPLATE,
-	EXOSCALE_ZONE,
-	EXOSCALE_ZONE,
-	EXOSCALE_NETWORK_OFFERING,
+	defaultExoscaleTemplate,
+	defaultExoscaleZone,
+	defaultExoscaleZone,
+	defaultExoscaleNetworkOffering,
 )

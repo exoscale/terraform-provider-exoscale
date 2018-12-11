@@ -55,11 +55,12 @@ func testAccCheckNetworkExists(n string, net *egoscale.Network) resource.TestChe
 
 		client := GetComputeClient(testAccProvider.Meta())
 		net.ID = id
-		if err := client.Get(net); err != nil {
+		resp, err := client.Get(net)
+		if err != nil {
 			return err
 		}
 
-		return nil
+		return Copy(net, resp.(*egoscale.Network))
 	}
 }
 
@@ -127,7 +128,8 @@ func testAccCheckNetworkDestroy(s *terraform.State) error {
 		}
 
 		key := &egoscale.Network{ID: id}
-		if err := client.Get(key); err != nil {
+		_, err = client.Get(key)
+		if err != nil {
 			if r, ok := err.(*egoscale.ErrorResponse); ok {
 				if r.ErrorCode == egoscale.ParamError {
 					return nil
@@ -151,8 +153,8 @@ resource "exoscale_network" "net" {
   }
 }
 `,
-	EXOSCALE_ZONE,
-	EXOSCALE_NETWORK_OFFERING,
+	defaultExoscaleZone,
+	defaultExoscaleNetworkOffering,
 )
 
 var testAccNetworkUpdate = fmt.Sprintf(`
@@ -167,6 +169,6 @@ resource "exoscale_network" "net" {
   netmask = "255.255.255.248"
 }
 `,
-	EXOSCALE_ZONE,
-	EXOSCALE_NETWORK_OFFERING,
+	defaultExoscaleZone,
+	defaultExoscaleNetworkOffering,
 )

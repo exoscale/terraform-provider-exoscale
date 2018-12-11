@@ -221,7 +221,7 @@ func updateNetwork(d *schema.ResourceData, meta interface{}) error {
 		for _, key := range []string{"start_ip", "end_ip"} {
 			o, n := d.GetChange(key)
 			if o.(string) != "" && n.(string) == "" {
-				return fmt.Errorf("[ERROR] new value of %q cannot be empty. old value was %s. The resource must be recreated instead.", key, o.(string))
+				return fmt.Errorf("[ERROR] new value of %q cannot be empty. old value was %s. The resource must be recreated instead", key, o.(string))
 			}
 		}
 	}

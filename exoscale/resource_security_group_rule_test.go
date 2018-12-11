@@ -50,9 +50,7 @@ func testAccCheckEgressRuleExists(n string, sg *egoscale.SecurityGroup, rule *eg
 			return fmt.Errorf("no egress rules found")
 		}
 
-		*rule = sg.EgressRule[0]
-
-		return nil
+		return Copy(rule, sg.EgressRule[0])
 	}
 }
 
@@ -71,9 +69,7 @@ func testAccCheckIngressRuleExists(n string, sg *egoscale.SecurityGroup, rule *e
 			return fmt.Errorf("no Ingress rules found")
 		}
 
-		*rule = sg.IngressRule[0]
-
-		return nil
+		return Copy(rule, sg.IngressRule[0])
 	}
 }
 func testAccCheckSecurityGroupRuleAttributes(r *egoscale.EgressRule) resource.TestCheckFunc {
@@ -123,7 +119,8 @@ func testAccCheckSecurityGroupRuleDestroy(s *terraform.State) error {
 		}
 
 		sg := &egoscale.SecurityGroup{ID: sgID}
-		if err := client.Get(sg); err != nil {
+		_, err = client.Get(sg)
+		if err != nil {
 			if r, ok := err.(*egoscale.ErrorResponse); ok {
 				if r.ErrorCode == egoscale.ParamError {
 					return nil

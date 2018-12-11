@@ -46,13 +46,11 @@ func testAccCheckSecondaryIPExists(n string, vm *egoscale.VirtualMachine, second
 		}
 
 		nic := vm.DefaultNic()
-		if len(nic.SecondaryIP) != 1 {
+		if nic == nil || len(nic.SecondaryIP) != 1 {
 			return fmt.Errorf("no secondaryip field in VM")
 		}
 
-		*secondaryip = nic.SecondaryIP[0]
-
-		return nil
+		return Copy(secondaryip, nic.SecondaryIP[0])
 	}
 }
 
@@ -98,7 +96,8 @@ func testAccCheckSecondaryIPDestroy(s *terraform.State) error {
 		}
 
 		vm := &egoscale.VirtualMachine{ID: vmID}
-		if err := client.Get(vm); err != nil {
+		_, err = client.Get(vm)
+		if err != nil {
 			if r, ok := err.(*egoscale.ErrorResponse); ok {
 				if r.ErrorCode == egoscale.ParamError {
 					return nil
@@ -166,7 +165,7 @@ resource "exoscale_secondary_ipaddress" "ip" {
   ip_address = "${exoscale_ipaddress.eip.ip_address}"
 }
 `,
-	EXOSCALE_ZONE,
-	EXOSCALE_TEMPLATE,
-	EXOSCALE_ZONE,
+	defaultExoscaleZone,
+	defaultExoscaleTemplate,
+	defaultExoscaleZone,
 )

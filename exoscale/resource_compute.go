@@ -642,10 +642,10 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 		rebootRequired = true
 		o, n := d.GetChange("affinity_groups")
 		if o.(*schema.Set).Len() >= n.(*schema.Set).Len() {
-			return fmt.Errorf("Affinity Groups cannot be added.")
+			return fmt.Errorf("affinity Groups cannot be added")
 		}
 		if n.(*schema.Set).Difference(o.(*schema.Set)).Len() > 0 {
-			return fmt.Errorf("No new Affinity Groups can be added.")
+			return fmt.Errorf("no new Affinity Groups can be added")
 		}
 
 		if affinitySet, ok := d.Get("affinity_groups").(*schema.Set); ok {
@@ -665,10 +665,10 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 		rebootRequired = true
 		o, n := d.GetChange("affinity_group_ids")
 		if o.(*schema.Set).Len() >= n.(*schema.Set).Len() {
-			return fmt.Errorf("Affinity Groups cannot be added.")
+			return fmt.Errorf("affinity Groups cannot be added")
 		}
 		if n.(*schema.Set).Difference(o.(*schema.Set)).Len() > 0 {
-			return fmt.Errorf("No new Affinity Groups can be added.")
+			return fmt.Errorf("no new Affinity Groups can be added")
 		}
 
 		if affinitySet, ok := d.Get("affinity_group_ids").(*schema.Set); ok {

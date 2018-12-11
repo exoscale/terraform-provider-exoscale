@@ -42,11 +42,12 @@ func testAccCheckSSHKeyPairExists(n string, sshkey *egoscale.SSHKeyPair) resourc
 
 		client := GetComputeClient(testAccProvider.Meta())
 		sshkey.Name = rs.Primary.ID
-		if err := client.Get(sshkey); err != nil {
+		resp, err := client.Get(sshkey)
+		if err != nil {
 			return err
 		}
 
-		return nil
+		return Copy(sshkey, resp.(*egoscale.SSHKeyPair))
 	}
 }
 
@@ -91,7 +92,8 @@ func testAccCheckSSHKeyPairDestroy(s *terraform.State) error {
 		}
 
 		key := &egoscale.SSHKeyPair{Name: rs.Primary.ID}
-		if err := client.Get(key); err != nil {
+		_, err := client.Get(key)
+		if err != nil {
 			if r, ok := err.(*egoscale.ErrorResponse); ok {
 				if r.ErrorCode == egoscale.ParamError {
 					return nil

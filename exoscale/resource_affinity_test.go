@@ -48,11 +48,12 @@ func testAccCheckAffinityGroupExists(n string, ag *egoscale.AffinityGroup) resou
 		client := GetComputeClient(testAccProvider.Meta())
 
 		ag.ID = id
-		if err := client.Get(ag); err != nil {
+		resp, err := client.Get(ag)
+		if err != nil {
 			return err
 		}
 
-		return nil
+		return Copy(ag, resp.(*egoscale.AffinityGroup))
 	}
 }
 
@@ -102,7 +103,8 @@ func testAccCheckAffinityGroupDestroy(s *terraform.State) error {
 		}
 
 		key := &egoscale.AffinityGroup{ID: id}
-		if err := client.Get(key); err != nil {
+		_, err = client.Get(key)
+		if err != nil {
 			if r, ok := err.(*egoscale.ErrorResponse); ok {
 				if r.ErrorCode == egoscale.ParamError {
 					return nil
