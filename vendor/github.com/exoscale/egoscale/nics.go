@@ -49,9 +49,10 @@ type NicSecondaryIP struct {
 	VirtualMachineID *UUID  `json:"virtualmachineid,omitempty" doc:"the ID of the vm"`
 }
 
+//go:generate go run generate/main.go -interface=Listable ListNics
+
 // ListNics represents the NIC search
 type ListNics struct {
-	ForDisplay       bool   `json:"fordisplay,omitempty" doc:"list resources by display flag; only ROOT admin is eligible to pass this parameter"`
 	Keyword          string `json:"keyword,omitempty" doc:"List by keyword"`
 	NetworkID        *UUID  `json:"networkid,omitempty" doc:"list nic of the specific vm's network"`
 	NicID            *UUID  `json:"nicid,omitempty" doc:"the ID of the nic to to list IPs"`
@@ -67,29 +68,6 @@ type ListNicsResponse struct {
 	Nic   []Nic `json:"nic"`
 }
 
-func (ListNics) response() interface{} {
-	return new(ListNicsResponse)
-}
-
-// SetPage sets the current page
-func (ls *ListNics) SetPage(page int) {
-	ls.Page = page
-}
-
-// SetPageSize sets the page size
-func (ls *ListNics) SetPageSize(pageSize int) {
-	ls.PageSize = pageSize
-}
-
-func (ListNics) each(resp interface{}, callback IterateItemFunc) {
-	nics := resp.(*ListNicsResponse)
-	for i := range nics.Nic {
-		if !callback(&(nics.Nic[i]), nil) {
-			break
-		}
-	}
-}
-
 // AddIPToNic (Async) represents the assignation of a secondary IP
 type AddIPToNic struct {
 	NicID     *UUID  `json:"nicid" doc:"the ID of the nic to which you want to assign private IP"`
@@ -97,11 +75,13 @@ type AddIPToNic struct {
 	_         bool   `name:"addIpToNic" description:"Assigns secondary IP to NIC"`
 }
 
-func (AddIPToNic) response() interface{} {
+// Response returns the struct to unmarshal
+func (AddIPToNic) Response() interface{} {
 	return new(AsyncJobResult)
 }
 
-func (AddIPToNic) asyncResponse() interface{} {
+// AsyncResponse returns the struct to unmarshal the async job
+func (AddIPToNic) AsyncResponse() interface{} {
 	return new(NicSecondaryIP)
 }
 
@@ -111,11 +91,13 @@ type RemoveIPFromNic struct {
 	_  bool  `name:"removeIpFromNic" description:"Removes secondary IP from the NIC."`
 }
 
-func (RemoveIPFromNic) response() interface{} {
+// Response returns the struct to unmarshal
+func (RemoveIPFromNic) Response() interface{} {
 	return new(AsyncJobResult)
 }
 
-func (RemoveIPFromNic) asyncResponse() interface{} {
+// AsyncResponse returns the struct to unmarshal the async job
+func (RemoveIPFromNic) AsyncResponse() interface{} {
 	return new(booleanResponse)
 }
 
@@ -127,10 +109,12 @@ type ActivateIP6 struct {
 	_     bool  `name:"activateIp6" description:"Activate the IPv6 on the VM's nic"`
 }
 
-func (ActivateIP6) response() interface{} {
+// Response returns the struct to unmarshal
+func (ActivateIP6) Response() interface{} {
 	return new(AsyncJobResult)
 }
 
-func (ActivateIP6) asyncResponse() interface{} {
+// AsyncResponse returns the struct to unmarshal the async job
+func (ActivateIP6) AsyncResponse() interface{} {
 	return new(Nic)
 }
