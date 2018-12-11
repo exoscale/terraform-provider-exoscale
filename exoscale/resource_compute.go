@@ -379,7 +379,8 @@ func existsCompute(d *schema.ResourceData, meta interface{}) (bool, error) {
 	machine := &egoscale.VirtualMachine{ID: id}
 
 	// The CS API returns an error if it doesn't exist
-	if err := client.GetWithContext(ctx, machine); err != nil {
+	_, err = client.GetWithContext(ctx, machine)
+	if err != nil {
 		e := handleNotFound(d, err)
 		return d.Id() != "", e
 	}
@@ -399,12 +400,15 @@ func readCompute(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	machine := &egoscale.VirtualMachine{ID: id}
-	if err := client.GetWithContext(ctx, machine); err != nil {
+	resp, err := client.GetWithContext(ctx, machine)
+	if err != nil {
 		return handleNotFound(d, err)
 	}
 
+	machine = resp.(*egoscale.VirtualMachine)
+
 	// user_data
-	resp, err := client.RequestWithContext(ctx, &egoscale.GetVirtualMachineUserData{
+	resp, err = client.RequestWithContext(ctx, &egoscale.GetVirtualMachineUserData{
 		VirtualMachineID: id,
 	})
 	if err != nil {
@@ -842,7 +846,8 @@ func importCompute(d *schema.ResourceData, meta interface{}) ([]*schema.Resource
 		machine.ID = id
 	}
 
-	if err := client.GetWithContext(ctx, machine); err != nil {
+	resp, err := client.GetWithContext(ctx, machine)
+	if err != nil {
 		if e := handleNotFound(d, err); e != nil {
 			return nil, e
 		}
@@ -851,12 +856,13 @@ func importCompute(d *schema.ResourceData, meta interface{}) ([]*schema.Resource
 		}
 	}
 
-	defaultNic := machine.DefaultNic()
+	vm := resp.(*egoscale.VirtualMachine)
+	defaultNic := vm.DefaultNic()
 	if defaultNic == nil {
 		return nil, fmt.Errorf("VM %v has no default NIC", d.Id())
 	}
 	secondaryIPs := defaultNic.SecondaryIP
-	nics := machine.NicsByType("Isolated")
+	nics := vm.NicsByType("Isolated")
 
 	resources := make([]*schema.ResourceData, 0, 1+len(nics)+len(secondaryIPs))
 	resources = append(resources, d)
@@ -1030,12 +1036,13 @@ func getSSHUsername(template string) string {
 
 func getSecurityGroup(ctx context.Context, client *egoscale.Client, name string) (*egoscale.SecurityGroup, error) {
 	sg := &egoscale.SecurityGroup{Name: name}
-	err := client.GetWithContext(ctx, sg)
+
+	resp, err := client.GetWithContext(ctx, sg)
 	if err != nil {
 		return nil, err
 	}
 
-	return sg, nil
+	return resp.(*egoscale.SecurityGroup), nil
 }
 
 // prepareUserData base64 encode the user-data and gzip it if supported

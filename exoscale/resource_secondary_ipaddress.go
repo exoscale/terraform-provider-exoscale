@@ -168,21 +168,22 @@ func getSecondaryIP(d *schema.ResourceData, meta interface{}) (*egoscale.NicSeco
 			return nil, fmt.Errorf("not a valid ipaddress, got %q", ipAddress)
 		}
 
-		ip := &egoscale.IPAddress{
+		req := &egoscale.IPAddress{
 			IPAddress: addr,
 			IsElastic: true,
 		}
 
-		if err := client.GetWithContext(ctx, ip); err != nil {
+		resp, err := client.GetWithContext(ctx, req)
+		if err != nil {
 			return nil, err
 		}
+		ip := resp.(*egoscale.IPAddress)
 
 		// This is a hack for importing a VM
 		reqVms := &egoscale.ListVirtualMachines{
 			ZoneID: ip.ZoneID,
 		}
 
-		var err error
 		var n *egoscale.Nic
 		client.PaginateWithContext(ctx, reqVms, func(v interface{}, e error) bool {
 			if e != nil {

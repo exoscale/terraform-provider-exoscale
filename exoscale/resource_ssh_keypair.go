@@ -90,8 +90,10 @@ func existsSSH(d *schema.ResourceData, meta interface{}) (bool, error) {
 		Name: d.Id(),
 	}
 
-	if err := client.GetWithContext(ctx, key); err != nil {
-		return false, err
+	_, err := client.GetWithContext(ctx, key)
+	if err != nil {
+		e := handleNotFound(d, err)
+		return d.Id() != "", e
 	}
 
 	return true, nil
@@ -107,11 +109,12 @@ func readSSH(d *schema.ResourceData, meta interface{}) error {
 		Name: d.Id(),
 	}
 
-	if err := client.GetWithContext(ctx, key); err != nil {
+	resp, err := client.GetWithContext(ctx, key)
+	if err != nil {
 		return err
 	}
 
-	return applySSH(d, key)
+	return applySSH(d, resp.(*egoscale.SSHKeyPair))
 }
 
 func deleteSSH(d *schema.ResourceData, meta interface{}) error {

@@ -111,13 +111,13 @@ func readNic(d *schema.ResourceData, meta interface{}) error {
 
 	nic := &egoscale.Nic{ID: id}
 
-	if err := client.GetWithContext(ctx, nic); err != nil {
-		if err != nil {
-			return handleNotFound(d, err)
-		}
+	resp, err := client.GetWithContext(ctx, nic)
+	if err != nil {
+		return handleNotFound(d, err)
 	}
 
-	return applyNic(d, *nic)
+	n := resp.(*egoscale.Nic)
+	return applyNic(d, *n)
 }
 
 func existsNic(d *schema.ResourceData, meta interface{}) (bool, error) {
@@ -133,7 +133,8 @@ func existsNic(d *schema.ResourceData, meta interface{}) (bool, error) {
 
 	nic := &egoscale.Nic{ID: id}
 
-	if err := client.GetWithContext(ctx, nic); err != nil {
+	_, err = client.GetWithContext(ctx, nic)
+	if err != nil {
 		e := handleNotFound(d, err)
 		return d.Id() != "", e
 	}

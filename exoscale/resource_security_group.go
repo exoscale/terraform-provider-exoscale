@@ -80,10 +80,13 @@ func existsSecurityGroup(d *schema.ResourceData, meta interface{}) (bool, error)
 	sg := &egoscale.SecurityGroup{
 		ID: id,
 	}
-	if err := client.GetWithContext(ctx, sg); err != nil {
+
+	_, err = client.GetWithContext(ctx, sg)
+	if err != nil {
 		e := handleNotFound(d, err)
 		return d.Id() != "", e
 	}
+
 	return true, nil
 }
 
@@ -98,13 +101,14 @@ func readSecurityGroup(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	sg := &egoscale.SecurityGroup{
+	resp, err := client.GetWithContext(ctx, &egoscale.SecurityGroup{
 		ID: id,
-	}
-	if err := client.GetWithContext(ctx, sg); err != nil {
+	})
+	if err != nil {
 		return handleNotFound(d, err)
 	}
 
+	sg := resp.(*egoscale.SecurityGroup)
 	return applySecurityGroup(d, sg)
 }
 
@@ -144,11 +148,13 @@ func importSecurityGroup(d *schema.ResourceData, meta interface{}) ([]*schema.Re
 		securityGroup.ID = id
 	}
 
-	if err := client.GetWithContext(ctx, securityGroup); err != nil {
+	resp, err := client.GetWithContext(ctx, securityGroup)
+	if err != nil {
 		return nil, err
 	}
 
-	if err := applySecurityGroup(d, securityGroup); err != nil {
+	sg := resp.(*egoscale.SecurityGroup)
+	if err := applySecurityGroup(d, sg); err != nil {
 		return nil, err
 	}
 

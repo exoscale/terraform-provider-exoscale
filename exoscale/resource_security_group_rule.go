@@ -118,22 +118,25 @@ func createSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
 
 	client := GetComputeClient(meta)
 
-	securityGroup := &egoscale.SecurityGroup{}
 	securityGroupID, ok := d.GetOkExists("security_group_id")
 
+	sg := &egoscale.SecurityGroup{}
 	if ok {
 		id, err := egoscale.ParseUUID(securityGroupID.(string))
 		if err != nil {
 			return err
 		}
-		securityGroup.ID = id
+		sg.ID = id
 	} else {
-		securityGroup.Name = d.Get("security_group").(string)
+		sg.Name = d.Get("security_group").(string)
 	}
 
-	if err := client.GetWithContext(ctx, securityGroup); err != nil {
+	resp, err := client.GetWithContext(ctx, sg)
+	if err != nil {
 		return err
 	}
+
+	securityGroup := resp.(*egoscale.SecurityGroup)
 
 	cidrList := make([]egoscale.CIDR, 0)
 	groupList := make([]egoscale.UserSecurityGroup, 0)
@@ -165,11 +168,13 @@ func createSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
 			group.ID = id
 		}
 
-		if err := client.GetWithContext(ctx, group); err != nil {
+		resp, err := client.GetWithContext(ctx, group)
+		if err != nil {
 			return err
 		}
 
-		groupList = append(groupList, group.UserSecurityGroup())
+		g := resp.(*egoscale.SecurityGroup)
+		groupList = append(groupList, g.UserSecurityGroup())
 	}
 
 	var req egoscale.Command // nolint: megacheck
@@ -191,12 +196,12 @@ func createSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
 		req = (*egoscale.AuthorizeSecurityGroupEgress)(req.(*egoscale.AuthorizeSecurityGroupIngress))
 	}
 
-	resp, err := client.RequestWithContext(ctx, req)
+	resp, err = client.RequestWithContext(ctx, req)
 	if err != nil {
 		return err
 	}
 
-	sg := resp.(*egoscale.SecurityGroup)
+	securityGroup = resp.(*egoscale.SecurityGroup)
 
 	// The rule allowed for creation produces only one rule!
 	if err := d.Set("type", trafficType); err != nil {

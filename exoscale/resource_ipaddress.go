@@ -147,11 +147,12 @@ func readElasticIP(d *schema.ResourceData, meta interface{}) error {
 		ipAddress.ID = id
 	}
 
-	if err := client.GetWithContext(ctx, ipAddress); err != nil {
+	resp, err := client.GetWithContext(ctx, ipAddress)
+	if err != nil {
 		return handleNotFound(d, err)
 	}
 
-	return applyElasticIP(d, ipAddress)
+	return applyElasticIP(d, resp.(*egoscale.IPAddress))
 }
 
 func updateElasticIP(d *schema.ResourceData, meta interface{}) error {
