@@ -57,3 +57,9 @@ $ arp -a
 _gateway (159.100.241.1) at fe:6e:f0:00:00:71 [ether] on eth0
 ? (10.0.0.231) at 0a:f6:92:00:2c:ca [ether] on eth1
 ```
+
+---
+
+See also [the blog post announcing the feature][managed privnet].
+
+[managed privnet]: https://www.exoscale.com/syslog/introducing-managed-private-networks/

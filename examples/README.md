@@ -32,6 +32,11 @@ configuration file built from a template.
 An example showing how the [Private networks](https://www.exoscale.com/syslog/introducing-multiple-private-networks/)
 API support can be used to create a private network between compute instances.
 
+## [Managed Private Network](managed-private-network)
+
+Vanilla private networks are unconfigured by default; the following shows how to enable
+the DHCP service, configure the instances and assign static leases.
+
 ## [DNS](dns)
 
 Managing DNS resources: domains and its associated records (`A`, `AAAA`, `CNAME`, `TXT`, etc.).
