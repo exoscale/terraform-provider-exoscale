@@ -52,8 +52,6 @@ github.com/davecgh/go-spew/spew
 github.com/exoscale/egoscale
 # github.com/fatih/color v1.7.0
 github.com/fatih/color
-# github.com/go-ini/ini v1.39.3 => gopkg.in/ini.v1 v1.39.3
-github.com/go-ini/ini
 # github.com/golang/protobuf v1.2.0
 github.com/golang/protobuf/proto
 github.com/golang/protobuf/ptypes
@@ -109,7 +107,7 @@ github.com/hashicorp/hil/parser
 github.com/hashicorp/hil/scanner
 # github.com/hashicorp/logutils v1.0.0
 github.com/hashicorp/logutils
-# github.com/hashicorp/terraform v0.11.10
+# github.com/hashicorp/terraform v0.11.11
 github.com/hashicorp/terraform/plugin
 github.com/hashicorp/terraform/helper/logging
 github.com/hashicorp/terraform/helper/schema
@@ -241,3 +239,5 @@ google.golang.org/grpc/stats
 google.golang.org/grpc/status
 google.golang.org/grpc/tap
 google.golang.org/grpc/balancer/base
+# gopkg.in/ini.v1 v1.39.3 => github.com/go-ini/ini v1.39.3
+gopkg.in/ini.v1
