@@ -52,6 +52,11 @@ func computeResource() *schema.Resource {
 			Optional:    true,
 			Description: "cloud-init configuration",
 		},
+		"user_data_base64": {
+			Type:        schema.TypeBool,
+			Computed:    true,
+			Description: "was the cloud-init configuration base64 encoded",
+		},
 		"key_pair": {
 			Type:     schema.TypeString,
 			Required: true,
@@ -295,11 +300,14 @@ func createCompute(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	userData, err := prepareUserData(d, meta, "user_data")
+	userData, base64Encoded, err := prepareUserData(d, meta, "user_data")
 	if err != nil {
 		return err
 	}
 
+	if err := d.Set("user_data_base64", base64Encoded); err != nil {
+		return err
+	}
 	startVM := d.Get("state").(string) != "Stopped"
 
 	details := make(map[string]string)
@@ -414,12 +422,19 @@ func readCompute(d *schema.ResourceData, meta interface{}) error {
 	if err != nil {
 		return err
 	}
-	userData, err := resp.(*egoscale.VirtualMachineUserData).Decode()
-	if err != nil {
-		return err
+	vmUserData := resp.(*egoscale.VirtualMachineUserData)
+	userData := vmUserData.UserData
+
+	// When the data wasn't already encoded, decode it.
+	base64Encoded := d.Get("user_data_base64").(bool)
+	if !base64Encoded {
+		userData, err = vmUserData.Decode()
+		if err != nil {
+			return err
+		}
 	}
 
-	if err := d.Set("user_data", string(userData)); err != nil {
+	if err := d.Set("user_data", userData); err != nil {
 		return err
 	}
 
@@ -526,13 +541,17 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	if d.HasChange("user_data") {
-		userData, err := prepareUserData(d, meta, "user_data")
+		userData, base64Encoded, err := prepareUserData(d, meta, "user_data")
 		if err != nil {
 			return err
 		}
 
 		req.UserData = userData
 		rebootRequired = true
+
+		if err := d.Set("user_data_base64", base64Encoded); err != nil {
+			return err
+		}
 	}
 
 	if d.HasChange("security_groups") {
@@ -773,6 +792,7 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 	d.SetPartial("user_data")
+	d.SetPartial("user_data_base64")
 	d.SetPartial("display_name")
 	d.SetPartial("security_groups")
 
@@ -1046,30 +1066,37 @@ func getSecurityGroup(ctx context.Context, client *egoscale.Client, name string)
 }
 
 // prepareUserData base64 encode the user-data and gzip it if supported
-func prepareUserData(d *schema.ResourceData, meta interface{}, key string) (string, error) {
+func prepareUserData(d *schema.ResourceData, meta interface{}, key string) (string, bool, error) {
 	userData := d.Get(key).(string)
 
-	if strings.HasPrefix(userData, "#cloud-config") || strings.HasPrefix(userData, "Content-Type: multipart/mixed;") {
-		byteUserData := []byte(userData)
-
-		if meta.(BaseConfig).gzipUserData {
-			b := new(bytes.Buffer)
-			gz := gzip.NewWriter(b)
-
-			if _, err := gz.Write(byteUserData); err != nil {
-				return "", err
-			}
-			if err := gz.Flush(); err != nil {
-				return "", err
-			}
-			if err := gz.Close(); err != nil {
-				return "", err
-			}
-
-			byteUserData = b.Bytes()
-		}
-		return base64.StdEncoding.EncodeToString(byteUserData), nil
+	// template_cloudinit_config alows to gzip but not base64, prevent such case
+	if len(userData) > 2 && userData[0] == '\x1f' && userData[1] == '\x8b' {
+		return "", false, fmt.Errorf("user_data appears gzipped. It should be left raw, or also be base64 encoded")
 	}
 
-	return userData, nil
+	// If the data is already base64 encoded, do nothing.
+	_, err := base64.StdEncoding.DecodeString(userData)
+	if err == nil {
+		return userData, true, nil
+	}
+
+	byteUserData := []byte(userData)
+
+	if meta.(BaseConfig).gzipUserData {
+		b := new(bytes.Buffer)
+		gz := gzip.NewWriter(b)
+
+		if _, err := gz.Write(byteUserData); err != nil {
+			return "", false, err
+		}
+		if err := gz.Flush(); err != nil {
+			return "", false, err
+		}
+		if err := gz.Close(); err != nil {
+			return "", false, err
+		}
+
+		byteUserData = b.Bytes()
+	}
+	return base64.StdEncoding.EncodeToString(byteUserData), false, nil
 }

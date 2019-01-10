@@ -3,7 +3,7 @@ data "template_file" "init" {
   count = "${length(var.hostnames)}"
 
   vars {
-    ubuntu = "artful"
+    ubuntu = "${var.flavor}"
     fqdn = "${element(var.hostnames, count.index)}"
   }
 }

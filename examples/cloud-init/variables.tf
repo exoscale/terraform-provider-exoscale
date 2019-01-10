@@ -18,6 +18,10 @@ variable "zone" {
 }
 
 variable "template" {
-  default = "Linux Ubuntu 18.04 64-bit"
+  default = "Linux Ubuntu 18.04 LTS 64-bit"
+}
+
+variable "flavor" {
+  default = "bionic"
 }
 

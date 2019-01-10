@@ -3,7 +3,7 @@ provider "template" {
 }
 
 provider "exoscale" {
-  version = "~> 0.9.13"
+  version = "~> 0.9.41"
   key = "${var.key}"
   secret = "${var.secret}"
 }

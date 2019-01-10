@@ -56,7 +56,7 @@ EOF
 
 - `zone` - (Required) name of [the data-center](https://www.exoscale.com/datacenters/)
 
-- `user_data` - [cloud-init](http://cloudinit.readthedocs.io/en/latest/) configuration
+- `user_data` - [cloud-init](http://cloudinit.readthedocs.io/en/latest/) configuration. Whenever possible don't base64 encode neither gzip it yourself. This will be automatically taken care of on your behalf by the provider.
 
 - `key_pair` - (Required) name of the SSH key pair to be installed
 
