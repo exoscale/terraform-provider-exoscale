@@ -8,17 +8,17 @@ GOLANGCI_LINT_VERSION=1.11.1
 default: build
 
 build: fmtcheck
-	go install -mod vendor
+	GO111MODULE=on go install -mod vendor
 
 sweep:
 	@echo "WARNING: This will destroy infrastructure. Use only in development accounts."
-	go test $(TEST) -v -sweep=$(SWEEP) $(SWEEPARGS)
+	go test $(TEST) -mod vendor -v -sweep=$(SWEEP) $(SWEEPARGS)
 
 test: fmtcheck
-	go test $(TEST) -timeout=30s -parallel=4
+	go test $(TEST) -mod vendor -v $(TESTARGS) -timeout=30s -parallel=4
 
 testacc: fmtcheck
-	TF_ACC=1 go test $(TEST) -v $(TESTARGS) -timeout 120m
+	TF_ACC=1 go test $(TEST) -mod vendor -v $(TESTARGS) -timeout 120m
 
 fmt:
 	@echo "==> Fixing source code with gofmt..."

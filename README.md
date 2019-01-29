@@ -21,7 +21,9 @@ Clone repository to: `$GOPATH/src/github.com/terraform-providers/terraform-provi
 
 ```sh
 $ mkdir -p $GOPATH/src/github.com/terraform-providers; cd $GOPATH/src/github.com/terraform-providers
-$ git clone git@github.com:terraform-providers/terraform-provider-exoscale
+
+# NB: this repository will eventually be hosted on the terraform-providers organization
+$ git clone git@github.com:exoscale/terraform-provider-exoscale
 ```
 
 Enter the provider directory and build the provider

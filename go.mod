@@ -1,4 +1,4 @@
-module github.com/exoscale/terraform-provider-exoscale
+module github.com/terraform-providers/terraform-provider-exoscale
 
 replace gopkg.in/ini.v1 => github.com/go-ini/ini v1.39.3
 
