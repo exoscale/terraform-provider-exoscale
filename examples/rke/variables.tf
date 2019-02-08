@@ -8,8 +8,8 @@ variable "hostnames" {
   type = "list"
   default = [
     "huey",
-    #"dewey",
-    #"louie"
+    "dewey",
+    "louie"
   ]
 }
 
@@ -19,4 +19,12 @@ variable "zone" {
 
 variable "template" {
   default = "Linux Ubuntu 16.04 LTS 64-bit"
+}
+
+variable "ubuntu-flavor" {
+  default = "xenial"
+}
+
+variable "docker-version" {
+  default = "17.03.3"
 }

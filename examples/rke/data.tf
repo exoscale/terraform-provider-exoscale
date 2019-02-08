@@ -3,8 +3,8 @@ data "template_file" "init" {
   count = "${length(var.hostnames)}"
 
   vars {
-    ubuntu = "xenial"
-    docker-version = "17.03.2~ce-0~ubuntu-xenial"
+    ubuntu = "${var.ubuntu-flavor}"
+    docker-version = "${var.docker-version}~ce-0~ubuntu-${var.ubuntu-flavor}"
     hostname = "${element(var.hostnames, count.index)}"
   }
 }

@@ -3,7 +3,7 @@ provider "template" {
 }
 
 provider "exoscale" {
-  version = "~> 0.9.22"
+  version = "~> 0.9.41"
   key = "${var.key}"
   secret = "${var.secret}"
 }
@@ -17,69 +17,35 @@ resource "exoscale_security_group" "rke" {
   name = "rke"
 }
 
-resource "exoscale_security_group_rule" "rke_ssh" {
+// https://rancher.com/docs/rancher/v2.x/en/installation/requirements/
+resource "exoscale_security_group_rules" "rke" {
   security_group_id = "${exoscale_security_group.rke.id}"
-  protocol = "TCP"
-  type = "INGRESS"
-  cidr = "0.0.0.0/0"
-  start_port = 22
-  end_port = 22
-}
 
-resource "exoscale_security_group_rule" "rke_docker" {
-  security_group_id = "${exoscale_security_group.rke.id}"
-  protocol = "TCP"
-  type = "INGRESS"
-  user_security_group_id = "${exoscale_security_group.rke.id}"
-  start_port = 2378
-  end_port = 2380
-}
+  ingress {
+    protocol = "TCP"
+    cidr_list = ["0.0.0.0/0", "::/0"]
+    ports = ["22", "80", "443", "2376", "6443", "30000-32767"]
+  }
 
-resource "exoscale_security_group_rule" "rke_api_server" {
-  security_group_id = "${exoscale_security_group.rke.id}"
-  protocol = "TCP"
-  type = "INGRESS"
-  user_security_group_id = "${exoscale_security_group.rke.id}"
-  start_port = 6443
-  end_port = 6443
-}
+  ingress {
+    protocol = "UDP"
+    cidr_list = ["0.0.0.0/0", "::/0"]
+    ports = ["30000-32767"]
+  }
 
-resource "exoscale_security_group_rule" "rke_external_api_server" {
-  security_group_id = "${exoscale_security_group.rke.id}"
-  protocol = "TCP"
-  type = "INGRESS"
-  cidr = "0.0.0.0/0"
-  start_port = 6443
-  end_port = 6443
-}
+  ingress {
+    protocol = "TCP"
+    user_security_group_list = ["${exoscale_security_group.rke.name}"]
+    ports = ["2379-2380", "4789", "10250-10252", "10256"]
+  }
 
-resource "exoscale_security_group_rule" "rke_external_http" {
-  security_group_id = "${exoscale_security_group.rke.id}"
-  protocol = "TCP"
-  type = "INGRESS"
-  cidr = "0.0.0.0/0"
-  start_port = 80
-  end_port = 80
-}
+  ingress {
+    protocol = "UDP"
+    user_security_group_list = ["${exoscale_security_group.rke.name}"]
+    ports = ["8472", "30000-32767"]
+  }
 
-resource "exoscale_security_group_rule" "rke_external_tls" {
-  security_group_id = "${exoscale_security_group.rke.id}"
-  protocol = "TCP"
-  type = "INGRESS"
-  cidr = "0.0.0.0/0"
-  start_port = 443
-  end_port = 443
 }
-
-resource "exoscale_security_group_rule" "rke_logs_metrics" {
-  security_group_id = "${exoscale_security_group.rke.id}"
-  protocol = "TCP"
-  type = "INGRESS"
-  user_security_group_id = "${exoscale_security_group.rke.id}"
-  start_port = 10250
-  end_port = 10250
-}
-
 
 resource "exoscale_compute" "node" {
   count = "${length(var.hostnames)}"

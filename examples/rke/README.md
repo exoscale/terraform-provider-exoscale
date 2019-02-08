@@ -26,7 +26,9 @@ master_ips = ubuntu@89.145.160.57,ubuntu@89.145.160.47,ubuntu@89.145.160.24
 
 ## Before jumping to the official tutorial
 
-Aside from the SSL keys (either self-signed or signed by CA), we can infer the `nodes` section of the `rancher-cluster.yml` file from the Terraform output.
+Aside from the SSL keys (either self-signed or signed by CA), we can infer the
+`nodes` section of the [`cluster.yml`](./cluster.yml.example) file from the
+Terraform output.
 
 ```
 # the SSH keypair created in the prerequisites and referenced as `my-key` above.
@@ -34,13 +36,13 @@ ssh_key_path: ~/.ssh/id_rsa
 nodes:
  - address: 89.145.160.57
    user: ubuntu
-   role: [controlpane,etcd,worker]
+   role: [controlplane,etcd,worker]
  - address: 89.145.160.47
    user: ubuntu
-   role: [controlpane,etcd,worker]
+   role: [controlplane,etcd,worker]
  - address: 89.145.160.24
    user: ubuntu
-   role: [controlpane,etcd,worker]
+   role: [controlplane,etcd,worker]
 
 # ...
 ```

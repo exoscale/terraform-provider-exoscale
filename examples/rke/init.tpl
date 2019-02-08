@@ -15,4 +15,5 @@ packages:
 
 
 runcmd:
-  - [ usermod, -aG, docker, ubuntu ]
+- [ apt-mark, hold, docker-ce ]
+- [ usermod, -aG, docker, ubuntu ]

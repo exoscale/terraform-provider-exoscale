@@ -59,3 +59,40 @@ func TestValidateIPv6StringOk(t *testing.T) {
 		t.Error("no errors were expected")
 	}
 }
+
+func TestValidatePortRangeOk(t *testing.T) {
+	tests := []struct {
+		ports string
+	}{
+		{"0"},
+		{"22"},
+		{"8000-8080"},
+		{"49150"},
+	}
+
+	for _, tt := range tests {
+		_, errs := ValidatePortRange(tt.ports, "test_property")
+		if len(errs) != 0 {
+			t.Errorf("no errors were expected %q %v", tt.ports, errs)
+		}
+	}
+}
+
+func TestValidatePortRangeKo(t *testing.T) {
+	tests := []struct {
+		ports string
+	}{
+		{"-1"},
+		{"22-22"},
+		{"22-23-24"},
+		{"8000-7000"},
+		{"65536"},
+	}
+
+	for _, tt := range tests {
+		_, errs := ValidatePortRange(tt.ports, "test_property")
+		if len(errs) == 0 {
+			t.Errorf("an error was expected, %q", tt.ports)
+		}
+	}
+}

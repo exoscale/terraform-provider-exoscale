@@ -28,7 +28,7 @@ func TestAccSecurityGroupRule(t *testing.T) {
 					testAccCheckSecurityGroupRuleAttributes(cidr),
 					testAccCheckSecurityGroupRuleAttributes((*egoscale.EgressRule)(usg)),
 					testAccCheckSecurityGroupRuleCreateAttributes("EGRESS", "TCP"),
-					testAccCheckSecurityGroupRuleCreateAttributes("INGRESS", "ICMP"),
+					testAccCheckSecurityGroupRuleCreateAttributes("INGRESS", "ICMPv6"),
 				),
 			},
 		},
@@ -130,7 +130,7 @@ func testAccCheckSecurityGroupRuleDestroy(s *terraform.State) error {
 		}
 	}
 
-	return fmt.Errorf("SecurityGroup: still exists")
+	return fmt.Errorf("security group rule still exists")
 }
 
 var testAccSecurityGroupRuleCreate = `
@@ -150,9 +150,9 @@ resource "exoscale_security_group_rule" "cidr" {
 
 resource "exoscale_security_group_rule" "usg" {
   security_group = "${exoscale_security_group.sg.name}"
-  protocol = "ICMP"
+  protocol = "ICMPv6"
   type = "INGRESS"
-  icmp_type = 8
+  icmp_type = 128
   icmp_code = 0
   user_security_group = "${exoscale_security_group.sg.name}"
 }

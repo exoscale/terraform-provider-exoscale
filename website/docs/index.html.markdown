@@ -23,7 +23,6 @@ provider "exoscale" {
 
   timeout = 60          # default: waits 60 seconds in total for a resource
   delay = 5             # default: waits 5 seconds between each poll request
-  gzip_user_data = true # default: gzip user-data of compute instances
 }
 
 # or

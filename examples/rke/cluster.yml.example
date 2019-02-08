@@ -1,0 +1,12 @@
+# the SSH keypair created in the prerequisites and referenced as `my-key` above.
+ssh_key_path: ~/.ssh/id_rsa
+nodes:
+ - address: 89.145.160.57
+   user: ubuntu
+   role: [controlpane,etcd,worker]
+ - address: 89.145.160.47
+   user: ubuntu
+   role: [controlpane,etcd,worker]
+ - address: 89.145.160.24
+   user: ubuntu
+   role: [controlpane,etcd,worker]

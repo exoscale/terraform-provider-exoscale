@@ -8,8 +8,8 @@ description: |-
 
 # exoscale_security_group_rule
 
-A security group rule represents a single `ingress` or `egress` rule which has
-to be linked with to `exoscale_security_group`.
+A security group rule represents a single `ingress` or `egress` rule belonging
+to a `exoscale_security_group`.
 
 ## Example usage
 
@@ -30,7 +30,7 @@ resource "exoscale_security_group_rule" "http" {
 
 - `security_group` - (Required) which security group by id the rule applies to
 
-- `protocol` - (Required) the protocol, e.g. `TCP`, `UDP`, `ICMP`, ..., or `ALL`
+- `protocol` - (Required) the protocol, e.g. `TCP`, `UDP`, `ICMP`, `ICMPv6`, ... or `ALL`
 
 - `type` - (Required) traffic type, either `INGRESS` or `EGRESS`
 
@@ -38,13 +38,13 @@ resource "exoscale_security_group_rule" "http" {
 
 - `start_port` and `end_port` - for `TCP`, `UDP` traffic
 
-- `icmp_type` and `icmp_code` - for `ICMP` traffic
+- `icmp_type` and `icmp_code` - for `ICMP`, `ICMPv6` traffic
 
 - `cidr` - source/destination of the traffic as an IP subnet (conflicts with `user_security_group`)
 
-- `user_security_group_id` - source/destination of the traffic as a security group by id (conflicts with `cidr`)
+- `user_security_group_id` - source/destination of the traffic identified by a security group by id (conflicts with `cidr`)
 
-- `user_security_group` - source/destination of the traffic as a security group by name (conflicts with `cidr`)
+- `user_security_group` - source/destination of the traffic identified by a security group by name (conflicts with `cidr`)
 
 ## Attributes Reference
 

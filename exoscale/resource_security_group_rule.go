@@ -10,6 +10,11 @@ import (
 	"github.com/hashicorp/terraform/helper/validation"
 )
 
+// supportedProtocols contains the allowed protocols
+var supportedProtocols = []string{
+	"TCP", "UDP", "ICMP", "ICMPv6", "AH", "ESP", "GRE", "IPIP", "ALL",
+}
+
 func securityGroupRuleResource() *schema.Resource {
 	return &schema.Resource{
 		Create: createSecurityGroupRule,
@@ -63,9 +68,9 @@ func securityGroupRuleResource() *schema.Resource {
 			"protocol": {
 				Type:         schema.TypeString,
 				Optional:     true,
-				Default:      "tcp",
+				Default:      "TCP",
 				ForceNew:     true,
-				ValidateFunc: validation.StringInSlice([]string{"TCP", "UDP", "ICMP", "ICMPv6", "AH", "ESP", "GRE", "IPIP", "ALL"}, true),
+				ValidateFunc: validation.StringInSlice(supportedProtocols, true),
 			},
 			"start_port": {
 				Type:          schema.TypeInt,
@@ -118,17 +123,9 @@ func createSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
 
 	client := GetComputeClient(meta)
 
-	securityGroupID, ok := d.GetOkExists("security_group_id")
-
-	sg := &egoscale.SecurityGroup{}
-	if ok {
-		id, err := egoscale.ParseUUID(securityGroupID.(string))
-		if err != nil {
-			return err
-		}
-		sg.ID = id
-	} else {
-		sg.Name = d.Get("security_group").(string)
+	sg, err := inferSecurityGroup(d)
+	if err != nil {
+		return err
 	}
 
 	resp, err := client.GetWithContext(ctx, sg)
@@ -228,25 +225,11 @@ func existsSecurityGroupRule(d *schema.ResourceData, meta interface{}) (bool, er
 
 	client := GetComputeClient(meta)
 
-	var securityGroupID *egoscale.UUID
-	var securityGroupName string
-
-	if s, ok := d.GetOkExists("security_group_id"); ok {
-		var err error
-		securityGroupID, err = egoscale.ParseUUID(s.(string))
-		if err != nil {
-			return false, err
-		}
-	} else if n, ok := d.GetOkExists("security_group"); ok {
-		securityGroupName = n.(string)
+	sg, err := inferSecurityGroup(d)
+	if err != nil {
+		return false, err
 	}
 
-	sg := &egoscale.SecurityGroup{
-		ID:   securityGroupID,
-		Name: securityGroupName,
-	}
-
-	var err error
 	var ingressRule egoscale.IngressRule
 	var egressRule egoscale.EgressRule
 
@@ -303,24 +286,11 @@ func readSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
 
 	client := GetComputeClient(meta)
 
-	var securityGroupID *egoscale.UUID
-	var securityGroupName string
-	if s, ok := d.GetOkExists("security_group_id"); ok {
-		var err error
-		securityGroupID, err = egoscale.ParseUUID(s.(string))
-		if err != nil {
-			return err
-		}
-	} else if n, ok := d.GetOkExists("security_group"); ok {
-		securityGroupName = n.(string)
+	sg, err := inferSecurityGroup(d)
+	if err != nil {
+		return err
 	}
 
-	sg := &egoscale.SecurityGroup{
-		ID:   securityGroupID,
-		Name: securityGroupName,
-	}
-
-	var err error
 	var ingressRule egoscale.IngressRule
 	var egressRule egoscale.EgressRule
 
@@ -408,6 +378,7 @@ func applySecurityGroupRule(d *schema.ResourceData, group *egoscale.SecurityGrou
 	if rule.CIDR != nil {
 		cidr = rule.CIDR.String()
 	}
+
 	if err := d.Set("cidr", cidr); err != nil {
 		return err
 	}
@@ -423,10 +394,11 @@ func applySecurityGroupRule(d *schema.ResourceData, group *egoscale.SecurityGrou
 	if err := d.Set("end_port", rule.EndPort); err != nil {
 		return err
 	}
-	if err := d.Set("protocol", strings.ToUpper(rule.Protocol)); err != nil {
+	protocol := strings.ToUpper(rule.Protocol)
+	protocol = strings.Replace(protocol, "V6", "v6", -1)
+	if err := d.Set("protocol", protocol); err != nil {
 		return err
 	}
-
 	if err := d.Set("user_security_group", rule.SecurityGroupName); err != nil {
 		return err
 	}
@@ -439,4 +411,24 @@ func applySecurityGroupRule(d *schema.ResourceData, group *egoscale.SecurityGrou
 	}
 
 	return nil
+}
+
+func inferSecurityGroup(d *schema.ResourceData) (*egoscale.SecurityGroup, error) {
+	var securityGroupID *egoscale.UUID
+	var securityGroupName string
+
+	if s, ok := d.GetOkExists("security_group_id"); ok {
+		var err error
+		securityGroupID, err = egoscale.ParseUUID(s.(string))
+		if err != nil {
+			return nil, err
+		}
+	} else if n, ok := d.GetOkExists("security_group"); ok {
+		securityGroupName = n.(string)
+	}
+
+	return &egoscale.SecurityGroup{
+		ID:   securityGroupID,
+		Name: securityGroupName,
+	}, nil
 }
