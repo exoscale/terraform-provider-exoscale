@@ -59,7 +59,7 @@ func existsDomain(d *schema.ResourceData, meta interface{}) (bool, error) {
 
 	_, err := client.GetDomain(d.Id())
 	if err != nil {
-		if _, ok := err.(*egoscale.DNSErrorResponse); ok {
+		if _, ok := err.(*egoscale.DNSErrorResponse); ok { // nolint: gosimple
 			return false, nil
 		}
 	}

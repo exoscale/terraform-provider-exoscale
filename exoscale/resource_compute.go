@@ -629,7 +629,7 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 		o, n := d.GetChange("size")
 		oldSize := o.(string)
 		newSize := n.(string)
-		if strings.ToLower(oldSize) != strings.ToLower(newSize) {
+		if !strings.EqualFold(oldSize, newSize) {
 			rebootRequired = true
 			resp, err := client.RequestWithContext(ctx, &egoscale.ListServiceOfferings{
 				Name: newSize,

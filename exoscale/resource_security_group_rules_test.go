@@ -172,7 +172,7 @@ func testAccCheckSecurityGroupHasManyRules(quantity int) resource.TestCheckFunc 
 func testAccCheckSecurityGroupIngressRuleExists(sg *egoscale.SecurityGroup, rule *egoscale.IngressRule) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		for _, r := range sg.IngressRule {
-			if strings.ToUpper(r.Protocol) == strings.ToUpper(rule.Protocol) && r.StartPort == rule.StartPort && r.EndPort == rule.EndPort && r.IcmpCode == rule.IcmpCode && r.IcmpType == rule.IcmpType {
+			if strings.EqualFold(r.Protocol, rule.Protocol) && r.StartPort == rule.StartPort && r.EndPort == rule.EndPort && r.IcmpCode == rule.IcmpCode && r.IcmpType == rule.IcmpType {
 				if r.CIDR != nil && rule.CIDR != nil && r.CIDR.Equal(*rule.CIDR) {
 					return nil
 				}
@@ -189,7 +189,7 @@ func testAccCheckSecurityGroupIngressRuleExists(sg *egoscale.SecurityGroup, rule
 func testAccCheckSecurityGroupEgressRuleExists(sg *egoscale.SecurityGroup, rule *egoscale.EgressRule) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		for _, r := range sg.EgressRule {
-			if strings.ToUpper(r.Protocol) == strings.ToUpper(rule.Protocol) && r.StartPort == rule.StartPort && r.EndPort == rule.EndPort && r.IcmpCode == rule.IcmpCode && r.IcmpType == rule.IcmpType {
+			if strings.EqualFold(r.Protocol, rule.Protocol) && r.StartPort == rule.StartPort && r.EndPort == rule.EndPort && r.IcmpCode == rule.IcmpCode && r.IcmpType == rule.IcmpType {
 				if r.CIDR != nil && rule.CIDR != nil && r.CIDR.Equal(*rule.CIDR) {
 					return nil
 				}

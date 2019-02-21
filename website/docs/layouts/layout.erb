@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="<%= description_for(current_page) %>">
+
+    <title><%= title_for(current_page) %></title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.4/css/bulma.min.css">
+    <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
+
+    <%= yield_content :head %>
+  </head>
+
+  <body id="<%= body_id_for(current_page) %>" class="<%= body_classes_for(current_page) %>">
+
+  <nav class="navbar is-dark" role="navigation" aria-label="main navigation">
+    <div class="container">
+      <div class="navbar-brand">
+          <a class="navbar-item" href="<%= base_url %>">Exoscale Terraform provider</a>
+      </div>
+      <div class="navbar-menu">
+        <div class="navbar-start is-active">
+          <a class="navbar-item" href="https://github.com/exoscale/terraform-provider-exoscale/issues">issues</a>
+          <a class="navbar-item" href="https://github.com/exoscale/terraform-provider-exoscale/">source</a>
+        </div>
+        <div class="navbar-end is-right">
+            <div style="margin-top:.7rem">
+                <a class="button is-primary" href="https://github.com/exoscale/terraform-provider-exoscale/releases">
+                    <span class="icon"><i class="fas fa-download"></i></span>
+                    <span>Download</span>
+                </a>
+          <iframe src="https://ghbtns.com/github-btn.html?user=exoscale&repo=terraform-provider-exoscale&type=star&count=true&size=large" frameborder="0" scrolling="0" width="160px" height="30px" style="height:30px !important"></iframe>
+            </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+    <%= yield %>
+
+    <footer class="footer" style="clear:both">
+        <div class="container">
+            <div class="content has-text-centered">
+                <p>Made with ❤️ in Lausanne, Switzerland 🇨🇭.</p>
+                Hosted on <a href="https://github.com/exoscale/terraform-provider-exoscale">GitHub</a>.</p>
+            </div>
+        </div>
+    </footer>
+
+  </body>
+</html>

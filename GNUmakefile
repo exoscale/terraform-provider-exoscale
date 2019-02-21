@@ -3,7 +3,7 @@ TEST?=./...
 GOFMT_FILES?=$$(find . -name '*.go' |grep -v vendor)
 PKG_NAME=exoscale
 WEBSITE_REPO=github.com/hashicorp/terraform-website
-GOLANGCI_LINT_VERSION=1.11.1
+GOLANGCI_LINT_VERSION=1.15.0
 
 default: build
 
