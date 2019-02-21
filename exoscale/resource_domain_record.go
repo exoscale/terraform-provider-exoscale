@@ -34,7 +34,7 @@ func domainRecordResource() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 				ValidateFunc: validation.StringInSlice([]string{
-					"A", "AAAA", "ALIAS", "CNAME", "HINFO", "MX", "NAPTR",
+					"A", "AAAA", "ALIAS", "CAA", "CNAME", "HINFO", "MX", "NAPTR",
 					"NS", "POOL", "SPF", "SRV", "SSHFP", "TXT", "URL",
 				}, true),
 			},
