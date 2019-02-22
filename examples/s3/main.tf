@@ -22,6 +22,10 @@ resource "aws_s3_bucket" "testbucket" {
   bucket = "${var.bucket}"
   acl = "public-read"
 
+  lifecycle {
+    ignore_changes = ["object_lock_configuration.#"]
+  }
+
   cors_rule {
     allowed_headers = ["*"]
     allowed_methods = ["PUT", "POST"]
