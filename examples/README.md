@@ -53,6 +53,12 @@ Having one elastic IP address linked to two (or more) instances.
 
 Using the [Terraform AWS Provider](https://www.terraform.io/docs/providers/aws/) with the [Exoscale Object Storage](https://www.exoscale.com/object-storage/) to manage a bucket.
 
+## [Exokube](exokube)
+
+A sample single node Kubernetes cluster to act as a [Minikube][minikube] on Exoscale.
+
 ## External examples
 
 - Oliver Moser's: [Prometheus Service Discovery Demo](https://github.com/olmoser/infracoders-reloaded)
+
+[minikube]: https://github.com/kubernetes/minikube
