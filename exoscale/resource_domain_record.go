@@ -1,6 +1,7 @@
 package exoscale
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 
@@ -57,13 +58,23 @@ func domainRecordResource() *schema.Resource {
 				Computed: true,
 			},
 		},
+
+		Timeouts: &schema.ResourceTimeout{
+			Create: schema.DefaultTimeout(defaultTimeout),
+			Read:   schema.DefaultTimeout(defaultTimeout),
+			Update: schema.DefaultTimeout(defaultTimeout),
+			Delete: schema.DefaultTimeout(defaultTimeout),
+		},
 	}
 }
 
 func createRecord(d *schema.ResourceData, meta interface{}) error {
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutCreate))
+	defer cancel()
+
 	client := GetDNSClient(meta)
 
-	record, err := client.CreateRecord(d.Get("domain").(string), egoscale.DNSRecord{
+	record, err := client.CreateRecord(ctx, d.Get("domain").(string), egoscale.DNSRecord{
 		Name:       d.Get("name").(string),
 		Content:    d.Get("content").(string),
 		RecordType: d.Get("record_type").(string),
@@ -80,13 +91,16 @@ func createRecord(d *schema.ResourceData, meta interface{}) error {
 }
 
 func existsRecord(d *schema.ResourceData, meta interface{}) (bool, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
+	defer cancel()
+
 	client := GetDNSClient(meta)
 
 	id, _ := strconv.ParseInt(d.Id(), 10, 64)
 	domain := d.Get("domain").(string)
 
 	if domain != "" {
-		record, err := client.GetRecord(domain, id)
+		record, err := client.GetRecord(ctx, domain, id)
 		if err != nil {
 			if _, ok := err.(*egoscale.DNSErrorResponse); !ok {
 				return false, err
@@ -98,13 +112,13 @@ func existsRecord(d *schema.ResourceData, meta interface{}) (bool, error) {
 		return record != nil, nil
 	}
 
-	domains, err := client.GetDomains()
+	domains, err := client.GetDomains(ctx)
 	if err != nil {
 		return false, err
 	}
 
 	for _, domain := range domains {
-		record, err := client.GetRecord(domain.Name, id)
+		record, err := client.GetRecord(ctx, domain.Name, id)
 		if err != nil {
 			if _, ok := err.(*egoscale.DNSErrorResponse); !ok {
 				return false, err
@@ -122,13 +136,16 @@ func existsRecord(d *schema.ResourceData, meta interface{}) (bool, error) {
 }
 
 func readRecord(d *schema.ResourceData, meta interface{}) error {
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
+	defer cancel()
+
 	client := GetDNSClient(meta)
 
 	id, _ := strconv.ParseInt(d.Id(), 10, 64)
 	domain := d.Get("domain").(string)
 
 	if domain != "" {
-		record, err := client.GetRecord(domain, id)
+		record, err := client.GetRecord(ctx, domain, id)
 		if err != nil {
 			return err
 		}
@@ -136,13 +153,13 @@ func readRecord(d *schema.ResourceData, meta interface{}) error {
 		return applyRecord(d, *record)
 	}
 
-	domains, err := client.GetDomains()
+	domains, err := client.GetDomains(ctx)
 	if err != nil {
 		return err
 	}
 
 	for _, domain := range domains {
-		record, err := client.GetRecord(domain.Name, id)
+		record, err := client.GetRecord(ctx, domain.Name, id)
 		if err != nil {
 			return err
 		}
@@ -159,10 +176,13 @@ func readRecord(d *schema.ResourceData, meta interface{}) error {
 }
 
 func updateRecord(d *schema.ResourceData, meta interface{}) error {
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutUpdate))
+	defer cancel()
+
 	client := GetDNSClient(meta)
 
 	id, _ := strconv.ParseInt(d.Id(), 10, 64)
-	record, err := client.UpdateRecord(d.Get("domain").(string), egoscale.UpdateDNSRecord{
+	record, err := client.UpdateRecord(ctx, d.Get("domain").(string), egoscale.UpdateDNSRecord{
 		ID:         id,
 		Name:       d.Get("name").(string),
 		Content:    d.Get("content").(string),
@@ -179,10 +199,13 @@ func updateRecord(d *schema.ResourceData, meta interface{}) error {
 }
 
 func deleteRecord(d *schema.ResourceData, meta interface{}) error {
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutDelete))
+	defer cancel()
+
 	client := GetDNSClient(meta)
 
 	id, _ := strconv.ParseInt(d.Id(), 10, 64)
-	err := client.DeleteRecord(d.Get("domain").(string), id)
+	err := client.DeleteRecord(ctx, d.Get("domain").(string), id)
 	if err != nil {
 		d.SetId("")
 	}

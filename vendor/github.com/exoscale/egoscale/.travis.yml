@@ -1,6 +1,6 @@
 language: go
 
-dist: trusty
+dist: xenial
 sudo: required
 
 go:
@@ -9,9 +9,11 @@ go:
 - "1.9.x"
 - "1.10.x"
 - "1.11.x"
+- "1.12.x"
+- tip
 
 env:
-  - GOLANGCI_LINT_VERSION=1.12.2 GO111MODULES=on
+  - GOLANGCI_LINT_VERSION=1.15.0 GO111MODULES=on
 
 cache: apt
 
@@ -26,9 +28,16 @@ install:
   - npm i codeclimate-test-reporter
   - '[ "$(echo "$TRAVIS_GO_VERSION" | perl -pe "s/\\.[x\\d]+$//")" = "1.11" ] && go mod vendor || go get -u github.com/satori/go.uuid'
 
+before_script:
+  - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+  - chmod +x ./cc-test-reporter
+  - ./cc-test-reporter before-build
+
 script:
-  - go test -race -coverprofile=coverage.out -covermode=atomic .
-  - npx codeclimate-test-reporter < coverage.out
+  - go test -race -coverprofile=c.out -covermode=atomic .
+
+after_script:
+  - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT
 
 jobs:
   include:

@@ -48,7 +48,7 @@ github.com/bgentry/speakeasy
 github.com/blang/semver
 # github.com/davecgh/go-spew v1.1.1
 github.com/davecgh/go-spew/spew
-# github.com/exoscale/egoscale v0.13.0
+# github.com/exoscale/egoscale v0.14.3
 github.com/exoscale/egoscale
 # github.com/fatih/color v1.7.0
 github.com/fatih/color
@@ -239,5 +239,5 @@ google.golang.org/grpc/stats
 google.golang.org/grpc/status
 google.golang.org/grpc/tap
 google.golang.org/grpc/balancer/base
-# gopkg.in/ini.v1 v1.39.3 => github.com/go-ini/ini v1.39.3
+# gopkg.in/ini.v1 v1.42.0 => github.com/go-ini/ini v1.42.0
 gopkg.in/ini.v1

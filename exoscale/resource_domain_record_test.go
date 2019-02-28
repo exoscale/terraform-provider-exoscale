@@ -1,6 +1,7 @@
 package exoscale
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"testing"
@@ -46,7 +47,7 @@ func testAccCheckDNSRecordExists(n string, domain *egoscale.DNSDomain, record *e
 		id, _ := strconv.ParseInt(rs.Primary.ID, 10, 64)
 
 		client := GetDNSClient(testAccProvider.Meta())
-		r, err := client.GetRecord(domain.Name, id)
+		r, err := client.GetRecord(context.TODO(), domain.Name, id)
 		if err != nil {
 			return err
 		}
@@ -98,7 +99,7 @@ func testAccCheckDNSRecordDestroy(s *terraform.State) error {
 		}
 
 		id, _ := strconv.ParseInt(rs.Primary.ID, 10, 64)
-		d, err := client.GetRecord(rs.Primary.Attributes["domain"], id)
+		d, err := client.GetRecord(context.TODO(), rs.Primary.Attributes["domain"], id)
 		if err != nil {
 			if _, ok := err.(*egoscale.DNSErrorResponse); ok {
 				return nil

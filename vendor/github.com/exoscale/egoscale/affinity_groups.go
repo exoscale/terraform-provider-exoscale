@@ -11,12 +11,12 @@ import (
 // Affinity and Anti-Affinity groups provide a way to influence where VMs should run.
 // See: http://docs.cloudstack.apache.org/projects/cloudstack-administration/en/stable/virtual_machines.html#affinity-groups
 type AffinityGroup struct {
-	Account           string   `json:"account,omitempty" doc:"the account owning the affinity group"`
-	Description       string   `json:"description,omitempty" doc:"the description of the affinity group"`
-	ID                *UUID    `json:"id,omitempty" doc:"the ID of the affinity group"`
-	Name              string   `json:"name,omitempty" doc:"the name of the affinity group"`
-	Type              string   `json:"type,omitempty" doc:"the type of the affinity group"`
-	VirtualMachineIDs []string `json:"virtualmachineIds,omitempty" doc:"virtual machine Ids associated with this affinity group"`
+	Account           string `json:"account,omitempty" doc:"the account owning the affinity group"`
+	Description       string `json:"description,omitempty" doc:"the description of the affinity group"`
+	ID                *UUID  `json:"id,omitempty" doc:"the ID of the affinity group"`
+	Name              string `json:"name,omitempty" doc:"the name of the affinity group"`
+	Type              string `json:"type,omitempty" doc:"the type of the affinity group"`
+	VirtualMachineIDs []UUID `json:"virtualmachineIds,omitempty" doc:"virtual machine Ids associated with this affinity group"`
 }
 
 // ListRequest builds the ListAffinityGroups request
@@ -52,9 +52,17 @@ type AffinityGroupType struct {
 // CreateAffinityGroup (Async) represents a new (anti-)affinity group
 type CreateAffinityGroup struct {
 	Description string `json:"description,omitempty" doc:"Optional description of the affinity group"`
-	Name        string `json:"name" doc:"Name of the affinity group"`
+	Name        string `json:"name,omitempty" doc:"Name of the affinity group"`
 	Type        string `json:"type" doc:"Type of the affinity group from the available affinity/anti-affinity group types"`
 	_           bool   `name:"createAffinityGroup" description:"Creates an affinity/anti-affinity group"`
+}
+
+func (req CreateAffinityGroup) onBeforeSend(params url.Values) error {
+	// Name must be set, but can be empty
+	if req.Name == "" {
+		params.Set("name", "")
+	}
+	return nil
 }
 
 // Response returns the struct to unmarshal
@@ -107,7 +115,7 @@ func (DeleteAffinityGroup) Response() interface{} {
 
 // AsyncResponse returns the struct to unmarshal the async job
 func (DeleteAffinityGroup) AsyncResponse() interface{} {
-	return new(booleanResponse)
+	return new(BooleanResponse)
 }
 
 //go:generate go run generate/main.go -interface=Listable ListAffinityGroups

@@ -436,7 +436,7 @@ func (ExpungeVirtualMachine) Response() interface{} {
 
 // AsyncResponse returns the struct to unmarshal the async job
 func (ExpungeVirtualMachine) AsyncResponse() interface{} {
-	return new(booleanResponse)
+	return new(BooleanResponse)
 }
 
 // ScaleVirtualMachine (Async) scales the virtual machine to a new service offering.
@@ -457,7 +457,7 @@ func (ScaleVirtualMachine) Response() interface{} {
 
 // AsyncResponse returns the struct to unmarshal the async job
 func (ScaleVirtualMachine) AsyncResponse() interface{} {
-	return new(booleanResponse)
+	return new(BooleanResponse)
 }
 
 // ChangeServiceForVirtualMachine changes the service offering for a virtual machine. The virtual machine must be in a "Stopped" state for this command to take effect.
@@ -509,7 +509,7 @@ type ListVirtualMachines struct {
 	ForVirtualNetwork *bool         `json:"forvirtualnetwork,omitempty" doc:"list by network type; true if need to list vms using Virtual Network, false otherwise"`
 	GroupID           *UUID         `json:"groupid,omitempty" doc:"the group ID"`
 	ID                *UUID         `json:"id,omitempty" doc:"the ID of the virtual machine"`
-	IDs               []string      `json:"ids,omitempty" doc:"the IDs of the virtual machines, mutually exclusive with id"`
+	IDs               []UUID        `json:"ids,omitempty" doc:"the IDs of the virtual machines, mutually exclusive with id"`
 	IPAddress         net.IP        `json:"ipaddress,omitempty" doc:"an IP address to filter the result"`
 	IsoID             *UUID         `json:"isoid,omitempty" doc:"list vms by iso"`
 	Keyword           string        `json:"keyword,omitempty" doc:"List by keyword"`

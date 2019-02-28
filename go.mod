@@ -1,11 +1,11 @@
 module github.com/terraform-providers/terraform-provider-exoscale
 
-replace gopkg.in/ini.v1 => github.com/go-ini/ini v1.39.3
+replace gopkg.in/ini.v1 => github.com/go-ini/ini v1.42.0
 
 require (
 	github.com/apparentlymart/go-cidr v1.0.0 // indirect
 	github.com/blang/semver v3.5.1+incompatible // indirect
-	github.com/exoscale/egoscale v0.13.0
+	github.com/exoscale/egoscale v0.14.3
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b // indirect
 	github.com/gopherjs/gopherjs v0.0.0-20181103185306-d547d1d9531e // indirect
 	github.com/hashicorp/go-getter v0.0.0-20181119194526-bd1edc22f8ea // indirect
@@ -27,5 +27,5 @@ require (
 	github.com/zclconf/go-cty v0.0.0-20181210194043-3a13afc12792 // indirect
 	golang.org/x/crypto v0.0.0-20181203042331-505ab145d0a9 // indirect
 	golang.org/x/net v0.0.0-20181207154023-610586996380 // indirect
-	gopkg.in/ini.v1 v1.39.3
+	gopkg.in/ini.v1 v1.42.0
 )

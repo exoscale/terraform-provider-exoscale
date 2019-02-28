@@ -1,6 +1,8 @@
 package exoscale
 
 import (
+	"context"
+
 	"github.com/exoscale/egoscale"
 	"github.com/hashicorp/terraform/helper/schema"
 )
@@ -39,13 +41,22 @@ func domainResource() *schema.Resource {
 				Computed: true,
 			},
 		},
+
+		Timeouts: &schema.ResourceTimeout{
+			Create: schema.DefaultTimeout(defaultTimeout),
+			Read:   schema.DefaultTimeout(defaultTimeout),
+			Delete: schema.DefaultTimeout(defaultTimeout),
+		},
 	}
 }
 
 func createDomain(d *schema.ResourceData, meta interface{}) error {
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutCreate))
+	defer cancel()
+
 	client := GetDNSClient(meta)
 
-	domain, err := client.CreateDomain(d.Get("name").(string))
+	domain, err := client.CreateDomain(ctx, d.Get("name").(string))
 	if err != nil {
 		return err
 	}
@@ -55,9 +66,12 @@ func createDomain(d *schema.ResourceData, meta interface{}) error {
 }
 
 func existsDomain(d *schema.ResourceData, meta interface{}) (bool, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
+	defer cancel()
+
 	client := GetDNSClient(meta)
 
-	_, err := client.GetDomain(d.Id())
+	_, err := client.GetDomain(ctx, d.Id())
 	if err != nil {
 		if _, ok := err.(*egoscale.DNSErrorResponse); ok { // nolint: gosimple
 			return false, nil
@@ -68,9 +82,12 @@ func existsDomain(d *schema.ResourceData, meta interface{}) (bool, error) {
 }
 
 func readDomain(d *schema.ResourceData, meta interface{}) error {
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
+	defer cancel()
+
 	client := GetDNSClient(meta)
 
-	domain, err := client.GetDomain(d.Id())
+	domain, err := client.GetDomain(ctx, d.Id())
 	if err != nil {
 		return err
 	}
@@ -79,9 +96,12 @@ func readDomain(d *schema.ResourceData, meta interface{}) error {
 }
 
 func deleteDomain(d *schema.ResourceData, meta interface{}) error {
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutDelete))
+	defer cancel()
+
 	client := GetDNSClient(meta)
 
-	err := client.DeleteDomain(d.Id())
+	err := client.DeleteDomain(ctx, d.Id())
 	if err != nil {
 		d.SetId("")
 	}
@@ -90,8 +110,11 @@ func deleteDomain(d *schema.ResourceData, meta interface{}) error {
 }
 
 func importDomain(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
+	defer cancel()
+
 	client := GetDNSClient(meta)
-	domain, err := client.GetDomain(d.Id())
+	domain, err := client.GetDomain(ctx, d.Id())
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +126,7 @@ func importDomain(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceD
 	resources := make([]*schema.ResourceData, 0, 1)
 	resources = append(resources, d)
 
-	records, err := client.GetRecords(d.Id())
+	records, err := client.GetRecords(ctx, d.Id())
 	if err != nil {
 		return nil, err
 	}

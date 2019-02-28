@@ -1,6 +1,7 @@
 package exoscale
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -41,7 +42,7 @@ func testAccCheckDNSDomainExists(n string, domain *egoscale.DNSDomain) resource.
 		}
 
 		client := GetDNSClient(testAccProvider.Meta())
-		d, err := client.GetDomain(rs.Primary.ID)
+		d, err := client.GetDomain(context.TODO(), rs.Primary.ID)
 		if err != nil {
 			return err
 		}
@@ -92,7 +93,7 @@ func testAccCheckDNSDomainDestroy(s *terraform.State) error {
 			continue
 		}
 
-		d, err := client.GetDomain(rs.Primary.Attributes["name"])
+		d, err := client.GetDomain(context.TODO(), rs.Primary.Attributes["name"])
 		if err != nil {
 			if _, ok := err.(*egoscale.DNSErrorResponse); ok {
 				return nil
