@@ -17,7 +17,7 @@ resource plugin.  Additional documentation can be found in the examples director
 
 ```hcl
 provider "exoscale" {
-  version = "~> 0.9.43"
+  version = "~> 0.9.45"
   key = "EXO..."
   secret = "..."
 
