@@ -158,7 +158,11 @@ func updateSecurityGroupRules(d *schema.ResourceData, meta interface{}) error {
 					return err
 				}
 
-				rule := resp.(*egoscale.SecurityGroup).IngressRule[0]
+				sg := resp.(*egoscale.SecurityGroup)
+				if len(sg.IngressRule) != 1 {
+					return fmt.Errorf("one ingress was supposed to be updated. Does %#v already exist?", req)
+				}
+				rule := sg.IngressRule[0]
 				id := ingressRuleToID(rule)
 				ids.Add(id)
 			}
@@ -200,12 +204,17 @@ func updateSecurityGroupRules(d *schema.ResourceData, meta interface{}) error {
 
 			for _, req := range reqs {
 				req.SecurityGroupID = sgID
-				resp, err := client.RequestWithContext(ctx, (egoscale.AuthorizeSecurityGroupIngress)(req))
+				ereq := (egoscale.AuthorizeSecurityGroupEgress)(req)
+				resp, err := client.RequestWithContext(ctx, ereq)
 				if err != nil {
 					return err
 				}
 
-				rule := resp.(*egoscale.SecurityGroup).EgressRule[0]
+				sg := resp.(*egoscale.SecurityGroup)
+				if len(sg.EgressRule) != 1 {
+					return fmt.Errorf("one egress was supposed to be updated. Does %#v already exist?", ereq)
+				}
+				rule := sg.EgressRule[0]
 				id := egressRuleToID(rule)
 				ids.Add(id)
 			}
@@ -259,7 +268,11 @@ func createSecurityGroupRules(d *schema.ResourceData, meta interface{}) error {
 					return err
 				}
 
-				rule := resp.(*egoscale.SecurityGroup).IngressRule[0]
+				sg := resp.(*egoscale.SecurityGroup)
+				if len(sg.IngressRule) != 1 {
+					return fmt.Errorf("one ingress was supposed to be created. Does %#v already exist?", req)
+				}
+				rule := sg.IngressRule[0]
 				id := ingressRuleToID(rule)
 				ids.Add(id)
 			}
@@ -277,12 +290,17 @@ func createSecurityGroupRules(d *schema.ResourceData, meta interface{}) error {
 
 			for _, req := range reqs {
 				req.SecurityGroupID = sg.ID
-				resp, err := client.RequestWithContext(ctx, (*egoscale.AuthorizeSecurityGroupEgress)(&req))
+				ereq := (*egoscale.AuthorizeSecurityGroupEgress)(&req)
+				resp, err := client.RequestWithContext(ctx, ereq)
 				if err != nil {
 					return err
 				}
 
-				rule := resp.(*egoscale.SecurityGroup).EgressRule[0]
+				sg := resp.(*egoscale.SecurityGroup)
+				if len(sg.EgressRule) != 1 {
+					return fmt.Errorf("one egress was supposed to be created. Does %#v already exist?", ereq)
+				}
+				rule := sg.EgressRule[0]
 				id := egressRuleToID(rule)
 				ids.Add(id)
 

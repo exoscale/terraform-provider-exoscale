@@ -138,6 +138,43 @@ func TestAccSecurityGroupRules(t *testing.T) {
 					}),
 				),
 			},
+			{
+				Config: testAccSecurityGroupRulesUpdate,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckSecurityGroupExists("exoscale_security_group.sg", sg),
+					testAccCheckSecurityGroupHasManyRules(16),
+					testAccCheckSecurityGroupIngressRuleExists(sg, &egoscale.IngressRule{
+						SecurityGroupName: "terraform-test-security-group",
+						StartPort:         2222,
+						EndPort:           2222,
+						Protocol:          "TCP",
+					}),
+					testAccCheckSecurityGroupIngressRuleExists(sg, &egoscale.IngressRule{
+						SecurityGroupName: "default",
+						StartPort:         2222,
+						EndPort:           2222,
+						Protocol:          "TCP",
+					}),
+					testAccCheckSecurityGroupEgressRuleExists(sg, &egoscale.EgressRule{
+						CIDR:      egoscale.MustParseCIDR("192.168.0.0/24"),
+						StartPort: 4444,
+						EndPort:   4444,
+						Protocol:  "UDP",
+					}),
+					testAccCheckSecurityGroupEgressRuleExists(sg, &egoscale.EgressRule{
+						CIDR:      egoscale.MustParseCIDR("::/0"),
+						StartPort: 4444,
+						EndPort:   4444,
+						Protocol:  "UDP",
+					}),
+					testAccCheckSecurityGroupEgressRuleExists(sg, &egoscale.EgressRule{
+						SecurityGroupName: "default",
+						StartPort:         4444,
+						EndPort:           4444,
+						Protocol:          "UDP",
+					}),
+				),
+			},
 		},
 	})
 }
@@ -265,6 +302,45 @@ resource "exoscale_security_group_rules" "rules" {
     protocol = "UDP"
     cidr_list = ["192.168.0.0/24", "::/0"]
     ports = ["44", "2375-2377"]
+    user_security_group_list = ["default"]
+  }
+}
+`
+
+var testAccSecurityGroupRulesUpdate = `
+resource "exoscale_security_group" "sg" {
+  name = "terraform-test-security-group"
+  description = "Terraform Security Group Test"
+}
+
+resource "exoscale_security_group_rules" "rules" {
+  security_group_id = "${exoscale_security_group.sg.id}"
+
+  ingress {
+    protocol = "ICMP"
+    icmp_type = 8
+    icmp_code = 0
+    cidr_list = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    protocol = "ICMPv6"
+    icmp_type = 128
+    icmp_code = 0
+    cidr_list = ["::/0"]
+  }
+
+  ingress {
+    protocol = "TCP"
+    cidr_list = ["10.0.0.0/24", "::/0"]
+    ports = ["2222", "8000-8888"],
+    user_security_group_list = ["${exoscale_security_group.sg.name}", "default"]
+  }
+
+  egress {
+    protocol = "UDP"
+    cidr_list = ["192.168.0.0/24", "::/0"]
+    ports = ["4444", "2375-2377"]
     user_security_group_list = ["default"]
   }
 }
