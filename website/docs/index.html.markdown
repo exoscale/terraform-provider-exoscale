@@ -30,7 +30,7 @@ provider "exoscale" {
 
 ```hcl
 provider "exoscale" {
-  version = "~> 0.9.43"
+  version = "~> 0.9.45"
 
   config = "cloudstack.ini"   # default: filename
   region = "cloudstack"       # default: section name
