@@ -16,7 +16,7 @@ attributed to many compute. See [secondary_ipaddress](secondary_ipaddress.html).
 ```
 resource "exoscale_ipaddress" "myip" {
   zone = "ch-dk-2"
-  tags {
+  tags = {
     usage = "load-balancer"
   }
 }

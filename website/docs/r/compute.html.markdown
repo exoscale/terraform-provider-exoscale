@@ -32,7 +32,7 @@ resource "exoscale_compute" "mymachine" {
 manage_etc_hosts: localhost
 EOF
 
-  tags {
+  tags = {
     production = "true"
   }
 

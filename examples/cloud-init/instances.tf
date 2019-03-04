@@ -17,7 +17,7 @@ resource "exoscale_compute" "master" {
 
   user_data = "${element(data.template_cloudinit_config.config.*.rendered, count.index)}"
 
-  tags {
+  tags = {
     managedby = "terraform"
     swarm = "master"
   }
