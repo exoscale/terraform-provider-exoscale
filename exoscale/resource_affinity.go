@@ -128,7 +128,11 @@ func applyAffinityGroup(d *schema.ResourceData, affinity *egoscale.AffinityGroup
 	if err := d.Set("type", affinity.Type); err != nil {
 		return err
 	}
-	if err := d.Set("virtual_machine_ids", affinity.VirtualMachineIDs); err != nil {
+	ids := make([]string, len(affinity.VirtualMachineIDs))
+	for i, id := range affinity.VirtualMachineIDs {
+		ids[i] = id.String()
+	}
+	if err := d.Set("virtual_machine_ids", ids); err != nil {
 		return err
 	}
 
