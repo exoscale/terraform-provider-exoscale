@@ -35,7 +35,7 @@ $ make build
 
 Using the provider
 ----------------------
-If you're building the provider, follow the instructions to [install it as a plugin.][install] After placing it into your plugins directory,  run `terraform init` to initialize it.
+If you're building the provider, follow the instructions to [install it as a plugin.](https://www.terraform.io/docs/configuration/providers.html#third-party-plugins) After placing it into your plugins directory,  run `terraform init` to initialize it.
 
 Developing the Provider
 ---------------------------
@@ -66,5 +66,3 @@ In order to run the full suite of Acceptance tests, run `make testacc`.
 ```sh
 $ make testacc
 ```
-
-install: https://www.terraform.io/docs/configuration/providers.html#third-party-plugins
