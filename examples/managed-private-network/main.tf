@@ -73,7 +73,7 @@ resource "exoscale_nic" "eth_dynamic" {
 }
 
 provider "exoscale" {
-  version = "~> 0.9.36"
+  version = "~> 0.10"
   key = "${var.key}"
   secret = "${var.secret}"
 }
