@@ -23,7 +23,7 @@ resource "exoscale_network" "privNet" {
   end_ip = "10.0.0.254"
   netmask = "255.255.255.0"
 
-  tags {
+  tags = {
     # ...
   }
 }

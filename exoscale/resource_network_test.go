@@ -148,7 +148,7 @@ resource "exoscale_network" "net" {
   zone = %q
   network_offering = %q
 
-  tags {
+  tags = {
     managedby = "terraform"
   }
 }

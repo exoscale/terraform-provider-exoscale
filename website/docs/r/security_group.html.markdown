@@ -19,7 +19,7 @@ resource "exoscale_security_group" "http" {
   name = "HTTP"
   description = "Long text"
 
-  tags {
+  tags = {
     kind = "web"
   }
 }

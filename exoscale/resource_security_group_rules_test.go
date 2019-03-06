@@ -294,7 +294,7 @@ resource "exoscale_security_group_rules" "rules" {
   ingress {
     protocol = "TCP"
     cidr_list = ["10.0.0.0/24", "::/0"]
-    ports = ["22", "8000-8888"],
+    ports = ["22", "8000-8888"]
     user_security_group_list = ["${exoscale_security_group.sg.name}", "default"]
   }
 
@@ -333,7 +333,7 @@ resource "exoscale_security_group_rules" "rules" {
   ingress {
     protocol = "TCP"
     cidr_list = ["10.0.0.0/24", "::/0"]
-    ports = ["2222", "8000-8888"],
+    ports = ["2222", "8000-8888"]
     user_security_group_list = ["${exoscale_security_group.sg.name}", "default"]
   }
 

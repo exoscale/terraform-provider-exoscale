@@ -138,7 +138,7 @@ resource "exoscale_compute" "vm" {
   disk_size = "12"
   key_pair = "${exoscale_ssh_keypair.key.name}"
 
-  tags {
+  tags = {
     test = "terraform"
   }
 

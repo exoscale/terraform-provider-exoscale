@@ -130,7 +130,7 @@ func testAccCheckElasticIPDestroy(s *terraform.State) error {
 var testAccElasticIPCreate = fmt.Sprintf(`
 resource "exoscale_ipaddress" "eip" {
   zone = %q
-  tags {
+  tags = {
     test = "acceptance"
   }
 }
