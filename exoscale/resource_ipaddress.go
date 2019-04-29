@@ -5,22 +5,66 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"regexp"
 
 	"github.com/exoscale/egoscale"
 	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform/helper/validation"
 )
 
 func elasticIPResource() *schema.Resource {
 	s := map[string]*schema.Schema{
-		"ip_address": {
-			Type:     schema.TypeString,
-			Computed: true,
-		},
 		"zone": {
 			Type:        schema.TypeString,
 			Required:    true,
 			ForceNew:    true,
-			Description: "Name of the Data-Center",
+			Description: "Name of the zone",
+		},
+		"healthcheck_mode": {
+			Type:         schema.TypeString,
+			Description:  "Healthcheck probing mode",
+			Optional:     true,
+			ValidateFunc: validation.StringMatch(regexp.MustCompile("(?:tcp|http)"), `must be either "tcp" or "http"`),
+			ForceNew:     true,
+		},
+		"healthcheck_port": {
+			Type:         schema.TypeInt,
+			Description:  "Healthcheck service port to probe",
+			Optional:     true,
+			ValidateFunc: validation.IntBetween(1, 65535),
+		},
+		"healthcheck_path": {
+			Type:        schema.TypeString,
+			Description: "Healthcheck probe HTTP request path, must be specified in \"http\" mode",
+			Optional:    true,
+		},
+		"healthcheck_interval": {
+			Type:         schema.TypeInt,
+			Description:  "Healthcheck probing interval in seconds",
+			Optional:     true,
+			ValidateFunc: validation.IntBetween(5, 300),
+		},
+		"healthcheck_timeout": {
+			Type:         schema.TypeInt,
+			Description:  "Time in seconds before considering a healthcheck probing failed",
+			Optional:     true,
+			ValidateFunc: validation.IntBetween(2, 60),
+		},
+		"healthcheck_strikes_ok": {
+			Type:         schema.TypeInt,
+			Description:  "Number of successful healthcheck probes before considering the target healthy",
+			Optional:     true,
+			ValidateFunc: validation.IntBetween(1, 20),
+		},
+		"healthcheck_strikes_fail": {
+			Type:         schema.TypeInt,
+			Description:  "Number of unsuccessful healthcheck probes before considering the target unhealthy",
+			Optional:     true,
+			ValidateFunc: validation.IntBetween(1, 20),
+		},
+		"ip_address": {
+			Type:     schema.TypeString,
+			Computed: true,
 		},
 	}
 
@@ -61,8 +105,50 @@ func createElasticIP(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	req := &egoscale.AssociateIPAddress{
-		ZoneID: zone.ID,
+	req := &egoscale.AssociateIPAddress{ZoneID: zone.ID}
+
+	if req.HealthcheckMode = d.Get("healthcheck_mode").(string); req.HealthcheckMode != "" {
+		if req.HealthcheckPort = int64(d.Get("healthcheck_port").(int)); req.HealthcheckPort == 0 {
+			return fmt.Errorf("healthcheck_port must be specified")
+		}
+
+		req.HealthcheckPath = d.Get("healthcheck_path").(string)
+		if req.HealthcheckMode == "http" && req.HealthcheckPath == "" {
+			return fmt.Errorf("healthcheck_path must be specified in \"http\" mode")
+		} else if req.HealthcheckMode == "tcp" && req.HealthcheckPath != "" {
+			return fmt.Errorf("healthcheck_path must not be specified in \"tcp\" mode")
+		}
+
+		if req.HealthcheckInterval = int64(d.Get("healthcheck_interval").(int)); req.HealthcheckInterval == 0 {
+			return fmt.Errorf("healthcheck_interval must be specified")
+		}
+
+		if req.HealthcheckTimeout = int64(d.Get("healthcheck_timeout").(int)); req.HealthcheckTimeout == 0 {
+			return fmt.Errorf("healthcheck_timeout must be specified")
+		} else if req.HealthcheckTimeout >= req.HealthcheckInterval {
+			return fmt.Errorf("healthcheck_timeout must be lower than healthcheck_interval")
+		}
+
+		if req.HealthcheckStrikesOk = int64(d.Get("healthcheck_strikes_ok").(int)); req.HealthcheckStrikesOk == 0 {
+			return fmt.Errorf("healthcheck_strikes_ok must be specified")
+		}
+
+		if req.HealthcheckStrikesFail = int64(d.Get("healthcheck_strikes_fail").(int)); req.HealthcheckStrikesFail == 0 {
+			return fmt.Errorf("healthcheck_strikes_fail must be specified")
+		}
+	} else {
+		for _, k := range []string{
+			"healthcheck_port",
+			"healthcheck_path",
+			"healthcheck_interval",
+			"healthcheck_timeout",
+			"healthcheck_strikes_ok",
+			"healthcheck_strikes_fail",
+		} {
+			if _, ok := d.GetOkExists(k); ok {
+				return fmt.Errorf("%q can only be specified with healthcheck_mode", k)
+			}
+		}
 	}
 
 	resp, err := client.RequestWithContext(ctx, req)
@@ -163,15 +249,91 @@ func updateElasticIP(d *schema.ResourceData, meta interface{}) error {
 
 	d.Partial(true)
 
-	requests, err := updateTags(d, "tags", new(egoscale.IPAddress).ResourceType())
+	commands := make([]partialCommand, 0)
+
+	updateTags, err := updateTags(d, "tags", new(egoscale.IPAddress).ResourceType())
 	if err != nil {
 		return err
 	}
+	for _, update := range updateTags {
+		commands = append(commands, partialCommand{
+			partial: "tags",
+			request: update,
+		})
+	}
 
-	for _, req := range requests {
-		_, err := client.RequestWithContext(ctx, req)
+	eipPartials := make([]string, 0)
+	updateEIP := egoscale.UpdateIPAddress{}
+	if d.HasChange("healthcheck_port") {
+		eipPartials = append(eipPartials, "healthcheck_port")
+		updateEIP.HealthcheckPort = int64(d.Get("healthcheck_port").(int))
+		if _, ok := d.GetOk("healthcheck_mode"); ok && updateEIP.HealthcheckPort == 0 {
+			return fmt.Errorf("healthcheck_port must be specified")
+		}
+	}
+	if d.HasChange("healthcheck_path") {
+		eipPartials = append(eipPartials, "healthcheck_path")
+		updateEIP.HealthcheckPath = d.Get("healthcheck_path").(string)
+		if healthcheckMode, ok := d.GetOk("healthcheck_mode"); ok {
+			if healthcheckMode == "http" && updateEIP.HealthcheckPath == "" {
+				return fmt.Errorf("healthcheck_path must be specified in \"http\" mode")
+			} else if healthcheckMode == "tcp" && updateEIP.HealthcheckPath != "" {
+				return fmt.Errorf("healthcheck_path must not be specified in \"tcp\" mode")
+			}
+		}
+	}
+	if d.HasChange("healthcheck_interval") {
+		eipPartials = append(eipPartials, "healthcheck_interval")
+		updateEIP.HealthcheckInterval = int64(d.Get("healthcheck_interval").(int))
+		if _, ok := d.GetOk("healthcheck_mode"); ok && updateEIP.HealthcheckInterval == 0 {
+			return fmt.Errorf("healthcheck_interval must be specified")
+		}
+	}
+	if d.HasChange("healthcheck_timeout") {
+		eipPartials = append(eipPartials, "healthcheck_timeout")
+		updateEIP.HealthcheckTimeout = int64(d.Get("healthcheck_timeout").(int))
+		if _, ok := d.GetOk("healthcheck_mode"); ok && updateEIP.HealthcheckTimeout == 0 {
+			return fmt.Errorf("healthcheck_timeout must be specified")
+		}
+	}
+	if d.HasChange("healthcheck_strikes_ok") {
+		eipPartials = append(eipPartials, "healthcheck_strikes_ok")
+		updateEIP.HealthcheckStrikesOk = int64(d.Get("healthcheck_strikes_ok").(int))
+		if _, ok := d.GetOk("healthcheck_mode"); ok && updateEIP.HealthcheckStrikesOk == 0 {
+			return fmt.Errorf("healthcheck_strikes_ok must be specified")
+		}
+	}
+	if d.HasChange("healthcheck_strikes_fail") {
+		eipPartials = append(eipPartials, "healthcheck_strikes_fail")
+		updateEIP.HealthcheckStrikesFail = int64(d.Get("healthcheck_strikes_fail").(int))
+		if _, ok := d.GetOk("healthcheck_mode"); ok && updateEIP.HealthcheckStrikesFail == 0 {
+			return fmt.Errorf("healthcheck_strikes_fail must be specified")
+		}
+	}
+	if len(eipPartials) > 0 {
+		id, err := egoscale.ParseUUID(d.Id())
 		if err != nil {
 			return err
+		}
+
+		updateEIP.ID = id
+		commands = append(commands, partialCommand{
+			partials: eipPartials,
+			request:  updateEIP,
+		})
+	}
+
+	for _, cmd := range commands {
+		_, err := client.RequestWithContext(ctx, cmd.request)
+		if err != nil {
+			return err
+		}
+
+		d.SetPartial(cmd.partial)
+		if cmd.partials != nil {
+			for _, partial := range cmd.partials {
+				d.SetPartial(partial)
+			}
 		}
 	}
 
@@ -180,7 +342,6 @@ func updateElasticIP(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	d.SetPartial("tags")
 	d.Partial(false)
 
 	return err
@@ -209,6 +370,31 @@ func applyElasticIP(d *schema.ResourceData, ip *egoscale.IPAddress) error {
 	}
 	if err := d.Set("zone", ip.ZoneName); err != nil {
 		return err
+	}
+
+	// healthcheck
+	if ip.Healthcheck != nil {
+		if err := d.Set("healthcheck_mode", ip.Healthcheck.Mode); err != nil {
+			return err
+		}
+		if err := d.Set("healthcheck_port", ip.Healthcheck.Port); err != nil {
+			return err
+		}
+		if err := d.Set("healthcheck_path", ip.Healthcheck.Path); err != nil {
+			return err
+		}
+		if err := d.Set("healthcheck_interval", ip.Healthcheck.Interval); err != nil {
+			return err
+		}
+		if err := d.Set("healthcheck_timeout", ip.Healthcheck.Timeout); err != nil {
+			return err
+		}
+		if err := d.Set("healthcheck_strikes_ok", ip.Healthcheck.StrikesOk); err != nil {
+			return err
+		}
+		if err := d.Set("healthcheck_strikes_fail", ip.Healthcheck.StrikesFail); err != nil {
+			return err
+		}
 	}
 
 	// tags

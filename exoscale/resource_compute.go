@@ -520,15 +520,6 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 
 	d.Partial(true)
 
-	// partialCommand represents an update command, it's made of
-	// the partial key which is expected to change and the
-	// request that has to be run.
-	type partialCommand struct {
-		partial  string
-		partials []string
-		request  egoscale.Command
-	}
-
 	commands := make([]partialCommand, 0)
 
 	// Update command is synchronous, hence it won't be put with the others
