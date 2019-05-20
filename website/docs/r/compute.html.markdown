@@ -47,16 +47,19 @@ EOF
 
 - `display_name` - (Required) initial `hostname`
 
-- `template` - (Required) name from [the template](https://www.exoscale.com/templates/)
+- `template` - (Required) name or ID of the [template](https://www.exoscale.com/templates/).
+If a name is provided, only *featured* templates are available.
 
-- `size` - (Required) size of [the instances](https://www.exoscale.com/pricing/#/compute/),
-              e.g. Tiny, Small, Medium, Large, etc.
+- `size` - (Required) size of the [instance](https://www.exoscale.com/pricing/#/compute/),
+e.g. Tiny, Small, Medium, Large, etc.
 
 - `disk_size` - (Required) size of the root disk in GiB (at least 10)
 
-- `zone` - (Required) name of [the data-center](https://www.exoscale.com/datacenters/)
+- `zone` - (Required) name of the [zone](https://www.exoscale.com/datacenters/)
 
-- `user_data` - [cloud-init](http://cloudinit.readthedocs.io/en/latest/) configuration. Whenever possible don't base64 encode neither gzip it yourself. This will be automatically taken care of on your behalf by the provider.
+- `user_data` - [cloud-init](http://cloudinit.readthedocs.io/en/latest/) configuration.
+Whenever possible don't base64 encode neither gzip it yourself.
+This will be automatically taken care of on your behalf by the provider.
 
 - `key_pair` - (Required) name of the SSH key pair to be installed
 
@@ -64,9 +67,9 @@ EOF
 
 - `state` - state of the virtual machine. E.g. `Running` or `Stopped`
 
-- `affinity_groups` - list of [Affinity Groups](affinity_group.html)
+- `affinity_groups` - list of [affinity groups](affinity_group.html)
 
-- `security_groups` - list of [Security Groups](security_group.html)
+- `security_groups` - list of [security groups](security_group.html)
 
 - `ip4` - activate IPv4 (only `true`)
 

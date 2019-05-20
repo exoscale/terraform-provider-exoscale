@@ -112,6 +112,10 @@ func Provider() terraform.ResourceProvider {
 			},
 		},
 
+		DataSourcesMap: map[string]*schema.Resource{
+			"exoscale_compute_template": computeTemplateDatasource(),
+		},
+
 		ResourcesMap: map[string]*schema.Resource{
 			"exoscale_compute":              computeResource(),
 			"exoscale_ssh_keypair":          sshResource(),

@@ -230,21 +230,24 @@ func createCompute(d *schema.ResourceData, meta interface{}) error {
 	currentDiskSize := diskSize << 30 // Gib to B
 	image := strings.ToLower(d.Get("template").(string))
 
-	for _, template := range resp.(*egoscale.ListTemplatesResponse).Template {
-		// Skip non-machine images
-		if strings.ToLower(template.Name) != image {
-			continue
-		}
+	// First try to parse the image value as a UUID, if it fails try as a name
+	if templateID, err = egoscale.ParseUUID(image); err != nil {
+		for _, template := range resp.(*egoscale.ListTemplatesResponse).Template {
+			// Skip non-machine images
+			if strings.ToLower(template.Name) != image {
+				continue
+			}
 
-		if name, ok := template.Details["username"]; username == "" && ok {
-			username = name
-		}
+			if name, ok := template.Details["username"]; username == "" && ok {
+				username = name
+			}
 
-		// Pick the smallest disk size
-		if template.Size <= currentDiskSize {
-			currentDiskSize = template.Size
-			templateID = template.ID
-			continue
+			// Pick the smallest disk size
+			if template.Size <= currentDiskSize {
+				currentDiskSize = template.Size
+				templateID = template.ID
+				continue
+			}
 		}
 	}
 
