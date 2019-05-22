@@ -8,6 +8,10 @@ IMPROVEMENTS:
 
 - Add support for *managed* Elastic IP to the `exoscale_ipaddress` resource
 
+CHANGES:
+
+- `start_ip`/`end_ip`/`netmask` attributes are now required for *managed* Private Networks
+
 ## 0.10.0 (March 6, 2019)
 
 - dep: playing with terraform v0.12.0-beta1 (#200)

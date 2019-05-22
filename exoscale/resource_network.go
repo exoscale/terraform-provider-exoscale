@@ -2,6 +2,7 @@ package exoscale
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -10,8 +11,6 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
 )
-
-const defaultNetmask = "255.255.255.0"
 
 func networkResource() *schema.Resource {
 	s := map[string]*schema.Schema{
@@ -46,7 +45,6 @@ func networkResource() *schema.Resource {
 		"netmask": {
 			Type:         schema.TypeString,
 			Optional:     true,
-			Description:  fmt.Sprintf("Network mask (default to %s)", defaultNetmask),
 			ValidateFunc: validation.SingleIP(),
 		},
 	}
@@ -102,10 +100,10 @@ func createNetwork(d *schema.ResourceData, meta interface{}) error {
 	startIP := net.ParseIP(d.Get("start_ip").(string))
 	endIP := net.ParseIP(d.Get("end_ip").(string))
 	netmask := net.ParseIP(d.Get("netmask").(string))
-	if startIP == nil && endIP == nil {
-		netmask = nil
-	} else if netmask == nil {
-		netmask = net.ParseIP(defaultNetmask)
+	if (startIP == nil && endIP != nil) || (startIP != nil && endIP == nil) {
+		return errors.New("start_ip and end_ip must be both specified")
+	} else if (startIP != nil && endIP != nil) && netmask == nil {
+		return errors.New("netmask must be specified with start_ip and end_ip")
 	}
 
 	req := &egoscale.CreateNetwork{
@@ -226,7 +224,6 @@ func updateNetwork(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	// Update name and display_text
 	updateNetwork := &egoscale.UpdateNetwork{
 		ID:          id,
 		Name:        d.Get("name").(string),
@@ -236,7 +233,6 @@ func updateNetwork(d *schema.ResourceData, meta interface{}) error {
 		Netmask:     net.ParseIP(d.Get("netmask").(string)),
 	}
 
-	// Update tags
 	requests, err := updateTags(d, "tags", egoscale.Network{}.ResourceType())
 	if err != nil {
 		return err

@@ -8,20 +8,19 @@ description: |-
 
 # exoscale_network
 
+The `exoscale_network` resource manages a [Private Network][privnet], a
+virtual L2 network segment shared only among Compute instances attached to it.
+
+[privnet]: https://community.exoscale.com/documentation/compute/private-networks/
 
 ## Usage
 
 ```hcl
-resource "exoscale_network" "privNet" {
+resource "exoscale_network" "unmanaged" {
   name = "myPrivNet"
   display_text = "description"
   zone = "ch-gva-2"
   network_offering = "PrivNet"
-
-  // Optional and only available at zone: CH-GVA-2
-  start_ip = "10.0.0.20"
-  end_ip = "10.0.0.254"
-  netmask = "255.255.255.0"
 
   tags = {
     # ...
@@ -29,23 +28,42 @@ resource "exoscale_network" "privNet" {
 }
 ```
 
+*Managed* Private Network (note: this feature is currently only available in
+the `CH-GVA-2` zone):
+
+```hcl
+resource "exoscale_network" "managed" {
+  name = "myPrivNet"
+  display_text = "description"
+  zone = "ch-gva-2"
+  network_offering = "PrivNet"
+
+  start_ip = "10.0.0.20"
+  end_ip = "10.0.0.254"
+  netmask = "255.255.255.0"
+}
+```
+
 ## Argument Reference
-
-- `name` - (Required) name of the network
-
-- `display_text` - description of the network
-
-- `network_offering` - (Required) network offering name
 
 - `zone` - (Required) name of the zone
 
-- `start_ip` - First IP address of IP range used by the DHCP service to automatically assign
+- `name` - (Required) name of the network
 
-- `end_ip` - Last IP address of the IP range used by the DHCP service
+- `network_offering` - (Required) network offering name
 
-- `netmask` - Netmask defining the IP network allowed for the static lease (see `exoscale_nic` resource)
+- `display_text` - Description of the network
 
-- `tags` - dictionary of tags (key / value)
+- `start_ip` - First address of IP range used by the DHCP service to automatically assign.
+  Required for *managed* Private Networks.
+
+- `end_ip` - Last address of the IP range used by the DHCP service.
+  Required for *managed* Private Networks.
+
+- `netmask` - Netmask defining the IP network allowed for the static lease (see `exoscale_nic` resource).
+  Required for *managed* Private Networks.
+
+- `tags` - dictionary of tags (key/value)
 
 
 ## Import
