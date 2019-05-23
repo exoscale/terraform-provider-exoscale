@@ -5,6 +5,7 @@ example.tf
 terraform.tfplan
 terraform.tfstate
 bin/
+build/
 modules-dev/
 /pkg/
 website/.vagrant
@@ -33,7 +34,3 @@ website/vendor
 # Keep windows files with windows line endings
 *.winfile eol=crlf
 /.vs
-
-# to be removed once on terraform-providers org
-.goreleaser.yml
-

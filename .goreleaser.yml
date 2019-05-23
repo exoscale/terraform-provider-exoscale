@@ -1,0 +1,26 @@
+builds:
+  - main: main.go
+    binary: "terraform-provider-exoscale_{{.Tag}}"
+    goos:
+      - darwin
+      - linux
+      - windows
+    goarch:
+      - amd64
+    env:
+      - CGO_ENABLED=0
+
+sign:
+  cmd: gpg
+  args: ["-u", "ops@exoscale.ch", "--detach-sign", "${artifact}"]
+  artifacts: all
+
+
+dist: build
+
+release:
+  github:
+    owner: exoscale
+    name: terraform-provider-exoscale
+  draft: true
+
