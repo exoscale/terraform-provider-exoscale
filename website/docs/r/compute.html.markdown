@@ -67,7 +67,9 @@ This will be automatically taken care of on your behalf by the provider.
 
 - `state` - state of the virtual machine. E.g. `Running` or `Stopped`
 
-- `affinity_groups` - list of [affinity groups](affinity_group.html)
+- `affinity_groups` - list of [affinity group](affinity_group.html) names (at creation time only)
+
+- `affinity_group_ids` - list of [affinity group](affinity_group.html) IDs (at creation time only)
 
 - `security_groups` - list of [security groups](security_group.html)
 

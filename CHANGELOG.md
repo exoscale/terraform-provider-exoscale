@@ -11,6 +11,7 @@ IMPROVEMENTS:
 CHANGES:
 
 - `start_ip`/`end_ip`/`netmask` attributes are now required for *managed* Private Networks
+- `affinity_groups`/`affinity_group_ids` attributes change now force a `exoscale_compute` resource to be re-created
 
 ## 0.10.0 (March 6, 2019)
 

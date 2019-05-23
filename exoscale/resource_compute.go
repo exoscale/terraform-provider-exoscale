@@ -110,6 +110,7 @@ func computeResource() *schema.Resource {
 		"affinity_group_ids": {
 			Type:          schema.TypeSet,
 			Optional:      true,
+			ForceNew:      true,
 			Computed:      true,
 			Set:           schema.HashString,
 			ConflictsWith: []string{"affinity_groups"},
@@ -120,6 +121,7 @@ func computeResource() *schema.Resource {
 		"affinity_groups": {
 			Type:          schema.TypeSet,
 			Optional:      true,
+			ForceNew:      true,
 			Computed:      true,
 			Set:           schema.HashString,
 			ConflictsWith: []string{"affinity_group_ids"},
@@ -646,58 +648,6 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 				request: &egoscale.ScaleVirtualMachine{
 					ID:                id,
 					ServiceOfferingID: services.ServiceOffering[0].ID,
-				},
-			})
-		}
-	}
-
-	if d.HasChange("affinity_groups") {
-		rebootRequired = true
-		o, n := d.GetChange("affinity_groups")
-		if o.(*schema.Set).Len() >= n.(*schema.Set).Len() {
-			return fmt.Errorf("affinity Groups cannot be added")
-		}
-		if n.(*schema.Set).Difference(o.(*schema.Set)).Len() > 0 {
-			return fmt.Errorf("no new Affinity Groups can be added")
-		}
-
-		if affinitySet, ok := d.Get("affinity_groups").(*schema.Set); ok {
-			affinityGroups := make([]string, affinitySet.Len())
-			for i, group := range affinitySet.List() {
-				affinityGroups[i] = group.(string)
-			}
-			commands = append(commands, partialCommand{
-				partials: []string{"affinity_groups", "affinity_group_ids"},
-				request: &egoscale.UpdateVMAffinityGroup{
-					ID:                 id,
-					AffinityGroupNames: affinityGroups,
-				},
-			})
-		}
-	} else if d.HasChange("affinity_group_ids") {
-		rebootRequired = true
-		o, n := d.GetChange("affinity_group_ids")
-		if o.(*schema.Set).Len() >= n.(*schema.Set).Len() {
-			return fmt.Errorf("affinity Groups cannot be added")
-		}
-		if n.(*schema.Set).Difference(o.(*schema.Set)).Len() > 0 {
-			return fmt.Errorf("no new Affinity Groups can be added")
-		}
-
-		if affinitySet, ok := d.Get("affinity_group_ids").(*schema.Set); ok {
-			affinityGroups := make([]egoscale.UUID, affinitySet.Len())
-			for i, group := range affinitySet.List() {
-				id, err := egoscale.ParseUUID(group.(string))
-				if err != nil {
-					return err
-				}
-				affinityGroups[i] = *id
-			}
-			commands = append(commands, partialCommand{
-				partials: []string{"affinity_groups", "affinity_group_ids"},
-				request: &egoscale.UpdateVMAffinityGroup{
-					ID:               id,
-					AffinityGroupIDs: affinityGroups,
 				},
 			})
 		}
