@@ -1,5 +1,5 @@
 provider "exoscale" {
-  version = "~> 0.10"
+  version = "~> 0.11"
 }
 
 resource "exoscale_ssh_keypair" "key" {

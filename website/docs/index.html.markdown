@@ -17,7 +17,7 @@ resource plugin.  Additional documentation can be found in the examples director
 
 ```hcl
 provider "exoscale" {
-  version = "~> 0.10"
+  version = "~> 0.11"
   key = "EXO..."
   secret = "..."
 
@@ -30,7 +30,7 @@ provider "exoscale" {
 
 ```hcl
 provider "exoscale" {
-  version = "~> 0.10"
+  version = "~> 0.11"
 
   config = "cloudstack.ini"   # default: filename
   region = "cloudstack"       # default: section name
