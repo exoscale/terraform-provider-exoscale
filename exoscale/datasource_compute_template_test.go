@@ -15,7 +15,7 @@ const (
 	//     templatefilter=featured \
 	//     zoneid=1128bd56-b4d9-4ac6-a7b9-c715b187ce11 \
 	//     name="Linux Ubuntu 18.04 LTS 64-bit"
-	datasourceComputeTemplateID       = "712aee87-1f7b-4af4-8f40-3c11929a8a2e"
+	datasourceComputeTemplateID       = "095250e3-7c56-441a-a25b-100a3d3f5a6e"
 	datasourceComputeTemplateName     = "Linux Ubuntu 18.04 LTS 64-bit"
 	datasourceComputeTemplateUsername = "ubuntu"
 )
