@@ -1,7 +1,7 @@
 ---
 layout: "exoscale"
 page_title: "Exoscale: exoscale_security_group_rules"
-sidebar_current: "docs-exoscale-security-group_rules"
+sidebar_current: "docs-exoscale-security-group-rules"
 description: |-
   Manages a set of rules to a security group.
 ---

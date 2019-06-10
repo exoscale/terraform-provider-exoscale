@@ -2,55 +2,90 @@
     <% content_for :sidebar do %>
         <aside class="menu" role="complimentary">
             <p class="menu-label">
+                <a href="<%= base_url %>">Exoscale data sources</a>
+            </p>
+            <ul class="menu-list">
+                <li>
+                    <a href="<%= base_url %>/d/compute_template.html"
+                        <%=- sidebar_current("docs-exoscale-compute-template") -%>
+                        >exoscale_compute_template</a>
+                </li>
+            </ul>
+
+            <p class="menu-label">
                 <a href="<%= base_url %>">Exoscale resources</a>
             </p>
             <ul class="menu-list">
-                <li<% sidebar_current("docs-exoscale-affinity-group") %>>
-                    <a href="<%= base_url %>/r/affinity_group.html">exoscale_affinity_group</a>
+                <li>
+                    <a href="<%= base_url %>/r/affinity_group.html"
+                        <%= sidebar_current("docs-exoscale-affinity-group") -%>
+                        >exoscale_affinity_group</a>
                 </li>
 
-                <li<% sidebar_current("docs-exoscale-compute") %>>
-                    <a href="<%= base_url %>/r/compute.html">exoscale_compute</a>
+                <li>
+                    <a href="<%= base_url %>/r/compute.html"
+                        <%=- sidebar_current("docs-exoscale-compute") -%>
+                        >exoscale_compute</a>
                 </li>
 
-                <li<% sidebar_current("docs-exoscale-domain") %>>
-                    <a href="<%= base_url %>/r/domain.html">exoscale_domain</a>
+                <li>
+                    <a href="<%= base_url %>/r/domain.html"
+                        <%=- sidebar_current("docs-exoscale-domain") -%>
+                        >exoscale_domain</a>
                 </li>
 
-                <li<% sidebar_current("docs-exoscale-domain-record") %>>
-                    <a href="<%= base_url %>/r/domain_record.html">exoscale_domain_record</a>
+                <li>
+                    <a href="<%= base_url %>/r/domain_record.html"
+                        <%=- sidebar_current("docs-exoscale-domain-record") -%>
+                        >exoscale_domain_record</a>
                 </li>
 
-                <li<% sidebar_current("docs-exoscale-ipaddress") %>>
-                    <a href="<%= base_url %>/r/ipaddress.html">exoscale_ipaddress</a>
+                <li>
+                    <a href="<%= base_url %>/r/ipaddress.html"
+                        <%=- sidebar_current("docs-exoscale-ipaddress") -%>
+                        >exoscale_ipaddress</a>
                 </li>
 
-                <li<% sidebar_current("docs-exoscale-network") %>>
-                    <a href="<%= base_url %>/r/network.html">exoscale_network</a>
+                <li>
+                    <a href="<%= base_url %>/r/network.html"
+                        <%=- sidebar_current("docs-exoscale-network") -%>
+                        >exoscale_network</a>
                 </li>
 
-                <li<% sidebar_current("docs-exoscale-nic") %>>
-                    <a href="<%= base_url %>/r/nic.html">exoscale_nic</a>
+                <li>
+                    <a href="<%= base_url %>/r/nic.html"
+                        <%=- sidebar_current("docs-exoscale-nic") -%>
+                        >exoscale_nic</a>
                 </li>
 
-                <li<% sidebar_current("docs-exoscale-security-group") %>>
-                    <a href="<%= base_url %>/r/security_group.html">exoscale_security_group</a>
+                <li>
+                    <a href="<%= base_url %>/r/security_group.html"
+                        <%=- sidebar_current("docs-exoscale-security-group") -%>
+                        >exoscale_security_group</a>
                 </li>
 
-                <li<% sidebar_current("docs-exoscale-security-group-rule") %>>
-                    <a href="<%= base_url %>/r/security_group_rule.html">exoscale_security_group_rule</a>
+                <li>
+                    <a href="<%= base_url %>/r/security_group_rule.html"
+                        <%=- sidebar_current("docs-exoscale-security-group-rule") -%>
+                        >exoscale_security_group_rule</a>
                 </li>
 
-                <li<% sidebar_current("docs-exoscale-security-group-rules") %>>
-                    <a href="<%= base_url %>/r/security_group_rules.html">exoscale_security_group_rules</a>
+                <li>
+                    <a href="<%= base_url %>/r/security_group_rules.html"
+                        <%=- sidebar_current("docs-exoscale-security-group-rules") -%>
+                        >exoscale_security_group_rules</a>
                 </li>
 
-                <li<% sidebar_current("docs-exoscale-secondary-ipaddress") %>>
-                    <a href="<%= base_url %>/r/secondary_ipaddress.html">exoscale_secondary_ipaddress</a>
+                <li>
+                    <a href="<%= base_url %>/r/secondary_ipaddress.html"
+                        <%=- sidebar_current("docs-exoscale-secondary-ipaddress") -%>
+                        >exoscale_secondary_ipaddress</a>
                 </li>
 
-                <li<% sidebar_current("docs-exoscale-ssh-keypair") %>>
-                    <a href="<%= base_url %>/r/ssh_keypair.html">exoscale_ssh_keypair</a>
+                <li>
+                    <a href="<%= base_url %>/r/ssh_keypair.html"
+                        <%=- sidebar_current("docs-exoscale-ssh-keypair") -%>
+                        >exoscale_ssh_keypair</a>
                 </li>
             </ul>
         </aside>

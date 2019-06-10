@@ -54,7 +54,7 @@ module Helpers
   # if the YAML frontmatter matches the expected value.
   def sidebar_current(expected)
     current = current_page.data.sidebar_current || ""
-    if current.start_with?(expected)
+    if current == expected
       return " class=\"is-active\""
     else
       return ""
