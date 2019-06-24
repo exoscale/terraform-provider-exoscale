@@ -1,6 +1,7 @@
 package exoscale
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"testing"
@@ -10,48 +11,54 @@ import (
 	"github.com/hashicorp/terraform/terraform"
 )
 
-func TestAccNic(t *testing.T) {
+func TestAccResourceNIC(t *testing.T) {
 	vm := new(egoscale.VirtualMachine)
-	nw := new(egoscale.Network)
+	network := new(egoscale.Network)
 	nic := new(egoscale.Nic)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckNicDestroy,
+		CheckDestroy: testAccCheckResourceNICDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccNicCreate,
+				Config: testAccResourceNICConfigCreate,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckComputeExists("exoscale_compute.vm", vm),
-					testAccCheckNetworkExists("exoscale_network.net", nw),
-					testAccCheckNicExists("exoscale_nic.nic", vm, nic),
-					testAccCheckNicAttributes(nic, net.ParseIP("10.0.0.1")),
-					testAccCheckNicCreateAttributes(),
+					testAccCheckResourceComputeExists("exoscale_compute.vm", vm),
+					testAccCheckResourceNetworkExists("exoscale_network.net", network),
+					testAccCheckResourceNICExists("exoscale_nic.nic", vm, nic),
+					testAccCheckResourceNIC(nic, net.ParseIP("10.0.0.1")),
+					testAccCheckResourceNICAttributes(testAttrs{
+						"mac_address": ValidateRegexp("^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$"),
+						"ip_address":  ValidateString("10.0.0.1"),
+					}),
 				),
 			}, {
-				Config: testAccNicUpdate,
+				Config: testAccResourceNICConfigUpdate,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckComputeExists("exoscale_compute.vm", vm),
-					testAccCheckNetworkExists("exoscale_network.net", nw),
-					testAccCheckNicExists("exoscale_nic.nic", vm, nic),
-					testAccCheckNicAttributes(nic, net.ParseIP("10.0.0.3")),
-					testAccCheckNicCreateAttributes(),
+					testAccCheckResourceComputeExists("exoscale_compute.vm", vm),
+					testAccCheckResourceNetworkExists("exoscale_network.net", network),
+					testAccCheckResourceNICExists("exoscale_nic.nic", vm, nic),
+					testAccCheckResourceNIC(nic, net.ParseIP("10.0.0.3")),
+					testAccCheckResourceNICAttributes(testAttrs{
+						"mac_address": ValidateRegexp("^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$"),
+						"ip_address":  ValidateString("10.0.0.3"),
+					}),
 				),
 			},
 		},
 	})
 }
 
-func testAccCheckNicExists(n string, vm *egoscale.VirtualMachine, nic *egoscale.Nic) resource.TestCheckFunc {
+func testAccCheckResourceNICExists(n string, vm *egoscale.VirtualMachine, nic *egoscale.Nic) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
-			return fmt.Errorf("Not found: %s", n)
+			return errors.New("resource not found in the state")
 		}
 
 		if rs.Primary.ID == "" {
-			return fmt.Errorf("no nic ID is set")
+			return errors.New("resource ID not set")
 		}
 
 		id, err := egoscale.ParseUUID(rs.Primary.ID)
@@ -71,39 +78,35 @@ func testAccCheckNicExists(n string, vm *egoscale.VirtualMachine, nic *egoscale.
 	}
 }
 
-func testAccCheckNicAttributes(nic *egoscale.Nic, ipAddress net.IP) resource.TestCheckFunc {
+func testAccCheckResourceNIC(nic *egoscale.Nic, ipAddress net.IP) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		if nic.MACAddress == nil {
-			return fmt.Errorf("nic is nil")
+			return errors.New("NIC is nil")
 		}
 
 		if !nic.IPAddress.Equal(ipAddress) {
-			return fmt.Errorf("nic has bad IP address, got %s, want %s", nic.IPAddress, ipAddress)
+			return fmt.Errorf("expected NIC IP address %v, got %s", ipAddress, nic.IPAddress)
 		}
 
 		return nil
 	}
 }
 
-func testAccCheckNicCreateAttributes() resource.TestCheckFunc {
+func testAccCheckResourceNICAttributes(expected testAttrs) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		for _, rs := range s.RootModule().Resources {
 			if rs.Type != "exoscale_nic" {
 				continue
 			}
-			_, err := net.ParseMAC(rs.Primary.Attributes["mac_address"])
-			if err != nil {
-				return fmt.Errorf("Bad MAC %s", err)
-			}
 
-			return nil
+			return checkResourceAttributes(expected, rs.Primary.Attributes)
 		}
 
-		return fmt.Errorf("could not find nic mac address")
+		return errors.New("resource not found in the state")
 	}
 }
 
-func testAccCheckNicDestroy(s *terraform.State) error {
+func testAccCheckResourceNICDestroy(s *terraform.State) error {
 	client := GetComputeClient(testAccProvider.Meta())
 
 	for _, rs := range s.RootModule().Resources {
@@ -127,10 +130,10 @@ func testAccCheckNicDestroy(s *terraform.State) error {
 			return err
 		}
 	}
-	return fmt.Errorf("nic still exists")
+	return errors.New("NIC still exists")
 }
 
-var testAccNicCreate = fmt.Sprintf(`
+var testAccResourceNICConfigCreate = fmt.Sprintf(`
 resource "exoscale_ssh_keypair" "key" {
   name = "terraform-test-keypair"
 }
@@ -173,7 +176,7 @@ resource "exoscale_nic" "nic" {
 	defaultExoscaleNetworkOffering,
 )
 
-var testAccNicUpdate = fmt.Sprintf(`
+var testAccResourceNICConfigUpdate = fmt.Sprintf(`
 resource "exoscale_ssh_keypair" "key" {
   name = "terraform-test-keypair"
 }

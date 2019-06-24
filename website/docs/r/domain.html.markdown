@@ -3,42 +3,44 @@ layout: "exoscale"
 page_title: "Exoscale: exoscale_domain"
 sidebar_current: "docs-exoscale-domain"
 description: |-
-  Manages a domain.
+  Provides an Exoscale DNS Domain resource.
 ---
 
-# exoscale_domain
+# exoscale\_domain
 
-Define a domain in the sense of a website address.
+Provides an Exoscale [DNS][dns] Domain resource. This can be used to create and delete DNS Domains.
+
+[dns]: https://community.exoscale.com/documentation/dns/
 
 ## Usage example
 
 ```hcl
-resource "exoscale_domain" "exo" {
-  name = "exo.exo"
+resource "exoscale_domain" "example" {
+  name = "example.net"
 }
 ```
 
 ## Argument Reference
 
-- `name` - (Required) name of the domain.
-
+* `name` - (Required) The name of the DNS Domain.
 
 ## Attributes Reference
 
 The following attributes are exported:
 
-- `token` - this token serves as an alternative way to manages the domain records
-
-- `state`
-
-- `auto_renew`
-
-- `expires_on` - date of expiration, if known
+* `token` - A security token that can be used as an alternative way to manage DNS Domains via the Exoscale API.
+* `state` - The state of the DNS Domain.
+* `auto_renew` - Boolean indicating that the DNS Domain has automatic renewal enabled.
+* `expires_on` - The date of expiration of the DNS Domain, if known.
 
 ## Import
 
-Importing a domain will import all the records (but `NS` and `SOA`).
+An existing DNS Domain can be imported as a resource by name:
 
-```shell
-$ terraform import exoscale_domain.exoscale-ch exoscale.ch
+```console
+$ terraform import exoscale_domain.example example.net
 ```
+
+~> **NOTE:** importing a `exoscale_domain` resource will also import all related [`exoscale_domain_records`][domainrec] resources (except `NS` and `SOA`).
+
+[domainre]: domain_record.html

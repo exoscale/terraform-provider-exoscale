@@ -5,6 +5,7 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"log"
 	"regexp"
@@ -16,8 +17,32 @@ import (
 	"github.com/hashicorp/terraform/helper/validation"
 )
 
-func computeResource() *schema.Resource {
+func resourceComputeIDString(d resourceIDStringer) string {
+	return resourceIDString(d, "exoscale_compute")
+}
+
+func resourceCompute() *schema.Resource {
 	s := map[string]*schema.Schema{
+		"zone": {
+			Type:     schema.TypeString,
+			Required: true,
+			ForceNew: true,
+		},
+		"template": {
+			Type:     schema.TypeString,
+			Required: true,
+			ForceNew: true,
+		},
+		"disk_size": {
+			Type:         schema.TypeInt,
+			Required:     true,
+			ValidateFunc: validation.IntAtLeast(10),
+		},
+		"key_pair": {
+			Type:     schema.TypeString,
+			Required: true,
+			ForceNew: true,
+		},
 		"name": {
 			Type:     schema.TypeString,
 			Computed: true,
@@ -27,25 +52,10 @@ func computeResource() *schema.Resource {
 			Optional: true,
 			Computed: true,
 		},
-		"template": {
-			Type:     schema.TypeString,
-			Required: true,
-			ForceNew: true,
-		},
 		"size": {
 			Type:     schema.TypeString,
 			Optional: true,
 			Default:  "Medium",
-		},
-		"disk_size": {
-			Type:         schema.TypeInt,
-			Required:     true,
-			ValidateFunc: validation.IntAtLeast(10),
-		},
-		"zone": {
-			Type:     schema.TypeString,
-			Required: true,
-			ForceNew: true,
 		},
 		"user_data": {
 			Type:        schema.TypeString,
@@ -56,11 +66,6 @@ func computeResource() *schema.Resource {
 			Type:        schema.TypeBool,
 			Computed:    true,
 			Description: "was the cloud-init configuration base64 encoded",
-		},
-		"key_pair": {
-			Type:     schema.TypeString,
-			Required: true,
-			ForceNew: true,
 		},
 		"keyboard": {
 			Type:     schema.TypeString,
@@ -163,14 +168,16 @@ func computeResource() *schema.Resource {
 	addTags(s, "tags")
 
 	return &schema.Resource{
-		Create: createCompute,
-		Exists: existsCompute,
-		Read:   readCompute,
-		Update: updateCompute,
-		Delete: deleteCompute,
+		Schema: s,
+
+		Create: resourceComputeCreate,
+		Read:   resourceComputeRead,
+		Update: resourceComputeUpdate,
+		Delete: resourceComputeDelete,
+		Exists: resourceComputeExists,
 
 		Importer: &schema.ResourceImporter{
-			State: importCompute,
+			State: resourceComputeImport,
 		},
 
 		Timeouts: &schema.ResourceTimeout{
@@ -179,12 +186,12 @@ func computeResource() *schema.Resource {
 			Update: schema.DefaultTimeout(defaultTimeout),
 			Delete: schema.DefaultTimeout(defaultTimeout),
 		},
-
-		Schema: s,
 	}
 }
 
-func createCompute(d *schema.ResourceData, meta interface{}) error {
+func resourceComputeCreate(d *schema.ResourceData, meta interface{}) error {
+	log.Printf("[DEBUG] %s: beginning create", resourceComputeIDString(d))
+
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutCreate))
 	defer cancel()
 
@@ -193,7 +200,7 @@ func createCompute(d *schema.ResourceData, meta interface{}) error {
 	displayName := d.Get("display_name").(string)
 	hostName := regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9\-]+$`)
 	if !hostName.MatchString(displayName) {
-		return fmt.Errorf("At creation time, the `display_name` must match a value compatible with the `hostname` (alpha-numeric and hyphens")
+		return errors.New("at creation time, the `display_name` must match a value compatible with the `hostname` (alpha-numeric and hyphens")
 	}
 
 	// ServiceOffering
@@ -375,10 +382,12 @@ func createCompute(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	return readCompute(d, meta)
+	log.Printf("[DEBUG] %s: create finished successfully", resourceComputeIDString(d))
+
+	return resourceComputeRead(d, meta)
 }
 
-func existsCompute(d *schema.ResourceData, meta interface{}) (bool, error) {
+func resourceComputeExists(d *schema.ResourceData, meta interface{}) (bool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
 	defer cancel()
 
@@ -401,7 +410,9 @@ func existsCompute(d *schema.ResourceData, meta interface{}) (bool, error) {
 	return true, nil
 }
 
-func readCompute(d *schema.ResourceData, meta interface{}) error {
+func resourceComputeRead(d *schema.ResourceData, meta interface{}) error {
+	log.Printf("[DEBUG] %s: beginning read", resourceComputeIDString(d))
+
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
 	defer cancel()
 
@@ -494,10 +505,14 @@ func readCompute(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	return applyCompute(d, machine)
+	log.Printf("[DEBUG] %s: read finished successfully", resourceComputeIDString(d))
+
+	return resourceComputeApply(d, machine)
 }
 
-func updateCompute(d *schema.ResourceData, meta interface{}) error {
+func resourceComputeUpdate(d *schema.ResourceData, meta interface{}) error {
+	log.Printf("[DEBUG] %s: beginning update", resourceComputeIDString(d))
+
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutUpdate))
 	defer cancel()
 
@@ -565,7 +580,7 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 		}
 
 		if len(securityGroupIDs) == 0 {
-			return fmt.Errorf("A VM must have at least one Security Group, none found")
+			return errors.New("a Compute instance must have at least one Security Group, none found")
 		}
 
 		req.SecurityGroupIDs = securityGroupIDs
@@ -584,7 +599,7 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 		}
 
 		if len(securityGroupIDs) == 0 {
-			return fmt.Errorf("A VM must have at least one Security Group, none found")
+			return errors.New("a Compute instance must have at least one Security Group, none found")
 		}
 
 		req.SecurityGroupIDs = securityGroupIDs
@@ -634,13 +649,9 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 				return err
 			}
 
-			services, ok := resp.(*egoscale.ListServiceOfferingsResponse)
-			if !ok {
-				return fmt.Errorf("wrong type, a ListServiceOfferingsResponse was expected, got %T", resp)
-			}
-
+			services := resp.(*egoscale.ListServiceOfferingsResponse)
 			if len(services.ServiceOffering) != 1 {
-				return fmt.Errorf("size %q was not found", newSize)
+				return fmt.Errorf("size %q not found", newSize)
 			}
 
 			commands = append(commands, partialCommand{
@@ -667,16 +678,14 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 	if d.HasChange("ip4") {
 		activateIP4 := d.Get("ip4").(bool)
 		if !activateIP4 {
-			return fmt.Errorf("The IPv4 address cannot be deactivated")
+			return errors.New("the IPv4 address cannot be deactivated")
 		}
 	}
 
 	if d.HasChange("ip6") {
 		activateIP6 := d.Get("ip6").(bool)
 		if activateIP6 {
-			resp, err := client.Request(&egoscale.ListNics{
-				VirtualMachineID: id,
-			})
+			resp, err := client.Request(&egoscale.ListNics{VirtualMachineID: id})
 			if err != nil {
 				return err
 			}
@@ -688,12 +697,10 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 
 			commands = append(commands, partialCommand{
 				partials: []string{"ip6", "ip6_address", "ip6_cidr"},
-				request: &egoscale.ActivateIP6{
-					NicID: nics.Nic[0].ID,
-				},
+				request:  &egoscale.ActivateIP6{NicID: nics.Nic[0].ID},
 			})
 		} else {
-			return fmt.Errorf("The IPv6 address cannot be deactivated")
+			return errors.New("the IPv6 address cannot be deactivated")
 		}
 	}
 
@@ -701,12 +708,14 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 		switch d.Get("state").(string) {
 		case "Running":
 			startRequired = true
+
 		case "Stopped":
 			stopRequired = true
 			rebootRequired = false
 			startRequired = false
+
 		default:
-			return fmt.Errorf("The new state cannot applied, %s. Do it manually", d.Get("state").(string))
+			return fmt.Errorf("new state %q cannot be applied", d.Get("state").(string))
 		}
 	}
 
@@ -720,7 +729,7 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 		}
 
 		m := resp.(*egoscale.VirtualMachine)
-		if err := applyCompute(d, m); err != nil {
+		if err := resourceComputeApply(d, m); err != nil {
 			return err
 		}
 		d.SetPartial("state")
@@ -732,7 +741,7 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	if err := readCompute(d, meta); err != nil {
+	if err := resourceComputeRead(d, meta); err != nil {
 		return err
 	}
 	d.SetPartial("user_data")
@@ -763,15 +772,16 @@ func updateCompute(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	// Update oneself
-	err = readCompute(d, meta)
-
 	d.Partial(false)
 
-	return err
+	log.Printf("[DEBUG] %s: update finished successfully", resourceComputeIDString(d))
+
+	return resourceComputeRead(d, meta)
 }
 
-func deleteCompute(d *schema.ResourceData, meta interface{}) error {
+func resourceComputeDelete(d *schema.ResourceData, meta interface{}) error {
+	log.Printf("[DEBUG] %s: beginning delete", resourceComputeIDString(d))
+
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutDelete))
 	defer cancel()
 
@@ -782,20 +792,18 @@ func deleteCompute(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	err = client.DeleteWithContext(ctx, &egoscale.VirtualMachine{
-		ID: id,
-	})
+	vm := &egoscale.VirtualMachine{ID: id}
 
-	if err != nil {
+	if err := client.DeleteWithContext(ctx, vm); err != nil {
 		return err
 	}
 
-	d.SetId("")
+	log.Printf("[DEBUG] %s: delete finished successfully", resourceComputeIDString(d))
 
 	return nil
 }
 
-func importCompute(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+func resourceComputeImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
 	defer cancel()
 
@@ -832,7 +840,7 @@ func importCompute(d *schema.ResourceData, meta interface{}) ([]*schema.Resource
 	resources = append(resources, d)
 
 	for _, secondaryIP := range secondaryIPs {
-		resource := secondaryIPResource()
+		resource := resourceSecondaryIPAddress()
 		d := resource.Data(nil)
 		d.SetType("exoscale_secondary_ipaddress")
 		if err := d.Set("compute_id", id); err != nil {
@@ -840,7 +848,7 @@ func importCompute(d *schema.ResourceData, meta interface{}) ([]*schema.Resource
 		}
 		secondaryIP.NicID = defaultNic.ID
 		secondaryIP.NetworkID = defaultNic.NetworkID
-		if err := applySecondaryIP(d, &secondaryIP); err != nil {
+		if err := resourceSecondaryIPAddressApply(d, &secondaryIP); err != nil {
 			return nil, err
 		}
 
@@ -848,10 +856,10 @@ func importCompute(d *schema.ResourceData, meta interface{}) ([]*schema.Resource
 	}
 
 	for _, nic := range nics {
-		resource := nicResource()
+		resource := resourceNIC()
 		d := resource.Data(nil)
 		d.SetType("exoscale_nic")
-		if err := applyNic(d, nic); err != nil {
+		if err := resourceNICApply(d, nic); err != nil {
 			return nil, err
 		}
 
@@ -861,7 +869,7 @@ func importCompute(d *schema.ResourceData, meta interface{}) ([]*schema.Resource
 	return resources, nil
 }
 
-func applyCompute(d *schema.ResourceData, machine *egoscale.VirtualMachine) error {
+func resourceComputeApply(d *schema.ResourceData, machine *egoscale.VirtualMachine) error {
 	if err := d.Set("name", machine.Name); err != nil {
 		return err
 	}
@@ -1015,7 +1023,7 @@ func prepareUserData(d *schema.ResourceData, meta interface{}, key string) (stri
 
 	// template_cloudinit_config alows to gzip but not base64, prevent such case
 	if len(userData) > 2 && userData[0] == '\x1f' && userData[1] == '\x8b' {
-		return "", false, fmt.Errorf("user_data appears gzipped. It should be left raw, or also be base64 encoded")
+		return "", false, errors.New("user_data appears to be gzipped: it should be left raw, or also be base64 encoded")
 	}
 
 	// If the data is already base64 encoded, do nothing.

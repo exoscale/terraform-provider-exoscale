@@ -3,9 +3,68 @@ package exoscale
 import (
 	"fmt"
 	"net"
+	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/exoscale/egoscale"
+	"github.com/hashicorp/terraform/helper/schema"
 )
+
+// ValidateString validates that the given field is a string and matches the expected value
+func ValidateString(str string) schema.SchemaValidateFunc {
+	return func(i interface{}, k string) (s []string, es []error) {
+		value, ok := i.(string)
+		if !ok {
+			es = append(es, fmt.Errorf("expected type of %s to be string", k))
+			return
+		}
+
+		if value != str {
+			es = append(es, fmt.Errorf("string %q doesn't match expected value %q", value, str))
+			return
+		}
+
+		return
+	}
+}
+
+// ValidateRegexp validates that the given field is a string and matches the regexp
+func ValidateRegexp(pattern string) schema.SchemaValidateFunc {
+	return func(i interface{}, k string) (s []string, es []error) {
+		value, ok := i.(string)
+		if !ok {
+			es = append(es, fmt.Errorf("expected type of %s to be string", k))
+			return
+		}
+
+		r := regexp.MustCompile(pattern)
+		if !r.MatchString(value) {
+			es = append(es, fmt.Errorf("string %q doesn't match regular expression value %q", value, pattern))
+			return
+		}
+
+		return
+	}
+}
+
+// ValidateUUID validates that the given field is a UUID
+func ValidateUUID() schema.SchemaValidateFunc {
+	return func(i interface{}, k string) (s []string, es []error) {
+		value, ok := i.(string)
+		if !ok {
+			es = append(es, fmt.Errorf("expected type of %s to be string", k))
+			return
+		}
+
+		if _, err := egoscale.ParseUUID(value); err != nil {
+			es = append(es, fmt.Errorf("string %q is not a valid UUID", value))
+			return
+		}
+
+		return
+	}
+}
 
 // ValidateIPv4String validates that the given field is a string representing an IPv4 address
 func ValidateIPv4String(i interface{}, k string) (s []string, es []error) {

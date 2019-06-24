@@ -3,47 +3,63 @@ layout: "exoscale"
 page_title: "Exoscale: exoscale_domain_record"
 sidebar_current: "docs-exoscale-domain-record"
 description: |-
-  Manages a domain record
+  Provides an Exoscale DNS Domain Record resource.
 ---
 
-# exoscale_domain_record
+# exoscale\_domain\_record
 
-Defines a DNS entry linked with a domain.
+Provides an Exoscale [DNS][dns] Domain Record resource. This can be used to create, modify, and delete DNS Domain Records.
+
+[dns]: https://community.exoscale.com/documentation/dns/
 
 ## Usage example
 
 ```hcl
-resource "exoscale_domain_record" "glop" {
-  domain = "${exoscale_domain.exo.id}"
-  name = "glap"
+resource "exoscale_domain" "example" {
+  name = "example.net"
+}
+
+resource "exoscale_domain_record" "myserver" {
+  domain      = "${exoscale_domain.example.id}"
+  name        = "myserver"
+  record_type = "A"
+  content     = "1.2.3.4"
+}
+
+resource "exoscale_domain_record" "myserver_alias" {
+  domain      = "${exoscale_domain.example.id}"
+  name        = "myserver-new"
   record_type = "CNAME"
-  content = "${exoscale_domain.exo.name}"
+  content     = "${exoscale_domain_record.myserver.hostname}"
 }
 ```
 
 ## Argument Reference
 
-- `domain` - (Required) domain it's linked to
+* `domain` - (Required) The name of the [`exoscale_domain`][domain] to create the record into.
+* `name` - (Required) The name of the DNS Domain Record.
+* `record_type` - (Required) The type of the DNS Domain Record. Supported values are: `A`, `AAAA`, `ALIAS`, `CAA`, `CNAME`, `HINFO`, `MX`, `NAPTR`, `NS`, `POOL`, `SPF`, `SRV`, `SSHFP`, `TXT`, `URL`.
+* `content` - (Required) The value of the DNS Domain Record.
+* `ttl` - The [Time To Live][ttl] of the DNS Domain Record.
+* `prio` - The priority of the DNS Domain Record (for types that support it).
 
-- `name` - (Required) name of the DNS record
-
-- `record_type` - (Required) type of the DNS record. E.g. `A`, `CNAME`, `MX`, etc.
-
-- `content` - (Required) value of the DNS record
-
-- `ttl` - time to live
-
-- `prio` - priority
+[domain]: domain.html
+[ttl]: https://en.wikipedia.org/wiki/Time_to_live
 
 ## Attributes Reference
 
-- `hostname` - full name, useful for linking `A` records into `CNAME`.
+The following attributes are exported:
+
+* `hostname` - The DNS Domain Record's *Fully Qualified Domain Name* (FQDN), useful for linking `A` records into `CNAME`.
 
 ## Import
 
-A record is imported with its domain resource. Importing an Domain Record resource is also possible by id.
+An existing DNS Domain Record can be imported as a resource by ID:
 
-```shell
-# by id
+```console
 $ terraform import exoscale_domain_record.www 12480484
 ```
+
+~> **NOTE:** importing an existing [`exoscale_domain`][domain] resource also imports linked `exoscale_domain_record` resources.
+
+[domain]: domain.html

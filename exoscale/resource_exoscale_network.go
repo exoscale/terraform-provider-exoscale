@@ -12,25 +12,29 @@ import (
 	"github.com/hashicorp/terraform/helper/validation"
 )
 
-func networkResource() *schema.Resource {
+func resourceNetworkIDString(d resourceIDStringer) string {
+	return resourceIDString(d, "exoscale_network")
+}
+
+func resourceNetwork() *schema.Resource {
 	s := map[string]*schema.Schema{
-		"name": {
+		"zone": {
 			Type:     schema.TypeString,
 			Required: true,
-		},
-		"display_text": {
-			Type:     schema.TypeString,
-			Optional: true,
-			Computed: true,
+			ForceNew: true,
 		},
 		"network_offering": {
 			Type:     schema.TypeString,
 			Required: true,
 		},
-		"zone": {
+		"name": {
 			Type:     schema.TypeString,
 			Required: true,
-			ForceNew: true,
+		},
+		"display_text": { // TODO: rename to "description"
+			Type:     schema.TypeString,
+			Optional: true,
+			Computed: true,
 		},
 		"start_ip": {
 			Type:         schema.TypeString,
@@ -52,11 +56,13 @@ func networkResource() *schema.Resource {
 	addTags(s, "tags")
 
 	return &schema.Resource{
-		Create: createNetwork,
-		Exists: existsNetwork,
-		Read:   readNetwork,
-		Update: updateNetwork,
-		Delete: deleteNetwork,
+		Schema: s,
+
+		Create: resourceNetworkCreate,
+		Read:   resourceNetworkRead,
+		Update: resourceNetworkUpdate,
+		Delete: resourceNetworkDelete,
+		Exists: resourceNetworkExists,
 
 		Importer: &schema.ResourceImporter{
 			State: schema.ImportStatePassthrough,
@@ -68,12 +74,12 @@ func networkResource() *schema.Resource {
 			Update: schema.DefaultTimeout(defaultTimeout),
 			Delete: schema.DefaultTimeout(defaultTimeout),
 		},
-
-		Schema: s,
 	}
 }
 
-func createNetwork(d *schema.ResourceData, meta interface{}) error {
+func resourceNetworkCreate(d *schema.ResourceData, meta interface{}) error {
+	log.Printf("[DEBUG] %s: beginning create", resourceNetworkIDString(d))
+
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutCreate))
 	defer cancel()
 
@@ -144,10 +150,14 @@ func createNetwork(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	return readNetwork(d, meta)
+	log.Printf("[DEBUG] %s: create finished successfully", resourceNetworkIDString(d))
+
+	return resourceNetworkRead(d, meta)
 }
 
-func readNetwork(d *schema.ResourceData, meta interface{}) error {
+func resourceNetworkRead(d *schema.ResourceData, meta interface{}) error {
+	log.Printf("[DEBUG] %s: beginning read", resourceNetworkIDString(d))
+
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
 	defer cancel()
 
@@ -172,10 +182,13 @@ func readNetwork(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	network := networks.Network[0]
-	return applyNetwork(d, &network)
+
+	log.Printf("[DEBUG] %s: read finished successfully", resourceNetworkIDString(d))
+
+	return resourceNetworkApply(d, &network)
 }
 
-func existsNetwork(d *schema.ResourceData, meta interface{}) (bool, error) {
+func resourceNetworkExists(d *schema.ResourceData, meta interface{}) (bool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
 	defer cancel()
 
@@ -204,7 +217,9 @@ func existsNetwork(d *schema.ResourceData, meta interface{}) (bool, error) {
 	return true, nil
 }
 
-func updateNetwork(d *schema.ResourceData, meta interface{}) error {
+func resourceNetworkUpdate(d *schema.ResourceData, meta interface{}) error {
+	log.Printf("[DEBUG] %s: beginning update", resourceNetworkIDString(d))
+
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutUpdate))
 	defer cancel()
 
@@ -224,6 +239,7 @@ func updateNetwork(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
+	// Update name and display_text
 	updateNetwork := &egoscale.UpdateNetwork{
 		ID:          id,
 		Name:        d.Get("name").(string),
@@ -233,6 +249,7 @@ func updateNetwork(d *schema.ResourceData, meta interface{}) error {
 		Netmask:     net.ParseIP(d.Get("netmask").(string)),
 	}
 
+	// Update tags
 	requests, err := updateTags(d, "tags", egoscale.Network{}.ResourceType())
 	if err != nil {
 		return err
@@ -247,15 +264,14 @@ func updateNetwork(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	err = readNetwork(d, meta)
-	if err != nil {
-		return err
-	}
+	log.Printf("[DEBUG] %s: update finished successfully", resourceNetworkIDString(d))
 
-	return nil
+	return resourceNetworkRead(d, meta)
 }
 
-func deleteNetwork(d *schema.ResourceData, meta interface{}) error {
+func resourceNetworkDelete(d *schema.ResourceData, meta interface{}) error {
+	log.Printf("[DEBUG] %s: beginning delete", resourceNetworkIDString(d))
+
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutDelete))
 	defer cancel()
 
@@ -266,15 +282,18 @@ func deleteNetwork(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	if err = client.BooleanRequestWithContext(ctx, &egoscale.DeleteNetwork{ID: id}); err != nil {
+	network := &egoscale.DeleteNetwork{ID: id}
+
+	if err = client.BooleanRequestWithContext(ctx, network); err != nil {
 		return err
 	}
 
-	d.SetId("")
+	log.Printf("[DEBUG] %s: delete finished successfully", resourceNetworkIDString(d))
+
 	return nil
 }
 
-func applyNetwork(d *schema.ResourceData, network *egoscale.Network) error {
+func resourceNetworkApply(d *schema.ResourceData, network *egoscale.Network) error {
 	d.SetId(network.ID.String())
 	if err := d.Set("name", network.Name); err != nil {
 		return err

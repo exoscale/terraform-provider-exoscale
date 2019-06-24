@@ -1,8 +1,8 @@
 package exoscale
 
 import (
+	"errors"
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 	"testing"
@@ -27,18 +27,18 @@ func TestPreparePorts(t *testing.T) {
 	}
 }
 
-func TestAccSecurityGroupRules(t *testing.T) {
+func TestAccResourceSecurityGroupRules(t *testing.T) {
 	sg := new(egoscale.SecurityGroup)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckSecurityGroupRulesDestroy,
+		CheckDestroy: testAccCheckResourceSecurityGroupRulesDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccSecurityGroupRulesCreate,
+				Config: testAccResourceSecurityGroupRulesConfigCreate,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckSecurityGroupExists("exoscale_security_group.sg", sg),
+					testAccCheckResourceSecurityGroupExists("exoscale_security_group.sg", sg),
 					testAccCheckSecurityGroupHasManyRules(16),
 					testAccCheckSecurityGroupIngressRuleExists(sg, &egoscale.IngressRule{
 						CIDR:     egoscale.MustParseCIDR("0.0.0.0/0"),
@@ -139,9 +139,9 @@ func TestAccSecurityGroupRules(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccSecurityGroupRulesUpdate,
+				Config: testAccResourceSecurityGroupRulesConfigUpdate,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckSecurityGroupExists("exoscale_security_group.sg", sg),
+					testAccCheckResourceSecurityGroupExists("exoscale_security_group.sg", sg),
 					testAccCheckSecurityGroupHasManyRules(16),
 					testAccCheckSecurityGroupIngressRuleExists(sg, &egoscale.IngressRule{
 						SecurityGroupName: "terraform-test-security-group",
@@ -188,7 +188,6 @@ func testAccCheckSecurityGroupHasManyRules(quantity int) resource.TestCheckFunc 
 
 			total := 0
 			for k, id := range rs.Primary.Attributes {
-				log.Printf("[DEBUG] k: %s", k)
 				if strings.HasSuffix(k, ".ids.#") {
 					count, _ := strconv.Atoi(id)
 					total += count
@@ -196,13 +195,13 @@ func testAccCheckSecurityGroupHasManyRules(quantity int) resource.TestCheckFunc 
 			}
 
 			if total != quantity {
-				return fmt.Errorf("meh!? number of rules doesn't match, want %d != has %d", quantity, total)
+				return fmt.Errorf("number of rules doesn't match, want %d != has %d", quantity, total)
 			}
 
 			return nil
 		}
 
-		return fmt.Errorf("Could not find any security group rules")
+		return errors.New("Could not find any security group rules")
 	}
 }
 
@@ -240,7 +239,7 @@ func testAccCheckSecurityGroupEgressRuleExists(sg *egoscale.SecurityGroup, rule 
 	}
 }
 
-func testAccCheckSecurityGroupRulesDestroy(s *terraform.State) error {
+func testAccCheckResourceSecurityGroupRulesDestroy(s *terraform.State) error {
 	client := GetComputeClient(testAccProvider.Meta())
 
 	for _, rs := range s.RootModule().Resources {
@@ -265,10 +264,10 @@ func testAccCheckSecurityGroupRulesDestroy(s *terraform.State) error {
 		}
 	}
 
-	return fmt.Errorf("security group rules still exists")
+	return errors.New("Security Group Rules still exist")
 }
 
-var testAccSecurityGroupRulesCreate = `
+var testAccResourceSecurityGroupRulesConfigCreate = `
 resource "exoscale_security_group" "sg" {
   name = "terraform-test-security-group"
   description = "Terraform Security Group Test"
@@ -307,7 +306,7 @@ resource "exoscale_security_group_rules" "rules" {
 }
 `
 
-var testAccSecurityGroupRulesUpdate = `
+var testAccResourceSecurityGroupRulesConfigUpdate = `
 resource "exoscale_security_group" "sg" {
   name = "terraform-test-security-group"
   description = "Terraform Security Group Test"

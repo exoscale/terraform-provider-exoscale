@@ -3,6 +3,7 @@ package exoscale
 import (
 	"context"
 	"fmt"
+	"log"
 	"strconv"
 
 	"github.com/exoscale/egoscale"
@@ -10,34 +11,33 @@ import (
 	"github.com/hashicorp/terraform/helper/validation"
 )
 
-func domainRecordResource() *schema.Resource {
+var supportedRecordTypes = []string{
+	"A", "AAAA", "ALIAS", "CAA", "CNAME",
+	"HINFO", "MX", "NAPTR", "NS", "POOL",
+	"SPF", "SRV", "SSHFP", "TXT", "URL",
+}
+
+func resourceDomainRecordIDString(d resourceIDStringer) string {
+	return resourceIDString(d, "exoscale_domain_record")
+}
+
+func resourceDomainRecord() *schema.Resource {
 	return &schema.Resource{
-		Create: createRecord,
-		Read:   readRecord,
-		Exists: existsRecord,
-		Update: updateRecord,
-		Delete: deleteRecord,
-
-		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
-		},
-
 		Schema: map[string]*schema.Schema{
 			"domain": {
 				Type:     schema.TypeString,
 				Required: true,
+				ForceNew: true,
+			},
+			"record_type": {
+				Type:         schema.TypeString,
+				Required:     true,
+				ForceNew:     true,
+				ValidateFunc: validation.StringInSlice(supportedRecordTypes, true),
 			},
 			"name": {
 				Type:     schema.TypeString,
 				Required: true,
-			},
-			"record_type": {
-				Type:     schema.TypeString,
-				Required: true,
-				ValidateFunc: validation.StringInSlice([]string{
-					"A", "AAAA", "ALIAS", "CAA", "CNAME", "HINFO", "MX", "NAPTR",
-					"NS", "POOL", "SPF", "SRV", "SSHFP", "TXT", "URL",
-				}, true),
 			},
 			"content": {
 				Type:     schema.TypeString,
@@ -59,6 +59,16 @@ func domainRecordResource() *schema.Resource {
 			},
 		},
 
+		Create: resourceDomainRecordCreate,
+		Read:   resourceDomainRecordRead,
+		Update: resourceDomainRecordUpdate,
+		Delete: resourceDomainRecordDelete,
+		Exists: resourceDomainRecordExists,
+
+		Importer: &schema.ResourceImporter{
+			State: schema.ImportStatePassthrough,
+		},
+
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(defaultTimeout),
 			Read:   schema.DefaultTimeout(defaultTimeout),
@@ -68,7 +78,9 @@ func domainRecordResource() *schema.Resource {
 	}
 }
 
-func createRecord(d *schema.ResourceData, meta interface{}) error {
+func resourceDomainRecordCreate(d *schema.ResourceData, meta interface{}) error {
+	log.Printf("[DEBUG] %s: beginning create", resourceDomainRecordIDString(d))
+
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutCreate))
 	defer cancel()
 
@@ -87,10 +99,13 @@ func createRecord(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	d.SetId(strconv.FormatInt(record.ID, 10))
-	return readRecord(d, meta)
+
+	log.Printf("[DEBUG] %s: create finished successfully", resourceDomainRecordIDString(d))
+
+	return resourceDomainRecordRead(d, meta)
 }
 
-func existsRecord(d *schema.ResourceData, meta interface{}) (bool, error) {
+func resourceDomainRecordExists(d *schema.ResourceData, meta interface{}) (bool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
 	defer cancel()
 
@@ -135,7 +150,9 @@ func existsRecord(d *schema.ResourceData, meta interface{}) (bool, error) {
 	return false, nil
 }
 
-func readRecord(d *schema.ResourceData, meta interface{}) error {
+func resourceDomainRecordRead(d *schema.ResourceData, meta interface{}) error {
+	log.Printf("[DEBUG] %s: beginning read", resourceDomainRecordIDString(d))
+
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
 	defer cancel()
 
@@ -144,13 +161,16 @@ func readRecord(d *schema.ResourceData, meta interface{}) error {
 	id, _ := strconv.ParseInt(d.Id(), 10, 64)
 	domain := d.Get("domain").(string)
 
+	// TODO: when is it not the case? Isn't the `domain` attribute supposed to be mandatory?
 	if domain != "" {
 		record, err := client.GetRecord(ctx, domain, id)
 		if err != nil {
 			return err
 		}
 
-		return applyRecord(d, *record)
+		log.Printf("[DEBUG] %s: read finished successfully", resourceDomainRecordIDString(d))
+
+		return resourceDomainRecordApply(d, *record)
 	}
 
 	domains, err := client.GetDomains(ctx)
@@ -168,14 +188,19 @@ func readRecord(d *schema.ResourceData, meta interface{}) error {
 			if err := d.Set("domain", domain.Name); err != nil {
 				return err
 			}
-			return applyRecord(d, *record)
+
+			log.Printf("[DEBUG] %s: read finished successfully", resourceDomainRecordIDString(d))
+
+			return resourceDomainRecordApply(d, *record)
 		}
 	}
 
 	return fmt.Errorf("domain record %s not found", d.Id())
 }
 
-func updateRecord(d *schema.ResourceData, meta interface{}) error {
+func resourceDomainRecordUpdate(d *schema.ResourceData, meta interface{}) error {
+	log.Printf("[DEBUG] %s: beginning update", resourceDomainRecordIDString(d))
+
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutUpdate))
 	defer cancel()
 
@@ -183,37 +208,41 @@ func updateRecord(d *schema.ResourceData, meta interface{}) error {
 
 	id, _ := strconv.ParseInt(d.Id(), 10, 64)
 	record, err := client.UpdateRecord(ctx, d.Get("domain").(string), egoscale.UpdateDNSRecord{
-		ID:         id,
-		Name:       d.Get("name").(string),
-		Content:    d.Get("content").(string),
-		RecordType: d.Get("record_type").(string),
-		TTL:        d.Get("ttl").(int),
-		Prio:       d.Get("prio").(int),
+		ID:      id,
+		Name:    d.Get("name").(string),
+		Content: d.Get("content").(string),
+		TTL:     d.Get("ttl").(int),
+		Prio:    d.Get("prio").(int),
 	})
 
 	if err != nil {
 		return err
 	}
 
-	return applyRecord(d, *record)
+	log.Printf("[DEBUG] %s: update finished successfully", resourceDomainRecordIDString(d))
+
+	return resourceDomainRecordApply(d, *record) // FIXME: use resourceDomainRecordRead()
 }
 
-func deleteRecord(d *schema.ResourceData, meta interface{}) error {
+func resourceDomainRecordDelete(d *schema.ResourceData, meta interface{}) error {
+	log.Printf("[DEBUG] %s: beginning delete", resourceDomainRecordIDString(d))
+
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutDelete))
 	defer cancel()
 
 	client := GetDNSClient(meta)
 
 	id, _ := strconv.ParseInt(d.Id(), 10, 64)
-	err := client.DeleteRecord(ctx, d.Get("domain").(string), id)
-	if err != nil {
-		d.SetId("")
+	if err := client.DeleteRecord(ctx, d.Get("domain").(string), id); err != nil {
+		return err
 	}
 
-	return err
+	log.Printf("[DEBUG] %s: delete finished successfully", resourceDomainRecordIDString(d))
+
+	return nil
 }
 
-func applyRecord(d *schema.ResourceData, record egoscale.DNSRecord) error {
+func resourceDomainRecordApply(d *schema.ResourceData, record egoscale.DNSRecord) error {
 	d.SetId(strconv.FormatInt(record.ID, 10))
 	if err := d.Set("name", record.Name); err != nil {
 		return err

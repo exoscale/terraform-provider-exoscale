@@ -2,28 +2,18 @@ package exoscale
 
 import (
 	"context"
+	"log"
 
 	"github.com/exoscale/egoscale"
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
-func affinityGroupResource() *schema.Resource {
+func resourceAffinityIDString(d resourceIDStringer) string {
+	return resourceIDString(d, "exoscale_affinity")
+}
+
+func resourceAffinity() *schema.Resource {
 	return &schema.Resource{
-		Create: createAffinityGroup,
-		Exists: existsAffinityGroup,
-		Read:   readAffinityGroup,
-		Delete: deleteAffinityGroup,
-
-		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
-		},
-
-		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(defaultTimeout),
-			Read:   schema.DefaultTimeout(defaultTimeout),
-			Delete: schema.DefaultTimeout(defaultTimeout),
-		},
-
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:     schema.TypeString,
@@ -50,10 +40,27 @@ func affinityGroupResource() *schema.Resource {
 				},
 			},
 		},
+
+		Create: resourceAffinityCreate,
+		Read:   resourceAffinityRead,
+		Delete: resourceAffinityDelete,
+		Exists: resourceAffinityExists,
+
+		Importer: &schema.ResourceImporter{
+			State: schema.ImportStatePassthrough,
+		},
+
+		Timeouts: &schema.ResourceTimeout{
+			Create: schema.DefaultTimeout(defaultTimeout),
+			Read:   schema.DefaultTimeout(defaultTimeout),
+			Delete: schema.DefaultTimeout(defaultTimeout),
+		},
 	}
 }
 
-func createAffinityGroup(d *schema.ResourceData, meta interface{}) error {
+func resourceAffinityCreate(d *schema.ResourceData, meta interface{}) error {
+	log.Printf("[DEBUG] %s: beginning create", resourceAffinityIDString(d))
+
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutCreate))
 	defer cancel()
 
@@ -64,15 +71,21 @@ func createAffinityGroup(d *schema.ResourceData, meta interface{}) error {
 		Description: d.Get("description").(string),
 		Type:        d.Get("type").(string),
 	}
+
 	resp, err := client.RequestWithContext(ctx, req)
 	if err != nil {
 		return err
 	}
 
-	return applyAffinityGroup(d, resp.(*egoscale.AffinityGroup))
+	ag := resp.(*egoscale.AffinityGroup)
+	d.SetId(ag.ID.String())
+
+	log.Printf("[DEBUG] %s: create finished successfully", resourceAffinityIDString(d))
+
+	return resourceAffinityRead(d, meta)
 }
 
-func existsAffinityGroup(d *schema.ResourceData, meta interface{}) (bool, error) {
+func resourceAffinityExists(d *schema.ResourceData, meta interface{}) (bool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
 	defer cancel()
 
@@ -83,9 +96,7 @@ func existsAffinityGroup(d *schema.ResourceData, meta interface{}) (bool, error)
 		return false, err
 	}
 
-	ag := &egoscale.AffinityGroup{
-		ID: id,
-	}
+	ag := &egoscale.AffinityGroup{ID: id}
 	_, err = client.GetWithContext(ctx, ag)
 	if err != nil {
 		e := handleNotFound(d, err)
@@ -95,7 +106,9 @@ func existsAffinityGroup(d *schema.ResourceData, meta interface{}) (bool, error)
 	return true, nil
 }
 
-func readAffinityGroup(d *schema.ResourceData, meta interface{}) error {
+func resourceAffinityRead(d *schema.ResourceData, meta interface{}) error {
+	log.Printf("[DEBUG] %s: beginning read", resourceAffinityIDString(d))
+
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
 	defer cancel()
 
@@ -106,19 +119,43 @@ func readAffinityGroup(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	ag := &egoscale.AffinityGroup{
-		ID: id,
-	}
+	ag := &egoscale.AffinityGroup{ID: id}
+
 	resp, err := client.GetWithContext(ctx, ag)
 	if err != nil {
 		return handleNotFound(d, err)
 	}
 
-	return applyAffinityGroup(d, resp.(*egoscale.AffinityGroup))
+	log.Printf("[DEBUG] %s: read finished successfully", resourceAffinityIDString(d))
+
+	return resourceAffinityApply(d, resp.(*egoscale.AffinityGroup))
 }
 
-func applyAffinityGroup(d *schema.ResourceData, affinity *egoscale.AffinityGroup) error {
-	d.SetId(affinity.ID.String())
+func resourceAffinityDelete(d *schema.ResourceData, meta interface{}) error {
+	log.Printf("[DEBUG] %s: beginning delete", resourceAffinityIDString(d))
+
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutDelete))
+	defer cancel()
+
+	client := GetComputeClient(meta)
+
+	id, err := egoscale.ParseUUID(d.Id())
+	if err != nil {
+		return err
+	}
+
+	ag := &egoscale.AffinityGroup{ID: id}
+
+	if err := client.DeleteWithContext(ctx, ag); err != nil {
+		return err
+	}
+
+	log.Printf("[DEBUG] %s: delete finished successfully", resourceAffinityIDString(d))
+
+	return nil
+}
+
+func resourceAffinityApply(d *schema.ResourceData, affinity *egoscale.AffinityGroup) error {
 	if err := d.Set("name", affinity.Name); err != nil {
 		return err
 	}
@@ -137,20 +174,4 @@ func applyAffinityGroup(d *schema.ResourceData, affinity *egoscale.AffinityGroup
 	}
 
 	return nil
-}
-
-func deleteAffinityGroup(d *schema.ResourceData, meta interface{}) error {
-	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutDelete))
-	defer cancel()
-
-	client := GetComputeClient(meta)
-
-	id, err := egoscale.ParseUUID(d.Id())
-	if err != nil {
-		return err
-	}
-
-	return client.DeleteWithContext(ctx, &egoscale.AffinityGroup{
-		ID: id,
-	})
 }

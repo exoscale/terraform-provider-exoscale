@@ -13,7 +13,13 @@ import (
 	"github.com/hashicorp/terraform/helper/validation"
 )
 
-func securityGroupRulesResource() *schema.Resource {
+type fetchRuleFunc func(identifier string) (*egoscale.IngressRule, bool)
+
+func resourceSecurityGroupRulesIDString(d resourceIDStringer) string {
+	return resourceIDString(d, "exoscale_security_group_rules")
+}
+
+func resourceSecurityGroupRules() *schema.Resource {
 	ruleSchema := &schema.Schema{
 		Type:     schema.TypeSet,
 		Optional: true,
@@ -74,18 +80,6 @@ func securityGroupRulesResource() *schema.Resource {
 	}
 
 	return &schema.Resource{
-		Create: createSecurityGroupRules,
-		Read:   readSecurityGroupRules,
-		Update: updateSecurityGroupRules,
-		Delete: deleteSecurityGroupRules,
-
-		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(defaultTimeout),
-			Read:   schema.DefaultTimeout(defaultTimeout),
-			Update: schema.DefaultTimeout(defaultTimeout),
-			Delete: schema.DefaultTimeout(defaultTimeout),
-		},
-
 		Schema: map[string]*schema.Schema{
 			"security_group_id": {
 				Type:          schema.TypeString,
@@ -104,10 +98,181 @@ func securityGroupRulesResource() *schema.Resource {
 			"ingress": ruleSchema,
 			"egress":  ruleSchema,
 		},
+
+		Create: resourceSecurityGroupRulesCreate,
+		Read:   resourceSecurityGroupRulesRead,
+		Update: resourceSecurityGroupRulesUpdate,
+		Delete: resourceSecurityGroupRulesDelete,
+
+		Timeouts: &schema.ResourceTimeout{
+			Create: schema.DefaultTimeout(defaultTimeout),
+			Read:   schema.DefaultTimeout(defaultTimeout),
+			Update: schema.DefaultTimeout(defaultTimeout),
+			Delete: schema.DefaultTimeout(defaultTimeout),
+		},
 	}
 }
 
-func updateSecurityGroupRules(d *schema.ResourceData, meta interface{}) error {
+func resourceSecurityGroupRulesCreate(d *schema.ResourceData, meta interface{}) error {
+	log.Printf("[DEBUG] %s: beginning create", resourceSecurityGroupRulesIDString(d))
+
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutCreate))
+	defer cancel()
+
+	client := GetComputeClient(meta)
+
+	sg, err := inferSecurityGroup(d)
+	if err != nil {
+		return err
+	}
+
+	resp, err := client.GetWithContext(ctx, sg)
+	if err != nil {
+		if e := handleNotFound(d, err); e != nil {
+			return e
+		}
+	}
+
+	sg = resp.(*egoscale.SecurityGroup)
+
+	d.SetId(fmt.Sprintf("%d", rand.Uint64()))
+	if err := d.Set("security_group", sg.Name); err != nil {
+		return err
+	}
+	if err := d.Set("security_group_id", sg.ID.String()); err != nil {
+		return err
+	}
+
+	if rules := d.Get("ingress").(*schema.Set); rules.Len() > 0 {
+		for _, r := range rules.List() {
+			rule := r.(map[string]interface{})
+			ids := rule["ids"].(*schema.Set)
+			reqs, err := ruleToAuthorize(ctx, client, rule)
+			if err != nil {
+				return err
+			}
+
+			for _, req := range reqs {
+				req.SecurityGroupID = sg.ID
+				resp, err := client.RequestWithContext(ctx, req)
+				if err != nil {
+					return err
+				}
+
+				sg := resp.(*egoscale.SecurityGroup)
+				if len(sg.IngressRule) != 1 {
+					return fmt.Errorf("one ingress was supposed to be created. Does %#v already exist?", req)
+				}
+				rule := sg.IngressRule[0]
+				id := ingressRuleToID(rule)
+				ids.Add(id)
+			}
+		}
+	}
+
+	if rules := d.Get("egress").(*schema.Set); rules.Len() > 0 {
+		for _, r := range rules.List() {
+			rule := r.(map[string]interface{})
+			ids := rule["ids"].(*schema.Set)
+			reqs, err := ruleToAuthorize(ctx, client, rule)
+			if err != nil {
+				return err
+			}
+
+			for _, req := range reqs {
+				req.SecurityGroupID = sg.ID
+				ereq := (*egoscale.AuthorizeSecurityGroupEgress)(&req)
+				resp, err := client.RequestWithContext(ctx, ereq)
+				if err != nil {
+					return err
+				}
+
+				sg := resp.(*egoscale.SecurityGroup)
+				if len(sg.EgressRule) != 1 {
+					return fmt.Errorf("one egress was supposed to be created. Does %#v already exist?", ereq)
+				}
+				rule := sg.EgressRule[0]
+				id := egressRuleToID(rule)
+				ids.Add(id)
+
+				log.Printf("[DEBUG] rule %s was built!\n", id)
+			}
+
+			log.Printf("[DEBUG] Ingress RuleID %+v\n", ids)
+		}
+	}
+
+	log.Printf("[DEBUG] %s: create finished successfully", resourceSecurityGroupRulesIDString(d))
+
+	return resourceSecurityGroupRulesRead(d, meta)
+}
+
+func resourceSecurityGroupRulesRead(d *schema.ResourceData, meta interface{}) error {
+	log.Printf("[DEBUG] %s: beginning read", resourceSecurityGroupRulesIDString(d))
+
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
+	defer cancel()
+
+	client := GetComputeClient(meta)
+
+	sg, err := inferSecurityGroup(d)
+	if err != nil {
+		return err
+	}
+
+	resp, err := client.GetWithContext(ctx, sg)
+	if err != nil {
+		return handleNotFound(d, err)
+	}
+
+	sg = resp.(*egoscale.SecurityGroup)
+
+	ingressRules := make(map[string]int, len(sg.IngressRule))
+	for i, rule := range sg.IngressRule {
+		id := ingressRuleToID(rule)
+		ingressRules[id] = i
+	}
+
+	if rules := d.Get("ingress").(*schema.Set); rules.Len() > 0 {
+		readRules(rules, func(identifier string) (*egoscale.IngressRule, bool) {
+			idx, ok := ingressRules[identifier]
+			if !ok {
+				return nil, false
+			}
+			return &sg.IngressRule[idx], true
+		})
+		if err := d.Set("ingress", rules); err != nil {
+			return err
+		}
+	}
+
+	egressRules := make(map[string]int, len(sg.EgressRule))
+	for i, rule := range sg.EgressRule {
+		id := egressRuleToID(rule)
+		egressRules[id] = i
+	}
+
+	if rules := d.Get("egress").(*schema.Set); rules.Len() > 0 {
+		readRules(rules, func(identifier string) (*egoscale.IngressRule, bool) {
+			idx, ok := egressRules[identifier]
+			if !ok {
+				return nil, false
+			}
+			return (*egoscale.IngressRule)(&sg.EgressRule[idx]), true
+		})
+		if err := d.Set("egress", rules); err != nil {
+			return err
+		}
+	}
+
+	log.Printf("[DEBUG] %s: read finished successfully", resourceSecurityGroupRulesIDString(d))
+
+	return nil
+}
+
+func resourceSecurityGroupRulesUpdate(d *schema.ResourceData, meta interface{}) error {
+	log.Printf("[DEBUG] %s: beginning update", resourceSecurityGroupRulesIDString(d))
+
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutCreate))
 	defer cancel()
 
@@ -221,60 +386,34 @@ func updateSecurityGroupRules(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	return readSecurityGroupRules(d, meta)
+	log.Printf("[DEBUG] %s: update finished successfully", resourceSecurityGroupRulesIDString(d))
+
+	return resourceSecurityGroupRulesRead(d, meta)
 }
 
-func createSecurityGroupRules(d *schema.ResourceData, meta interface{}) error {
-	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutCreate))
+func resourceSecurityGroupRulesDelete(d *schema.ResourceData, meta interface{}) error {
+	log.Printf("[DEBUG] %s: beginning delete", resourceSecurityGroupRulesIDString(d))
+
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutDelete))
 	defer cancel()
 
 	client := GetComputeClient(meta)
-
-	sg, err := inferSecurityGroup(d)
-	if err != nil {
-		return err
-	}
-
-	resp, err := client.GetWithContext(ctx, sg)
-	if err != nil {
-		if e := handleNotFound(d, err); e != nil {
-			return e
-		}
-	}
-
-	sg = resp.(*egoscale.SecurityGroup)
-
-	d.SetId(fmt.Sprintf("%d", rand.Uint64()))
-	if err := d.Set("security_group", sg.Name); err != nil {
-		return err
-	}
-	if err := d.Set("security_group_id", sg.ID.String()); err != nil {
-		return err
-	}
 
 	if rules := d.Get("ingress").(*schema.Set); rules.Len() > 0 {
 		for _, r := range rules.List() {
 			rule := r.(map[string]interface{})
 			ids := rule["ids"].(*schema.Set)
-			reqs, err := ruleToAuthorize(ctx, client, rule)
+			reqs, err := ruleToRevoke(rule)
 			if err != nil {
 				return err
 			}
 
-			for _, req := range reqs {
-				req.SecurityGroupID = sg.ID
-				resp, err := client.RequestWithContext(ctx, req)
-				if err != nil {
+			for identifier, req := range reqs {
+				if err := client.BooleanRequestWithContext(ctx, req); err != nil {
 					return err
 				}
 
-				sg := resp.(*egoscale.SecurityGroup)
-				if len(sg.IngressRule) != 1 {
-					return fmt.Errorf("one ingress was supposed to be created. Does %#v already exist?", req)
-				}
-				rule := sg.IngressRule[0]
-				id := ingressRuleToID(rule)
-				ids.Add(id)
+				ids.Remove(identifier)
 			}
 		}
 	}
@@ -283,97 +422,24 @@ func createSecurityGroupRules(d *schema.ResourceData, meta interface{}) error {
 		for _, r := range rules.List() {
 			rule := r.(map[string]interface{})
 			ids := rule["ids"].(*schema.Set)
-			reqs, err := ruleToAuthorize(ctx, client, rule)
+			reqs, err := ruleToRevoke(rule)
 			if err != nil {
 				return err
 			}
-
-			for _, req := range reqs {
-				req.SecurityGroupID = sg.ID
-				ereq := (*egoscale.AuthorizeSecurityGroupEgress)(&req)
-				resp, err := client.RequestWithContext(ctx, ereq)
-				if err != nil {
+			for identifier, req := range reqs {
+				if err := client.BooleanRequestWithContext(ctx, (*egoscale.RevokeSecurityGroupEgress)(&req)); err != nil {
 					return err
 				}
 
-				sg := resp.(*egoscale.SecurityGroup)
-				if len(sg.EgressRule) != 1 {
-					return fmt.Errorf("one egress was supposed to be created. Does %#v already exist?", ereq)
-				}
-				rule := sg.EgressRule[0]
-				id := egressRuleToID(rule)
-				ids.Add(id)
-
-				log.Printf("[DEBUG] rule %s was built!\n", id)
+				ids.Remove(identifier)
 			}
-
-			log.Printf("[DEBUG] Ingress RuleID %+v\n", ids)
 		}
 	}
 
-	return readSecurityGroupRules(d, meta)
-}
-
-func readSecurityGroupRules(d *schema.ResourceData, meta interface{}) error {
-	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
-	defer cancel()
-
-	client := GetComputeClient(meta)
-
-	sg, err := inferSecurityGroup(d)
-	if err != nil {
-		return err
-	}
-
-	resp, err := client.GetWithContext(ctx, sg)
-	if err != nil {
-		return handleNotFound(d, err)
-	}
-
-	sg = resp.(*egoscale.SecurityGroup)
-
-	ingressRules := make(map[string]int, len(sg.IngressRule))
-	for i, rule := range sg.IngressRule {
-		id := ingressRuleToID(rule)
-		ingressRules[id] = i
-	}
-
-	if rules := d.Get("ingress").(*schema.Set); rules.Len() > 0 {
-		readRules(rules, func(identifier string) (*egoscale.IngressRule, bool) {
-			idx, ok := ingressRules[identifier]
-			if !ok {
-				return nil, false
-			}
-			return &sg.IngressRule[idx], true
-		})
-		if err := d.Set("ingress", rules); err != nil {
-			return err
-		}
-	}
-
-	egressRules := make(map[string]int, len(sg.EgressRule))
-	for i, rule := range sg.EgressRule {
-		id := egressRuleToID(rule)
-		egressRules[id] = i
-	}
-
-	if rules := d.Get("egress").(*schema.Set); rules.Len() > 0 {
-		readRules(rules, func(identifier string) (*egoscale.IngressRule, bool) {
-			idx, ok := egressRules[identifier]
-			if !ok {
-				return nil, false
-			}
-			return (*egoscale.IngressRule)(&sg.EgressRule[idx]), true
-		})
-		if err := d.Set("egress", rules); err != nil {
-			return err
-		}
-	}
+	log.Printf("[DEBUG] %s: delete finished successfully", resourceSecurityGroupRulesIDString(d))
 
 	return nil
 }
-
-type fetchRuleFunc func(identifier string) (*egoscale.IngressRule, bool)
 
 // readRules performs the reconciliation of the rules using the ruleFunc
 func readRules(rules *schema.Set, ruleFunc fetchRuleFunc) {
@@ -452,53 +518,6 @@ func readRules(rules *schema.Set, ruleFunc fetchRuleFunc) {
 
 		rules.Add(rule)
 	}
-}
-
-func deleteSecurityGroupRules(d *schema.ResourceData, meta interface{}) error {
-	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutDelete))
-	defer cancel()
-
-	client := GetComputeClient(meta)
-
-	if rules := d.Get("ingress").(*schema.Set); rules.Len() > 0 {
-		for _, r := range rules.List() {
-			rule := r.(map[string]interface{})
-			ids := rule["ids"].(*schema.Set)
-			reqs, err := ruleToRevoke(rule)
-			if err != nil {
-				return err
-			}
-
-			for identifier, req := range reqs {
-				if err := client.BooleanRequestWithContext(ctx, req); err != nil {
-					return err
-				}
-
-				ids.Remove(identifier)
-			}
-		}
-	}
-
-	if rules := d.Get("egress").(*schema.Set); rules.Len() > 0 {
-		for _, r := range rules.List() {
-			rule := r.(map[string]interface{})
-			ids := rule["ids"].(*schema.Set)
-			reqs, err := ruleToRevoke(rule)
-			if err != nil {
-				return err
-			}
-			for identifier, req := range reqs {
-				if err := client.BooleanRequestWithContext(ctx, (*egoscale.RevokeSecurityGroupEgress)(&req)); err != nil {
-					return err
-				}
-
-				ids.Remove(identifier)
-			}
-		}
-	}
-
-	d.SetId("")
-	return nil
 }
 
 func ingressRuleToID(rule egoscale.IngressRule) string {

@@ -2,7 +2,9 @@ package exoscale
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/exoscale/egoscale"
@@ -15,23 +17,12 @@ var supportedProtocols = []string{
 	"TCP", "UDP", "ICMP", "ICMPv6", "AH", "ESP", "GRE", "IPIP", "ALL",
 }
 
-func securityGroupRuleResource() *schema.Resource {
+func resourceSecurityGroupRuleIDString(d resourceIDStringer) string {
+	return resourceIDString(d, "exoscale_security_group_rule")
+}
+
+func resourceSecurityGroupRule() *schema.Resource {
 	return &schema.Resource{
-		Create: createSecurityGroupRule,
-		Exists: existsSecurityGroupRule,
-		Read:   readSecurityGroupRule,
-		Delete: deleteSecurityGroupRule,
-
-		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
-		},
-
-		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(defaultTimeout),
-			Read:   schema.DefaultTimeout(defaultTimeout),
-			Delete: schema.DefaultTimeout(defaultTimeout),
-		},
-
 		Schema: map[string]*schema.Schema{
 			"type": {
 				Type:         schema.TypeString,
@@ -114,10 +105,27 @@ func securityGroupRuleResource() *schema.Resource {
 				ConflictsWith: []string{"cidr", "user_security_group_id"},
 			},
 		},
+
+		Create: resourceSecurityGroupRuleCreate,
+		Read:   resourceSecurityGroupRuleRead,
+		Delete: resourceSecurityGroupRuleDelete,
+		Exists: resourceSecurityGroupRuleExists,
+
+		Importer: &schema.ResourceImporter{
+			State: schema.ImportStatePassthrough,
+		},
+
+		Timeouts: &schema.ResourceTimeout{
+			Create: schema.DefaultTimeout(defaultTimeout),
+			Read:   schema.DefaultTimeout(defaultTimeout),
+			Delete: schema.DefaultTimeout(defaultTimeout),
+		},
 	}
 }
 
-func createSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
+func resourceSecurityGroupRuleCreate(d *schema.ResourceData, meta interface{}) error {
+	log.Printf("[DEBUG] %s: beginning create", resourceSecurityGroupRuleIDString(d))
+
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutCreate))
 	defer cancel()
 
@@ -150,7 +158,7 @@ func createSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
 		userSecurityGroupName := d.Get("user_security_group").(string)
 
 		if userSecurityGroupID == "" && userSecurityGroupName == "" {
-			return fmt.Errorf("No CIDR, User Security Group ID or Name were provided")
+			return errors.New("No CIDR, User Security Group ID or Name were provided")
 		}
 
 		group := &egoscale.SecurityGroup{
@@ -189,7 +197,6 @@ func createSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
 
 	trafficType := strings.ToUpper(d.Get("type").(string))
 	if trafficType == "EGRESS" {
-		// yay! types
 		req = (*egoscale.AuthorizeSecurityGroupEgress)(req.(*egoscale.AuthorizeSecurityGroupIngress))
 	}
 
@@ -206,20 +213,23 @@ func createSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
 	}
 	if trafficType == "EGRESS" {
 		if len(sg.EgressRule) != 1 {
-			return fmt.Errorf("no security group rules were created, aborting")
+			return errors.New("no security group rules were created, aborting")
 		}
 
-		return applySecurityGroupRule(d, securityGroup, sg.EgressRule[0])
+		return resourceSecurityGroupRuleApply(d, securityGroup, sg.EgressRule[0])
 	}
 
 	if len(sg.IngressRule) != 1 {
-		return fmt.Errorf("no security group rules were created, aborting")
+		return errors.New("no security group rules were created, aborting")
 	}
 
-	return applySecurityGroupRule(d, securityGroup, (egoscale.EgressRule)(sg.IngressRule[0]))
+	log.Printf("[DEBUG] %s: create finished successfully", resourceSecurityGroupRuleIDString(d))
+
+	// FIXME: use resourceSecurityGroupRuleRead()
+	return resourceSecurityGroupRuleApply(d, securityGroup, (egoscale.EgressRule)(sg.IngressRule[0]))
 }
 
-func existsSecurityGroupRule(d *schema.ResourceData, meta interface{}) (bool, error) {
+func resourceSecurityGroupRuleExists(d *schema.ResourceData, meta interface{}) (bool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
 	defer cancel()
 
@@ -280,7 +290,9 @@ func existsSecurityGroupRule(d *schema.ResourceData, meta interface{}) (bool, er
 	return false, nil
 }
 
-func readSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
+func resourceSecurityGroupRuleRead(d *schema.ResourceData, meta interface{}) error {
+	log.Printf("[DEBUG] %s: beginning read", resourceSecurityGroupRuleIDString(d))
+
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
 	defer cancel()
 
@@ -335,19 +347,26 @@ func readSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
 
 	if egressRule.RuleID != nil {
 		d.Set("type", "EGRESS") // nolint: errcheck
-		return applySecurityGroupRule(d, sg, egressRule)
+		return resourceSecurityGroupRuleApply(d, sg, egressRule)
 	}
 
 	if ingressRule.RuleID != nil {
 		d.Set("type", "INGRESS") // nolint: errcheck
-		return applySecurityGroupRule(d, sg, (egoscale.EgressRule)(ingressRule))
+		return resourceSecurityGroupRuleApply(d, sg, (egoscale.EgressRule)(ingressRule))
 	}
 
-	d.SetId("")
+	d.SetId("") // FIXME: wat
+
+	log.Printf("[DEBUG] %s: read finished successfully", resourceSecurityGroupRuleIDString(d))
+
 	return nil
 }
 
-func deleteSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
+func resourceSecurityGroupRuleDelete(d *schema.ResourceData, meta interface{}) error {
+	var req egoscale.Command
+
+	log.Printf("[DEBUG] %s: beginning delete", resourceSecurityGroupRuleIDString(d))
+
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutDelete))
 	defer cancel()
 
@@ -358,21 +377,22 @@ func deleteSecurityGroupRule(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	var req egoscale.Command
 	if d.Get("type").(string) == "EGRESS" {
-		req = &egoscale.RevokeSecurityGroupEgress{
-			ID: id,
-		}
+		req = &egoscale.RevokeSecurityGroupEgress{ID: id}
 	} else {
-		req = &egoscale.RevokeSecurityGroupIngress{
-			ID: id,
-		}
+		req = &egoscale.RevokeSecurityGroupIngress{ID: id}
 	}
 
-	return client.BooleanRequestWithContext(ctx, req)
+	if err := client.BooleanRequestWithContext(ctx, req); err != nil {
+		return err
+	}
+
+	log.Printf("[DEBUG] %s: delete finished successfully", resourceSecurityGroupRuleIDString(d))
+
+	return nil
 }
 
-func applySecurityGroupRule(d *schema.ResourceData, group *egoscale.SecurityGroup, rule egoscale.EgressRule) error {
+func resourceSecurityGroupRuleApply(d *schema.ResourceData, group *egoscale.SecurityGroup, rule egoscale.EgressRule) error {
 	d.SetId(rule.RuleID.String())
 	cidr := ""
 	if rule.CIDR != nil {

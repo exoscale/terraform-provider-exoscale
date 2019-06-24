@@ -1,6 +1,7 @@
 package exoscale
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"testing"
@@ -10,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform/terraform"
 )
 
-func TestAccSecondaryIP(t *testing.T) {
+func TestAccResourceSecondaryIPAddress(t *testing.T) {
 	vm := new(egoscale.VirtualMachine)
 	eip := new(egoscale.IPAddress)
 	secondaryip := new(egoscale.NicSecondaryIP)
@@ -18,71 +19,83 @@ func TestAccSecondaryIP(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckSecondaryIPDestroy,
+		CheckDestroy: testAccCheckResourceSecondaryIPAddressDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
-				Config: testAccSecondaryIPCreate,
+			{
+				Config: testAccResourceSecondaryIPAddressConfig,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckComputeExists("exoscale_compute.vm", vm),
-					testAccCheckElasticIPExists("exoscale_ipaddress.eip", eip),
-					testAccCheckSecondaryIPExists("exoscale_secondary_ipaddress.ip", vm, secondaryip),
-					testAccCheckSecondaryIPAttributes(secondaryip),
-					testAccCheckSecondaryIPCreateAttributes(),
+					testAccCheckResourceComputeExists("exoscale_compute.vm", vm),
+					testAccCheckIPAddressExists("exoscale_ipaddress.eip", eip),
+					testAccCheckResourceSecondaryIPAddressExists("exoscale_secondary_ipaddress.ip", vm, secondaryip),
+					testAccCheckResourceSecondaryIPAddress(secondaryip),
+					testAccCheckResourceSecondaryIPAddressAttributes(testAttrs{
+						"nic_id":     ValidateUUID(),
+						"network_id": ValidateUUID(),
+					}),
 				),
+			},
+			{
+				ResourceName:      "exoscale_secondary_ipaddress.ip",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateCheck: func(s []*terraform.InstanceState) error {
+					return checkResourceAttributes(
+						testAttrs{
+							"nic_id":     ValidateUUID(),
+							"network_id": ValidateUUID(),
+						},
+						s[0].Attributes)
+				},
 			},
 		},
 	})
 }
 
-func testAccCheckSecondaryIPExists(n string, vm *egoscale.VirtualMachine, secondaryip *egoscale.NicSecondaryIP) resource.TestCheckFunc {
+func testAccCheckResourceSecondaryIPAddressExists(n string, vm *egoscale.VirtualMachine, secondaryip *egoscale.NicSecondaryIP) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
-			return fmt.Errorf("Not found: %s", n)
+			return errors.New("resource not found in the state")
 		}
 
 		if rs.Primary.ID == "" {
-			return fmt.Errorf("no secondaryip IP ID is set")
+			return errors.New("resource ID not set")
 		}
 
 		nic := vm.DefaultNic()
 		if nic == nil || len(nic.SecondaryIP) != 1 {
-			return fmt.Errorf("no secondaryip field in VM")
+			return errors.New("no secondaryip field in VM")
 		}
 
 		return Copy(secondaryip, nic.SecondaryIP[0])
 	}
 }
 
-func testAccCheckSecondaryIPAttributes(nic *egoscale.NicSecondaryIP) resource.TestCheckFunc {
+func testAccCheckResourceSecondaryIPAddress(nic *egoscale.NicSecondaryIP) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		if nic.IPAddress == nil {
-			return fmt.Errorf("ip address is nil")
+			return errors.New("ip address is nil")
 		}
 
 		return nil
 	}
 }
 
-func testAccCheckSecondaryIPCreateAttributes() resource.TestCheckFunc {
+func testAccCheckResourceSecondaryIPAddressAttributes(expected testAttrs) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		for _, rs := range s.RootModule().Resources {
 			if rs.Type != "exoscale_secondary_ipaddress" {
 				continue
 			}
-			ip := net.ParseIP(rs.Primary.Attributes["ip_address"])
-			if ip == nil {
-				return fmt.Errorf("Bad IP %s", rs.Primary.Attributes["ip_address"])
-			}
 
-			return nil
+			return checkResourceAttributes(expected, rs.Primary.Attributes)
 		}
 
-		return fmt.Errorf("could not find secondary IP address")
+		return errors.New("resource not found in the state")
 	}
 }
 
-func testAccCheckSecondaryIPDestroy(s *terraform.State) error {
+func testAccCheckResourceSecondaryIPAddressDestroy(s *terraform.State) error {
 	client := GetComputeClient(testAccProvider.Meta())
 
 	for _, rs := range s.RootModule().Resources {
@@ -113,12 +126,12 @@ func testAccCheckSecondaryIPDestroy(s *terraform.State) error {
 
 		ipAddress := net.ParseIP(rs.Primary.Attributes["ip_address"])
 		if ipAddress == nil {
-			return fmt.Errorf("not a valid IP address")
+			return errors.New("not a valid IP address")
 		}
 
 		for _, ip := range nic.SecondaryIP {
 			if ip.IPAddress.Equal(ipAddress) {
-				return fmt.Errorf("secondary ip still exists")
+				return errors.New("Secondary IP address still exists")
 			}
 		}
 	}
@@ -126,7 +139,7 @@ func testAccCheckSecondaryIPDestroy(s *terraform.State) error {
 	return nil
 }
 
-var testAccSecondaryIPCreate = fmt.Sprintf(`
+var testAccResourceSecondaryIPAddressConfig = fmt.Sprintf(`
 resource "exoscale_ssh_keypair" "key" {
   name = "terraform-test-keypair"
 }

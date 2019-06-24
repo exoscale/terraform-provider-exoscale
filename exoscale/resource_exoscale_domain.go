@@ -2,22 +2,18 @@ package exoscale
 
 import (
 	"context"
+	"log"
 
 	"github.com/exoscale/egoscale"
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
-func domainResource() *schema.Resource {
+func resourceDomainIDString(d resourceIDStringer) string {
+	return resourceIDString(d, "exoscale_domain")
+}
+
+func resourceDomain() *schema.Resource {
 	return &schema.Resource{
-		Create: createDomain,
-		Exists: existsDomain,
-		Read:   readDomain,
-		Delete: deleteDomain,
-
-		Importer: &schema.ResourceImporter{
-			State: importDomain,
-		},
-
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:     schema.TypeString,
@@ -42,6 +38,15 @@ func domainResource() *schema.Resource {
 			},
 		},
 
+		Create: resourceDomainCreate,
+		Read:   resourceDomainRead,
+		Delete: resourceDomainDelete,
+		Exists: resourceDomainExists,
+
+		Importer: &schema.ResourceImporter{
+			State: resourceDomainImport,
+		},
+
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(defaultTimeout),
 			Read:   schema.DefaultTimeout(defaultTimeout),
@@ -50,7 +55,9 @@ func domainResource() *schema.Resource {
 	}
 }
 
-func createDomain(d *schema.ResourceData, meta interface{}) error {
+func resourceDomainCreate(d *schema.ResourceData, meta interface{}) error {
+	log.Printf("[DEBUG] %s: beginning create", resourceDomainIDString(d))
+
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutCreate))
 	defer cancel()
 
@@ -62,10 +69,13 @@ func createDomain(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	d.SetId(domain.Name)
-	return readDomain(d, meta)
+
+	log.Printf("[DEBUG] %s: create finished successfully", resourceDomainIDString(d))
+
+	return resourceDomainRead(d, meta)
 }
 
-func existsDomain(d *schema.ResourceData, meta interface{}) (bool, error) {
+func resourceDomainExists(d *schema.ResourceData, meta interface{}) (bool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
 	defer cancel()
 
@@ -81,7 +91,9 @@ func existsDomain(d *schema.ResourceData, meta interface{}) (bool, error) {
 	return err == nil, err
 }
 
-func readDomain(d *schema.ResourceData, meta interface{}) error {
+func resourceDomainRead(d *schema.ResourceData, meta interface{}) error {
+	log.Printf("[DEBUG] %s: beginning read", resourceDomainIDString(d))
+
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
 	defer cancel()
 
@@ -92,10 +104,14 @@ func readDomain(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	return applyDomain(d, *domain)
+	log.Printf("[DEBUG] %s: read finished successfully", resourceDomainIDString(d))
+
+	return resourceDomainApply(d, *domain)
 }
 
-func deleteDomain(d *schema.ResourceData, meta interface{}) error {
+func resourceDomainDelete(d *schema.ResourceData, meta interface{}) error {
+	log.Printf("[DEBUG] %s: beginning delete", resourceDomainIDString(d))
+
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutDelete))
 	defer cancel()
 
@@ -103,13 +119,15 @@ func deleteDomain(d *schema.ResourceData, meta interface{}) error {
 
 	err := client.DeleteDomain(ctx, d.Id())
 	if err != nil {
-		d.SetId("")
+		return err
 	}
 
-	return err
+	log.Printf("[DEBUG] %s: delete finished successfully", resourceDomainIDString(d))
+
+	return nil
 }
 
-func importDomain(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+func resourceDomainImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
 	defer cancel()
 
@@ -119,7 +137,7 @@ func importDomain(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceD
 		return nil, err
 	}
 
-	if err := applyDomain(d, *domain); err != nil {
+	if err := resourceDomainApply(d, *domain); err != nil {
 		return nil, err
 	}
 
@@ -136,14 +154,14 @@ func importDomain(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceD
 		if record.RecordType == "NS" || record.RecordType == "SOA" {
 			continue
 		}
-		resource := domainRecordResource()
+		resource := resourceDomainRecord()
 		d := resource.Data(nil)
 		d.SetType("exoscale_domain_record")
 		if err := d.Set("domain", domain.Name); err != nil {
 			return nil, err
 		}
 
-		if err := applyRecord(d, record); err != nil {
+		if err := resourceDomainRecordApply(d, record); err != nil {
 			continue
 		}
 
@@ -153,7 +171,7 @@ func importDomain(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceD
 	return resources, nil
 }
 
-func applyDomain(d *schema.ResourceData, domain egoscale.DNSDomain) error {
+func resourceDomainApply(d *schema.ResourceData, domain egoscale.DNSDomain) error {
 	d.SetId(domain.Name)
 	if err := d.Set("name", domain.Name); err != nil {
 		return err

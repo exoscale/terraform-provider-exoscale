@@ -3,38 +3,50 @@ layout: "exoscale"
 page_title: "Exoscale: exoscale_secondary_ipaddress"
 sidebar_current: "docs-exoscale-secondary-ipaddress"
 description: |-
-  Manages an elastic IP address assignement to a compute resource
+  Provides an Exoscale resource for assigning an existing Elastic IP to a Compute instance.
 ---
 
-# exoscale_secondary_ipaddress
+# exoscale\_secondary\_ipaddress
 
-A Secondary IP Address expresses the attribution of an extra IP address to a
-compute resource.
+Provides a resource for assigning an existing Exoscale [Elastic IP][eip] to a [Compute instance][compute].
 
-~> **NOTE** The network interfaces of the compute resource itself still have
-to be configured accordingly.
+~> **NOTE:** The network interfaces of the Compute instance itself still have to be configured accordingly (unless using a *managed* Elastic IP).
+
+[eip]: ipaddress.html
+[compute]: compute.html
 
 ### Secondary IP Address
 
 ```hcl
-resource "exoscale_secondary_ipaddress" "ingress_ip" {
-  compute_id = "${exoscale_compute.mymachine.id}"
-  ip_address = "${exoscale_ipaddress.myip.ip_address}"
+resource "exoscale_compute" "vm1" {
+  ...
+}
+
+resource "exoscale_ipaddress" "vip" {
+  ...
+}
+
+resource "exoscale_secondary_ipaddress" "vip" {
+  compute_id = "${exoscale_compute.vm1.id}"
+  ip_address = "${exoscale_ipaddress.vip.ip_address}"
 }
 ```
 
 ## Argument Reference
 
-- `compute_id` - (Required) id of the [compute resource](compute.html)
+* `compute_id` - (Required) The ID of the [Compute instance][compute].
+* `ip_address` - (Required) The [Elastic IP][eip] address to assign.
 
-- `ip_address` - (Required) IP address to use, preferably this comes from an [elastic IP](ip_address.html)
+[compute]: compute.html
+[eip]: ip_address.html
 
 ## Attributes Reference
 
-- `nic_id`: id of the NIC
+The following attributes are exported:
 
-- `network_id`: id of the Network (of the NIC)
+* `nic_id` - The ID of the NIC.
+* `network_id` - The ID of the Network the Compute instance NIC is attached to.
 
 ## Import
 
-This resource is automatically imported when you import a compute resource.
+This resource is automatically imported when importing an `exoscale_compute` resource.

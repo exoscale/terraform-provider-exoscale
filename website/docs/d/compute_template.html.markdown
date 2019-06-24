@@ -3,13 +3,15 @@ layout: "exoscale"
 page_title: "Exoscale: exoscale_compute_template"
 sidebar_current: "docs-exoscale-compute-template"
 description: |-
-  Retrieve information about a compute template.
+  Provides information about a Compute template.
 ---
 
-# exoscale_compute_template
+# exoscale\_compute\_template
 
-Get information on an Compute [template](https://www.exoscale.com/templates/)
-for use in other resources such as a [Compute Instance](../r/compute.html).
+Provides information on an Compute [template][templates] for use in other resources such as a [`exoscale_compute`][compute] resource.
+
+[templates]: https://www.exoscale.com/templates/
+[compute]: ../r/compute.html
 
 ## Example Usage
 
@@ -34,20 +36,17 @@ resource "exoscale_compute" "my_server" {
 
 ## Argument Reference
 
-- `zone` - (Required) Name of the [zone](https://www.exoscale.com/datacenters/)
+* `zone` - (Required) The name of the [zone][zone] where to look for the Compute template.
+* `name` - The name of the Compute template.
+* `id` - The ID of the Compute template.
+* `filter` - A Compute template search filter, must be either `featured` (official Exoscale templates), `community` (community-contributed templates) or `mine` (custom templates private to my organization). Default is `featured`.
 
-- `name` - Name of the template
-
-- `id` - ID of the template
-
-- `filter` - Template search filter, must be either `featured` (official
-  Exoscale templates), `community` (community-contributed templates) or `mine`
-  (custom templates private to my organization). Default is `featured`.
+[zone]: https://www.exoscale.com/datacenters/
 
 ## Attributes Reference
 
-- `id` - ID of the template
+The following attributes are exported:
 
-- `name` - Name of the template
-
-- `username` - Username to use to log into a Compute Instance based on this template
+* `id` - ID of the template
+* `name` - Name of the template
+* `username` - Username to use to log into a Compute Instance based on this template

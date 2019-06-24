@@ -2,6 +2,7 @@ package exoscale
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -12,7 +13,11 @@ import (
 	"github.com/hashicorp/terraform/helper/validation"
 )
 
-func elasticIPResource() *schema.Resource {
+func resourceIPAddressIDString(d resourceIDStringer) string {
+	return resourceIDString(d, "exoscale_ipaddress")
+}
+
+func resourceIPAddress() *schema.Resource {
 	s := map[string]*schema.Schema{
 		"zone": {
 			Type:        schema.TypeString,
@@ -71,11 +76,13 @@ func elasticIPResource() *schema.Resource {
 	addTags(s, "tags")
 
 	return &schema.Resource{
-		Create: createElasticIP,
-		Read:   readElasticIP,
-		Update: updateElasticIP,
-		Exists: existsElasticIP,
-		Delete: deleteElasticIP,
+		Schema: s,
+
+		Create: resourceIPAddressCreate,
+		Read:   resourceIPAddressRead,
+		Update: resourceIPAddressUpdate,
+		Delete: resourceIPAddressDelete,
+		Exists: resourceIPAddressExists,
 
 		Importer: &schema.ResourceImporter{
 			State: schema.ImportStatePassthrough,
@@ -87,12 +94,12 @@ func elasticIPResource() *schema.Resource {
 			Update: schema.DefaultTimeout(defaultTimeout),
 			Delete: schema.DefaultTimeout(defaultTimeout),
 		},
-
-		Schema: s,
 	}
 }
 
-func createElasticIP(d *schema.ResourceData, meta interface{}) error {
+func resourceIPAddressCreate(d *schema.ResourceData, meta interface{}) error {
+	log.Printf("[DEBUG] %s: beginning create", resourceIPAddressIDString(d))
+
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutCreate))
 	defer cancel()
 
@@ -109,32 +116,32 @@ func createElasticIP(d *schema.ResourceData, meta interface{}) error {
 
 	if req.HealthcheckMode = d.Get("healthcheck_mode").(string); req.HealthcheckMode != "" {
 		if req.HealthcheckPort = int64(d.Get("healthcheck_port").(int)); req.HealthcheckPort == 0 {
-			return fmt.Errorf("healthcheck_port must be specified")
+			return errors.New("healthcheck_port must be specified")
 		}
 
 		req.HealthcheckPath = d.Get("healthcheck_path").(string)
 		if req.HealthcheckMode == "http" && req.HealthcheckPath == "" {
-			return fmt.Errorf("healthcheck_path must be specified in \"http\" mode")
+			return errors.New("healthcheck_path must be specified in \"http\" mode")
 		} else if req.HealthcheckMode == "tcp" && req.HealthcheckPath != "" {
-			return fmt.Errorf("healthcheck_path must not be specified in \"tcp\" mode")
+			return errors.New("healthcheck_path must not be specified in \"tcp\" mode")
 		}
 
 		if req.HealthcheckInterval = int64(d.Get("healthcheck_interval").(int)); req.HealthcheckInterval == 0 {
-			return fmt.Errorf("healthcheck_interval must be specified")
+			return errors.New("healthcheck_interval must be specified")
 		}
 
 		if req.HealthcheckTimeout = int64(d.Get("healthcheck_timeout").(int)); req.HealthcheckTimeout == 0 {
-			return fmt.Errorf("healthcheck_timeout must be specified")
+			return errors.New("healthcheck_timeout must be specified")
 		} else if req.HealthcheckTimeout >= req.HealthcheckInterval {
-			return fmt.Errorf("healthcheck_timeout must be lower than healthcheck_interval")
+			return errors.New("healthcheck_timeout must be lower than healthcheck_interval")
 		}
 
 		if req.HealthcheckStrikesOk = int64(d.Get("healthcheck_strikes_ok").(int)); req.HealthcheckStrikesOk == 0 {
-			return fmt.Errorf("healthcheck_strikes_ok must be specified")
+			return errors.New("healthcheck_strikes_ok must be specified")
 		}
 
 		if req.HealthcheckStrikesFail = int64(d.Get("healthcheck_strikes_fail").(int)); req.HealthcheckStrikesFail == 0 {
-			return fmt.Errorf("healthcheck_strikes_fail must be specified")
+			return errors.New("healthcheck_strikes_fail must be specified")
 		}
 	} else {
 		for _, k := range []string{
@@ -156,11 +163,10 @@ func createElasticIP(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	elasticIP, ok := resp.(*egoscale.IPAddress)
-	if !ok {
-		return fmt.Errorf("wrong type: an IPAddress was expected, got %T", resp)
-	}
+	elasticIP := resp.(*egoscale.IPAddress)
+
 	d.SetId(elasticIP.ID.String())
+
 	if err := d.Set("ip_address", elasticIP.IPAddress.String()); err != nil {
 		return err
 	}
@@ -185,10 +191,12 @@ func createElasticIP(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	return readElasticIP(d, meta)
+	log.Printf("[DEBUG] %s: create finished successfully", resourceIPAddressIDString(d))
+
+	return resourceIPAddressRead(d, meta)
 }
 
-func existsElasticIP(d *schema.ResourceData, meta interface{}) (bool, error) {
+func resourceIPAddressExists(d *schema.ResourceData, meta interface{}) (bool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
 	defer cancel()
 
@@ -212,7 +220,9 @@ func existsElasticIP(d *schema.ResourceData, meta interface{}) (bool, error) {
 	return elasticIPes.Count == 1, nil
 }
 
-func readElasticIP(d *schema.ResourceData, meta interface{}) error {
+func resourceIPAddressRead(d *schema.ResourceData, meta interface{}) error {
+	log.Printf("[DEBUG] %s: beginning read", resourceIPAddressIDString(d))
+
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
 	defer cancel()
 
@@ -238,10 +248,14 @@ func readElasticIP(d *schema.ResourceData, meta interface{}) error {
 		return handleNotFound(d, err)
 	}
 
-	return applyElasticIP(d, resp.(*egoscale.IPAddress))
+	log.Printf("[DEBUG] %s: read finished successfully", resourceIPAddressIDString(d))
+
+	return resourceIPAddressApply(d, resp.(*egoscale.IPAddress))
 }
 
-func updateElasticIP(d *schema.ResourceData, meta interface{}) error {
+func resourceIPAddressUpdate(d *schema.ResourceData, meta interface{}) error {
+	log.Printf("[DEBUG] %s: beginning update", resourceIPAddressIDString(d))
+
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutUpdate))
 	defer cancel()
 
@@ -268,7 +282,7 @@ func updateElasticIP(d *schema.ResourceData, meta interface{}) error {
 		eipPartials = append(eipPartials, "healthcheck_port")
 		updateEIP.HealthcheckPort = int64(d.Get("healthcheck_port").(int))
 		if _, ok := d.GetOk("healthcheck_mode"); ok && updateEIP.HealthcheckPort == 0 {
-			return fmt.Errorf("healthcheck_port must be specified")
+			return errors.New("healthcheck_port must be specified")
 		}
 	}
 	if d.HasChange("healthcheck_path") {
@@ -276,9 +290,9 @@ func updateElasticIP(d *schema.ResourceData, meta interface{}) error {
 		updateEIP.HealthcheckPath = d.Get("healthcheck_path").(string)
 		if healthcheckMode, ok := d.GetOk("healthcheck_mode"); ok {
 			if healthcheckMode == "http" && updateEIP.HealthcheckPath == "" {
-				return fmt.Errorf("healthcheck_path must be specified in \"http\" mode")
+				return errors.New("healthcheck_path must be specified in \"http\" mode")
 			} else if healthcheckMode == "tcp" && updateEIP.HealthcheckPath != "" {
-				return fmt.Errorf("healthcheck_path must not be specified in \"tcp\" mode")
+				return errors.New("healthcheck_path must not be specified in \"tcp\" mode")
 			}
 		}
 	}
@@ -286,28 +300,28 @@ func updateElasticIP(d *schema.ResourceData, meta interface{}) error {
 		eipPartials = append(eipPartials, "healthcheck_interval")
 		updateEIP.HealthcheckInterval = int64(d.Get("healthcheck_interval").(int))
 		if _, ok := d.GetOk("healthcheck_mode"); ok && updateEIP.HealthcheckInterval == 0 {
-			return fmt.Errorf("healthcheck_interval must be specified")
+			return errors.New("healthcheck_interval must be specified")
 		}
 	}
 	if d.HasChange("healthcheck_timeout") {
 		eipPartials = append(eipPartials, "healthcheck_timeout")
 		updateEIP.HealthcheckTimeout = int64(d.Get("healthcheck_timeout").(int))
 		if _, ok := d.GetOk("healthcheck_mode"); ok && updateEIP.HealthcheckTimeout == 0 {
-			return fmt.Errorf("healthcheck_timeout must be specified")
+			return errors.New("healthcheck_timeout must be specified")
 		}
 	}
 	if d.HasChange("healthcheck_strikes_ok") {
 		eipPartials = append(eipPartials, "healthcheck_strikes_ok")
 		updateEIP.HealthcheckStrikesOk = int64(d.Get("healthcheck_strikes_ok").(int))
 		if _, ok := d.GetOk("healthcheck_mode"); ok && updateEIP.HealthcheckStrikesOk == 0 {
-			return fmt.Errorf("healthcheck_strikes_ok must be specified")
+			return errors.New("healthcheck_strikes_ok must be specified")
 		}
 	}
 	if d.HasChange("healthcheck_strikes_fail") {
 		eipPartials = append(eipPartials, "healthcheck_strikes_fail")
 		updateEIP.HealthcheckStrikesFail = int64(d.Get("healthcheck_strikes_fail").(int))
 		if _, ok := d.GetOk("healthcheck_mode"); ok && updateEIP.HealthcheckStrikesFail == 0 {
-			return fmt.Errorf("healthcheck_strikes_fail must be specified")
+			return errors.New("healthcheck_strikes_fail must be specified")
 		}
 	}
 	if len(eipPartials) > 0 {
@@ -337,17 +351,16 @@ func updateElasticIP(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	err = readElasticIP(d, meta)
-	if err != nil {
-		return err
-	}
-
 	d.Partial(false)
 
-	return err
+	log.Printf("[DEBUG] %s: update finished successfully", resourceIPAddressIDString(d))
+
+	return resourceIPAddressRead(d, meta)
 }
 
-func deleteElasticIP(d *schema.ResourceData, meta interface{}) error {
+func resourceIPAddressDelete(d *schema.ResourceData, meta interface{}) error {
+	log.Printf("[DEBUG] %s: beginning delete", resourceIPAddressIDString(d))
+
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutDelete))
 	defer cancel()
 
@@ -358,12 +371,18 @@ func deleteElasticIP(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	return client.DeleteWithContext(ctx, &egoscale.IPAddress{
-		ID: id,
-	})
+	eip := &egoscale.IPAddress{ID: id}
+
+	if err := client.DeleteWithContext(ctx, eip); err != nil {
+		return err
+	}
+
+	log.Printf("[DEBUG] %s: delete finished successfully", resourceIPAddressIDString(d))
+
+	return nil
 }
 
-func applyElasticIP(d *schema.ResourceData, ip *egoscale.IPAddress) error {
+func resourceIPAddressApply(d *schema.ResourceData, ip *egoscale.IPAddress) error {
 	d.SetId(ip.ID.String())
 	if err := d.Set("ip_address", ip.IPAddress.String()); err != nil {
 		return err

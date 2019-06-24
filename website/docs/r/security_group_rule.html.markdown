@@ -3,55 +3,55 @@ layout: "exoscale"
 page_title: "Exoscale: exoscale_security_group_rule"
 sidebar_current: "docs-exoscale-security-group-rule"
 description: |-
-  Manages a rule to a security group.
+  Provides an Exoscale Security Group Rule.
 ---
 
-# exoscale_security_group_rule
+# exoscale\_security\_group\_rule
 
-A security group rule represents a single `ingress` or `egress` rule belonging
-to a `exoscale_security_group`.
+Provides an Exoscale [Security Group][sg] Rule resource. This can be used to create and delete Security Group Rules.
+
+[sg]: security_group.html
 
 ## Example usage
 
 ```hcl
+resource "exoscale_security_group" "webservers" {
+  ...
+}
+
 resource "exoscale_security_group_rule" "http" {
-  security_group_id = "${exoscale_security_group.http.id}"
-  protocol = "TCP"
-  type = "INGRESS"
-  cidr = "0.0.0.0/0"  # "::/0" for IPv6
-  start_port = 80
-  end_port = 80
+  security_group_id = "${exoscale_security_group.webservers.id}"
+  type              = "INGRESS"
+  protocol          = "TCP"
+  cidr              = "0.0.0.0/0" # "::/0" for IPv6
+  start_port        = 80
+  end_port          = 80
 }
 ```
 
 ## Argument Reference
 
-- `security_group_id` - (Required) which security group by name the rule applies to
+* `security_group` - (Required) The Security Group name the rule applies to.
+* `security_group_id` - (Required) The Security Group ID the rule applies to.
+* `type` - (Required) The traffic direction to match (`INGRESS` or `EGRESS`).
+* `protocol` - (Required) The network protocol to match. Supported values are: `TCP`, `UDP`, `ICMP`, `ICMPv6`, `AH`, `ESP`, `GRE`, `IPIP` and `ALL`.
+* `description` - A free-form text describing the Security Group Rule purpose.
+* `start_port`/`end_port` - A `TCP`/`UDP` port range to match.
+* `icmp_type`/`icmp_code` - An `ICMP`/`ICMPv6` [type/code][icmp] to match.
+* `cidr` - A source (for ingress)/destination (for egress) IP subnet to match (conflicts with `user_security_group`).
+* `user_security_group_id` - A source (for ingress)/destination (for egress) Security Group ID to match (conflicts with `cidr`).
+* `user_security_group` - A source (for ingress)/destination (for egress) Security Group name to match (conflicts with `cidr`).
 
-- `security_group` - (Required) which security group by id the rule applies to
-
-- `protocol` - (Required) the protocol, e.g. `TCP`, `UDP`, `ICMP`, `ICMPv6`, ... or `ALL`
-
-- `type` - (Required) traffic type, either `INGRESS` or `EGRESS`
-
-- `description` - human description
-
-- `start_port` and `end_port` - for `TCP`, `UDP` traffic
-
-- `icmp_type` and `icmp_code` - for `ICMP`, `ICMPv6` traffic
-
-- `cidr` - source/destination of the traffic as an IP subnet (conflicts with `user_security_group`)
-
-- `user_security_group_id` - source/destination of the traffic identified by a security group by id (conflicts with `cidr`)
-
-- `user_security_group` - source/destination of the traffic identified by a security group by name (conflicts with `cidr`)
+[icmp]: https://en.wikipedia.org/wiki/Internet_Control_Message_Protocol#Control_messages
 
 ## Attributes Reference
 
-- `security_group` - Name of the security group
+The following attributes are exported:
 
-- `security_group_id` - Identifier of the security group
+* `security_group` - The name of the Security Group the rule applies to.
+* `security_group_id` - The ID of the Security Group the rule applies to.
+* `user_security_group` - The name of the source (for ingress)/destination (for egress) Security Group to match.
 
-- `user_security_group` - Name of the source/destination security group
+## Import
 
-- `user_security_group_id` - Identifer of the source/destination security group
+This resource is automatically imported when importing an `exoscale_security_group` resource.

@@ -3,33 +3,47 @@ layout: "exoscale"
 page_title: "Exoscale: exoscale_nic"
 sidebar_current: "docs-exoscale-nic"
 description: |-
-  Manages a compute NIC
+  Provides an Exoscale Compute instance Private Network Interface (NIC).
 ---
 
-# exoscale_nic
+# exoscale\_nic
 
+Provides an Exoscale Compute instance [Private Network][privnet] Interface (NIC) resource. This can be used to create, update and delete Compute instance NICs.
+
+[privnet]: https://community.exoscale.com/documentation/compute/private-networks/
 
 ## Usage
 
 ```hcl
-resource "exoscale_nic" "eth1" {
-  compute_id = "${exoscale_compute.mymachine.id}"
-  network_id = "${exoscale_network.privNet.id}"
+resource "exoscale_compute" "vm1" {
+  ...
+}
+
+resource "exoscale_network" "oob" {
+  ...
+}
+
+resource "exoscale_nic" "oob" {
+  compute_id = "${exoscale_compute.vm1.id}"
+  network_id = "${exoscale_network.oob.id}"
 }
 ```
 
 ## Argument Reference
 
-- `compute_id` - (Required) identifier of the compute resource
+* `compute_id` - (Required) The [Compute instance][compute] ID.
+* `network_id` - (Required) The [Private Network][privnet] ID.
+* `ip_address` - The IP address to request as static DHCP lease if the NIC is attached to a *managed* Private Network (see the [`exoscale_network`][privnet] resource).
 
-- `network_id` - (Required) identifier of the private network
-
-- `ip_address` - IP address to use as a static DHCP lease (see the `exoscale_network` resource)
+[compute]: compute.html
+[privnet]: network.html
 
 ## Attributes Reference
 
-- `mac_address` - physical address of the network interface
+The following attributes are exported:
+
+* `mac_address` - The physical address (MAC) of the Compute instance NIC.
 
 ## Import
 
-This resource is automatically imported when you import a compute resource.
+This resource is automatically imported when importing an `exoscale_compute` resource.

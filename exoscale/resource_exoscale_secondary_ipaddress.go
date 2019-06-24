@@ -2,7 +2,9 @@ package exoscale
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"log"
 	"net"
 	"strings"
 
@@ -10,23 +12,12 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
-func secondaryIPResource() *schema.Resource {
+func resourceSecondaryIPAddressIDString(d resourceIDStringer) string {
+	return resourceIDString(d, "exoscale_secondary_ipaddress")
+}
+
+func resourceSecondaryIPAddress() *schema.Resource {
 	return &schema.Resource{
-		Create: createSecondaryIP,
-		Exists: existsSecondaryIP,
-		Read:   readSecondaryIP,
-		Delete: deleteSecondaryIP,
-
-		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
-		},
-
-		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(defaultTimeout),
-			Read:   schema.DefaultTimeout(defaultTimeout),
-			Delete: schema.DefaultTimeout(defaultTimeout),
-		},
-
 		Schema: map[string]*schema.Schema{
 			"compute_id": {
 				Type:     schema.TypeString,
@@ -49,10 +40,27 @@ func secondaryIPResource() *schema.Resource {
 				Computed: true,
 			},
 		},
+
+		Create: resourceSecondaryIPAddressCreate,
+		Read:   resourceSecondaryIPAddressRead,
+		Delete: resourceSecondaryIPAddressDelete,
+		Exists: resourceSecondaryIPAddressExists,
+
+		Importer: &schema.ResourceImporter{
+			State: schema.ImportStatePassthrough,
+		},
+
+		Timeouts: &schema.ResourceTimeout{
+			Create: schema.DefaultTimeout(defaultTimeout),
+			Read:   schema.DefaultTimeout(defaultTimeout),
+			Delete: schema.DefaultTimeout(defaultTimeout),
+		},
 	}
 }
 
-func createSecondaryIP(d *schema.ResourceData, meta interface{}) error {
+func resourceSecondaryIPAddressCreate(d *schema.ResourceData, meta interface{}) error {
+	log.Printf("[DEBUG] %s: beginning create", resourceSecondaryIPAddressIDString(d))
+
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutCreate))
 	defer cancel()
 
@@ -91,11 +99,10 @@ func createSecondaryIP(d *schema.ResourceData, meta interface{}) error {
 			return err
 		}
 
-		ip, ok := resp.(*egoscale.NicSecondaryIP)
-		if !ok {
-			return fmt.Errorf("wrong type, expected NicSecondaryIP but got %T", resp)
-		}
+		ip := resp.(*egoscale.NicSecondaryIP)
+
 		d.SetId(fmt.Sprintf("%s_%s", ip.NicID, ip.IPAddress.String()))
+
 		if err := d.Set("compute_id", virtualMachineID.String()); err != nil {
 			return err
 		}
@@ -103,13 +110,15 @@ func createSecondaryIP(d *schema.ResourceData, meta interface{}) error {
 			return err
 		}
 
-		return readSecondaryIP(d, meta)
+		log.Printf("[DEBUG] %s: create finished successfully", resourceSecondaryIPAddressIDString(d))
+
+		return resourceSecondaryIPAddressRead(d, meta)
 	}
 
 	return fmt.Errorf("No default NIC found for %v", virtualMachineID)
 }
 
-func existsSecondaryIP(d *schema.ResourceData, meta interface{}) (bool, error) {
+func resourceSecondaryIPAddressExists(d *schema.ResourceData, meta interface{}) (bool, error) {
 	ip, err := getSecondaryIP(d, meta)
 	if err != nil {
 		e := handleNotFound(d, err)
@@ -119,20 +128,25 @@ func existsSecondaryIP(d *schema.ResourceData, meta interface{}) (bool, error) {
 	return ip != nil, nil
 }
 
-func readSecondaryIP(d *schema.ResourceData, meta interface{}) error {
+func resourceSecondaryIPAddressRead(d *schema.ResourceData, meta interface{}) error {
+	log.Printf("[DEBUG] %s: beginning read", resourceSecondaryIPAddressIDString(d))
+
 	ip, err := getSecondaryIP(d, meta)
 	if err != nil {
 		return handleNotFound(d, err)
 	}
 
 	if ip != nil {
-		err = applySecondaryIP(d, ip)
+		err = resourceSecondaryIPAddressApply(d, ip)
 		if err != nil {
 			return err
 		}
 	} else {
 		d.SetId("")
 	}
+
+	log.Printf("[DEBUG] %s: read finished successfully", resourceSecondaryIPAddressIDString(d))
+
 	return nil
 }
 
@@ -153,7 +167,7 @@ func getSecondaryIP(d *schema.ResourceData, meta interface{}) (*egoscale.NicSeco
 		id := d.Id()
 		infos := strings.SplitN(id, "_", 2)
 		if len(infos) != 2 {
-			return nil, fmt.Errorf("import requires <nicid>_<ipaddress>")
+			return nil, errors.New("import requires <nicid>_<ipaddress>")
 		}
 
 		var errUUID error
@@ -264,7 +278,9 @@ func getSecondaryIP(d *schema.ResourceData, meta interface{}) (*egoscale.NicSeco
 	return nil, nil
 }
 
-func deleteSecondaryIP(d *schema.ResourceData, meta interface{}) error {
+func resourceSecondaryIPAddressDelete(d *schema.ResourceData, meta interface{}) error {
+	log.Printf("[DEBUG] %s: beginning delete", resourceSecondaryIPAddressIDString(d))
+
 	ip, err := getSecondaryIP(d, meta)
 	if err != nil {
 		return err
@@ -280,12 +296,16 @@ func deleteSecondaryIP(d *schema.ResourceData, meta interface{}) error {
 
 	client := GetComputeClient(meta)
 
-	return client.BooleanRequestWithContext(ctx, &egoscale.RemoveIPFromNic{
-		ID: ip.ID,
-	})
+	if err := client.BooleanRequestWithContext(ctx, &egoscale.RemoveIPFromNic{ID: ip.ID}); err != nil {
+		return err
+	}
+
+	log.Printf("[DEBUG] %s: read finished successfully", resourceSecondaryIPAddressIDString(d))
+
+	return nil
 }
 
-func applySecondaryIP(d *schema.ResourceData, secondaryIP *egoscale.NicSecondaryIP) error {
+func resourceSecondaryIPAddressApply(d *schema.ResourceData, secondaryIP *egoscale.NicSecondaryIP) error {
 
 	d.SetId(fmt.Sprintf("%s_%s", secondaryIP.NicID, secondaryIP.IPAddress.String()))
 

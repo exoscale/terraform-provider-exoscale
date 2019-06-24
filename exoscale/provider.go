@@ -113,22 +113,22 @@ func Provider() terraform.ResourceProvider {
 		},
 
 		DataSourcesMap: map[string]*schema.Resource{
-			"exoscale_compute_template": computeTemplateDatasource(),
+			"exoscale_compute_template": datasourceComputeTemplate(),
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
-			"exoscale_compute":              computeResource(),
-			"exoscale_ssh_keypair":          sshResource(),
-			"exoscale_affinity":             affinityGroupResource(),
-			"exoscale_domain":               domainResource(),
-			"exoscale_domain_record":        domainRecordResource(),
-			"exoscale_security_group":       securityGroupResource(),
-			"exoscale_security_group_rule":  securityGroupRuleResource(),
-			"exoscale_security_group_rules": securityGroupRulesResource(),
-			"exoscale_ipaddress":            elasticIPResource(),
-			"exoscale_secondary_ipaddress":  secondaryIPResource(),
-			"exoscale_network":              networkResource(),
-			"exoscale_nic":                  nicResource(),
+			"exoscale_affinity":             resourceAffinity(),
+			"exoscale_compute":              resourceCompute(),
+			"exoscale_domain_record":        resourceDomainRecord(),
+			"exoscale_domain":               resourceDomain(),
+			"exoscale_ipaddress":            resourceIPAddress(),
+			"exoscale_network":              resourceNetwork(),
+			"exoscale_nic":                  resourceNIC(),
+			"exoscale_secondary_ipaddress":  resourceSecondaryIPAddress(),
+			"exoscale_security_group_rule":  resourceSecurityGroupRule(),
+			"exoscale_security_group_rules": resourceSecurityGroupRules(),
+			"exoscale_security_group":       resourceSecurityGroup(),
+			"exoscale_ssh_keypair":          resourceSSHKeypair(),
 		},
 
 		ConfigureFunc: providerConfigure,
@@ -284,4 +284,17 @@ func handleNotFound(d *schema.ResourceData, err error) error {
 		return r
 	}
 	return err
+}
+
+type resourceIDStringer interface {
+	Id() string
+}
+
+func resourceIDString(d resourceIDStringer, name string) string {
+	id := d.Id()
+	if id == "" {
+		id = "<new resource>"
+	}
+
+	return fmt.Sprintf("%s (ID = %s)", name, id)
 }

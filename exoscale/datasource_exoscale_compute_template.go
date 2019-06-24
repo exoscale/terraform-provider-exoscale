@@ -2,6 +2,7 @@ package exoscale
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
 
@@ -10,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform/helper/validation"
 )
 
-func computeTemplateDatasource() *schema.Resource {
+func datasourceComputeTemplate() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"zone": {
@@ -19,14 +20,16 @@ func computeTemplateDatasource() *schema.Resource {
 				Required:    true,
 			},
 			"name": {
-				Type:        schema.TypeString,
-				Description: "Name of the template",
-				Optional:    true,
+				Type:          schema.TypeString,
+				Description:   "Name of the template",
+				Optional:      true,
+				ConflictsWith: []string{"id"},
 			},
 			"id": {
-				Type:        schema.TypeString,
-				Description: "ID of the template",
-				Optional:    true,
+				Type:          schema.TypeString,
+				Description:   "ID of the template",
+				Optional:      true,
+				ConflictsWith: []string{"name"},
 			},
 			"filter": {
 				Type:        schema.TypeString,
@@ -44,11 +47,11 @@ func computeTemplateDatasource() *schema.Resource {
 			},
 		},
 
-		Read: readComputeTemplateDatasource,
+		Read: datasourceComputeTemplateRead,
 	}
 }
 
-func readComputeTemplateDatasource(d *schema.ResourceData, meta interface{}) error {
+func datasourceComputeTemplateRead(d *schema.ResourceData, meta interface{}) error {
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutCreate))
 	defer cancel()
 
@@ -72,8 +75,8 @@ func readComputeTemplateDatasource(d *schema.ResourceData, meta interface{}) err
 
 	templateName, byName := d.GetOk("name")
 	templateID, byID := d.GetOk("id")
-	if !byName && !byID || byName && byID {
-		return fmt.Errorf("either name or id must be specified")
+	if !byName && !byID {
+		return errors.New("either name or id must be specified")
 	}
 
 	req.Name = templateName.(string)
@@ -91,7 +94,7 @@ func readComputeTemplateDatasource(d *schema.ResourceData, meta interface{}) err
 
 	templates := resp.(*egoscale.ListTemplatesResponse).Template
 	if len(templates) == 0 {
-		return fmt.Errorf("template not found")
+		return errors.New("template not found")
 	}
 
 	d.SetId(templates[0].ID.String())

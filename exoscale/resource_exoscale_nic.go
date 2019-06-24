@@ -3,27 +3,19 @@ package exoscale
 import (
 	"context"
 	"fmt"
+	"log"
 	"net"
 
 	"github.com/exoscale/egoscale"
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
-func nicResource() *schema.Resource {
+func resourceNICIDString(d resourceIDStringer) string {
+	return resourceIDString(d, "exoscale_nic")
+}
+
+func resourceNIC() *schema.Resource {
 	return &schema.Resource{
-		Create: createNic,
-		Exists: existsNic,
-		Read:   readNic,
-		Update: updateNic,
-		Delete: deleteNic,
-
-		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(defaultTimeout),
-			Read:   schema.DefaultTimeout(defaultTimeout),
-			Update: schema.DefaultTimeout(defaultTimeout),
-			Delete: schema.DefaultTimeout(defaultTimeout),
-		},
-
 		Schema: map[string]*schema.Schema{
 			"compute_id": {
 				Type:     schema.TypeString,
@@ -54,10 +46,25 @@ func nicResource() *schema.Resource {
 				Computed: true,
 			},
 		},
+
+		Create: resourceNICCreate,
+		Read:   resourceNICRead,
+		Update: resourceNICUpdate,
+		Delete: resourceNICDelete,
+		Exists: resourceNICExists,
+
+		Timeouts: &schema.ResourceTimeout{
+			Create: schema.DefaultTimeout(defaultTimeout),
+			Read:   schema.DefaultTimeout(defaultTimeout),
+			Update: schema.DefaultTimeout(defaultTimeout),
+			Delete: schema.DefaultTimeout(defaultTimeout),
+		},
 	}
 }
 
-func createNic(d *schema.ResourceData, meta interface{}) error {
+func resourceNICCreate(d *schema.ResourceData, meta interface{}) error {
+	log.Printf("[DEBUG] %s: beginning create", resourceNICIDString(d))
+
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutCreate))
 	defer cancel()
 
@@ -91,14 +98,19 @@ func createNic(d *schema.ResourceData, meta interface{}) error {
 	vm := resp.(*egoscale.VirtualMachine)
 	nic := vm.NicByNetworkID(*networkID)
 	if nic == nil {
-		return fmt.Errorf("Nic addition didn't create a NIC for Network %s", networkID)
+		return fmt.Errorf("NIC addition didn't create a NIC for Network %s", networkID)
 	}
 
 	d.SetId(nic.ID.String())
-	return readNic(d, meta)
+
+	log.Printf("[DEBUG] %s: create finished successfully", resourceNICIDString(d))
+
+	return resourceNICRead(d, meta)
 }
 
-func readNic(d *schema.ResourceData, meta interface{}) error {
+func resourceNICRead(d *schema.ResourceData, meta interface{}) error {
+	log.Printf("[DEBUG] %s: beginning read", resourceNICIDString(d))
+
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
 	defer cancel()
 
@@ -117,10 +129,13 @@ func readNic(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	n := resp.(*egoscale.Nic)
-	return applyNic(d, *n)
+
+	log.Printf("[DEBUG] %s: read finished successfully", resourceNICIDString(d))
+
+	return resourceNICApply(d, *n)
 }
 
-func existsNic(d *schema.ResourceData, meta interface{}) (bool, error) {
+func resourceNICExists(d *schema.ResourceData, meta interface{}) (bool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
 	defer cancel()
 
@@ -142,7 +157,9 @@ func existsNic(d *schema.ResourceData, meta interface{}) (bool, error) {
 	return true, nil
 }
 
-func updateNic(d *schema.ResourceData, meta interface{}) error {
+func resourceNICUpdate(d *schema.ResourceData, meta interface{}) error {
+	log.Printf("[DEBUG] %s: beginning update", resourceNICIDString(d))
+
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutUpdate))
 	defer cancel()
 
@@ -174,14 +191,16 @@ func updateNic(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	err = readNic(d, meta)
-
 	d.Partial(false)
 
-	return err
+	log.Printf("[DEBUG] %s: update finished successfully", resourceNICIDString(d))
+
+	return resourceNICRead(d, meta)
 }
 
-func deleteNic(d *schema.ResourceData, meta interface{}) error {
+func resourceNICDelete(d *schema.ResourceData, meta interface{}) error {
+	log.Printf("[DEBUG] %s: beginning delete", resourceNICIDString(d))
+
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutDelete))
 	defer cancel()
 
@@ -206,7 +225,6 @@ func deleteNic(d *schema.ResourceData, meta interface{}) error {
 		NicID:            id,
 		VirtualMachineID: vmID,
 	})
-
 	if err != nil {
 		return err
 	}
@@ -214,14 +232,15 @@ func deleteNic(d *schema.ResourceData, meta interface{}) error {
 	vm := resp.(*egoscale.VirtualMachine)
 	nic := vm.NicByNetworkID(*networkID)
 	if nic != nil {
-		return fmt.Errorf("Failed removing NIC %s from instance %s", d.Id(), vm.ID)
+		return fmt.Errorf("failed to remove NIC %s from instance %s", d.Id(), vm.ID)
 	}
 
-	d.SetId("")
+	log.Printf("[DEBUG] %s: delete finished successfully", resourceNICIDString(d))
+
 	return nil
 }
 
-func applyNic(d *schema.ResourceData, nic egoscale.Nic) error {
+func resourceNICApply(d *schema.ResourceData, nic egoscale.Nic) error {
 	d.SetId(nic.ID.String())
 	if err := d.Set("compute_id", nic.VirtualMachineID.String()); err != nil {
 		return err

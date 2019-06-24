@@ -2,28 +2,18 @@ package exoscale
 
 import (
 	"context"
+	"log"
 
 	"github.com/exoscale/egoscale"
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
-func sshResource() *schema.Resource {
+func resourceSSHKeypairIDString(d resourceIDStringer) string {
+	return resourceIDString(d, "exoscale_ssh_keypair")
+}
+
+func resourceSSHKeypair() *schema.Resource {
 	return &schema.Resource{
-		Create: createSSH,
-		Exists: existsSSH,
-		Read:   readSSH,
-		Delete: deleteSSH,
-
-		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
-		},
-
-		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(defaultTimeout),
-			Read:   schema.DefaultTimeout(defaultTimeout),
-			Delete: schema.DefaultTimeout(defaultTimeout),
-		},
-
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:     schema.TypeString,
@@ -45,10 +35,29 @@ func sshResource() *schema.Resource {
 				Computed: true,
 			},
 		},
+
+		Create: resourceSSHKeypairCreate,
+		Read:   resourceSSHKeypairRead,
+		Delete: resourceSSHKeypairDelete,
+		Exists: resourceSSHKeypairExists,
+
+		Importer: &schema.ResourceImporter{
+			State: schema.ImportStatePassthrough,
+		},
+
+		Timeouts: &schema.ResourceTimeout{
+			Create: schema.DefaultTimeout(defaultTimeout),
+			Read:   schema.DefaultTimeout(defaultTimeout),
+			Delete: schema.DefaultTimeout(defaultTimeout),
+		},
 	}
 }
 
-func createSSH(d *schema.ResourceData, meta interface{}) error {
+func resourceSSHKeypairCreate(d *schema.ResourceData, meta interface{}) error {
+	var keypair *egoscale.SSHKeyPair
+
+	log.Printf("[DEBUG] %s: beginning create", resourceSSHKeypairIDString(d))
+
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutCreate))
 	defer cancel()
 
@@ -64,23 +73,23 @@ func createSSH(d *schema.ResourceData, meta interface{}) error {
 		if err != nil {
 			return err
 		}
-
-		keypair := resp.(*egoscale.SSHKeyPair)
-		return applySSH(d, keypair)
+		keypair = resp.(*egoscale.SSHKeyPair)
+	} else {
+		resp, err := client.RequestWithContext(ctx, &egoscale.CreateSSHKeyPair{Name: name})
+		if err != nil {
+			return err
+		}
+		keypair = resp.(*egoscale.SSHKeyPair)
 	}
 
-	resp, err := client.RequestWithContext(ctx, &egoscale.CreateSSHKeyPair{
-		Name: name,
-	})
-	if err != nil {
-		return err
-	}
+	d.SetId(keypair.Name)
 
-	keypair := resp.(*egoscale.SSHKeyPair)
-	return applySSH(d, keypair)
+	log.Printf("[DEBUG] %s: create finished successfully", resourceSSHKeypairIDString(d))
+
+	return resourceSSHKeypairRead(d, meta)
 }
 
-func existsSSH(d *schema.ResourceData, meta interface{}) (bool, error) {
+func resourceSSHKeypairExists(d *schema.ResourceData, meta interface{}) (bool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
 	defer cancel()
 
@@ -99,46 +108,50 @@ func existsSSH(d *schema.ResourceData, meta interface{}) (bool, error) {
 	return true, nil
 }
 
-func readSSH(d *schema.ResourceData, meta interface{}) error {
+func resourceSSHKeypairRead(d *schema.ResourceData, meta interface{}) error {
+	log.Printf("[DEBUG] %s: beginning read", resourceSSHKeypairIDString(d))
+
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
 	defer cancel()
 
 	client := GetComputeClient(meta)
 
-	key := &egoscale.SSHKeyPair{
-		Name: d.Id(),
-	}
+	key := &egoscale.SSHKeyPair{Name: d.Id()}
 
 	resp, err := client.GetWithContext(ctx, key)
 	if err != nil {
 		return err
 	}
 
-	return applySSH(d, resp.(*egoscale.SSHKeyPair))
+	log.Printf("[DEBUG] %s: read finished successfully", resourceSSHKeypairIDString(d))
+
+	return resourceSSHKeypairApply(d, resp.(*egoscale.SSHKeyPair))
 }
 
-func deleteSSH(d *schema.ResourceData, meta interface{}) error {
+func resourceSSHKeypairDelete(d *schema.ResourceData, meta interface{}) error {
+	log.Printf("[DEBUG] %s: beginning delete", resourceSSHKeypairIDString(d))
+
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutDelete))
 	defer cancel()
 
 	client := GetComputeClient(meta)
 
-	key := &egoscale.SSHKeyPair{
-		Name: d.Id(),
-	}
+	key := &egoscale.SSHKeyPair{Name: d.Id()}
+
 	if err := client.DeleteWithContext(ctx, key); err != nil {
 		return err
 	}
 
-	d.SetId("")
+	log.Printf("[DEBUG] %s: delete finished successfully", resourceSSHKeypairIDString(d))
+
 	return nil
 }
 
-func applySSH(d *schema.ResourceData, keypair *egoscale.SSHKeyPair) error {
-	d.SetId(keypair.Name)
+func resourceSSHKeypairApply(d *schema.ResourceData, keypair *egoscale.SSHKeyPair) error {
 	if err := d.Set("name", keypair.Name); err != nil {
 		return err
 	}
+
 	if err := d.Set("fingerprint", keypair.Fingerprint); err != nil {
 		return err
 	}

@@ -1,6 +1,7 @@
 package exoscale
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"testing"
@@ -26,14 +27,10 @@ func TestAccDatasourceComputeTemplate(t *testing.T) {
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			resource.TestStep{
-				Config: fmt.Sprintf(`
+				Config: `
 data "exoscale_compute_template" "ubuntu_lts" {
   zone = "ch-gva-2"
-  name = "%s"
-  id   = "%s"
 }`,
-					datasourceComputeTemplateName,
-					datasourceComputeTemplateID),
 				ExpectError: regexp.MustCompile("either name or id must be specified"),
 			},
 			resource.TestStep{
@@ -44,7 +41,11 @@ data "exoscale_compute_template" "ubuntu_lts" {
   filter = "featured"
 }`, datasourceComputeTemplateName),
 				Check: resource.ComposeTestCheckFunc(
-					testAccDatasourceComputeTemplateAttributes(t, "name"),
+					testAccDatasourceComputeTemplateAttributes(testAttrs{
+						"id":       ValidateString(datasourceComputeTemplateID),
+						"name":     ValidateString(datasourceComputeTemplateName),
+						"username": ValidateString(datasourceComputeTemplateUsername),
+					}),
 				),
 			},
 			resource.TestStep{
@@ -55,44 +56,27 @@ data "exoscale_compute_template" "ubuntu_lts" {
   filter = "featured"
 }`, datasourceComputeTemplateID),
 				Check: resource.ComposeTestCheckFunc(
-					testAccDatasourceComputeTemplateAttributes(t, "id"),
+					testAccDatasourceComputeTemplateAttributes(testAttrs{
+						"id":       ValidateString(datasourceComputeTemplateID),
+						"name":     ValidateString(datasourceComputeTemplateName),
+						"username": ValidateString(datasourceComputeTemplateUsername),
+					}),
 				),
 			},
 		},
 	})
 }
 
-func testAccDatasourceComputeTemplateAttributes(t *testing.T, attr string) resource.TestCheckFunc {
-	t.Logf("Testing compute_template data source by %s", attr)
+func testAccDatasourceComputeTemplateAttributes(expected testAttrs) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		for _, rs := range s.RootModule().Resources {
 			if rs.Type != "exoscale_compute_template" {
 				continue
 			}
 
-			if rs.Primary.ID != datasourceComputeTemplateID {
-				return fmt.Errorf("expected template ID %q, got %q",
-					datasourceComputeTemplateID,
-					rs.Primary.ID)
-			}
-
-			if name, ok := rs.Primary.Attributes["name"]; !ok {
-				return fmt.Errorf("template name missing")
-			} else if name != datasourceComputeTemplateName {
-				return fmt.Errorf("expected name ID %q, got %q",
-					datasourceComputeTemplateName,
-					rs.Primary.Attributes["name"])
-			}
-
-			if username, ok := rs.Primary.Attributes["username"]; !ok {
-				return fmt.Errorf("template username missing")
-			} else if username != datasourceComputeTemplateUsername {
-				return fmt.Errorf("expected username ID %q, got %q",
-					datasourceComputeTemplateUsername,
-					rs.Primary.Attributes["username"])
-			}
+			return checkResourceAttributes(expected, rs.Primary.Attributes)
 		}
 
-		return nil
+		return errors.New("compute_template datasource not found in the state")
 	}
 }

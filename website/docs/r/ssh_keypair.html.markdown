@@ -3,39 +3,41 @@ layout: "exoscale"
 page_title: "Exoscale: exoscale_ssh_keypair"
 sidebar_current: "docs-exoscale-ssh-keypair"
 description: |-
-  Manages an SSH key pair.
+  Provides an Exoscale SSH Keypair.
 ---
 
-# exoscale_ssh_keypair
+# exoscale\_ssh\_keypair
 
-Declare an SSH key that will be used for any compute instances.
+Provides an Exoscale [SSH Keypair][sshkp] resource. This can be used to create and delete SSH Keypairs.
+
+[sshkp]: https://community.exoscale.com/documentation/compute/ssh-keypairs/
 
 ## Example Usage
 
 ```hcl
-resource "exoscale_ssh_keypair" "keylabel" {
-  name = "keyname"
-  public_key = "keycontents"
+resource "exoscale_ssh_keypair" "admin" {
+  name       = "admin"
+  public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDGRY..."
 }
 ```
 
 ## Argument Reference
 
-- `name` - (Required) Defines the label in Exoscale to identify the key
-
-- `public_key` - the SSH public key that will be copied into the instances at **first** boot. If not `public_key` is provided, a `public_key` is saved locally
+* `name` - (Required) The name of the SSH Keypair.
+* `public_key` - A SSH public key that will be copied into the instances at **first** boot. If not provided, a SSH keypair is generated and the is saved locally (see the `private_key` attribute).
 
 ## Attributes Reference
 
-- `fingerprint` - the unique identifier of the SSH Key Pair
+The following attributes are exported:
 
-- `public_key` - if no public key was provided, this has been generated
-
-- `private_key` - if no public key was provided and a key was generated
+* `fingerprint` - The unique identifier of the SSH Keypair.
+* `public_key` - The SSH public key generated if none was provided.
+* `private_key` - The SSH private key generated if no public key was provided.
 
 ## Import
 
-```shell
-# by name
-$ terraform import exoscale_ssh_keypair.mykeypair name
+An existing SSH Keypair can be imported as a resource by name:
+
+```console
+$ terraform import exoscale_ssh_keypair.mykey my-key
 ```

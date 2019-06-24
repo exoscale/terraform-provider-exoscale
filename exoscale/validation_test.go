@@ -4,6 +4,54 @@ import (
 	"testing"
 )
 
+func TestValidateStringKo(t *testing.T) {
+	f := ValidateString("exoscale")
+	_, errs := f("not exoscale", "test_property")
+	if len(errs) == 0 {
+		t.Error("an error was expected")
+	}
+}
+
+func TestValidateStringOk(t *testing.T) {
+	f := ValidateString("exoscale")
+	_, errs := f("exoscale", "test_property")
+	if len(errs) > 0 {
+		t.Errorf("no errors were expected, got %v", errs)
+	}
+}
+
+func TestValidateRegexpKo(t *testing.T) {
+	f := ValidateRegexp("^[0-9][a-z]$")
+	_, errs := f("nope", "test_property")
+	if len(errs) == 0 {
+		t.Error("an error was expected")
+	}
+}
+
+func TestValidateRegexpOk(t *testing.T) {
+	f := ValidateRegexp("^[0-9][a-z]$")
+	_, errs := f("0a", "test_property")
+	if len(errs) > 0 {
+		t.Errorf("no errors were expected, got %v", errs)
+	}
+}
+
+func TestValidateUUIDKo(t *testing.T) {
+	f := ValidateUUID()
+	_, errs := f("nope", "test_property")
+	if len(errs) == 0 {
+		t.Error("an error was expected")
+	}
+}
+
+func TestValidateUUIDOk(t *testing.T) {
+	f := ValidateUUID()
+	_, errs := f("1b3a2bc6-8d8a-4fcd-9d10-b0e683bd88a1", "test_property")
+	if len(errs) > 0 {
+		t.Errorf("no errors were expected, got %v", errs)
+	}
+}
+
 func TestValidateIPv4StringNumber(t *testing.T) {
 	_, errs := ValidateIPv4String(15, "test_property")
 	if len(errs) == 0 {
