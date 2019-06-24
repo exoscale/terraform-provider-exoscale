@@ -2,6 +2,7 @@
 
 CHANGES:
 
+- Internal refactoring requested by HashiCorp during provider review (#228)
 - mod: update Terraform SDK to 0.12.1
 
 ## 0.11.0 (May 23, 2019)
