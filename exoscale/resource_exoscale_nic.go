@@ -30,6 +30,7 @@ func resourceNIC() *schema.Resource {
 			"ip_address": {
 				Type:         schema.TypeString,
 				Optional:     true,
+				Computed:     true,
 				Description:  "IP address",
 				ValidateFunc: ValidateIPv4String,
 			},
@@ -171,23 +172,24 @@ func resourceNICUpdate(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	if d.HasChange("ip_address") {
-		o, n := d.GetChange("ip_address")
+		_, n := d.GetChange("ip_address")
 
-		if o.(string) != "" && n.(string) == "" {
-			return fmt.Errorf("[ERROR] new value of %q cannot be empty. old value was %s. The resource must be recreated instead", "ip_address", o.(string))
-		}
+		// We should set the IP only if the new IP is not null
+		// and if the IP has changed
+		if n.(string) != "" {
 
-		ipAddress := net.ParseIP(n.(string))
+			ipAddress := net.ParseIP(n.(string))
 
-		d.SetPartial("ip_address")
+			d.SetPartial("ip_address")
 
-		_, err := client.RequestWithContext(ctx, egoscale.UpdateVMNicIP{
-			NicID:     id,
-			IPAddress: ipAddress,
-		})
+			_, err := client.RequestWithContext(ctx, egoscale.UpdateVMNicIP{
+				NicID:     id,
+				IPAddress: ipAddress,
+			})
 
-		if err != nil {
-			return err
+			if err != nil {
+				return err
+			}
 		}
 	}
 
