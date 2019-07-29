@@ -1,3 +1,5 @@
+GOPATH?=$(shell pwd)/build
+VERSION:=$(shell git describe --tags `git rev-list --tags --max-count=1` | sed 's|^[^0-9]*||')
 SWEEP?=us-east-1,us-west-2
 TEST?=./...
 GOFMT_FILES?=$$(find . -name '*.go' |grep -v vendor)
@@ -8,7 +10,12 @@ GOLANGCI_LINT_VERSION=1.15.0
 default: build
 
 build: fmtcheck
-	GO111MODULE=on go install -mod vendor
+	GOPATH=$(GOPATH) GO111MODULE=on go install -mod vendor
+
+install: build
+	@mkdir -p $(HOME)/.terraform.d/plugins
+	@cp -v $(GOPATH)/bin/terraform-provider-exoscale $(HOME)/.terraform.d/plugins/terraform-provider-exoscale_v$(VERSION)
+	@echo "Please run 'terraform init' to finalize provider/plugin installation"
 
 sweep:
 	@echo "WARNING: This will destroy infrastructure. Use only in development accounts."
@@ -62,5 +69,5 @@ ifeq (,$(wildcard $(GOPATH)/src/$(WEBSITE_REPO)))
 endif
 	@$(MAKE) -C $(GOPATH)/src/$(WEBSITE_REPO) website-provider-test PROVIDER_PATH=$(shell pwd) PROVIDER_NAME=$(PKG_NAME)
 
-.PHONY: build sweep test testacc vet fmt fmtcheck errcheck vendor-status test-compile website website-test
+.PHONY: build install sweep test testacc vet fmt fmtcheck errcheck vendor-status test-compile website website-test
 
