@@ -38,7 +38,7 @@ resource "exoscale_secondary_ipaddress" "vip" {
 * `ip_address` - (Required) The [Elastic IP][eip] address to assign.
 
 [compute]: compute.html
-[eip]: ip_address.html
+[eip]: ipaddress.html
 
 ## Attributes Reference
 
