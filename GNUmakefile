@@ -22,10 +22,10 @@ sweep:
 	go test $(TEST) -mod vendor -v -sweep=$(SWEEP) $(SWEEPARGS)
 
 test: fmtcheck
-	go test $(TEST) -mod vendor -v $(TESTARGS) -timeout=30s -parallel=4
+	GO111MODULE=on go test $(TEST) -mod vendor -v $(TESTARGS) -timeout=30s -parallel=4
 
 testacc: fmtcheck
-	TF_ACC=1 go test $(TEST) -mod vendor -v $(TESTARGS) -timeout 120m
+	TF_ACC=1 GO111MODULE=on go test $(TEST) -mod vendor -v $(TESTARGS) -timeout 120m
 
 fmt:
 	@echo "==> Fixing source code with gofmt..."
