@@ -13,7 +13,7 @@ Provides an Exoscale [Elastic IP][eip] resource. This can be used to create, upd
 See [`exoscale_secondary_ipaddress`][secip] for usage with Compute instances.
 
 [eip]: https://community.exoscale.com/documentation/compute/eip/
-[secip]: secondaryipaddress.html
+[secip]: secondary_ipaddress.html
 
 ### Usage example
 
