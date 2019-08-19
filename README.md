@@ -2,7 +2,7 @@ Terraform Provider
 ==================
 
 - Website: https://www.terraform.io
-- [![Build Status](https://travis-ci.com/terraform-providers/terraform-provider-exoscale.svg?branch=master)](https://travis-ci.com/terraform-providers/terraform-provider-exoscale)
+- [![Build Status](https://travis-ci.org/terraform-providers/terraform-provider-exoscale.svg?branch=master)](https://travis-ci.org/terraform-providers/terraform-provider-exoscale)
 - [![Gitter chat](https://badges.gitter.im/hashicorp-terraform/Lobby.png)](https://gitter.im/hashicorp-terraform/Lobby)
 - Mailing list: [Google Groups](http://groups.google.com/group/terraform-tool)
 
