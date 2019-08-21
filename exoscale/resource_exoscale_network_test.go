@@ -11,6 +11,17 @@ import (
 	"github.com/hashicorp/terraform/terraform"
 )
 
+const (
+	testNetworkDisplayText        = "Terraform Acceptance Test (create)"
+	testNetworkStartIP            = "10.0.0.10"
+	testNetworkEndIP              = "10.0.0.50"
+	testNetworkNetmask            = "255.255.0.0"
+	testNetworkDisplayTextUpdated = "Terraform Acceptance Test (update)"
+	testNetworkStartIPUpdated     = "10.0.0.1"
+	testNetworkEndIPUpdated       = "10.0.0.100"
+	testNetworkNetmaskUpdated     = "255.0.0.0"
+)
+
 func TestAccResourceNetwork(t *testing.T) {
 	network := new(egoscale.Network)
 
@@ -23,9 +34,12 @@ func TestAccResourceNetwork(t *testing.T) {
 				Config: testAccResourceNetworkConfigCreate,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckResourceNetworkExists("exoscale_network.net", network),
-					testAccCheckResourceNetwork(network, nil),
+					testAccCheckResourceNetwork(network, net.ParseIP(testNetworkStartIP)),
 					testAccCheckResourceNetworkAttributes(testAttrs{
-						"display_text":   ValidateString("Terraform Acceptance Test (create)"),
+						"display_text":   ValidateString(testNetworkDisplayText),
+						"start_ip":       ValidateString(testNetworkStartIP),
+						"end_ip":         ValidateString(testNetworkEndIP),
+						"netmask":        ValidateString(testNetworkNetmask),
 						"tags.managedby": ValidateString("terraform"),
 					}),
 				),
@@ -34,12 +48,12 @@ func TestAccResourceNetwork(t *testing.T) {
 				Config: testAccResourceNetworkConfigUpdate,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckResourceNetworkExists("exoscale_network.net", network),
-					testAccCheckResourceNetwork(network, net.ParseIP("10.0.0.1")),
+					testAccCheckResourceNetwork(network, net.ParseIP(testNetworkStartIPUpdated)),
 					testAccCheckResourceNetworkAttributes(testAttrs{
-						"display_text": ValidateString("Terraform Acceptance Test (update)"),
-						"start_ip":     ValidateString("10.0.0.1"),
-						"end_ip":       ValidateString("10.0.0.5"),
-						"netmask":      ValidateString("255.0.0.0"),
+						"display_text": ValidateString(testNetworkDisplayTextUpdated),
+						"start_ip":     ValidateString(testNetworkStartIPUpdated),
+						"end_ip":       ValidateString(testNetworkEndIPUpdated),
+						"netmask":      ValidateString(testNetworkNetmaskUpdated),
 					}),
 				),
 			},
@@ -50,10 +64,10 @@ func TestAccResourceNetwork(t *testing.T) {
 				ImportStateCheck: func(s []*terraform.InstanceState) error {
 					return checkResourceAttributes(
 						testAttrs{
-							"display_text": ValidateString("Terraform Acceptance Test (update)"),
-							"start_ip":     ValidateString("10.0.0.1"),
-							"end_ip":       ValidateString("10.0.0.5"),
-							"netmask":      ValidateString("255.0.0.0"),
+							"display_text": ValidateString(testNetworkDisplayTextUpdated),
+							"start_ip":     ValidateString(testNetworkStartIPUpdated),
+							"end_ip":       ValidateString(testNetworkEndIPUpdated),
+							"netmask":      ValidateString(testNetworkNetmaskUpdated),
 						},
 						s[0].Attributes)
 				},
@@ -151,7 +165,11 @@ resource "exoscale_network" "net" {
   zone = %q
   network_offering = %q
   name = "terraform-test-network1"
-  display_text = "Terraform Acceptance Test (create)"
+  display_text = %q
+
+  start_ip = %q
+  end_ip = %q
+  netmask = %q
 
   tags = {
     managedby = "terraform"
@@ -160,6 +178,10 @@ resource "exoscale_network" "net" {
 `,
 	defaultExoscaleZone,
 	defaultExoscaleNetworkOffering,
+	testNetworkDisplayText,
+	testNetworkStartIP,
+	testNetworkEndIP,
+	testNetworkNetmask,
 )
 
 var testAccResourceNetworkConfigUpdate = fmt.Sprintf(`
@@ -167,13 +189,17 @@ resource "exoscale_network" "net" {
   zone = %q
   network_offering = %q
   name = "terraform-test-network2"
-  display_text = "Terraform Acceptance Test (update)"
+  display_text = %q
 
-  start_ip = "10.0.0.1"
-  end_ip = "10.0.0.5"
-  netmask = "255.0.0.0"
+  start_ip = %q
+  end_ip = %q
+  netmask = %q
 }
 `,
 	defaultExoscaleZone,
 	defaultExoscaleNetworkOffering,
+	testNetworkDisplayTextUpdated,
+	testNetworkStartIPUpdated,
+	testNetworkEndIPUpdated,
+	testNetworkNetmaskUpdated,
 )
