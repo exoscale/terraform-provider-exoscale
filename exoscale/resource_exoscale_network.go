@@ -168,8 +168,15 @@ func resourceNetworkRead(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
+	zoneName := d.Get("zone").(string)
+	zone, err := getZoneByName(ctx, client, zoneName)
+	if err != nil {
+		return err
+	}
+
 	resp, err := client.RequestWithContext(ctx, &egoscale.ListNetworks{
-		ID: id,
+		ID:     id,
+		ZoneID: zone.ID,
 	})
 
 	if err != nil {
@@ -199,8 +206,15 @@ func resourceNetworkExists(d *schema.ResourceData, meta interface{}) (bool, erro
 		return false, err
 	}
 
+	zoneName := d.Get("zone").(string)
+	zone, err := getZoneByName(ctx, client, zoneName)
+	if err != nil {
+		return false, err
+	}
+
 	resp, err := client.RequestWithContext(ctx, &egoscale.ListNetworks{
-		ID: id,
+		ID:     id,
+		ZoneID: zone.ID,
 	})
 
 	if err != nil {
