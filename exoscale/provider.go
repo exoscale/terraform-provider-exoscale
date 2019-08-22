@@ -236,6 +236,8 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		gzipUserData:    d.Get("gzip_user_data").(bool),
 	}
 
+	egoscale.UserAgent = fmt.Sprintf("Exoscale-Terraform-Provider/0 %s", egoscale.UserAgent)
+
 	return baseConfig, nil
 }
 
