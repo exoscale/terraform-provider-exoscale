@@ -1,4 +1,4 @@
-## 0.12.0 (Unreleased)
+## 0.12.1 (August 23, 2019)
 
 IMPROVEMENTS:
 
@@ -6,9 +6,15 @@ IMPROVEMENTS:
 
 CHANGES:
 
-- Internal refactoring requested by HashiCorp during provider review
 - mod: update egoscale to 0.18.1
 - mod: update Terraform SDK to 0.12.6
+
+## 0.12.0 (August 12, 2019)
+
+CHANGES:
+
+- Internal refactoring requested by HashiCorp during provider review (#228)
+- mod: update Terraform SDK to 0.12.1
 
 ## 0.11.0 (May 23, 2019)
 
