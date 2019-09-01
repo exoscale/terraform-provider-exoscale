@@ -57,6 +57,10 @@ Using the [Terraform AWS Provider](https://www.terraform.io/docs/providers/aws/)
 
 A sample single node Kubernetes cluster to act as a [Minikube][minikube] on Exoscale.
 
+## [SOS Terraform Backend](sos-backend)
+
+Using an Exoscale SOS bucket to persist `.tfstate` changes.
+
 ## External examples
 
 - Oliver Moser's: [Prometheus Service Discovery Demo](https://github.com/olmoser/infracoders-reloaded)
