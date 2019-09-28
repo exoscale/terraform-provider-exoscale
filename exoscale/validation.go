@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/exoscale/egoscale"
-	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
 // ValidateString validates that the given field is a string and matches the expected value

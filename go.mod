@@ -1,16 +1,17 @@
 module github.com/terraform-providers/terraform-provider-exoscale
 
 require (
-	cloud.google.com/go v0.39.0 // indirect
+	github.com/apparentlymart/go-dump v0.0.0-20190214190832-042adf3cf4a0 // indirect
+	github.com/aws/aws-sdk-go v1.21.7 // indirect
 	github.com/exoscale/egoscale v0.18.1
-	github.com/go-ini/ini v1.42.0
 	github.com/gopherjs/gopherjs v0.0.0-20190430165422-3e4dfb77656c // indirect
-	github.com/hashicorp/golang-lru v0.5.1 // indirect
-	github.com/hashicorp/terraform v0.12.6
-	golang.org/x/net v0.0.0-20190603091049-60506f45cf65 // indirect
-	golang.org/x/oauth2 v0.0.0-20190523182746-aaccbc9213b0 // indirect
-	golang.org/x/sys v0.0.0-20190602015325-4c4f7f33c9ed // indirect
-	google.golang.org/appengine v1.6.0 // indirect
-	google.golang.org/genproto v0.0.0-20190530194941-fb225487d101 // indirect
-	google.golang.org/grpc v1.19.1 // indirect
+	github.com/hashicorp/terraform-plugin-sdk v1.1.0
+	github.com/jtolds/gls v4.2.1+incompatible // indirect
+	github.com/mattn/go-colorable v0.1.1 // indirect
+	github.com/smartystreets/assertions v0.0.0-20180927180507-b2de0cb4f26d // indirect
+	github.com/smartystreets/goconvey v0.0.0-20180222194500-ef6db91d284a // indirect
+	github.com/vmihailenco/msgpack v4.0.1+incompatible // indirect
+	gopkg.in/ini.v1 v1.48.0
 )
+
+go 1.13

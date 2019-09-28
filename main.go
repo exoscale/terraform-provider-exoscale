@@ -1,9 +1,7 @@
 package main
 
-/* Bootstrap the plugin for Terraform */
-
 import (
-	"github.com/hashicorp/terraform/plugin"
+	"github.com/hashicorp/terraform-plugin-sdk/plugin"
 	"github.com/terraform-providers/terraform-provider-exoscale/exoscale"
 )
 

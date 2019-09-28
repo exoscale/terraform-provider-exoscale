@@ -2,7 +2,7 @@ package exoscale
 
 import (
 	"github.com/exoscale/egoscale"
-	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
 // addTags adds the tags structure to the schema at the given key

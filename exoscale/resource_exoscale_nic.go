@@ -7,7 +7,7 @@ import (
 	"net"
 
 	"github.com/exoscale/egoscale"
-	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
 func resourceNICIDString(d resourceIDStringer) string {

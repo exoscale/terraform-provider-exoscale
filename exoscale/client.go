@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/exoscale/egoscale"
-	"github.com/hashicorp/terraform/helper/logging"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/logging"
 )
 
 const defaultConfig = "cloudstack.ini"
