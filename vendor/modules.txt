@@ -61,8 +61,6 @@ github.com/davecgh/go-spew/spew
 github.com/exoscale/egoscale
 # github.com/fatih/color v1.7.0
 github.com/fatih/color
-# github.com/go-ini/ini v1.42.0
-github.com/go-ini/ini
 # github.com/gofrs/uuid v3.2.0+incompatible
 github.com/gofrs/uuid
 # github.com/golang/protobuf v1.3.2
@@ -346,3 +344,5 @@ google.golang.org/grpc/stats
 google.golang.org/grpc/status
 google.golang.org/grpc/tap
 google.golang.org/grpc/test/bufconn
+# gopkg.in/ini.v1 v1.48.0
+gopkg.in/ini.v1
