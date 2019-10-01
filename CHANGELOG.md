@@ -1,4 +1,9 @@
 ## 0.12.2 (Unreleased)
+
+CHANGES:
+
+- Switch to the Terraform Plugin SDK (#5)
+
 ## 0.12.1 (August 26, 2019)
 
 IMPROVEMENTS:
