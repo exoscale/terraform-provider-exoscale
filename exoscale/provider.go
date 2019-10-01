@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/exoscale/egoscale"
-	"gopkg.in/ini.v1"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"gopkg.in/ini.v1"
 )
 
 // Provider returns a terraform.ResourceProvider.

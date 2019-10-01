@@ -26,14 +26,14 @@ func TestAccDatasourceComputeTemplate(t *testing.T) {
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: `
 data "exoscale_compute_template" "ubuntu_lts" {
   zone = "ch-gva-2"
 }`,
 				ExpectError: regexp.MustCompile("either name or id must be specified"),
 			},
-			resource.TestStep{
+			{
 				Config: fmt.Sprintf(`
 data "exoscale_compute_template" "ubuntu_lts" {
   zone   = "ch-gva-2"
@@ -48,7 +48,7 @@ data "exoscale_compute_template" "ubuntu_lts" {
 					}),
 				),
 			},
-			resource.TestStep{
+			{
 				Config: fmt.Sprintf(`
 data "exoscale_compute_template" "ubuntu_lts" {
   zone   = "ch-gva-2"
