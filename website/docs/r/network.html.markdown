@@ -40,7 +40,7 @@ resource "exoscale_network" "managed" {
   network_offering = "PrivNet"
 
   start_ip = "10.0.0.20"
-  end_ip   = "10.0.0.254"
+  end_ip   = "10.0.0.253"
   netmask  = "255.255.255.0"
 }
 ```
