@@ -92,7 +92,7 @@ func datasourceComputeTemplateRead(d *schema.ResourceData, meta interface{}) err
 		return fmt.Errorf("templates list query failed: %s", err)
 	}
 
-	var template *egoscale.Template
+	var template egoscale.Template
 	nt := resp.(*egoscale.ListTemplatesResponse).Count
 	switch {
 	case nt == 0:
@@ -102,7 +102,7 @@ func datasourceComputeTemplateRead(d *schema.ResourceData, meta interface{}) err
 		return errors.New("multiple results returned, expected only one")
 
 	default:
-		template = &(resp.(*egoscale.ListTemplatesResponse).Template[0])
+		template = resp.(*egoscale.ListTemplatesResponse).Template[0]
 	}
 
 	d.SetId(template.ID.String())
