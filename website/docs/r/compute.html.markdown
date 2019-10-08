@@ -15,10 +15,15 @@ Provides an Exoscale [Compute instance][compute] resource. This can be used to c
 ## Example Usage
 
 ```hcl
+data "exoscale_compute_template" "ubuntu" {
+  zone = "ch-gva-2"
+  name = "Linux Ubuntu 18.04 LTS 64-bit"
+}
+
 resource "exoscale_compute" "mymachine" {
   zone         = "ch-gva-2"
   display_name = "mymachine"
-  template     = "Linux Debian 9 64-bit"
+  template_id  = "${data.exoscale_compute_template.ubuntu.id}"
   size         = "Medium"
   disk_size    = 10
   key_pair     = "me@mymachine"
@@ -49,7 +54,8 @@ EOF
 
 * `zone` - (Required) The name of the [zone][zone] to deploy the Compute instance into.
 * `display_name` - (Required) The displayed name of the Compute instance. Note: This value is also used to set the OS' *hostname* during creation, so the value can only contain alphanumeric and hyphen ("-") characters; it can be changed to any character during a later update.
-* `template` - (Required) The name or ID of the Compute instance [template][template]. If a name is provided, only *featured* templates are available.
+* `template` - **Deprecated** (Required) The name of the Compute instance [template][template]. Only *featured* templates are available, use the `template_id` attribute instead.
+* `template_id` - (Required) The ID of the Compute instance [template][template]. Usage of the [`compute_template`][compute_template] data source is recommended.
 * `size` - (Required) The Compute instance [size][size], e.g. `Tiny`, `Small`, `Medium`, `Large` etc.
 * `disk_size` - (Required) The Compute instance root disk size in GiB (at least `10`).
 * `key_pair` - (Required) The name of the [SSH key pair][sshkeypair] to be installed.
@@ -71,16 +77,19 @@ EOF
 [cloudinit]: http://cloudinit.readthedocs.io/en/latest/
 [aag]: affinity.html
 [sg]: security_group.html
+[compute_template]: ../d/compute_template.html
 
 ## Attributes Reference
 
 The following attributes are exported:
 
 * `name` - The name of the Compute instance (*hostname*).
-* `username` - The user to use to connect to the Compute instance with SSH.
+* `username` - **Deprecated** The user to use to connect to the Compute instance with SSH. Broken, use the [`compute_template`][compute_template] data source `username` attribute instead.
 * `password` - The initial Compute instance password and/or encrypted password.
 * `ip_address` - The IP address of the Compute instance main network interface.
 * `ip6_address` - The IPv6 address of the Compute instance main network interface.
+
+[compute_template]: ../d/compute_template.html
 
 ## Import
 

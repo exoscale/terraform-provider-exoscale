@@ -92,22 +92,36 @@ func datasourceComputeTemplateRead(d *schema.ResourceData, meta interface{}) err
 		return fmt.Errorf("templates list query failed: %s", err)
 	}
 
-	templates := resp.(*egoscale.ListTemplatesResponse).Template
-	if len(templates) == 0 {
+	template := new(egoscale.Template)
+	nt := resp.(*egoscale.ListTemplatesResponse).Count
+	switch {
+	case nt == 0:
 		return errors.New("template not found")
+
+	case nt > 1:
+		return errors.New("multiple results returned, expected only one")
+
+	default:
+		template = &(resp.(*egoscale.ListTemplatesResponse).Template[0])
 	}
 
-	d.SetId(templates[0].ID.String())
+	d.SetId(template.ID.String())
 
 	if err := d.Set("id", d.Id()); err != nil {
 		return err
 	}
-	if err := d.Set("name", templates[0].Name); err != nil {
+	if err := d.Set("name", template.Name); err != nil {
 		return err
 	}
 
-	if username, ok := templates[0].Details["username"]; ok {
+	if username, ok := template.Details["username"]; ok {
 		if err := d.Set("username", username); err != nil {
+			return err
+		}
+	} else {
+		// If no username information provided in the template details,
+		// attempt an educated guess based on the template name
+		if err := d.Set("username", getSSHUsername(template.Name)); err != nil {
 			return err
 		}
 	}

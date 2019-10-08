@@ -8,6 +8,11 @@ provider "exoscale" {
   secret = "${var.secret}"
 }
 
+data "exoscale_compute_template" "ubuntu" {
+  zone = "${var.zone}"
+  name = "Linux Ubuntu 18.04 LTS 64-bit"
+}
+
 resource "exoscale_ipaddress" "ingress" {
   zone = "${var.zone}"
 }
@@ -22,7 +27,7 @@ data "template_file" "cloudinit" {
 
 resource "exoscale_compute" "machine" {
   display_name = "machine"
-  template = "Linux Ubuntu 18.04 LTS 64-bit"
+  template_id = "${data.exoscale_compute_template.ubuntu.id}"
   size = "Medium"
   disk_size = "22"
   key_pair = "${var.key_pair}"

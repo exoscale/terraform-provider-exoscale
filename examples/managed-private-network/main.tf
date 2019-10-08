@@ -14,6 +14,11 @@ variable "dynamic_machines" {
   default = 2
 }
 
+data "exoscale_compute_template" "ubuntu" {
+  zone = "${var.zone}"
+  name = "Linux Ubuntu 18.04 LTS 64-bit"
+}
+
 resource "exoscale_network" "intra" {
   name = "demo-intra"
   display_text = "demo intra privnet"
@@ -30,7 +35,7 @@ resource "exoscale_compute" "static" {
 
   display_name = "demo-static-${count.index}"
 
-  template = "Linux Ubuntu 18.04 LTS 64-bit"
+  template_id = "${data.exoscale_compute_template.ubuntu.id}"
   size = "Small"
   disk_size = "10"
   security_groups = ["default"]
@@ -55,7 +60,7 @@ resource "exoscale_compute" "dynamic" {
 
   display_name = "demo-dynamic-${count.index}"
 
-  template = "Linux Ubuntu 18.04 LTS 64-bit"
+  template_id = "${data.exoscale_compute_template.ubuntu.id}"
   size = "Small"
   disk_size = "10"
   security_groups = ["default"]

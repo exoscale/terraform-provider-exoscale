@@ -6,9 +6,14 @@ resource "exoscale_ssh_keypair" "key" {
   name = "mykey"
 }
 
+data "exoscale_compute_template" "ubuntu" {
+  zone = "at-vie-1"
+  name = "Linux Ubuntu 18.04 LTS 64-bit"
+}
+
 resource "exoscale_compute" "vm" {
   display_name = "myvm"
-  template = "Linux Ubuntu 18.04 LTS 64-bit"
+  template_id = "${data.exoscale_compute_template.ubuntu.id}"
   size = "Medium"
   key_pair = "${exoscale_ssh_keypair.key.name}"
   disk_size = 10

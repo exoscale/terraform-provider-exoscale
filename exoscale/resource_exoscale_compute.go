@@ -29,9 +29,18 @@ func resourceCompute() *schema.Resource {
 			ForceNew: true,
 		},
 		"template": {
-			Type:     schema.TypeString,
-			Required: true,
-			ForceNew: true,
+			Type:          schema.TypeString,
+			Optional:      true,
+			ForceNew:      true,
+			Deprecated:    "use `template_id` attribute with the `compute_template` data source",
+			ConflictsWith: []string{"template_id"},
+		},
+		"template_id": {
+			Type:          schema.TypeString,
+			Optional:      true,
+			Computed:      true,
+			ForceNew:      true,
+			ConflictsWith: []string{"template"},
 		},
 		"disk_size": {
 			Type:         schema.TypeInt,
@@ -155,8 +164,9 @@ func resourceCompute() *schema.Resource {
 			},
 		},
 		"username": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Type:       schema.TypeString,
+			Computed:   true,
+			Deprecated: "broken, use `compute_template` data source `username` attribute",
 		},
 		"password": {
 			Type:      schema.TypeString,
@@ -225,49 +235,54 @@ func resourceComputeCreate(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	diskSize := int64(d.Get("disk_size").(int))
-	resp, err = client.RequestWithContext(ctx, &egoscale.ListTemplates{
-		TemplateFilter: "featured",
-		ZoneID:         zone.ID,
-	})
-	if err != nil {
-		return err
+	username := ""
+	templateID := ""
+	_, byLegacyName := d.GetOk("template")
+	_, byID := d.GetOk("template_id")
+	if !byLegacyName && !byID {
+		return errors.New("either template or template_id must be specified")
 	}
 
-	var templateID *egoscale.UUID
-	username := ""
-	currentDiskSize := diskSize << 30 // Gib to B
-	image := strings.ToLower(d.Get("template").(string))
+	// If template is specified by name, fetch the template details from the API to get its ID.
+	// This behavior relates to the deprecated `template` attribute and will be removed in the future,
+	// where the resource will only support template IDs looked up by the compute_template data source.
+	if byLegacyName {
+		resp, err = client.RequestWithContext(ctx, &egoscale.ListTemplates{
+			ZoneID:         zone.ID,
+			Name:           d.Get("template").(string),
+			TemplateFilter: "featured",
+		})
+		if err != nil {
+			return err
+		}
 
-	// First try to parse the image value as a UUID, if it fails try as a name
-	if templateID, err = egoscale.ParseUUID(image); err != nil {
-		for _, template := range resp.(*egoscale.ListTemplatesResponse).Template {
-			// Skip non-machine images
-			if strings.ToLower(template.Name) != image {
-				continue
-			}
+		nt := resp.(*egoscale.ListTemplatesResponse).Count
+		switch {
+		case nt == 0:
+			return errors.New("template not found")
 
-			if name, ok := template.Details["username"]; username == "" && ok {
-				username = name
-			}
+		case nt > 1:
+			return errors.New("multiple results returned, expected only one")
 
-			// Pick the smallest disk size
-			if template.Size <= currentDiskSize {
-				currentDiskSize = template.Size
-				templateID = template.ID
-				continue
+		default:
+			for _, t := range resp.(*egoscale.ListTemplatesResponse).Template {
+				templateID = t.ID.String()
+				if name, ok := t.Details["username"]; username == "" && ok {
+					username = name
+				}
 			}
 		}
-	}
-
-	if templateID == nil {
-		return fmt.Errorf("Template not found: %s (%dGB Disk)", d.Get("template").(string), d.Get("disk_size").(int))
+	} else {
+		templateID = d.Get("template_id").(string)
 	}
 
 	if username == "" {
-		log.Printf("[INFO] Username not found in the template details, falling back to root.")
+		log.Printf("[INFO] %s: username not found in the template details, falling back to `root`",
+			resourceComputeIDString(d))
 		username = "root"
 	}
+
+	diskSize := int64(d.Get("disk_size").(int))
 
 	// Affinity Groups
 	var affinityGroups []string
@@ -334,7 +349,7 @@ func resourceComputeCreate(d *schema.ResourceData, meta interface{}) error {
 		Keyboard:           d.Get("keyboard").(string),
 		UserData:           userData,
 		ServiceOfferingID:  service,
-		TemplateID:         templateID,
+		TemplateID:         egoscale.MustParseUUID(templateID),
 		ZoneID:             zone.ID,
 		AffinityGroupIDs:   affinityGroupIDs,
 		AffinityGroupNames: affinityGroups,
@@ -882,7 +897,7 @@ func resourceComputeApply(d *schema.ResourceData, machine *egoscale.VirtualMachi
 	if err := d.Set("size", machine.ServiceOfferingName); err != nil {
 		return err
 	}
-	if err := d.Set("template", machine.TemplateName); err != nil {
+	if err := d.Set("template_id", machine.TemplateID.String()); err != nil {
 		return err
 	}
 	if err := d.Set("zone", machine.ZoneName); err != nil {
@@ -963,7 +978,6 @@ func resourceComputeApply(d *schema.ResourceData, machine *egoscale.VirtualMachi
 	// Connection info for the provisioners
 	connInfo := map[string]string{
 		"type": "ssh",
-		"user": d.Get("username").(string),
 		"host": d.Get("ip_address").(string),
 	}
 
