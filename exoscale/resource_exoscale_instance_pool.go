@@ -12,7 +12,7 @@ import (
 )
 
 func resourceInstancePoolIDString(d resourceIDStringer) string {
-	return resourceIDString(d, "exoscale_compute_instance_pool")
+	return resourceIDString(d, "exoscale_instance_pool")
 }
 
 func resourceInstancePool() *schema.Resource {
@@ -20,12 +20,10 @@ func resourceInstancePool() *schema.Resource {
 		"zone": {
 			Type:     schema.TypeString,
 			Required: true,
-			ForceNew: true,
 		},
 		"template": {
 			Type:     schema.TypeString,
 			Required: true,
-			ForceNew: true,
 		},
 		"size": {
 			Type:         schema.TypeInt,
@@ -34,20 +32,19 @@ func resourceInstancePool() *schema.Resource {
 		},
 		"key_pair": {
 			Type:     schema.TypeString,
-			Required: true,
-			ForceNew: true,
+			Optional: true,
 		},
 		"name": {
 			Type:     schema.TypeString,
-			Computed: true,
+			Required: true,
 		},
 		"description": {
 			Type:     schema.TypeString,
-			Computed: true,
+			Optional: true,
 		},
 		"serviceoffering": {
 			Type:     schema.TypeString,
-			Optional: true,
+			Required: true,
 		},
 		"user_data": {
 			Type:        schema.TypeString,
@@ -65,8 +62,6 @@ func resourceInstancePool() *schema.Resource {
 		"affinity_group_ids": {
 			Type:     schema.TypeSet,
 			Optional: true,
-			ForceNew: true,
-			Computed: true,
 			Set:      schema.HashString,
 			Elem: &schema.Schema{
 				Type: schema.TypeString,
@@ -75,7 +70,6 @@ func resourceInstancePool() *schema.Resource {
 		"security_group_ids": {
 			Type:     schema.TypeSet,
 			Optional: true,
-			Computed: true,
 			Set:      schema.HashString,
 			Elem: &schema.Schema{
 				Type: schema.TypeString,
@@ -84,7 +78,6 @@ func resourceInstancePool() *schema.Resource {
 		"networks_ids": {
 			Type:     schema.TypeSet,
 			Optional: true,
-			Computed: true,
 			Set:      schema.HashString,
 			Elem: &schema.Schema{
 				Type: schema.TypeString,
@@ -111,7 +104,7 @@ func resourceInstancePool() *schema.Resource {
 		Exists: resourceInstancePoolExists,
 
 		Importer: &schema.ResourceImporter{
-			State: resourceComputeImport,
+			State: resourceInstancePoolImport,
 		},
 
 		Timeouts: &schema.ResourceTimeout{

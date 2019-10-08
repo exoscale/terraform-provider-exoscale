@@ -123,19 +123,19 @@ func Provider() terraform.ResourceProvider {
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
-			"exoscale_affinity":              resourceAffinity(),
-			"exoscale_compute":               resourceCompute(),
-			"exoscale_compute_instance_pool": resourceInstancePool(),
-			"exoscale_domain_record":         resourceDomainRecord(),
-			"exoscale_domain":                resourceDomain(),
-			"exoscale_ipaddress":             resourceIPAddress(),
-			"exoscale_network":               resourceNetwork(),
-			"exoscale_nic":                   resourceNIC(),
-			"exoscale_secondary_ipaddress":   resourceSecondaryIPAddress(),
-			"exoscale_security_group_rule":   resourceSecurityGroupRule(),
-			"exoscale_security_group_rules":  resourceSecurityGroupRules(),
-			"exoscale_security_group":        resourceSecurityGroup(),
-			"exoscale_ssh_keypair":           resourceSSHKeypair(),
+			"exoscale_affinity":             resourceAffinity(),
+			"exoscale_compute":              resourceCompute(),
+			"exoscale_instance_pool":        resourceInstancePool(),
+			"exoscale_domain_record":        resourceDomainRecord(),
+			"exoscale_domain":               resourceDomain(),
+			"exoscale_ipaddress":            resourceIPAddress(),
+			"exoscale_network":              resourceNetwork(),
+			"exoscale_nic":                  resourceNIC(),
+			"exoscale_secondary_ipaddress":  resourceSecondaryIPAddress(),
+			"exoscale_security_group_rule":  resourceSecurityGroupRule(),
+			"exoscale_security_group_rules": resourceSecurityGroupRules(),
+			"exoscale_security_group":       resourceSecurityGroup(),
+			"exoscale_ssh_keypair":          resourceSSHKeypair(),
 		},
 
 		ConfigureFunc: providerConfigure,
@@ -252,20 +252,21 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 }
 
 func getZoneByName(ctx context.Context, client *egoscale.Client, zoneName string) (*egoscale.Zone, error) {
-	resp, err := client.RequestWithContext(ctx, &egoscale.ListZones{
-		Name: strings.ToLower(zoneName),
-	})
+	zone := &egoscale.Zone{}
 
+	id, err := egoscale.ParseUUID(zoneName)
+	if err != nil {
+		zone.Name = zoneName
+	} else {
+		zone.ID = id
+	}
+
+	resp, err := client.GetWithContext(ctx, zone)
 	if err != nil {
 		return nil, err
 	}
 
-	zones := resp.(*egoscale.ListZonesResponse)
-	if zones.Count == 0 {
-		return nil, fmt.Errorf("Zone not found %s", zoneName)
-	}
-
-	return &(zones.Zone[0]), nil
+	return resp.(*egoscale.Zone), nil
 }
 
 // handleNotFound inspects the CloudStack ErrorCode to guess if the resource is missing
