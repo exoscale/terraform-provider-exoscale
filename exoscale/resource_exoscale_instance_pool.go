@@ -3,10 +3,8 @@ package exoscale
 import (
 	"context"
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"log"
-	"strings"
 
 	"github.com/exoscale/egoscale"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
@@ -108,9 +106,9 @@ func resourceInstancePool() *schema.Resource {
 
 		Create: resourceInstancePoolCreate,
 		Read:   resourceInstancePoolRead,
-		Update: resourceComputeUpdate,
-		Delete: resourceComputeDelete,
-		Exists: resourceComputeExists,
+		Update: resourceInstancePoolUpdate,
+		Delete: resourceInstancePoolDelete,
+		Exists: resourceInstancePoolExists,
 
 		Importer: &schema.ResourceImporter{
 			State: resourceComputeImport,
@@ -137,22 +135,16 @@ func resourceInstancePoolCreate(d *schema.ResourceData, meta interface{}) error 
 	description := d.Get("description").(string)
 
 	// Instance pool size
-	size := d.Get("size").(string)
+	size := d.Get("size").(int)
 
 	// ServiceOffering
-	so := d.Get("serviceoffering").(string)
-	resp, err := client.RequestWithContext(ctx, &egoscale.ListServiceOfferings{
-		Name: so,
+	resp, err := client.GetWithContext(ctx, &egoscale.ServiceOffering{
+		Name: d.Get("serviceoffering").(string),
 	})
 	if err != nil {
 		return err
 	}
-
-	services := resp.(*egoscale.ListServiceOfferingsResponse)
-	if len(services.ServiceOffering) != 1 {
-		return fmt.Errorf("Unable to find the serviceoffering: %#v", size)
-	}
-	serviceoffering := services.ServiceOffering[0]
+	serviceoffering := resp.(*egoscale.ServiceOffering)
 
 	// XXX Use Generic Get...
 	zoneName := d.Get("zone").(string)
@@ -205,7 +197,7 @@ func resourceInstancePoolCreate(d *schema.ResourceData, meta interface{}) error 
 		}
 	}
 
-	userData, base64Encoded, err := prepareUserData(d, meta, "user_data")
+	userData, _, err := prepareUserData(d, meta, "user_data")
 	if err != nil {
 		return err
 	}
@@ -221,6 +213,7 @@ func resourceInstancePoolCreate(d *schema.ResourceData, meta interface{}) error 
 		AffinityGroupIDs:  affinityGroupIDs,
 		SecurityGroupIDs:  securityGroupIDs,
 		NetworkIDs:        networkIDs,
+		Size:              size,
 	}
 
 	resp, err = client.RequestWithContext(ctx, req)
@@ -266,26 +259,9 @@ func resourceInstancePoolRead(d *schema.ResourceData, meta interface{}) error {
 
 	instancePool := &resp.(*egoscale.GetInstancePoolsResponse).ListInstancePoolsResponse[0]
 
-	userData, err := base64.StdEncoding.DecodeString(instancePool.UserData)
-	if err != nil {
-		return err
-	}
-
-	if err := d.Set("user_data", userData); err != nil {
-		return err
-	}
-
-	if err := d.Set("zone", zone.Name); err != nil {
-		return err
-	}
-
-	if err := d.Set("user_data", userData); err != nil {
-		return err
-	}
-
 	log.Printf("[DEBUG] %s: read finished successfully", resourceInstancePoolIDString(d))
 
-	return resourceInstancePoolApply(d, instancePool)
+	return resourceInstancePoolApply(ctx, client, d, instancePool)
 }
 
 func resourceInstancePoolExists(d *schema.ResourceData, meta interface{}) (bool, error) {
@@ -309,15 +285,14 @@ func resourceInstancePoolExists(d *schema.ResourceData, meta interface{}) (bool,
 		ZoneID: zone.ID,
 	})
 	if err != nil {
-		e := handleNotFound(d, err)
-		return d.Id() != "", e
+		return false, err
 	}
 
 	return true, nil
 }
 
-func resourceComputeUpdate(d *schema.ResourceData, meta interface{}) error {
-	log.Printf("[DEBUG] %s: beginning update", resourceComputeIDString(d))
+func resourceInstancePoolUpdate(d *schema.ResourceData, meta interface{}) error {
+	log.Printf("[DEBUG] %s: beginning update", resourceInstancePoolIDString(d))
 
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutUpdate))
 	defer cancel()
@@ -329,264 +304,55 @@ func resourceComputeUpdate(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	// Get() gives us the new state
-	initialState := d.Get("state").(string)
-	if d.HasChange("state") {
-		o, _ := d.GetChange("state")
-		initialState = o.(string)
+	zone, err := getZoneByName(ctx, client, d.Get("zone").(string))
+	if err != nil {
+		return err
 	}
 
-	if initialState != "Running" && initialState != "Stopped" {
-		return fmt.Errorf("VM %s must be either Running or Stopped. got %s", d.Id(), initialState)
+	req := &egoscale.UpdateInstancePool{
+		ID:     id,
+		ZoneID: zone.ID,
 	}
 
-	rebootRequired := false
-	startRequired := false
-	stopRequired := false
-
-	d.Partial(true)
-
-	commands := make([]partialCommand, 0)
-
-	// Update command is synchronous, hence it won't be put with the others
-	req := &egoscale.UpdateVirtualMachine{
-		ID: id,
+	if d.HasChange("description") {
+		req.Description = d.Get("description").(string)
 	}
 
-	if d.HasChange("display_name") {
-		req.DisplayName = d.Get("display_name").(string)
-	}
-
+	var userData string
 	if d.HasChange("user_data") {
-		userData, base64Encoded, err := prepareUserData(d, meta, "user_data")
+		userData, _, err = prepareUserData(d, meta, "user_data")
 		if err != nil {
 			return err
 		}
 
 		req.UserData = userData
-		rebootRequired = true
-
-		if err := d.Set("user_data_base64", base64Encoded); err != nil {
-			return err
-		}
 	}
 
-	if d.HasChange("security_groups") {
-		rebootRequired = true
-
-		securityGroupIDs := make([]egoscale.UUID, 0)
-		if securitySet, ok := d.Get("security_groups").(*schema.Set); ok {
-			for _, group := range securitySet.List() {
-				sg, err := getSecurityGroup(ctx, client, group.(string))
-				if err != nil {
-					return err
-				}
-				securityGroupIDs = append(securityGroupIDs, *sg.ID)
-			}
-		}
-
-		if len(securityGroupIDs) == 0 {
-			return errors.New("a Compute instance must have at least one Security Group, none found")
-		}
-
-		req.SecurityGroupIDs = securityGroupIDs
-	} else if d.HasChange("security_group_ids") {
-		rebootRequired = true
-
-		securityGroupIDs := make([]egoscale.UUID, 0)
-		if securitySet, ok := d.Get("security_group_ids").(*schema.Set); ok {
-			for _, group := range securitySet.List() {
-				id, err := egoscale.ParseUUID(group.(string))
-				if err != nil {
-					return err
-				}
-				securityGroupIDs = append(securityGroupIDs, *id)
-			}
-		}
-
-		if len(securityGroupIDs) == 0 {
-			return errors.New("a Compute instance must have at least one Security Group, none found")
-		}
-
-		req.SecurityGroupIDs = securityGroupIDs
-	}
-
-	if d.HasChange("disk_size") {
-		o, n := d.GetChange("disk_size")
-		oldSize := o.(int)
-		newSize := n.(int)
-
-		if oldSize > newSize {
-			return fmt.Errorf("A volume can only be expanded. From %dG to %dG is not allowed", oldSize, newSize)
-		}
-
-		rebootRequired = true
-
-		volumes, err := client.ListWithContext(ctx, &egoscale.Volume{
-			VirtualMachineID: id,
-			Type:             "ROOT",
-		})
-		if err != nil {
-			return err
-		}
-		if len(volumes) != 1 {
-			return fmt.Errorf("ROOT volume not found for the VM %s", d.Id())
-		}
-		volume := volumes[0].(*egoscale.Volume)
-		commands = append(commands, partialCommand{
-			partial: "disk_size",
-			request: &egoscale.ResizeVolume{
-				ID:   volume.ID,
-				Size: int64(d.Get("disk_size").(int)),
-			},
-		})
-	}
-
-	if d.HasChange("size") {
-		o, n := d.GetChange("size")
-		oldSize := o.(string)
-		newSize := n.(string)
-		if !strings.EqualFold(oldSize, newSize) {
-			rebootRequired = true
-			resp, err := client.RequestWithContext(ctx, &egoscale.ListServiceOfferings{
-				Name: newSize,
-			})
-			if err != nil {
-				return err
-			}
-
-			services := resp.(*egoscale.ListServiceOfferingsResponse)
-			if len(services.ServiceOffering) != 1 {
-				return fmt.Errorf("size %q not found", newSize)
-			}
-
-			commands = append(commands, partialCommand{
-				partial: "size",
-				request: &egoscale.ScaleVirtualMachine{
-					ID:                id,
-					ServiceOfferingID: services.ServiceOffering[0].ID,
-				},
-			})
-		}
-	}
-
-	updates, err := updateTags(d, "tags", "userVM")
-	if err != nil {
-		return err
-	}
-	for _, update := range updates {
-		commands = append(commands, partialCommand{
-			partial: "tags",
-			request: update,
-		})
-	}
-
-	if d.HasChange("ip4") {
-		activateIP4 := d.Get("ip4").(bool)
-		if !activateIP4 {
-			return errors.New("the IPv4 address cannot be deactivated")
-		}
-	}
-
-	if d.HasChange("ip6") {
-		activateIP6 := d.Get("ip6").(bool)
-		if activateIP6 {
-			resp, err := client.Request(&egoscale.ListNics{VirtualMachineID: id})
-			if err != nil {
-				return err
-			}
-
-			nics := resp.(*egoscale.ListNicsResponse)
-			if len(nics.Nic) == 0 {
-				return fmt.Errorf("The VM has no NIC %v", d.Id())
-			}
-
-			commands = append(commands, partialCommand{
-				partials: []string{"ip6", "ip6_address", "ip6_cidr"},
-				request:  &egoscale.ActivateIP6{NicID: nics.Nic[0].ID},
-			})
-		} else {
-			return errors.New("the IPv6 address cannot be deactivated")
-		}
-	}
-
-	if d.HasChange("state") {
-		switch d.Get("state").(string) {
-		case "Running":
-			startRequired = true
-
-		case "Stopped":
-			stopRequired = true
-			rebootRequired = false
-			startRequired = false
-
-		default:
-			return fmt.Errorf("new state %q cannot be applied", d.Get("state").(string))
-		}
-	}
-
-	// Stop
-	if initialState != "Stopped" && (rebootRequired || stopRequired) {
-		resp, err := client.RequestWithContext(ctx, &egoscale.StopVirtualMachine{
-			ID: id,
-		})
-		if err != nil {
-			return err
-		}
-
-		m := resp.(*egoscale.VirtualMachine)
-		if err := resourceComputeApply(d, m); err != nil {
-			return err
-		}
-		d.SetPartial("state")
-	}
-
-	// Update, we ignore the result as a full read is require for the user-data/volume
 	_, err = client.RequestWithContext(ctx, req)
 	if err != nil {
 		return err
 	}
 
-	if err := resourceComputeRead(d, meta); err != nil {
-		return err
-	}
-	d.SetPartial("user_data")
-	d.SetPartial("user_data_base64")
-	d.SetPartial("display_name")
-	d.SetPartial("security_groups")
+	if d.HasChange("size") {
+		scale := &egoscale.ScaleInstancePool{
+			ID:     id,
+			ZoneID: zone.ID,
+			Size:   d.Get("size").(int),
+		}
 
-	if (initialState == "Running" && rebootRequired) || startRequired {
-		commands = append(commands, partialCommand{
-			partial: "state",
-			request: &egoscale.StartVirtualMachine{
-				ID: id,
-			},
-		})
-	}
-
-	for _, cmd := range commands {
-		_, err := client.RequestWithContext(ctx, cmd.request)
+		_, err = client.RequestWithContext(ctx, scale)
 		if err != nil {
 			return err
 		}
-
-		d.SetPartial(cmd.partial)
-		if cmd.partials != nil {
-			for _, partial := range cmd.partials {
-				d.SetPartial(partial)
-			}
-		}
 	}
 
-	d.Partial(false)
-
-	log.Printf("[DEBUG] %s: update finished successfully", resourceComputeIDString(d))
+	log.Printf("[DEBUG] %s: update finished successfully", resourceInstancePoolIDString(d))
 
 	return resourceComputeRead(d, meta)
 }
 
-func resourceComputeDelete(d *schema.ResourceData, meta interface{}) error {
-	log.Printf("[DEBUG] %s: beginning delete", resourceComputeIDString(d))
+func resourceInstancePoolDelete(d *schema.ResourceData, meta interface{}) error {
+	log.Printf("[DEBUG] %s: beginning delete", resourceInstancePoolIDString(d))
 
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutDelete))
 	defer cancel()
@@ -598,84 +364,54 @@ func resourceComputeDelete(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	vm := &egoscale.VirtualMachine{ID: id}
-
-	if err := client.DeleteWithContext(ctx, vm); err != nil {
+	zone, err := getZoneByName(ctx, client, d.Get("zone").(string))
+	if err != nil {
 		return err
 	}
 
-	log.Printf("[DEBUG] %s: delete finished successfully", resourceComputeIDString(d))
+	req := &egoscale.DestroyInstancePool{
+		ID:     id,
+		ZoneID: zone.ID,
+	}
+
+	if _, err := client.RequestWithContext(ctx, req); err != nil {
+		return err
+	}
+
+	log.Printf("[DEBUG] %s: delete finished successfully", resourceInstancePoolIDString(d))
 
 	return nil
 }
 
-func resourceComputeImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+func resourceInstancePoolImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
 	defer cancel()
 
 	client := GetComputeClient(meta)
 
-	machine := &egoscale.VirtualMachine{}
-
-	id, err := egoscale.ParseUUID(d.Id())
+	zone, err := getZoneByName(ctx, client, d.Get("zone").(string))
 	if err != nil {
-		machine.Name = d.Id()
-	} else {
-		machine.ID = id
+		return nil, err
 	}
 
-	resp, err := client.GetWithContext(ctx, machine)
+	instancePool, err := getInstancePoolByName(ctx, client, d.Id(), zone.ID)
 	if err != nil {
-		if e := handleNotFound(d, err); e != nil {
-			return nil, e
-		}
-		if d.Id() == "" {
-			return nil, fmt.Errorf("Failure to import the compute resource: %s", id)
-		}
+		return nil, err
 	}
 
-	vm := resp.(*egoscale.VirtualMachine)
-	defaultNic := vm.DefaultNic()
-	if defaultNic == nil {
-		return nil, fmt.Errorf("VM %v has no default NIC", d.Id())
-	}
-	secondaryIPs := defaultNic.SecondaryIP
-	nics := vm.NicsByType("Isolated")
-
-	resources := make([]*schema.ResourceData, 0, 1+len(nics)+len(secondaryIPs))
+	resources := make([]*schema.ResourceData, 0, 1)
 	resources = append(resources, d)
 
-	for _, secondaryIP := range secondaryIPs {
-		resource := resourceSecondaryIPAddress()
-		d := resource.Data(nil)
-		d.SetType("exoscale_secondary_ipaddress")
-		if err := d.Set("compute_id", id); err != nil {
-			return nil, err
-		}
-		secondaryIP.NicID = defaultNic.ID
-		secondaryIP.NetworkID = defaultNic.NetworkID
-		if err := resourceSecondaryIPAddressApply(d, &secondaryIP); err != nil {
-			return nil, err
-		}
-
-		resources = append(resources, d)
+	resource := new(schema.ResourceData)
+	if err := resourceInstancePoolApply(ctx, client, resource, instancePool); err != nil {
+		return nil, err
 	}
-
-	for _, nic := range nics {
-		resource := resourceNIC()
-		d := resource.Data(nil)
-		d.SetType("exoscale_nic")
-		if err := resourceNICApply(d, nic); err != nil {
-			return nil, err
-		}
-
-		resources = append(resources, d)
-	}
+	resources = append(resources, resource)
 
 	return resources, nil
 }
 
-func resourceInstancePoolApply(d *schema.ResourceData, instancePool *egoscale.InstancePool) error {
+func resourceInstancePoolApply(ctx context.Context, client *egoscale.Client, d *schema.ResourceData, instancePool *egoscale.InstancePool) error {
 	if err := d.Set("name", instancePool.Name); err != nil {
 		return err
 	}
@@ -689,6 +425,51 @@ func resourceInstancePoolApply(d *schema.ResourceData, instancePool *egoscale.In
 		return err
 	}
 	if err := d.Set("state", instancePool.State); err != nil {
+		return err
+	}
+
+	// service offering
+	resp, err := client.GetWithContext(ctx, &egoscale.ServiceOffering{
+		ID: instancePool.ServiceOfferingID,
+	})
+	if err != nil {
+		return err
+	}
+	service := resp.(*egoscale.ServiceOffering)
+	if err := d.Set("serviceoffering", service.Name); err != nil {
+		return err
+	}
+
+	// template
+	template, err := getTemplateByName(ctx, client, instancePool.ZoneID, instancePool.TemplateID.String(), "featured")
+	if err != nil {
+		template, err = getTemplateByName(ctx, client, instancePool.ZoneID, instancePool.TemplateID.String(), "self")
+		if err != nil {
+			return err
+		}
+	}
+
+	if err := d.Set("template", template.Name); err != nil {
+		return err
+	}
+
+	// zone
+	zone, err := getZoneByName(ctx, client, instancePool.ZoneID.String())
+	if err != nil {
+		return err
+	}
+
+	if err := d.Set("zone", zone.Name); err != nil {
+		return err
+	}
+
+	// user data
+	userData, err := base64.StdEncoding.DecodeString(instancePool.UserData)
+	if err != nil {
+		return err
+	}
+
+	if err := d.Set("user_data", userData); err != nil {
 		return err
 	}
 
@@ -710,18 +491,30 @@ func resourceInstancePoolApply(d *schema.ResourceData, instancePool *egoscale.In
 		return err
 	}
 
-	return nil
-}
-
-func getSecurityGroup(ctx context.Context, client *egoscale.Client, name string) (*egoscale.SecurityGroup, error) {
-	sg := &egoscale.SecurityGroup{Name: name}
-
-	resp, err := client.GetWithContext(ctx, sg)
-	if err != nil {
-		return nil, err
+	// networks
+	networksIDs := make([]string, len(instancePool.NetworkIDs))
+	for i, n := range instancePool.NetworkIDs {
+		networksIDs[i] = n.String()
+	}
+	if err := d.Set("networks_ids", networksIDs); err != nil {
+		return err
 	}
 
-	return resp.(*egoscale.SecurityGroup), nil
+	// virtual Machines
+	virtualMachines := make([]string, len(instancePool.VirtualMachines))
+	for i, vm := range instancePool.VirtualMachines {
+		resp, err := client.GetWithContext(ctx, &egoscale.VirtualMachine{ID: vm.ID})
+		if err != nil {
+			return err
+		}
+		v := resp.(*egoscale.VirtualMachine)
+		virtualMachines[i] = v.Name
+	}
+	if err := d.Set("networks_ids", networksIDs); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func getTemplateByName(ctx context.Context, client *egoscale.Client, zoneID *egoscale.UUID, name string, templateFilter string) (*egoscale.Template, error) {
@@ -748,4 +541,49 @@ func getTemplateByName(ctx context.Context, client *egoscale.Client, zoneID *ego
 		return resp[0].(*egoscale.Template), nil
 	}
 	return nil, fmt.Errorf("multiple templates found for %q", name)
+}
+
+func getInstancePoolByID(ctx context.Context, client *egoscale.Client, id, zone *egoscale.UUID) (*egoscale.InstancePool, error) {
+	resp, err := client.RequestWithContext(ctx, egoscale.GetInstancePool{
+		ID:     id,
+		ZoneID: zone,
+	})
+	if err != nil {
+		return nil, err
+	}
+	r := resp.(*egoscale.GetInstancePoolsResponse)
+
+	return &r.ListInstancePoolsResponse[0], nil
+}
+
+func getInstancePoolByName(ctx context.Context, client *egoscale.Client, name string, zone *egoscale.UUID) (*egoscale.InstancePool, error) {
+	instancePools := []egoscale.InstancePool{}
+
+	id, err := egoscale.ParseUUID(name)
+	if err == nil {
+		return getInstancePoolByID(ctx, client, id, zone)
+	}
+
+	resp, err := client.RequestWithContext(ctx, egoscale.ListInstancePool{
+		ZoneID: zone,
+	})
+	if err != nil {
+		return nil, err
+	}
+	r := resp.(*egoscale.ListInstancePoolsResponse)
+
+	for _, i := range r.ListInstancePoolsResponse {
+		if i.Name == name {
+			instancePools = append(instancePools, i)
+		}
+	}
+
+	switch count := len(instancePools); {
+	case count == 0:
+		return nil, fmt.Errorf("not found: %q", name)
+	case count > 1:
+		return nil, fmt.Errorf("more than one element found: %q", count)
+	}
+
+	return &instancePools[0], nil
 }
