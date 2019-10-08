@@ -247,7 +247,7 @@ func resourceInstancePoolRead(d *schema.ResourceData, meta interface{}) error {
 	pool := &egoscale.GetInstancePool{ID: id, ZoneID: zone.ID}
 	resp, err := client.RequestWithContext(ctx, pool)
 	if err != nil {
-		return handleNotFound(d, err)
+		return err
 	}
 
 	instancePool := &resp.(*egoscale.GetInstancePoolsResponse).ListInstancePoolsResponse[0]
@@ -462,7 +462,7 @@ func resourceInstancePoolApply(ctx context.Context, client *egoscale.Client, d *
 		return err
 	}
 
-	if err := d.Set("user_data", userData); err != nil {
+	if err := d.Set("user_data", string(userData)); err != nil {
 		return err
 	}
 
