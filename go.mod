@@ -5,6 +5,7 @@ require (
 	github.com/aws/aws-sdk-go v1.21.7 // indirect
 	github.com/exoscale/egoscale v0.18.1
 	github.com/gopherjs/gopherjs v0.0.0-20190430165422-3e4dfb77656c // indirect
+	github.com/hashicorp/go-cleanhttp v0.5.1
 	github.com/hashicorp/terraform-plugin-sdk v1.1.0
 	github.com/jtolds/gls v4.2.1+incompatible // indirect
 	github.com/mattn/go-colorable v0.1.1 // indirect

@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/exoscale/egoscale"
+	"github.com/hashicorp/go-cleanhttp"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/logging"
 )
 
@@ -31,6 +32,7 @@ func getClient(endpoint string, meta interface{}) *egoscale.Client {
 	cs := egoscale.NewClient(endpoint, config.key, config.secret)
 
 	cs.Timeout = config.timeout
+	cs.HTTPClient = cleanhttp.DefaultPooledClient()
 	cs.HTTPClient.Timeout = config.timeout
 
 	if logging.IsDebugOrHigher() {
