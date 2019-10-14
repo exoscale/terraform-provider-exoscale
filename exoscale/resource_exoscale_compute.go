@@ -247,7 +247,7 @@ func resourceComputeCreate(d *schema.ResourceData, meta interface{}) error {
 	// This behavior relates to the deprecated `template` attribute and will be removed in the future,
 	// where the resource will only support template IDs looked up by the compute_template data source.
 	if byLegacyName {
-		resp, err = client.RequestWithContext(ctx, &egoscale.ListTemplates{
+		resp, err = client.GetWithContext(ctx, &egoscale.ListTemplates{
 			ZoneID:         zone.ID,
 			Name:           d.Get("template").(string),
 			TemplateFilter: "featured",
@@ -256,21 +256,10 @@ func resourceComputeCreate(d *schema.ResourceData, meta interface{}) error {
 			return err
 		}
 
-		nt := resp.(*egoscale.ListTemplatesResponse).Count
-		switch {
-		case nt == 0:
-			return errors.New("template not found")
-
-		case nt > 1:
-			return errors.New("multiple results returned, expected only one")
-
-		default:
-			for _, t := range resp.(*egoscale.ListTemplatesResponse).Template {
-				templateID = t.ID.String()
-				if name, ok := t.Details["username"]; username == "" && ok {
-					username = name
-				}
-			}
+		template := resp.(*egoscale.Template)
+		templateID = template.ID.String()
+		if name, ok := template.Details["username"]; username == "" && ok {
+			username = name
 		}
 	} else {
 		templateID = d.Get("template_id").(string)
