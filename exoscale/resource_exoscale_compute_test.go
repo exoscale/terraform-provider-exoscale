@@ -20,12 +20,29 @@ func TestAccResourceCompute(t *testing.T) {
 		CheckDestroy: testAccCheckResourceComputeDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceComputeConfigCreate,
+				// This should go away once `template` attribute is phased out
+				Config: testAccResourceComputeConfigCreateDeprecated,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckResourceComputeExists("exoscale_compute.vm", vm),
 					testAccCheckResourceCompute(vm),
 					testAccCheckResourceComputeAttributes(testAttrs{
 						"template":     ValidateString(defaultExoscaleTemplate),
+						"template_id":  ValidateString(defaultExoscaleTemplateID),
+						"display_name": ValidateString("terraform-test-compute1"),
+						"size":         ValidateString("Micro"),
+						"disk_size":    ValidateString("12"),
+						"key_pair":     ValidateString("terraform-test-keypair"),
+						"tags.test":    ValidateString("terraform"),
+					}),
+				),
+			},
+			{
+				Config: testAccResourceComputeConfigCreate,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckResourceComputeExists("exoscale_compute.vm", vm),
+					testAccCheckResourceCompute(vm),
+					testAccCheckResourceComputeAttributes(testAttrs{
+						"template_id":  ValidateString(defaultExoscaleTemplateID),
 						"display_name": ValidateString("terraform-test-compute1"),
 						"size":         ValidateString("Micro"),
 						"disk_size":    ValidateString("12"),
@@ -41,7 +58,7 @@ func TestAccResourceCompute(t *testing.T) {
 					testAccCheckResourceComputeExists("exoscale_compute.vm", vm),
 					testAccCheckResourceCompute(vm),
 					testAccCheckResourceComputeAttributes(testAttrs{
-						"template":          ValidateString(defaultExoscaleTemplate),
+						"template_id":       ValidateString(defaultExoscaleTemplateID),
 						"display_name":      ValidateString("terraform-test-compute2"),
 						"size":              ValidateString("Small"),
 						"disk_size":         ValidateString("18"),
@@ -56,11 +73,11 @@ func TestAccResourceCompute(t *testing.T) {
 				ResourceName:            "exoscale_compute.vm",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"password", "user_data_base64"},
+				ImportStateVerifyIgnore: []string{"username", "password", "user_data_base64"},
 				ImportStateCheck: func(s []*terraform.InstanceState) error {
 					return checkResourceAttributes(
 						testAttrs{
-							"template":          ValidateString(defaultExoscaleTemplate),
+							"template_id":       ValidateString(defaultExoscaleTemplateID),
 							"display_name":      ValidateString("terraform-test-compute2"),
 							"size":              ValidateString("Small"),
 							"disk_size":         ValidateString("18"),
@@ -156,7 +173,8 @@ func testAccCheckResourceComputeDestroy(s *terraform.State) error {
 	return errors.New("Compute instance still exists")
 }
 
-var testAccResourceComputeConfigCreate = fmt.Sprintf(`
+// This should go away once `template` attribute is phased out
+var testAccResourceComputeConfigCreateDeprecated = fmt.Sprintf(`
 resource "exoscale_ssh_keypair" "key" {
   name = "terraform-test-keypair"
 }
@@ -182,6 +200,32 @@ resource "exoscale_compute" "vm" {
 	defaultExoscaleZone,
 )
 
+var testAccResourceComputeConfigCreate = fmt.Sprintf(`
+resource "exoscale_ssh_keypair" "key" {
+  name = "terraform-test-keypair"
+}
+
+resource "exoscale_compute" "vm" {
+  template_id = %q
+  zone = %q
+  display_name = "terraform-test-compute1"
+  size = "Micro"
+  disk_size = "12"
+  key_pair = "${exoscale_ssh_keypair.key.name}"
+
+  tags = {
+    test = "terraform"
+  }
+
+  timeouts {
+    create = "10m"
+  }
+}
+`,
+	defaultExoscaleTemplateID,
+	defaultExoscaleZone,
+)
+
 var testAccResourceComputeConfigUpdate = fmt.Sprintf(`
 resource "exoscale_ssh_keypair" "key" {
   name = "terraform-test-keypair"
@@ -192,7 +236,7 @@ resource "exoscale_security_group" "sg" {
 }
 
 resource "exoscale_compute" "vm" {
-  template = %q
+  template_id = %q
   zone = %q
   display_name = "terraform-test-compute2"
   size = "Small"
@@ -216,6 +260,6 @@ EOF
   depends_on = ["exoscale_security_group.sg"]
 }
 `,
-	defaultExoscaleTemplate,
+	defaultExoscaleTemplateID,
 	defaultExoscaleZone,
 )

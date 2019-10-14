@@ -1,7 +1,12 @@
+data "exoscale_compute_template" "test" {
+  zone = "${var.zone}"
+  name = "${var.template}"
+}
+
 resource "exoscale_compute" "test" {
   count = "${length(var.hostnames)}"
   display_name = "${var.hostnames[count.index]}"
-  template = "${var.template}"
+  template_id = "${data.exoscale_compute_template.test.id}"
   zone = "${var.zone}"
   size = "Tiny"
   disk_size = 17

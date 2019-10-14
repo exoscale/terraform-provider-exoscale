@@ -8,12 +8,17 @@ provider "exoscale" {
   secret = "${var.secret}"
 }
 
+data "exoscale_compute_template" "exokube" {
+  zone = "${var.zone}"
+  name = "${var.template}"
+}
+
 resource "exoscale_compute" "exokube" {
   display_name = "exokube"
   size = "Medium"
   disk_size = 50
   zone = "${var.zone}"
-  template = "${var.template}"
+  template_id = "${data.exoscale_compute_template.exokube.id}"
   key_pair = "${var.key_pair}"
   ip6 = true
 

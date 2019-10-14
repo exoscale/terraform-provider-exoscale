@@ -4,6 +4,11 @@ provider "exoscale" {
   secret = "${var.secret}"
 }
 
+data "exoscale_compute_template" "main" {
+  zone = "${var.zone}"
+  name = "${var.template}"
+}
+
 resource "exoscale_security_group" "default" {
   name = "default-with-ipv6"
 }
@@ -30,7 +35,7 @@ resource "exoscale_security_group_rule" "default-ssh-6" {
 
 resource "exoscale_compute" "main" {
   display_name = "test-ipv6"
-  template = "${var.template}"
+  template_id = "${data.exoscale_compute_template.main.id}"
   zone = "${var.zone}"
   size = "Medium"
   disk_size = 11

@@ -8,6 +8,11 @@ provider "exoscale" {
   secret = "${var.secret}"
 }
 
+data "exoscale_compute_template" "node" {
+  zone = "${var.zone}"
+  name = "${var.template}"
+}
+
 resource "exoscale_affinity" "rke" {
   name = "rke-nodes"
   description = "keep nodes of different hosts"
@@ -50,7 +55,7 @@ resource "exoscale_security_group_rules" "rke" {
 resource "exoscale_compute" "node" {
   count = "${length(var.hostnames)}"
   display_name = "${element(var.hostnames, count.index)}"
-  template = "${var.template}"
+  template_id = "${data.exoscale_compute_template.node.id}"
   zone = "${var.zone}"
   size = "Medium"
   disk_size = 50

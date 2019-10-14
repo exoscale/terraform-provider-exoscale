@@ -2,12 +2,17 @@ variable "machines" {
   default = 2
 }
 
+data "exoscale_compute_template" "ubuntu" {
+  zone = "${var.zone}"
+  name = "Linux Ubuntu 18.04 LTS 64-bit"
+}
+
 resource "exoscale_compute" "machine" {
   count = "${var.machines}"
 
   display_name = "demo-machine-${count.index}"
 
-  template = "Linux Ubuntu 18.04 LTS 64-bit"
+  template_id = "${data.exoscale_compute_template.ubuntu.id}"
   size = "Small"
   disk_size = "10"
   security_groups = ["default"]
