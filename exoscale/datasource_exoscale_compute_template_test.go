@@ -11,12 +11,12 @@ import (
 )
 
 const (
-	// Reference template used for tests: "Linux Ubuntu 18.04 LTS 64-bit" @ CH-GVA-2 (featured)
+	// Reference template used for tests: "Linux Ubuntu 18.04 LTS 64-bit" @ ch-gva-2 (featured)
 	// cs --region cloudstack listTemplates \
 	//     templatefilter=featured \
 	//     zoneid=1128bd56-b4d9-4ac6-a7b9-c715b187ce11 \
 	//     name="Linux Ubuntu 18.04 LTS 64-bit"
-	datasourceComputeTemplateID       = "095250e3-7c56-441a-a25b-100a3d3f5a6e"
+	datasourceComputeTemplateID       = "45346aba-6027-45bc-ad1e-bd1f563c2d84"
 	datasourceComputeTemplateName     = "Linux Ubuntu 18.04 LTS 64-bit"
 	datasourceComputeTemplateUsername = "ubuntu"
 )
