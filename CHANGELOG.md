@@ -1,8 +1,17 @@
-## 0.12.2 (Unreleased)
+## 0.13.0 (Unreleased)
+
+DEPRECATIONS:
+
+- The `exoscale_compute` *template* attribute is now deprecated, replaced by `template_id`. See resource documentation for details (#9)
+
+IMPROVEMENTS:
+
+- Various documentation improvements (#4, #7)
 
 CHANGES:
 
 - Switch to the Terraform Plugin SDK (#5)
+- Switch the HTTP client to [go-cleanhttp](https://github.com/hashicorp/go-cleanhttp) (#10)
 
 ## 0.12.1 (August 26, 2019)
 
