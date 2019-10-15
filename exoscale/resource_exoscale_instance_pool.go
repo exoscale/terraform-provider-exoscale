@@ -136,7 +136,6 @@ func resourceInstancePoolCreate(d *schema.ResourceData, meta interface{}) error 
 	}
 	serviceoffering := resp.(*egoscale.ServiceOffering)
 
-	// XXX Use Generic Get...
 	zoneName := d.Get("zone").(string)
 	zone, err := getZoneByName(ctx, client, zoneName)
 	if err != nil {
