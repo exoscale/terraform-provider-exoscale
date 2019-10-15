@@ -21,7 +21,7 @@ func resourceInstancePool() *schema.Resource {
 			Type:     schema.TypeString,
 			Required: true,
 		},
-		"template": {
+		"template_id": {
 			Type:     schema.TypeString,
 			Required: true,
 		},
@@ -55,9 +55,6 @@ func resourceInstancePool() *schema.Resource {
 			Type:     schema.TypeString,
 			Optional: true,
 			Computed: true,
-			// ValidateFunc: validation.StringInSlice([]string{
-			// 	"Running", "Stopped",
-			// }, true),
 		},
 		"affinity_group_ids": {
 			Type:     schema.TypeSet,
@@ -146,14 +143,6 @@ func resourceInstancePoolCreate(d *schema.ResourceData, meta interface{}) error 
 		return err
 	}
 
-	template, err := getTemplateByName(ctx, client, zone.ID, d.Get("template").(string), "featured")
-	if err != nil {
-		template, err = getTemplateByName(ctx, client, zone.ID, d.Get("template").(string), "self")
-		if err != nil {
-			return err
-		}
-	}
-
 	var affinityGroupIDs []egoscale.UUID
 	if affinityIDSet, ok := d.Get("affinity_group_ids").(*schema.Set); ok {
 		affinityGroupIDs = make([]egoscale.UUID, affinityIDSet.Len())
@@ -190,10 +179,7 @@ func resourceInstancePoolCreate(d *schema.ResourceData, meta interface{}) error 
 		}
 	}
 
-	userData, _, err := prepareUserData(d, meta, "user_data")
-	if err != nil {
-		return err
-	}
+	userData := base64.StdEncoding.EncodeToString([]byte(d.Get("user_data").(string)))
 
 	req := &egoscale.CreateInstancePool{
 		Name:              name,
@@ -201,7 +187,7 @@ func resourceInstancePoolCreate(d *schema.ResourceData, meta interface{}) error 
 		KeyPair:           d.Get("key_pair").(string),
 		UserData:          userData,
 		ServiceOfferingID: serviceoffering.ID,
-		TemplateID:        template.ID,
+		TemplateID:        egoscale.MustParseUUID(d.Get("template_id").(string)),
 		ZoneID:            zone.ID,
 		AffinityGroupIDs:  affinityGroupIDs,
 		SecurityGroupIDs:  securityGroupIDs,
@@ -216,10 +202,6 @@ func resourceInstancePoolCreate(d *schema.ResourceData, meta interface{}) error 
 
 	instancePool := resp.(*egoscale.CreateInstancePoolResponse)
 	d.SetId(instancePool.ID.String())
-
-	if err := d.Set("state", instancePool.State); err != nil {
-		return err
-	}
 
 	log.Printf("[DEBUG] %s: create finished successfully", resourceInstancePoolIDString(d))
 
@@ -313,11 +295,7 @@ func resourceInstancePoolUpdate(d *schema.ResourceData, meta interface{}) error 
 
 	var userData string
 	if d.HasChange("user_data") {
-		userData, _, err = prepareUserData(d, meta, "user_data")
-		if err != nil {
-			return err
-		}
-
+		userData = base64.StdEncoding.EncodeToString([]byte(d.Get("user_data").(string)))
 		req.UserData = userData
 	}
 
@@ -341,7 +319,7 @@ func resourceInstancePoolUpdate(d *schema.ResourceData, meta interface{}) error 
 
 	log.Printf("[DEBUG] %s: update finished successfully", resourceInstancePoolIDString(d))
 
-	return resourceComputeRead(d, meta)
+	return resourceInstancePoolRead(d, meta)
 }
 
 func resourceInstancePoolDelete(d *schema.ResourceData, meta interface{}) error {
@@ -408,7 +386,7 @@ func resourceInstancePoolApply(ctx context.Context, client *egoscale.Client, d *
 	if err := d.Set("name", instancePool.Name); err != nil {
 		return err
 	}
-	if err := d.Set("description", instancePool.Name); err != nil {
+	if err := d.Set("description", instancePool.Description); err != nil {
 		return err
 	}
 	if err := d.Set("key_pair", instancePool.KeyPair); err != nil {
@@ -418,6 +396,9 @@ func resourceInstancePoolApply(ctx context.Context, client *egoscale.Client, d *
 		return err
 	}
 	if err := d.Set("state", instancePool.State); err != nil {
+		return err
+	}
+	if err := d.Set("template_id", instancePool.TemplateID.String()); err != nil {
 		return err
 	}
 
@@ -430,19 +411,6 @@ func resourceInstancePoolApply(ctx context.Context, client *egoscale.Client, d *
 	}
 	service := resp.(*egoscale.ServiceOffering)
 	if err := d.Set("serviceoffering", service.Name); err != nil {
-		return err
-	}
-
-	// template
-	template, err := getTemplateByName(ctx, client, instancePool.ZoneID, instancePool.TemplateID.String(), "featured")
-	if err != nil {
-		template, err = getTemplateByName(ctx, client, instancePool.ZoneID, instancePool.TemplateID.String(), "self")
-		if err != nil {
-			return err
-		}
-	}
-
-	if err := d.Set("template", template.Name); err != nil {
 		return err
 	}
 
@@ -508,32 +476,6 @@ func resourceInstancePoolApply(ctx context.Context, client *egoscale.Client, d *
 	}
 
 	return nil
-}
-
-func getTemplateByName(ctx context.Context, client *egoscale.Client, zoneID *egoscale.UUID, name string, templateFilter string) (*egoscale.Template, error) {
-	req := &egoscale.ListTemplates{
-		TemplateFilter: templateFilter,
-		ZoneID:         zoneID,
-	}
-
-	id, errUUID := egoscale.ParseUUID(name)
-	if errUUID != nil {
-		req.Name = name
-	} else {
-		req.ID = id
-	}
-
-	resp, err := client.ListWithContext(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	if len(resp) == 0 {
-		return nil, fmt.Errorf("template %q not found", name)
-	}
-	if len(resp) == 1 {
-		return resp[0].(*egoscale.Template), nil
-	}
-	return nil, fmt.Errorf("multiple templates found for %q", name)
 }
 
 func getInstancePoolByID(ctx context.Context, client *egoscale.Client, id, zone *egoscale.UUID) (*egoscale.InstancePool, error) {

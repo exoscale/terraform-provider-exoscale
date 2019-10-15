@@ -164,13 +164,22 @@ resource "exoscale_ssh_keypair" "key" {
   name = "terraform-test-keypair"
 }
 
+variable "template" {
+	default = %q
+}
+
 variable "zone" {
 	default = %q
 }
 
+data "exoscale_compute_template" "instancepool" {
+	zone = "${var.zone}"
+	name = "${var.template}"
+}
+
 resource "exoscale_instance_pool" "pool" {
   name = "instance-pool-test"
-  template = %q
+  template_id = "${data.exoscale_compute_template.instancepool.id}"
   serviceoffering = "medium
   size = 3
   key_pair = "${exoscale_ssh_keypair.key.name}"
@@ -181,8 +190,8 @@ resource "exoscale_instance_pool" "pool" {
   }
 }
 `,
-	defaultExoscaleZone,
 	defaultExoscaleTemplate,
+	defaultExoscaleZone,
 )
 
 var testAccResourceInstancePoolConfigUpdate = fmt.Sprintf(`
