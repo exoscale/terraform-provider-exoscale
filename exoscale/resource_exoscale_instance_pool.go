@@ -56,14 +56,6 @@ func resourceInstancePool() *schema.Resource {
 			Optional: true,
 			Computed: true,
 		},
-		"affinity_group_ids": {
-			Type:     schema.TypeSet,
-			Optional: true,
-			Set:      schema.HashString,
-			Elem: &schema.Schema{
-				Type: schema.TypeString,
-			},
-		},
 		"security_group_ids": {
 			Type:     schema.TypeSet,
 			Optional: true,
@@ -142,18 +134,6 @@ func resourceInstancePoolCreate(d *schema.ResourceData, meta interface{}) error 
 		return err
 	}
 
-	var affinityGroupIDs []egoscale.UUID
-	if affinityIDSet, ok := d.Get("affinity_group_ids").(*schema.Set); ok {
-		affinityGroupIDs = make([]egoscale.UUID, affinityIDSet.Len())
-		for i, group := range affinityIDSet.List() {
-			id, err := egoscale.ParseUUID(group.(string))
-			if err != nil {
-				return err
-			}
-			affinityGroupIDs[i] = *id
-		}
-	}
-
 	var securityGroupIDs []egoscale.UUID
 	if securityIDSet, ok := d.Get("security_group_ids").(*schema.Set); ok {
 		securityGroupIDs = make([]egoscale.UUID, securityIDSet.Len())
@@ -188,7 +168,6 @@ func resourceInstancePoolCreate(d *schema.ResourceData, meta interface{}) error 
 		ServiceOfferingID: serviceoffering.ID,
 		TemplateID:        egoscale.MustParseUUID(d.Get("template_id").(string)),
 		ZoneID:            zone.ID,
-		AffinityGroupIDs:  affinityGroupIDs,
 		SecurityGroupIDs:  securityGroupIDs,
 		NetworkIDs:        networkIDs,
 		Size:              size,
@@ -430,15 +409,6 @@ func resourceInstancePoolApply(ctx context.Context, client *egoscale.Client, d *
 	}
 
 	if err := d.Set("user_data", string(userData)); err != nil {
-		return err
-	}
-
-	// affinity groups
-	affinityGroupIDs := make([]string, len(instancePool.AffinityGroupIDs))
-	for i, ag := range instancePool.AffinityGroupIDs {
-		affinityGroupIDs[i] = ag.String()
-	}
-	if err := d.Set("affinity_group_ids", affinityGroupIDs); err != nil {
 		return err
 	}
 
