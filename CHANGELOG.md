@@ -1,24 +1,29 @@
 ## 0.13.1 (Unreleased)
+
+FIXES:
+
+- Fix the `exoscale_domain_record` resource import method ([GH-12])
+
 ## 0.13.0 (October 15, 2019)
 
 DEPRECATIONS:
 
-- The `exoscale_compute` *template* attribute is now deprecated, replaced by `template_id`. See resource documentation for details (#9)
+- The `exoscale_compute` *template* attribute is now deprecated, replaced by `template_id`. See resource documentation for details ([GH-9])
 
 IMPROVEMENTS:
 
-- Various documentation improvements (#4, #7)
+- Various documentation improvements ([GH-4], [GH-7])
 
 CHANGES:
 
-- Switch to the Terraform Plugin SDK (#5)
-- Switch the HTTP client to [go-cleanhttp](https://github.com/hashicorp/go-cleanhttp) (#10)
+- Switch to the Terraform Plugin SDK ([GH-5])
+- Switch the HTTP client to [go-cleanhttp](https://github.com/hashicorp/go-cleanhttp) ([GH-10])
 
 ## 0.12.1 (August 26, 2019)
 
 IMPROVEMENTS:
 
-- Improve exoscale_network resource API call resiliency (#2)
+- Improve exoscale_network resource API call resiliency ([GH-2])
 
 CHANGES:
 
