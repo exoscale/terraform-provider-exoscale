@@ -118,10 +118,8 @@ func resourceInstancePoolCreate(d *schema.ResourceData, meta interface{}) error 
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
 
-	// Instance pool size
 	size := d.Get("size").(int)
 
-	// ServiceOffering
 	resp, err := client.GetWithContext(ctx, &egoscale.ServiceOffering{
 		Name: d.Get("service_offering").(string),
 	})
