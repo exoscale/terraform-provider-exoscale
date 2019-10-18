@@ -3,6 +3,7 @@ package exoscale
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"log"
 
@@ -226,6 +227,10 @@ func resourceInstancePoolExists(d *schema.ResourceData, meta interface{}) (bool,
 	id, err := egoscale.ParseUUID(d.Id())
 	if err != nil {
 		return false, err
+	}
+
+	if d.Get("zone").(string) == "" {
+		return false, errors.New("teAAAsttestetst")
 	}
 
 	zone, err := getZoneByName(ctx, client, d.Get("zone").(string))

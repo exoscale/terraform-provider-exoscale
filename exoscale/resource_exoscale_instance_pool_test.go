@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/exoscale/egoscale"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
@@ -40,7 +41,6 @@ func TestAccResourceInstancePool(t *testing.T) {
 					testAccCheckResourceInstancePoolExists("exoscale_instance_pool.pool", pool),
 					testAccCheckResourceInstancePool(pool),
 					testAccCheckResourceInstancePoolAttributes(testAttrs{
-						"zone":        ValidateString(defaultExoscaleZone),
 						"description": ValidateString("test description"),
 						"user_data":   ValidateString("#cloud-config\npackage_upgrade: true\n"),
 						"size":        ValidateString("1"),
@@ -146,21 +146,22 @@ func testAccCheckResourceInstancePoolDestroy(s *terraform.State) error {
 			return err
 		}
 
-		// this for is here to prevent race condition when
-		// an instance pool is destroyed, to wait till instance pool state chage from
-		// "running" to "destroying
-		for {
-			pool := &egoscale.GetInstancePool{ID: id, ZoneID: zone.ID}
-			r, err := client.Request(pool)
-			if err != nil {
-				return nil
-			}
-			instancePool := r.(*egoscale.GetInstancePoolResponse).InstancePools[0]
+		// this if statement is here to prevent race condition when
+		// an instance pool is destroyed, to wait till instance pool state chage
+		// from "running" to "destroying"
+		time.Sleep(time.Second * 10)
 
-			if instancePool.State == egoscale.InstancePoolDestroying {
-				return nil
-			}
+		pool := &egoscale.GetInstancePool{ID: id, ZoneID: zone.ID}
+		r, err := client.Request(pool)
+		if err != nil {
+			return nil
 		}
+		instancePool := r.(*egoscale.GetInstancePoolResponse).InstancePools[0]
+
+		if instancePool.State == egoscale.InstancePoolDestroying {
+			return nil
+		}
+
 	}
 	return errors.New("instance pool still exists")
 }
