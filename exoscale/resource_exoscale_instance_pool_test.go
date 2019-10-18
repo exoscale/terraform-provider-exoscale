@@ -1,9 +1,11 @@
 package exoscale
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/exoscale/egoscale"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
@@ -24,12 +26,12 @@ func TestAccResourceInstancePool(t *testing.T) {
 					testAccCheckResourceInstancePoolExists("exoscale_instance_pool.pool", pool),
 					testAccCheckResourceInstancePool(pool),
 					testAccCheckResourceInstancePoolAttributes(testAttrs{
-						"template":        ValidateString(defaultExoscaleTemplate),
-						"zone":            ValidateString(defaultExoscaleZone),
-						"name":            ValidateString("instance-pool-test"),
-						"serviceoffering": ValidateString("Medium"),
-						"size":            ValidateString("3"),
-						"key_pair":        ValidateString("terraform-test-keypair"),
+						"template_id":      ValidateString(defaultExoscaleTemplateID),
+						"zone":             ValidateString(defaultExoscaleZone),
+						"name":             ValidateString("instance-pool-test"),
+						"service_offering": ValidateString("Medium"),
+						"size":             ValidateString("3"),
+						"key_pair":         ValidateString("terraform-test-keypair"),
 					}),
 				),
 			},
@@ -39,6 +41,7 @@ func TestAccResourceInstancePool(t *testing.T) {
 					testAccCheckResourceInstancePoolExists("exoscale_instance_pool.pool", pool),
 					testAccCheckResourceInstancePool(pool),
 					testAccCheckResourceInstancePoolAttributes(testAttrs{
+						"zone":        ValidateString(defaultExoscaleZone),
 						"description": ValidateString("test description"),
 						"user_data":   ValidateString("#cloud-config\npackage_upgrade: true\n"),
 						"size":        ValidateString("1"),
@@ -52,14 +55,14 @@ func TestAccResourceInstancePool(t *testing.T) {
 				ImportStateCheck: func(s []*terraform.InstanceState) error {
 					return checkResourceAttributes(
 						testAttrs{
-							"template":        ValidateString(defaultExoscaleTemplate),
-							"zone":            ValidateString(defaultExoscaleZone),
-							"name":            ValidateString("instance-pool-test"),
-							"description":     ValidateString("test description"),
-							"serviceoffering": ValidateString("Medium"),
-							"size":            ValidateString("1"),
-							"key_pair":        ValidateString("terraform-test-keypair"),
-							"user_data":       ValidateString("#cloud-config\npackage_upgrade: true\n"),
+							"template_id":      ValidateString(defaultExoscaleTemplate),
+							"zone":             ValidateString(defaultExoscaleZone),
+							"name":             ValidateString("instance-pool-test"),
+							"description":      ValidateString("test description"),
+							"service_offering": ValidateString("Medium"),
+							"size":             ValidateString("1"),
+							"key_pair":         ValidateString("terraform-test-keypair"),
+							"user_data":        ValidateString("#cloud-config\npackage_upgrade: true\n"),
 						},
 						s[0].Attributes)
 				},
@@ -86,20 +89,17 @@ func testAccCheckResourceInstancePoolExists(n string, pool *egoscale.InstancePoo
 
 		client := GetComputeClient(testAccProvider.Meta())
 
-		resp, err := client.Get(&egoscale.Zone{
-			Name: defaultExoscaleZone,
-		})
+		zone, err := getZoneByName(context.TODO(), client, defaultExoscaleZone)
 		if err != nil {
 			return err
 		}
-		zone := resp.(*egoscale.Zone)
 
 		req := &egoscale.GetInstancePool{ID: id, ZoneID: zone.ID}
 		r, err := client.Request(req)
 		if err != nil {
 			return err
 		}
-		instancePool := r.(*egoscale.GetInstancePoolsResponse).ListInstancePoolsResponse[0]
+		instancePool := r.(*egoscale.GetInstancePoolResponse).InstancePools[0]
 
 		return Copy(pool, &instancePool)
 	}
@@ -142,17 +142,21 @@ func testAccCheckResourceInstancePoolDestroy(s *terraform.State) error {
 			return err
 		}
 
-		resp, err := client.Get(&egoscale.Zone{
-			Name: defaultExoscaleZone,
-		})
+		zone, err := getZoneByName(context.TODO(), client, defaultExoscaleZone)
 		if err != nil {
 			return err
 		}
-		zone := resp.(*egoscale.Zone)
+
+		time.Sleep(time.Second * 5)
 
 		pool := &egoscale.GetInstancePool{ID: id, ZoneID: zone.ID}
-		_, err = client.Request(pool)
+		r, err := client.Request(pool)
 		if err != nil {
+			return nil
+		}
+		instancePool := r.(*egoscale.GetInstancePoolResponse).InstancePools[0]
+
+		if instancePool.State == egoscale.InstancePoolDestroying {
 			return nil
 		}
 	}
@@ -165,22 +169,22 @@ resource "exoscale_ssh_keypair" "key" {
 }
 
 variable "template" {
-	default = %q
+  default = %q
 }
 
 variable "zone" {
-	default = %q
+  default = %q
 }
 
 data "exoscale_compute_template" "instancepool" {
-	zone = "${var.zone}"
-	name = "${var.template}"
+  zone = "${var.zone}"
+  name = "${var.template}"
 }
 
 resource "exoscale_instance_pool" "pool" {
   name = "instance-pool-test"
   template_id = "${data.exoscale_compute_template.instancepool.id}"
-  serviceoffering = "medium
+  service_offering = "Medium"
   size = 3
   key_pair = "${exoscale_ssh_keypair.key.name}"
   zone = "${var.zone}"
@@ -195,21 +199,38 @@ resource "exoscale_instance_pool" "pool" {
 )
 
 var testAccResourceInstancePoolConfigUpdate = fmt.Sprintf(`
+resource "exoscale_ssh_keypair" "key" {
+  name = "terraform-test-keypair"
+}
+
+variable "template" {
+  default = %q
+}
 
 variable "zone" {
-	  default = %q
+  default = %q
 }
-  
+
+data "exoscale_compute_template" "instancepool" {
+  zone = "${var.zone}"
+  name = "${var.template}"
+}
+
 resource "exoscale_instance_pool" "pool" {
+  name = "instance-pool-test"
   description = "test description"
-  user_data = "#cloud-config\npackage_upgrade: true\n"
+  template_id = "${data.exoscale_compute_template.instancepool.id}"
+  service_offering = "Medium"
   size = 1
+  user_data = "#cloud-config\npackage_upgrade: true\n"
+  key_pair = "${exoscale_ssh_keypair.key.name}"
   zone = "${var.zone}"
 
   timeouts {
-	update = "10m"
+    create = "10m"
   }
 }
 `,
+	defaultExoscaleTemplate,
 	defaultExoscaleZone,
 )

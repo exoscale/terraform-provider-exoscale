@@ -210,7 +210,7 @@ func resourceInstancePoolRead(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	instancePool := &resp.(*egoscale.GetInstancePoolsResponse).ListInstancePoolsResponse[0]
+	instancePool := &resp.(*egoscale.GetInstancePoolResponse).InstancePools[0]
 
 	log.Printf("[DEBUG] %s: read finished successfully", resourceInstancePoolIDString(d))
 
@@ -449,9 +449,9 @@ func getInstancePoolByID(ctx context.Context, client *egoscale.Client, id, zone 
 	if err != nil {
 		return nil, err
 	}
-	r := resp.(*egoscale.GetInstancePoolsResponse)
+	r := resp.(*egoscale.GetInstancePoolResponse)
 
-	return &r.ListInstancePoolsResponse[0], nil
+	return &r.InstancePools[0], nil
 }
 
 func getInstancePoolByName(ctx context.Context, client *egoscale.Client, name string, zone *egoscale.UUID) (*egoscale.InstancePool, error) {
@@ -462,7 +462,7 @@ func getInstancePoolByName(ctx context.Context, client *egoscale.Client, name st
 		return getInstancePoolByID(ctx, client, id, zone)
 	}
 
-	resp, err := client.RequestWithContext(ctx, egoscale.ListInstancePool{
+	resp, err := client.RequestWithContext(ctx, egoscale.ListInstancePools{
 		ZoneID: zone,
 	})
 	if err != nil {
@@ -470,7 +470,7 @@ func getInstancePoolByName(ctx context.Context, client *egoscale.Client, name st
 	}
 	r := resp.(*egoscale.ListInstancePoolsResponse)
 
-	for _, i := range r.ListInstancePoolsResponse {
+	for _, i := range r.InstancePools {
 		if i.Name == name {
 			instancePools = append(instancePools, i)
 		}
