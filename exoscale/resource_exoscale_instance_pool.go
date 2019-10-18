@@ -50,9 +50,8 @@ func resourceInstancePool() *schema.Resource {
 			ForceNew: true,
 		},
 		"user_data": {
-			Type:        schema.TypeString,
-			Optional:    true,
-			Description: "cloud-init configuration",
+			Type:     schema.TypeString,
+			Optional: true,
 		},
 		"state": {
 			Type:     schema.TypeString,
@@ -383,7 +382,6 @@ func resourceInstancePoolApply(ctx context.Context, client *egoscale.Client, d *
 		return err
 	}
 
-	// service offering
 	resp, err := client.GetWithContext(ctx, &egoscale.ServiceOffering{
 		ID: instancePool.ServiceOfferingID,
 	})
@@ -395,7 +393,6 @@ func resourceInstancePoolApply(ctx context.Context, client *egoscale.Client, d *
 		return err
 	}
 
-	// zone
 	zone, err := getZoneByName(ctx, client, instancePool.ZoneID.String())
 	if err != nil {
 		return err
@@ -405,7 +402,6 @@ func resourceInstancePoolApply(ctx context.Context, client *egoscale.Client, d *
 		return err
 	}
 
-	// user data
 	userData, err := base64.StdEncoding.DecodeString(instancePool.UserData)
 	if err != nil {
 		return err
@@ -415,7 +411,6 @@ func resourceInstancePoolApply(ctx context.Context, client *egoscale.Client, d *
 		return err
 	}
 
-	// security groups
 	securityGroupIDs := make([]string, len(instancePool.SecurityGroupIDs))
 	for i, sg := range instancePool.SecurityGroupIDs {
 		securityGroupIDs[i] = sg.String()
@@ -424,16 +419,14 @@ func resourceInstancePoolApply(ctx context.Context, client *egoscale.Client, d *
 		return err
 	}
 
-	// networks
-	networksIDs := make([]string, len(instancePool.NetworkIDs))
+	networkIDs := make([]string, len(instancePool.NetworkIDs))
 	for i, n := range instancePool.NetworkIDs {
-		networksIDs[i] = n.String()
+		networkIDs[i] = n.String()
 	}
-	if err := d.Set("network_ids", networksIDs); err != nil {
+	if err := d.Set("network_ids", networkIDs); err != nil {
 		return err
 	}
 
-	// virtual Machines
 	virtualMachines := make([]string, len(instancePool.VirtualMachines))
 	for i, vm := range instancePool.VirtualMachines {
 		resp, err := client.GetWithContext(ctx, &egoscale.VirtualMachine{ID: vm.ID})
@@ -443,7 +436,7 @@ func resourceInstancePoolApply(ctx context.Context, client *egoscale.Client, d *
 		v := resp.(*egoscale.VirtualMachine)
 		virtualMachines[i] = v.Name
 	}
-	if err := d.Set("network_ids", networksIDs); err != nil {
+	if err := d.Set("network_ids", networkIDs); err != nil {
 		return err
 	}
 
