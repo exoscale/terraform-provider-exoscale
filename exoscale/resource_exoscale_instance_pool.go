@@ -343,26 +343,31 @@ func resourceInstancePoolImport(d *schema.ResourceData, meta interface{}) ([]*sc
 
 	client := GetComputeClient(meta)
 
-	zone, err := getZoneByName(ctx, client, d.Get("zone").(string))
+	resp, err := client.RequestWithContext(ctx, egoscale.ListZones{})
 	if err != nil {
 		return nil, err
 	}
-
-	instancePool, err := getInstancePoolByName(ctx, client, d.Id(), zone.ID)
-	if err != nil {
-		return nil, err
-	}
+	zones := resp.(*egoscale.ListZonesResponse).Zone
 
 	resources := make([]*schema.ResourceData, 0, 1)
 	resources = append(resources, d)
 
-	resource := new(schema.ResourceData)
-	if err := resourceInstancePoolApply(ctx, client, resource, instancePool); err != nil {
-		return nil, err
-	}
-	resources = append(resources, resource)
+	for _, zone := range zones {
+		instancePool, err := getInstancePoolByName(ctx, client, d.Id(), zone.ID)
+		if err != nil {
+			continue
+		}
 
-	return resources, nil
+		resource := new(schema.ResourceData)
+		if err := resourceInstancePoolApply(ctx, client, resource, instancePool); err != nil {
+			return nil, err
+		}
+		resources = append(resources, resource)
+
+		return resources, nil
+	}
+
+	return nil, fmt.Errorf("Instance pool %q not found", d.Id())
 }
 
 func resourceInstancePoolApply(ctx context.Context, client *egoscale.Client, d *schema.ResourceData, instancePool *egoscale.InstancePool) error {
