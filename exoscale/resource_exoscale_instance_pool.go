@@ -20,6 +20,7 @@ func resourceInstancePool() *schema.Resource {
 		"zone": {
 			Type:     schema.TypeString,
 			Required: true,
+			ForceNew: true,
 		},
 		"template_id": {
 			Type:     schema.TypeString,
@@ -33,6 +34,7 @@ func resourceInstancePool() *schema.Resource {
 		"key_pair": {
 			Type:     schema.TypeString,
 			Optional: true,
+			ForceNew: true,
 		},
 		"name": {
 			Type:     schema.TypeString,
@@ -42,9 +44,10 @@ func resourceInstancePool() *schema.Resource {
 			Type:     schema.TypeString,
 			Optional: true,
 		},
-		"serviceoffering": {
+		"service_offering": {
 			Type:     schema.TypeString,
 			Required: true,
+			ForceNew: true,
 		},
 		"user_data": {
 			Type:        schema.TypeString,
@@ -64,7 +67,7 @@ func resourceInstancePool() *schema.Resource {
 				Type: schema.TypeString,
 			},
 		},
-		"networks_ids": {
+		"network_ids": {
 			Type:     schema.TypeSet,
 			Optional: true,
 			Set:      schema.HashString,
@@ -121,12 +124,12 @@ func resourceInstancePoolCreate(d *schema.ResourceData, meta interface{}) error 
 
 	// ServiceOffering
 	resp, err := client.GetWithContext(ctx, &egoscale.ServiceOffering{
-		Name: d.Get("serviceoffering").(string),
+		Name: d.Get("service_offering").(string),
 	})
 	if err != nil {
 		return err
 	}
-	serviceoffering := resp.(*egoscale.ServiceOffering)
+	serviceOffering := resp.(*egoscale.ServiceOffering)
 
 	zoneName := d.Get("zone").(string)
 	zone, err := getZoneByName(ctx, client, zoneName)
@@ -147,7 +150,7 @@ func resourceInstancePoolCreate(d *schema.ResourceData, meta interface{}) error 
 	}
 
 	var networkIDs []egoscale.UUID
-	if networkIDSet, ok := d.Get("networks_ids").(*schema.Set); ok {
+	if networkIDSet, ok := d.Get("network_ids").(*schema.Set); ok {
 		networkIDs = make([]egoscale.UUID, networkIDSet.Len())
 		for i, group := range networkIDSet.List() {
 			id, err := egoscale.ParseUUID(group.(string))
@@ -165,7 +168,7 @@ func resourceInstancePoolCreate(d *schema.ResourceData, meta interface{}) error 
 		Description:       description,
 		KeyPair:           d.Get("key_pair").(string),
 		UserData:          userData,
-		ServiceOfferingID: serviceoffering.ID,
+		ServiceOfferingID: serviceOffering.ID,
 		TemplateID:        egoscale.MustParseUUID(d.Get("template_id").(string)),
 		ZoneID:            zone.ID,
 		SecurityGroupIDs:  securityGroupIDs,
@@ -388,7 +391,7 @@ func resourceInstancePoolApply(ctx context.Context, client *egoscale.Client, d *
 		return err
 	}
 	service := resp.(*egoscale.ServiceOffering)
-	if err := d.Set("serviceoffering", service.Name); err != nil {
+	if err := d.Set("service_offering", service.Name); err != nil {
 		return err
 	}
 
@@ -426,7 +429,7 @@ func resourceInstancePoolApply(ctx context.Context, client *egoscale.Client, d *
 	for i, n := range instancePool.NetworkIDs {
 		networksIDs[i] = n.String()
 	}
-	if err := d.Set("networks_ids", networksIDs); err != nil {
+	if err := d.Set("network_ids", networksIDs); err != nil {
 		return err
 	}
 
@@ -440,7 +443,7 @@ func resourceInstancePoolApply(ctx context.Context, client *egoscale.Client, d *
 		v := resp.(*egoscale.VirtualMachine)
 		virtualMachines[i] = v.Name
 	}
-	if err := d.Set("networks_ids", networksIDs); err != nil {
+	if err := d.Set("network_ids", networksIDs); err != nil {
 		return err
 	}
 

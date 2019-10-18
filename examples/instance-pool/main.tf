@@ -21,7 +21,7 @@ resource "exoscale_instance_pool" "instancepool-test" {
   key_pair = "test"
   zone = "${var.zone}"
 
-  //security_group_ids = ["xxxx", "xxx"]
+  # security_group_ids = ["xxxx", "xxx"]
 }
 
 provider "exoscale" {
