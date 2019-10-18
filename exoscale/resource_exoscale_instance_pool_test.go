@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/exoscale/egoscale"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
@@ -147,17 +146,20 @@ func testAccCheckResourceInstancePoolDestroy(s *terraform.State) error {
 			return err
 		}
 
-		time.Sleep(time.Second * 5)
+		// this for is here to prevent race condition when
+		// an instance pool is destroyed, to wait till instance pool state chage from
+		// "running" to "destroying
+		for {
+			pool := &egoscale.GetInstancePool{ID: id, ZoneID: zone.ID}
+			r, err := client.Request(pool)
+			if err != nil {
+				return nil
+			}
+			instancePool := r.(*egoscale.GetInstancePoolResponse).InstancePools[0]
 
-		pool := &egoscale.GetInstancePool{ID: id, ZoneID: zone.ID}
-		r, err := client.Request(pool)
-		if err != nil {
-			return nil
-		}
-		instancePool := r.(*egoscale.GetInstancePoolResponse).InstancePools[0]
-
-		if instancePool.State == egoscale.InstancePoolDestroying {
-			return nil
+			if instancePool.State == egoscale.InstancePoolDestroying {
+				return nil
+			}
 		}
 	}
 	return errors.New("instance pool still exists")
