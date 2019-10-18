@@ -127,23 +127,26 @@ func resourceDomainRecordExists(d *schema.ResourceData, meta interface{}) (bool,
 		return record != nil, nil
 	}
 
+	// If we reach this stage it means that we're in "import" mode, so we don't have the domain information yet.
+	// We have to scroll each existing domain's records and try to find one matching the resource ID.
+	log.Printf("[DEBUG] %s: import mode detected, trying to locate the record domain", resourceDomainRecordIDString(d))
+
 	domains, err := client.GetDomains(ctx)
 	if err != nil {
 		return false, err
 	}
 
 	for _, domain := range domains {
-		record, err := client.GetRecord(ctx, domain.Name, id)
+		records, err := client.GetRecords(ctx, domain.Name)
 		if err != nil {
-			if _, ok := err.(*egoscale.DNSErrorResponse); !ok {
-				return false, err
-			}
-
-			return true, err
+			return false, err
 		}
 
-		if record != nil {
-			return true, nil
+		for _, record := range records {
+			if record.ID == id {
+				log.Printf("[DEBUG] %s: found record domain: %s", resourceDomainRecordIDString(d), domain.Name)
+				return true, nil
+			}
 		}
 	}
 
@@ -161,7 +164,6 @@ func resourceDomainRecordRead(d *schema.ResourceData, meta interface{}) error {
 	id, _ := strconv.ParseInt(d.Id(), 10, 64)
 	domain := d.Get("domain").(string)
 
-	// TODO: when is it not the case? Isn't the `domain` attribute supposed to be mandatory?
 	if domain != "" {
 		record, err := client.GetRecord(ctx, domain, id)
 		if err != nil {
@@ -173,25 +175,31 @@ func resourceDomainRecordRead(d *schema.ResourceData, meta interface{}) error {
 		return resourceDomainRecordApply(d, *record)
 	}
 
+	// If we reach this stage it means that we're in "import" mode, so we don't have the domain information yet.
+	// We have to scroll each existing domain's records and try to find one matching the resource ID.
+	log.Printf("[DEBUG] %s: import mode detected, trying to locate the record domain", resourceDomainRecordIDString(d))
+
 	domains, err := client.GetDomains(ctx)
 	if err != nil {
 		return err
 	}
 
 	for _, domain := range domains {
-		record, err := client.GetRecord(ctx, domain.Name, id)
+		records, err := client.GetRecords(ctx, domain.Name)
 		if err != nil {
 			return err
 		}
 
-		if record != nil {
-			if err := d.Set("domain", domain.Name); err != nil {
-				return err
+		for _, record := range records {
+			if record.ID == id {
+				if err := d.Set("domain", domain.Name); err != nil {
+					return err
+				}
+
+				log.Printf("[DEBUG] %s: read finished successfully", resourceDomainRecordIDString(d))
+
+				return resourceDomainRecordApply(d, record)
 			}
-
-			log.Printf("[DEBUG] %s: read finished successfully", resourceDomainRecordIDString(d))
-
-			return resourceDomainRecordApply(d, *record)
 		}
 	}
 
