@@ -3,7 +3,6 @@ package exoscale
 import (
 	"context"
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"log"
 
@@ -224,29 +223,22 @@ func resourceInstancePoolExists(d *schema.ResourceData, meta interface{}) (bool,
 
 	client := GetComputeClient(meta)
 
-	id, err := egoscale.ParseUUID(d.Id())
+	resp, err := client.RequestWithContext(ctx, egoscale.ListZones{})
 	if err != nil {
 		return false, err
 	}
+	zones := resp.(*egoscale.ListZonesResponse).Zone
 
-	if d.Get("zone").(string) == "" {
-		return false, errors.New("teAAAsttestetst")
+	for _, zone := range zones {
+		_, err := getInstancePoolByName(ctx, client, d.Id(), zone.ID)
+		if err != nil {
+			continue
+		}
+
+		return true, nil
 	}
 
-	zone, err := getZoneByName(ctx, client, d.Get("zone").(string))
-	if err != nil {
-		return false, err
-	}
-
-	_, err = client.RequestWithContext(ctx, &egoscale.GetInstancePool{
-		ID:     id,
-		ZoneID: zone.ID,
-	})
-	if err != nil {
-		return false, err
-	}
-
-	return true, nil
+	return false, fmt.Errorf("Instance pool %q not found", d.Id())
 }
 
 func resourceInstancePoolUpdate(d *schema.ResourceData, meta interface{}) error {
