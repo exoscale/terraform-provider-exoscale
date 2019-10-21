@@ -358,11 +358,9 @@ func resourceInstancePoolImport(d *schema.ResourceData, meta interface{}) ([]*sc
 			continue
 		}
 
-		resource := new(schema.ResourceData)
-		if err := resourceInstancePoolApply(ctx, client, resource, instancePool); err != nil {
+		if err := resourceInstancePoolApply(ctx, client, d, instancePool); err != nil {
 			return nil, err
 		}
-		resources = append(resources, resource)
 
 		return resources, nil
 	}

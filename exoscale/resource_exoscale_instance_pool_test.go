@@ -54,7 +54,7 @@ func TestAccResourceInstancePool(t *testing.T) {
 				ImportStateCheck: func(s []*terraform.InstanceState) error {
 					return checkResourceAttributes(
 						testAttrs{
-							"template_id":      ValidateString(defaultExoscaleTemplate),
+							"template_id":      ValidateString(defaultExoscaleTemplateID),
 							"zone":             ValidateString(defaultExoscaleZone),
 							"name":             ValidateString("instance-pool-test"),
 							"description":      ValidateString("test description"),
