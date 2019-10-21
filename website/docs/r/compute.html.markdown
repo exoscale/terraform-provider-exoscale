@@ -93,7 +93,7 @@ The following attributes are exported:
 
 ## `remote-exec` provisioner usage
 
-If you wish to log to a `exoscale_compute` resource using the [`remote-exec`][rexec] provisioner, make sure to explicity set the SSH user to connect to the instance to the actual template username returned by the [`exoscale_compute_template`] data source:
+If you wish to log to a `exoscale_compute` resource using the [`remote-exec`][rexec] provisioner, make sure to explicity set the SSH `user` setting to connect to the instance to the actual template username returned by the [`exoscale_compute_template`][compute_template] data source:
 
 ```hcl
 data "exoscale_compute_template" "ubuntu" {
