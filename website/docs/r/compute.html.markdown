@@ -91,6 +91,38 @@ The following attributes are exported:
 
 [compute_template]: ../d/compute_template.html
 
+## `remote-exec` provisioner usage
+
+If you wish to log to a `exoscale_compute` resource using the [`remote-exec`][rexec] provisioner, make sure to explicity set the SSH `user` setting to connect to the instance to the actual template username returned by the [`exoscale_compute_template`][compute_template] data source:
+
+```hcl
+data "exoscale_compute_template" "ubuntu" {
+  zone = "ch-gva-2"
+  name = "Linux Ubuntu 18.04 LTS 64-bit"
+}
+
+resource "exoscale_compute" "mymachine" {
+  zone         = "ch-gva-2"
+  display_name = "mymachine"
+  template_id  = "${data.exoscale_compute_template.ubuntu.id}"
+  size         = "Medium"
+  disk_size    = 10
+  key_pair     = "me@mymachine"
+  state        = "Running"
+
+  provisioner "remote-exec" {
+    connection {
+      type = "ssh"
+      host = "${self.ip_address}"
+      user = "${data.exoscale_compute_template.ubuntu.username}"
+    }
+  }
+}
+```
+
+[rexec]: https://www.terraform.io/docs/provisioners/remote-exec.html
+[compute_template]: ../d/compute_template.html
+
 ## Import
 
 An existing Compute instance can be imported as a resource by name or ID. Importing a Compute instance imports the `exoscale_compute` resource as well as related [`exoscale_secondary_ipaddress`][secip] and [`exoscale_nic`][nic] resources.

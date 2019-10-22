@@ -21,6 +21,8 @@ resource "exoscale_compute" "vm" {
 
   provisioner "remote-exec" {
     connection {
+      host = "${self.ip_address}"
+      user = "${data.exoscale_compute_template.ubuntu.username}"
       private_key = "${exoscale_ssh_keypair.key.private_key}"
     }
 

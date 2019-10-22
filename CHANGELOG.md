@@ -9,6 +9,7 @@ FIXES:
 DEPRECATIONS:
 
 - The `exoscale_compute` *template* attribute is now deprecated, replaced by `template_id`. See resource documentation for details ([GH-9])
+- The `exoscale_compute` *username* attribute is now deprecated, users wanting to use the *remote-exec* provisioner should now rely on the *exoscale_compute_template* data source `username` attribute. See resource documentation for details ([GH-9])
 
 IMPROVEMENTS:
 
