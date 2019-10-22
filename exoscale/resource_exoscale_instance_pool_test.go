@@ -146,7 +146,7 @@ func testAccCheckResourceInstancePoolDestroy(s *terraform.State) error {
 			return err
 		}
 
-		// this if statement is here to prevent race condition when
+		// this time.Sleep() is here to prevent race condition when
 		// an instance pool is destroyed, to wait till instance pool state chage
 		// from "running" to "destroying"
 		time.Sleep(time.Second * 10)

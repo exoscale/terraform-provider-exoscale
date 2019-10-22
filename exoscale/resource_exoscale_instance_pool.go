@@ -8,7 +8,6 @@ import (
 
 	"github.com/exoscale/egoscale"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 )
 
 func resourceInstancePoolIDString(d resourceIDStringer) string {
@@ -17,46 +16,40 @@ func resourceInstancePoolIDString(d resourceIDStringer) string {
 
 func resourceInstancePool() *schema.Resource {
 	s := map[string]*schema.Schema{
-		"zone": {
+		"name": {
 			Type:     schema.TypeString,
 			Required: true,
-			ForceNew: true,
 		},
 		"template_id": {
 			Type:     schema.TypeString,
 			Required: true,
 		},
 		"size": {
-			Type:         schema.TypeInt,
-			Required:     true,
-			ValidateFunc: validation.IntAtLeast(1),
-		},
-		"key_pair": {
-			Type:     schema.TypeString,
-			Optional: true,
-			ForceNew: true,
-		},
-		"name": {
-			Type:     schema.TypeString,
+			Type:     schema.TypeInt,
 			Required: true,
 		},
-		"description": {
+		"zone": {
 			Type:     schema.TypeString,
-			Optional: true,
+			Required: true,
+			ForceNew: true,
 		},
 		"service_offering": {
 			Type:     schema.TypeString,
 			Required: true,
 			ForceNew: true,
 		},
-		"user_data": {
+		"key_pair": {
+			Type:     schema.TypeString,
+			Optional: true,
+			ForceNew: true,
+		},
+		"description": {
 			Type:     schema.TypeString,
 			Optional: true,
 		},
-		"state": {
+		"user_data": {
 			Type:     schema.TypeString,
 			Optional: true,
-			Computed: true,
 		},
 		"security_group_ids": {
 			Type:     schema.TypeSet,
@@ -73,6 +66,11 @@ func resourceInstancePool() *schema.Resource {
 			Elem: &schema.Schema{
 				Type: schema.TypeString,
 			},
+		},
+		"state": {
+			Type:     schema.TypeString,
+			Optional: true,
+			Computed: true,
 		},
 		"virtual_machines": {
 			Type:     schema.TypeSet,
@@ -95,7 +93,7 @@ func resourceInstancePool() *schema.Resource {
 		Exists: resourceInstancePoolExists,
 
 		Importer: &schema.ResourceImporter{
-			State: resourceInstancePoolImport,
+			State: schema.ImportStatePassthrough,
 		},
 
 		Timeouts: &schema.ResourceTimeout{
@@ -194,27 +192,24 @@ func resourceInstancePoolRead(d *schema.ResourceData, meta interface{}) error {
 
 	client := GetComputeClient(meta)
 
-	id, err := egoscale.ParseUUID(d.Id())
+	resp, err := client.RequestWithContext(ctx, egoscale.ListZones{})
 	if err != nil {
 		return err
 	}
+	zones := resp.(*egoscale.ListZonesResponse).Zone
 
-	zone, err := getZoneByName(ctx, client, d.Get("zone").(string))
-	if err != nil {
-		return err
+	for _, zone := range zones {
+		instancePool, err := getInstancePoolByName(ctx, client, d.Id(), zone.ID)
+		if err != nil {
+			continue
+		}
+
+		log.Printf("[DEBUG] %s: read finished successfully", resourceInstancePoolIDString(d))
+
+		return resourceInstancePoolApply(ctx, client, d, instancePool)
 	}
 
-	pool := &egoscale.GetInstancePool{ID: id, ZoneID: zone.ID}
-	resp, err := client.RequestWithContext(ctx, pool)
-	if err != nil {
-		return err
-	}
-
-	instancePool := &resp.(*egoscale.GetInstancePoolResponse).InstancePools[0]
-
-	log.Printf("[DEBUG] %s: read finished successfully", resourceInstancePoolIDString(d))
-
-	return resourceInstancePoolApply(ctx, client, d, instancePool)
+	return fmt.Errorf("Instance pool %q not found", d.Id())
 }
 
 func resourceInstancePoolExists(d *schema.ResourceData, meta interface{}) (bool, error) {
@@ -264,8 +259,16 @@ func resourceInstancePoolUpdate(d *schema.ResourceData, meta interface{}) error 
 		ZoneID: zone.ID,
 	}
 
+	if d.HasChange("name") {
+		req.Name = d.Get("name").(string)
+	}
+
 	if d.HasChange("description") {
 		req.Description = d.Get("description").(string)
+	}
+
+	if d.HasChange("template_id") {
+		req.TemplateID = egoscale.MustParseUUID(d.Get("template_id").(string))
 	}
 
 	var userData string
@@ -327,37 +330,6 @@ func resourceInstancePoolDelete(d *schema.ResourceData, meta interface{}) error 
 	log.Printf("[DEBUG] %s: delete finished successfully", resourceInstancePoolIDString(d))
 
 	return nil
-}
-
-func resourceInstancePoolImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
-	defer cancel()
-
-	client := GetComputeClient(meta)
-
-	resp, err := client.RequestWithContext(ctx, egoscale.ListZones{})
-	if err != nil {
-		return nil, err
-	}
-	zones := resp.(*egoscale.ListZonesResponse).Zone
-
-	resources := make([]*schema.ResourceData, 0, 1)
-	resources = append(resources, d)
-
-	for _, zone := range zones {
-		instancePool, err := getInstancePoolByName(ctx, client, d.Id(), zone.ID)
-		if err != nil {
-			continue
-		}
-
-		if err := resourceInstancePoolApply(ctx, client, d, instancePool); err != nil {
-			return nil, err
-		}
-
-		return resources, nil
-	}
-
-	return nil, fmt.Errorf("Instance pool %q not found", d.Id())
 }
 
 func resourceInstancePoolApply(ctx context.Context, client *egoscale.Client, d *schema.ResourceData, instancePool *egoscale.InstancePool) error {
