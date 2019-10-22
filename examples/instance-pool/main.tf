@@ -17,11 +17,13 @@ resource "exoscale_instance_pool" "instancepool-test" {
   template_id = "${data.exoscale_compute_template.instancepool.id}"
   service_offering = "Medium"
   size = 5
+  disk_size = 50
   user_data = "#cloud-config\npackage_upgrade: true\n"
   key_pair = "test"
   zone = "${var.zone}"
 
   # security_group_ids = ["xxxx", "xxx"]
+  # network_ids = ["xxxx", "xxx"]
 }
 
 provider "exoscale" {

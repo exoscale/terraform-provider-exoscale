@@ -41,6 +41,7 @@ resource "exoscale_instance_pool" "pool" {
   template_id = "${data.exoscale_compute_template.instancepool.id}"
   size = 3
   service_offering = "Medium"
+  disk_size = 50
   description = "my description"
   user_data = "#cloud-config\npackage_upgrade: true\n"
   key_pair = "${exoscale_ssh_keypair.key.name}"
@@ -61,6 +62,7 @@ resource "exoscale_instance_pool" "pool" {
 * `template_id` - (Required) The ID of the Compute instance [template][template]. Usage of the [`compute_template`][compute_template] data source is recommended.
 * `size` - (Required) The number of instances in the instance pool.
 * `service_offering` - (Required) The Compute instance [size][size], e.g. `Tiny`, `Small`, `Medium`, `Large` etc.
+* `disk_size` - The instances disk size from the instance pool.
 * `description` - The description of the instance pool.
 * `user_data` - A [cloud-init][cloudinit] configuration. Whenever possible don't base64-encode neither gzip it yourself, as this will be automatically taken care of on your behalf by the provider.
 * `key_pair` - The name of the [SSH key pair][sshkeypair] to be installed on each instance.

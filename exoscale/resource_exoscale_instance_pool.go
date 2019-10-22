@@ -43,6 +43,10 @@ func resourceInstancePool() *schema.Resource {
 			Optional: true,
 			ForceNew: true,
 		},
+		"disk_size": {
+			Type:     schema.TypeInt,
+			Optional: true,
+		},
 		"description": {
 			Type:     schema.TypeString,
 			Optional: true,
@@ -118,6 +122,8 @@ func resourceInstancePoolCreate(d *schema.ResourceData, meta interface{}) error 
 
 	size := d.Get("size").(int)
 
+	diskSize := d.Get("disk_size").(int)
+
 	resp, err := client.GetWithContext(ctx, &egoscale.ServiceOffering{
 		Name: d.Get("service_offering").(string),
 	})
@@ -169,6 +175,7 @@ func resourceInstancePoolCreate(d *schema.ResourceData, meta interface{}) error 
 		SecurityGroupIDs:  securityGroupIDs,
 		NetworkIDs:        networkIDs,
 		Size:              size,
+		RootDiskSize:      diskSize,
 	}
 
 	resp, err = client.RequestWithContext(ctx, req)
@@ -343,6 +350,9 @@ func resourceInstancePoolApply(ctx context.Context, client *egoscale.Client, d *
 		return err
 	}
 	if err := d.Set("size", instancePool.Size); err != nil {
+		return err
+	}
+	if err := d.Set("disk_size", instancePool.RootDiskSize); err != nil {
 		return err
 	}
 	if err := d.Set("state", instancePool.State); err != nil {
