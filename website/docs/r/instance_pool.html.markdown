@@ -12,8 +12,8 @@ Provides an Exoscale [instance pool][instance-pool] resource. This can be used t
 
 <!---
 Waiting for community post
+[instance-pool]: https://community.exoscale.com/documentation/compute/instance-pool
 -->
-[instance-pool]: https://community.exoscale.com/documentation/compute/
 
 ## Example Usage
 
