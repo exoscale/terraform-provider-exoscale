@@ -15,30 +15,27 @@ Provides an Exoscale `instance pool` resource. This can be used to create, modif
 
 ```hcl
 resource "exoscale_ssh_keypair" "key" {
-  name = "terraform-keypair"
-}
-
-variable "template" {
-  default = "Linux Ubuntu 18.04 LTS 64-bit"
+  name = "terraform-mywebapp-keypair"
 }
 
 variable "zone" {
   default = "de-fra-1"
 }
 
-data "exoscale_compute_template" "instancepool" {
+data "exoscale_compute_template" "mywebapp" {
   zone = "${var.zone}"
-  name = "${var.template}"
+  name = "mywebapp"
+  filter = "mine"
 }
 
-resource "exoscale_instance_pool" "pool" {
+resource "exoscale_instance_pool" "webapp" {
   zone = "${var.zone}"
-  name = "terraform-instance-pool"
-  template_id = "${data.exoscale_compute_template.instancepool.id}"
+  name = "webapp"
+  template_id = "${data.exoscale_compute_template.mywebbapp.id}"
   size = 3
   service_offering = "Medium"
   disk_size = 50
-  description = "my description"
+  description = "This is the production environment for my web app"
   user_data = "#cloud-config\npackage_upgrade: true\n"
   key_pair = "${exoscale_ssh_keypair.key.name}"
 
