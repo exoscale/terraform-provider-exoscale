@@ -8,12 +8,8 @@ description: |-
 
 # exoscale\_instance\_pool
 
-Provides an Exoscale [instance pool][instance-pool] resource. This can be used to create, modify, and delete instance pools.
+Provides an Exoscale `instance pool` resource. This can be used to create, modify, and delete instance pools.
 
-<!---
-Waiting for community post
-[instance-pool]: https://community.exoscale.com/documentation/compute/instance-pool
--->
 
 ## Example Usage
 
