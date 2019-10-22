@@ -15,7 +15,7 @@ resource "exoscale_instance_pool" "instancepool-test" {
   name = "terraforminstancepool"
   description = "test"
   template_id = "${data.exoscale_compute_template.instancepool.id}"
-  serviceoffering = "Medium"
+  service_offering = "Medium"
   size = 5
   user_data = "#cloud-config\npackage_upgrade: true\n"
   key_pair = "test"
