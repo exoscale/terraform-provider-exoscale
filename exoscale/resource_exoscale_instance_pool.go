@@ -268,20 +268,24 @@ func resourceInstancePoolUpdate(d *schema.ResourceData, meta interface{}) error 
 
 	if d.HasChange("name") {
 		req.Name = d.Get("name").(string)
+		d.SetPartial("name")
 	}
 
 	if d.HasChange("description") {
 		req.Description = d.Get("description").(string)
+		d.SetPartial("description")
 	}
 
 	if d.HasChange("template_id") {
 		req.TemplateID = egoscale.MustParseUUID(d.Get("template_id").(string))
+		d.SetPartial("template_id")
 	}
 
 	var userData string
 	if d.HasChange("user_data") {
 		userData = base64.StdEncoding.EncodeToString([]byte(d.Get("user_data").(string)))
 		req.UserData = userData
+		d.SetPartial("user_data")
 	}
 
 	_, err = client.RequestWithContext(ctx, req)
@@ -296,11 +300,15 @@ func resourceInstancePoolUpdate(d *schema.ResourceData, meta interface{}) error 
 			Size:   d.Get("size").(int),
 		}
 
+		d.SetPartial("size")
+
 		_, err = client.RequestWithContext(ctx, scale)
 		if err != nil {
 			return err
 		}
 	}
+
+	d.Partial(false)
 
 	log.Printf("[DEBUG] %s: update finished successfully", resourceInstancePoolIDString(d))
 
