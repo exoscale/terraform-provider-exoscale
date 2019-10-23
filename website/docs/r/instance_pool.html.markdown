@@ -8,7 +8,7 @@ description: |-
 
 # exoscale\_instance\_pool
 
-Provides an Exoscale `instance pool` resource. This can be used to create, modify, and delete instance pools.
+Provides an Exoscale Instance Pool resource. This can be used to create, modify, and delete instance pools.
 
 
 ## Example Usage
@@ -20,6 +20,16 @@ resource "exoscale_ssh_keypair" "key" {
 
 variable "zone" {
   default = "de-fra-1"
+}
+
+resource "exoscale_security_group" "web" {
+  name = "web"
+  description = "Security Group for webapp production"
+}
+
+resource "exoscale_network" "web_privnet" {
+  zone = "${var.zone}"
+  name = "web-privnet"
 }
 
 data "exoscale_compute_template" "mywebapp" {
@@ -35,12 +45,12 @@ resource "exoscale_instance_pool" "webapp" {
   size = 3
   service_offering = "Medium"
   disk_size = 50
-  description = "This is the production environment for my web app"
+  description = "This is the production environment for my webapp"
   user_data = "#cloud-config\npackage_upgrade: true\n"
   key_pair = "${exoscale_ssh_keypair.key.name}"
 
-  security_group_ids = ["4d388ced-209d-4be4-932c-f99d14d6e3b9"]
-  network_ids = ["13ec3ed2-ec06-4061-9bd3-92bd0e3adebf"]
+  security_group_ids = [${exoscale_security_group.web.id}]
+  network_ids = [${exoscale_network.web_privnet.id}]
 
   timeouts {
     create = "10m"
@@ -50,15 +60,15 @@ resource "exoscale_instance_pool" "webapp" {
 
 ## Argument Reference
 
-* `zone` - (Required) The name of the [zone][zone] to deploy the Compute instance into.
+* `zone` - (Required) The name of the [zone][zone] to deploy the instance pool into.
 * `name` - (Required) The name of the instance pool.
-* `template_id` - (Required) The ID of the Compute instance [template][template]. Usage of the [`compute_template`][compute_template] data source is recommended.
-* `size` - (Required) The number of instances in the instance pool.
-* `service_offering` - (Required) The Compute instance [size][size], e.g. `Tiny`, `Small`, `Medium`, `Large` etc.
+* `template_id` - (Required) (Required) The ID of the instance [template][template] to use when creating Compute instances. Usage of the [`compute_template`][compute_template] data source is recommended.
+* `size` - (Required) The number of Compute instance members the instance pool manages.
+* `service_offering` - (Required) The managed Compute instances [size][size], e.g. `Tiny`, `Small`, `Medium`, `Large` etc.
 * `disk_size` - The instances disk size from the instance pool.
 * `description` - The description of the instance pool.
-* `user_data` - A [cloud-init][cloudinit] configuration. Whenever possible don't base64-encode neither gzip it yourself, as this will be automatically taken care of on your behalf by the provider.
-* `key_pair` - The name of the [SSH key pair][sshkeypair] to be installed on each instance.
+* `user_data` - A [cloud-init][cloudinit] configuration to apply when creating Compute instances. Whenever possible don't base64-encode neither gzip it yourself, as this will be automatically taken care of on your behalf by the provider.
+* `key_pair` - The name of the [SSH key pair][sshkeypair] to install when creating Compute instances.
 * `security_group_ids` - A list of [Security Group][sg] IDs.
 * `network_ids` - A list of [Private Network][net] IDs.
 
@@ -72,7 +82,7 @@ resource "exoscale_instance_pool" "webapp" {
 
 ## Import
 
-An existing Compute instance can be imported as a resource by name or ID. Importing an instance pool imports the `exoscale_instance_pool` resource.
+An existing instance pool can be imported as a resource by name or ID. Importing an instance pool imports the `exoscale_instance_pool` resource.
 
 ```console
 # By name
