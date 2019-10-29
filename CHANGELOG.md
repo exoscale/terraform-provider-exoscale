@@ -1,8 +1,12 @@
 ## 0.13.1 (Unreleased)
 
-FIXES:
+BUG FIXES:
 
 - Fix the `exoscale_domain_record` resource import method ([GH-12])
+
+CHANGES:
+
+- Add provider version to HTTP client User-Agent ([GH-16])
 
 ## 0.13.0 (October 15, 2019)
 
