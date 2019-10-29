@@ -31,6 +31,7 @@ Managed EIP:
 ```hcl
 resource "exoscale_ipaddress" "myip" {
   zone                     = "ch-dk-2"
+  description              = "My elastic IP for load balancer"
   healthcheck_mode         = "http"
   healthcheck_port         = 8000
   healthcheck_path         = "/status"
@@ -44,6 +45,7 @@ resource "exoscale_ipaddress" "myip" {
 ## Argument Reference
 
 * `zone` - (Required) The name of the [zone][zone] to create the Elastic IP into.
+* `description` - The description of the Elastic IP.
 * `healthcheck_mode` - The healthcheck probing mode (must be either `tcp` or `http`).
 * `healthcheck_port` - The healthcheck service port to probe (must be between `1` and `65535`).
 * `healthcheck_path` - The healthcheck probe HTTP request path (must be specified in `http` mode).

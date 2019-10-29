@@ -67,6 +67,10 @@ func resourceIPAddress() *schema.Resource {
 			Optional:     true,
 			ValidateFunc: validation.IntBetween(1, 20),
 		},
+		"description": {
+			Type:     schema.TypeString,
+			Optional: true,
+		},
 		"ip_address": {
 			Type:     schema.TypeString,
 			Computed: true,
@@ -112,7 +116,10 @@ func resourceIPAddressCreate(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	req := &egoscale.AssociateIPAddress{ZoneID: zone.ID}
+	req := &egoscale.AssociateIPAddress{
+		ZoneID:      zone.ID,
+		Description: d.Get("description").(string),
+	}
 
 	if req.HealthcheckMode = d.Get("healthcheck_mode").(string); req.HealthcheckMode != "" {
 		if req.HealthcheckPort = int64(d.Get("healthcheck_port").(int)); req.HealthcheckPort == 0 {
@@ -324,6 +331,10 @@ func resourceIPAddressUpdate(d *schema.ResourceData, meta interface{}) error {
 			return errors.New("healthcheck_strikes_fail must be specified")
 		}
 	}
+	if d.HasChange("description") {
+		eipPartials = append(eipPartials, "description")
+		updateEIP.Description = d.Get("description").(string)
+	}
 	if len(eipPartials) > 0 {
 		id, err := egoscale.ParseUUID(d.Id())
 		if err != nil {
@@ -388,6 +399,9 @@ func resourceIPAddressApply(d *schema.ResourceData, ip *egoscale.IPAddress) erro
 		return err
 	}
 	if err := d.Set("zone", ip.ZoneName); err != nil {
+		return err
+	}
+	if err := d.Set("description", ip.Description); err != nil {
 		return err
 	}
 

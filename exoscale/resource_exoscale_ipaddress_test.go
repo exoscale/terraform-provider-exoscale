@@ -48,6 +48,7 @@ func TestAccResourceIPAddress(t *testing.T) {
 						"healthcheck_timeout":      ValidateString(fmt.Sprint(testIPHealthcheckTimeout1)),
 						"healthcheck_strikes_ok":   ValidateString(fmt.Sprint(testIPHealthcheckStrikesOk1)),
 						"healthcheck_strikes_fail": ValidateString(fmt.Sprint(testIPHealthcheckStrikesFail1)),
+						"description":              ValidateString("IPAdress 1"),
 					}),
 				),
 			},
@@ -64,6 +65,7 @@ func TestAccResourceIPAddress(t *testing.T) {
 						"healthcheck_timeout":      ValidateString(fmt.Sprint(testIPHealthcheckTimeout2)),
 						"healthcheck_strikes_ok":   ValidateString(fmt.Sprint(testIPHealthcheckStrikesOk2)),
 						"healthcheck_strikes_fail": ValidateString(fmt.Sprint(testIPHealthcheckStrikesFail2)),
+						"description":              ValidateString("IPAdress 1 updated!"),
 					}),
 				),
 			},
@@ -81,6 +83,7 @@ func TestAccResourceIPAddress(t *testing.T) {
 							"healthcheck_timeout":      ValidateString(fmt.Sprint(testIPHealthcheckTimeout2)),
 							"healthcheck_strikes_ok":   ValidateString(fmt.Sprint(testIPHealthcheckStrikesOk2)),
 							"healthcheck_strikes_fail": ValidateString(fmt.Sprint(testIPHealthcheckStrikesFail2)),
+							"description":              ValidateString("IPAdress 1 updated!"),
 						},
 						s[0].Attributes)
 				},
@@ -262,6 +265,7 @@ func testAccCheckIPAddressDestroy(s *terraform.State) error {
 var testAccIPAddressConfigCreate = fmt.Sprintf(`
 resource "exoscale_ipaddress" "eip" {
   zone = %q
+  description = "IPAdress 1"
   healthcheck_mode = "%s"
   healthcheck_port = %d
   healthcheck_path = "%s"
@@ -287,6 +291,7 @@ resource "exoscale_ipaddress" "eip" {
 var testAccIPAddressConfigUpdate = fmt.Sprintf(`
 resource "exoscale_ipaddress" "eip" {
   zone = %q
+  description = "IPAdress 1 updated!"
   healthcheck_mode = "%s"
   healthcheck_port = %d
   healthcheck_path = "%s"
