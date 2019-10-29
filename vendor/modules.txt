@@ -57,7 +57,7 @@ github.com/bgentry/go-netrc/netrc
 github.com/bgentry/speakeasy
 # github.com/davecgh/go-spew v1.1.1
 github.com/davecgh/go-spew/spew
-# github.com/exoscale/egoscale v0.18.2-0.20191023153834-882535418db1
+# github.com/exoscale/egoscale v1.19.0
 github.com/exoscale/egoscale
 # github.com/fatih/color v1.7.0
 github.com/fatih/color
