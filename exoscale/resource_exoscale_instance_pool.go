@@ -266,6 +266,8 @@ func resourceInstancePoolUpdate(d *schema.ResourceData, meta interface{}) error 
 		ZoneID: zone.ID,
 	}
 
+	d.Partial(true)
+
 	if d.HasChange("name") {
 		req.Name = d.Get("name").(string)
 		d.SetPartial("name")
