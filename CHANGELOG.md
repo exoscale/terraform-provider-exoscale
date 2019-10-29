@@ -4,9 +4,10 @@ BUG FIXES:
 
 - Fix the `exoscale_domain_record` resource import method ([GH-12])
 
-CHANGES:
+IMPROVEMENTS:
 
 - Add provider version to HTTP client User-Agent ([GH-16])
+- Prevent state changes when a `compute` resource is temporarily being migrated during a plan refresh ([GH-17])
 
 ## 0.13.0 (October 15, 2019)
 
