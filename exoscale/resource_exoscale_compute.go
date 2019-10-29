@@ -892,6 +892,8 @@ func resourceComputeApply(d *schema.ResourceData, machine *egoscale.VirtualMachi
 	if err := d.Set("zone", machine.ZoneName); err != nil {
 		return err
 	}
+
+	// don't converge state for migrating instances
 	state := machine.State
 	if state == "Migrating" {
 		state = "Running"
