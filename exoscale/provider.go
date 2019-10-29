@@ -12,6 +12,7 @@ import (
 	"github.com/exoscale/egoscale"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/terraform-providers/terraform-provider-exoscale/version"
 	"gopkg.in/ini.v1"
 )
 
@@ -236,7 +237,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		gzipUserData:    d.Get("gzip_user_data").(bool),
 	}
 
-	egoscale.UserAgent = fmt.Sprintf("Exoscale-Terraform-Provider/0 %s", egoscale.UserAgent)
+	egoscale.UserAgent = fmt.Sprintf("Exoscale-Terraform-Provider/%s %s", version.ProviderVersion, egoscale.UserAgent)
 
 	return baseConfig, nil
 }
