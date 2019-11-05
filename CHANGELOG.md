@@ -9,6 +9,10 @@ IMPROVEMENTS:
 - Add provider version to HTTP client User-Agent ([GH-16])
 - Prevent state changes when a `compute` resource is temporarily being migrated during a plan refresh ([GH-17])
 
+CHANGES:
+
+- The `exoscale_compute` *template* attribute deprecated in version 0.13.0 has been reinstated ([GH-15]). Both `template` and `template_id` are exclusive, and referencing custom templates require the use of the *template_id* attribute with the `exoscale_compute_template` data source.
+
 ## 0.13.0 (October 15, 2019)
 
 DEPRECATIONS:
