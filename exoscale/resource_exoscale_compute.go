@@ -32,7 +32,6 @@ func resourceCompute() *schema.Resource {
 			Type:          schema.TypeString,
 			Optional:      true,
 			ForceNew:      true,
-			Deprecated:    "use `template_id` attribute with the `compute_template` data source",
 			ConflictsWith: []string{"template_id"},
 		},
 		"template_id": {
@@ -237,16 +236,13 @@ func resourceComputeCreate(d *schema.ResourceData, meta interface{}) error {
 
 	username := ""
 	templateID := ""
-	_, byLegacyName := d.GetOk("template")
+	_, byName := d.GetOk("template")
 	_, byID := d.GetOk("template_id")
-	if !byLegacyName && !byID {
+	if !byName && !byID {
 		return errors.New("either template or template_id must be specified")
 	}
 
-	// If template is specified by name, fetch the template details from the API to get its ID.
-	// This behavior relates to the deprecated `template` attribute and will be removed in the future,
-	// where the resource will only support template IDs looked up by the compute_template data source.
-	if byLegacyName {
+	if byName {
 		resp, err = client.GetWithContext(ctx, &egoscale.ListTemplates{
 			ZoneID:         zone.ID,
 			Name:           d.Get("template").(string),
@@ -885,6 +881,13 @@ func resourceComputeApply(d *schema.ResourceData, machine *egoscale.VirtualMachi
 	}
 	if err := d.Set("size", machine.ServiceOfferingName); err != nil {
 		return err
+	}
+	// We only store the "template" value if the attribute is actually set in the configuration,
+	// otherwise it'll trigger state difference if `template_id` is set in the configuration
+	if _, ok := d.GetOk("template"); ok {
+		if err := d.Set("template", machine.TemplateName); err != nil {
+			return err
+		}
 	}
 	if err := d.Set("template_id", machine.TemplateID.String()); err != nil {
 		return err

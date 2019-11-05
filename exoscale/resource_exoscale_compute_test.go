@@ -21,7 +21,7 @@ func TestAccResourceCompute(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// This should go away once `template` attribute is phased out
-				Config: testAccResourceComputeConfigCreateDeprecated,
+				Config: testAccResourceComputeConfigCreateTemplateByName,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckResourceComputeExists("exoscale_compute.vm", vm),
 					testAccCheckResourceCompute(vm),
@@ -37,7 +37,7 @@ func TestAccResourceCompute(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccResourceComputeConfigCreate,
+				Config: testAccResourceComputeConfigCreateTemplateByID,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckResourceComputeExists("exoscale_compute.vm", vm),
 					testAccCheckResourceCompute(vm),
@@ -173,8 +173,7 @@ func testAccCheckResourceComputeDestroy(s *terraform.State) error {
 	return errors.New("Compute instance still exists")
 }
 
-// This should go away once `template` attribute is phased out
-var testAccResourceComputeConfigCreateDeprecated = fmt.Sprintf(`
+var testAccResourceComputeConfigCreateTemplateByName = fmt.Sprintf(`
 resource "exoscale_ssh_keypair" "key" {
   name = "terraform-test-keypair"
 }
@@ -200,7 +199,7 @@ resource "exoscale_compute" "vm" {
 	defaultExoscaleZone,
 )
 
-var testAccResourceComputeConfigCreate = fmt.Sprintf(`
+var testAccResourceComputeConfigCreateTemplateByID = fmt.Sprintf(`
 resource "exoscale_ssh_keypair" "key" {
   name = "terraform-test-keypair"
 }
