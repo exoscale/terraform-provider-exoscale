@@ -31,6 +31,7 @@ func resourceCompute() *schema.Resource {
 		"template": {
 			Type:          schema.TypeString,
 			Optional:      true,
+			Computed:      true,
 			ForceNew:      true,
 			ConflictsWith: []string{"template_id"},
 		},
@@ -882,12 +883,8 @@ func resourceComputeApply(d *schema.ResourceData, machine *egoscale.VirtualMachi
 	if err := d.Set("size", machine.ServiceOfferingName); err != nil {
 		return err
 	}
-	// We only store the "template" value if the attribute is actually set in the configuration,
-	// otherwise it'll trigger state difference if `template_id` is set in the configuration
-	if _, ok := d.GetOk("template"); ok {
-		if err := d.Set("template", machine.TemplateName); err != nil {
-			return err
-		}
+	if err := d.Set("template", machine.TemplateName); err != nil {
+		return err
 	}
 	if err := d.Set("template_id", machine.TemplateID.String()); err != nil {
 		return err
