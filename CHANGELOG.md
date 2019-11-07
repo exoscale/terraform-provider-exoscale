@@ -1,40 +1,45 @@
 ## 0.13.2 (Unreleased)
+
+BUG FIXES:
+
+- Fix the `exoscale_compute` resource import method (GH-20)
+
 ## 0.13.1 (November 05, 2019)
 
 BUG FIXES:
 
-- Fix the `exoscale_domain_record` resource import method ([[#12](https://github.com/terraform-providers/terraform-provider-aws/issues/12)])
+- Fix the `exoscale_domain_record` resource import method ([#12](https://github.com/terraform-providers/terraform-provider-aws/issues/12))
 
 IMPROVEMENTS:
 
-- Add provider version to HTTP client User-Agent ([[#16](https://github.com/terraform-providers/terraform-provider-aws/issues/16)])
-- Prevent state changes when a `compute` resource is temporarily being migrated during a plan refresh ([[#17](https://github.com/terraform-providers/terraform-provider-aws/issues/17)])
+- Add provider version to HTTP client User-Agent ([#16](https://github.com/terraform-providers/terraform-provider-aws/issues/16))
+- Prevent state changes when a `compute` resource is temporarily being migrated during a plan refresh ([#17](https://github.com/terraform-providers/terraform-provider-aws/issues/17))
 
 CHANGES:
 
-- The `exoscale_compute` *template* attribute deprecated in version 0.13.0 has been reinstated ([[#15](https://github.com/terraform-providers/terraform-provider-aws/issues/15)]). Both `template` and `template_id` are exclusive, and referencing custom templates require the use of the *template_id* attribute with the `exoscale_compute_template` data source.
+- The `exoscale_compute` *template* attribute deprecated in version 0.13.0 has been reinstated ([#15](https://github.com/terraform-providers/terraform-provider-aws/issues/15)). Both `template` and `template_id` are exclusive, and referencing custom templates require the use of the *template_id* attribute with the `exoscale_compute_template` data source.
 
 ## 0.13.0 (October 15, 2019)
 
 DEPRECATIONS:
 
-- The `exoscale_compute` *template* attribute is now deprecated, replaced by `template_id`. See resource documentation for details ([[#9](https://github.com/terraform-providers/terraform-provider-aws/issues/9)])
-- The `exoscale_compute` *username* attribute is now deprecated, users wanting to use the *remote-exec* provisioner should now rely on the *exoscale_compute_template* data source `username` attribute. See resource documentation for details ([[#9](https://github.com/terraform-providers/terraform-provider-aws/issues/9)])
+- The `exoscale_compute` *template* attribute is now deprecated, replaced by `template_id`. See resource documentation for details ([#9](https://github.com/terraform-providers/terraform-provider-aws/issues/9))
+- The `exoscale_compute` *username* attribute is now deprecated, users wanting to use the *remote-exec* provisioner should now rely on the *exoscale_compute_template* data source `username` attribute. See resource documentation for details ([#9](https://github.com/terraform-providers/terraform-provider-aws/issues/9))
 
 IMPROVEMENTS:
 
-- Various documentation improvements ([[#4](https://github.com/terraform-providers/terraform-provider-aws/issues/4)], [[#7](https://github.com/terraform-providers/terraform-provider-aws/issues/7)])
+- Various documentation improvements ([#4](https://github.com/terraform-providers/terraform-provider-aws/issues/4), [#7](https://github.com/terraform-providers/terraform-provider-aws/issues/7))
 
 CHANGES:
 
-- Switch to the Terraform Plugin SDK ([[#5](https://github.com/terraform-providers/terraform-provider-aws/issues/5)])
-- Switch the HTTP client to [go-cleanhttp](https://github.com/hashicorp/go-cleanhttp) ([[#10](https://github.com/terraform-providers/terraform-provider-aws/issues/10)])
+- Switch to the Terraform Plugin SDK ([#5](https://github.com/terraform-providers/terraform-provider-aws/issues/5))
+- Switch the HTTP client to [go-cleanhttp](https://github.com/hashicorp/go-cleanhttp) ([#10](https://github.com/terraform-providers/terraform-provider-aws/issues/10))
 
 ## 0.12.1 (August 26, 2019)
 
 IMPROVEMENTS:
 
-- Improve exoscale_network resource API call resiliency ([[#2](https://github.com/terraform-providers/terraform-provider-aws/issues/2)])
+- Improve exoscale_network resource API call resiliency ([#2](https://github.com/terraform-providers/terraform-provider-aws/issues/2))
 
 CHANGES:
 
