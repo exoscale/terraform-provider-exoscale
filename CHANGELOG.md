@@ -1,8 +1,8 @@
-## 0.13.2 (Unreleased)
+## 0.13.2 (November 07, 2019)
 
 BUG FIXES:
 
-- Fix the `exoscale_compute` resource import method (GH-20)
+- Fix the `exoscale_compute` resource import method ([#20](https://github.com/terraform-providers/terraform-provider-aws/issues/20))
 
 ## 0.13.1 (November 05, 2019)
 
