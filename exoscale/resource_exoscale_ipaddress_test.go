@@ -25,6 +25,8 @@ const (
 	testIPHealthcheckTimeout2     int64 = 2
 	testIPHealthcheckStrikesOk2   int64 = 2
 	testIPHealthcheckStrikesFail2 int64 = 3
+	testIPDescription1                  = "IPAdress 1"
+	testIPDescription2                  = "IPAdress 2"
 )
 
 func TestAccResourceIPAddress(t *testing.T) {
@@ -48,6 +50,7 @@ func TestAccResourceIPAddress(t *testing.T) {
 						"healthcheck_timeout":      ValidateString(fmt.Sprint(testIPHealthcheckTimeout1)),
 						"healthcheck_strikes_ok":   ValidateString(fmt.Sprint(testIPHealthcheckStrikesOk1)),
 						"healthcheck_strikes_fail": ValidateString(fmt.Sprint(testIPHealthcheckStrikesFail1)),
+						"description":              ValidateString(testIPDescription1),
 					}),
 				),
 			},
@@ -64,6 +67,7 @@ func TestAccResourceIPAddress(t *testing.T) {
 						"healthcheck_timeout":      ValidateString(fmt.Sprint(testIPHealthcheckTimeout2)),
 						"healthcheck_strikes_ok":   ValidateString(fmt.Sprint(testIPHealthcheckStrikesOk2)),
 						"healthcheck_strikes_fail": ValidateString(fmt.Sprint(testIPHealthcheckStrikesFail2)),
+						"description":              ValidateString(testIPDescription2),
 					}),
 				),
 			},
@@ -81,6 +85,7 @@ func TestAccResourceIPAddress(t *testing.T) {
 							"healthcheck_timeout":      ValidateString(fmt.Sprint(testIPHealthcheckTimeout2)),
 							"healthcheck_strikes_ok":   ValidateString(fmt.Sprint(testIPHealthcheckStrikesOk2)),
 							"healthcheck_strikes_fail": ValidateString(fmt.Sprint(testIPHealthcheckStrikesFail2)),
+							"description":              ValidateString(testIPDescription2),
 						},
 						s[0].Attributes)
 				},
@@ -262,6 +267,7 @@ func testAccCheckIPAddressDestroy(s *terraform.State) error {
 var testAccIPAddressConfigCreate = fmt.Sprintf(`
 resource "exoscale_ipaddress" "eip" {
   zone = %q
+  description = %q
   healthcheck_mode = "%s"
   healthcheck_port = %d
   healthcheck_path = "%s"
@@ -275,6 +281,7 @@ resource "exoscale_ipaddress" "eip" {
 }
 `,
 	defaultExoscaleZone,
+	testIPDescription1,
 	testIPHealthcheckMode1,
 	testIPHealthcheckPort1,
 	testIPHealthcheckPath1,
@@ -287,6 +294,7 @@ resource "exoscale_ipaddress" "eip" {
 var testAccIPAddressConfigUpdate = fmt.Sprintf(`
 resource "exoscale_ipaddress" "eip" {
   zone = %q
+  description = %q
   healthcheck_mode = "%s"
   healthcheck_port = %d
   healthcheck_path = "%s"
@@ -297,6 +305,7 @@ resource "exoscale_ipaddress" "eip" {
 }
 `,
 	defaultExoscaleZone,
+	testIPDescription2,
 	testIPHealthcheckMode2,
 	testIPHealthcheckPort2,
 	testIPHealthcheckPath2,

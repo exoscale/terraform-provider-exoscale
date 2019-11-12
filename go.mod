@@ -3,7 +3,7 @@ module github.com/terraform-providers/terraform-provider-exoscale
 require (
 	github.com/apparentlymart/go-dump v0.0.0-20190214190832-042adf3cf4a0 // indirect
 	github.com/aws/aws-sdk-go v1.21.7 // indirect
-	github.com/exoscale/egoscale v0.18.1
+	github.com/exoscale/egoscale v1.19.0
 	github.com/gopherjs/gopherjs v0.0.0-20190430165422-3e4dfb77656c // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.1
 	github.com/hashicorp/terraform-plugin-sdk v1.1.0

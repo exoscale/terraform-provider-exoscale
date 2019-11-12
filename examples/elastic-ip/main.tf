@@ -15,6 +15,7 @@ data "exoscale_compute_template" "ubuntu" {
 
 resource "exoscale_ipaddress" "ingress" {
   zone = "${var.zone}"
+  description = "my elastic IP"
 }
 
 data "template_file" "cloudinit" {
