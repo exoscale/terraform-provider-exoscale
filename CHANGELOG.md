@@ -1,4 +1,9 @@
 ## 0.13.3 (Unreleased)
+
+FEATURES:
+
+- The `exoscale_ipaddress` resource now supports a `description` attribute (GH-18)
+
 ## 0.13.2 (November 07, 2019)
 
 BUG FIXES:
