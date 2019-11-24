@@ -51,7 +51,7 @@ for async tasks to complete. Currently, this is used during the creation of
 
 endpoint = "https://api.exoscale.ch/compute"
 key = "EXO..."
-token = "..."
+secret = "..."
 ```
 
 ### Environment variables
