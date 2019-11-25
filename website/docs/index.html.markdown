@@ -49,9 +49,9 @@ for async tasks to complete. Currently, this is used during the creation of
 ```ini
 [cloudstack]
 
-endpoint = "https://api.exoscale.ch/compute"
+endpoint = "https://api.exoscale.com/compute"
 key = "EXO..."
-token = "..."
+secret = "..."
 ```
 
 ### Environment variables
