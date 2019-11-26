@@ -209,22 +209,26 @@ func resourceIPAddressExists(d *schema.ResourceData, meta interface{}) (bool, er
 
 	client := GetComputeClient(meta)
 
+	ipAddress := &egoscale.IPAddress{
+		IsElastic: true,
+	}
+
 	id, err := egoscale.ParseUUID(d.Id())
 	if err != nil {
-		return false, err
+		ip := net.ParseIP(d.Id())
+		if ip == nil {
+			return false, fmt.Errorf("%q is neither a valid ID or IP address", d.Id())
+		}
+		ipAddress.IPAddress = ip
+	} else {
+		ipAddress.ID = id
 	}
 
-	resp, err := client.RequestWithContext(ctx, &egoscale.ListPublicIPAddresses{
-		ID: id,
-	})
-
-	if err != nil {
-		e := handleNotFound(d, err)
-		return d.Id() != "", e
+	if _, err = client.GetWithContext(ctx, ipAddress); err != nil {
+		return d.Id() != "", handleNotFound(d, err)
 	}
 
-	elasticIPes := resp.(*egoscale.ListPublicIPAddressesResponse)
-	return elasticIPes.Count == 1, nil
+	return true, nil
 }
 
 func resourceIPAddressRead(d *schema.ResourceData, meta interface{}) error {
