@@ -79,7 +79,6 @@ func resourceCompute() *schema.Resource {
 		"keyboard": {
 			Type:     schema.TypeString,
 			Optional: true,
-			ForceNew: true,
 			ValidateFunc: validation.StringInSlice([]string{
 				"de", "de-ch", "es", "fi", "fr", "fr-be", "fr-ch", "is",
 				"it", "jp", "nl-be", "no", "pt", "uk", "us",
@@ -805,6 +804,8 @@ func resourceComputeDelete(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceComputeImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	log.Printf("[DEBUG] %s: beginning import", resourceComputeIDString(d))
+
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
 	defer cancel()
 
@@ -841,10 +842,14 @@ func resourceComputeImport(d *schema.ResourceData, meta interface{}) ([]*schema.
 	resources = append(resources, d)
 
 	for _, secondaryIP := range secondaryIPs {
+		log.Printf("[DEBUG] %s: importing exoscale_secondary_ipaddress resource (ID = %s)",
+			resourceComputeIDString(d),
+			secondaryIP.ID.String())
+
 		resource := resourceSecondaryIPAddress()
 		d := resource.Data(nil)
 		d.SetType("exoscale_secondary_ipaddress")
-		if err := d.Set("compute_id", id); err != nil {
+		if err := d.Set("compute_id", id.String()); err != nil {
 			return nil, err
 		}
 		secondaryIP.NicID = defaultNic.ID
@@ -857,6 +862,10 @@ func resourceComputeImport(d *schema.ResourceData, meta interface{}) ([]*schema.
 	}
 
 	for _, nic := range nics {
+		log.Printf("[DEBUG] %s: importing exoscale_nic resource (ID = %s)",
+			resourceComputeIDString(d),
+			nic.ID.String())
+
 		resource := resourceNIC()
 		d := resource.Data(nil)
 		d.SetType("exoscale_nic")
@@ -866,6 +875,8 @@ func resourceComputeImport(d *schema.ResourceData, meta interface{}) ([]*schema.
 
 		resources = append(resources, d)
 	}
+
+	log.Printf("[DEBUG] %s: import finished successfully", resourceComputeIDString(d))
 
 	return resources, nil
 }
