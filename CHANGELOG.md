@@ -7,6 +7,7 @@ FEATURES:
 BUG FIXES:
 
 - Fix the `exoscale_compute` resource import method when importing a Compute instance with secondary IP addresses attached (GH-23)
+- Fix the `exoscale_ipaddress` resource import method by IP address (GH-24)
 
 ## 0.13.2 (November 07, 2019)
 
