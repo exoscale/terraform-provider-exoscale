@@ -4,6 +4,10 @@ FEATURES:
 
 - The `exoscale_ipaddress` resource now supports a `description` attribute (GH-18)
 
+BUG FIXES:
+
+- Fix the `exoscale_compute` resource import method when importing a Compute instance with secondary IP addresses attached (GH-23)
+
 ## 0.13.2 (November 07, 2019)
 
 BUG FIXES:
