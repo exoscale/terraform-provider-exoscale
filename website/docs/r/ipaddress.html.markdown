@@ -68,7 +68,7 @@ The following attributes are exported:
 An existing Elastic IP can be imported as a resource by address or ID:
 
 ```console
-# By name
+# By address
 $ terraform import exoscale_ipaddress.myip 159.100.251.224
 
 # By ID
