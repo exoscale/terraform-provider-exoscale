@@ -1,13 +1,13 @@
-## 0.14.0 (Unreleased)
+## 0.14.0 (December 02, 2019)
 
 FEATURES:
 
-- The `exoscale_ipaddress` resource now supports a `description` attribute (GH-18)
+- The `exoscale_ipaddress` resource now supports a `description` attribute ([#18](https://github.com/terraform-providers/terraform-provider-aws/issues/18))
 
 BUG FIXES:
 
-- Fix the `exoscale_compute` resource import method when importing a Compute instance with secondary IP addresses attached (GH-23)
-- Fix the `exoscale_ipaddress` resource import method by IP address (GH-24)
+- Fix the `exoscale_compute` resource import method when importing a Compute instance with secondary IP addresses attached ([#23](https://github.com/terraform-providers/terraform-provider-aws/issues/23))
+- Fix the `exoscale_ipaddress` resource import method by IP address ([#24](https://github.com/terraform-providers/terraform-provider-aws/issues/24))
 
 ## 0.13.2 (November 07, 2019)
 
