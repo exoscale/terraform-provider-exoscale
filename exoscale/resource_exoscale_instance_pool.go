@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/exoscale/egoscale"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
@@ -342,6 +343,21 @@ func resourceInstancePoolDelete(d *schema.ResourceData, meta interface{}) error 
 
 	if _, err := client.RequestWithContext(ctx, req); err != nil {
 		return err
+	}
+
+	get := &egoscale.GetInstancePool{
+		ID:     id,
+		ZoneID: zone.ID,
+	}
+	for {
+		_, err := client.RequestWithContext(ctx, get)
+		if csError, ok := err.(*egoscale.ErrorResponse); ok && csError.ErrorCode == egoscale.NotFound {
+			break
+		} else if ok && csError.ErrorCode != egoscale.NotFound {
+			return err
+		}
+
+		time.Sleep(time.Second * 10)
 	}
 
 	log.Printf("[DEBUG] %s: delete finished successfully", resourceInstancePoolIDString(d))
