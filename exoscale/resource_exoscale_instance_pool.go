@@ -55,6 +55,7 @@ func resourceInstancePool() *schema.Resource {
 		},
 		"disk_size": {
 			Type:     schema.TypeInt,
+			Computed: true,
 			Optional: true,
 			ForceNew: true,
 		},
@@ -108,7 +109,7 @@ func resourceInstancePool() *schema.Resource {
 		Exists: resourceInstancePoolExists,
 
 		Importer: &schema.ResourceImporter{
-			State: resourceInstancePoolImport,
+			State: schema.ImportStatePassthrough,
 		},
 
 		Timeouts: &schema.ResourceTimeout{
@@ -134,9 +135,6 @@ func resourceInstancePoolCreate(d *schema.ResourceData, meta interface{}) error 
 	size := d.Get("size").(int)
 
 	diskSize := d.Get("disk_size").(int)
-	if err := d.Set("disk_size", diskSize); err != nil {
-		return err
-	}
 
 	resp, err := client.GetWithContext(ctx, &egoscale.ServiceOffering{
 		Name: d.Get("service_offering").(string),
@@ -396,31 +394,6 @@ func resourceInstancePoolDelete(d *schema.ResourceData, meta interface{}) error 
 	return nil
 }
 
-func resourceInstancePoolImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-	log.Printf("[DEBUG] %s: beginning import", resourceComputeIDString(d))
-
-	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
-	defer cancel()
-
-	instancePool, err := findInstancePool(ctx, d, meta)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := d.Set("disk_size", instancePool.RootDiskSize); err != nil {
-		return nil, err
-	}
-
-	c := GetComputeClient(meta)
-	resourceInstancePoolApply(ctx, c, d, instancePool)
-
-	log.Printf("[DEBUG] %s: import finished successfully", resourceComputeIDString(d))
-
-	return []*schema.ResourceData{
-		d,
-	}, nil
-}
-
 func resourceInstancePoolApply(ctx context.Context, client *egoscale.Client, d *schema.ResourceData, instancePool *egoscale.InstancePool) error {
 	if err := d.Set("name", instancePool.Name); err != nil {
 		return err
@@ -435,10 +408,8 @@ func resourceInstancePoolApply(ctx context.Context, client *egoscale.Client, d *
 		return err
 	}
 
-	if d.Get("disk_size").(int) != 0 {
-		if err := d.Set("disk_size", instancePool.RootDiskSize); err != nil {
-			return err
-		}
+	if err := d.Set("disk_size", instancePool.RootDiskSize); err != nil {
+		return err
 	}
 
 	if err := d.Set("state", instancePool.State); err != nil {
