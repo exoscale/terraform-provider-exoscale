@@ -54,7 +54,7 @@ func resourceCompute() *schema.Resource {
 		},
 		"name": {
 			Type:     schema.TypeString,
-			Computed: true,
+			Required: true,
 		},
 		"display_name": {
 			Type:     schema.TypeString,
@@ -206,11 +206,13 @@ func resourceComputeCreate(d *schema.ResourceData, meta interface{}) error {
 
 	client := GetComputeClient(meta)
 
-	displayName := d.Get("display_name").(string)
+	name := d.Get("name").(string)
 	hostName := regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9\-]+$`)
-	if !hostName.MatchString(displayName) {
-		return errors.New("at creation time, the `display_name` must match a value compatible with the `hostname` (alpha-numeric and hyphens")
+	if !hostName.MatchString(name) {
+		return errors.New("`name` must match a value compatible with the `hostname` (alpha-numeric and hyphens")
 	}
+
+	displayName := d.Get("display_name").(string)
 
 	// ServiceOffering
 	size := d.Get("size").(string)
@@ -327,7 +329,7 @@ func resourceComputeCreate(d *schema.ResourceData, meta interface{}) error {
 	details["ip6"] = strconv.FormatBool(d.Get("ip6").(bool))
 
 	req := &egoscale.DeployVirtualMachine{
-		Name:               displayName,
+		Name:               name,
 		DisplayName:        displayName,
 		RootDiskSize:       int64(diskSize),
 		KeyPair:            d.Get("key_pair").(string),
@@ -547,6 +549,10 @@ func resourceComputeUpdate(d *schema.ResourceData, meta interface{}) error {
 		ID: id,
 	}
 
+	if d.HasChange("name") {
+		req.Name = d.Get("name").(string)
+	}
+
 	if d.HasChange("display_name") {
 		req.DisplayName = d.Get("display_name").(string)
 	}
@@ -746,6 +752,7 @@ func resourceComputeUpdate(d *schema.ResourceData, meta interface{}) error {
 	}
 	d.SetPartial("user_data")
 	d.SetPartial("user_data_base64")
+	d.SetPartial("name")
 	d.SetPartial("display_name")
 	d.SetPartial("security_groups")
 

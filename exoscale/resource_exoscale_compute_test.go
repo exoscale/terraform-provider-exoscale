@@ -28,7 +28,8 @@ func TestAccResourceCompute(t *testing.T) {
 					testAccCheckResourceComputeAttributes(testAttrs{
 						"template":     ValidateString(defaultExoscaleTemplate),
 						"template_id":  ValidateString(defaultExoscaleTemplateID),
-						"display_name": ValidateString("terraform-test-compute1"),
+						"name":         ValidateString("terraform-test-compute1"),
+						"display_name": ValidateString("Terraform test compute 1"),
 						"size":         ValidateString("Micro"),
 						"disk_size":    ValidateString("12"),
 						"key_pair":     ValidateString("terraform-test-keypair"),
@@ -43,7 +44,8 @@ func TestAccResourceCompute(t *testing.T) {
 					testAccCheckResourceCompute(vm),
 					testAccCheckResourceComputeAttributes(testAttrs{
 						"template_id":  ValidateString(defaultExoscaleTemplateID),
-						"display_name": ValidateString("terraform-test-compute1"),
+						"name":         ValidateString("terraform-test-compute1"),
+						"display_name": ValidateString("Terraform test compute 1"),
 						"size":         ValidateString("Micro"),
 						"disk_size":    ValidateString("12"),
 						"key_pair":     ValidateString("terraform-test-keypair"),
@@ -59,7 +61,8 @@ func TestAccResourceCompute(t *testing.T) {
 					testAccCheckResourceCompute(vm),
 					testAccCheckResourceComputeAttributes(testAttrs{
 						"template_id":       ValidateString(defaultExoscaleTemplateID),
-						"display_name":      ValidateString("terraform-test-compute2"),
+						"name":              ValidateString("terraform-test-compute2"),
+						"display_name":      ValidateString("Terraform test compute 2"),
 						"size":              ValidateString("Small"),
 						"disk_size":         ValidateString("18"),
 						"key_pair":          ValidateString("terraform-test-keypair"),
@@ -78,7 +81,8 @@ func TestAccResourceCompute(t *testing.T) {
 					return checkResourceAttributes(
 						testAttrs{
 							"template_id":       ValidateString(defaultExoscaleTemplateID),
-							"display_name":      ValidateString("terraform-test-compute2"),
+							"name":              ValidateString("terraform-test-compute2"),
+							"display_name":      ValidateString("Terraform test compute 2"),
 							"size":              ValidateString("Small"),
 							"disk_size":         ValidateString("18"),
 							"key_pair":          ValidateString("terraform-test-keypair"),
@@ -181,7 +185,8 @@ resource "exoscale_ssh_keypair" "key" {
 resource "exoscale_compute" "vm" {
   template = %q
   zone = %q
-  display_name = "terraform-test-compute1"
+  name = "terraform-test-compute1"
+  display_name = "Terraform test compute 1"
   size = "Micro"
   disk_size = "12"
   key_pair = "${exoscale_ssh_keypair.key.name}"
@@ -207,7 +212,8 @@ resource "exoscale_ssh_keypair" "key" {
 resource "exoscale_compute" "vm" {
   template_id = %q
   zone = %q
-  display_name = "terraform-test-compute1"
+  name = "terraform-test-compute1"
+  display_name = "Terraform test compute 1"
   size = "Micro"
   disk_size = "12"
   key_pair = "${exoscale_ssh_keypair.key.name}"
@@ -237,7 +243,8 @@ resource "exoscale_security_group" "sg" {
 resource "exoscale_compute" "vm" {
   template_id = %q
   zone = %q
-  display_name = "terraform-test-compute2"
+  name = "terraform-test-compute2"
+  display_name = "Terraform test compute 2"
   size = "Small"
   disk_size = "18"
   key_pair = "${exoscale_ssh_keypair.key.name}"
