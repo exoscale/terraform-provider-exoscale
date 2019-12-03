@@ -29,7 +29,7 @@ func TestAccResourceInstancePool(t *testing.T) {
 						"template_id":      ValidateString(defaultExoscaleTemplateID),
 						"zone":             ValidateString(defaultExoscaleZone),
 						"name":             ValidateString("instance-pool-test"),
-						"service_offering": ValidateString("Medium"),
+						"service_offering": ValidateString("medium"),
 						"size":             ValidateString("3"),
 						"disk_size":        ValidateString("50"),
 						"key_pair":         ValidateString("terraform-test-keypair"),
@@ -60,7 +60,7 @@ func TestAccResourceInstancePool(t *testing.T) {
 							"zone":             ValidateString(defaultExoscaleZone),
 							"name":             ValidateString("instance-pool-test-updated"),
 							"description":      ValidateString("test description"),
-							"service_offering": ValidateString("Medium"),
+							"service_offering": ValidateString("medium"),
 							"size":             ValidateString("1"),
 							"disk_size":        ValidateString("50"),
 							"key_pair":         ValidateString("terraform-test-keypair"),
@@ -190,9 +190,10 @@ data "exoscale_compute_template" "instancepool" {
 resource "exoscale_instance_pool" "pool" {
   name = "instance-pool-test"
   template_id = "${data.exoscale_compute_template.instancepool.id}"
-  service_offering = "Medium"
+  service_offering = "medium"
   size = 3
   disk_size = 50
+  user_data = "#cloud-config\npackage_upgrade: true\n"
   key_pair = "${exoscale_ssh_keypair.key.name}"
   zone = "${var.zone}"
 
@@ -227,7 +228,7 @@ resource "exoscale_instance_pool" "pool" {
   name = "instance-pool-test-updated"
   description = "test description"
   template_id = "${data.exoscale_compute_template.instancepool.id}"
-  service_offering = "Medium"
+  service_offering = "medium"
   size = 1
   disk_size = 50
   user_data = "#cloud-config\npackage_upgrade: true\n"

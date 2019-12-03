@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/exoscale/egoscale"
@@ -38,6 +39,14 @@ func resourceInstancePool() *schema.Resource {
 			Type:     schema.TypeString,
 			Required: true,
 			ForceNew: true,
+			ValidateFunc: func(val interface{}, key string) (warns []string, errs []error) {
+				v := val.(string)
+				if strings.ContainsAny(v, "ABCDEFGHIJKLMNOPQRSTUVWXYZ") {
+					errs = append(errs, fmt.Errorf("%q must be lowercase, got: %q", key, v))
+				}
+
+				return
+			},
 		},
 		"key_pair": {
 			Type:     schema.TypeString,
@@ -395,7 +404,7 @@ func resourceInstancePoolApply(ctx context.Context, client *egoscale.Client, d *
 		return err
 	}
 	service := resp.(*egoscale.ServiceOffering)
-	if err := d.Set("service_offering", service.Name); err != nil {
+	if err := d.Set("service_offering", strings.ToLower(service.Name)); err != nil {
 		return err
 	}
 
