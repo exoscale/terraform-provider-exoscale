@@ -56,6 +56,7 @@ func resourceInstancePool() *schema.Resource {
 		"disk_size": {
 			Type:     schema.TypeInt,
 			Optional: true,
+			ForceNew: true,
 		},
 		"description": {
 			Type:     schema.TypeString,
@@ -107,7 +108,7 @@ func resourceInstancePool() *schema.Resource {
 		Exists: resourceInstancePoolExists,
 
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			State: resourceInstancePoolImport,
 		},
 
 		Timeouts: &schema.ResourceTimeout{
@@ -133,6 +134,9 @@ func resourceInstancePoolCreate(d *schema.ResourceData, meta interface{}) error 
 	size := d.Get("size").(int)
 
 	diskSize := d.Get("disk_size").(int)
+	if err := d.Set("disk_size", diskSize); err != nil {
+		return err
+	}
 
 	resp, err := client.GetWithContext(ctx, &egoscale.ServiceOffering{
 		Name: d.Get("service_offering").(string),
@@ -216,7 +220,7 @@ func resourceInstancePoolRead(d *schema.ResourceData, meta interface{}) error {
 	zones := resp.(*egoscale.ListZonesResponse).Zone
 
 	for _, zone := range zones {
-		instancePool, err := getInstancePoolByName(ctx, client, d.Id(), zone.ID)
+		instancePool, err := getInstancePoolByID(ctx, client, egoscale.MustParseUUID(d.Id()), zone.ID)
 		if err != nil {
 			continue
 		}
@@ -229,28 +233,46 @@ func resourceInstancePoolRead(d *schema.ResourceData, meta interface{}) error {
 	return fmt.Errorf("Instance pool %q not found", d.Id())
 }
 
-func resourceInstancePoolExists(d *schema.ResourceData, meta interface{}) (bool, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
-	defer cancel()
-
+func findInstancePool(ctx context.Context, d *schema.ResourceData, meta interface{}) (*egoscale.InstancePool, error) {
 	client := GetComputeClient(meta)
 
 	resp, err := client.RequestWithContext(ctx, egoscale.ListZones{})
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 	zones := resp.(*egoscale.ListZonesResponse).Zone
 
+	var instancePool *egoscale.InstancePool
 	for _, zone := range zones {
-		_, err := getInstancePoolByName(ctx, client, d.Id(), zone.ID)
-		if err != nil {
+		get := egoscale.GetInstancePool{
+			ID:     egoscale.MustParseUUID(d.Id()),
+			ZoneID: zone.ID,
+		}
+		resp, err := client.RequestWithContext(ctx, get)
+		if csError, ok := err.(*egoscale.ErrorResponse); ok && csError.ErrorCode == egoscale.NotFound {
 			continue
+		} else if ok && csError.ErrorCode != egoscale.NotFound {
+			return nil, err
 		}
 
-		return true, nil
+		instancePool = &resp.(*egoscale.GetInstancePoolResponse).InstancePools[0]
+	}
+	if instancePool == nil {
+		return nil, fmt.Errorf("Instance pool %q not found", d.Id())
 	}
 
-	return false, fmt.Errorf("Instance pool %q not found", d.Id())
+	return instancePool, nil
+}
+
+func resourceInstancePoolExists(d *schema.ResourceData, meta interface{}) (bool, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
+	defer cancel()
+
+	if _, err := findInstancePool(ctx, d, meta); err != nil {
+		return false, err
+	}
+
+	return true, nil
 }
 
 func resourceInstancePoolUpdate(d *schema.ResourceData, meta interface{}) error {
@@ -374,6 +396,31 @@ func resourceInstancePoolDelete(d *schema.ResourceData, meta interface{}) error 
 	return nil
 }
 
+func resourceInstancePoolImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	log.Printf("[DEBUG] %s: beginning import", resourceComputeIDString(d))
+
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
+	defer cancel()
+
+	instancePool, err := findInstancePool(ctx, d, meta)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := d.Set("disk_size", instancePool.RootDiskSize); err != nil {
+		return nil, err
+	}
+
+	c := GetComputeClient(meta)
+	resourceInstancePoolApply(ctx, c, d, instancePool)
+
+	log.Printf("[DEBUG] %s: import finished successfully", resourceComputeIDString(d))
+
+	return []*schema.ResourceData{
+		d,
+	}, nil
+}
+
 func resourceInstancePoolApply(ctx context.Context, client *egoscale.Client, d *schema.ResourceData, instancePool *egoscale.InstancePool) error {
 	if err := d.Set("name", instancePool.Name); err != nil {
 		return err
@@ -387,9 +434,13 @@ func resourceInstancePoolApply(ctx context.Context, client *egoscale.Client, d *
 	if err := d.Set("size", instancePool.Size); err != nil {
 		return err
 	}
-	if err := d.Set("disk_size", instancePool.RootDiskSize); err != nil {
-		return err
+
+	if d.Get("disk_size").(int) != 0 {
+		if err := d.Set("disk_size", instancePool.RootDiskSize); err != nil {
+			return err
+		}
 	}
+
 	if err := d.Set("state", instancePool.State); err != nil {
 		return err
 	}
@@ -469,36 +520,4 @@ func getInstancePoolByID(ctx context.Context, client *egoscale.Client, id, zone 
 	r := resp.(*egoscale.GetInstancePoolResponse)
 
 	return &r.InstancePools[0], nil
-}
-
-func getInstancePoolByName(ctx context.Context, client *egoscale.Client, name string, zone *egoscale.UUID) (*egoscale.InstancePool, error) {
-	instancePools := []egoscale.InstancePool{}
-
-	id, err := egoscale.ParseUUID(name)
-	if err == nil {
-		return getInstancePoolByID(ctx, client, id, zone)
-	}
-
-	resp, err := client.RequestWithContext(ctx, egoscale.ListInstancePools{
-		ZoneID: zone,
-	})
-	if err != nil {
-		return nil, err
-	}
-	r := resp.(*egoscale.ListInstancePoolsResponse)
-
-	for _, i := range r.InstancePools {
-		if i.Name == name {
-			instancePools = append(instancePools, i)
-		}
-	}
-
-	switch count := len(instancePools); {
-	case count == 0:
-		return nil, fmt.Errorf("not found: %q", name)
-	case count > 1:
-		return nil, fmt.Errorf("more than one element found: %q", count)
-	}
-
-	return &instancePools[0], nil
 }
