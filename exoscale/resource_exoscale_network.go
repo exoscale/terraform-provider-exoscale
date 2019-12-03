@@ -23,10 +23,6 @@ func resourceNetwork() *schema.Resource {
 			Required: true,
 			ForceNew: true,
 		},
-		"network_offering": {
-			Type:     schema.TypeString,
-			Required: true,
-		},
 		"name": {
 			Type:     schema.TypeString,
 			Required: true,
@@ -97,12 +93,6 @@ func resourceNetworkCreate(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	networkName := d.Get("network_offering").(string)
-	networkOffering, err := getNetworkOfferingByName(ctx, client, networkName)
-	if err != nil {
-		return err
-	}
-
 	startIP := net.ParseIP(d.Get("start_ip").(string))
 	endIP := net.ParseIP(d.Get("end_ip").(string))
 	netmask := net.ParseIP(d.Get("netmask").(string))
@@ -113,13 +103,12 @@ func resourceNetworkCreate(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	req := &egoscale.CreateNetwork{
-		Name:              name,
-		DisplayText:       displayText,
-		NetworkOfferingID: networkOffering.ID,
-		ZoneID:            zone.ID,
-		StartIP:           startIP,
-		EndIP:             endIP,
-		Netmask:           netmask,
+		Name:        name,
+		DisplayText: displayText,
+		ZoneID:      zone.ID,
+		StartIP:     startIP,
+		EndIP:       endIP,
+		Netmask:     netmask,
 	}
 
 	resp, err := client.RequestWithContext(ctx, req)
@@ -314,10 +303,6 @@ func resourceNetworkApply(d *schema.ResourceData, network *egoscale.Network) err
 	}
 
 	if err := d.Set("display_text", network.DisplayText); err != nil {
-		return err
-	}
-
-	if err := d.Set("network_offering", network.NetworkOfferingName); err != nil {
 		return err
 	}
 

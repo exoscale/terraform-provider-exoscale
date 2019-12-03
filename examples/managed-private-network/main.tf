@@ -23,7 +23,6 @@ resource "exoscale_network" "intra" {
   name = "demo-intra"
   display_text = "demo intra privnet"
   zone = "${var.zone}"
-  network_offering = "PrivNet"
 
   start_ip = "10.0.0.50"
   end_ip = "10.0.0.250"

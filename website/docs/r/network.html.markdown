@@ -22,7 +22,6 @@ resource "exoscale_network" "unmanaged" {
   zone             = "ch-gva-2"
   name             = "oob"
   display_text     = "Out-of-band network"
-  network_offering = "PrivNet"
 
   tags = {
     ...
@@ -37,7 +36,6 @@ resource "exoscale_network" "managed" {
   zone             = "ch-gva-2"
   name             = "oob"
   display_text     = "Out-of-band network with DHCP"
-  network_offering = "PrivNet"
 
   start_ip = "10.0.0.20"
   end_ip   = "10.0.0.253"
@@ -50,7 +48,6 @@ resource "exoscale_network" "managed" {
 * `zone` - (Required) The name of the [zone][zone] to create the Private Network into.
 * `name` - (Required) The name of the Private Network.
 * `display_text` - A free-form text describing the Private Network purpose.
-* `network_offering` - (Required) The Private Nnetwork offering name (`PrivNet` is the only supported value).
 * `start_ip` - The first address of IP range used by the DHCP service to automatically assign. Required for *managed* Private Networks.
 * `end_ip` - The last address of the IP range used by the DHCP service. Required for *managed* Private Networks.
 * `netmask` - The netmask defining the IP network allowed for the static lease (see `exoscale_nic` resource). Required for *managed* Private Networks.

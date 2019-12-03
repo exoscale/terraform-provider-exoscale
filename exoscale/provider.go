@@ -259,23 +259,6 @@ func getZoneByName(ctx context.Context, client *egoscale.Client, zoneName string
 	return &(zones.Zone[0]), nil
 }
 
-func getNetworkOfferingByName(ctx context.Context, client *egoscale.Client, zoneName string) (*egoscale.NetworkOffering, error) {
-	resp, err := client.RequestWithContext(ctx, &egoscale.ListNetworkOfferings{
-		Name: strings.ToLower(zoneName),
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	networks := resp.(*egoscale.ListNetworkOfferingsResponse)
-	if networks.Count == 0 {
-		return nil, fmt.Errorf("NetworkOffering not found %s", zoneName)
-	}
-
-	return &(networks.NetworkOffering[0]), nil
-}
-
 // handleNotFound inspects the CloudStack ErrorCode to guess if the resource is missing
 // and then removes it (unsetting the ID) and succeeds.
 func handleNotFound(d *schema.ResourceData, err error) error {

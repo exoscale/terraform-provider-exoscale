@@ -41,6 +41,12 @@ github.com/exoscale/egoscale v0.18.1 h1:1FNZVk8jHUx0AvWhOZxLEDNlacTU0chMXUUNkm9E
 github.com/exoscale/egoscale v0.18.1/go.mod h1:Z7OOdzzTOz1Q1PjQXumlz9Wn/CddH0zSYdCF3rnBKXE=
 github.com/exoscale/egoscale v0.18.2-0.20191023153834-882535418db1 h1:aj7KBtZjB7MBSrjI8inj1eLDNdvPTZwuLCdPyelYYAU=
 github.com/exoscale/egoscale v0.18.2-0.20191023153834-882535418db1/go.mod h1:Z7OOdzzTOz1Q1PjQXumlz9Wn/CddH0zSYdCF3rnBKXE=
+github.com/exoscale/egoscale v0.19.0 h1:R5YdCdUcWaqhyG1riWPA2mBlv/jPAtyf+gwQFkZTRRU=
+github.com/exoscale/egoscale v0.19.0/go.mod h1:Z7OOdzzTOz1Q1PjQXumlz9Wn/CddH0zSYdCF3rnBKXE=
+github.com/exoscale/egoscale v0.21.0 h1:eDLArESY12K0+DdTkZgkt+y5lDLmv2rljPsXjYIxmQw=
+github.com/exoscale/egoscale v0.21.0/go.mod h1:hRo78jkjkCDKpivQdRBEpNYF5+cVpCJCPDg2/r45KaY=
+github.com/exoscale/egoscale v0.21.1-0.20191203093359-7b137bf0485d h1:DR8mGrn2dj/yxFjEMfXHaX7O2ELU/YniWPyakYCG8Zk=
+github.com/exoscale/egoscale v0.21.1-0.20191203093359-7b137bf0485d/go.mod h1:hRo78jkjkCDKpivQdRBEpNYF5+cVpCJCPDg2/r45KaY=
 github.com/exoscale/egoscale v1.19.0 h1:DbSyyzaPyxDBgGOuduCU26rQ4PJb/GP+8srXRabRf5U=
 github.com/exoscale/egoscale v1.19.0/go.mod h1:Z7OOdzzTOz1Q1PjQXumlz9Wn/CddH0zSYdCF3rnBKXE=
 github.com/fatih/color v1.7.0 h1:DkWD4oS2D8LGGgTQ6IvwJJXSL5Vp2ffcQg58nFV38Ys=

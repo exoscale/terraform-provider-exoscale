@@ -156,7 +156,6 @@ resource "exoscale_network" "net" {
   name = "terraform-test-network"
   display_text = "Terraform Acceptance Test"
   zone = %q
-  network_offering = %q
 
   start_ip = "10.0.0.1"
   end_ip = "10.0.0.1"
@@ -173,7 +172,6 @@ resource "exoscale_nic" "nic" {
 	defaultExoscaleTemplate,
 	defaultExoscaleZone,
 	defaultExoscaleZone,
-	defaultExoscaleNetworkOffering,
 )
 
 var testAccResourceNICConfigUpdate = fmt.Sprintf(`
@@ -199,7 +197,6 @@ resource "exoscale_network" "net" {
   name = "terraform-test-network"
   display_text = "Terraform Acceptance Test"
   zone = %q
-  network_offering = %q
 
   start_ip = "10.0.0.1"
   end_ip = "10.0.0.1"
@@ -216,5 +213,4 @@ resource "exoscale_nic" "nic" {
 	defaultExoscaleTemplate,
 	defaultExoscaleZone,
 	defaultExoscaleZone,
-	defaultExoscaleNetworkOffering,
 )
