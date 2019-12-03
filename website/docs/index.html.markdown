@@ -49,7 +49,7 @@ for async tasks to complete. Currently, this is used during the creation of
 ```ini
 [cloudstack]
 
-endpoint = "https://api.exoscale.com/compute"
+endpoint = "https://api.exoscale.com/v1"
 key = "EXO..."
 secret = "..."
 ```

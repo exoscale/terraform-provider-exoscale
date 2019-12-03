@@ -10,7 +10,7 @@ import (
 
 const defaultConfig = "cloudstack.ini"
 const defaultProfile = "cloudstack"
-const defaultComputeEndpoint = "https://api.exoscale.ch/compute"
+const defaultComputeEndpoint = "https://api.exoscale.ch/v1"
 const defaultDNSEndpoint = "https://api.exoscale.ch/dns"
 const defaultTimeout = 5 * time.Minute
 const defaultGzipUserData = true
