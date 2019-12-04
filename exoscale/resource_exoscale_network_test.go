@@ -166,8 +166,6 @@ resource "exoscale_network" "net" {
   name = "terraform-test-network1"
   display_text = %q
 
-  network_offering = "test"
-
   start_ip = %q
   end_ip = %q
   netmask = %q
