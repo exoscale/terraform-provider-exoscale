@@ -24,9 +24,9 @@ func resourceNetwork() *schema.Resource {
 			ForceNew: true,
 		},
 		"network_offering": {
-			Type:     schema.TypeString,
-			Optional: true,
-			Removed:  "The new Exoscale API version doesn't need a Network Offering to create a Private Network.",
+			Type:       schema.TypeString,
+			Optional:   true,
+			Deprecated: "This attribute is deprecated, please remove it from your configuration.",
 		},
 		"name": {
 			Type:     schema.TypeString,
