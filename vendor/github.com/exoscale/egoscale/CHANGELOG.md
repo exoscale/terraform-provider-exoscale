@@ -1,6 +1,22 @@
 Changelog
 =========
 
+0.21.0
+------
+
+- feature: add const `NotFound` 404 on type `ErrorCode` (#417)
+
+0.20.1
+------
+
+- fix: update the `ListAPIKeysResponse` field (#415)
+
+0.20.0
+------
+
+- feature: Add Instance pool implementation (#410)
+- feature: Add IAM implementation (#411)
+
 0.19.0
 ------
 

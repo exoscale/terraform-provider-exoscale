@@ -163,7 +163,6 @@ func testAccCheckResourceNetworkDestroy(s *terraform.State) error {
 var testAccResourceNetworkConfigCreate = fmt.Sprintf(`
 resource "exoscale_network" "net" {
   zone = %q
-  network_offering = %q
   name = "terraform-test-network1"
   display_text = %q
 
@@ -177,7 +176,6 @@ resource "exoscale_network" "net" {
 }
 `,
 	defaultExoscaleZone,
-	defaultExoscaleNetworkOffering,
 	testNetworkDisplayText,
 	testNetworkStartIP,
 	testNetworkEndIP,
@@ -187,7 +185,6 @@ resource "exoscale_network" "net" {
 var testAccResourceNetworkConfigUpdate = fmt.Sprintf(`
 resource "exoscale_network" "net" {
   zone = %q
-  network_offering = %q
   name = "terraform-test-network2"
   display_text = %q
 
@@ -197,7 +194,6 @@ resource "exoscale_network" "net" {
 }
 `,
 	defaultExoscaleZone,
-	defaultExoscaleNetworkOffering,
 	testNetworkDisplayTextUpdated,
 	testNetworkStartIPUpdated,
 	testNetworkEndIPUpdated,
