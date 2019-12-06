@@ -1,4 +1,9 @@
 ## 0.14.1 (Unreleased)
+
+CHANGES:
+
+- The `exoscale_network` resource `network_offering` attribute is now deprecated (GH-26).
+
 ## 0.14.0 (December 02, 2019)
 
 FEATURES:
