@@ -16,6 +16,11 @@ import (
 	"gopkg.in/ini.v1"
 )
 
+const (
+	legacyAPIVersion = "compute"
+	apiVersion       = "v1"
+)
+
 // Provider returns a terraform.ResourceProvider.
 func Provider() terraform.ResourceProvider {
 	return &schema.Provider{
@@ -224,7 +229,10 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		e, err := section.GetKey("endpoint")
 		if err == nil {
 			endpoint = e.String()
-			dnsEndpoint = strings.Replace(endpoint, "/compute", "/dns", 1)
+			dnsEndpoint = strings.Replace(endpoint, "/"+apiVersion, "/dns", 1)
+			if strings.Contains(dnsEndpoint, "/"+legacyAPIVersion) {
+				dnsEndpoint = strings.Replace(endpoint, "/"+legacyAPIVersion, "/dns", 1)
+			}
 		}
 	}
 
