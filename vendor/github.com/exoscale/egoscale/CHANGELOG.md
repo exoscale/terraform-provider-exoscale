@@ -1,6 +1,11 @@
 Changelog
 =========
 
+0.22.0
+------
+
+- change: Remove all references to Network Offerings (#418)
+
 0.21.0
 ------
 
