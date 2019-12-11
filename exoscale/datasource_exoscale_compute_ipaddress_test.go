@@ -19,44 +19,52 @@ func TestAccDatasourceComputeIPAddress(t *testing.T) {
 				Config: testAccIPAddressConfigCreate,
 			},
 			{
-				Config: `
+				Config: fmt.Sprintf(`
+%s
+
 data "exoscale_compute_ipaddress" "ip_address" {
   zone = "ch-gva-2"
-}`,
-				ExpectError: regexp.MustCompile(`You must set at least one attribute "is", "ip_address" or "description"`),
+}`, testAccIPAddressConfigCreate),
+				ExpectError: regexp.MustCompile(`You must set at least one attribute "id", "ip_address" or "description"`),
 			},
 			{
 				Config: fmt.Sprintf(`
-data "exoscale_compute_ipaddress" "ubuntu_lts" {
+%s
+
+data "exoscale_compute_ipaddress" "ip_address" {
   zone = "ch-gva-2"
-  id   = "${resource.exoscale_ipaddress.eip.id}"
-}`),
+  id   = "${exoscale_ipaddress.eip.id}"
+}`, testAccIPAddressConfigCreate),
 				Check: resource.ComposeTestCheckFunc(
-					testAccDatasourceComputeTemplateAttributes(testAttrs{
+					testAccDatasourceComputeIPAddressAttributes(testAttrs{
 						"description": ValidateString(testIPDescription1),
 					}),
 				),
 			},
 			{
 				Config: fmt.Sprintf(`
-data "exoscale_compute_ipaddress" "ubuntu_lts" {
+%s
+
+data "exoscale_compute_ipaddress" "ip_address" {
   zone        = "ch-gva-2"
-  description = "${resource.exoscale_ipaddress.eip.description}"
-}`),
+  description = "${exoscale_ipaddress.eip.description}"
+}`, testAccIPAddressConfigCreate),
 				Check: resource.ComposeTestCheckFunc(
-					testAccDatasourceComputeTemplateAttributes(testAttrs{
+					testAccDatasourceComputeIPAddressAttributes(testAttrs{
 						"description": ValidateString(testIPDescription1),
 					}),
 				),
 			},
 			{
 				Config: fmt.Sprintf(`
-data "exoscale_compute_ipaddress" "ubuntu_lts" {
+%s
+
+data "exoscale_compute_ipaddress" "ip_address" {
   zone       = "ch-gva-2"
-  ip_address = "${resource.exoscale_ipaddress.eip.ip_address}"
-}`),
+  ip_address = "${exoscale_ipaddress.eip.ip_address}"
+}`, testAccIPAddressConfigCreate),
 				Check: resource.ComposeTestCheckFunc(
-					testAccDatasourceComputeTemplateAttributes(testAttrs{
+					testAccDatasourceComputeIPAddressAttributes(testAttrs{
 						"description": ValidateString(testIPDescription1),
 					}),
 				),

@@ -59,10 +59,17 @@ func datasourceComputeIPAddressRead(d *schema.ResourceData, meta interface{}) er
 		return err
 	}
 
+	id := d.Get("id").(string)
+
+	var uuid *egoscale.UUID
+	if id != "" {
+		uuid = egoscale.MustParseUUID(id)
+	}
+
 	resp, err := client.RequestWithContext(ctx,
 		egoscale.ListPublicIPAddresses{
 			ZoneID:    zone.ID,
-			ID:        egoscale.MustParseUUID(d.Get("id").(string)),
+			ID:        uuid,
 			IPAddress: net.ParseIP(d.Get("ip_address").(string)),
 		},
 	)
