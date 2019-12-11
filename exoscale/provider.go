@@ -119,7 +119,8 @@ func Provider() terraform.ResourceProvider {
 		},
 
 		DataSourcesMap: map[string]*schema.Resource{
-			"exoscale_compute_template": datasourceComputeTemplate(),
+			"exoscale_compute_template":  datasourceComputeTemplate(),
+			"exoscale_compute_ipaddress": datasourceComputeIPAddress(),
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
