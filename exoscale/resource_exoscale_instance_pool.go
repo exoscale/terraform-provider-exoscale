@@ -435,10 +435,14 @@ func resourceInstancePoolApply(ctx context.Context, client *egoscale.Client, d *
 		return err
 	}
 
-	zone, err := getZoneByName(ctx, client, instancePool.ZoneID.String())
+	resp, err = client.GetWithContext(ctx, egoscale.Zone{
+		ID: instancePool.ZoneID,
+	})
 	if err != nil {
 		return err
 	}
+
+	zone := resp.(*egoscale.Zone)
 
 	if err := d.Set("zone", zone.Name); err != nil {
 		return err
