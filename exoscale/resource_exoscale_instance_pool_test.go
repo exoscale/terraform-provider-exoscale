@@ -198,7 +198,7 @@ resource "exoscale_instance_pool" "pool" {
   zone = "${var.zone}"
 
   timeouts {
-    create = "10m"
+    delete = "10m"
   }
 }
 `,
@@ -236,7 +236,7 @@ resource "exoscale_instance_pool" "pool" {
   zone = "${var.zone}"
 
   timeouts {
-    create = "10m"
+    delete = "10m"
   }
 }
 `,
