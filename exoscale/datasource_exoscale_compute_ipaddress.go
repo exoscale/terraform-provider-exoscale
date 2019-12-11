@@ -87,7 +87,7 @@ func datasourceComputeIPAddressRead(d *schema.ResourceData, meta interface{}) er
 		return datasourceComputeIPAddressApply(d, ipAddrs)
 	}
 
-	return fmt.Errorf(`You must set at least one attribute "is", "ip_address" or "description"`)
+	return fmt.Errorf(`You must set at least one attribute "id", "ip_address" or "description"`)
 }
 
 func datasourceComputeIPAddressApply(d *schema.ResourceData, ipAddresses []egoscale.IPAddress) error {
