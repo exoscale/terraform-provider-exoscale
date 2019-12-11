@@ -378,7 +378,7 @@ func resourceInstancePoolDelete(d *schema.ResourceData, meta interface{}) error 
 		ID:     id,
 		ZoneID: zone.ID,
 	}
-	for c := time.Tick(time.Second * 10); ; {
+	for c := time.Tick(time.Second * 10); ; { // nolint: staticcheck
 		_, err := client.RequestWithContext(ctx, get)
 		if csError, ok := err.(*egoscale.ErrorResponse); ok && csError.ErrorCode == egoscale.NotFound {
 			break
