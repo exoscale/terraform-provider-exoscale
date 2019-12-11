@@ -378,7 +378,7 @@ func resourceInstancePoolDelete(d *schema.ResourceData, meta interface{}) error 
 		ID:     id,
 		ZoneID: zone.ID,
 	}
-	for {
+	for c := time.Tick(time.Second * 10); ; {
 		_, err := client.RequestWithContext(ctx, get)
 		if csError, ok := err.(*egoscale.ErrorResponse); ok && csError.ErrorCode == egoscale.NotFound {
 			break
@@ -386,7 +386,12 @@ func resourceInstancePoolDelete(d *schema.ResourceData, meta interface{}) error 
 			return err
 		}
 
-		time.Sleep(time.Second * 10)
+		select {
+		case <-ctx.Done():
+			return fmt.Errorf("Context timeout after: %v", d.Timeout(schema.TimeoutDelete))
+		case <-c:
+			continue
+		}
 	}
 
 	log.Printf("[DEBUG] %s: delete finished successfully", resourceInstancePoolIDString(d))
