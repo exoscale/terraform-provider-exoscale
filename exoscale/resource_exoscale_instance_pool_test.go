@@ -49,26 +49,26 @@ func TestAccResourceInstancePool(t *testing.T) {
 					}),
 				),
 			},
-			// {
-			// 	ResourceName:      "exoscale_instance_pool.pool",
-			// 	ImportState:       true,
-			// 	ImportStateVerify: true,
-			// 	ImportStateCheck: func(s []*terraform.InstanceState) error {
-			// 		return checkResourceAttributes(
-			// 			testAttrs{
-			// 				"template_id":      ValidateString(defaultExoscaleTemplateID),
-			// 				"zone":             ValidateString(defaultExoscaleZone),
-			// 				"name":             ValidateString("instance-pool-test-updated"),
-			// 				"description":      ValidateString("test description"),
-			// 				"service_offering": ValidateString("medium"),
-			// 				"size":             ValidateString("1"),
-			// 				"disk_size":        ValidateString("50"),
-			// 				"key_pair":         ValidateString("terraform-test-keypair"),
-			// 				"user_data":        ValidateString("#cloud-config\npackage_upgrade: true\n"),
-			// 			},
-			// 			s[0].Attributes)
-			// 	},
-			// },
+			{
+				ResourceName:      "exoscale_instance_pool.pool",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateCheck: func(s []*terraform.InstanceState) error {
+					return checkResourceAttributes(
+						testAttrs{
+							"template_id":      ValidateString(defaultExoscaleTemplateID),
+							"zone":             ValidateString(defaultExoscaleZone),
+							"name":             ValidateString("instance-pool-test-updated"),
+							"description":      ValidateString("test description"),
+							"service_offering": ValidateString("medium"),
+							"size":             ValidateString("1"),
+							"disk_size":        ValidateString("50"),
+							"key_pair":         ValidateString("terraform-test-keypair"),
+							"user_data":        ValidateString("#cloud-config\npackage_upgrade: true\n"),
+						},
+						s[0].Attributes)
+				},
+			},
 		},
 	})
 }
