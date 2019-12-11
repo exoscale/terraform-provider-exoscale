@@ -16,9 +16,6 @@ func TestAccDatasourceComputeIPAddress(t *testing.T) {
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccIPAddressConfigCreate,
-			},
-			{
 				Config: fmt.Sprintf(`
 %s
 
