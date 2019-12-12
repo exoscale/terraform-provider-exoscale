@@ -125,6 +125,7 @@ func Provider() terraform.ResourceProvider {
 		ResourcesMap: map[string]*schema.Resource{
 			"exoscale_affinity":             resourceAffinity(),
 			"exoscale_compute":              resourceCompute(),
+			"exoscale_instance_pool":        resourceInstancePool(),
 			"exoscale_domain_record":        resourceDomainRecord(),
 			"exoscale_domain":               resourceDomain(),
 			"exoscale_ipaddress":            resourceIPAddress(),
