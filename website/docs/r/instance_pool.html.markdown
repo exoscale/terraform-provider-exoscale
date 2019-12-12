@@ -3,12 +3,12 @@ layout: "exoscale"
 page_title: "Exoscale: exoscale_instance_pool"
 sidebar_current: "docs-exoscale-instance-pool"
 description: |-
-  Provides an Exoscale instance pool resource.
+  Provides an Exoscale Instance Pool resource.
 ---
 
 # exoscale\_instance\_pool
 
-Provides an Exoscale Instance Pool resource. This can be used to create, modify, and delete instance pools.
+Provides an Exoscale Instance Pool resource. This can be used to create, modify, and delete Instance Pools.
 
 
 ## Example Usage
@@ -53,20 +53,20 @@ resource "exoscale_instance_pool" "webapp" {
   network_ids = [${exoscale_network.web_privnet.id}]
 
   timeouts {
-    create = "10m"
+    delete = "10m"
   }
 }
 ```
 
 ## Argument Reference
 
-* `zone` - (Required) The name of the [zone][zone] to deploy the instance pool into.
-* `name` - (Required) The name of the instance pool.
+* `zone` - (Required) The name of the [zone][zone] to deploy the Instance Pool into.
+* `name` - (Required) The name of the Instance Pool.
 * `template_id` - (Required) (Required) The ID of the instance [template][template] to use when creating Compute instances. Usage of the [`compute_template`][compute_template] data source is recommended.
-* `size` - (Required) The number of Compute instance members the instance pool manages.
+* `size` - (Required) The number of Compute instance members the Instance Pool manages.
 * `service_offering` - (Required) The managed Compute instances [size][size], e.g. `Tiny`, `Small`, `Medium`, `Large` etc.
 * `disk_size` - The managed Compute instances disk size.
-* `description` - The description of the instance pool.
+* `description` - The description of the Instance Pool.
 * `user_data` - A [cloud-init][cloudinit] configuration to apply when creating Compute instances. Whenever possible don't base64-encode neither gzip it yourself, as this will be automatically taken care of on your behalf by the provider.
 * `key_pair` - The name of the [SSH key pair][sshkeypair] to install when creating Compute instances.
 * `security_group_ids` - A list of [Security Group][sg] IDs.
@@ -82,7 +82,7 @@ resource "exoscale_instance_pool" "webapp" {
 
 ## Import
 
-An existing instance pool can be imported as a resource by name or ID. Importing an instance pool imports the `exoscale_instance_pool` resource.
+An existing Instance Pool can be imported as a resource by name or ID. Importing an Instance Pool imports the `exoscale_instance_pool` resource.
 
 ```console
 # By name
