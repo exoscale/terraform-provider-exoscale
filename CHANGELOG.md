@@ -1,12 +1,12 @@
-## 0.15.0 (Unreleased)
+## 0.15.0 (December 12, 2019)
 
 FEATURES:
 
-- **New Resource:** `exoscale_instance_pool` (GH-11).
+- **New Resource:** `exoscale_instance_pool` ([#11](https://github.com/terraform-providers/terraform-provider-aws/issues/11)).
 
 CHANGES:
 
-- The `exoscale_network` resource `network_offering` attribute is now deprecated (GH-26).
+- The `exoscale_network` resource `network_offering` attribute is now deprecated ([#26](https://github.com/terraform-providers/terraform-provider-aws/issues/26)).
 
 ## 0.14.0 (December 02, 2019)
 
