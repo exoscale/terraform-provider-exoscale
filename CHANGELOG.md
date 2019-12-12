@@ -1,4 +1,8 @@
-## 0.14.1 (Unreleased)
+## 0.15.0 (Unreleased)
+
+FEATURES:
+
+- **New Resource:** `exoscale_instance_pool` (GH-11).
 
 CHANGES:
 
