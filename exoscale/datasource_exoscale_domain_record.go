@@ -62,6 +62,7 @@ func datasourceDomainRecordRead(d *schema.ResourceData, meta interface{}) error 
 		if len(r) > 1 {
 			return fmt.Errorf("record %s: more than one record found", d.Get("name").(string))
 		}
+		recordID = r[0].ID
 	default:
 		return errors.New("either name or id must be specified")
 	}
