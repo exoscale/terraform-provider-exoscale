@@ -40,7 +40,6 @@ func datasourceComputeIPAddress() *schema.Resource {
 				Description:   "Map of tags (key: value)",
 				Optional:      true,
 				ConflictsWith: []string{"description", "ip_address", "id"},
-				Computed:      true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
@@ -128,6 +127,13 @@ func datasourceComputeIPAddressApply(d *schema.ResourceData, ipAddresses []egosc
 		return err
 	}
 	if err := d.Set("ip_address", ip.IPAddress.String()); err != nil {
+		return err
+	}
+	tags := make(map[string]interface{})
+	for _, tag := range ip.Tags {
+		tags[tag.Key] = tag.Value
+	}
+	if err := d.Set("tags", tags); err != nil {
 		return err
 	}
 

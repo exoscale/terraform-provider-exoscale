@@ -72,9 +72,7 @@ data "exoscale_compute_ipaddress" "ip_address" {
 
 data "exoscale_compute_ipaddress" "ip_address" {
   zone       = "ch-gva-2"
-  tags = {
-    test = "acceptance"
-  }
+  tags = "${exoscale_ipaddress.eip.tags}"
 }`, testAccIPAddressConfigCreate),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDatasourceComputeIPAddressAttributes(testAttrs{
