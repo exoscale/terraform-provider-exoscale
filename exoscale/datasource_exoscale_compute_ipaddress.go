@@ -21,26 +21,30 @@ func datasourceComputeIPAddress() *schema.Resource {
 				Type:          schema.TypeString,
 				Description:   "Description of the IP",
 				Optional:      true,
-				ConflictsWith: []string{"ip_address", "id"},
+				ConflictsWith: []string{"ip_address", "id", "tags"},
 			},
 			"ip_address": {
 				Type:          schema.TypeString,
 				Description:   "IP Address",
 				Optional:      true,
-				ConflictsWith: []string{"description", "id"},
+				ConflictsWith: []string{"description", "id", "tags"},
 			},
 			"id": {
 				Type:          schema.TypeString,
 				Description:   "ID of the ip",
 				Optional:      true,
-				ConflictsWith: []string{"description", "ip_address"},
+				ConflictsWith: []string{"description", "ip_address", "tags"},
 			},
-			// "tag": {
-			// 	Type:          schema.TypeString,
-			// 	Description:   "Tag of the ip",
-			// 	Optional:      true,
-			// 	ConflictsWith: []string{"description", "ip_address", "id", "tag"},
-			// },
+			"tags": {
+				Type:          schema.TypeMap,
+				Description:   "Map of tags (key: value)",
+				Optional:      true,
+				ConflictsWith: []string{"description", "ip_address", "id"},
+				Computed:      true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+			},
 		},
 
 		Read: datasourceComputeIPAddressRead,
@@ -79,11 +83,20 @@ func datasourceComputeIPAddressRead(d *schema.ResourceData, meta interface{}) er
 
 	ips := resp.(*egoscale.ListPublicIPAddressesResponse).PublicIPAddress
 
+	t, ok := d.GetOk("tags")
 	switch {
 	case d.Get("id").(string) != "":
 		return datasourceComputeIPAddressApply(d, ips)
 	case d.Get("ip_address").(string) != "":
 		return datasourceComputeIPAddressApply(d, ips)
+	case ok:
+		ipAddrs := make([]egoscale.IPAddress, 0)
+		for _, ip := range ips {
+			if compareTags(ip, t.(map[string]interface{})) {
+				ipAddrs = append(ipAddrs, ip)
+			}
+		}
+		return datasourceComputeIPAddressApply(d, ipAddrs)
 	case d.Get("description").(string) != "":
 		ipAddrs := make([]egoscale.IPAddress, 0)
 		for _, ip := range ips {
@@ -94,7 +107,7 @@ func datasourceComputeIPAddressRead(d *schema.ResourceData, meta interface{}) er
 		return datasourceComputeIPAddressApply(d, ipAddrs)
 	}
 
-	return fmt.Errorf(`You must set at least one attribute "id", "ip_address" or "description"`)
+	return fmt.Errorf(`You must set at least one attribute "id", "ip_address", "tags" or "description"`)
 }
 
 func datasourceComputeIPAddressApply(d *schema.ResourceData, ipAddresses []egoscale.IPAddress) error {
@@ -119,4 +132,17 @@ func datasourceComputeIPAddressApply(d *schema.ResourceData, ipAddresses []egosc
 	}
 
 	return nil
+}
+
+func compareTags(ip egoscale.IPAddress, t map[string]interface{}) bool {
+	i := 0
+	for _, tag := range ip.Tags {
+		for k, v := range t {
+			if tag.Key == k && tag.Value == v.(string) {
+				i++
+			}
+		}
+	}
+
+	return i > 0
 }

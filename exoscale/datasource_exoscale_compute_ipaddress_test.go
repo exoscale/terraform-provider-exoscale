@@ -22,7 +22,7 @@ func TestAccDatasourceComputeIPAddress(t *testing.T) {
 data "exoscale_compute_ipaddress" "ip_address" {
   zone = "ch-gva-2"
 }`, testAccIPAddressConfigCreate),
-				ExpectError: regexp.MustCompile(`You must set at least one attribute "id", "ip_address" or "description"`),
+				ExpectError: regexp.MustCompile(`You must set at least one attribute "id", "ip_address", "tags" or "description"`),
 			},
 			{
 				Config: fmt.Sprintf(`
@@ -59,6 +59,22 @@ data "exoscale_compute_ipaddress" "ip_address" {
 data "exoscale_compute_ipaddress" "ip_address" {
   zone       = "ch-gva-2"
   ip_address = "${exoscale_ipaddress.eip.ip_address}"
+}`, testAccIPAddressConfigCreate),
+				Check: resource.ComposeTestCheckFunc(
+					testAccDatasourceComputeIPAddressAttributes(testAttrs{
+						"description": ValidateString(testIPDescription1),
+					}),
+				),
+			},
+			{
+				Config: fmt.Sprintf(`
+%s
+
+data "exoscale_compute_ipaddress" "ip_address" {
+  zone       = "ch-gva-2"
+  tags = {
+    test = "acceptance"
+  }
 }`, testAccIPAddressConfigCreate),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDatasourceComputeIPAddressAttributes(testAttrs{
