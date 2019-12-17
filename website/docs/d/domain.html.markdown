@@ -18,7 +18,7 @@ Provides information on an [domain][domain].
 data "exoscale_domain" "exo" {
   name = my-company.com
 }
-
+```
 
 ## Argument Reference
 
