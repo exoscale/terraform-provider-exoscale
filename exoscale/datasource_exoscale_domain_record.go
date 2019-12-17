@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/exoscale/egoscale"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
@@ -151,9 +152,9 @@ func datasourceDomainRecordApply(d *schema.ResourceData, records []egoscale.DNSR
 		return errors.New("no records found")
 	}
 
-	recordsDetails := make([]interface{}, 0)
-	for _, r := range records {
-		recordsDetails = append(recordsDetails, map[string]interface{}{
+	recordsDetails := make([]map[string]interface{}, len(records))
+	for i, r := range records {
+		recordsDetails[i] = map[string]interface{}{
 			"id":          r.ID,
 			"domain":      d.Get("domain").(string),
 			"name":        r.Name,
@@ -162,7 +163,7 @@ func datasourceDomainRecordApply(d *schema.ResourceData, records []egoscale.DNSR
 			"update_at":   r.UpdatedAt,
 			"record_type": r.RecordType,
 			"prio":        r.Prio,
-		})
+		}
 	}
 
 	err := d.Set("records", recordsDetails)
