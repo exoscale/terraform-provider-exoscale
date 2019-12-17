@@ -93,6 +93,28 @@ data "exoscale_domain_record" "test_record" {
 					),
 				),
 			},
+			{
+				Config: fmt.Sprintf(`
+%s
+
+%s
+
+			data "exoscale_domain_record" "test_record" {
+			  domain = "${exoscale_domain.exo.id}"
+			  filter {
+			    content = "mta*"
+			  }
+			}`, testAccResourceDomainRecordConfigCreate, testAccResourceDomainRecordConfigCreate2),
+				Check: resource.ComposeTestCheckFunc(
+					testAccDatasourceDomainRecordAttributes(
+						"data.exoscale_domain_record.test_record",
+						testAttrs{
+							"records.0.domain": ValidateString(testDomain),
+							"records.1.domain": ValidateString(testDomain),
+						},
+					),
+				),
+			},
 		},
 	})
 }
