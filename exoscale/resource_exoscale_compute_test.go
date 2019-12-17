@@ -68,8 +68,8 @@ resource "exoscale_compute" "vm" {
 }
 `,
 		testAccResourceComputeSSHKeyName,
-		testInstanceTemplateID,
-		testZoneName,
+		testAccResourceComputeTemplateID,
+		testAccResourceComputeZoneName,
 		testAccResourceComputeName,
 		testAccResourceComputeSize,
 		testAccResourceComputeDiskSize,
@@ -111,8 +111,8 @@ EOF
 `,
 		testAccResourceComputeSSHKeyName,
 		testAccResourceComputeSecurityGroupName,
-		testInstanceTemplateID,
-		testZoneName,
+		testAccResourceComputeTemplateID,
+		testAccResourceComputeZoneName,
 		testAccResourceComputeNameUpdated,
 		testAccResourceComputeSizeUpdated,
 		testAccResourceComputeDiskSizeUpdated,
@@ -136,8 +136,8 @@ func TestAccResourceCompute(t *testing.T) {
 					testAccCheckResourceComputeExists("exoscale_compute.vm", vm),
 					testAccCheckResourceCompute(vm),
 					testAccCheckResourceComputeAttributes(testAttrs{
-						"template":     ValidateString(testInstanceTemplateName),
-						"template_id":  ValidateString(testInstanceTemplateID),
+						"template":     ValidateString(testAccResourceComputeTemplateName),
+						"template_id":  ValidateString(testAccResourceComputeTemplateID),
 						"display_name": ValidateString(testAccResourceComputeName),
 						"size":         ValidateString(testAccResourceComputeSize),
 						"disk_size":    ValidateString(testAccResourceComputeDiskSize),
@@ -152,7 +152,7 @@ func TestAccResourceCompute(t *testing.T) {
 					testAccCheckResourceComputeExists("exoscale_compute.vm", vm),
 					testAccCheckResourceCompute(vm),
 					testAccCheckResourceComputeAttributes(testAttrs{
-						"template_id":  ValidateString(testInstanceTemplateID),
+						"template_id":  ValidateString(testAccResourceComputeTemplateID),
 						"display_name": ValidateString(testAccResourceComputeName),
 						"size":         ValidateString(testAccResourceComputeSize),
 						"disk_size":    ValidateString(testAccResourceComputeDiskSize),
@@ -168,7 +168,7 @@ func TestAccResourceCompute(t *testing.T) {
 					testAccCheckResourceComputeExists("exoscale_compute.vm", vm),
 					testAccCheckResourceCompute(vm),
 					testAccCheckResourceComputeAttributes(testAttrs{
-						"template_id":       ValidateString(testInstanceTemplateID),
+						"template_id":       ValidateString(testAccResourceComputeTemplateID),
 						"display_name":      ValidateString(testAccResourceComputeNameUpdated),
 						"size":              ValidateString(testAccResourceComputeSizeUpdated),
 						"disk_size":         ValidateString(testAccResourceComputeDiskSizeUpdated),
@@ -187,7 +187,7 @@ func TestAccResourceCompute(t *testing.T) {
 				ImportStateCheck: func(s []*terraform.InstanceState) error {
 					return checkResourceAttributes(
 						testAttrs{
-							"template_id":       ValidateString(testInstanceTemplateID),
+							"template_id":       ValidateString(testAccResourceComputeTemplateID),
 							"display_name":      ValidateString(testAccResourceComputeNameUpdated),
 							"size":              ValidateString(testAccResourceComputeSizeUpdated),
 							"disk_size":         ValidateString(testAccResourceComputeDiskSizeUpdated),
