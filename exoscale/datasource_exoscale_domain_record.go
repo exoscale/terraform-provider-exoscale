@@ -14,18 +14,18 @@ func datasourceDomainRecord() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			"domain": {
 				Type:        schema.TypeString,
-				Description: "Domain of the record",
+				Description: "Domain of the Record",
 				Required:    true,
 			},
 			"name": {
 				Type:          schema.TypeString,
-				Description:   "Name of the record",
+				Description:   "Name of the Record",
 				Optional:      true,
 				ConflictsWith: []string{"id"},
 			},
 			"id": {
 				Type:          schema.TypeInt,
-				Description:   "ID of the record",
+				Description:   "ID of the Record",
 				Optional:      true,
 				ConflictsWith: []string{"name"},
 			},
