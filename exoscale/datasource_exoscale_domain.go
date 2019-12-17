@@ -12,7 +12,7 @@ func datasourceDomain() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:        schema.TypeString,
-				Description: "Name of the domain",
+				Description: "Name of the Domain",
 				Required:    true,
 			},
 		},
