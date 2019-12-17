@@ -16,12 +16,12 @@ Provides information on an Domain [Record][record].
 ## Example Usage
 
 ```hcl
-resource "exoscale_domain" "exo" {
+data "exoscale_domain" "exo" {
   name = my-company.com
 }
 
 data "exoscale_domain_record" "mx" {
-  domain = "${exoscale_domain.exo.id}"
+  domain = "${data.exoscale_domain.exo.name}"
   name   = "mail"
 }
 ```
