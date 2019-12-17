@@ -49,8 +49,8 @@ func datasourceDomainRecordRead(d *schema.ResourceData, meta interface{}) error 
 
 	var recordID int64
 	switch {
-	case d.Get("id").(int64) != 0:
-		recordID = d.Get("id").(int64)
+	case d.Get("id").(int) != 0:
+		recordID = int64(d.Get("id").(int))
 	case d.Get("name").(string) != "":
 		r, err := client.GetRecordsWithFilters(ctx, domain.Name, d.Get("name").(string), "")
 		if err != nil {
