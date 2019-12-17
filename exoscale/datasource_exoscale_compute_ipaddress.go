@@ -31,7 +31,7 @@ func datasourceComputeIPAddress() *schema.Resource {
 			},
 			"id": {
 				Type:          schema.TypeString,
-				Description:   "ID of the ip",
+				Description:   "ID of the IP Address",
 				Optional:      true,
 				ConflictsWith: []string{"description", "ip_address", "tags"},
 			},
