@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
@@ -21,6 +22,7 @@ func TestAccDatasourceDomainRecord(t *testing.T) {
 
 data "exoscale_domain_record" "test_record" {
   domain = "${exoscale_domain.exo.id}"
+  filter {}
 }`, testAccResourceDomainRecordConfigCreate),
 				ExpectError: regexp.MustCompile("either name or id must be specified"),
 			},
@@ -30,7 +32,9 @@ data "exoscale_domain_record" "test_record" {
 
 data "exoscale_domain_record" "test_record" {
   domain = "${exoscale_domain.exo.id}"
-  name = "${exoscale_domain_record.mx.name}"
+  filter {
+    name   = "${exoscale_domain_record.mx.name}"
+  }
 }`, testAccResourceDomainRecordConfigCreate),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDatasourceDomainRecordAttributes(testAttrs{
@@ -45,7 +49,9 @@ data "exoscale_domain_record" "test_record" {
 
 data "exoscale_domain_record" "test_record" {
   domain = "${exoscale_domain.exo.id}"
-  id = "${exoscale_domain_record.mx.id}"
+  filter {
+    id = "${exoscale_domain_record.mx.id}"
+  }
 }`, testAccResourceDomainRecordConfigCreate),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDatasourceDomainRecordAttributes(testAttrs{
@@ -64,6 +70,13 @@ func testAccDatasourceDomainRecordAttributes(expected testAttrs) resource.TestCh
 			if rs.Type != "exoscale_domain_record" {
 				continue
 			}
+
+			if rs.Primary.ID == "" {
+				return fmt.Errorf("Snapshot records source ID not set")
+			}
+
+			println("test:")
+			spew.Dump(rs.Primary.Attributes["records.#"])
 
 			return checkResourceAttributes(expected, rs.Primary.Attributes)
 		}
