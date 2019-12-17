@@ -150,5 +150,5 @@ func compareTags(ip egoscale.IPAddress, t map[string]interface{}) bool {
 		}
 	}
 
-	return i > 0
+	return i > 0 && i >= len(ip.Tags)
 }
