@@ -10,6 +10,116 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
 
+var (
+	testAccResourceComputeSSHKeyName        = testPrefix + "-" + testRandomString()
+	testAccResourceComputeSecurityGroupName = testPrefix + "-" + testRandomString()
+	testAccResourceComputeZoneName          = testZoneName
+	testAccResourceComputeTemplateName      = testInstanceTemplateName
+	testAccResourceComputeTemplateID        = testInstanceTemplateID
+	testAccResourceComputeName              = testPrefix + "-" + testRandomString()
+	testAccResourceComputeNameUpdated       = testAccResourceComputeName + "-updated"
+	testAccResourceComputeSize              = "Micro"
+	testAccResourceComputeSizeUpdated       = "Small"
+	testAccResourceComputeDiskSize          = "10"
+	testAccResourceComputeDiskSizeUpdated   = "15"
+
+	testAccResourceComputeConfigCreateTemplateByName = fmt.Sprintf(`
+resource "exoscale_ssh_keypair" "key" {
+  name = "%s"
+}
+
+resource "exoscale_compute" "vm" {
+  zone = "%s"
+  template = "%s"
+  display_name = "%s"
+  size = "%s"
+  disk_size = "%s"
+  key_pair = "${exoscale_ssh_keypair.key.name}"
+
+  tags = {
+    test = "terraform"
+  }
+}
+`,
+		testAccResourceComputeSSHKeyName,
+		testAccResourceComputeZoneName,
+		testAccResourceComputeTemplateName,
+		testAccResourceComputeName,
+		testAccResourceComputeSize,
+		testAccResourceComputeDiskSize,
+	)
+
+	testAccResourceComputeConfigCreateTemplateByID = fmt.Sprintf(`
+resource "exoscale_ssh_keypair" "key" {
+  name = "%s"
+}
+
+resource "exoscale_compute" "vm" {
+  template_id = "%s"
+  zone = "%s"
+  display_name = "%s"
+  size = "%s"
+  disk_size = "%s"
+  key_pair = "${exoscale_ssh_keypair.key.name}"
+
+  tags = {
+    test = "terraform"
+  }
+}
+`,
+		testAccResourceComputeSSHKeyName,
+		testInstanceTemplateID,
+		testZoneName,
+		testAccResourceComputeName,
+		testAccResourceComputeSize,
+		testAccResourceComputeDiskSize,
+	)
+
+	testAccResourceComputeConfigUpdate = fmt.Sprintf(`
+resource "exoscale_ssh_keypair" "key" {
+  name = "%s"
+}
+
+resource "exoscale_security_group" "sg" {
+  name = "%s"
+}
+
+resource "exoscale_compute" "vm" {
+  template_id = "%s"
+  zone = "%s"
+  display_name = "%s"
+  size = "%s"
+  disk_size = "%s"
+  key_pair = "${exoscale_ssh_keypair.key.name}"
+
+  user_data = <<EOF
+#cloud-config
+package_upgrade: true
+EOF
+
+  security_groups = ["default", "%s"]
+
+  ip6 = true
+
+  timeouts {
+    delete = "10m"
+  }
+
+  # Ensure SG exists before we reference it
+  depends_on = ["exoscale_security_group.sg"]
+}
+`,
+		testAccResourceComputeSSHKeyName,
+		testAccResourceComputeSecurityGroupName,
+		testInstanceTemplateID,
+		testZoneName,
+		testAccResourceComputeNameUpdated,
+		testAccResourceComputeSizeUpdated,
+		testAccResourceComputeDiskSizeUpdated,
+		testAccResourceComputeSecurityGroupName,
+	)
+)
+
 func TestAccResourceCompute(t *testing.T) {
 	sg := new(egoscale.SecurityGroup)
 	vm := new(egoscale.VirtualMachine)
@@ -26,12 +136,12 @@ func TestAccResourceCompute(t *testing.T) {
 					testAccCheckResourceComputeExists("exoscale_compute.vm", vm),
 					testAccCheckResourceCompute(vm),
 					testAccCheckResourceComputeAttributes(testAttrs{
-						"template":     ValidateString(defaultExoscaleTemplate),
-						"template_id":  ValidateString(defaultExoscaleTemplateID),
-						"display_name": ValidateString("terraform-test-compute1"),
-						"size":         ValidateString("Micro"),
-						"disk_size":    ValidateString("12"),
-						"key_pair":     ValidateString("terraform-test-keypair"),
+						"template":     ValidateString(testInstanceTemplateName),
+						"template_id":  ValidateString(testInstanceTemplateID),
+						"display_name": ValidateString(testAccResourceComputeName),
+						"size":         ValidateString(testAccResourceComputeSize),
+						"disk_size":    ValidateString(testAccResourceComputeDiskSize),
+						"key_pair":     ValidateString(testAccResourceComputeSSHKeyName),
 						"tags.test":    ValidateString("terraform"),
 					}),
 				),
@@ -42,11 +152,11 @@ func TestAccResourceCompute(t *testing.T) {
 					testAccCheckResourceComputeExists("exoscale_compute.vm", vm),
 					testAccCheckResourceCompute(vm),
 					testAccCheckResourceComputeAttributes(testAttrs{
-						"template_id":  ValidateString(defaultExoscaleTemplateID),
-						"display_name": ValidateString("terraform-test-compute1"),
-						"size":         ValidateString("Micro"),
-						"disk_size":    ValidateString("12"),
-						"key_pair":     ValidateString("terraform-test-keypair"),
+						"template_id":  ValidateString(testInstanceTemplateID),
+						"display_name": ValidateString(testAccResourceComputeName),
+						"size":         ValidateString(testAccResourceComputeSize),
+						"disk_size":    ValidateString(testAccResourceComputeDiskSize),
+						"key_pair":     ValidateString(testAccResourceComputeSSHKeyName),
 						"tags.test":    ValidateString("terraform"),
 					}),
 				),
@@ -58,11 +168,11 @@ func TestAccResourceCompute(t *testing.T) {
 					testAccCheckResourceComputeExists("exoscale_compute.vm", vm),
 					testAccCheckResourceCompute(vm),
 					testAccCheckResourceComputeAttributes(testAttrs{
-						"template_id":       ValidateString(defaultExoscaleTemplateID),
-						"display_name":      ValidateString("terraform-test-compute2"),
-						"size":              ValidateString("Small"),
-						"disk_size":         ValidateString("18"),
-						"key_pair":          ValidateString("terraform-test-keypair"),
+						"template_id":       ValidateString(testInstanceTemplateID),
+						"display_name":      ValidateString(testAccResourceComputeNameUpdated),
+						"size":              ValidateString(testAccResourceComputeSizeUpdated),
+						"disk_size":         ValidateString(testAccResourceComputeDiskSizeUpdated),
+						"key_pair":          ValidateString(testAccResourceComputeSSHKeyName),
 						"security_groups.#": ValidateString("2"),
 						"ip6":               ValidateString("true"),
 						"user_data":         ValidateString("#cloud-config\npackage_upgrade: true\n"),
@@ -77,11 +187,11 @@ func TestAccResourceCompute(t *testing.T) {
 				ImportStateCheck: func(s []*terraform.InstanceState) error {
 					return checkResourceAttributes(
 						testAttrs{
-							"template_id":       ValidateString(defaultExoscaleTemplateID),
-							"display_name":      ValidateString("terraform-test-compute2"),
-							"size":              ValidateString("Small"),
-							"disk_size":         ValidateString("18"),
-							"key_pair":          ValidateString("terraform-test-keypair"),
+							"template_id":       ValidateString(testInstanceTemplateID),
+							"display_name":      ValidateString(testAccResourceComputeNameUpdated),
+							"size":              ValidateString(testAccResourceComputeSizeUpdated),
+							"disk_size":         ValidateString(testAccResourceComputeDiskSizeUpdated),
+							"key_pair":          ValidateString(testAccResourceComputeSSHKeyName),
 							"security_groups.#": ValidateString("2"),
 							"ip6":               ValidateString("true"),
 							"user_data":         ValidateString("#cloud-config\npackage_upgrade: true\n"),
@@ -172,93 +282,3 @@ func testAccCheckResourceComputeDestroy(s *terraform.State) error {
 	}
 	return errors.New("Compute instance still exists")
 }
-
-var testAccResourceComputeConfigCreateTemplateByName = fmt.Sprintf(`
-resource "exoscale_ssh_keypair" "key" {
-  name = "terraform-test-keypair"
-}
-
-resource "exoscale_compute" "vm" {
-  template = %q
-  zone = %q
-  display_name = "terraform-test-compute1"
-  size = "Micro"
-  disk_size = "12"
-  key_pair = "${exoscale_ssh_keypair.key.name}"
-
-  tags = {
-    test = "terraform"
-  }
-
-  timeouts {
-    create = "10m"
-  }
-}
-`,
-	defaultExoscaleTemplate,
-	defaultExoscaleZone,
-)
-
-var testAccResourceComputeConfigCreateTemplateByID = fmt.Sprintf(`
-resource "exoscale_ssh_keypair" "key" {
-  name = "terraform-test-keypair"
-}
-
-resource "exoscale_compute" "vm" {
-  template_id = %q
-  zone = %q
-  display_name = "terraform-test-compute1"
-  size = "Micro"
-  disk_size = "12"
-  key_pair = "${exoscale_ssh_keypair.key.name}"
-
-  tags = {
-    test = "terraform"
-  }
-
-  timeouts {
-    create = "10m"
-  }
-}
-`,
-	defaultExoscaleTemplateID,
-	defaultExoscaleZone,
-)
-
-var testAccResourceComputeConfigUpdate = fmt.Sprintf(`
-resource "exoscale_ssh_keypair" "key" {
-  name = "terraform-test-keypair"
-}
-
-resource "exoscale_security_group" "sg" {
-  name = "terraform-test-security-group"
-}
-
-resource "exoscale_compute" "vm" {
-  template_id = %q
-  zone = %q
-  display_name = "terraform-test-compute2"
-  size = "Small"
-  disk_size = "18"
-  key_pair = "${exoscale_ssh_keypair.key.name}"
-
-  user_data = <<EOF
-#cloud-config
-package_upgrade: true
-EOF
-
-  security_groups = ["default", "terraform-test-security-group"]
-
-  ip6 = true
-
-  timeouts {
-    delete = "30m"
-  }
-
-  # Ensure SG exists before we reference it
-  depends_on = ["exoscale_security_group.sg"]
-}
-`,
-	defaultExoscaleTemplateID,
-	defaultExoscaleZone,
-)

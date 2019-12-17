@@ -10,23 +10,71 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
 
-const (
-	testIPHealthcheckMode1              = "http"
-	testIPHealthcheckPort1        int64 = 80
-	testIPHealthcheckPath1              = "/health"
-	testIPHealthcheckInterval1    int64 = 10
-	testIPHealthcheckTimeout1     int64 = 5
-	testIPHealthcheckStrikesOk1   int64 = 1
-	testIPHealthcheckStrikesFail1       = 2
-	testIPHealthcheckMode2              = "http"
-	testIPHealthcheckPort2        int64 = 8000
-	testIPHealthcheckPath2              = "/healthz"
-	testIPHealthcheckInterval2    int64 = 5
-	testIPHealthcheckTimeout2     int64 = 2
-	testIPHealthcheckStrikesOk2   int64 = 2
-	testIPHealthcheckStrikesFail2 int64 = 3
-	testIPDescription1                  = "IPAdress 1"
-	testIPDescription2                  = "IPAdress 2"
+var (
+	testAccResourceIPAddressZoneName                            = testZoneName
+	testAccResourceIPAddressDescription                         = testDescription
+	testAccResourceIPAddressHealthcheckMode                     = "http"
+	testAccResourceIPAddressHealthcheckPort               int64 = 80
+	testAccResourceIPAddressHealthcheckPortUpdated        int64 = 8000
+	testAccResourceIPAddressHealthcheckPath                     = "/health"
+	testAccResourceIPAddressHealthcheckPathUpdated              = "/healthz"
+	testAccResourceIPAddressHealthcheckInterval           int64 = 10
+	testAccResourceIPAddressHealthcheckIntervalUpdated    int64 = 5
+	testAccResourceIPAddressHealthcheckTimeout            int64 = 5
+	testAccResourceIPAddressHealthcheckTimeoutUpdated     int64 = 2
+	testAccResourceIPAddressHealthcheckStrikesOk          int64 = 1
+	testAccResourceIPAddressHealthcheckStrikesOkUpdated   int64 = 2
+	testAccResourceIPAddressHealthcheckStrikesFail        int64 = 2
+	testAccResourceIPAddressHealthcheckStrikesFailUpdated int64 = 3
+
+	testAccIPAddressConfigCreate = fmt.Sprintf(`
+resource "exoscale_ipaddress" "eip" {
+  zone = "%s"
+  healthcheck_mode = "%s"
+  healthcheck_port = %d
+  healthcheck_path = "%s"
+  healthcheck_interval = %d
+  healthcheck_timeout = %d
+  healthcheck_strikes_ok = %d
+  healthcheck_strikes_fail = %d
+  tags = {
+    test = "acceptance"
+  }
+}
+`,
+		testAccResourceIPAddressZoneName,
+		testAccResourceIPAddressHealthcheckMode,
+		testAccResourceIPAddressHealthcheckPort,
+		testAccResourceIPAddressHealthcheckPath,
+		testAccResourceIPAddressHealthcheckInterval,
+		testAccResourceIPAddressHealthcheckTimeout,
+		testAccResourceIPAddressHealthcheckStrikesOk,
+		testAccResourceIPAddressHealthcheckStrikesFail,
+	)
+
+	testAccIPAddressConfigUpdate = fmt.Sprintf(`
+resource "exoscale_ipaddress" "eip" {
+  zone = "%s"
+  description = "%s"
+  healthcheck_mode = "%s"
+  healthcheck_port = %d
+  healthcheck_path = "%s"
+  healthcheck_interval = %d
+  healthcheck_timeout = %d
+  healthcheck_strikes_ok = %d
+  healthcheck_strikes_fail = %d
+}
+`,
+		testAccResourceIPAddressZoneName,
+		testAccResourceIPAddressDescription,
+		testAccResourceIPAddressHealthcheckMode,
+		testAccResourceIPAddressHealthcheckPortUpdated,
+		testAccResourceIPAddressHealthcheckPathUpdated,
+		testAccResourceIPAddressHealthcheckIntervalUpdated,
+		testAccResourceIPAddressHealthcheckTimeoutUpdated,
+		testAccResourceIPAddressHealthcheckStrikesOkUpdated,
+		testAccResourceIPAddressHealthcheckStrikesFailUpdated,
+	)
 )
 
 func TestAccResourceIPAddress(t *testing.T) {
@@ -43,14 +91,13 @@ func TestAccResourceIPAddress(t *testing.T) {
 					testAccCheckIPAddressExists("exoscale_ipaddress.eip", eip),
 					testAccCheckIPAddressCreate(eip),
 					testAccCheckIPAddressAttributes(testAttrs{
-						"healthcheck_mode":         ValidateString(testIPHealthcheckMode1),
-						"healthcheck_port":         ValidateString(fmt.Sprint(testIPHealthcheckPort1)),
-						"healthcheck_path":         ValidateString(testIPHealthcheckPath1),
-						"healthcheck_interval":     ValidateString(fmt.Sprint(testIPHealthcheckInterval1)),
-						"healthcheck_timeout":      ValidateString(fmt.Sprint(testIPHealthcheckTimeout1)),
-						"healthcheck_strikes_ok":   ValidateString(fmt.Sprint(testIPHealthcheckStrikesOk1)),
-						"healthcheck_strikes_fail": ValidateString(fmt.Sprint(testIPHealthcheckStrikesFail1)),
-						"description":              ValidateString(testIPDescription1),
+						"healthcheck_mode":         ValidateString(testAccResourceIPAddressHealthcheckMode),
+						"healthcheck_port":         ValidateString(fmt.Sprint(testAccResourceIPAddressHealthcheckPort)),
+						"healthcheck_path":         ValidateString(testAccResourceIPAddressHealthcheckPath),
+						"healthcheck_interval":     ValidateString(fmt.Sprint(testAccResourceIPAddressHealthcheckInterval)),
+						"healthcheck_timeout":      ValidateString(fmt.Sprint(testAccResourceIPAddressHealthcheckTimeout)),
+						"healthcheck_strikes_ok":   ValidateString(fmt.Sprint(testAccResourceIPAddressHealthcheckStrikesOk)),
+						"healthcheck_strikes_fail": ValidateString(fmt.Sprint(testAccResourceIPAddressHealthcheckStrikesFail)),
 					}),
 				),
 			},
@@ -60,14 +107,14 @@ func TestAccResourceIPAddress(t *testing.T) {
 					testAccCheckIPAddressExists("exoscale_ipaddress.eip", eip),
 					testAccCheckIPAddressUpdate(eip),
 					testAccCheckIPAddressAttributes(testAttrs{
-						"healthcheck_mode":         ValidateString(testIPHealthcheckMode2),
-						"healthcheck_port":         ValidateString(fmt.Sprint(testIPHealthcheckPort2)),
-						"healthcheck_path":         ValidateString(testIPHealthcheckPath2),
-						"healthcheck_interval":     ValidateString(fmt.Sprint(testIPHealthcheckInterval2)),
-						"healthcheck_timeout":      ValidateString(fmt.Sprint(testIPHealthcheckTimeout2)),
-						"healthcheck_strikes_ok":   ValidateString(fmt.Sprint(testIPHealthcheckStrikesOk2)),
-						"healthcheck_strikes_fail": ValidateString(fmt.Sprint(testIPHealthcheckStrikesFail2)),
-						"description":              ValidateString(testIPDescription2),
+						"description":              ValidateString(testAccResourceIPAddressDescription),
+						"healthcheck_mode":         ValidateString(testAccResourceIPAddressHealthcheckMode),
+						"healthcheck_port":         ValidateString(fmt.Sprint(testAccResourceIPAddressHealthcheckPortUpdated)),
+						"healthcheck_path":         ValidateString(testAccResourceIPAddressHealthcheckPathUpdated),
+						"healthcheck_interval":     ValidateString(fmt.Sprint(testAccResourceIPAddressHealthcheckIntervalUpdated)),
+						"healthcheck_timeout":      ValidateString(fmt.Sprint(testAccResourceIPAddressHealthcheckTimeoutUpdated)),
+						"healthcheck_strikes_ok":   ValidateString(fmt.Sprint(testAccResourceIPAddressHealthcheckStrikesOkUpdated)),
+						"healthcheck_strikes_fail": ValidateString(fmt.Sprint(testAccResourceIPAddressHealthcheckStrikesFailUpdated)),
 					}),
 				),
 			},
@@ -78,14 +125,14 @@ func TestAccResourceIPAddress(t *testing.T) {
 				ImportStateCheck: func(s []*terraform.InstanceState) error {
 					return checkResourceAttributes(
 						testAttrs{
-							"healthcheck_mode":         ValidateString(testIPHealthcheckMode2),
-							"healthcheck_port":         ValidateString(fmt.Sprint(testIPHealthcheckPort2)),
-							"healthcheck_path":         ValidateString(testIPHealthcheckPath2),
-							"healthcheck_interval":     ValidateString(fmt.Sprint(testIPHealthcheckInterval2)),
-							"healthcheck_timeout":      ValidateString(fmt.Sprint(testIPHealthcheckTimeout2)),
-							"healthcheck_strikes_ok":   ValidateString(fmt.Sprint(testIPHealthcheckStrikesOk2)),
-							"healthcheck_strikes_fail": ValidateString(fmt.Sprint(testIPHealthcheckStrikesFail2)),
-							"description":              ValidateString(testIPDescription2),
+							"description":              ValidateString(testAccResourceIPAddressDescription),
+							"healthcheck_mode":         ValidateString(testAccResourceIPAddressHealthcheckMode),
+							"healthcheck_port":         ValidateString(fmt.Sprint(testAccResourceIPAddressHealthcheckPortUpdated)),
+							"healthcheck_path":         ValidateString(testAccResourceIPAddressHealthcheckPathUpdated),
+							"healthcheck_interval":     ValidateString(fmt.Sprint(testAccResourceIPAddressHealthcheckIntervalUpdated)),
+							"healthcheck_timeout":      ValidateString(fmt.Sprint(testAccResourceIPAddressHealthcheckTimeoutUpdated)),
+							"healthcheck_strikes_ok":   ValidateString(fmt.Sprint(testAccResourceIPAddressHealthcheckStrikesOkUpdated)),
+							"healthcheck_strikes_fail": ValidateString(fmt.Sprint(testAccResourceIPAddressHealthcheckStrikesFailUpdated)),
 						},
 						s[0].Attributes)
 				},
@@ -130,39 +177,39 @@ func testAccCheckIPAddressCreate(eip *egoscale.IPAddress) resource.TestCheckFunc
 		if eip.Healthcheck == nil {
 			return errors.New("IP healthcheck is nil")
 		}
-		if eip.Healthcheck.Mode != testIPHealthcheckMode1 {
+		if eip.Healthcheck.Mode != testAccResourceIPAddressHealthcheckMode {
 			return fmt.Errorf("expected IP healthcheck mode %v, got %v",
-				testIPHealthcheckMode1,
+				testAccResourceIPAddressHealthcheckMode,
 				eip.Healthcheck.Mode)
 		}
-		if eip.Healthcheck.Port != testIPHealthcheckPort1 {
+		if eip.Healthcheck.Port != testAccResourceIPAddressHealthcheckPort {
 			return fmt.Errorf("expected IP healthcheck port %v, got %v",
-				testIPHealthcheckPort1,
+				testAccResourceIPAddressHealthcheckPort,
 				eip.Healthcheck.Port)
 		}
-		if eip.Healthcheck.Path != testIPHealthcheckPath1 {
+		if eip.Healthcheck.Path != testAccResourceIPAddressHealthcheckPath {
 			return fmt.Errorf("expected IP healthcheck path %v, got %v",
-				testIPHealthcheckPath1,
+				testAccResourceIPAddressHealthcheckPath,
 				eip.Healthcheck.Path)
 		}
-		if eip.Healthcheck.Interval != testIPHealthcheckInterval1 {
+		if eip.Healthcheck.Interval != testAccResourceIPAddressHealthcheckInterval {
 			return fmt.Errorf("expected IP healthcheck interval %v, got %v",
-				testIPHealthcheckInterval1,
+				testAccResourceIPAddressHealthcheckInterval,
 				eip.Healthcheck.Interval)
 		}
-		if eip.Healthcheck.Timeout != testIPHealthcheckTimeout1 {
+		if eip.Healthcheck.Timeout != testAccResourceIPAddressHealthcheckTimeout {
 			return fmt.Errorf("expected IP healthcheck timeout %v, got %v",
-				testIPHealthcheckTimeout1,
+				testAccResourceIPAddressHealthcheckTimeout,
 				eip.Healthcheck.Timeout)
 		}
-		if eip.Healthcheck.StrikesOk != testIPHealthcheckStrikesOk1 {
+		if eip.Healthcheck.StrikesOk != testAccResourceIPAddressHealthcheckStrikesOk {
 			return fmt.Errorf("expected IP healthcheck strikes-ok %v, got %v",
-				testIPHealthcheckStrikesOk1,
+				testAccResourceIPAddressHealthcheckStrikesOk,
 				eip.Healthcheck.StrikesOk)
 		}
-		if eip.Healthcheck.StrikesFail != testIPHealthcheckStrikesFail1 {
+		if eip.Healthcheck.StrikesFail != testAccResourceIPAddressHealthcheckStrikesFail {
 			return fmt.Errorf("expected IP healthcheck strikes-fail %v, got %v",
-				testIPHealthcheckStrikesFail1,
+				testAccResourceIPAddressHealthcheckStrikesFail,
 				eip.Healthcheck.StrikesFail)
 		}
 
@@ -179,39 +226,39 @@ func testAccCheckIPAddressUpdate(eip *egoscale.IPAddress) resource.TestCheckFunc
 		if eip.Healthcheck == nil {
 			return errors.New("IP healthcheck is nil")
 		}
-		if eip.Healthcheck.Mode != testIPHealthcheckMode2 {
+		if eip.Healthcheck.Mode != testAccResourceIPAddressHealthcheckMode {
 			return fmt.Errorf("expected IP healthcheck mode %v, got %v",
-				testIPHealthcheckMode2,
+				testAccResourceIPAddressHealthcheckMode,
 				eip.Healthcheck.Mode)
 		}
-		if eip.Healthcheck.Port != testIPHealthcheckPort2 {
+		if eip.Healthcheck.Port != testAccResourceIPAddressHealthcheckPortUpdated {
 			return fmt.Errorf("expected IP healthcheck port %v, got %v",
-				testIPHealthcheckPort2,
+				testAccResourceIPAddressHealthcheckPortUpdated,
 				eip.Healthcheck.Port)
 		}
-		if eip.Healthcheck.Path != testIPHealthcheckPath2 {
+		if eip.Healthcheck.Path != testAccResourceIPAddressHealthcheckPathUpdated {
 			return fmt.Errorf("expected IP healthcheck path %v, got %v",
-				testIPHealthcheckPath2,
+				testAccResourceIPAddressHealthcheckPathUpdated,
 				eip.Healthcheck.Path)
 		}
-		if eip.Healthcheck.Interval != testIPHealthcheckInterval2 {
+		if eip.Healthcheck.Interval != testAccResourceIPAddressHealthcheckIntervalUpdated {
 			return fmt.Errorf("expected IP healthcheck interval %v, got %v",
-				testIPHealthcheckInterval2,
+				testAccResourceIPAddressHealthcheckIntervalUpdated,
 				eip.Healthcheck.Interval)
 		}
-		if eip.Healthcheck.Timeout != testIPHealthcheckTimeout2 {
+		if eip.Healthcheck.Timeout != testAccResourceIPAddressHealthcheckTimeoutUpdated {
 			return fmt.Errorf("expected IP healthcheck timeout %v, got %v",
-				testIPHealthcheckTimeout2,
+				testAccResourceIPAddressHealthcheckTimeoutUpdated,
 				eip.Healthcheck.Timeout)
 		}
-		if eip.Healthcheck.StrikesOk != testIPHealthcheckStrikesOk2 {
+		if eip.Healthcheck.StrikesOk != testAccResourceIPAddressHealthcheckStrikesOkUpdated {
 			return fmt.Errorf("expected IP healthcheck strikes-ok %v, got %v",
-				testIPHealthcheckStrikesOk2,
+				testAccResourceIPAddressHealthcheckStrikesOkUpdated,
 				eip.Healthcheck.StrikesOk)
 		}
-		if eip.Healthcheck.StrikesFail != testIPHealthcheckStrikesFail2 {
+		if eip.Healthcheck.StrikesFail != testAccResourceIPAddressHealthcheckStrikesFailUpdated {
 			return fmt.Errorf("expected IP healthcheck strikes-fail %v, got %v",
-				testIPHealthcheckStrikesFail2,
+				testAccResourceIPAddressHealthcheckStrikesFailUpdated,
 				eip.Healthcheck.StrikesFail)
 		}
 
@@ -263,54 +310,3 @@ func testAccCheckIPAddressDestroy(s *terraform.State) error {
 	}
 	return nil
 }
-
-var testAccIPAddressConfigCreate = fmt.Sprintf(`
-resource "exoscale_ipaddress" "eip" {
-  zone = %q
-  description = %q
-  healthcheck_mode = "%s"
-  healthcheck_port = %d
-  healthcheck_path = "%s"
-  healthcheck_interval = %d
-  healthcheck_timeout = %d
-  healthcheck_strikes_ok = %d
-  healthcheck_strikes_fail = %d
-  tags = {
-    test = "acceptance"
-  }
-}
-`,
-	defaultExoscaleZone,
-	testIPDescription1,
-	testIPHealthcheckMode1,
-	testIPHealthcheckPort1,
-	testIPHealthcheckPath1,
-	testIPHealthcheckInterval1,
-	testIPHealthcheckTimeout1,
-	testIPHealthcheckStrikesOk1,
-	testIPHealthcheckStrikesFail1,
-)
-
-var testAccIPAddressConfigUpdate = fmt.Sprintf(`
-resource "exoscale_ipaddress" "eip" {
-  zone = %q
-  description = %q
-  healthcheck_mode = "%s"
-  healthcheck_port = %d
-  healthcheck_path = "%s"
-  healthcheck_interval = %d
-  healthcheck_timeout = %d
-  healthcheck_strikes_ok = %d
-  healthcheck_strikes_fail = %d
-}
-`,
-	defaultExoscaleZone,
-	testIPDescription2,
-	testIPHealthcheckMode2,
-	testIPHealthcheckPort2,
-	testIPHealthcheckPath2,
-	testIPHealthcheckInterval2,
-	testIPHealthcheckTimeout2,
-	testIPHealthcheckStrikesOk2,
-	testIPHealthcheckStrikesFail2,
-)

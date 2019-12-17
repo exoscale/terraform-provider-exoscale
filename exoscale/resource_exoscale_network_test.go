@@ -3,7 +3,6 @@ package exoscale
 import (
 	"errors"
 	"fmt"
-	"net"
 	"testing"
 
 	"github.com/exoscale/egoscale"
@@ -11,15 +10,57 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
 
-const (
-	testNetworkDisplayText        = "Terraform Acceptance Test (create)"
-	testNetworkStartIP            = "10.0.0.10"
-	testNetworkEndIP              = "10.0.0.50"
-	testNetworkNetmask            = "255.255.0.0"
-	testNetworkDisplayTextUpdated = "Terraform Acceptance Test (update)"
-	testNetworkStartIPUpdated     = "10.0.0.1"
-	testNetworkEndIPUpdated       = "10.0.0.100"
-	testNetworkNetmaskUpdated     = "255.0.0.0"
+var (
+	testAccResourceNetworkZoneName       = testZoneName
+	testAccResourceNetworkName           = testPrefix + "-" + testRandomString()
+	testAccResourceNetworkNameUpdated    = testAccResourceNetworkName + "-updated"
+	testAccResourceNetworkDisplayText    = testDescription
+	testAccResourceNetworkStartIP        = "10.0.0.10"
+	testAccResourceNetworkStartIPUpdated = "10.0.0.1"
+	testAccResourceNetworkEndIP          = "10.0.0.50"
+	testAccResourceNetworkEndIPUpdated   = "10.0.0.100"
+	testAccResourceNetworkNetmask        = "255.255.0.0"
+	testAccResourceNetworkNetmaskUpdated = "255.0.0.0"
+
+	testAccResourceNetworkConfigCreate = fmt.Sprintf(`
+resource "exoscale_network" "net" {
+  zone = "%s"
+  name = "%s"
+  display_text = "%s"
+
+  start_ip = "%s"
+  end_ip = "%s"
+  netmask = "%s"
+
+  tags = {
+    managedby = "terraform"
+  }
+}
+`,
+		testAccResourceNetworkZoneName,
+		testAccResourceNetworkName,
+		testAccResourceNetworkDisplayText,
+		testAccResourceNetworkStartIP,
+		testAccResourceNetworkEndIP,
+		testAccResourceNetworkNetmask,
+	)
+
+	testAccResourceNetworkConfigUpdate = fmt.Sprintf(`
+resource "exoscale_network" "net" {
+  zone = "%s"
+  name = "%s"
+
+  start_ip = "%s"
+  end_ip = "%s"
+  netmask = "%s"
+}
+`,
+		testAccResourceNetworkZoneName,
+		testAccResourceNetworkNameUpdated,
+		testAccResourceNetworkStartIPUpdated,
+		testAccResourceNetworkEndIPUpdated,
+		testAccResourceNetworkNetmaskUpdated,
+	)
 )
 
 func TestAccResourceNetwork(t *testing.T) {
@@ -34,12 +75,12 @@ func TestAccResourceNetwork(t *testing.T) {
 				Config: testAccResourceNetworkConfigCreate,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckResourceNetworkExists("exoscale_network.net", network),
-					testAccCheckResourceNetwork(network, net.ParseIP(testNetworkStartIP)),
+					testAccCheckResourceNetwork(network),
 					testAccCheckResourceNetworkAttributes(testAttrs{
-						"display_text":   ValidateString(testNetworkDisplayText),
-						"start_ip":       ValidateString(testNetworkStartIP),
-						"end_ip":         ValidateString(testNetworkEndIP),
-						"netmask":        ValidateString(testNetworkNetmask),
+						"name":           ValidateString(testAccResourceNetworkName),
+						"start_ip":       ValidateString(testAccResourceNetworkStartIP),
+						"end_ip":         ValidateString(testAccResourceNetworkEndIP),
+						"netmask":        ValidateString(testAccResourceNetworkNetmask),
 						"tags.managedby": ValidateString("terraform"),
 					}),
 				),
@@ -48,12 +89,13 @@ func TestAccResourceNetwork(t *testing.T) {
 				Config: testAccResourceNetworkConfigUpdate,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckResourceNetworkExists("exoscale_network.net", network),
-					testAccCheckResourceNetwork(network, net.ParseIP(testNetworkStartIPUpdated)),
+					testAccCheckResourceNetwork(network),
 					testAccCheckResourceNetworkAttributes(testAttrs{
-						"display_text": ValidateString(testNetworkDisplayTextUpdated),
-						"start_ip":     ValidateString(testNetworkStartIPUpdated),
-						"end_ip":       ValidateString(testNetworkEndIPUpdated),
-						"netmask":      ValidateString(testNetworkNetmaskUpdated),
+						"name":         ValidateString(testAccResourceNetworkNameUpdated),
+						"display_text": ValidateString(testAccResourceNetworkDisplayText),
+						"start_ip":     ValidateString(testAccResourceNetworkStartIPUpdated),
+						"end_ip":       ValidateString(testAccResourceNetworkEndIPUpdated),
+						"netmask":      ValidateString(testAccResourceNetworkNetmaskUpdated),
 					}),
 				),
 			},
@@ -64,10 +106,11 @@ func TestAccResourceNetwork(t *testing.T) {
 				ImportStateCheck: func(s []*terraform.InstanceState) error {
 					return checkResourceAttributes(
 						testAttrs{
-							"display_text": ValidateString(testNetworkDisplayTextUpdated),
-							"start_ip":     ValidateString(testNetworkStartIPUpdated),
-							"end_ip":       ValidateString(testNetworkEndIPUpdated),
-							"netmask":      ValidateString(testNetworkNetmaskUpdated),
+							"name":         ValidateString(testAccResourceNetworkNameUpdated),
+							"display_text": ValidateString(testAccResourceNetworkDisplayText),
+							"start_ip":     ValidateString(testAccResourceNetworkStartIPUpdated),
+							"end_ip":       ValidateString(testAccResourceNetworkEndIPUpdated),
+							"netmask":      ValidateString(testAccResourceNetworkNetmaskUpdated),
 						},
 						s[0].Attributes)
 				},
@@ -104,14 +147,10 @@ func testAccCheckResourceNetworkExists(name string, network *egoscale.Network) r
 	}
 }
 
-func testAccCheckResourceNetwork(network *egoscale.Network, expectedStartIP net.IP) resource.TestCheckFunc {
+func testAccCheckResourceNetwork(network *egoscale.Network) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		if network.ID == nil {
 			return errors.New("Network is nil")
-		}
-
-		if !network.StartIP.Equal(expectedStartIP) {
-			return fmt.Errorf("expected start IP %v, got %v", expectedStartIP, network.StartIP)
 		}
 
 		return nil
@@ -159,43 +198,3 @@ func testAccCheckResourceNetworkDestroy(s *terraform.State) error {
 
 	return errors.New("Network still exists")
 }
-
-var testAccResourceNetworkConfigCreate = fmt.Sprintf(`
-resource "exoscale_network" "net" {
-  zone = %q
-  name = "terraform-test-network1"
-  display_text = %q
-
-  start_ip = %q
-  end_ip = %q
-  netmask = %q
-
-  tags = {
-    managedby = "terraform"
-  }
-}
-`,
-	defaultExoscaleZone,
-	testNetworkDisplayText,
-	testNetworkStartIP,
-	testNetworkEndIP,
-	testNetworkNetmask,
-)
-
-var testAccResourceNetworkConfigUpdate = fmt.Sprintf(`
-resource "exoscale_network" "net" {
-  zone = %q
-  name = "terraform-test-network2"
-  display_text = %q
-
-  start_ip = %q
-  end_ip = %q
-  netmask = %q
-}
-`,
-	defaultExoscaleZone,
-	testNetworkDisplayTextUpdated,
-	testNetworkStartIPUpdated,
-	testNetworkEndIPUpdated,
-	testNetworkNetmaskUpdated,
-)

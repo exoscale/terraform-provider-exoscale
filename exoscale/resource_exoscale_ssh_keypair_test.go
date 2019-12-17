@@ -10,10 +10,23 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
 
-const (
-	testSSHKey            = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDN7L45b4vO2ytH68ZUC5PMS1b7JG78zGslwcJ0zolE5BuxsCYor248/FKGC5TXrME+yBu/uLqaAkioq4Wp1PzP6Zy5jEowWQDOdeER7uu1GgZShcvly2Oaf/UKLqTdwL+U3tCknqHY63fOAi1lBwmNTUu1uZ24iNiogfhXwQn7HJLQK9vfoGwg+/qJIzeswR6XDa6qh0fuzdxWQ4JWHw2s8fv8WvGOlklmAg/uEi1kF5D6R7kJpOVaE20FLnT4sjA81iErhMIH77OaZqQKiyVH3i5m/lkQI/2e25ml8aculaWzHOs4ctd7l+K1ZWFYje3qMBY1sar1gd787eaqk6RZ"
-	testSSHKeyFingerprint = "4d:31:21:c4:77:9f:19:91:6e:84:9d:7c:12:a8:11:1f"
-	testSSHKeyName        = "terraform-test-keypair"
+var (
+	testAccResourceSSHKeyName = testPrefix + "-" + testRandomString()
+	testAccResourceSSHKey     = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDN7L45b4vO2ytH68ZU" +
+		"C5PMS1b7JG78zGslwcJ0zolE5BuxsCYor248/FKGC5TXrME+yBu/uLqaAkioq4Wp1PzP6Zy5jEowWQDO" +
+		"deER7uu1GgZShcvly2Oaf/UKLqTdwL+U3tCknqHY63fOAi1lBwmNTUu1uZ24iNiogfhXwQn7HJLQK9vf" +
+		"oGwg+/qJIzeswR6XDa6qh0fuzdxWQ4JWHw2s8fv8WvGOlklmAg/uEi1kF5D6R7kJpOVaE20FLnT4sjA8" +
+		"1iErhMIH77OaZqQKiyVH3i5m/lkQI/2e25ml8aculaWzHOs4ctd7l+K1ZWFYje3qMBY1sar1gd787eaqk6RZ"
+	testAccResourceSSHKeyFingerprint = "4d:31:21:c4:77:9f:19:91:6e:84:9d:7c:12:a8:11:1f"
+
+	testAccResourceSSHKeypairConfig = fmt.Sprintf(`
+resource "exoscale_ssh_keypair" "key" {
+  name       = "%s"
+  public_key = "%s"
+}
+`,
+		testAccResourceSSHKeyName,
+		testAccResourceSSHKey)
 )
 
 func TestAccResourceSSHKeypair(t *testing.T) {
@@ -30,8 +43,8 @@ func TestAccResourceSSHKeypair(t *testing.T) {
 					testAccCheckResourceSSHKeypairExists("exoscale_ssh_keypair.key", sshkey),
 					testAccCheckResourceSSHKeypair(sshkey),
 					testAccCheckResourceSSHKeypairAttributes(testAttrs{
-						"public_key":  ValidateString(testSSHKey),
-						"fingerprint": ValidateString(testSSHKeyFingerprint),
+						"public_key":  ValidateString(testAccResourceSSHKey),
+						"fingerprint": ValidateString(testAccResourceSSHKeyFingerprint),
 					}),
 				),
 			},
@@ -43,8 +56,8 @@ func TestAccResourceSSHKeypair(t *testing.T) {
 				ImportStateCheck: func(s []*terraform.InstanceState) error {
 					return checkResourceAttributes(
 						testAttrs{
-							"name":        ValidateString(testSSHKeyName),
-							"fingerprint": ValidateString(testSSHKeyFingerprint),
+							"name":        ValidateString(testAccResourceSSHKeyName),
+							"fingerprint": ValidateString(testAccResourceSSHKeyFingerprint),
 						},
 						s[0].Attributes)
 				},
@@ -120,12 +133,3 @@ func testAccCheckResourceSSHKeypairDestroy(s *terraform.State) error {
 	}
 	return errors.New("SSH Keypair still exists")
 }
-
-var testAccResourceSSHKeypairConfig = fmt.Sprintf(`
-resource "exoscale_ssh_keypair" "key" {
-  name       = "%s"
-  public_key = "%s"
-}
-`,
-	testSSHKeyName,
-	testSSHKey)
