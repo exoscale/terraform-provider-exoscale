@@ -34,7 +34,7 @@ data "exoscale_domain_record" "mx" {
     # content  = "mta*"  You can use Regex or not.
 }
 
-output "first_record_id" {
+output "first_domain_record_name" {
   value = $(data.exoscale_domain_record.mx.records.0.name)
   # value = $(data.exoscale_domain_record.mx.records.1.id)
 }
