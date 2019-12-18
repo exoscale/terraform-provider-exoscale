@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
@@ -24,7 +25,7 @@ func TestAccDatasourceDomainRecord(t *testing.T) {
 data "exoscale_domain_record" "test_record" {
   domain = "${exoscale_domain.exo.id}"
   filter {}
-}`, testAccResourceDomainRecordConfigCreate, testAccResourceDomainRecordConfigCreate2),
+}`, testAccResourceDomainRecordConfigCreate, testAccDataSourceDomainRecordConfigCreate),
 				ExpectError: regexp.MustCompile("either name or id must be specified"),
 			},
 			{
@@ -38,7 +39,7 @@ data "exoscale_domain_record" "test_record" {
   filter {
     name   = "${exoscale_domain_record.mx.name}"
   }
-}`, testAccResourceDomainRecordConfigCreate, testAccResourceDomainRecordConfigCreate2),
+}`, testAccResourceDomainRecordConfigCreate, testAccDataSourceDomainRecordConfigCreate),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDatasourceDomainRecordAttributes(
 						"data.exoscale_domain_record.test_record",
@@ -60,7 +61,7 @@ data "exoscale_domain_record" "test_record" {
 			  filter {
 			    id = "${exoscale_domain_record.mx.id}"
 			  }
-			}`, testAccResourceDomainRecordConfigCreate, testAccResourceDomainRecordConfigCreate2),
+			}`, testAccResourceDomainRecordConfigCreate, testAccDataSourceDomainRecordConfigCreate),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDatasourceDomainRecordAttributes(
 						"data.exoscale_domain_record.test_record",
@@ -82,7 +83,7 @@ data "exoscale_domain_record" "test_record" {
 			  filter {
 			    record_type = "MX"
 			  }
-			}`, testAccResourceDomainRecordConfigCreate, testAccResourceDomainRecordConfigCreate2),
+			}`, testAccResourceDomainRecordConfigCreate, testAccDataSourceDomainRecordConfigCreate),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDatasourceDomainRecordAttributes(
 						"data.exoscale_domain_record.test_record",
@@ -104,7 +105,7 @@ data "exoscale_domain_record" "test_record" {
 			  filter {
 			    content = "mta*"
 			  }
-			}`, testAccResourceDomainRecordConfigCreate, testAccResourceDomainRecordConfigCreate2),
+			}`, testAccResourceDomainRecordConfigCreate, testAccDataSourceDomainRecordConfigCreate),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDatasourceDomainRecordAttributes(
 						"data.exoscale_domain_record.test_record",
@@ -131,12 +132,14 @@ func testAccDatasourceDomainRecordAttributes(rsName string, expected testAttrs) 
 			return fmt.Errorf("Snapshot records source ID not set")
 		}
 
+		spew.Dump(rs.Primary.DeepCopy())
+
 		return checkResourceAttributes(expected, rs.Primary.Attributes)
 	}
 
 }
 
-var testAccResourceDomainRecordConfigCreate2 = `
+var testAccDataSourceDomainRecordConfigCreate = `
 resource "exoscale_domain_record" "mx2" {
   domain      = "${exoscale_domain.exo.id}"
   name        = "mail2"

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
 	"time"
 
 	"github.com/exoscale/egoscale"
@@ -138,7 +139,10 @@ func datasourceDomainRecordRead(d *schema.ResourceData, meta interface{}) error 
 		if err != nil {
 			return err
 		}
-		records = datasourceDomainRecordFilter(records, m["content"].(string))
+		records, err = datasourceDomainRecordFilter(records, m["content"].(string))
+		if err != nil {
+			return err
+		}
 	}
 
 	d.SetId(time.Now().UTC().String())
@@ -173,10 +177,20 @@ func datasourceDomainRecordApply(d *schema.ResourceData, records []egoscale.DNSR
 	return nil
 }
 
-func datasourceDomainRecordFilter(records []egoscale.DNSRecord, content string) []egoscale.DNSRecord {
-	if content == "" {
-		return records
+func datasourceDomainRecordFilter(records []egoscale.DNSRecord, content string) ([]egoscale.DNSRecord, error) {
+	regexp, err := regexp.Compile(content)
+	if err != nil {
+		return nil, err
 	}
 
-	return records
+	res := make([]egoscale.DNSRecord, 0)
+	for _, r := range records {
+		if !regexp.Match([]byte(r.Content)) {
+			continue
+		}
+
+		res = append(res, r)
+	}
+
+	return res, nil
 }
