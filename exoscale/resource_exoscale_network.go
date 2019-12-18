@@ -155,29 +155,10 @@ func resourceNetworkRead(d *schema.ResourceData, meta interface{}) error {
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
 	defer cancel()
 
-	client := GetComputeClient(meta)
-
-	id, err := egoscale.ParseUUID(d.Id())
+	networks, err := resourceNetworkFind(ctx, d, meta)
 	if err != nil {
 		return err
 	}
-
-	zoneName := d.Get("zone").(string)
-	zone, err := getZoneByName(ctx, client, zoneName)
-	if err != nil {
-		return err
-	}
-
-	resp, err := client.RequestWithContext(ctx, &egoscale.ListNetworks{
-		ID:     id,
-		ZoneID: zone.ID,
-	})
-
-	if err != nil {
-		return handleNotFound(d, err)
-	}
-
-	networks := resp.(*egoscale.ListNetworksResponse)
 	if networks.Count == 0 {
 		return fmt.Errorf("No network found for ID: %s", d.Id())
 	}
@@ -189,34 +170,43 @@ func resourceNetworkRead(d *schema.ResourceData, meta interface{}) error {
 	return resourceNetworkApply(d, &network)
 }
 
+func resourceNetworkFind(ctx context.Context, d *schema.ResourceData, meta interface{}) (*egoscale.ListNetworksResponse, error) {
+	client := GetComputeClient(meta)
+	id := egoscale.MustParseUUID(d.Id())
+
+	r, err := client.RequestWithContext(ctx, &egoscale.ListZones{})
+	if err != nil {
+		return nil, err
+	}
+	zones := r.(*egoscale.ListZonesResponse).Zone
+
+	var resp interface{}
+	for _, zone := range zones {
+		resp, err = client.RequestWithContext(ctx, &egoscale.ListNetworks{
+			ID:     id,
+			ZoneID: zone.ID,
+		})
+		if r, ok := err.(*egoscale.ErrorResponse); ok && r.ErrorCode == egoscale.ParamError {
+			continue
+		} else if ok && r.ErrorCode != egoscale.NotFound {
+			return nil, err
+		}
+
+		break
+	}
+
+	return resp.(*egoscale.ListNetworksResponse), nil
+}
+
 func resourceNetworkExists(d *schema.ResourceData, meta interface{}) (bool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
 	defer cancel()
 
-	client := GetComputeClient(meta)
-
-	id, err := egoscale.ParseUUID(d.Id())
+	networks, err := resourceNetworkFind(ctx, d, meta)
 	if err != nil {
 		return false, err
 	}
 
-	zoneName := d.Get("zone").(string)
-	zone, err := getZoneByName(ctx, client, zoneName)
-	if err != nil {
-		return false, err
-	}
-
-	resp, err := client.RequestWithContext(ctx, &egoscale.ListNetworks{
-		ID:     id,
-		ZoneID: zone.ID,
-	})
-
-	if err != nil {
-		e := handleNotFound(d, err)
-		return d.Id() != "", e
-	}
-
-	networks := resp.(*egoscale.ListNetworksResponse)
 	if networks.Count == 0 {
 		d.SetId("")
 		return false, nil
