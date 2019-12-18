@@ -108,4 +108,4 @@ func TestCheckResourceAttributes(t *testing.T) {
 
 var defaultExoscaleZone = "ch-gva-2"
 var defaultExoscaleTemplate = "Linux Ubuntu 18.04 LTS 64-bit"
-var defaultExoscaleTemplateID = "45346aba-6027-45bc-ad1e-bd1f563c2d84" // "Linux Ubuntu 18.04 LTS 64-bit" @ ch-gva-2
+var defaultExoscaleTemplateID = "287b6306-fdeb-4dc6-855d-90c4f68f572b" // "Linux Ubuntu 18.04 LTS 64-bit" @ ch-gva-2
