@@ -12,6 +12,88 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
 
+var (
+	testAccResourceInstancePoolSSHKeyName      = testPrefix + "-" + testRandomString()
+	testAccResourceInstancePoolZoneName        = testZoneName
+	testAccResourceInstancePoolName            = testPrefix + "-" + testRandomString()
+	testAccResourceInstancePoolNameUpdated     = testAccResourceInstancePoolName + "-updated"
+	testAccResourceInstancePoolDescription     = testDescription
+	testAccResourceInstancePoolTemplateID      = testInstanceTemplateID
+	testAccResourceInstancePoolServiceOffering = "medium"
+	testAccResourceInstancePoolSize            = 2
+	testAccResourceInstancePoolDiskSize        = 10
+	testAccResourceInstancePoolSizeUpdated     = 1
+	testAccResourceInstancePoolUserData        = `#cloud-config
+package_upgrade: true
+`
+
+	testAccResourceInstancePoolConfigCreate = fmt.Sprintf(`
+resource "exoscale_ssh_keypair" "key" {
+  name = "%s"
+}
+
+resource "exoscale_instance_pool" "pool" {
+  zone = "%s"
+  name = "%s"
+  template_id = "%s"
+  service_offering = "%s"
+  size = %d
+  disk_size = %d
+  key_pair = "${exoscale_ssh_keypair.key.name}"
+  user_data = <<EOF
+%s
+EOF
+
+  timeouts {
+    delete = "10m"
+  }
+}
+`,
+		testAccResourceInstancePoolSSHKeyName,
+		testAccResourceInstancePoolZoneName,
+		testAccResourceInstancePoolName,
+		testAccResourceInstancePoolTemplateID,
+		testAccResourceInstancePoolServiceOffering,
+		testAccResourceInstancePoolSize,
+		testAccResourceInstancePoolDiskSize,
+		testAccResourceInstancePoolUserData,
+	)
+
+	testAccResourceInstancePoolConfigUpdate = fmt.Sprintf(`
+resource "exoscale_ssh_keypair" "key" {
+  name = "%s"
+}
+
+resource "exoscale_instance_pool" "pool" {
+  zone = "%s"
+  name = "%s"
+  description = "%s"
+  template_id = "%s"
+  service_offering = "%s"
+  size = %d
+  disk_size = %d
+  key_pair = "${exoscale_ssh_keypair.key.name}"
+  user_data = <<EOF
+%s
+EOF
+
+  timeouts {
+    delete = "10m"
+  }
+}
+`,
+		testAccResourceInstancePoolSSHKeyName,
+		testAccResourceInstancePoolZoneName,
+		testAccResourceInstancePoolNameUpdated,
+		testAccResourceInstancePoolDescription,
+		testAccResourceInstancePoolTemplateID,
+		testAccResourceInstancePoolServiceOffering,
+		testAccResourceInstancePoolSizeUpdated,
+		testAccResourceInstancePoolDiskSize,
+		testAccResourceInstancePoolUserData,
+	)
+)
+
 func TestAccResourceInstancePool(t *testing.T) {
 	pool := new(egoscale.InstancePool)
 
@@ -26,13 +108,13 @@ func TestAccResourceInstancePool(t *testing.T) {
 					testAccCheckResourceInstancePoolExists("exoscale_instance_pool.pool", pool),
 					testAccCheckResourceInstancePool(pool),
 					testAccCheckResourceInstancePoolAttributes(testAttrs{
-						"template_id":      ValidateString(defaultExoscaleTemplateID),
-						"zone":             ValidateString(defaultExoscaleZone),
-						"name":             ValidateString("instance-pool-test"),
-						"service_offering": ValidateString("medium"),
-						"size":             ValidateString("3"),
-						"disk_size":        ValidateString("50"),
-						"key_pair":         ValidateString("terraform-test-keypair"),
+						"zone":             ValidateString(testAccResourceInstancePoolZoneName),
+						"name":             ValidateString(testAccResourceInstancePoolName),
+						"template_id":      ValidateString(testAccResourceInstancePoolTemplateID),
+						"service_offering": ValidateString(testAccResourceInstancePoolServiceOffering),
+						"size":             ValidateString(fmt.Sprint(testAccResourceInstancePoolSize)),
+						"disk_size":        ValidateString(fmt.Sprint(testAccResourceInstancePoolDiskSize)),
+						"key_pair":         ValidateString(testAccResourceInstancePoolSSHKeyName),
 					}),
 				),
 			},
@@ -42,29 +124,33 @@ func TestAccResourceInstancePool(t *testing.T) {
 					testAccCheckResourceInstancePoolExists("exoscale_instance_pool.pool", pool),
 					testAccCheckResourceInstancePool(pool),
 					testAccCheckResourceInstancePoolAttributes(testAttrs{
-						"name":        ValidateString("instance-pool-test-updated"),
-						"description": ValidateString("test description"),
-						"user_data":   ValidateString("#cloud-config\npackage_upgrade: true\n"),
-						"size":        ValidateString("1"),
+						"zone":             ValidateString(testAccResourceInstancePoolZoneName),
+						"name":             ValidateString(testAccResourceInstancePoolNameUpdated),
+						"description":      ValidateString(testAccResourceInstancePoolDescription),
+						"template_id":      ValidateString(testAccResourceInstancePoolTemplateID),
+						"service_offering": ValidateString(testAccResourceInstancePoolServiceOffering),
+						"size":             ValidateString(fmt.Sprint(testAccResourceInstancePoolSizeUpdated)),
+						"disk_size":        ValidateString(fmt.Sprint(testAccResourceInstancePoolDiskSize)),
+						"key_pair":         ValidateString(testAccResourceInstancePoolSSHKeyName),
 					}),
 				),
 			},
 			{
-				ResourceName:      "exoscale_instance_pool.pool",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "exoscale_instance_pool.pool",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"state"},
 				ImportStateCheck: func(s []*terraform.InstanceState) error {
 					return checkResourceAttributes(
 						testAttrs{
-							"template_id":      ValidateString(defaultExoscaleTemplateID),
-							"zone":             ValidateString(defaultExoscaleZone),
-							"name":             ValidateString("instance-pool-test-updated"),
-							"description":      ValidateString("test description"),
-							"service_offering": ValidateString("medium"),
-							"size":             ValidateString("1"),
-							"disk_size":        ValidateString("50"),
-							"key_pair":         ValidateString("terraform-test-keypair"),
-							"user_data":        ValidateString("#cloud-config\npackage_upgrade: true\n"),
+							"zone":             ValidateString(testAccResourceInstancePoolZoneName),
+							"name":             ValidateString(testAccResourceInstancePoolNameUpdated),
+							"description":      ValidateString(testAccResourceInstancePoolDescription),
+							"template_id":      ValidateString(testAccResourceInstancePoolTemplateID),
+							"service_offering": ValidateString(testAccResourceInstancePoolServiceOffering),
+							"size":             ValidateString(fmt.Sprint(testAccResourceInstancePoolSizeUpdated)),
+							"disk_size":        ValidateString(fmt.Sprint(testAccResourceInstancePoolDiskSize)),
+							"key_pair":         ValidateString(testAccResourceInstancePoolSSHKeyName),
 						},
 						s[0].Attributes)
 				},
@@ -91,7 +177,7 @@ func testAccCheckResourceInstancePoolExists(n string, pool *egoscale.InstancePoo
 
 		client := GetComputeClient(testAccProvider.Meta())
 
-		zone, err := getZoneByName(context.TODO(), client, defaultExoscaleZone)
+		zone, err := getZoneByName(context.TODO(), client, testZoneName)
 		if err != nil {
 			return err
 		}
@@ -144,7 +230,7 @@ func testAccCheckResourceInstancePoolDestroy(s *terraform.State) error {
 			return err
 		}
 
-		zone, err := getZoneByName(context.TODO(), client, defaultExoscaleZone)
+		zone, err := getZoneByName(context.TODO(), client, testZoneName)
 		if err != nil {
 			return err
 		}
@@ -168,78 +254,3 @@ func testAccCheckResourceInstancePoolDestroy(s *terraform.State) error {
 	}
 	return errors.New("instance pool still exists")
 }
-
-var testAccResourceInstancePoolConfigCreate = fmt.Sprintf(`
-resource "exoscale_ssh_keypair" "key" {
-  name = "terraform-test-keypair"
-}
-
-variable "template" {
-  default = %q
-}
-
-variable "zone" {
-  default = %q
-}
-
-data "exoscale_compute_template" "instancepool" {
-  zone = "${var.zone}"
-  name = "${var.template}"
-}
-
-resource "exoscale_instance_pool" "pool" {
-  name = "instance-pool-test"
-  template_id = "${data.exoscale_compute_template.instancepool.id}"
-  service_offering = "medium"
-  size = 3
-  disk_size = 50
-  user_data = "#cloud-config\npackage_upgrade: true\n"
-  key_pair = "${exoscale_ssh_keypair.key.name}"
-  zone = "${var.zone}"
-
-  timeouts {
-    delete = "10m"
-  }
-}
-`,
-	defaultExoscaleTemplate,
-	defaultExoscaleZone,
-)
-
-var testAccResourceInstancePoolConfigUpdate = fmt.Sprintf(`
-resource "exoscale_ssh_keypair" "key" {
-  name = "terraform-test-keypair"
-}
-
-variable "template" {
-  default = %q
-}
-
-variable "zone" {
-  default = %q
-}
-
-data "exoscale_compute_template" "instancepool" {
-  zone = "${var.zone}"
-  name = "${var.template}"
-}
-
-resource "exoscale_instance_pool" "pool" {
-  name = "instance-pool-test-updated"
-  description = "test description"
-  template_id = "${data.exoscale_compute_template.instancepool.id}"
-  service_offering = "medium"
-  size = 1
-  disk_size = 50
-  user_data = "#cloud-config\npackage_upgrade: true\n"
-  key_pair = "${exoscale_ssh_keypair.key.name}"
-  zone = "${var.zone}"
-
-  timeouts {
-    delete = "10m"
-  }
-}
-`,
-	defaultExoscaleTemplate,
-	defaultExoscaleZone,
-)

@@ -11,6 +11,53 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
 
+var (
+	testAccResourceSecondaryIPAddressZoneName          = testZoneName
+	testAccResourceSecondaryIPAddressSSHKeyName        = testPrefix + "-" + testRandomString()
+	testAccResourceSecondaryIPAddressComputeName       = testPrefix + "-" + testRandomString()
+	testAccResourceSecondaryIPAddressComputeTemplateID = testInstanceTemplateID
+
+	testAccResourceSecondaryIPAddressConfig = fmt.Sprintf(`
+resource "exoscale_ssh_keypair" "key" {
+  name = "%s"
+}
+
+resource "exoscale_ipaddress" "eip" {
+  zone = "%s"
+
+  tags = {
+    terraform = "acceptance"
+  }
+}
+
+resource "exoscale_compute" "vm" {
+  zone = exoscale_ipaddress.eip.zone
+  display_name = "%s"
+  template_id = "%s"
+  size = "Micro"
+  disk_size = "10"
+  key_pair = exoscale_ssh_keypair.key.name
+
+  # prevents bad ordering during the deletion
+  depends_on = ["exoscale_ipaddress.eip"]
+
+  tags = {
+    terraform = "acceptance"
+  }
+}
+
+resource "exoscale_secondary_ipaddress" "ip" {
+  compute_id = exoscale_compute.vm.id
+  ip_address = exoscale_ipaddress.eip.ip_address
+}
+`,
+		testAccResourceSecondaryIPAddressSSHKeyName,
+		testAccResourceSecondaryIPAddressZoneName,
+		testAccResourceSecondaryIPAddressComputeName,
+		testAccResourceSecondaryIPAddressComputeTemplateID,
+	)
+)
+
 func TestAccResourceSecondaryIPAddress(t *testing.T) {
 	vm := new(egoscale.VirtualMachine)
 	eip := new(egoscale.IPAddress)
@@ -138,47 +185,3 @@ func testAccCheckResourceSecondaryIPAddressDestroy(s *terraform.State) error {
 
 	return nil
 }
-
-var testAccResourceSecondaryIPAddressConfig = fmt.Sprintf(`
-resource "exoscale_ssh_keypair" "key" {
-  name = "terraform-test-keypair"
-}
-
-resource "exoscale_ipaddress" "eip" {
-  zone = %q
-
-  tags = {
-    terraform = "acceptance"
-  }
-}
-
-resource "exoscale_compute" "vm" {
-  display_name = "terraform-test-compute"
-  template = %q
-  zone = %q
-  size = "Micro"
-  disk_size = "12"
-  key_pair = "${exoscale_ssh_keypair.key.name}"
-
-  # prevents bad ordering during the deletion
-  depends_on = ["exoscale_ipaddress.eip"]
-
-  timeouts {
-    create = "10m"
-    delete = "30m"
-  }
-
-  tags = {
-    terraform = "acceptance"
-  }
-}
-
-resource "exoscale_secondary_ipaddress" "ip" {
-  compute_id = "${exoscale_compute.vm.id}"
-  ip_address = "${exoscale_ipaddress.eip.ip_address}"
-}
-`,
-	defaultExoscaleZone,
-	defaultExoscaleTemplate,
-	defaultExoscaleZone,
-)

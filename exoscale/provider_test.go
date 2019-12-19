@@ -2,12 +2,23 @@ package exoscale
 
 import (
 	"fmt"
+	"math/rand"
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+)
+
+// Common test environment information
+const (
+	testPrefix               = "test-terraform-exoscale-provider"
+	testDescription          = "Created by the terraform-exoscale provider"
+	testZoneName             = "ch-gva-2"
+	testInstanceTemplateName = "Linux Ubuntu 18.04 LTS 64-bit"
+	testInstanceTemplateID   = "287b6306-fdeb-4dc6-855d-90c4f68f572b" // "Linux Ubuntu 18.04 LTS 64-bit" @ ch-gva-2
 )
 
 // testAttrs represents a map of expected resource attributes during acceptance tests.
@@ -106,6 +117,14 @@ func TestCheckResourceAttributes(t *testing.T) {
 	}
 }
 
-var defaultExoscaleZone = "ch-gva-2"
-var defaultExoscaleTemplate = "Linux Ubuntu 18.04 LTS 64-bit"
-var defaultExoscaleTemplateID = "287b6306-fdeb-4dc6-855d-90c4f68f572b" // "Linux Ubuntu 18.04 LTS 64-bit" @ ch-gva-2
+func testRandomString() string {
+	chars := "1234567890abcdefghijklmnopqrstuvwxyz"
+
+	rand.Seed(time.Now().UnixNano())
+	b := make([]byte, 10)
+	for i := range b {
+		b[i] = chars[rand.Int63()%int64(len(chars))]
+	}
+
+	return string(b)
+}

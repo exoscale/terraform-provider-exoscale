@@ -11,6 +11,92 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
 
+var (
+	testAccResourceNICZoneName          = testZoneName
+	testAccResourceNICSSHKeyName        = testPrefix + "-" + testRandomString()
+	testAccResourceNICSNetworkName      = testPrefix + "-" + testRandomString()
+	testAccResourceNICComputeName       = testPrefix + "-" + testRandomString()
+	testAccResourceNICComputeTemplateID = testInstanceTemplateID
+	testAccResourceNICCIPAddress        = "10.0.0.1"
+	testAccResourceNICCIPAddressUpdated = "10.0.0.3"
+
+	testAccResourceNICConfigCreate = fmt.Sprintf(`
+locals {
+  zone = "%s"
+}
+
+resource "exoscale_ssh_keypair" "key" {
+  name = "%s"
+}
+
+resource "exoscale_compute" "vm" {
+  zone = local.zone
+  display_name = "%s"
+  template_id = "%s"
+  size = "Micro"
+  disk_size = "10"
+  key_pair = "${exoscale_ssh_keypair.key.name}"
+}
+
+resource "exoscale_network" "net" {
+  zone = local.zone
+  name = "%s"
+  start_ip = "10.0.0.1"
+  end_ip = "10.0.0.1"
+  netmask = "255.255.255.252"
+}
+
+resource "exoscale_nic" "nic" {
+  compute_id = "${exoscale_compute.vm.id}"
+  network_id = "${exoscale_network.net.id}"
+  ip_address = "%s"
+}
+`,
+		testAccResourceNICZoneName,
+		testAccResourceNICSSHKeyName,
+		testAccResourceNICComputeName,
+		testAccResourceNICComputeTemplateID,
+		testAccResourceNICSNetworkName,
+		testAccResourceNICCIPAddress,
+	)
+
+	testAccResourceNICConfigUpdate = fmt.Sprintf(`
+resource "exoscale_ssh_keypair" "key" {
+  name = "%s"
+}
+
+resource "exoscale_compute" "vm" {
+  zone = "%s"
+  display_name = "%s"
+  template_id = "%s"
+  size = "Micro"
+  disk_size = "10"
+  key_pair = "${exoscale_ssh_keypair.key.name}"
+}
+
+resource "exoscale_network" "net" {
+  zone = exoscale_compute.vm.zone
+  name = "%s"
+  start_ip = "10.0.0.1"
+  end_ip = "10.0.0.1"
+  netmask = "255.255.255.248"
+}
+
+resource "exoscale_nic" "nic" {
+  compute_id = "${exoscale_compute.vm.id}"
+  network_id = "${exoscale_network.net.id}"
+  ip_address = "%s"
+}
+`,
+		testAccResourceNICSSHKeyName,
+		testAccResourceNICZoneName,
+		testAccResourceNICComputeName,
+		testAccResourceNICComputeTemplateID,
+		testAccResourceNICSNetworkName,
+		testAccResourceNICCIPAddressUpdated,
+	)
+)
+
 func TestAccResourceNIC(t *testing.T) {
 	vm := new(egoscale.VirtualMachine)
 	network := new(egoscale.Network)
@@ -30,7 +116,7 @@ func TestAccResourceNIC(t *testing.T) {
 					testAccCheckResourceNIC(nic, net.ParseIP("10.0.0.1")),
 					testAccCheckResourceNICAttributes(testAttrs{
 						"mac_address": ValidateRegexp("^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$"),
-						"ip_address":  ValidateString("10.0.0.1"),
+						"ip_address":  ValidateString(testAccResourceNICCIPAddress),
 					}),
 				),
 			}, {
@@ -42,7 +128,7 @@ func TestAccResourceNIC(t *testing.T) {
 					testAccCheckResourceNIC(nic, net.ParseIP("10.0.0.3")),
 					testAccCheckResourceNICAttributes(testAttrs{
 						"mac_address": ValidateRegexp("^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$"),
-						"ip_address":  ValidateString("10.0.0.3"),
+						"ip_address":  ValidateString(testAccResourceNICCIPAddressUpdated),
 					}),
 				),
 			},
@@ -132,85 +218,3 @@ func testAccCheckResourceNICDestroy(s *terraform.State) error {
 	}
 	return errors.New("NIC still exists")
 }
-
-var testAccResourceNICConfigCreate = fmt.Sprintf(`
-resource "exoscale_ssh_keypair" "key" {
-  name = "terraform-test-keypair"
-}
-
-resource "exoscale_compute" "vm" {
-  display_name = "terraform-test-compute"
-  template = %q
-  zone = %q
-  size = "Micro"
-  disk_size = "12"
-  key_pair = "${exoscale_ssh_keypair.key.name}"
-
-  timeouts {
-    create = "10m"
-    delete = "30m"
-  }
-}
-
-resource "exoscale_network" "net" {
-  name = "terraform-test-network"
-  display_text = "Terraform Acceptance Test"
-  zone = %q
-
-  start_ip = "10.0.0.1"
-  end_ip = "10.0.0.1"
-  netmask = "255.255.255.252"
-}
-
-resource "exoscale_nic" "nic" {
-  compute_id = "${exoscale_compute.vm.id}"
-  network_id = "${exoscale_network.net.id}"
-
-  ip_address = "10.0.0.1"
-}
-`,
-	defaultExoscaleTemplate,
-	defaultExoscaleZone,
-	defaultExoscaleZone,
-)
-
-var testAccResourceNICConfigUpdate = fmt.Sprintf(`
-resource "exoscale_ssh_keypair" "key" {
-  name = "terraform-test-keypair"
-}
-
-resource "exoscale_compute" "vm" {
-  display_name = "terraform-test-compute"
-  template = %q
-  zone = %q
-  size = "Micro"
-  disk_size = "12"
-  key_pair = "${exoscale_ssh_keypair.key.name}"
-
-  timeouts {
-    create = "10m"
-    delete = "30m"
-  }
-}
-
-resource "exoscale_network" "net" {
-  name = "terraform-test-network"
-  display_text = "Terraform Acceptance Test"
-  zone = %q
-
-  start_ip = "10.0.0.1"
-  end_ip = "10.0.0.1"
-  netmask = "255.255.255.248"
-}
-
-resource "exoscale_nic" "nic" {
-  compute_id = "${exoscale_compute.vm.id}"
-  network_id = "${exoscale_network.net.id}"
-
-  ip_address = "10.0.0.3"
-}
-`,
-	defaultExoscaleTemplate,
-	defaultExoscaleZone,
-	defaultExoscaleZone,
-)

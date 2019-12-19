@@ -12,6 +12,63 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
 
+var (
+	testAccResourceDomainRecordDomainName     = testPrefix + "-" + testRandomString() + ".net"
+	testAccResourceDomainRecordName           = "mail1"
+	testAccResourceDomainRecordNameUpdated    = "mail2"
+	testAccResourceDomainRecordType           = "MX"
+	testAccResourceDomainRecordContent        = "mta1"
+	testAccResourceDomainRecordContentUpdated = "mta2"
+	testAccResourceDomainRecordPrio           = 10
+	testAccResourceDomainRecordPrioUpdated    = 20
+	testAccResourceDomainRecordTTL            = 10
+	testAccResourceDomainRecordTTLUpdated     = 20
+
+	testAccResourceDomainRecordConfigCreate = fmt.Sprintf(`
+resource "exoscale_domain" "exo" {
+  name = "%s"
+}
+
+resource "exoscale_domain_record" "mx" {
+  domain      = "${exoscale_domain.exo.id}"
+  name        = "%s"
+  record_type = "%s"
+  content     = "%s"
+  prio        = %d
+  ttl         = %d
+}
+`,
+		testAccResourceDomainRecordDomainName,
+		testAccResourceDomainRecordName,
+		testAccResourceDomainRecordType,
+		testAccResourceDomainRecordContent,
+		testAccResourceDomainRecordPrio,
+		testAccResourceDomainRecordTTL,
+	)
+
+	testAccResourceDomainRecordConfigUpdate = fmt.Sprintf(`
+resource "exoscale_domain" "exo" {
+  name = "%s"
+}
+
+resource "exoscale_domain_record" "mx" {
+  domain      = "${exoscale_domain.exo.id}"
+  name        = "%s"
+  record_type = "%s"
+  content     = "%s"
+  prio        = %d
+  ttl         = %d
+}
+`,
+		testAccResourceDomainRecordDomainName,
+		testAccResourceDomainRecordNameUpdated,
+		testAccResourceDomainRecordType,
+		testAccResourceDomainRecordContentUpdated,
+		testAccResourceDomainRecordPrioUpdated,
+		testAccResourceDomainRecordTTLUpdated,
+	)
+)
+
 func TestAccResourceDomainRecord(t *testing.T) {
 	domain := new(egoscale.DNSDomain)
 	record := new(egoscale.DNSRecord)
@@ -28,11 +85,11 @@ func TestAccResourceDomainRecord(t *testing.T) {
 					testAccCheckResourceDomainRecordExists("exoscale_domain_record.mx", domain, record),
 					testAccCheckResourceDomainRecord(record),
 					testAccCheckResourceDomainRecordAttributes(testAttrs{
-						"name":        ValidateString("mail1"),
-						"record_type": ValidateString("MX"),
-						"content":     ValidateString("mta1"),
-						"prio":        ValidateString("10"),
-						"ttl":         ValidateString("10"),
+						"name":        ValidateString(testAccResourceDomainRecordName),
+						"record_type": ValidateString(testAccResourceDomainRecordType),
+						"content":     ValidateString(testAccResourceDomainRecordContent),
+						"prio":        ValidateString(fmt.Sprint(testAccResourceDomainRecordPrio)),
+						"ttl":         ValidateString(fmt.Sprint(testAccResourceDomainRecordTTL)),
 					}),
 				),
 			},
@@ -43,11 +100,11 @@ func TestAccResourceDomainRecord(t *testing.T) {
 					testAccCheckResourceDomainRecordExists("exoscale_domain_record.mx", domain, record),
 					testAccCheckResourceDomainRecord(record),
 					testAccCheckResourceDomainRecordAttributes(testAttrs{
-						"name":        ValidateString("mail2"),
-						"record_type": ValidateString("MX"),
-						"content":     ValidateString("mta2"),
-						"prio":        ValidateString("20"),
-						"ttl":         ValidateString("20"),
+						"name":        ValidateString(testAccResourceDomainRecordNameUpdated),
+						"record_type": ValidateString(testAccResourceDomainRecordType),
+						"content":     ValidateString(testAccResourceDomainRecordContentUpdated),
+						"prio":        ValidateString(fmt.Sprint(testAccResourceDomainRecordPrioUpdated)),
+						"ttl":         ValidateString(fmt.Sprint(testAccResourceDomainRecordTTLUpdated)),
 					}),
 				),
 			},
@@ -58,11 +115,11 @@ func TestAccResourceDomainRecord(t *testing.T) {
 				ImportStateCheck: func(s []*terraform.InstanceState) error {
 					return checkResourceAttributes(
 						testAttrs{
-							"name":        ValidateString("mail2"),
-							"record_type": ValidateString("MX"),
-							"content":     ValidateString("mta2"),
-							"prio":        ValidateString("20"),
-							"ttl":         ValidateString("20"),
+							"name":        ValidateString(testAccResourceDomainRecordNameUpdated),
+							"record_type": ValidateString(testAccResourceDomainRecordType),
+							"content":     ValidateString(testAccResourceDomainRecordContentUpdated),
+							"prio":        ValidateString(fmt.Sprint(testAccResourceDomainRecordPrioUpdated)),
+							"ttl":         ValidateString(fmt.Sprint(testAccResourceDomainRecordTTLUpdated)),
 						},
 						s[0].Attributes)
 				},
@@ -143,35 +200,3 @@ func testAccCheckResourceDomainRecordDestroy(s *terraform.State) error {
 	}
 	return nil
 }
-
-var testAccResourceDomainRecordConfigCreate = fmt.Sprintf(`
-resource "exoscale_domain" "exo" {
-  name = "%s"
-}
-
-resource "exoscale_domain_record" "mx" {
-  domain      = "${exoscale_domain.exo.id}"
-  name        = "mail1"
-  record_type = "MX"
-  content     = "mta1"
-  prio        = 10
-  ttl         = 10
-}
-`,
-	testDomain)
-
-var testAccResourceDomainRecordConfigUpdate = fmt.Sprintf(`
-resource "exoscale_domain" "exo" {
-  name = "%s"
-}
-
-resource "exoscale_domain_record" "mx" {
-  domain      = "${exoscale_domain.exo.id}"
-  name        = "mail2"
-  record_type = "MX"
-  content     = "mta2"
-  ttl         = 20
-  prio        = 20
-}
-`,
-	testDomain)

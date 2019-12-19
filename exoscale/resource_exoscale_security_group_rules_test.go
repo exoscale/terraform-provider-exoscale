@@ -13,6 +13,90 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
 
+var (
+	testAccResourceSecurityGroupRulesSecurityGroupName = testPrefix + "-" + testRandomString()
+
+	testAccResourceSecurityGroupRulesConfigCreate = fmt.Sprintf(`
+resource "exoscale_security_group" "sg" {
+  name = "%s"
+}
+
+resource "exoscale_security_group_rules" "rules" {
+  security_group_id = "${exoscale_security_group.sg.id}"
+
+  ingress {
+    protocol = "ICMP"
+    icmp_type = 8
+    icmp_code = 0
+    cidr_list = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    protocol = "ICMPv6"
+    icmp_type = 128
+    icmp_code = 0
+    cidr_list = ["::/0"]
+  }
+
+  ingress {
+    protocol = "TCP"
+    cidr_list = ["10.0.0.0/24", "::/0"]
+    ports = ["22", "8000-8888"]
+    user_security_group_list = ["${exoscale_security_group.sg.name}", "default"]
+  }
+
+  egress {
+    protocol = "UDP"
+    cidr_list = ["192.168.0.0/24", "::/0"]
+    ports = ["44", "2375-2377"]
+    user_security_group_list = ["default"]
+  }
+}
+`,
+		testAccResourceSecurityGroupRulesSecurityGroupName,
+	)
+
+	testAccResourceSecurityGroupRulesConfigUpdate = fmt.Sprintf(`
+resource "exoscale_security_group" "sg" {
+  name = "%s"
+}
+
+resource "exoscale_security_group_rules" "rules" {
+  security_group_id = "${exoscale_security_group.sg.id}"
+
+  ingress {
+    protocol = "ICMP"
+    icmp_type = 8
+    icmp_code = 0
+    cidr_list = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    protocol = "ICMPv6"
+    icmp_type = 128
+    icmp_code = 0
+    cidr_list = ["::/0"]
+  }
+
+  ingress {
+    protocol = "TCP"
+    cidr_list = ["10.0.0.0/24", "::/0"]
+    ports = ["2222", "8000-8888"]
+    user_security_group_list = ["${exoscale_security_group.sg.name}", "default"]
+  }
+
+  egress {
+    protocol = "UDP"
+    cidr_list = ["192.168.0.0/24", "::/0"]
+    ports = ["4444", "2375-2377"]
+    user_security_group_list = ["default"]
+  }
+}
+`,
+		testAccResourceSecurityGroupRulesSecurityGroupName,
+	)
+)
+
 func TestPreparePorts(t *testing.T) {
 	ports := preparePorts(schema.NewSet(schema.HashString, []interface{}{"22", "10-20"}))
 
@@ -77,7 +161,7 @@ func TestAccResourceSecurityGroupRules(t *testing.T) {
 						Protocol:  "TCP",
 					}),
 					testAccCheckSecurityGroupIngressRuleExists(sg, &egoscale.IngressRule{
-						SecurityGroupName: "terraform-test-security-group",
+						SecurityGroupName: testAccResourceSecurityGroupRulesSecurityGroupName,
 						StartPort:         22,
 						EndPort:           22,
 						Protocol:          "TCP",
@@ -89,7 +173,7 @@ func TestAccResourceSecurityGroupRules(t *testing.T) {
 						Protocol:          "TCP",
 					}),
 					testAccCheckSecurityGroupIngressRuleExists(sg, &egoscale.IngressRule{
-						SecurityGroupName: "terraform-test-security-group",
+						SecurityGroupName: testAccResourceSecurityGroupRulesSecurityGroupName,
 						StartPort:         8000,
 						EndPort:           8888,
 						Protocol:          "TCP",
@@ -144,7 +228,7 @@ func TestAccResourceSecurityGroupRules(t *testing.T) {
 					testAccCheckResourceSecurityGroupExists("exoscale_security_group.sg", sg),
 					testAccCheckSecurityGroupHasManyRules(16),
 					testAccCheckSecurityGroupIngressRuleExists(sg, &egoscale.IngressRule{
-						SecurityGroupName: "terraform-test-security-group",
+						SecurityGroupName: testAccResourceSecurityGroupRulesSecurityGroupName,
 						StartPort:         2222,
 						EndPort:           2222,
 						Protocol:          "TCP",
@@ -266,81 +350,3 @@ func testAccCheckResourceSecurityGroupRulesDestroy(s *terraform.State) error {
 
 	return errors.New("Security Group Rules still exist")
 }
-
-var testAccResourceSecurityGroupRulesConfigCreate = `
-resource "exoscale_security_group" "sg" {
-  name = "terraform-test-security-group"
-  description = "Terraform Security Group Test"
-}
-
-resource "exoscale_security_group_rules" "rules" {
-  security_group_id = "${exoscale_security_group.sg.id}"
-
-  ingress {
-    protocol = "ICMP"
-    icmp_type = 8
-    icmp_code = 0
-    cidr_list = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    protocol = "ICMPv6"
-    icmp_type = 128
-    icmp_code = 0
-    cidr_list = ["::/0"]
-  }
-
-  ingress {
-    protocol = "TCP"
-    cidr_list = ["10.0.0.0/24", "::/0"]
-    ports = ["22", "8000-8888"]
-    user_security_group_list = ["${exoscale_security_group.sg.name}", "default"]
-  }
-
-  egress {
-    protocol = "UDP"
-    cidr_list = ["192.168.0.0/24", "::/0"]
-    ports = ["44", "2375-2377"]
-    user_security_group_list = ["default"]
-  }
-}
-`
-
-var testAccResourceSecurityGroupRulesConfigUpdate = `
-resource "exoscale_security_group" "sg" {
-  name = "terraform-test-security-group"
-  description = "Terraform Security Group Test"
-}
-
-resource "exoscale_security_group_rules" "rules" {
-  security_group_id = "${exoscale_security_group.sg.id}"
-
-  ingress {
-    protocol = "ICMP"
-    icmp_type = 8
-    icmp_code = 0
-    cidr_list = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    protocol = "ICMPv6"
-    icmp_type = 128
-    icmp_code = 0
-    cidr_list = ["::/0"]
-  }
-
-  ingress {
-    protocol = "TCP"
-    cidr_list = ["10.0.0.0/24", "::/0"]
-    ports = ["2222", "8000-8888"]
-    user_security_group_list = ["${exoscale_security_group.sg.name}", "default"]
-  }
-
-  egress {
-    protocol = "UDP"
-    cidr_list = ["192.168.0.0/24", "::/0"]
-    ports = ["4444", "2375-2377"]
-    user_security_group_list = ["default"]
-  }
-}
-`
