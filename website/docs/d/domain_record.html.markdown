@@ -3,40 +3,46 @@ layout: "exoscale"
 page_title: "Exoscale: exoscale_domain_record"
 sidebar_current: "docs-exoscale-domain_record"
 description: |-
-  Provides information about a Domain Record.
+  Provides information about an Exoscale DNS domain record.
 ---
 
 # exoscale\_domain\_record
 
-Use this data source to look Domain [Records][record].
+Provides information on [domain records][record] hosted on [Exoscale DNS][exodns].
 
-[templates]: https://community.exoscale.com/documentation/dns/api/
+[exodns]: https://www.exoscale.com/dns/
+[record]: ../r/domain_record.html
 
 ## Example Usage
 
 The example below matches all Domain Records that match with name `mailserver` and Record type `MX`.
 
 ```hcl
-data "exoscale_domain" "exo" {
+data "exoscale_domain" "mycompany" {
   name = my-company.com
 }
 
-data "exoscale_domain_record" "mx" {
-  domain = test.com"
+data "exoscale_domain_record" "mycompany_mailservers" {
+  domain = data.exoscale_domain.mycompany.name
   filter {
     name   = "mailserver"
     recorde_type  = "MX"
-    # OR 
-    # id   = 12345
-    # OR 
-    # record_type  = "MX"
-    # OR 
-    # content  = "mta*"  You can use Regex or not.
+  }
+}
+
+data "exoscale_domain_record" "mycompany_nameservers" {
+  domain = data.exoscale_domain.mycompany.name
+  filter {
+    content  = "ns.*"
+  }
 }
 
 output "first_domain_record_name" {
-  value = $(data.exoscale_domain_record.mx.records.0.name)
-  # value = $(data.exoscale_domain_record.mx.records.1.id)
+  value = $(data.exoscale_domain_record.mycompany_mailservers.records.0.name)
+}
+
+output "first_domain_record_content" {
+  value = $(data.exoscale_domain_record.mycompany_nameservers.records.0.content)
 }
 ```
 
@@ -53,7 +59,7 @@ output "first_domain_record_name" {
 * `content` - A regular expression matching the Domain Record content to lookup.
 
 
-[domain]: https://www.exoscale.com/dns/
+[domain]: ../r/domain.html
 
 ## Attributes Reference
 
@@ -65,7 +71,5 @@ The following attributes are exported:
 * `domain` - Domain Name where the Record is associate to.
 * `name` - Domain Record name
 * `content` - Domain Record content
-* `create_at` - Domain Record creation date
-* `update_at` - Domain Record last updated date 
 * `record_type` - Domain Record type
 * `prio` - Domain Record prio

@@ -9,6 +9,7 @@ import (
 
 	"github.com/exoscale/egoscale"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 )
 
 func datasourceDomainRecord() *schema.Resource {
@@ -36,7 +37,7 @@ func datasourceDomainRecord() *schema.Resource {
 						"name": {
 							Type:          schema.TypeString,
 							Optional:      true,
-							ConflictsWith: []string{"filter.0.id", "filter.0.record_type", "filter.0.content"},
+							ConflictsWith: []string{"filter.0.id", "filter.0.content"},
 						},
 						"record_type": {
 							Type:          schema.TypeString,
@@ -46,6 +47,7 @@ func datasourceDomainRecord() *schema.Resource {
 						"content": {
 							Type:          schema.TypeString,
 							Optional:      true,
+							ValidateFunc:  validation.ValidateRegexp,
 							ConflictsWith: []string{"filter.0.id", "filter.0.name", "filter.0.record_type"},
 						},
 					},
@@ -74,16 +76,6 @@ func datasourceDomainRecord() *schema.Resource {
 						"content": {
 							Type:        schema.TypeString,
 							Description: "Content of the Record",
-							Optional:    true,
-						},
-						"create_at": {
-							Type:        schema.TypeString,
-							Description: "Creation of the Record",
-							Optional:    true,
-						},
-						"update_at": {
-							Type:        schema.TypeString,
-							Description: "Last update of the Record",
 							Optional:    true,
 						},
 						"record_type": {
@@ -147,10 +139,6 @@ func datasourceDomainRecordRead(d *schema.ResourceData, meta interface{}) error 
 
 	d.SetId(time.Now().UTC().String())
 
-	return datasourceDomainRecordApply(d, records)
-}
-
-func datasourceDomainRecordApply(d *schema.ResourceData, records []egoscale.DNSRecord) error {
 	if len(records) == 0 {
 		return errors.New("no records found")
 	}
@@ -162,14 +150,12 @@ func datasourceDomainRecordApply(d *schema.ResourceData, records []egoscale.DNSR
 			"domain":      d.Get("domain").(string),
 			"name":        r.Name,
 			"content":     r.Content,
-			"create_at":   r.CreatedAt,
-			"update_at":   r.UpdatedAt,
 			"record_type": r.RecordType,
 			"prio":        r.Prio,
 		}
 	}
 
-	err := d.Set("records", recordsDetails)
+	err = d.Set("records", recordsDetails)
 	if err != nil {
 		return fmt.Errorf("Error setting records: %s", err)
 	}
