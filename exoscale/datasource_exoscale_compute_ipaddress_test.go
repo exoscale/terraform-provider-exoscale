@@ -10,6 +10,24 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
 
+var (
+	testAccDataSourceIPAddressZoneName    = testZoneName
+	testAccDataSourceIPAddressDescription = testDescription
+
+	testAccDataSourceIPAddressConfigCreate = fmt.Sprintf(`
+resource "exoscale_ipaddress" "eip" {
+  zone = "%s"
+  description = "%s"
+  tags = {
+    test = "acceptance"
+  }
+}
+`,
+		testAccDataSourceIPAddressZoneName,
+		testAccDataSourceIPAddressDescription,
+	)
+)
+
 func TestAccDatasourceComputeIPAddress(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
@@ -29,10 +47,10 @@ data "exoscale_compute_ipaddress" "ip_address" {
 data "exoscale_compute_ipaddress" "ip_address" {
   zone = "ch-gva-2"
   id   = "${exoscale_ipaddress.eip.id}"
-}`, testAccIPAddressConfigCreate),
+}`, testAccDataSourceIPAddressConfigCreate),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDatasourceComputeIPAddressAttributes(testAttrs{
-						"description": ValidateString(testAccResourceIPAddressDescription),
+						"description": ValidateString(testAccDataSourceIPAddressDescription),
 					}),
 				),
 			},
@@ -43,10 +61,10 @@ data "exoscale_compute_ipaddress" "ip_address" {
 data "exoscale_compute_ipaddress" "ip_address" {
   zone        = "ch-gva-2"
   description = "${exoscale_ipaddress.eip.description}"
-}`, testAccIPAddressConfigCreate),
+}`, testAccDataSourceIPAddressConfigCreate),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDatasourceComputeIPAddressAttributes(testAttrs{
-						"description": ValidateString(testAccResourceIPAddressDescription),
+						"description": ValidateString(testAccDataSourceIPAddressDescription),
 					}),
 				),
 			},
@@ -57,10 +75,10 @@ data "exoscale_compute_ipaddress" "ip_address" {
 data "exoscale_compute_ipaddress" "ip_address" {
   zone       = "ch-gva-2"
   ip_address = "${exoscale_ipaddress.eip.ip_address}"
-}`, testAccIPAddressConfigCreate),
+}`, testAccDataSourceIPAddressConfigCreate),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDatasourceComputeIPAddressAttributes(testAttrs{
-						"description": ValidateString(testAccResourceIPAddressDescription),
+						"description": ValidateString(testAccDataSourceIPAddressDescription),
 					}),
 				),
 			},
@@ -71,10 +89,10 @@ data "exoscale_compute_ipaddress" "ip_address" {
 data "exoscale_compute_ipaddress" "ip_address" {
   zone       = "ch-gva-2"
   tags = "${exoscale_ipaddress.eip.tags}"
-}`, testAccIPAddressConfigCreate),
+}`, testAccDataSourceIPAddressConfigCreate),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDatasourceComputeIPAddressAttributes(testAttrs{
-						"description": ValidateString(testAccResourceIPAddressDescription),
+						"description": ValidateString(testAccDataSourceIPAddressDescription),
 					}),
 				),
 			},
