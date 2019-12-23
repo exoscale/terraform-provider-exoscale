@@ -10,9 +10,18 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
 
-const (
-	testSecurityGroupName        = "terraform-test-security-group"
-	testSecurityGroupDescription = "Terraform Security Group Test"
+var (
+	testAccResourceSecurityGroupName        = testPrefix + "-" + testRandomString()
+	testAccResourceSecurityGroupDescription = testDescription
+
+	testAccResourceSecurityGroupConfig = fmt.Sprintf(`
+resource "exoscale_security_group" "sg" {
+  name = "%s"
+  description = "%s"
+}
+`,
+		testAccResourceSecurityGroupName,
+		testAccResourceSecurityGroupDescription)
 )
 
 func TestAccResourceSecurityGroup(t *testing.T) {
@@ -29,7 +38,8 @@ func TestAccResourceSecurityGroup(t *testing.T) {
 					testAccCheckResourceSecurityGroupExists("exoscale_security_group.sg", sg),
 					testAccCheckResourceSecurityGroup(sg),
 					testAccCheckResourceSecurityGroupAttributes(testAttrs{
-						"description": ValidateString(testSecurityGroupDescription),
+						"name":        ValidateString(testAccResourceSecurityGroupName),
+						"description": ValidateString(testAccResourceSecurityGroupDescription),
 					}),
 				),
 			},
@@ -40,8 +50,8 @@ func TestAccResourceSecurityGroup(t *testing.T) {
 				ImportStateCheck: func(s []*terraform.InstanceState) error {
 					return checkResourceAttributes(
 						testAttrs{
-							"name":        ValidateString(testSecurityGroupName),
-							"description": ValidateString(testSecurityGroupDescription),
+							"name":        ValidateString(testAccResourceSecurityGroupName),
+							"description": ValidateString(testAccResourceSecurityGroupDescription),
 						},
 						s[0].Attributes)
 				},
@@ -128,12 +138,3 @@ func testAccCheckResourceSecurityGroupDestroy(s *terraform.State) error {
 	}
 	return errors.New("Security Group still exists")
 }
-
-var testAccResourceSecurityGroupConfig = fmt.Sprintf(`
-resource "exoscale_security_group" "sg" {
-  name = "%s"
-  description = "%s"
-}
-`,
-	testSecurityGroupName,
-	testSecurityGroupDescription)

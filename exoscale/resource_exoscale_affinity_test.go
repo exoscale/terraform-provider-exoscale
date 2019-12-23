@@ -2,11 +2,27 @@ package exoscale
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/exoscale/egoscale"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+)
+
+var (
+	testAccResourceAffinityName        = testPrefix + "-" + testRandomString()
+	testAccResourceAffinityDescription = testDescription
+
+	testAccResourceAffinityConfig = fmt.Sprintf(`
+resource "exoscale_affinity" "ag" {
+  name = "%s"
+  description = "%s"
+}
+`,
+		testAccResourceAffinityName,
+		testAccResourceAffinityDescription,
+	)
 )
 
 func TestAccResourceAffinity(t *testing.T) {
@@ -23,8 +39,8 @@ func TestAccResourceAffinity(t *testing.T) {
 					testAccCheckResourceAffinityExists("exoscale_affinity.ag", ag),
 					testAccCheckResourceAffinity(ag),
 					testAccCheckResourceAffinityAttributes(testAttrs{
-						"name":        ValidateString("terraform-test-affinity"),
-						"description": ValidateString("Terraform Acceptance Test"),
+						"name":        ValidateString(testAccResourceAffinityName),
+						"description": ValidateString(testAccResourceAffinityDescription),
 						"type":        ValidateString("host anti-affinity"),
 					}),
 				),
@@ -36,8 +52,8 @@ func TestAccResourceAffinity(t *testing.T) {
 				ImportStateCheck: func(s []*terraform.InstanceState) error {
 					return checkResourceAttributes(
 						testAttrs{
-							"name":        ValidateString("terraform-test-affinity"),
-							"description": ValidateString("Terraform Acceptance Test"),
+							"name":        ValidateString(testAccResourceAffinityName),
+							"description": ValidateString(testAccResourceAffinityDescription),
 							"type":        ValidateString("host anti-affinity"),
 						},
 						s[0].Attributes)
@@ -125,10 +141,3 @@ func testAccCheckResourceAffinityDestroy(s *terraform.State) error {
 
 	return errors.New("Affinity Group still exists")
 }
-
-var testAccResourceAffinityConfig = `
-resource "exoscale_affinity" "ag" {
-  name = "terraform-test-affinity"
-  description = "Terraform Acceptance Test"
-}
-`

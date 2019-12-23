@@ -2,11 +2,68 @@ package exoscale
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/exoscale/egoscale"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+)
+
+var (
+	testAccResourceSecurityGroupRuleSecurityGroupName = testPrefix + "-" + testRandomString()
+	testAccResourceSecurityGroupRuleWithCIDRProtocol  = "TCP"
+	testAccResourceSecurityGroupRuleWithCIDRType      = "EGRESS"
+	testAccResourceSecurityGroupRuleWithCIDRCIDR      = "::/0"
+	testAccResourceSecurityGroupRuleWithCIDRStartPort = 2
+	testAccResourceSecurityGroupRuleWithCIDREndPort   = 1024
+	testAccResourceSecurityGroupRuleWithUSGProtocol   = "ICMPv6"
+	testAccResourceSecurityGroupRuleWithUSGType       = "INGRESS"
+	testAccResourceSecurityGroupRuleWithUSGICMPType   = 128
+	testAccResourceSecurityGroupRuleWithUSGICMPCode   = 0
+
+	testAccResourceSecurityGroupRuleConfigWithCIDR = fmt.Sprintf(`
+resource "exoscale_security_group" "sg" {
+  name = "%s"
+}
+
+resource "exoscale_security_group_rule" "cidr" {
+  security_group_id = "${exoscale_security_group.sg.id}"
+  protocol = "%s"
+  type = "%s"
+  cidr = "%s"
+  start_port = %d
+  end_port = %d
+}
+`,
+		testAccResourceSecurityGroupRuleSecurityGroupName,
+		testAccResourceSecurityGroupRuleWithCIDRProtocol,
+		testAccResourceSecurityGroupRuleWithCIDRType,
+		testAccResourceSecurityGroupRuleWithCIDRCIDR,
+		testAccResourceSecurityGroupRuleWithCIDRStartPort,
+		testAccResourceSecurityGroupRuleWithCIDREndPort,
+	)
+
+	testAccResourceSecurityGroupRuleConfigWithUSG = fmt.Sprintf(`
+resource "exoscale_security_group" "sg" {
+  name = "%s"
+}
+
+resource "exoscale_security_group_rule" "usg" {
+  security_group = "${exoscale_security_group.sg.name}"
+  protocol = "%s"
+  type = "%s"
+  icmp_type = %d
+  icmp_code = %d
+  user_security_group = "${exoscale_security_group.sg.name}"
+}
+`,
+		testAccResourceSecurityGroupRuleSecurityGroupName,
+		testAccResourceSecurityGroupRuleWithUSGProtocol,
+		testAccResourceSecurityGroupRuleWithUSGType,
+		testAccResourceSecurityGroupRuleWithUSGICMPType,
+		testAccResourceSecurityGroupRuleWithUSGICMPCode,
+	)
 )
 
 func TestAccResourceSecurityGroupRule(t *testing.T) {
@@ -20,19 +77,19 @@ func TestAccResourceSecurityGroupRule(t *testing.T) {
 		CheckDestroy: testAccCheckResourceSecurityGroupRuleDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceSecurityGroupRuleConfigCIDR,
+				Config: testAccResourceSecurityGroupRuleConfigWithCIDR,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckResourceSecurityGroupExists("exoscale_security_group.sg", sg),
 					testAccCheckEgressRuleExists("exoscale_security_group_rule.cidr", sg, cidr),
 					testAccCheckResourceSecurityGroupRule(cidr),
 					testAccCheckResourceSecurityGroupRule((*egoscale.EgressRule)(usg)),
 					testAccCheckResourceSecurityGroupRuleAttributes(testAttrs{
-						"security_group": ValidateString("terraform-test-security-group"),
-						"protocol":       ValidateString("TCP"),
-						"type":           ValidateString("EGRESS"),
-						"cidr":           ValidateString("::/0"),
-						"start_port":     ValidateString("2"),
-						"end_port":       ValidateString("1024"),
+						"security_group": ValidateString(testAccResourceSecurityGroupRuleSecurityGroupName),
+						"protocol":       ValidateString(testAccResourceSecurityGroupRuleWithCIDRProtocol),
+						"type":           ValidateString(testAccResourceSecurityGroupRuleWithCIDRType),
+						"cidr":           ValidateString(testAccResourceSecurityGroupRuleWithCIDRCIDR),
+						"start_port":     ValidateString(fmt.Sprint(testAccResourceSecurityGroupRuleWithCIDRStartPort)),
+						"end_port":       ValidateString(fmt.Sprint(testAccResourceSecurityGroupRuleWithCIDREndPort)),
 					}),
 				),
 			},
@@ -43,30 +100,30 @@ func TestAccResourceSecurityGroupRule(t *testing.T) {
 				ImportStateCheck: func(s []*terraform.InstanceState) error {
 					return checkResourceAttributes(
 						testAttrs{
-							"security_group": ValidateString("terraform-test-security-group"),
-							"protocol":       ValidateString("TCP"),
-							"type":           ValidateString("EGRESS"),
-							"cidr":           ValidateString("::/0"),
-							"start_port":     ValidateString("2"),
-							"end_port":       ValidateString("1024"),
+							"security_group": ValidateString(testAccResourceSecurityGroupRuleSecurityGroupName),
+							"protocol":       ValidateString(testAccResourceSecurityGroupRuleWithCIDRProtocol),
+							"type":           ValidateString(testAccResourceSecurityGroupRuleWithCIDRType),
+							"cidr":           ValidateString(testAccResourceSecurityGroupRuleWithCIDRCIDR),
+							"start_port":     ValidateString(fmt.Sprint(testAccResourceSecurityGroupRuleWithCIDRStartPort)),
+							"end_port":       ValidateString(fmt.Sprint(testAccResourceSecurityGroupRuleWithCIDREndPort)),
 						},
 						s[0].Attributes)
 				},
 			},
 			{
-				Config: testAccResourceSecurityGroupRuleConfigUSG,
+				Config: testAccResourceSecurityGroupRuleConfigWithUSG,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckResourceSecurityGroupExists("exoscale_security_group.sg", sg),
 					testAccCheckIngressRuleExists("exoscale_security_group_rule.usg", sg, usg),
 					testAccCheckResourceSecurityGroupRule(usg),
 					testAccCheckResourceSecurityGroupRule((*egoscale.EgressRule)(usg)),
 					testAccCheckResourceSecurityGroupRuleAttributes(testAttrs{
-						"security_group":      ValidateString("terraform-test-security-group"),
-						"protocol":            ValidateString("ICMPv6"),
-						"type":                ValidateString("INGRESS"),
-						"icmp_type":           ValidateString("128"),
-						"icmp_code":           ValidateString("0"),
-						"user_security_group": ValidateString("terraform-test-security-group"),
+						"security_group":      ValidateString(testAccResourceSecurityGroupRuleSecurityGroupName),
+						"protocol":            ValidateString(testAccResourceSecurityGroupRuleWithUSGProtocol),
+						"type":                ValidateString(testAccResourceSecurityGroupRuleWithUSGType),
+						"icmp_type":           ValidateString(fmt.Sprint(testAccResourceSecurityGroupRuleWithUSGICMPType)),
+						"icmp_code":           ValidateString(fmt.Sprint(testAccResourceSecurityGroupRuleWithUSGICMPCode)),
+						"user_security_group": ValidateString(testAccResourceSecurityGroupRuleSecurityGroupName),
 					}),
 				),
 			},
@@ -77,12 +134,12 @@ func TestAccResourceSecurityGroupRule(t *testing.T) {
 				ImportStateCheck: func(s []*terraform.InstanceState) error {
 					return checkResourceAttributes(
 						testAttrs{
-							"security_group":      ValidateString("terraform-test-security-group"),
-							"protocol":            ValidateString("ICMPv6"),
-							"type":                ValidateString("INGRESS"),
-							"icmp_type":           ValidateString("128"),
-							"icmp_code":           ValidateString("0"),
-							"user_security_group": ValidateString("terraform-test-security-group"),
+							"security_group":      ValidateString(testAccResourceSecurityGroupRuleSecurityGroupName),
+							"protocol":            ValidateString(testAccResourceSecurityGroupRuleWithUSGProtocol),
+							"type":                ValidateString(testAccResourceSecurityGroupRuleWithUSGType),
+							"icmp_type":           ValidateString(fmt.Sprint(testAccResourceSecurityGroupRuleWithUSGICMPType)),
+							"icmp_code":           ValidateString(fmt.Sprint(testAccResourceSecurityGroupRuleWithUSGICMPCode)),
+							"user_security_group": ValidateString(testAccResourceSecurityGroupRuleSecurityGroupName),
 						},
 						s[0].Attributes)
 				},
@@ -184,35 +241,3 @@ func testAccCheckResourceSecurityGroupRuleDestroy(s *terraform.State) error {
 
 	return errors.New("Security Group Rule still exists")
 }
-
-var testAccResourceSecurityGroupRuleConfigCIDR = `
-resource "exoscale_security_group" "sg" {
-  name = "terraform-test-security-group"
-  description = "Terraform Security Group Test"
-}
-
-resource "exoscale_security_group_rule" "cidr" {
-  security_group_id = "${exoscale_security_group.sg.id}"
-  protocol = "TCP"
-  type = "EGRESS"
-  cidr = "::/0"
-  start_port = 2
-  end_port = 1024
-}
-`
-
-var testAccResourceSecurityGroupRuleConfigUSG = `
-resource "exoscale_security_group" "sg" {
-  name = "terraform-test-security-group"
-  description = "Terraform Security Group Test"
-}
-
-resource "exoscale_security_group_rule" "usg" {
-  security_group = "${exoscale_security_group.sg.name}"
-  protocol = "ICMPv6"
-  type = "INGRESS"
-  icmp_type = 128
-  icmp_code = 0
-  user_security_group = "${exoscale_security_group.sg.name}"
-}
-`

@@ -11,8 +11,16 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
 
-const (
-	testDomain = "terraform-test.exo"
+var (
+	testAccResourceDomainName = testPrefix + "-" + testRandomString() + ".net"
+
+	testAccDNSDomainCreate = fmt.Sprintf(`
+resource "exoscale_domain" "exo" {
+  name = "%s"
+}
+`,
+		testAccResourceDomainName,
+	)
 )
 
 func TestAccResourceDomain(t *testing.T) {
@@ -29,7 +37,7 @@ func TestAccResourceDomain(t *testing.T) {
 					testAccCheckResourceDomainExists("exoscale_domain.exo", domain),
 					testAccCheckResourceDomain(domain),
 					testAccCheckResourceDomainAttributes(testAttrs{
-						"name":       ValidateString(testDomain),
+						"name":       ValidateString(testAccResourceDomainName),
 						"state":      ValidateString("hosted"),
 						"auto_renew": ValidateString("false"),
 						"expires_on": ValidateString(""),
@@ -44,7 +52,7 @@ func TestAccResourceDomain(t *testing.T) {
 				ImportStateCheck: func(s []*terraform.InstanceState) error {
 					return checkResourceAttributes(
 						testAttrs{
-							"name":       ValidateString(testDomain),
+							"name":       ValidateString(testAccResourceDomainName),
 							"state":      ValidateString("hosted"),
 							"auto_renew": ValidateString("false"),
 							"expires_on": ValidateString(""),
@@ -126,10 +134,3 @@ func testAccCheckResourceDomainDestroy(s *terraform.State) error {
 	}
 	return nil
 }
-
-var testAccDNSDomainCreate = fmt.Sprintf(`
-resource "exoscale_domain" "exo" {
-  name = "%s"
-}
-`,
-	testDomain)

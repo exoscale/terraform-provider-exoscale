@@ -253,20 +253,21 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 }
 
 func getZoneByName(ctx context.Context, client *egoscale.Client, zoneName string) (*egoscale.Zone, error) {
-	resp, err := client.RequestWithContext(ctx, &egoscale.ListZones{
-		Name: strings.ToLower(zoneName),
-	})
+	zone := &egoscale.Zone{}
 
+	id, err := egoscale.ParseUUID(zoneName)
+	if err != nil {
+		zone.Name = zoneName
+	} else {
+		zone.ID = id
+	}
+
+	resp, err := client.GetWithContext(ctx, zone)
 	if err != nil {
 		return nil, err
 	}
 
-	zones := resp.(*egoscale.ListZonesResponse)
-	if zones.Count == 0 {
-		return nil, fmt.Errorf("Zone not found %s", zoneName)
-	}
-
-	return &(zones.Zone[0]), nil
+	return resp.(*egoscale.Zone), nil
 }
 
 // handleNotFound inspects the CloudStack ErrorCode to guess if the resource is missing
