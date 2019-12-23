@@ -32,7 +32,7 @@ data "exoscale_compute_ipaddress" "ip_address" {
 }`, testAccIPAddressConfigCreate),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDatasourceComputeIPAddressAttributes(testAttrs{
-						"description": ValidateString(testIPDescription1),
+						"description": ValidateString(testAccResourceIPAddressDescription),
 					}),
 				),
 			},
@@ -46,7 +46,7 @@ data "exoscale_compute_ipaddress" "ip_address" {
 }`, testAccIPAddressConfigCreate),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDatasourceComputeIPAddressAttributes(testAttrs{
-						"description": ValidateString(testIPDescription1),
+						"description": ValidateString(testAccResourceIPAddressDescription),
 					}),
 				),
 			},
@@ -60,7 +60,7 @@ data "exoscale_compute_ipaddress" "ip_address" {
 }`, testAccIPAddressConfigCreate),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDatasourceComputeIPAddressAttributes(testAttrs{
-						"description": ValidateString(testIPDescription1),
+						"description": ValidateString(testAccResourceIPAddressDescription),
 					}),
 				),
 			},
@@ -74,7 +74,7 @@ data "exoscale_compute_ipaddress" "ip_address" {
 }`, testAccIPAddressConfigCreate),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDatasourceComputeIPAddressAttributes(testAttrs{
-						"description": ValidateString(testIPDescription1),
+						"description": ValidateString(testAccResourceIPAddressDescription),
 					}),
 				),
 			},
