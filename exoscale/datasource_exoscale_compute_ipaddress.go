@@ -19,7 +19,7 @@ func datasourceComputeIPAddress() *schema.Resource {
 			},
 			"description": {
 				Type:          schema.TypeString,
-				Description:   "Description of the IP",
+				Description:   "Description of the Elastic IP",
 				Optional:      true,
 				ConflictsWith: []string{"ip_address", "id", "tags"},
 			},
@@ -31,7 +31,7 @@ func datasourceComputeIPAddress() *schema.Resource {
 			},
 			"id": {
 				Type:          schema.TypeString,
-				Description:   "ID of the IP Address",
+				Description:   "ID of the Elastic IP",
 				Optional:      true,
 				ConflictsWith: []string{"description", "ip_address", "tags"},
 			},
@@ -82,13 +82,13 @@ func datasourceComputeIPAddressRead(d *schema.ResourceData, meta interface{}) er
 
 	ips := resp.(*egoscale.ListPublicIPAddressesResponse).PublicIPAddress
 
-	t, ok := d.GetOk("tags")
+	t, byTags := d.GetOk("tags")
 	switch {
 	case d.Get("id").(string) != "":
 		return datasourceComputeIPAddressApply(d, ips)
 	case d.Get("ip_address").(string) != "":
 		return datasourceComputeIPAddressApply(d, ips)
-	case ok:
+	case byTags:
 		ipAddrs := make([]egoscale.IPAddress, 0)
 		for _, ip := range ips {
 			if compareTags(ip, t.(map[string]interface{})) {
@@ -113,9 +113,9 @@ func datasourceComputeIPAddressApply(d *schema.ResourceData, ipAddresses []egosc
 	len := len(ipAddresses)
 	switch {
 	case len == 0:
-		return fmt.Errorf("No IP Address found")
+		return fmt.Errorf("No matching Elastic IP found")
 	case len > 1:
-		return fmt.Errorf("More than one IP Address found")
+		return fmt.Errorf("More than one Elastic IPs found")
 	}
 	ip := ipAddresses[0]
 	d.SetId(ip.ID.String())

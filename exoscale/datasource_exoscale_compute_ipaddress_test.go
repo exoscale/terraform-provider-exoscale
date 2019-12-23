@@ -16,12 +16,10 @@ func TestAccDatasourceComputeIPAddress(t *testing.T) {
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: fmt.Sprintf(`
-%s
-
+				Config: `
 data "exoscale_compute_ipaddress" "ip_address" {
   zone = "ch-gva-2"
-}`, testAccIPAddressConfigCreate),
+}`,
 				ExpectError: regexp.MustCompile(`You must set at least one attribute "id", "ip_address", "tags" or "description"`),
 			},
 			{
