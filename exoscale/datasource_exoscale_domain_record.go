@@ -31,17 +31,17 @@ func datasourceDomainRecord() *schema.Resource {
 						"id": {
 							Type:          schema.TypeInt,
 							Optional:      true,
-							ConflictsWith: []string{"filter.0.name", "filter.0.record_type", "filter.0.content"},
+							ConflictsWith: []string{"filter.0.name", "filter.0.record_type", "filter.0.content_regex"},
 						},
 						"name": {
 							Type:          schema.TypeString,
 							Optional:      true,
-							ConflictsWith: []string{"filter.0.id", "filter.0.content"},
+							ConflictsWith: []string{"filter.0.id", "filter.0.content_regex"},
 						},
 						"record_type": {
 							Type:          schema.TypeString,
 							Optional:      true,
-							ConflictsWith: []string{"filter.0.id", "filter.0.content"},
+							ConflictsWith: []string{"filter.0.id", "filter.0.content_regex"},
 						},
 						"content_regex": {
 							Type:          schema.TypeString,
@@ -130,7 +130,7 @@ func datasourceDomainRecordRead(d *schema.ResourceData, meta interface{}) error 
 		if err != nil {
 			return err
 		}
-		records, err = datasourceDomainRecordFilter(records, m["content"].(string))
+		records, err = datasourceDomainRecordFilter(records, m["content_regex"].(string))
 		if err != nil {
 			return err
 		}
