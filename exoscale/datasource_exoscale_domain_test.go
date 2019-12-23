@@ -9,8 +9,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
 
-var testAccDatasourceDomainName = testPrefix + "-" + testRandomString() + ".com"
-
 func TestAccDatasourceDomain(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
@@ -21,10 +19,10 @@ func TestAccDatasourceDomain(t *testing.T) {
 %s
 data "exoscale_domain" "domain" {
   name = "${exoscale_domain.exo.name}"
-}`, testAccResourceDomainRecordConfigCreate),
+}`, testAccDNSDomainCreate),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDatasourceDomainAttributes(testAttrs{
-						"name": ValidateString(testAccDatasourceDomainName),
+						"name": ValidateString(testAccResourceDomainName),
 					}),
 				),
 			},
