@@ -58,7 +58,7 @@ EOF
 * `template_id` - (Required) The ID of the Compute instance [template][template]. Usage of the [`compute_template`][compute_template] data source is recommended.
 * `size` - (Required) The Compute instance [size][size], e.g. `Tiny`, `Small`, `Medium`, `Large` etc.
 * `disk_size` - (Required) The Compute instance root disk size in GiB (at least `10`).
-* `key_pair` - (Required) The name of the [SSH key pair][sshkeypair] to be installed.
+* `key_pair` - The name of the [SSH key pair][sshkeypair] to be installed.
 * `user_data` - A [cloud-init][cloudinit] configuration. Whenever possible don't base64-encode neither gzip it yourself, as this will be automatically taken care of on your behalf by the provider.
 * `keyboard` - The keyboard layout configuration (at creation time only). Supported values are: `de`, `de-ch`, `es`, `fi`, `fr`, `fr-be`, `fr-ch`, `is`, `it`, `jp`, `nl-be`, `no`, `pt`, `uk`, `us`.
 * `state` - The state of the Compute instance, e.g. `Running` or `Stopped`
