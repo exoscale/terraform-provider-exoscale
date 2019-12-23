@@ -43,7 +43,7 @@ func datasourceDomainRecord() *schema.Resource {
 							Optional:      true,
 							ConflictsWith: []string{"filter.0.id", "filter.0.content"},
 						},
-						"content": {
+						"content_regex": {
 							Type:          schema.TypeString,
 							Optional:      true,
 							ValidateFunc:  validation.ValidateRegexp,
@@ -125,7 +125,7 @@ func datasourceDomainRecordRead(d *schema.ResourceData, meta interface{}) error 
 		if err != nil {
 			return err
 		}
-	case m["content"].(string) != "":
+	case m["content_regex"].(string) != "":
 		records, err = client.GetRecords(ctx, domain.Name)
 		if err != nil {
 			return err

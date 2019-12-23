@@ -33,7 +33,7 @@ data "exoscale_domain_record" "mycompany_mailservers" {
 data "exoscale_domain_record" "mycompany_nameservers" {
   domain = data.exoscale_domain.mycompany.name
   filter {
-    content  = "ns.*"
+    content_regex  = "ns.*"
   }
 }
 
@@ -56,7 +56,7 @@ output "first_domain_record_content" {
 * `name` - The name matching the Domain Record name to lookup.
 * `id` - The ID matching the Domain Record ID to lookup.
 * `record_type` - The Record type matching the Domain Record type to lookup.
-* `content` - A regular expression matching the Domain Record content to lookup.
+* `content_regex` - A regular expression matching the Domain Record content to lookup.
 
 
 [domain]: ../r/domain.html

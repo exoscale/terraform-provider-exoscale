@@ -152,7 +152,7 @@ data "exoscale_domain_record" "test_record" {
 			data "exoscale_domain_record" "test_record" {
 			  domain = "${exoscale_domain.exo.id}"
 			  filter {
-			    content = "mta.*"
+			    content_regex = "mta.*"
 			  }
 			}`, testAccDataSourceDomainRecordConfigCreate1, testAccDataSourceDomainRecordConfigCreate2),
 				Check: resource.ComposeTestCheckFunc(
