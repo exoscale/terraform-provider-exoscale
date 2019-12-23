@@ -8,23 +8,21 @@ description: |-
 
 # exoscale\_domain
 
-Provides information on an [domain][domain].
+Provides information on a domain name hosted on [Exoscale DNS][exodns].
 
-[domain]: ../r/domain.html
+[exodns]: https://www.exoscale.com/dns/
 
 ## Example Usage
 
 ```hcl
-data "exoscale_domain" "exo" {
-  name = my-company.com
+data "exoscale_domain" "my-company-com" {
+  name = "my-company.com"
 }
 ```
 
 ## Argument Reference
 
-* `name` - (Required) The name of the [domain][domain].
-
-[domain]: https://www.exoscale.com/dns/
+* `name` - (Required) The name of the domain.
 
 ## Attributes Reference
 

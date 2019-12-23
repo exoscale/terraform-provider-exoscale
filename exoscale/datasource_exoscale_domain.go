@@ -35,9 +35,5 @@ func datasourceDomainRead(d *schema.ResourceData, meta interface{}) error {
 
 	d.SetId(strconv.FormatInt(domain.ID, 10))
 
-	if err := d.Set("name", domain.Name); err != nil {
-		return err
-	}
-
-	return nil
+	return d.Set("name", domain.Name)
 }
