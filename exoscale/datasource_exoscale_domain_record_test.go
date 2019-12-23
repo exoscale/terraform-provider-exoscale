@@ -62,8 +62,8 @@ data "exoscale_domain_record" "test_record" {
 					testAccDatasourceDomainRecordAttributes(
 						"data.exoscale_domain_record.test_record",
 						testAttrs{
-							"records.0.name":   ValidateString("mail1"),
-							"records.0.domain": ValidateString(testAccResourceDomainName),
+							"records.0.name":   ValidateString(testAccResourceDomainRecordName),
+							"records.0.domain": ValidateString(testAccResourceDomainRecordDomainName),
 						},
 					),
 				),
@@ -84,8 +84,8 @@ data "exoscale_domain_record" "test_record" {
 					testAccDatasourceDomainRecordAttributes(
 						"data.exoscale_domain_record.test_record",
 						testAttrs{
-							"records.0.name":   ValidateString("mail1"),
-							"records.0.domain": ValidateString(testAccResourceDomainName),
+							"records.0.name":   ValidateString(testAccResourceDomainRecordName),
+							"records.0.domain": ValidateString(testAccResourceDomainRecordDomainName),
 						},
 					),
 				),
@@ -106,8 +106,8 @@ data "exoscale_domain_record" "test_record" {
 					testAccDatasourceDomainRecordAttributes(
 						"data.exoscale_domain_record.test_record",
 						testAttrs{
-							"records.0.domain": ValidateString(testAccResourceDomainName),
-							"records.1.domain": ValidateString(testAccResourceDomainName),
+							"records.0.domain": ValidateString(testAccResourceDomainRecordDomainName),
+							"records.1.domain": ValidateString(testAccResourceDomainRecordDomainName),
 						},
 					),
 				),
@@ -128,8 +128,8 @@ data "exoscale_domain_record" "test_record" {
 					testAccDatasourceDomainRecordAttributes(
 						"data.exoscale_domain_record.test_record",
 						testAttrs{
-							"records.0.domain": ValidateString(testAccResourceDomainName),
-							"records.1.domain": ValidateString(testAccResourceDomainName),
+							"records.0.domain": ValidateString(testAccResourceDomainRecordDomainName),
+							"records.1.domain": ValidateString(testAccResourceDomainRecordDomainName),
 						},
 					),
 				),
