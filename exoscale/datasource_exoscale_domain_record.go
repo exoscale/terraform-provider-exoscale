@@ -14,7 +14,6 @@ import (
 
 func datasourceDomainRecord() *schema.Resource {
 	return &schema.Resource{
-
 		Read: datasourceDomainRecordRead,
 
 		Schema: map[string]*schema.Schema{

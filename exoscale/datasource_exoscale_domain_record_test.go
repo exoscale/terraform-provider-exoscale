@@ -11,21 +11,52 @@ import (
 )
 
 var (
-	testAccDataSourceDomainRecordConfigCreate = fmt.Sprintf(`
-	resource "exoscale_domain_record" "mx2" {
-	  domain      = "${exoscale_domain.exo.id}"
-	  name        = "%s"
-	  record_type = "%s"
-	  content     = "%s"
-	  prio        = %d
-	  ttl         = %d
-	}
-	`,
-		testAccResourceDomainRecordNameUpdated,
-		testAccResourceDomainRecordType,
-		testAccResourceDomainRecordContentUpdated,
-		testAccResourceDomainRecordPrio,
-		testAccResourceDomainRecordTTL,
+	testAccDataSourceDomainRecordDomainName = testPrefix + "-" + testRandomString() + ".net"
+	testAccDataSourceDomainRecordName1      = "mail1"
+	testAccDataSourceDomainRecordName2      = "mail2"
+	testAccDataSourceDomainRecordType       = "MX"
+	testAccDataSourceDomainRecordContent1   = "mta1"
+	testAccDataSourceDomainRecordContent2   = "mta2"
+	testAccDataSourceDomainRecordPrio       = 10
+	testAccDataSourceDomainRecordTTL        = 10
+
+	testAccDataSourceDomainRecordConfigCreate1 = fmt.Sprintf(`
+resource "exoscale_domain" "exo" {
+  name = "%s"
+}
+
+resource "exoscale_domain_record" "mx" {
+  domain      = "${exoscale_domain.exo.id}"
+  name        = "%s"
+  record_type = "%s"
+  content     = "%s"
+  prio        = %d
+  ttl         = %d
+}
+`,
+		testAccDataSourceDomainRecordDomainName,
+		testAccDataSourceDomainRecordName1,
+		testAccDataSourceDomainRecordType,
+		testAccDataSourceDomainRecordContent1,
+		testAccDataSourceDomainRecordPrio,
+		testAccDataSourceDomainRecordTTL,
+	)
+
+	testAccDataSourceDomainRecordConfigCreate2 = fmt.Sprintf(`
+resource "exoscale_domain_record" "mx2" {
+  domain      = "${exoscale_domain.exo.id}"
+  name        = "%s"
+  record_type = "%s"
+  content     = "%s"
+  prio        = %d
+  ttl         = %d
+}
+`,
+		testAccDataSourceDomainRecordName2,
+		testAccDataSourceDomainRecordType,
+		testAccDataSourceDomainRecordContent2,
+		testAccDataSourceDomainRecordPrio,
+		testAccDataSourceDomainRecordTTL,
 	)
 )
 
@@ -43,7 +74,7 @@ func TestAccDatasourceDomainRecord(t *testing.T) {
 data "exoscale_domain_record" "test_record" {
   domain = "${exoscale_domain.exo.id}"
   filter {}
-}`, testAccResourceDomainRecordConfigCreate, testAccDataSourceDomainRecordConfigCreate),
+}`, testAccDataSourceDomainRecordConfigCreate1, testAccDataSourceDomainRecordConfigCreate2),
 				ExpectError: regexp.MustCompile("either name or id must be specified"),
 			},
 			{
@@ -57,13 +88,13 @@ data "exoscale_domain_record" "test_record" {
   filter {
     name   = "${exoscale_domain_record.mx.name}"
   }
-}`, testAccResourceDomainRecordConfigCreate, testAccDataSourceDomainRecordConfigCreate),
+}`, testAccDataSourceDomainRecordConfigCreate1, testAccDataSourceDomainRecordConfigCreate2),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDatasourceDomainRecordAttributes(
 						"data.exoscale_domain_record.test_record",
 						testAttrs{
-							"records.0.name":   ValidateString(testAccResourceDomainRecordName),
-							"records.0.domain": ValidateString(testAccResourceDomainRecordDomainName),
+							"records.0.name":   ValidateString(testAccDataSourceDomainRecordName1),
+							"records.0.domain": ValidateString(testAccDataSourceDomainRecordDomainName),
 						},
 					),
 				),
@@ -79,13 +110,13 @@ data "exoscale_domain_record" "test_record" {
 			  filter {
 			    id = "${exoscale_domain_record.mx.id}"
 			  }
-			}`, testAccResourceDomainRecordConfigCreate, testAccDataSourceDomainRecordConfigCreate),
+			}`, testAccDataSourceDomainRecordConfigCreate1, testAccDataSourceDomainRecordConfigCreate2),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDatasourceDomainRecordAttributes(
 						"data.exoscale_domain_record.test_record",
 						testAttrs{
-							"records.0.name":   ValidateString(testAccResourceDomainRecordName),
-							"records.0.domain": ValidateString(testAccResourceDomainRecordDomainName),
+							"records.0.name":   ValidateString(testAccDataSourceDomainRecordName1),
+							"records.0.domain": ValidateString(testAccDataSourceDomainRecordDomainName),
 						},
 					),
 				),
@@ -101,13 +132,13 @@ data "exoscale_domain_record" "test_record" {
 			  filter {
 			    record_type = "MX"
 			  }
-			}`, testAccResourceDomainRecordConfigCreate, testAccDataSourceDomainRecordConfigCreate),
+			}`, testAccDataSourceDomainRecordConfigCreate1, testAccDataSourceDomainRecordConfigCreate2),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDatasourceDomainRecordAttributes(
 						"data.exoscale_domain_record.test_record",
 						testAttrs{
-							"records.0.domain": ValidateString(testAccResourceDomainRecordDomainName),
-							"records.1.domain": ValidateString(testAccResourceDomainRecordDomainName),
+							"records.0.domain": ValidateString(testAccDataSourceDomainRecordDomainName),
+							"records.1.domain": ValidateString(testAccDataSourceDomainRecordDomainName),
 						},
 					),
 				),
@@ -123,13 +154,13 @@ data "exoscale_domain_record" "test_record" {
 			  filter {
 			    content = "mta.*"
 			  }
-			}`, testAccResourceDomainRecordConfigCreate, testAccDataSourceDomainRecordConfigCreate),
+			}`, testAccDataSourceDomainRecordConfigCreate1, testAccDataSourceDomainRecordConfigCreate2),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDatasourceDomainRecordAttributes(
 						"data.exoscale_domain_record.test_record",
 						testAttrs{
-							"records.0.domain": ValidateString(testAccResourceDomainRecordDomainName),
-							"records.1.domain": ValidateString(testAccResourceDomainRecordDomainName),
+							"records.0.domain": ValidateString(testAccDataSourceDomainRecordDomainName),
+							"records.1.domain": ValidateString(testAccDataSourceDomainRecordDomainName),
 						},
 					),
 				),
