@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 )
 
-func datasourceComputeTemplate() *schema.Resource {
+func dataSourceComputeTemplate() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"zone": {
@@ -47,11 +47,11 @@ func datasourceComputeTemplate() *schema.Resource {
 			},
 		},
 
-		Read: datasourceComputeTemplateRead,
+		Read: dataSourceComputeTemplateRead,
 	}
 }
 
-func datasourceComputeTemplateRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceComputeTemplateRead(d *schema.ResourceData, meta interface{}) error {
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutCreate))
 	defer cancel()
 

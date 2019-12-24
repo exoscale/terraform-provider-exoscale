@@ -7,7 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
-func datasourceDomain() *schema.Resource {
+func dataSourceDomain() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"name": {
@@ -16,11 +16,11 @@ func datasourceDomain() *schema.Resource {
 				Required:    true,
 			},
 		},
-		Read: datasourceDomainRead,
+		Read: dataSourceDomainRead,
 	}
 }
 
-func datasourceDomainRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceDomainRead(d *schema.ResourceData, meta interface{}) error {
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutCreate))
 	defer cancel()
 
