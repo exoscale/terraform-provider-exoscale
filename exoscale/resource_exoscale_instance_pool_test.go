@@ -39,7 +39,7 @@ resource "exoscale_instance_pool" "pool" {
   service_offering = "%s"
   size = %d
   disk_size = %d
-  key_pair = "${exoscale_ssh_keypair.key.name}"
+  key_pair = exoscale_ssh_keypair.key.name
   user_data = <<EOF
 %s
 EOF
@@ -72,7 +72,7 @@ resource "exoscale_instance_pool" "pool" {
   service_offering = "%s"
   size = %d
   disk_size = %d
-  key_pair = "${exoscale_ssh_keypair.key.name}"
+  key_pair = exoscale_ssh_keypair.key.name
   user_data = <<EOF
 %s
 EOF

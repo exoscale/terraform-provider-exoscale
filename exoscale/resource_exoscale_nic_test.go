@@ -35,7 +35,7 @@ resource "exoscale_compute" "vm" {
   template_id = "%s"
   size = "Micro"
   disk_size = "10"
-  key_pair = "${exoscale_ssh_keypair.key.name}"
+  key_pair = exoscale_ssh_keypair.key.name
 }
 
 resource "exoscale_network" "net" {
@@ -47,8 +47,8 @@ resource "exoscale_network" "net" {
 }
 
 resource "exoscale_nic" "nic" {
-  compute_id = "${exoscale_compute.vm.id}"
-  network_id = "${exoscale_network.net.id}"
+  compute_id = exoscale_compute.vm.id
+  network_id = exoscale_network.net.id
   ip_address = "%s"
 }
 `,
@@ -71,7 +71,7 @@ resource "exoscale_compute" "vm" {
   template_id = "%s"
   size = "Micro"
   disk_size = "10"
-  key_pair = "${exoscale_ssh_keypair.key.name}"
+  key_pair = exoscale_ssh_keypair.key.name
 }
 
 resource "exoscale_network" "net" {
@@ -83,8 +83,8 @@ resource "exoscale_network" "net" {
 }
 
 resource "exoscale_nic" "nic" {
-  compute_id = "${exoscale_compute.vm.id}"
-  network_id = "${exoscale_network.net.id}"
+  compute_id = exoscale_compute.vm.id
+  network_id = exoscale_network.net.id
   ip_address = "%s"
 }
 `,

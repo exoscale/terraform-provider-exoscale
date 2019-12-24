@@ -21,14 +21,14 @@ locals {
 }
 
 data "exoscale_compute_template" "ubuntu" {
-  zone = "${local.zone}"
+  zone = local.zone
   name = "Linux Ubuntu 18.04 LTS 64-bit"
 }
 
 resource "exoscale_compute" "my_server" {
-  zone         = "${local.zone}"
+  zone         = local.zone
   display_name = "my server"
-  template_id  = "${data.exoscale_compute_template.ubuntu.id}"
+  template_id  = data.exoscale_compute_template.ubuntu.id
   disk_size    = 10
   key_pair     = "my key"
 }

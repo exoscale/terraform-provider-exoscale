@@ -34,7 +34,7 @@ resource "exoscale_compute" "vm" {
   display_name = "%s"
   size = "%s"
   disk_size = "%s"
-  key_pair = "${exoscale_ssh_keypair.key.name}"
+  key_pair = exoscale_ssh_keypair.key.name
 
   tags = {
     test = "terraform"
@@ -60,7 +60,7 @@ resource "exoscale_compute" "vm" {
   display_name = "%s"
   size = "%s"
   disk_size = "%s"
-  key_pair = "${exoscale_ssh_keypair.key.name}"
+  key_pair = exoscale_ssh_keypair.key.name
 
   tags = {
     test = "terraform"
@@ -90,7 +90,7 @@ resource "exoscale_compute" "vm" {
   display_name = "%s"
   size = "%s"
   disk_size = "%s"
-  key_pair = "${exoscale_ssh_keypair.key.name}"
+  key_pair = exoscale_ssh_keypair.key.name
 
   user_data = <<EOF
 #cloud-config

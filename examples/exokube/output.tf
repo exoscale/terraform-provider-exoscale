@@ -1,5 +1,5 @@
 output "exokube_ssh" {
-  value = "${exoscale_compute.exokube.username}@${exoscale_compute.exokube.ip_address}"
+  value = exoscale_compute.exokube.username}@${exoscale_compute.exokube.ip_address
 }
 
 output "exokube_https" {

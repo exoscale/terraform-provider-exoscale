@@ -23,7 +23,7 @@ data "exoscale_compute_template" "ubuntu" {
 resource "exoscale_compute" "mymachine" {
   zone         = "ch-gva-2"
   display_name = "mymachine"
-  template_id  = "${data.exoscale_compute_template.ubuntu.id}"
+  template_id  = data.exoscale_compute_template.ubuntu.id
   size         = "Medium"
   disk_size    = 10
   key_pair     = "me@mymachine"
@@ -104,7 +104,7 @@ data "exoscale_compute_template" "ubuntu" {
 resource "exoscale_compute" "mymachine" {
   zone         = "ch-gva-2"
   display_name = "mymachine"
-  template_id  = "${data.exoscale_compute_template.ubuntu.id}"
+  template_id  = data.exoscale_compute_template.ubuntu.id
   size         = "Medium"
   disk_size    = 10
   key_pair     = "me@mymachine"
@@ -113,8 +113,8 @@ resource "exoscale_compute" "mymachine" {
   provisioner "remote-exec" {
     connection {
       type = "ssh"
-      host = "${self.ip_address}"
-      user = "${data.exoscale_compute_template.ubuntu.username}"
+      host = self.ip_address
+      user = data.exoscale_compute_template.ubuntu.username
     }
   }
 }

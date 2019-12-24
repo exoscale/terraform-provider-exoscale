@@ -1,6 +1,6 @@
 data "template_file" "user_data" {
-  template = "${file("cloud-config.yaml")}"
-  count = "${var.machines}"
+  template = file("cloud-config.yaml")
+  count = var.machines
 
   vars {
     hostname = "demo-machine-${count.index}"

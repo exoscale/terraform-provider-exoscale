@@ -7,27 +7,27 @@ variable "template" {
 }
 
 data "exoscale_compute_template" "instancepool" {
-  zone = "${var.zone}"
-  name = "${var.template}"
+  zone = var.zone
+  name = var.template
 }
 
 resource "exoscale_instance_pool" "instancepool-test" {
   name = "terraforminstancepool"
   description = "test"
-  template_id = "${data.exoscale_compute_template.instancepool.id}"
+  template_id = data.exoscale_compute_template.instancepool.id
   service_offering = "Medium"
   size = 5
   disk_size = 50
   user_data = "#cloud-config\npackage_upgrade: true\n"
   key_pair = "test"
-  zone = "${var.zone}"
+  zone = var.zone
 
   # security_group_ids = ["xxxx", "xxx"]
   # network_ids = ["xxxx", "xxx"]
 }
 
 provider "exoscale" {
-  key = "${var.key}"
-  secret = "${var.secret}"
+  key = var.key
+  secret = var.secret
   compute_endpoint = "https://api.exoscale.com/compute"
 }

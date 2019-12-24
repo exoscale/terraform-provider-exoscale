@@ -20,7 +20,7 @@ resource "exoscale_security_group" "webservers" {
 }
 
 resource "exoscale_security_group_rules" "admin" {
-  security_group = "${exoscale_security_group.webservers.name}"
+  security_group = exoscale_security_group.webservers.name
 
   ingress {
     protocol                 = "ICMP"
@@ -36,7 +36,7 @@ resource "exoscale_security_group_rules" "admin" {
 }
 
 resource "exoscale_security_group_rules" "web" {
-  security_group_id = "${exoscale_security_group.webservers.id}"
+  security_group_id = exoscale_security_group.webservers.id
 
   ingress {
     protocol  = "TCP"

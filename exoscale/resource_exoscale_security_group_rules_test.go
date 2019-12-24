@@ -22,7 +22,7 @@ resource "exoscale_security_group" "sg" {
 }
 
 resource "exoscale_security_group_rules" "rules" {
-  security_group_id = "${exoscale_security_group.sg.id}"
+  security_group_id = exoscale_security_group.sg.id
 
   ingress {
     protocol = "ICMP"
@@ -42,7 +42,7 @@ resource "exoscale_security_group_rules" "rules" {
     protocol = "TCP"
     cidr_list = ["10.0.0.0/24", "::/0"]
     ports = ["22", "8000-8888"]
-    user_security_group_list = ["${exoscale_security_group.sg.name}", "default"]
+    user_security_group_list = [exoscale_security_group.sg.name, "default"]
   }
 
   egress {
@@ -62,7 +62,7 @@ resource "exoscale_security_group" "sg" {
 }
 
 resource "exoscale_security_group_rules" "rules" {
-  security_group_id = "${exoscale_security_group.sg.id}"
+  security_group_id = exoscale_security_group.sg.id
 
   ingress {
     protocol = "ICMP"
@@ -82,7 +82,7 @@ resource "exoscale_security_group_rules" "rules" {
     protocol = "TCP"
     cidr_list = ["10.0.0.0/24", "::/0"]
     ports = ["2222", "8000-8888"]
-    user_security_group_list = ["${exoscale_security_group.sg.name}", "default"]
+    user_security_group_list = [exoscale_security_group.sg.name, "default"]
   }
 
   egress {
