@@ -49,7 +49,7 @@ data "exoscale_compute_ipaddress" "ip_address" {
   id   = "${exoscale_ipaddress.eip.id}"
 }`, testAccDataSourceIPAddressConfigCreate),
 				Check: resource.ComposeTestCheckFunc(
-					testAccDatasourceComputeIPAddressAttributes(testAttrs{
+					testAccDataSourceComputeIPAddressAttributes(testAttrs{
 						"description": ValidateString(testAccDataSourceIPAddressDescription),
 					}),
 				),
@@ -63,7 +63,7 @@ data "exoscale_compute_ipaddress" "ip_address" {
   description = "${exoscale_ipaddress.eip.description}"
 }`, testAccDataSourceIPAddressConfigCreate),
 				Check: resource.ComposeTestCheckFunc(
-					testAccDatasourceComputeIPAddressAttributes(testAttrs{
+					testAccDataSourceComputeIPAddressAttributes(testAttrs{
 						"description": ValidateString(testAccDataSourceIPAddressDescription),
 					}),
 				),
@@ -77,7 +77,7 @@ data "exoscale_compute_ipaddress" "ip_address" {
   ip_address = "${exoscale_ipaddress.eip.ip_address}"
 }`, testAccDataSourceIPAddressConfigCreate),
 				Check: resource.ComposeTestCheckFunc(
-					testAccDatasourceComputeIPAddressAttributes(testAttrs{
+					testAccDataSourceComputeIPAddressAttributes(testAttrs{
 						"description": ValidateString(testAccDataSourceIPAddressDescription),
 					}),
 				),
@@ -91,7 +91,7 @@ data "exoscale_compute_ipaddress" "ip_address" {
   tags = "${exoscale_ipaddress.eip.tags}"
 }`, testAccDataSourceIPAddressConfigCreate),
 				Check: resource.ComposeTestCheckFunc(
-					testAccDatasourceComputeIPAddressAttributes(testAttrs{
+					testAccDataSourceComputeIPAddressAttributes(testAttrs{
 						"description": ValidateString(testAccDataSourceIPAddressDescription),
 					}),
 				),
@@ -100,7 +100,7 @@ data "exoscale_compute_ipaddress" "ip_address" {
 	})
 }
 
-func testAccDatasourceComputeIPAddressAttributes(expected testAttrs) resource.TestCheckFunc {
+func testAccDataSourceComputeIPAddressAttributes(expected testAttrs) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		for _, rs := range s.RootModule().Resources {
 			if rs.Type != "exoscale_compute_ipaddress" {
@@ -110,6 +110,6 @@ func testAccDatasourceComputeIPAddressAttributes(expected testAttrs) resource.Te
 			return checkResourceAttributes(expected, rs.Primary.Attributes)
 		}
 
-		return errors.New("compute_ipaddress datasource not found in the state")
+		return errors.New("compute_ipaddress data source not found in the state")
 	}
 }

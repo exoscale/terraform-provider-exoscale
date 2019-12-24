@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
-func datasourceComputeIPAddress() *schema.Resource {
+func dataSourceComputeIPAddress() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"zone": {
@@ -46,11 +46,11 @@ func datasourceComputeIPAddress() *schema.Resource {
 			},
 		},
 
-		Read: datasourceComputeIPAddressRead,
+		Read: dataSourceComputeIPAddressRead,
 	}
 }
 
-func datasourceComputeIPAddressRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceComputeIPAddressRead(d *schema.ResourceData, meta interface{}) error {
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutCreate))
 	defer cancel()
 
@@ -85,9 +85,9 @@ func datasourceComputeIPAddressRead(d *schema.ResourceData, meta interface{}) er
 	t, byTags := d.GetOk("tags")
 	switch {
 	case d.Get("id").(string) != "":
-		return datasourceComputeIPAddressApply(d, ips)
+		return dataSourceComputeIPAddressApply(d, ips)
 	case d.Get("ip_address").(string) != "":
-		return datasourceComputeIPAddressApply(d, ips)
+		return dataSourceComputeIPAddressApply(d, ips)
 	case byTags:
 		ipAddrs := make([]egoscale.IPAddress, 0)
 		for _, ip := range ips {
@@ -95,7 +95,7 @@ func datasourceComputeIPAddressRead(d *schema.ResourceData, meta interface{}) er
 				ipAddrs = append(ipAddrs, ip)
 			}
 		}
-		return datasourceComputeIPAddressApply(d, ipAddrs)
+		return dataSourceComputeIPAddressApply(d, ipAddrs)
 	case d.Get("description").(string) != "":
 		ipAddrs := make([]egoscale.IPAddress, 0)
 		for _, ip := range ips {
@@ -103,13 +103,13 @@ func datasourceComputeIPAddressRead(d *schema.ResourceData, meta interface{}) er
 				ipAddrs = append(ipAddrs, ip)
 			}
 		}
-		return datasourceComputeIPAddressApply(d, ipAddrs)
+		return dataSourceComputeIPAddressApply(d, ipAddrs)
 	}
 
 	return fmt.Errorf(`You must set at least one attribute "id", "ip_address", "tags" or "description"`)
 }
 
-func datasourceComputeIPAddressApply(d *schema.ResourceData, ipAddresses []egoscale.IPAddress) error {
+func dataSourceComputeIPAddressApply(d *schema.ResourceData, ipAddresses []egoscale.IPAddress) error {
 	len := len(ipAddresses)
 	switch {
 	case len == 0:
