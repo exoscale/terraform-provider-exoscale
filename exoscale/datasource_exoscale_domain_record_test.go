@@ -60,7 +60,7 @@ resource "exoscale_domain_record" "mx2" {
 	)
 )
 
-func TestAccDatasourceDomainRecord(t *testing.T) {
+func TestAccDataSourceDomainRecord(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
@@ -90,7 +90,7 @@ data "exoscale_domain_record" "test_record" {
   }
 }`, testAccDataSourceDomainRecordConfigCreate1, testAccDataSourceDomainRecordConfigCreate2),
 				Check: resource.ComposeTestCheckFunc(
-					testAccDatasourceDomainRecordAttributes(
+					testAccDataSourceDomainRecordAttributes(
 						"data.exoscale_domain_record.test_record",
 						testAttrs{
 							"records.0.name":   ValidateString(testAccDataSourceDomainRecordName1),
@@ -112,7 +112,7 @@ data "exoscale_domain_record" "test_record" {
 			  }
 			}`, testAccDataSourceDomainRecordConfigCreate1, testAccDataSourceDomainRecordConfigCreate2),
 				Check: resource.ComposeTestCheckFunc(
-					testAccDatasourceDomainRecordAttributes(
+					testAccDataSourceDomainRecordAttributes(
 						"data.exoscale_domain_record.test_record",
 						testAttrs{
 							"records.0.name":   ValidateString(testAccDataSourceDomainRecordName1),
@@ -134,7 +134,7 @@ data "exoscale_domain_record" "test_record" {
 			  }
 			}`, testAccDataSourceDomainRecordConfigCreate1, testAccDataSourceDomainRecordConfigCreate2),
 				Check: resource.ComposeTestCheckFunc(
-					testAccDatasourceDomainRecordAttributes(
+					testAccDataSourceDomainRecordAttributes(
 						"data.exoscale_domain_record.test_record",
 						testAttrs{
 							"records.0.domain": ValidateString(testAccDataSourceDomainRecordDomainName),
@@ -156,7 +156,7 @@ data "exoscale_domain_record" "test_record" {
 			  }
 			}`, testAccDataSourceDomainRecordConfigCreate1, testAccDataSourceDomainRecordConfigCreate2),
 				Check: resource.ComposeTestCheckFunc(
-					testAccDatasourceDomainRecordAttributes(
+					testAccDataSourceDomainRecordAttributes(
 						"data.exoscale_domain_record.test_record",
 						testAttrs{
 							"records.0.domain": ValidateString(testAccDataSourceDomainRecordDomainName),
@@ -169,12 +169,12 @@ data "exoscale_domain_record" "test_record" {
 	})
 }
 
-func testAccDatasourceDomainRecordAttributes(rsName string, expected testAttrs) resource.TestCheckFunc {
+func testAccDataSourceDomainRecordAttributes(rsName string, expected testAttrs) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		all := s.RootModule().Resources
 		rs, ok := all[rsName]
 		if !ok {
-			return errors.New("exoscale_domain_record datasource not found in the state")
+			return errors.New("exoscale_domain_record data source not found in the state")
 		}
 
 		if rs.Primary.ID == "" {

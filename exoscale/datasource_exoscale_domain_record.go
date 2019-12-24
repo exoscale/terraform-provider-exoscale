@@ -12,9 +12,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 )
 
-func datasourceDomainRecord() *schema.Resource {
+func dataSourceDomainRecord() *schema.Resource {
 	return &schema.Resource{
-		Read: datasourceDomainRecordRead,
+		Read: dataSourceDomainRecordRead,
 
 		Schema: map[string]*schema.Schema{
 			"domain": {
@@ -94,7 +94,7 @@ func datasourceDomainRecord() *schema.Resource {
 	}
 }
 
-func datasourceDomainRecordRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceDomainRecordRead(d *schema.ResourceData, meta interface{}) error {
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutCreate))
 	defer cancel()
 
@@ -130,7 +130,7 @@ func datasourceDomainRecordRead(d *schema.ResourceData, meta interface{}) error 
 		if err != nil {
 			return err
 		}
-		records, err = datasourceDomainRecordFilter(records, m["content_regex"].(string))
+		records, err = dataSourceDomainRecordFilter(records, m["content_regex"].(string))
 		if err != nil {
 			return err
 		}
@@ -162,7 +162,7 @@ func datasourceDomainRecordRead(d *schema.ResourceData, meta interface{}) error 
 	return nil
 }
 
-func datasourceDomainRecordFilter(records []egoscale.DNSRecord, content string) ([]egoscale.DNSRecord, error) {
+func dataSourceDomainRecordFilter(records []egoscale.DNSRecord, content string) ([]egoscale.DNSRecord, error) {
 	regexp, err := regexp.Compile(content)
 	if err != nil {
 		return nil, err
