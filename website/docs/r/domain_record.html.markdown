@@ -20,17 +20,17 @@ resource "exoscale_domain" "example" {
 }
 
 resource "exoscale_domain_record" "myserver" {
-  domain      = "${exoscale_domain.example.id}"
+  domain      = exoscale_domain.example.id
   name        = "myserver"
   record_type = "A"
   content     = "1.2.3.4"
 }
 
 resource "exoscale_domain_record" "myserver_alias" {
-  domain      = "${exoscale_domain.example.id}"
+  domain      = exoscale_domain.example.id
   name        = "myserver-new"
   record_type = "CNAME"
-  content     = "${exoscale_domain_record.myserver.hostname}"
+  content     = exoscale_domain_record.myserver.hostname
 }
 ```
 

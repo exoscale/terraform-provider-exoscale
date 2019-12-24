@@ -30,7 +30,7 @@ resource "exoscale_domain" "exo" {
 }
 
 resource "exoscale_domain_record" "mx" {
-  domain      = "${exoscale_domain.exo.id}"
+  domain      = exoscale_domain.exo.id
   name        = "%s"
   record_type = "%s"
   content     = "%s"
@@ -52,7 +52,7 @@ resource "exoscale_domain" "exo" {
 }
 
 resource "exoscale_domain_record" "mx" {
-  domain      = "${exoscale_domain.exo.id}"
+  domain      = exoscale_domain.exo.id
   name        = "%s"
   record_type = "%s"
   content     = "%s"
