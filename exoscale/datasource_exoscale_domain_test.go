@@ -9,9 +9,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
 
-var testAccDatasourceDomainName = testPrefix + "-" + testRandomString() + ".net"
+var testAccDataSourceDomainName = testPrefix + "-" + testRandomString() + ".net"
 
-func TestAccDatasourceDomain(t *testing.T) {
+func TestAccDataSourceDomain(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
@@ -23,10 +23,10 @@ resource "exoscale_domain" "exo" {
 }
 data "exoscale_domain" "domain" {
   name = "${exoscale_domain.exo.name}"
-}`, testAccDatasourceDomainName),
+}`, testAccDataSourceDomainName),
 				Check: resource.ComposeTestCheckFunc(
-					testAccDatasourceDomainAttributes(testAttrs{
-						"name": ValidateString(testAccDatasourceDomainName),
+					testAccDataSourceDomainAttributes(testAttrs{
+						"name": ValidateString(testAccDataSourceDomainName),
 					}),
 				),
 			},
@@ -34,7 +34,7 @@ data "exoscale_domain" "domain" {
 	})
 }
 
-func testAccDatasourceDomainAttributes(expected testAttrs) resource.TestCheckFunc {
+func testAccDataSourceDomainAttributes(expected testAttrs) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		for _, rs := range s.RootModule().Resources {
 			if rs.Type != "exoscale_domain" {
@@ -44,6 +44,6 @@ func testAccDatasourceDomainAttributes(expected testAttrs) resource.TestCheckFun
 			return checkResourceAttributes(expected, rs.Primary.Attributes)
 		}
 
-		return errors.New("exoscale_domain datasource not found in the state")
+		return errors.New("exoscale_domain data source not found in the state")
 	}
 }
