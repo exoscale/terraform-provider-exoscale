@@ -49,7 +49,7 @@ func resourceCompute() *schema.Resource {
 		},
 		"key_pair": {
 			Type:     schema.TypeString,
-			Required: true,
+			Optional: true,
 			ForceNew: true,
 		},
 		"name": {
