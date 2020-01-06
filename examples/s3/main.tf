@@ -1,5 +1,5 @@
 provider "aws" {
-  version = "~> 1.24"
+  version = "~> 2.7"
   access_key = var.key
   secret_key = var.secret
 
@@ -23,7 +23,7 @@ resource "aws_s3_bucket" "testbucket" {
   acl = "public-read"
 
   lifecycle {
-    ignore_changes = ["object_lock_configuration.#"]
+    ignore_changes = [object_lock_configuration]
   }
 
   cors_rule {

@@ -2,7 +2,7 @@ data "template_file" "init" {
   template = file("init.tpl")
   count = length(var.hostnames)
 
-  vars {
+  vars = {
     ubuntu = var.flavor
     fqdn = element(var.hostnames, count.index)
   }

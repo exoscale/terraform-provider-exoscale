@@ -1,5 +1,5 @@
 provider "template" {
-  version = "~> 1.0"
+  version = "~> 2.1"
 }
 
 provider "local" {
@@ -7,7 +7,7 @@ provider "local" {
 }
 
 provider "null" {
-  version = "~> 1.0"
+  version = "~> 2.1"
 }
 
 provider "exoscale" {

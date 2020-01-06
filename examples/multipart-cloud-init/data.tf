@@ -2,7 +2,7 @@ data "template_file" "init" {
   count = length(var.hostnames)
   template = file("cloud-init.yml.tpl")
 
-  vars {
+  vars = {
     fqdn = var.hostnames[count.index]
     ubuntu = "artful"
   }
@@ -12,7 +12,7 @@ data "external" "terraform_version" {
   program = [
     "sh",
     "-c",
-    "echo \"{\\\"script\\\": \\\"#!/bin/sh\\\\necho Setup via $(terraform -v | head -n 1)\\\"}\""
+    "echo \"{\\\"script\\\": \\\"echo Setup via $(terraform -v | head -n 1)\\\"}\""
   ]
 }
 

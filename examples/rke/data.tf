@@ -2,9 +2,9 @@ data "template_file" "init" {
   template = file("init.tpl")
   count = length(var.hostnames)
 
-  vars {
+  vars = {
     ubuntu = var.ubuntu-flavor
-    docker-version = var.docker-version}~ce-0~ubuntu-${var.ubuntu-flavor
+    docker-version = format("%s~ce-0~ubuntu-%s", var.docker-version, var.ubuntu-flavor)
     hostname = element(var.hostnames, count.index)
   }
 }

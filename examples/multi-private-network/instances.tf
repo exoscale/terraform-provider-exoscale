@@ -23,7 +23,7 @@ resource "exoscale_compute" "machine" {
 }
 
 resource "exoscale_nic" "eth_intra" {
-  count = exoscale_compute.machine.count
+  count = length(exoscale_compute.machine)
 
   compute_id = exoscale_compute.machine.*.id[count.index]
   network_id = exoscale_network.intra.id

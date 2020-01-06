@@ -1,5 +1,5 @@
 provider "template" {
-  version = "~> 1.0"
+  version = "~> 2.1"
 }
 
 provider "exoscale" {
@@ -21,7 +21,7 @@ resource "exoscale_ipaddress" "ingress" {
 data "template_file" "cloudinit" {
   template = file("init.tpl")
 
-  vars {
+  vars = {
     eip = exoscale_ipaddress.ingress.ip_address
   }
 }

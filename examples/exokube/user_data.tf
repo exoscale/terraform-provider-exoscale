@@ -1,7 +1,7 @@
 data "template_file" "exokube" {
   template = file("cloud-config.yaml")
 
-  vars {
+  vars = {
     fqdn = "exokube"
     ubuntu = var.ubuntu_flavor
     docker_version = var.docker_version

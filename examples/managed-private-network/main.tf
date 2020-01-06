@@ -45,7 +45,7 @@ resource "exoscale_compute" "static" {
 }
 
 resource "exoscale_nic" "eth_static" {
-  count = exoscale_compute.static.count
+  count = length(exoscale_compute.static)
 
   compute_id = exoscale_compute.static.*.id[count.index]
   network_id = exoscale_network.intra.id
@@ -70,7 +70,7 @@ resource "exoscale_compute" "dynamic" {
 }
 
 resource "exoscale_nic" "eth_dynamic" {
-  count = exoscale_compute.dynamic.count
+  count = length(exoscale_compute.dynamic)
 
   compute_id = exoscale_compute.dynamic.*.id[count.index]
   network_id = exoscale_network.intra.id
