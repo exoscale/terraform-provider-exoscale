@@ -26,7 +26,7 @@ resource "exoscale_domain" "exo" {
 }
 
 resource "exoscale_domain_record" "mx" {
-  domain      = "${exoscale_domain.exo.id}"
+  domain      = exoscale_domain.exo.id
   name        = "%s"
   record_type = "%s"
   content     = "%s"
@@ -44,7 +44,7 @@ resource "exoscale_domain_record" "mx" {
 
 	testAccDataSourceDomainRecordConfigCreate2 = fmt.Sprintf(`
 resource "exoscale_domain_record" "mx2" {
-  domain      = "${exoscale_domain.exo.id}"
+  domain      = exoscale_domain.exo.id
   name        = "%s"
   record_type = "%s"
   content     = "%s"
@@ -72,7 +72,7 @@ func TestAccDataSourceDomainRecord(t *testing.T) {
 %s
 
 data "exoscale_domain_record" "test_record" {
-  domain = "${exoscale_domain.exo.id}"
+  domain = exoscale_domain.exo.id
   filter {}
 }`, testAccDataSourceDomainRecordConfigCreate1, testAccDataSourceDomainRecordConfigCreate2),
 				ExpectError: regexp.MustCompile("either name or id must be specified"),
@@ -84,9 +84,9 @@ data "exoscale_domain_record" "test_record" {
 %s
 
 data "exoscale_domain_record" "test_record" {
-  domain = "${exoscale_domain.exo.id}"
+  domain = exoscale_domain.exo.id
   filter {
-    name   = "${exoscale_domain_record.mx.name}"
+    name   = exoscale_domain_record.mx.name
   }
 }`, testAccDataSourceDomainRecordConfigCreate1, testAccDataSourceDomainRecordConfigCreate2),
 				Check: resource.ComposeTestCheckFunc(
@@ -106,9 +106,9 @@ data "exoscale_domain_record" "test_record" {
 %s
 
 			data "exoscale_domain_record" "test_record" {
-			  domain = "${exoscale_domain.exo.id}"
+			  domain = exoscale_domain.exo.id
 			  filter {
-			    id = "${exoscale_domain_record.mx.id}"
+			    id = exoscale_domain_record.mx.id
 			  }
 			}`, testAccDataSourceDomainRecordConfigCreate1, testAccDataSourceDomainRecordConfigCreate2),
 				Check: resource.ComposeTestCheckFunc(
@@ -128,7 +128,7 @@ data "exoscale_domain_record" "test_record" {
 %s
 
 			data "exoscale_domain_record" "test_record" {
-			  domain = "${exoscale_domain.exo.id}"
+			  domain = exoscale_domain.exo.id
 			  filter {
 			    record_type = "MX"
 			  }
@@ -150,7 +150,7 @@ data "exoscale_domain_record" "test_record" {
 %s
 
 			data "exoscale_domain_record" "test_record" {
-			  domain = "${exoscale_domain.exo.id}"
+			  domain = exoscale_domain.exo.id
 			  filter {
 			    content_regex = "mta.*"
 			  }
