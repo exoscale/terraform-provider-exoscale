@@ -4,7 +4,7 @@ data "template_file" "init" {
 
   vars = {
     fqdn = var.hostnames[count.index]
-    ubuntu = "artful"
+    ubuntu = "bionic"
   }
 }
 
