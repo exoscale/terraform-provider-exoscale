@@ -1,7 +1,7 @@
 provider "exoscale" {
-  version = "~> 0.12.1"
-  key     = "${var.key}"
-  secret  = "${var.secret}"
+  version = "~> 0.15"
+  key     = var.key
+  secret  = var.secret
 }
 
 

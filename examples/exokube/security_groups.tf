@@ -4,7 +4,7 @@ resource "exoscale_security_group" "exokube" {
 }
 
 resource "exoscale_security_group_rules" "exokube" {
-  security_group_id = "${exoscale_security_group.exokube.id}"
+  security_group_id = exoscale_security_group.exokube.id
 
   ingress {
     description = "Ping"

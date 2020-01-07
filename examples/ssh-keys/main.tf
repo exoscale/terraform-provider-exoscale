@@ -1,5 +1,5 @@
 provider "exoscale" {
-  version = "~> 0.11"
+  version = "~> 0.15"
 }
 
 resource "exoscale_ssh_keypair" "key" {
@@ -13,17 +13,17 @@ data "exoscale_compute_template" "ubuntu" {
 
 resource "exoscale_compute" "vm" {
   display_name = "myvm"
-  template_id = "${data.exoscale_compute_template.ubuntu.id}"
+  template_id = data.exoscale_compute_template.ubuntu.id
   size = "Medium"
-  key_pair = "${exoscale_ssh_keypair.key.name}"
+  key_pair = exoscale_ssh_keypair.key.name
   disk_size = 10
   zone = "at-vie-1"
 
   provisioner "remote-exec" {
     connection {
-      host = "${self.ip_address}"
-      user = "${data.exoscale_compute_template.ubuntu.username}"
-      private_key = "${exoscale_ssh_keypair.key.private_key}"
+      host = self.ip_address
+      user = data.exoscale_compute_template.ubuntu.username
+      private_key = exoscale_ssh_keypair.key.private_key
     }
 
     inline = [

@@ -28,7 +28,7 @@ resource "exoscale_security_group" "sg" {
 }
 
 resource "exoscale_security_group_rule" "cidr" {
-  security_group_id = "${exoscale_security_group.sg.id}"
+  security_group_id = exoscale_security_group.sg.id
   protocol = "%s"
   type = "%s"
   cidr = "%s"
@@ -50,12 +50,12 @@ resource "exoscale_security_group" "sg" {
 }
 
 resource "exoscale_security_group_rule" "usg" {
-  security_group = "${exoscale_security_group.sg.name}"
+  security_group = exoscale_security_group.sg.name
   protocol = "%s"
   type = "%s"
   icmp_type = %d
   icmp_code = %d
-  user_security_group = "${exoscale_security_group.sg.name}"
+  user_security_group = exoscale_security_group.sg.name
 }
 `,
 		testAccResourceSecurityGroupRuleSecurityGroupName,

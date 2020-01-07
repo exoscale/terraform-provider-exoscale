@@ -27,8 +27,8 @@ resource "exoscale_ipaddress" "vip" {
 }
 
 resource "exoscale_secondary_ipaddress" "vip" {
-  compute_id = "${exoscale_compute.vm1.id}"
-  ip_address = "${exoscale_ipaddress.vip.ip_address}"
+  compute_id = exoscale_compute.vm1.id
+  ip_address = exoscale_ipaddress.vip.ip_address
 }
 ```
 

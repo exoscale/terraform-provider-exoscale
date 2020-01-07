@@ -20,7 +20,7 @@ resource "exoscale_security_group" "webservers" {
 }
 
 resource "exoscale_security_group_rule" "http" {
-  security_group_id = "${exoscale_security_group.webservers.id}"
+  security_group_id = exoscale_security_group.webservers.id
   type              = "INGRESS"
   protocol          = "TCP"
   cidr              = "0.0.0.0/0" # "::/0" for IPv6

@@ -7,5 +7,5 @@ variable "zone" {
 }
 
 variable "template" {
-  default = "Linux CentOS 7.4 64-bit"
+  default = "Linux Ubuntu 18.04 LTS 64-bit"
 }

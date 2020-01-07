@@ -2,7 +2,7 @@
 
 This example creats a domain `example.exo` with three records
 
-- **A** so that `example.exo` points to the IPv4 of the instance (`"${exoscale_compute.<name>.ip_address}"`)
+- **A** so that `example.exo` points to the IPv4 of the instance (`exoscale_compute.<name>.ip_address`)
 - **CNAME** to alias `www.example.exo` to `example.exo`
 - **TXT** to put a text field
 

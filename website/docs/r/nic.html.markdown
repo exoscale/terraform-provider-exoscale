@@ -24,8 +24,8 @@ resource "exoscale_network" "oob" {
 }
 
 resource "exoscale_nic" "oob" {
-  compute_id = "${exoscale_compute.vm1.id}"
-  network_id = "${exoscale_network.oob.id}"
+  compute_id = exoscale_compute.vm1.id
+  network_id = exoscale_network.oob.id
 }
 ```
 

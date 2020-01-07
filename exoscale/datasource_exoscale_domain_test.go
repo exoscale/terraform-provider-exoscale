@@ -22,7 +22,7 @@ resource "exoscale_domain" "exo" {
   name = "%s"
 }
 data "exoscale_domain" "domain" {
-  name = "${exoscale_domain.exo.name}"
+  name = exoscale_domain.exo.name
 }`, testAccDataSourceDomainName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDataSourceDomainAttributes(testAttrs{

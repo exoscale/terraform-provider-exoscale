@@ -1,9 +1,9 @@
 provider "aws" {
-  version = "~> 1.24"
-  access_key = "${var.key}"
-  secret_key = "${var.secret}"
+  version = "~> 2.7"
+  access_key = var.key
+  secret_key = var.secret
 
-  region = "${var.zone}"
+  region = var.zone
   endpoints {
     s3 = "https://sos-${var.zone}.exo.io"
   }
@@ -19,11 +19,11 @@ provider "aws" {
 }
 
 resource "aws_s3_bucket" "testbucket" {
-  bucket = "${var.bucket}"
+  bucket = var.bucket
   acl = "public-read"
 
   lifecycle {
-    ignore_changes = ["object_lock_configuration.#"]
+    ignore_changes = [object_lock_configuration]
   }
 
   cors_rule {
@@ -36,9 +36,9 @@ resource "aws_s3_bucket" "testbucket" {
  }
 
 resource "aws_s3_bucket_object" "testobj" {
-  bucket = "${aws_s3_bucket.testbucket.bucket}"
+  bucket = aws_s3_bucket.testbucket.bucket
   acl = "public-read"
   key = "some-text.txt"
   source = "some-text.txt"
-  etag   = "${md5(file("some-text.txt"))}"
+  etag   = md5(file("some-text.txt"))
 }

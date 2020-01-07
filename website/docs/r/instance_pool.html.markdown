@@ -28,26 +28,26 @@ resource "exoscale_security_group" "web" {
 }
 
 resource "exoscale_network" "web_privnet" {
-  zone = "${var.zone}"
+  zone = var.zone
   name = "web-privnet"
 }
 
 data "exoscale_compute_template" "mywebapp" {
-  zone = "${var.zone}"
+  zone = var.zone
   name = "mywebapp"
   filter = "mine"
 }
 
 resource "exoscale_instance_pool" "webapp" {
-  zone = "${var.zone}"
+  zone = var.zone
   name = "webapp"
-  template_id = "${data.exoscale_compute_template.mywebbapp.id}"
+  template_id = data.exoscale_compute_template.mywebbapp.id
   size = 3
   service_offering = "Medium"
   disk_size = 50
   description = "This is the production environment for my webapp"
   user_data = "#cloud-config\npackage_upgrade: true\n"
-  key_pair = "${exoscale_ssh_keypair.key.name}"
+  key_pair = exoscale_ssh_keypair.key.name
 
   security_group_ids = [${exoscale_security_group.web.id}]
   network_ids = [${exoscale_network.web_privnet.id}]

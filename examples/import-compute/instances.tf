@@ -8,7 +8,7 @@ resource "exoscale_compute" "ada" {
   key_pair = "my@keypair"
   disk_size = 10
   size = "Tiny"
-  template_id = "${data.exoscale_compute_template.debian.id}"
+  template_id = data.exoscale_compute_template.debian.id
   zone = "ch-dk-2"
 
   timeouts {
@@ -16,5 +16,5 @@ resource "exoscale_compute" "ada" {
     delete = "2h"
   }
 
-  security_groups = ["${exoscale_security_group.default.name}"]
+  security_groups = [exoscale_security_group.default.name]
 }

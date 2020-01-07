@@ -3,7 +3,7 @@ variable "secret" {}
 variable "key_pair" {}
 
 variable "hostnames" {
-  type = "list"
+  type = list(string)
   default = ["alpha", "beta"]
 }
 
@@ -12,6 +12,6 @@ variable "zone" {
 }
 
 variable "template" {
-  default = "Linux Ubuntu 18.04 64-bit"
+  default = "Linux Ubuntu 18.04 LTS 64-bit"
 }
 

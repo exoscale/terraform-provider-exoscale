@@ -1,0 +1,2 @@
+variable "key" {}
+variable "secret" {}
