@@ -106,7 +106,7 @@ func dataSourceComputeRead(d *schema.ResourceData, meta interface{}) error {
 
 	client := GetComputeClient(meta)
 
-	req := egoscale.ListVirtualMachines{}
+	req := egoscale.VirtualMachine{}
 
 	computeName, byName := d.GetOk("name")
 	computeID, byID := d.GetOk("id")
@@ -130,23 +130,12 @@ func dataSourceComputeRead(d *schema.ResourceData, meta interface{}) error {
 		req.Name = computeName.(string)
 	}
 
-	resp, err := client.RequestWithContext(ctx, &req)
+	resp, err := client.GetWithContext(ctx, &req)
 	if err != nil {
-		return fmt.Errorf("compute list query failed: %s", err)
+		return err
 	}
 
-	var c egoscale.VirtualMachine
-	nt := resp.(*egoscale.ListVirtualMachinesResponse).Count
-	switch {
-	case nt == 0:
-		return errors.New("compute not found")
-
-	case nt > 1:
-		return errors.New("multiple results returned, expected only one")
-
-	default:
-		c = resp.(*egoscale.ListVirtualMachinesResponse).VirtualMachine[0]
-	}
+	c := resp.(*egoscale.VirtualMachine)
 
 	resp, err = client.GetWithContext(ctx, &egoscale.Volume{
 		VirtualMachineID: c.ID,
@@ -158,7 +147,9 @@ func dataSourceComputeRead(d *schema.ResourceData, meta interface{}) error {
 
 	ds := resp.(*egoscale.Volume).Size
 
-	resp, err = client.RequestWithContext(ctx, &egoscale.ListNics{})
+	resp, err = client.RequestWithContext(ctx, &egoscale.ListNics{
+		VirtualMachineID: c.ID,
+	})
 	if err != nil {
 		return err
 	}
@@ -167,7 +158,7 @@ func dataSourceComputeRead(d *schema.ResourceData, meta interface{}) error {
 	return dataSourceComputeApply(d, c, n, ds)
 }
 
-func dataSourceComputeApply(d *schema.ResourceData, compute egoscale.VirtualMachine, nics []egoscale.Nic, diskSize uint64) error {
+func dataSourceComputeApply(d *schema.ResourceData, compute *egoscale.VirtualMachine, nics []egoscale.Nic, diskSize uint64) error {
 	d.SetId(compute.ID.String())
 
 	if err := d.Set("id", d.Id()); err != nil {
@@ -228,7 +219,6 @@ func dataSourceComputeApply(d *schema.ResourceData, compute egoscale.VirtualMach
 			if nic.IP6Address != nil {
 				privateIPv6 = append(privateIPv6, nic.IP6Address.String())
 			}
-
 		}
 
 		if len(privateIPv4) > 0 {
