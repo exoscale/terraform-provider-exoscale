@@ -16,13 +16,13 @@ func dataSourceCompute() *schema.Resource {
 				Type:          schema.TypeString,
 				Description:   "ID of the Compute",
 				Optional:      true,
-				ConflictsWith: []string{"name", "tag"},
+				ConflictsWith: []string{"name", "tags"},
 			},
 			"name": {
 				Type:          schema.TypeString,
 				Description:   "Name of the Compute",
 				Optional:      true,
-				ConflictsWith: []string{"id", "tag"},
+				ConflictsWith: []string{"id", "tags"},
 			},
 			"tags": {
 				Type: schema.TypeMap,
@@ -53,7 +53,7 @@ func dataSourceCompute() *schema.Resource {
 				Computed:    true,
 				Description: "Current size of the compute",
 			},
-			"disk": {
+			"disk_size": {
 				Type:        schema.TypeInt,
 				Computed:    true,
 				Description: "Size of the compute disk",
@@ -74,25 +74,31 @@ func dataSourceCompute() *schema.Resource {
 				Description: "state of the compute",
 			},
 
-			"ipv4": {
+			"ip_address": {
 				Type:        schema.TypeString,
 				Computed:    true,
 				Description: "compute public ipv4 address",
 			},
-			"ipv6": {
+			"ip6_address": {
 				Type:        schema.TypeString,
 				Computed:    true,
 				Description: "compute public ipv6 address",
 			},
-			"privnet_ipv4": {
+			"privnet_ip_address": {
 				Type:        schema.TypeList,
 				Computed:    true,
 				Description: "compute private ipv4 address",
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
 			},
-			"privnet_ipv6": {
+			"privnet_ip6_address": {
 				Type:        schema.TypeList,
 				Computed:    true,
 				Description: "compute private ipv6 address",
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
 			},
 		},
 
@@ -110,20 +116,20 @@ func dataSourceComputeRead(d *schema.ResourceData, meta interface{}) error {
 
 	computeName, byName := d.GetOk("name")
 	computeID, byID := d.GetOk("id")
-	computeTag, byTag := d.GetOk("tag")
+	computeTag, byTag := d.GetOk("tags")
 	switch {
 	case !byName && !byID && !byTag:
-		return errors.New("either name, id or tag must be specified")
+		return errors.New("either name, id or tags must be specified")
 	case computeID != "":
 		var err error
 		if req.ID, err = egoscale.ParseUUID(computeID.(string)); err != nil {
 			return fmt.Errorf("invalid value for id: %s", err)
 		}
 	case byTag:
-		for key, value := range computeTag.(map[string]string) {
+		for key, value := range computeTag.(map[string]interface{}) {
 			req.Tags = append(req.Tags, egoscale.ResourceTag{
 				Key:   key,
-				Value: value,
+				Value: value.(string),
 			})
 		}
 	default:
@@ -145,7 +151,7 @@ func dataSourceComputeRead(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	ds := resp.(*egoscale.Volume).Size
+	ds := resp.(*egoscale.Volume).Size >> 30
 
 	resp, err = client.RequestWithContext(ctx, &egoscale.ListNics{
 		VirtualMachineID: c.ID,
@@ -179,7 +185,7 @@ func dataSourceComputeApply(d *schema.ResourceData, compute *egoscale.VirtualMac
 	if err := d.Set("size", compute.ServiceOfferingName); err != nil {
 		return err
 	}
-	if err := d.Set("disk", diskSize); err != nil {
+	if err := d.Set("disk_size", diskSize); err != nil {
 		return err
 	}
 	if err := d.Set("cpu", compute.CPUNumber); err != nil {
@@ -191,7 +197,7 @@ func dataSourceComputeApply(d *schema.ResourceData, compute *egoscale.VirtualMac
 	if err := d.Set("state", compute.State); err != nil {
 		return err
 	}
-	if err := d.Set("ipv4", compute.IP().String()); err != nil {
+	if err := d.Set("ip_address", compute.IP().String()); err != nil {
 		return err
 	}
 
@@ -209,7 +215,7 @@ func dataSourceComputeApply(d *schema.ResourceData, compute *egoscale.VirtualMac
 	for _, nic := range nics {
 		switch {
 		case nic.IsDefault && nic.IP6Address != nil:
-			if err := d.Set("ipv6", nic.IP6Address.String()); err != nil {
+			if err := d.Set("ip6_address", nic.IP6Address.String()); err != nil {
 				return err
 			}
 		case !nic.IsDefault:
@@ -220,17 +226,17 @@ func dataSourceComputeApply(d *schema.ResourceData, compute *egoscale.VirtualMac
 				privateIPv6 = append(privateIPv6, nic.IP6Address.String())
 			}
 		}
+	}
 
-		if len(privateIPv4) > 0 {
-			if err := d.Set("privnet_ipv4", privateIPv4); err != nil {
-				return err
-			}
+	if len(privateIPv4) > 0 {
+		if err := d.Set("privnet_ip_address", privateIPv4); err != nil {
+			return err
 		}
+	}
 
-		if len(privateIPv6) > 0 {
-			if err := d.Set("privnet_ipv6", privateIPv6); err != nil {
-				return err
-			}
+	if len(privateIPv6) > 0 {
+		if err := d.Set("privnet_ip6_address", privateIPv6); err != nil {
+			return err
 		}
 	}
 
