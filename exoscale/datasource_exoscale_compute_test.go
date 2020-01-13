@@ -12,7 +12,6 @@ import (
 var (
 	testAccDataSourceComputeSSHKeyName   = testPrefix + "-" + testRandomString()
 	testAccDataSourceComputeNetworkName  = testPrefix + "-" + testRandomString()
-	testAccDataSourceComputeZoneName     = testZoneName
 	testAccDataSourceComputeTemplateName = testInstanceTemplateName
 	testAccDataSourceComputeName         = testPrefix + "-" + testRandomString()
 	testAccDataSourceComputeSize         = "Small"
