@@ -53,7 +53,8 @@ EOF
 ## Argument Reference
 
 * `zone` - (Required) The name of the [zone][zone] to deploy the Compute instance into.
-* `display_name` - (Required) The displayed name of the Compute instance. Note: This value is also used to set the OS' *hostname* during creation, so the value can only contain alphanumeric and hyphen ("-") characters; it can be changed to any character during a later update.
+* `display_name` - (Required) The displayed name of the Compute instance. Note: if the `hostname` attribute is not set, this attribute is also used to set the OS' *hostname* during creation, so the value must contain only alphanumeric and hyphen ("-") characters; it can be changed to any character during a later update.
+* `hostname` - The Compute instance hostname, must contain only alphanumeric and hyphen ("-") characters. Note: updating this attribute's value requires to reboot the instance.
 * `template` - (Required) The name of the Compute instance [template][template]. Only *featured* templates are available, if you want to reference *custom templates* use the `template_id` attribute instead.
 * `template_id` - (Required) The ID of the Compute instance [template][template]. Usage of the [`compute_template`][compute_template] data source is recommended.
 * `size` - (Required) The Compute instance [size][size], e.g. `Tiny`, `Small`, `Medium`, `Large` etc.
@@ -83,7 +84,7 @@ EOF
 
 The following attributes are exported:
 
-* `name` - The name of the Compute instance (*hostname*).
+* `name` - **Deprecated** The Compute instance *hostname*. Use the `hostname` attribute instead.
 * `username` - The user to use to connect to the Compute instance with SSH. If you've referenced a *custom template* in the resource, use the [`compute_template`][compute_template] data source `username` attribute instead.
 * `password` - The initial Compute instance password and/or encrypted password.
 * `ip_address` - The IP address of the Compute instance main network interface.

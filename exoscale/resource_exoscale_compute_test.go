@@ -11,17 +11,18 @@ import (
 )
 
 var (
-	testAccResourceComputeSSHKeyName        = testPrefix + "-" + testRandomString()
-	testAccResourceComputeSecurityGroupName = testPrefix + "-" + testRandomString()
-	testAccResourceComputeZoneName          = testZoneName
-	testAccResourceComputeTemplateName      = testInstanceTemplateName
-	testAccResourceComputeTemplateID        = testInstanceTemplateID
-	testAccResourceComputeName              = testPrefix + "-" + testRandomString()
-	testAccResourceComputeNameUpdated       = testAccResourceComputeName + "-updated"
-	testAccResourceComputeSize              = "Micro"
-	testAccResourceComputeSizeUpdated       = "Small"
-	testAccResourceComputeDiskSize          = "10"
-	testAccResourceComputeDiskSizeUpdated   = "15"
+	testAccResourceComputeSSHKeyName         = testPrefix + "-" + testRandomString()
+	testAccResourceComputeSecurityGroupName  = testPrefix + "-" + testRandomString()
+	testAccResourceComputeZoneName           = testZoneName
+	testAccResourceComputeTemplateName       = testInstanceTemplateName
+	testAccResourceComputeTemplateID         = testInstanceTemplateID
+	testAccResourceComputeDisplayName        = testPrefix + "-" + testRandomString()
+	testAccResourceComputeDisplayNameUpdated = testAccResourceComputeDisplayName + "-updated"
+	testAccResourceComputeHostname           = testPrefix + "-" + testRandomString()
+	testAccResourceComputeSize               = "Micro"
+	testAccResourceComputeSizeUpdated        = "Small"
+	testAccResourceComputeDiskSize           = "10"
+	testAccResourceComputeDiskSizeUpdated    = "15"
 
 	testAccResourceComputeConfigCreateTemplateByName = fmt.Sprintf(`
 resource "exoscale_ssh_keypair" "key" {
@@ -44,7 +45,7 @@ resource "exoscale_compute" "vm" {
 		testAccResourceComputeSSHKeyName,
 		testAccResourceComputeZoneName,
 		testAccResourceComputeTemplateName,
-		testAccResourceComputeName,
+		testAccResourceComputeDisplayName,
 		testAccResourceComputeSize,
 		testAccResourceComputeDiskSize,
 	)
@@ -70,7 +71,7 @@ resource "exoscale_compute" "vm" {
 		testAccResourceComputeSSHKeyName,
 		testAccResourceComputeTemplateID,
 		testAccResourceComputeZoneName,
-		testAccResourceComputeName,
+		testAccResourceComputeDisplayName,
 		testAccResourceComputeSize,
 		testAccResourceComputeDiskSize,
 	)
@@ -88,6 +89,7 @@ resource "exoscale_compute" "vm" {
   template_id = "%s"
   zone = "%s"
   display_name = "%s"
+  hostname = "%s"
   size = "%s"
   disk_size = "%s"
   key_pair = exoscale_ssh_keypair.key.name
@@ -113,7 +115,8 @@ EOF
 		testAccResourceComputeSecurityGroupName,
 		testAccResourceComputeTemplateID,
 		testAccResourceComputeZoneName,
-		testAccResourceComputeNameUpdated,
+		testAccResourceComputeDisplayNameUpdated,
+		testAccResourceComputeHostname,
 		testAccResourceComputeSizeUpdated,
 		testAccResourceComputeDiskSizeUpdated,
 		testAccResourceComputeSecurityGroupName,
@@ -138,7 +141,9 @@ func TestAccResourceCompute(t *testing.T) {
 					testAccCheckResourceComputeAttributes(testAttrs{
 						"template":     ValidateString(testAccResourceComputeTemplateName),
 						"template_id":  ValidateString(testAccResourceComputeTemplateID),
-						"display_name": ValidateString(testAccResourceComputeName),
+						"display_name": ValidateString(testAccResourceComputeDisplayName),
+						"hostname":     ValidateString(testAccResourceComputeDisplayName),
+						"name":         ValidateString(testAccResourceComputeDisplayName),
 						"size":         ValidateString(testAccResourceComputeSize),
 						"disk_size":    ValidateString(testAccResourceComputeDiskSize),
 						"key_pair":     ValidateString(testAccResourceComputeSSHKeyName),
@@ -153,7 +158,9 @@ func TestAccResourceCompute(t *testing.T) {
 					testAccCheckResourceCompute(vm),
 					testAccCheckResourceComputeAttributes(testAttrs{
 						"template_id":  ValidateString(testAccResourceComputeTemplateID),
-						"display_name": ValidateString(testAccResourceComputeName),
+						"display_name": ValidateString(testAccResourceComputeDisplayName),
+						"hostname":     ValidateString(testAccResourceComputeDisplayName),
+						"name":         ValidateString(testAccResourceComputeDisplayName),
 						"size":         ValidateString(testAccResourceComputeSize),
 						"disk_size":    ValidateString(testAccResourceComputeDiskSize),
 						"key_pair":     ValidateString(testAccResourceComputeSSHKeyName),
@@ -169,7 +176,9 @@ func TestAccResourceCompute(t *testing.T) {
 					testAccCheckResourceCompute(vm),
 					testAccCheckResourceComputeAttributes(testAttrs{
 						"template_id":       ValidateString(testAccResourceComputeTemplateID),
-						"display_name":      ValidateString(testAccResourceComputeNameUpdated),
+						"display_name":      ValidateString(testAccResourceComputeDisplayNameUpdated),
+						"hostname":          ValidateString(testAccResourceComputeHostname),
+						"name":              ValidateString(testAccResourceComputeHostname),
 						"size":              ValidateString(testAccResourceComputeSizeUpdated),
 						"disk_size":         ValidateString(testAccResourceComputeDiskSizeUpdated),
 						"key_pair":          ValidateString(testAccResourceComputeSSHKeyName),
@@ -188,7 +197,9 @@ func TestAccResourceCompute(t *testing.T) {
 					return checkResourceAttributes(
 						testAttrs{
 							"template_id":       ValidateString(testAccResourceComputeTemplateID),
-							"display_name":      ValidateString(testAccResourceComputeNameUpdated),
+							"display_name":      ValidateString(testAccResourceComputeDisplayNameUpdated),
+							"hostname":          ValidateString(testAccResourceComputeHostname),
+							"name":              ValidateString(testAccResourceComputeHostname),
 							"size":              ValidateString(testAccResourceComputeSizeUpdated),
 							"disk_size":         ValidateString(testAccResourceComputeDiskSizeUpdated),
 							"key_pair":          ValidateString(testAccResourceComputeSSHKeyName),
