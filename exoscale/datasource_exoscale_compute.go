@@ -66,28 +66,28 @@ func dataSourceCompute() *schema.Resource {
 			"memory": {
 				Type:        schema.TypeInt,
 				Computed:    true,
-				Description: "memory allocated for the compute",
+				Description: "Memory allocated for the compute",
 			},
 			"state": {
 				Type:        schema.TypeString,
 				Computed:    true,
-				Description: "state of the compute",
+				Description: "State of the compute",
 			},
 
 			"ip_address": {
 				Type:        schema.TypeString,
 				Computed:    true,
-				Description: "compute public ipv4 address",
+				Description: "Compute public ipv4 address",
 			},
 			"ip6_address": {
 				Type:        schema.TypeString,
 				Computed:    true,
-				Description: "compute public ipv6 address",
+				Description: "Compute public ipv6 address",
 			},
 			"privnet_ip_address": {
 				Type:        schema.TypeList,
 				Computed:    true,
-				Description: "compute private ipv4 address",
+				Description: "Compute private ipv4 address",
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
