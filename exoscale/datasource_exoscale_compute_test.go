@@ -24,7 +24,7 @@ resource "exoscale_ssh_keypair" "key" {
   
 resource "exoscale_compute" "vm" {
   zone = "ch-gva-2"
-  display_name = "%s"
+  hostname = "%s"
   template = "%s"
   size = "%s"
   disk_size = "%s"
@@ -67,14 +67,14 @@ func TestAccDatasourceCompute(t *testing.T) {
 %s
 
 data "exoscale_compute" "compute" {
-  name = "${exoscale_compute.vm.name}"
+  name = "${exoscale_compute.vm.hostname}"
 }
 `, testAccDataSourceComputeCreate),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDataSourceComputeAttributes(
 						testAttrs{
 							"template":  ValidateString(testAccDataSourceComputeTemplateName),
-							"name":      ValidateString(testAccDataSourceComputeName),
+							"hostname":  ValidateString(testAccDataSourceComputeName),
 							"size":      ValidateString(testAccDataSourceComputeSize),
 							"disk_size": ValidateString(testAccDataSourceComputeDiskSize),
 						},
@@ -92,7 +92,7 @@ data "exoscale_compute" "compute" {
 					testAccDataSourceComputeAttributes(
 						testAttrs{
 							"template":  ValidateString(testAccDataSourceComputeTemplateName),
-							"name":      ValidateString(testAccDataSourceComputeName),
+							"hostname":  ValidateString(testAccDataSourceComputeName),
 							"size":      ValidateString(testAccDataSourceComputeSize),
 							"disk_size": ValidateString(testAccDataSourceComputeDiskSize),
 						},
@@ -110,7 +110,7 @@ data "exoscale_compute" "compute" {
 					testAccDataSourceComputeAttributes(
 						testAttrs{
 							"template":  ValidateString(testAccDataSourceComputeTemplateName),
-							"name":      ValidateString(testAccDataSourceComputeName),
+							"hostname":  ValidateString(testAccDataSourceComputeName),
 							"size":      ValidateString(testAccDataSourceComputeSize),
 							"disk_size": ValidateString(testAccDataSourceComputeDiskSize),
 						},

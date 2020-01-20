@@ -16,11 +16,11 @@ func dataSourceCompute() *schema.Resource {
 				Type:          schema.TypeString,
 				Description:   "ID of the Compute",
 				Optional:      true,
-				ConflictsWith: []string{"name", "tags"},
+				ConflictsWith: []string{"hostname", "tags"},
 			},
-			"name": {
+			"hostname": {
 				Type:          schema.TypeString,
-				Description:   "Name of the Compute",
+				Description:   "hostname of the Compute",
 				Optional:      true,
 				ConflictsWith: []string{"id", "tags"},
 			},
@@ -31,7 +31,7 @@ func dataSourceCompute() *schema.Resource {
 				},
 				Description:   "Map of tags (key: value)",
 				Optional:      true,
-				ConflictsWith: []string{"id", "name"},
+				ConflictsWith: []string{"id", "hostname"},
 			},
 			"created": {
 				Type:        schema.TypeString,
@@ -114,12 +114,12 @@ func dataSourceComputeRead(d *schema.ResourceData, meta interface{}) error {
 
 	req := egoscale.VirtualMachine{}
 
-	computeName, byName := d.GetOk("name")
+	computeName, byName := d.GetOk("hostname")
 	computeID, byID := d.GetOk("id")
 	computeTag, byTag := d.GetOk("tags")
 	switch {
 	case !byName && !byID && !byTag:
-		return errors.New("either name, id or tags must be specified")
+		return errors.New("either hostname, id or tags must be specified")
 	case computeID != "":
 		var err error
 		if req.ID, err = egoscale.ParseUUID(computeID.(string)); err != nil {
@@ -170,7 +170,7 @@ func dataSourceComputeApply(d *schema.ResourceData, compute *egoscale.VirtualMac
 	if err := d.Set("id", d.Id()); err != nil {
 		return err
 	}
-	if err := d.Set("name", compute.Name); err != nil {
+	if err := d.Set("hostname", compute.Name); err != nil {
 		return err
 	}
 	if err := d.Set("created", compute.Created); err != nil {

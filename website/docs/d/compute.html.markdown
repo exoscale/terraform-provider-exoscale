@@ -16,13 +16,13 @@ Provides information on an compute hosted on [Exoscale Compute][exocompute].
 
 ```hcl
 data "exoscale_compute" "my_server" {
-  name = "my server"
+  hostname = "my server"
 }
 ```
 
 ## Argument Reference
 
-* `name` - The name of the Compute.
+* `hostname` - The hostname of the Compute.
 * `id` - The ID of the Compute.
 * `tags` - The tags to find the Compute.
 
@@ -31,7 +31,7 @@ data "exoscale_compute" "my_server" {
 The following attributes are exported:
 
 * `id` - ID of the compute.
-* `name` - Name of the compute.
+* `hostname` - Hostname of the compute.
 * `tags` - Map of tags (key: value).
 * `created` - Date when the compute was created.
 * `zone` - Name of the zone.
