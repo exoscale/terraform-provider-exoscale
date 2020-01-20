@@ -771,6 +771,7 @@ func resourceComputeUpdate(d *schema.ResourceData, meta interface{}) error {
 	d.SetPartial("user_data")
 	d.SetPartial("user_data_base64")
 	d.SetPartial("display_name")
+	d.SetPartial("hostname")
 	d.SetPartial("security_groups")
 
 	if (initialState == "Running" && rebootRequired) || startRequired {
