@@ -14,13 +14,13 @@ func dataSourceCompute() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			"id": {
 				Type:          schema.TypeString,
-				Description:   "ID of the Compute",
+				Description:   "ID of the Compute instance",
 				Optional:      true,
 				ConflictsWith: []string{"hostname", "tags"},
 			},
 			"hostname": {
 				Type:          schema.TypeString,
-				Description:   "hostname of the Compute",
+				Description:   "hostname of the Compute instance",
 				Optional:      true,
 				ConflictsWith: []string{"id", "tags"},
 			},
@@ -36,66 +36,58 @@ func dataSourceCompute() *schema.Resource {
 			"created": {
 				Type:        schema.TypeString,
 				Computed:    true,
-				Description: "Date when the compute was created",
+				Description: "Date when the Compute instance was created",
 			},
 			"zone": {
 				Type:        schema.TypeString,
 				Computed:    true,
-				Description: "Name of the availability zone for the compute",
+				Description: "Name of the availability zone for the Compute instance",
 			},
 			"template": {
 				Type:        schema.TypeString,
 				Computed:    true,
-				Description: "Name of the template for the compute",
+				Description: "Name of the template for the Compute instance",
 			},
 			"size": {
 				Type:        schema.TypeString,
 				Computed:    true,
-				Description: "Current size of the compute",
+				Description: "Current size of the Compute instance",
 			},
 			"disk_size": {
 				Type:        schema.TypeInt,
 				Computed:    true,
-				Description: "Size of the compute disk",
+				Description: "Size of the Compute instance disk",
 			},
 			"cpu": {
 				Type:        schema.TypeInt,
 				Computed:    true,
-				Description: "Number of cpu the compute is running with",
+				Description: "Number of cpu the Compute instance is running with",
 			},
 			"memory": {
 				Type:        schema.TypeInt,
 				Computed:    true,
-				Description: "Memory allocated for the compute",
+				Description: "Memory allocated for the Compute instance",
 			},
 			"state": {
 				Type:        schema.TypeString,
 				Computed:    true,
-				Description: "State of the compute",
+				Description: "State of the Compute instance",
 			},
 
 			"ip_address": {
 				Type:        schema.TypeString,
 				Computed:    true,
-				Description: "Compute public ipv4 address",
+				Description: "Compute instance public ipv4 address",
 			},
 			"ip6_address": {
 				Type:        schema.TypeString,
 				Computed:    true,
-				Description: "Compute public ipv6 address",
+				Description: "Compute instance public ipv6 address (if ipv6 is enabled)",
 			},
-			"privnet_ip_address": {
+			"private_network_ip_addresses": {
 				Type:        schema.TypeList,
 				Computed:    true,
-				Description: "Compute private ipv4 address",
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
-				},
-			},
-			"privnet_ip6_address": {
-				Type:        schema.TypeList,
-				Computed:    true,
-				Description: "compute private ipv6 address",
+				Description: "List of Compute instance private IP addresses (in managed Private Networks only)",
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
@@ -210,8 +202,6 @@ func dataSourceComputeApply(d *schema.ResourceData, compute *egoscale.VirtualMac
 	}
 
 	privateIPv4 := make([]string, 0)
-	privateIPv6 := make([]string, 0)
-
 	for _, nic := range nics {
 		switch {
 		case nic.IsDefault && nic.IP6Address != nil:
@@ -222,20 +212,11 @@ func dataSourceComputeApply(d *schema.ResourceData, compute *egoscale.VirtualMac
 			if nic.IPAddress != nil {
 				privateIPv4 = append(privateIPv4, nic.IPAddress.String())
 			}
-			if nic.IP6Address != nil {
-				privateIPv6 = append(privateIPv6, nic.IP6Address.String())
-			}
 		}
 	}
 
 	if len(privateIPv4) > 0 {
-		if err := d.Set("privnet_ip_address", privateIPv4); err != nil {
-			return err
-		}
-	}
-
-	if len(privateIPv6) > 0 {
-		if err := d.Set("privnet_ip6_address", privateIPv6); err != nil {
+		if err := d.Set("private_network_ip_addresses", privateIPv4); err != nil {
 			return err
 		}
 	}

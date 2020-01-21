@@ -67,7 +67,7 @@ func TestAccDatasourceCompute(t *testing.T) {
 %s
 
 data "exoscale_compute" "compute" {
-  name = "${exoscale_compute.vm.hostname}"
+  hostname = "${exoscale_compute.vm.hostname}"
 }
 `, testAccDataSourceComputeCreate),
 				Check: resource.ComposeTestCheckFunc(
