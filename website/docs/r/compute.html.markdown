@@ -53,11 +53,12 @@ EOF
 ## Argument Reference
 
 * `zone` - (Required) The name of the [zone][zone] to deploy the Compute instance into.
-* `display_name` - (Required) The displayed name of the Compute instance. Note: This value is also used to set the OS' *hostname* during creation, so the value can only contain alphanumeric and hyphen ("-") characters; it can be changed to any character during a later update.
 * `template` - (Required) The name of the Compute instance [template][template]. Only *featured* templates are available, if you want to reference *custom templates* use the `template_id` attribute instead.
 * `template_id` - (Required) The ID of the Compute instance [template][template]. Usage of the [`compute_template`][compute_template] data source is recommended.
 * `size` - (Required) The Compute instance [size][size], e.g. `Tiny`, `Small`, `Medium`, `Large` etc.
 * `disk_size` - (Required) The Compute instance root disk size in GiB (at least `10`).
+* `display_name` - The displayed name of the Compute instance. Note: if the `hostname` attribute is not set, this attribute is also used to set the OS' *hostname* during creation, so the value must contain only alphanumeric and hyphen ("-") characters; it can be changed to any character during a later update. If neither `display_name` or `hostname` attributes are set, a random value will be generated automatically server-side.
+* `hostname` - The Compute instance hostname, must contain only alphanumeric and hyphen ("-") characters. If neither `display_name` or `hostname` attributes are set, a random value will be generated automatically server-side. Note: updating this attribute's value requires to reboot the instance.
 * `key_pair` - The name of the [SSH key pair][sshkeypair] to be installed.
 * `user_data` - A [cloud-init][cloudinit] configuration. Whenever possible don't base64-encode neither gzip it yourself, as this will be automatically taken care of on your behalf by the provider.
 * `keyboard` - The keyboard layout configuration (at creation time only). Supported values are: `de`, `de-ch`, `es`, `fi`, `fr`, `fr-be`, `fr-ch`, `is`, `it`, `jp`, `nl-be`, `no`, `pt`, `uk`, `us`.
@@ -83,7 +84,7 @@ EOF
 
 The following attributes are exported:
 
-* `name` - The name of the Compute instance (*hostname*).
+* `name` - **Deprecated** The Compute instance *hostname*. Use the `hostname` attribute instead.
 * `username` - The user to use to connect to the Compute instance with SSH. If you've referenced a *custom template* in the resource, use the [`compute_template`][compute_template] data source `username` attribute instead.
 * `password` - The initial Compute instance password and/or encrypted password.
 * `ip_address` - The IP address of the Compute instance main network interface.

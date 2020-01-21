@@ -17,6 +17,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 )
 
+const computeHostnameRegexp = `^[a-zA-Z0-9][a-zA-Z0-9\-]+$`
+
 func resourceComputeIDString(d resourceIDStringer) string {
 	return resourceIDString(d, "exoscale_compute")
 }
@@ -53,13 +55,23 @@ func resourceCompute() *schema.Resource {
 			ForceNew: true,
 		},
 		"name": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Type:       schema.TypeString,
+			Computed:   true,
+			Deprecated: "use `hostname` attribute instead",
 		},
 		"display_name": {
 			Type:     schema.TypeString,
 			Optional: true,
 			Computed: true,
+		},
+		"hostname": {
+			Type:     schema.TypeString,
+			Optional: true,
+			Computed: true,
+			ValidateFunc: validation.StringMatch(
+				regexp.MustCompile(computeHostnameRegexp),
+				"alphanumeric and hyphen characters",
+			),
 		},
 		"size": {
 			Type:     schema.TypeString,
@@ -207,9 +219,16 @@ func resourceComputeCreate(d *schema.ResourceData, meta interface{}) error {
 	client := GetComputeClient(meta)
 
 	displayName := d.Get("display_name").(string)
-	hostName := regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9\-]+$`)
-	if !hostName.MatchString(displayName) {
-		return errors.New("at creation time, the `display_name` must match a value compatible with the `hostname` (alpha-numeric and hyphens")
+	instanceName := ""
+	if _, ok := d.GetOk("hostname"); ok {
+		instanceName = d.Get("hostname").(string)
+	} else if displayName != "" {
+		instanceName = displayName
+		if !regexp.MustCompile(computeHostnameRegexp).MatchString(instanceName) {
+			return errors.New("if the `hostname` attribute is not set, the `display_name` attribute is used " +
+				"instead and its value must be compatible with an instance hostname (contain only alphanumeric " +
+				"and hyphen characters)")
+		}
 	}
 
 	// ServiceOffering
@@ -327,7 +346,7 @@ func resourceComputeCreate(d *schema.ResourceData, meta interface{}) error {
 	details["ip6"] = strconv.FormatBool(d.Get("ip6").(bool))
 
 	req := &egoscale.DeployVirtualMachine{
-		Name:               displayName,
+		Name:               instanceName,
 		DisplayName:        displayName,
 		RootDiskSize:       int64(diskSize),
 		KeyPair:            d.Get("key_pair").(string),
@@ -551,6 +570,11 @@ func resourceComputeUpdate(d *schema.ResourceData, meta interface{}) error {
 		req.DisplayName = d.Get("display_name").(string)
 	}
 
+	if d.HasChange("hostname") {
+		req.Name = d.Get("hostname").(string)
+		rebootRequired = true
+	}
+
 	if d.HasChange("user_data") {
 		userData, base64Encoded, err := prepareUserData(d, meta, "user_data")
 		if err != nil {
@@ -747,6 +771,7 @@ func resourceComputeUpdate(d *schema.ResourceData, meta interface{}) error {
 	d.SetPartial("user_data")
 	d.SetPartial("user_data_base64")
 	d.SetPartial("display_name")
+	d.SetPartial("hostname")
 	d.SetPartial("security_groups")
 
 	if (initialState == "Running" && rebootRequired) || startRequired {
@@ -882,7 +907,11 @@ func resourceComputeImport(d *schema.ResourceData, meta interface{}) ([]*schema.
 }
 
 func resourceComputeApply(d *schema.ResourceData, machine *egoscale.VirtualMachine) error {
+	// This should go away once the attribute has been phased out
 	if err := d.Set("name", machine.Name); err != nil {
+		return err
+	}
+	if err := d.Set("hostname", machine.Name); err != nil {
 		return err
 	}
 	if err := d.Set("display_name", machine.DisplayName); err != nil {
