@@ -123,6 +123,7 @@ func Provider() terraform.ResourceProvider {
 			"exoscale_compute_template":  dataSourceComputeTemplate(),
 			"exoscale_domain":            dataSourceDomain(),
 			"exoscale_domain_record":     dataSourceDomainRecord(),
+			"exoscale_compute":           dataSourceCompute(),
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
