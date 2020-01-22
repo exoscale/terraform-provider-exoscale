@@ -208,17 +208,13 @@ func dataSourceComputeApply(d *schema.ResourceData, compute *egoscale.VirtualMac
 			if err := d.Set("ip6_address", nic.IP6Address.String()); err != nil {
 				return err
 			}
-		case !nic.IsDefault:
-			if nic.IPAddress != nil {
-				privateIP = append(privateIP, nic.IPAddress.String())
-			}
+		case !nic.IsDefault && nic.IPAddress != nil:
+			privateIP = append(privateIP, nic.IPAddress.String())
 		}
 	}
 
 	if len(privateIP) > 0 {
-		if err := d.Set("private_network_ip_addresses", privateIP); err != nil {
-			return err
-		}
+		return d.Set("private_network_ip_addresses", privateIP)
 	}
 
 	return nil
