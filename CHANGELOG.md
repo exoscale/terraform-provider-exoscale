@@ -1,13 +1,34 @@
-## 0.15.1 (Unreleased)
+## 0.16.0 (Unreleased)
+
+FEATURES:
+
+- **New Data Source:** `exoscale_compute` ([#42](https://github.com/terraform-providers/terraform-provider-exoscale/issues/42))
+- **New Data Source:** `exoscale_compute_ipaddress` ([#31](https://github.com/terraform-providers/terraform-provider-exoscale/issues/31))
+- **New Data Source:** `exoscale_domain` ([#34](https://github.com/terraform-providers/terraform-provider-exoscale/issues/34))
+- **New Data Source:** `exoscale_domain_record` ([#33](https://github.com/terraform-providers/terraform-provider-exoscale/issues/33))
+
+CHANGES:
+
+- The `exoscale_compute` resource `key_pair` argument is now optional ([#38](https://github.com/terraform-providers/terraform-provider-exoscale/issues/38))
+
+IMPROVEMENTS:
+
+- Acceptance tests refactoring ([#35](https://github.com/terraform-providers/terraform-provider-exoscale/issues/35))
+- Fix configuration examples syntax ([#39](https://github.com/terraform-providers/terraform-provider-exoscale/issues/39))
+
+DEPRECATIONS:
+
+- The `exoscale_compute` resource `name` attribute is now deprecated, replaced by the new `hostname` attribute ([#44](https://github.com/terraform-providers/terraform-provider-exoscale/issues/44))
+
 ## 0.15.0 (December 12, 2019)
 
 FEATURES:
 
-- **New Resource:** `exoscale_instance_pool` ([#11](https://github.com/terraform-providers/terraform-provider-exoscale/issues/11)).
+- **New Resource:** `exoscale_instance_pool` ([#11](https://github.com/terraform-providers/terraform-provider-exoscale/issues/11))
 
 CHANGES:
 
-- The `exoscale_network` resource `network_offering` attribute is now deprecated ([#26](https://github.com/terraform-providers/terraform-provider-exoscale/issues/26)).
+- The `exoscale_network` resource `network_offering` attribute is now deprecated ([#26](https://github.com/terraform-providers/terraform-provider-exoscale/issues/26))
 
 ## 0.14.0 (December 02, 2019)
 
