@@ -20,7 +20,7 @@ func dataSourceCompute() *schema.Resource {
 			},
 			"hostname": {
 				Type:          schema.TypeString,
-				Description:   "hostname of the Compute instance",
+				Description:   "Hostname of the Compute instance",
 				Optional:      true,
 				ConflictsWith: []string{"id", "tags"},
 			},
@@ -201,7 +201,7 @@ func dataSourceComputeApply(d *schema.ResourceData, compute *egoscale.VirtualMac
 		return err
 	}
 
-	privateIPv4 := make([]string, 0)
+	privateIP := make([]string, 0)
 	for _, nic := range nics {
 		switch {
 		case nic.IsDefault && nic.IP6Address != nil:
@@ -210,13 +210,13 @@ func dataSourceComputeApply(d *schema.ResourceData, compute *egoscale.VirtualMac
 			}
 		case !nic.IsDefault:
 			if nic.IPAddress != nil {
-				privateIPv4 = append(privateIPv4, nic.IPAddress.String())
+				privateIP = append(privateIP, nic.IPAddress.String())
 			}
 		}
 	}
 
-	if len(privateIPv4) > 0 {
-		if err := d.Set("private_network_ip_addresses", privateIPv4); err != nil {
+	if len(privateIP) > 0 {
+		if err := d.Set("private_network_ip_addresses", privateIP); err != nil {
 			return err
 		}
 	}
