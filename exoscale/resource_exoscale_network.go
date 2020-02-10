@@ -192,10 +192,12 @@ func resourceNetworkFind(ctx context.Context, d *schema.ResourceData, meta inter
 			return nil, err
 		}
 
-		break
+		if resp.(*egoscale.ListNetworksResponse).Count > 0 {
+			return resp.(*egoscale.ListNetworksResponse), nil
+		}
 	}
 
-	return resp.(*egoscale.ListNetworksResponse), nil
+	return nil, errors.New("network resource not found")
 }
 
 func resourceNetworkExists(d *schema.ResourceData, meta interface{}) (bool, error) {
