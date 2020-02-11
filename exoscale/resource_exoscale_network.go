@@ -160,7 +160,7 @@ func resourceNetworkRead(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 	if networks.Count == 0 {
-		return fmt.Errorf("No network found for ID: %s", d.Id())
+		return fmt.Errorf("no network found for ID %s", d.Id())
 	}
 
 	network := networks.Network[0]
@@ -192,10 +192,12 @@ func resourceNetworkFind(ctx context.Context, d *schema.ResourceData, meta inter
 			return nil, err
 		}
 
-		break
+		if resp.(*egoscale.ListNetworksResponse).Count > 0 {
+			return resp.(*egoscale.ListNetworksResponse), nil
+		}
 	}
 
-	return resp.(*egoscale.ListNetworksResponse), nil
+	return nil, fmt.Errorf("no network found for ID %s", id)
 }
 
 func resourceNetworkExists(d *schema.ResourceData, meta interface{}) (bool, error) {
