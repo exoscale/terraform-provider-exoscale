@@ -1,4 +1,9 @@
 ## 0.16.1 (Unreleased)
+
+BUG FIXES:
+
+- Fix the `exoscale_network` resource import method ([#46](https://github.com/terraform-providers/terraform-provider-exoscale/issues/46))
+
 ## 0.16.0 (January 22, 2020)
 
 FEATURES:
