@@ -80,6 +80,12 @@ func resourceSSHKeypairCreate(d *schema.ResourceData, meta interface{}) error {
 			return err
 		}
 		keypair = resp.(*egoscale.SSHKeyPair)
+
+		// We have to set this attribute now instead of later in resourceSSHKeypairApply, because once we go
+		// through resourceSSHKeypairRead we'll have lost the information.
+		if err := d.Set("private_key", keypair.PrivateKey); err != nil {
+			return err
+		}
 	}
 
 	d.SetId(keypair.Name)
@@ -154,12 +160,6 @@ func resourceSSHKeypairApply(d *schema.ResourceData, keypair *egoscale.SSHKeyPai
 
 	if err := d.Set("fingerprint", keypair.Fingerprint); err != nil {
 		return err
-	}
-
-	if keypair.PrivateKey != "" {
-		if err := d.Set("private_key", keypair.PrivateKey); err != nil {
-			return err
-		}
 	}
 
 	return nil
