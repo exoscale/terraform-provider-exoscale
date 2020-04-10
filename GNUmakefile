@@ -10,7 +10,7 @@ GOLANGCI_LINT_VERSION=1.15.0
 default: build
 
 build: fmtcheck
-	GOPATH=$(GOPATH) GO111MODULE=on go install -mod vendor
+	GOPATH=$(GOPATH) GO111MODULE=on go install
 
 install: build
 	@mkdir -p $(HOME)/.terraform.d/plugins
@@ -19,13 +19,13 @@ install: build
 
 sweep:
 	@echo "WARNING: This will destroy infrastructure. Use only in development accounts."
-	go test $(TEST) -mod vendor -v -sweep=$(SWEEP) $(SWEEPARGS)
+	go test $(TEST) -v -sweep=$(SWEEP) $(SWEEPARGS)
 
 test: fmtcheck
-	GO111MODULE=on go test $(TEST) -mod vendor -v $(TESTARGS) -timeout=30s -parallel=4
+	go test $(TEST) -v $(TESTARGS) -timeout=30s -parallel=4
 
 testacc: fmtcheck
-	TF_ACC=1 GO111MODULE=on go test $(TEST) -mod vendor -v $(TESTARGS) -timeout 120m
+	TF_ACC=1 go test $(TEST) -v $(TESTARGS) -timeout 120m
 
 fmt:
 	@echo "==> Fixing source code with gofmt..."
