@@ -1,4 +1,9 @@
-## 0.17.0 (Unreleased)
+## 0.16.2 (Unreleased)
+
+BUG FIXES:
+
+- Fix the `exoscale_ssh_keypair` resource ([#50](https://github.com/terraform-providers/terraform-provider-exoscale/issues/50)), which `private_key` attribute was not set after requesting an SSH key pair creation by the API.
+
 ## 0.16.1 (February 11, 2020)
 
 BUG FIXES:
