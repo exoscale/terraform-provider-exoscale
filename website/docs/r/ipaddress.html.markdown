@@ -53,7 +53,7 @@ resource "exoscale_ipaddress" "myip" {
 * `healthcheck_timeout` - The time in seconds before considering a healthcheck probing failed (must be between `2` and `60`).
 * `healthcheck_strikes_ok` - The number of successful healthcheck probes before considering the target healthy (must be between `1` and `20`).
 * `healthcheck_strikes_fail` - The number of unsuccessful healthcheck probes before considering the target unhealthy (must be between `1` and `20`).
-* `tags` - A dictionary of tags (key/value).
+* `tags` - A dictionary of tags (key/value). To remove all tags, set attribute to `tags = {}`.
 
 [zone]: https://www.exoscale.com/datacenters/
 

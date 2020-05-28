@@ -69,7 +69,7 @@ EOF
 * `security_group_ids` - A list of [Security Group][sg] IDs (conflicts with `security_groups`).
 * `ip4` - Boolean controlling if IPv4 is enabled (only supported value is `true`).
 * `ip6` - Boolean controlling if IPv6 is enabled.
-* `tags` - A dictionary of tags (key/value).
+* `tags` - A dictionary of tags (key/value). To remove all tags, set attribute to `tags = {}`.
 
 [template]: https://www.exoscale.com/templates/
 [zone]: https://www.exoscale.com/datacenters/

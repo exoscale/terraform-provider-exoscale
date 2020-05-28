@@ -51,7 +51,7 @@ resource "exoscale_network" "managed" {
 * `start_ip` - The first address of IP range used by the DHCP service to automatically assign. Required for *managed* Private Networks.
 * `end_ip` - The last address of the IP range used by the DHCP service. Required for *managed* Private Networks.
 * `netmask` - The netmask defining the IP network allowed for the static lease (see `exoscale_nic` resource). Required for *managed* Private Networks.
-* `tags` - A dictionary of tags (key/value).
+* `tags` - A dictionary of tags (key/value). To remove all tags, set attribute to `tags = {}`.
 
 [zone]: https://www.exoscale.com/datacenters/
 
