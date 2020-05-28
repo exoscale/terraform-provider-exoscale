@@ -31,7 +31,7 @@ The following attributes are exported:
 
 * `name` - (Required) The name of the Security Group.
 * `description` - A free-form text describing the Anti-Affinity Group purpose.
-* `tags` - A dictionary of tags (key/value).
+* `tags` - A dictionary of tags (key/value). To remove all tags, set attribute to `tags = {}`.
 
 ## Import
 
