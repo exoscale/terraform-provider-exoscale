@@ -3,6 +3,7 @@ VERSION:=$(shell git describe --tags `git rev-list --tags --max-count=1` | sed '
 SWEEP?=us-east-1,us-west-2
 TEST?=./...
 GOFMT_FILES?=$$(find . -name '*.go' |grep -v vendor)
+GOTEST_OPTS=-v -count=1 -failfast -timeout 120m
 PKG_NAME=exoscale
 WEBSITE_REPO=github.com/hashicorp/terraform-website
 GOLANGCI_LINT_VERSION=1.15.0
@@ -19,13 +20,13 @@ install: build
 
 sweep:
 	@echo "WARNING: This will destroy infrastructure. Use only in development accounts."
-	go test $(TEST) -v -sweep=$(SWEEP) $(SWEEPARGS)
+	go test $(TEST) -sweep=$(SWEEP) $(SWEEPARGS)
 
 test: fmtcheck
-	go test $(TEST) -v $(TESTARGS) -timeout=30s -parallel=4
+	go test $(GOTEST_OPTS) $(TESTARGS) $(TEST)
 
 testacc: fmtcheck
-	TF_ACC=1 go test $(TEST) -v $(TESTARGS) -timeout 120m
+	TF_ACC=1 go test $(GOTEST_OPTS) $(TESTARGS) $(TEST)
 
 fmt:
 	@echo "==> Fixing source code with gofmt..."
@@ -36,7 +37,7 @@ fmtcheck:
 
 lint:
 	@echo "==> Checking source code against linters..."
-	@bin/golangci-lint run ./$(PKG_NAME)
+	@golangci-lint run ./$(PKG_NAME)
 
 tools:
 	curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s v$(GOLANGCI_LINT_VERSION)
@@ -53,7 +54,7 @@ test-compile:
 		echo "  make test-compile TEST=./$(PKG_NAME)"; \
 		exit 1; \
 	fi
-	go test -c $(TEST) $(TESTARGS)
+	go test $(GOTEST_OPTS) -c $(TESTARGS) $(TEST)
 
 website:
 ifeq (,$(wildcard $(GOPATH)/src/$(WEBSITE_REPO)))

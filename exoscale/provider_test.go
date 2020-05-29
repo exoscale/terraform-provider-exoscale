@@ -17,8 +17,8 @@ const (
 	testPrefix               = "test-terraform-exoscale-provider"
 	testDescription          = "Created by the terraform-exoscale provider"
 	testZoneName             = "ch-gva-2"
-	testInstanceTemplateName = "Linux Ubuntu 18.04 LTS 64-bit"
-	testInstanceTemplateID   = "287b6306-fdeb-4dc6-855d-90c4f68f572b" // "Linux Ubuntu 18.04 LTS 64-bit" @ ch-gva-2
+	testInstanceTemplateName = "Linux Ubuntu 20.04 LTS 64-bit"
+	testInstanceTemplateID   = "4843c915-b8ce-47e8-add7-d7a8de6d8bdc" // "Linux Ubuntu 20.04 LTS 64-bit" @ ch-gva-2
 )
 
 // testAttrs represents a map of expected resource attributes during acceptance tests.

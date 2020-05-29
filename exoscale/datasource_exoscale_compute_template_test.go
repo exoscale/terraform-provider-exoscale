@@ -11,13 +11,13 @@ import (
 )
 
 const (
-	// Reference template used for tests: "Linux Ubuntu 18.04 LTS 64-bit" @ ch-gva-2 (featured)
+	// Reference template used for tests: "Linux Ubuntu 20.04 LTS 64-bit" @ ch-gva-2 (featured)
 	// cs --region cloudstack listTemplates \
 	//     templatefilter=featured \
 	//     zoneid=1128bd56-b4d9-4ac6-a7b9-c715b187ce11 \
-	//     name="Linux Ubuntu 18.04 LTS 64-bit"
-	dataSourceComputeTemplateID       = "287b6306-fdeb-4dc6-855d-90c4f68f572b"
-	dataSourceComputeTemplateName     = "Linux Ubuntu 18.04 LTS 64-bit"
+	//     name="Linux Ubuntu 20.04 LTS 64-bit"
+	dataSourceComputeTemplateID       = "4843c915-b8ce-47e8-add7-d7a8de6d8bdc"
+	dataSourceComputeTemplateName     = "Linux Ubuntu 20.04 LTS 64-bit"
 	dataSourceComputeTemplateUsername = "ubuntu"
 )
 
