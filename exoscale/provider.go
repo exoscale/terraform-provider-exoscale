@@ -12,14 +12,21 @@ import (
 	"github.com/exoscale/egoscale"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
-	"github.com/terraform-providers/terraform-provider-exoscale/version"
 	"gopkg.in/ini.v1"
+
+	"github.com/terraform-providers/terraform-provider-exoscale/version"
 )
 
 const (
 	legacyAPIVersion = "compute"
 	apiVersion       = "v1"
 )
+
+func init() {
+	egoscale.UserAgent = fmt.Sprintf("Exoscale-Terraform-Provider/%s %s",
+		version.ProviderVersion,
+		egoscale.UserAgent)
+}
 
 // Provider returns a terraform.ResourceProvider.
 func Provider() terraform.ResourceProvider {
@@ -249,8 +256,6 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		dnsEndpoint:     dnsEndpoint,
 		gzipUserData:    d.Get("gzip_user_data").(bool),
 	}
-
-	egoscale.UserAgent = fmt.Sprintf("Exoscale-Terraform-Provider/%s %s", version.ProviderVersion, egoscale.UserAgent)
 
 	return baseConfig, nil
 }
