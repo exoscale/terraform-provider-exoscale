@@ -29,6 +29,24 @@ func ValidateString(str string) schema.SchemaValidateFunc {
 	}
 }
 
+// ValidateStringNot validates that the given field is a string that doesn't match the specified value.
+func ValidateStringNot(str string) schema.SchemaValidateFunc {
+	return func(i interface{}, k string) (s []string, es []error) {
+		value, ok := i.(string)
+		if !ok {
+			es = append(es, fmt.Errorf("expected type of %s to be string", k))
+			return
+		}
+
+		if value == str {
+			es = append(es, fmt.Errorf("string %q match expected value %q", value, str))
+			return
+		}
+
+		return
+	}
+}
+
 // ValidateRegexp validates that the given field is a string and matches the regexp
 func ValidateRegexp(pattern string) schema.SchemaValidateFunc {
 	return func(i interface{}, k string) (s []string, es []error) {

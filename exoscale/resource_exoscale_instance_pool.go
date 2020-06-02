@@ -482,7 +482,7 @@ func resourceInstancePoolApply(ctx context.Context, client *egoscale.Client, d *
 		v := resp.(*egoscale.VirtualMachine)
 		virtualMachines[i] = v.Name
 	}
-	if err := d.Set("network_ids", networkIDs); err != nil {
+	if err := d.Set("virtual_machines", virtualMachines); err != nil {
 		return err
 	}
 

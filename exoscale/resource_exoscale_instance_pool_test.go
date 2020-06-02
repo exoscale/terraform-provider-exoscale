@@ -108,13 +108,14 @@ func TestAccResourceInstancePool(t *testing.T) {
 					testAccCheckResourceInstancePoolExists("exoscale_instance_pool.pool", pool),
 					testAccCheckResourceInstancePool(pool),
 					testAccCheckResourceInstancePoolAttributes(testAttrs{
-						"zone":             ValidateString(testAccResourceInstancePoolZoneName),
-						"name":             ValidateString(testAccResourceInstancePoolName),
-						"template_id":      ValidateString(testAccResourceInstancePoolTemplateID),
-						"service_offering": ValidateString(testAccResourceInstancePoolServiceOffering),
-						"size":             ValidateString(fmt.Sprint(testAccResourceInstancePoolSize)),
-						"disk_size":        ValidateString(fmt.Sprint(testAccResourceInstancePoolDiskSize)),
-						"key_pair":         ValidateString(testAccResourceInstancePoolSSHKeyName),
+						"zone":               ValidateString(testAccResourceInstancePoolZoneName),
+						"name":               ValidateString(testAccResourceInstancePoolName),
+						"template_id":        ValidateString(testAccResourceInstancePoolTemplateID),
+						"service_offering":   ValidateString(testAccResourceInstancePoolServiceOffering),
+						"size":               ValidateString(fmt.Sprint(testAccResourceInstancePoolSize)),
+						"disk_size":          ValidateString(fmt.Sprint(testAccResourceInstancePoolDiskSize)),
+						"key_pair":           ValidateString(testAccResourceInstancePoolSSHKeyName),
+						"virtual_machines.#": ValidateStringNot("0"),
 					}),
 				),
 			},
@@ -124,14 +125,15 @@ func TestAccResourceInstancePool(t *testing.T) {
 					testAccCheckResourceInstancePoolExists("exoscale_instance_pool.pool", pool),
 					testAccCheckResourceInstancePool(pool),
 					testAccCheckResourceInstancePoolAttributes(testAttrs{
-						"zone":             ValidateString(testAccResourceInstancePoolZoneName),
-						"name":             ValidateString(testAccResourceInstancePoolNameUpdated),
-						"description":      ValidateString(testAccResourceInstancePoolDescription),
-						"template_id":      ValidateString(testAccResourceInstancePoolTemplateID),
-						"service_offering": ValidateString(testAccResourceInstancePoolServiceOffering),
-						"size":             ValidateString(fmt.Sprint(testAccResourceInstancePoolSizeUpdated)),
-						"disk_size":        ValidateString(fmt.Sprint(testAccResourceInstancePoolDiskSize)),
-						"key_pair":         ValidateString(testAccResourceInstancePoolSSHKeyName),
+						"zone":               ValidateString(testAccResourceInstancePoolZoneName),
+						"name":               ValidateString(testAccResourceInstancePoolNameUpdated),
+						"description":        ValidateString(testAccResourceInstancePoolDescription),
+						"template_id":        ValidateString(testAccResourceInstancePoolTemplateID),
+						"service_offering":   ValidateString(testAccResourceInstancePoolServiceOffering),
+						"size":               ValidateString(fmt.Sprint(testAccResourceInstancePoolSizeUpdated)),
+						"disk_size":          ValidateString(fmt.Sprint(testAccResourceInstancePoolDiskSize)),
+						"key_pair":           ValidateString(testAccResourceInstancePoolSSHKeyName),
+						"virtual_machines.#": ValidateStringNot("0"),
 					}),
 				),
 			},
@@ -236,7 +238,7 @@ func testAccCheckResourceInstancePoolDestroy(s *terraform.State) error {
 		}
 
 		// this time.Sleep() is here to prevent race condition when
-		// an instance pool is destroyed, to wait till instance pool state chage
+		// an instance pool is destroyed, to wait till instance pool state changes
 		// from "running" to "destroying"
 		time.Sleep(time.Second * 10)
 
