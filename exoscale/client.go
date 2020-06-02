@@ -12,6 +12,7 @@ const defaultConfig = "cloudstack.ini"
 const defaultProfile = "cloudstack"
 const defaultComputeEndpoint = "https://api.exoscale.com/v1"
 const defaultDNSEndpoint = "https://api.exoscale.com/dns"
+const defaultEnvironment = "api"
 const defaultTimeout = 5 * time.Minute
 const defaultGzipUserData = true
 
@@ -22,6 +23,7 @@ type BaseConfig struct {
 	timeout         time.Duration
 	computeEndpoint string
 	dnsEndpoint     string
+	environment     string
 	gzipUserData    bool
 	computeClient   *egoscale.Client
 	dnsClient       *egoscale.Client
@@ -61,4 +63,12 @@ func GetDNSClient(meta interface{}) *egoscale.Client {
 		config.dnsClient = getClient(config.dnsEndpoint, meta)
 	}
 	return config.dnsClient
+}
+
+func getEnvironment(meta interface{}) string {
+	config := meta.(BaseConfig)
+	if config.environment == "" {
+		return defaultEnvironment
+	}
+	return config.environment
 }

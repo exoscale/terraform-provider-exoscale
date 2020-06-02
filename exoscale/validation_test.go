@@ -53,28 +53,32 @@ func TestValidateUUIDOk(t *testing.T) {
 }
 
 func TestValidateIPv4StringNumber(t *testing.T) {
-	_, errs := ValidateIPv4String(15, "test_property")
+	f := ValidateIPv4String()
+	_, errs := f(15, "test_property")
 	if len(errs) == 0 {
 		t.Error("an error was expected")
 	}
 }
 
 func TestValidateIPv4StringNonIP(t *testing.T) {
-	_, errs := ValidateIPv4String("hello", "test_property")
+	f := ValidateIPv4String()
+	_, errs := f("hello", "test_property")
 	if len(errs) == 0 {
 		t.Error("an error was expected")
 	}
 }
 
 func TestValidateIPv4StringOk(t *testing.T) {
-	_, errs := ValidateIPv4String("10.0.0.1", "test_property")
+	f := ValidateIPv4String()
+	_, errs := f("10.0.0.1", "test_property")
 	if len(errs) != 0 {
 		t.Error("no errors were expected")
 	}
 }
 
 func TestValidateIPv4StringKo(t *testing.T) {
-	_, errs := ValidateIPv4String("64:ff9b::", "test_property")
+	f := ValidateIPv4String()
+	_, errs := f("64:ff9b::", "test_property")
 	if len(errs) == 0 {
 		t.Error("an error was expected")
 	}

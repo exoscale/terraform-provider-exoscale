@@ -27,10 +27,17 @@ type testAttrs map[string]schema.SchemaValidateFunc
 var testAccProviders map[string]terraform.ResourceProvider
 var testAccProvider *schema.Provider
 
+var testEnvironment string
+
 func init() {
 	testAccProvider = Provider().(*schema.Provider)
 	testAccProviders = map[string]terraform.ResourceProvider{
 		"exoscale": testAccProvider,
+	}
+
+	testEnvironment = os.Getenv("EXOSCALE_API_ENVIRONMENT")
+	if testEnvironment == "" {
+		testEnvironment = defaultEnvironment
 	}
 }
 

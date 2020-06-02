@@ -102,6 +102,13 @@ func Provider() terraform.ResourceProvider {
 				Description: fmt.Sprintf("Exoscale DNS API endpoint (by default: %s)", defaultDNSEndpoint),
 				DefaultFunc: schema.EnvDefaultFunc("EXOSCALE_DNS_ENDPOINT", defaultDNSEndpoint),
 			},
+			"environment": {
+				Type:     schema.TypeString,
+				Optional: true,
+				DefaultFunc: schema.MultiEnvDefaultFunc([]string{
+					"EXOSCALE_API_ENVIRONMENT",
+				}, defaultEnvironment),
+			},
 			"timeout": {
 				Type:     schema.TypeFloat,
 				Required: true,
@@ -142,6 +149,8 @@ func Provider() terraform.ResourceProvider {
 			"exoscale_ipaddress":            resourceIPAddress(),
 			"exoscale_network":              resourceNetwork(),
 			"exoscale_nic":                  resourceNIC(),
+			"exoscale_nlb":                  resourceNLB(),
+			"exoscale_nlb_service":          resourceNLBService(),
 			"exoscale_secondary_ipaddress":  resourceSecondaryIPAddress(),
 			"exoscale_security_group_rule":  resourceSecurityGroupRule(),
 			"exoscale_security_group_rules": resourceSecurityGroupRules(),
@@ -158,6 +167,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	secret, secretOK := d.GetOk("secret")
 	endpoint := d.Get("compute_endpoint").(string)
 	dnsEndpoint := d.Get("dns_endpoint").(string)
+	environment := d.Get("environment").(string)
 
 	// deprecation support
 	token, tokenOK := d.GetOk("token")
@@ -254,6 +264,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		timeout:         time.Duration(int64(d.Get("timeout").(float64)) * int64(time.Second)),
 		computeEndpoint: endpoint,
 		dnsEndpoint:     dnsEndpoint,
+		environment:     environment,
 		gzipUserData:    d.Get("gzip_user_data").(bool),
 	}
 
