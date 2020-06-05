@@ -43,7 +43,7 @@ resource "exoscale_instance_pool" "webapp" {
   name = "webapp"
   template_id = data.exoscale_compute_template.mywebapp.id
   size = 3
-  service_offering = "Medium"
+  service_offering = "medium"
   disk_size = 50
   description = "This is the production environment for my webapp"
   user_data = "#cloud-config\npackage_upgrade: true\n"
@@ -64,7 +64,7 @@ resource "exoscale_instance_pool" "webapp" {
 * `name` - (Required) The name of the Instance Pool.
 * `template_id` - (Required) (Required) The ID of the instance [template][template] to use when creating Compute instances. Usage of the [`compute_template`][compute_template] data source is recommended.
 * `size` - (Required) The number of Compute instance members the Instance Pool manages.
-* `service_offering` - (Required) The managed Compute instances [size][size], e.g. `Tiny`, `Small`, `Medium`, `Large` etc.
+* `service_offering` - (Required) The managed Compute instances [size][size], e.g. `tiny`, `small`, `medium`, `large` etc.
 * `disk_size` - The managed Compute instances disk size.
 * `description` - The description of the Instance Pool.
 * `user_data` - A [cloud-init][cloudinit] configuration to apply when creating Compute instances. Whenever possible don't base64-encode neither gzip it yourself, as this will be automatically taken care of on your behalf by the provider.
