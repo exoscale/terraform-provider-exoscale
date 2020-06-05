@@ -41,7 +41,7 @@ data "exoscale_compute_template" "mywebapp" {
 resource "exoscale_instance_pool" "webapp" {
   zone = var.zone
   name = "webapp"
-  template_id = data.exoscale_compute_template.mywebbapp.id
+  template_id = data.exoscale_compute_template.mywebapp.id
   size = 3
   service_offering = "Medium"
   disk_size = 50
@@ -49,8 +49,8 @@ resource "exoscale_instance_pool" "webapp" {
   user_data = "#cloud-config\npackage_upgrade: true\n"
   key_pair = exoscale_ssh_keypair.key.name
 
-  security_group_ids = [${exoscale_security_group.web.id}]
-  network_ids = [${exoscale_network.web_privnet.id}]
+  security_group_ids = [exoscale_security_group.web.id]
+  network_ids = [exoscale_network.web_privnet.id]
 
   timeouts {
     delete = "10m"

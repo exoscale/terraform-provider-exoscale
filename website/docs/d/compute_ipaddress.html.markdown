@@ -20,7 +20,7 @@ locals {
 }
 
 data "exoscale_compute_ipaddress" "eip" {
-  zone = "${local.zone}"
+  zone = local.zone
   ip_address = "159.162.3.4"
 }
 ```
