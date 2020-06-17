@@ -1,4 +1,15 @@
 ## 0.17.0 (Unreleased)
+
+- **New Resources:** `exoscale_nlb`/`exoscale_nlb_service` ([#52](https://github.com/terraform-providers/terraform-provider-exoscale/issues/52))
+
+BUG FIXES:
+
+- Fix the `exoscale_instance_pool` resource `virtual_machines` attribute ([#53](https://github.com/terraform-providers/terraform-provider-exoscale/issues/53))
+
+IMPROVEMENTS:
+
+- Various documentation updates and corrections
+
 ## 0.16.2 (April 10, 2020)
 
 BUG FIXES:
