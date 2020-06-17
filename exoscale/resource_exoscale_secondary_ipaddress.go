@@ -29,7 +29,7 @@ func resourceSecondaryIPAddress() *schema.Resource {
 				Required:     true,
 				ForceNew:     true,
 				Description:  "Elastic IP address",
-				ValidateFunc: ValidateIPv4String,
+				ValidateFunc: ValidateIPv4String(),
 			},
 			"nic_id": {
 				Type:     schema.TypeString,

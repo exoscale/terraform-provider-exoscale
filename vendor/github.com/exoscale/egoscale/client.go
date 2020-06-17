@@ -7,11 +7,17 @@ import (
 	"log"
 	"net/http"
 	"net/http/httputil"
+	"net/url"
 	"os"
 	"reflect"
 	"runtime"
 	"strings"
 	"time"
+
+	"github.com/pkg/errors"
+
+	apiv2 "github.com/exoscale/egoscale/api/v2"
+	v2 "github.com/exoscale/egoscale/internal/v2"
 )
 
 // UserAgent is the "User-Agent" HTTP request header added to outgoing HTTP requests.
@@ -61,6 +67,9 @@ type Client struct {
 	RetryStrategy RetryStrategyFunc
 	// Logger contains any log, plug your own
 	Logger *log.Logger
+
+	// API V2 secondary client
+	v2 *v2.ClientWithResponses
 }
 
 // RetryStrategyFunc represents a how much time to wait between two calls to the API
@@ -98,6 +107,31 @@ func NewClient(endpoint, apiKey, apiSecret string) *Client {
 	if prefix, ok := os.LookupEnv("EXOSCALE_TRACE"); ok {
 		client.Logger = log.New(os.Stderr, prefix, log.LstdFlags)
 		client.TraceOn()
+	}
+
+	// Infer API V2 endpoint from V1 endpoint
+	endpointURL, err := url.Parse(client.Endpoint)
+	if err != nil {
+		panic(errors.Wrap(err, "unable to initialize API client"))
+	}
+	endpointURL = endpointURL.ResolveReference(&url.URL{Path: apiv2.APIPrefix})
+
+	exoSecurityProvider, err := apiv2.NewSecurityProviderExoscale(client.APIKey, client.apiSecret)
+	if err != nil {
+		panic(errors.Wrap(err, "unable to initialize security provider"))
+	}
+	exoSecurityProvider.ReqExpire = client.Expiration
+
+	opts := []v2.ClientOption{
+		v2.WithHTTPClient(client.HTTPClient),
+		v2.WithRequestEditorFn(v2.MultiRequestsEditor(
+			exoSecurityProvider.Intercept,
+			apiv2.SetEndpointFromContext),
+		),
+	}
+
+	if client.v2, err = v2.NewClientWithResponses(endpointURL.String(), opts...); err != nil {
+		panic(errors.Wrap(err, "unable to initialize API client"))
 	}
 
 	return client
@@ -381,6 +415,8 @@ type traceTransport struct {
 
 // RoundTrip executes a single HTTP transaction
 func (t *traceTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	req.Header.Add("User-Agent", UserAgent)
+
 	if dump, err := httputil.DumpRequest(req, true); err == nil {
 		t.logger.Printf("%s", dump)
 	}

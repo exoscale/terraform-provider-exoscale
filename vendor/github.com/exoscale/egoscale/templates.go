@@ -77,7 +77,7 @@ type ListTemplates struct {
 	Page           int           `json:"page,omitempty"`
 	PageSize       int           `json:"pagesize,omitempty"`
 	ShowRemoved    *bool         `json:"showremoved,omitempty" doc:"Show removed templates as well"`
-	Tags           []ResourceTag `json:"tags,omitempty" doc:"List resources by tags (key/value pairs)"`
+	Tags           []ResourceTag `json:"tags,omitempty" doc:"List resources by tags (key/value pairs). Note: multiple tags are OR'ed, not AND'ed."`
 	ZoneID         *UUID         `json:"zoneid,omitempty" doc:"list templates by zoneid"`
 	_              bool          `name:"listTemplates" description:"List all public, private, and privileged templates."`
 }
@@ -143,7 +143,7 @@ type RegisterCustomTemplate struct {
 	_               bool              `name:"registerCustomTemplate" description:"Register a new template."`
 	Checksum        string            `json:"checksum" doc:"the MD5 checksum value of this template"`
 	Details         map[string]string `json:"details,omitempty" doc:"Template details in key/value pairs"`
-	Displaytext     string            `json:"displaytext" doc:"the display text of the template"`
+	Displaytext     string            `json:"displaytext,omitempty" doc:"the display text of the template"`
 	Name            string            `json:"name" doc:"the name of the template"`
 	PasswordEnabled *bool             `json:"passwordenabled,omitempty" doc:"true if the template supports the password reset feature; default is false"`
 	SSHKeyEnabled   *bool             `json:"sshkeyenabled,omitempty" doc:"true if the template supports the sshkey upload feature; default is false"`
