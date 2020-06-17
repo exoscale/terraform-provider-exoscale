@@ -1,4 +1,4 @@
-## 0.17.0 (Unreleased)
+## 0.17.0 (June 17, 2020)
 
 - **New Resources:** `exoscale_nlb`/`exoscale_nlb_service` ([#52](https://github.com/terraform-providers/terraform-provider-exoscale/issues/52))
 
