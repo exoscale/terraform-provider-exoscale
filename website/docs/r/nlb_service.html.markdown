@@ -6,10 +6,11 @@ description: |-
   Provides an Exoscale Network Load Balancer service resource.
 ---
 
-# exoscale\_nlb
+# exoscale\_nlb\_service
 
-Provides an Exoscale Network Load Balancer (NLB) service resource. This can be used to create, modify, and delete NLB services.
+Provides an Exoscale Network Load Balancer ([NLB][nlb]) service resource. This can be used to create, modify, and delete NLB services.
 
+[nlb]: nlb.html
 
 ## Example Usage
 
