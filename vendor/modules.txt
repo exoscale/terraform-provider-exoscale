@@ -61,7 +61,7 @@ github.com/davecgh/go-spew/spew
 # github.com/deepmap/oapi-codegen v1.3.7-0.20200311141508-ee90a3f9f1ae
 github.com/deepmap/oapi-codegen/pkg/runtime
 github.com/deepmap/oapi-codegen/pkg/types
-# github.com/exoscale/egoscale v0.26.0
+# github.com/exoscale/egoscale v0.26.2
 github.com/exoscale/egoscale
 github.com/exoscale/egoscale/api/v2
 github.com/exoscale/egoscale/internal/v2

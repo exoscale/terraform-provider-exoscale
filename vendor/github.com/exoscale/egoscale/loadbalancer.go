@@ -385,7 +385,7 @@ func (c *Client) UpdateNetworkLoadBalancer(ctx context.Context, zone string,
 
 // DeleteNetworkLoadBalancer deletes the specified Network Load Balancer instance in the specified zone.
 func (c *Client) DeleteNetworkLoadBalancer(ctx context.Context, zone, id string) error {
-	resp, err := c.v2.DestroyLoadBalancerWithResponse(apiv2.WithZone(ctx, zone), id)
+	resp, err := c.v2.DeleteLoadBalancerWithResponse(apiv2.WithZone(ctx, zone), id)
 	if err != nil {
 		return err
 	}
