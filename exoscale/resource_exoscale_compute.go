@@ -96,6 +96,11 @@ func resourceCompute() *schema.Resource {
 				"it", "jp", "nl-be", "no", "pt", "uk", "us",
 			}, true),
 		},
+		"reverse_dns": {
+			Type:         schema.TypeString,
+			Optional:     true,
+			ValidateFunc: ValidateRegexp(`^.*\.$`),
+		},
 		"state": {
 			Type:     schema.TypeString,
 			Optional: true,
@@ -372,6 +377,16 @@ func resourceComputeCreate(d *schema.ResourceData, meta interface{}) error {
 	machine := resp.(*egoscale.VirtualMachine)
 	d.SetId(machine.ID.String())
 
+	if reverseDNS := d.Get("reverse_dns").(string); reverseDNS != "" {
+		_, err := client.RequestWithContext(ctx, &egoscale.UpdateReverseDNSForVirtualMachine{
+			DomainName: reverseDNS,
+			ID:         machine.ID,
+		})
+		if err != nil {
+			return err
+		}
+	}
+
 	cmd, err := createTags(d, "tags", machine.ResourceType())
 	if err != nil {
 		return err
@@ -499,6 +514,10 @@ func resourceComputeRead(d *schema.ResourceData, meta interface{}) error {
 		if err := d.Set("username", username); err != nil {
 			return err
 		}
+	}
+
+	if err := reverseDNSApply(ctx, d, client); err != nil {
+		return err
 	}
 
 	password := d.Get("password").(string)
@@ -688,6 +707,16 @@ func resourceComputeUpdate(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
+	if d.HasChange("reverse_dns") {
+		commands = append(commands, partialCommand{
+			partial: "reverse_dns",
+			request: &egoscale.UpdateReverseDNSForVirtualMachine{
+				DomainName: d.Get("reverse_dns").(string),
+				ID:         id,
+			},
+		})
+	}
+
 	updates, err := updateTags(d, "tags", "userVM")
 	if err != nil {
 		return err
@@ -862,6 +891,10 @@ func resourceComputeImport(d *schema.ResourceData, meta interface{}) ([]*schema.
 	}
 	secondaryIPs := defaultNic.SecondaryIP
 	nics := vm.NicsByType("Isolated")
+
+	if err := reverseDNSApply(ctx, d, client); err != nil {
+		return nil, err
+	}
 
 	resources := make([]*schema.ResourceData, 0, 1+len(nics)+len(secondaryIPs))
 	resources = append(resources, d)
@@ -1100,4 +1133,29 @@ func prepareUserData(d *schema.ResourceData, meta interface{}, key string) (stri
 		byteUserData = b.Bytes()
 	}
 	return base64.StdEncoding.EncodeToString(byteUserData), false, nil
+}
+
+func reverseDNSApply(ctx context.Context, d *schema.ResourceData, client *egoscale.Client) error {
+	id, err := egoscale.ParseUUID(d.Id())
+	if err != nil {
+		return err
+	}
+
+	resp, err := client.RequestWithContext(
+		ctx,
+		&egoscale.QueryReverseDNSForVirtualMachine{
+			ID: id,
+		})
+	if err != nil {
+		return err
+	}
+	vm := resp.(*egoscale.VirtualMachine)
+
+	if nic := vm.DefaultNic(); nic != nil && len(nic.ReverseDNS) > 0 {
+		if err := d.Set("reverse_dns", nic.ReverseDNS[0].DomainName); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

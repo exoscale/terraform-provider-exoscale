@@ -23,6 +23,8 @@ var (
 	testAccResourceComputeSizeUpdated        = "Small"
 	testAccResourceComputeDiskSize           = "10"
 	testAccResourceComputeDiskSizeUpdated    = "15"
+	testAccResourceComputeReverseDNS         = "test.com."
+	testAccResourceComputeReverseDNSUpdated  = "test-updated.com."
 
 	testAccResourceComputeConfigCreateTemplateByName = fmt.Sprintf(`
 resource "exoscale_ssh_keypair" "key" {
@@ -36,6 +38,7 @@ resource "exoscale_compute" "vm" {
   size = "%s"
   disk_size = "%s"
   key_pair = exoscale_ssh_keypair.key.name
+  reverse_dns = "%s"
 
   tags = {
     test = "terraform"
@@ -48,6 +51,7 @@ resource "exoscale_compute" "vm" {
 		testAccResourceComputeDisplayName,
 		testAccResourceComputeSize,
 		testAccResourceComputeDiskSize,
+		testAccResourceComputeReverseDNS,
 	)
 
 	testAccResourceComputeConfigCreateTemplateByID = fmt.Sprintf(`
@@ -62,6 +66,7 @@ resource "exoscale_compute" "vm" {
   size = "%s"
   disk_size = "%s"
   key_pair = exoscale_ssh_keypair.key.name
+  reverse_dns = "%s"
 
   tags = {
     test = "terraform"
@@ -74,6 +79,7 @@ resource "exoscale_compute" "vm" {
 		testAccResourceComputeDisplayName,
 		testAccResourceComputeSize,
 		testAccResourceComputeDiskSize,
+		testAccResourceComputeReverseDNS,
 	)
 
 	testAccResourceComputeConfigUpdate = fmt.Sprintf(`
@@ -93,6 +99,7 @@ resource "exoscale_compute" "vm" {
   size = "%s"
   disk_size = "%s"
   key_pair = exoscale_ssh_keypair.key.name
+  reverse_dns = "%s"
 
   user_data = <<EOF
 #cloud-config
@@ -119,6 +126,7 @@ EOF
 		testAccResourceComputeHostname,
 		testAccResourceComputeSizeUpdated,
 		testAccResourceComputeDiskSizeUpdated,
+		testAccResourceComputeReverseDNSUpdated,
 		testAccResourceComputeSecurityGroupName,
 	)
 )
@@ -148,6 +156,7 @@ func TestAccResourceCompute(t *testing.T) {
 						"disk_size":    ValidateString(testAccResourceComputeDiskSize),
 						"key_pair":     ValidateString(testAccResourceComputeSSHKeyName),
 						"tags.test":    ValidateString("terraform"),
+						"reverse_dns":  ValidateString(testAccResourceComputeReverseDNS),
 					}),
 				),
 			},
@@ -165,6 +174,7 @@ func TestAccResourceCompute(t *testing.T) {
 						"disk_size":    ValidateString(testAccResourceComputeDiskSize),
 						"key_pair":     ValidateString(testAccResourceComputeSSHKeyName),
 						"tags.test":    ValidateString("terraform"),
+						"reverse_dns":  ValidateString(testAccResourceComputeReverseDNS),
 					}),
 				),
 			},
@@ -185,6 +195,7 @@ func TestAccResourceCompute(t *testing.T) {
 						"security_groups.#": ValidateString("2"),
 						"ip6":               ValidateString("true"),
 						"user_data":         ValidateString("#cloud-config\npackage_upgrade: true\n"),
+						"reverse_dns":       ValidateString(testAccResourceComputeReverseDNSUpdated),
 					}),
 				),
 			},
@@ -206,6 +217,7 @@ func TestAccResourceCompute(t *testing.T) {
 							"security_groups.#": ValidateString("2"),
 							"ip6":               ValidateString("true"),
 							"user_data":         ValidateString("#cloud-config\npackage_upgrade: true\n"),
+							"reverse_dns":       ValidateString(testAccResourceComputeReverseDNSUpdated),
 						},
 						s[0].Attributes)
 				},
