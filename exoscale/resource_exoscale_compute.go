@@ -708,13 +708,19 @@ func resourceComputeUpdate(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	if d.HasChange("reverse_dns") {
-		commands = append(commands, partialCommand{
+		cmd := partialCommand{
 			partial: "reverse_dns",
-			request: &egoscale.UpdateReverseDNSForVirtualMachine{
-				DomainName: d.Get("reverse_dns").(string),
+			request: &egoscale.DeleteReverseDNSFromVirtualMachine{ID: id},
+		}
+
+		if reverseDNS := d.Get("reverse_dns").(string); reverseDNS != "" {
+			cmd.request = &egoscale.UpdateReverseDNSForVirtualMachine{
+				DomainName: reverseDNS,
 				ID:         id,
-			},
-		})
+			}
+		}
+
+		commands = append(commands, cmd)
 	}
 
 	updates, err := updateTags(d, "tags", "userVM")
