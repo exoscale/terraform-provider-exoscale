@@ -29,6 +29,8 @@ resource "exoscale_compute" "mymachine" {
   key_pair     = "me@mymachine"
   state        = "Running"
 
+  reverse_dns = "mymachine.com."
+
   affinity_groups = []
   security_groups = ["default"]
 
@@ -60,6 +62,7 @@ EOF
 * `display_name` - The displayed name of the Compute instance. Note: if the `hostname` attribute is not set, this attribute is also used to set the OS' *hostname* during creation, so the value must contain only alphanumeric and hyphen ("-") characters; it can be changed to any character during a later update. If neither `display_name` or `hostname` attributes are set, a random value will be generated automatically server-side.
 * `hostname` - The Compute instance hostname, must contain only alphanumeric and hyphen ("-") characters. If neither `display_name` or `hostname` attributes are set, a random value will be generated automatically server-side. Note: updating this attribute's value requires to reboot the instance.
 * `key_pair` - The name of the [SSH key pair][sshkeypair] to be installed.
+* `reverse_dns` - The reverse DNS record of the Compute instance (must end with a `.`, e.g: `my-server.example.net.`).
 * `user_data` - A [cloud-init][cloudinit] configuration. Whenever possible don't base64-encode neither gzip it yourself, as this will be automatically taken care of on your behalf by the provider.
 * `keyboard` - The keyboard layout configuration (at creation time only). Supported values are: `de`, `de-ch`, `es`, `fi`, `fr`, `fr-be`, `fr-ch`, `is`, `it`, `jp`, `nl-be`, `no`, `pt`, `uk`, `us`.
 * `state` - The state of the Compute instance, e.g. `Running` or `Stopped`
