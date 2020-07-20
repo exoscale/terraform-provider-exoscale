@@ -8,7 +8,7 @@ description: |-
 
 # exoscale\_compute
 
-Provides information on an Compute instance hosted on [Exoscale Compute][exocompute].
+Provides information on a Compute instance hosted on [Exoscale Compute][exocompute].
 
 [exocompute]: https://www.exoscale.com/compute/
 
