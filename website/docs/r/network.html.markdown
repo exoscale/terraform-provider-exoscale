@@ -29,7 +29,7 @@ resource "exoscale_network" "unmanaged" {
 }
 ```
 
-*Managed* Private Network (~> **NOTE:** this feature is currently only available in the `ch-gva-2` zone):
+*Managed* Private Network:
 
 ```hcl
 resource "exoscale_network" "managed" {
