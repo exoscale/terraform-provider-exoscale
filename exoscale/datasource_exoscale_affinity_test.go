@@ -33,7 +33,7 @@ data "exoscale_affinity" "by-id" {
   id = exoscale_affinity.test.id
 }`, testAccDataSourceAffinityName),
 				Check: resource.ComposeTestCheckFunc(
-					testAccDataSourceAffinityAttributes(testAttrs{
+					testAccDataSourceAffinityAttributes("data.exoscale_affinity.by-id", testAttrs{
 						"id":   ValidateUUID(),
 						"name": ValidateString(testAccDataSourceAffinityName),
 					}),
@@ -49,7 +49,7 @@ data "exoscale_affinity" "by-name" {
   name = exoscale_affinity.test.name
 }`, testAccDataSourceAffinityName),
 				Check: resource.ComposeTestCheckFunc(
-					testAccDataSourceAffinityAttributes(testAttrs{
+					testAccDataSourceAffinityAttributes("data.exoscale_affinity.by-name", testAttrs{
 						"id":   ValidateUUID(),
 						"name": ValidateString(testAccDataSourceAffinityName),
 					}),
@@ -59,14 +59,12 @@ data "exoscale_affinity" "by-name" {
 	})
 }
 
-func testAccDataSourceAffinityAttributes(expected testAttrs) resource.TestCheckFunc {
+func testAccDataSourceAffinityAttributes(ds string, expected testAttrs) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		for _, rs := range s.RootModule().Resources {
-			if rs.Type != "exoscale_affinity" {
-				continue
+		for name, res := range s.RootModule().Resources {
+			if name == ds {
+				return checkResourceAttributes(expected, res.Primary.Attributes)
 			}
-
-			return checkResourceAttributes(expected, rs.Primary.Attributes)
 		}
 
 		return errors.New("exoscale_affinity data source not found in the state")
