@@ -8,9 +8,9 @@ description: |-
 
 # exoscale\_security\_group
 
-Provides information on a [Security Group][ag] for use in other resources such as a [`exoscale_instance_pool`][instancepool] resource.
+Provides information on a [Security Group][sg] for use in other resources such as a [`exoscale_instance_pool`][instancepool] resource.
 
-[ag]: https://community.exoscale.com/documentation/compute/security-groups/
+[sg]: https://community.exoscale.com/documentation/compute/security-groups/
 [compute]: ../r/compute.html
 
 
