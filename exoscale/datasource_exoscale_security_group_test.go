@@ -33,7 +33,7 @@ data "exoscale_security_group" "by-id" {
   id = exoscale_security_group.test.id
 }`, testAccDataSourceSecurityGroupName),
 				Check: resource.ComposeTestCheckFunc(
-					testAccDataSourceSecurityGroupAttributes(testAttrs{
+					testAccDataSourceSecurityGroupAttributes("data.exoscale_security_group.by-id", testAttrs{
 						"id":   ValidateUUID(),
 						"name": ValidateString(testAccDataSourceSecurityGroupName),
 					}),
@@ -49,7 +49,7 @@ data "exoscale_security_group" "by-name" {
   name = exoscale_security_group.test.name
 }`, testAccDataSourceSecurityGroupName),
 				Check: resource.ComposeTestCheckFunc(
-					testAccDataSourceSecurityGroupAttributes(testAttrs{
+					testAccDataSourceSecurityGroupAttributes("data.exoscale_security_group.by-name", testAttrs{
 						"id":   ValidateUUID(),
 						"name": ValidateString(testAccDataSourceSecurityGroupName),
 					}),
@@ -59,14 +59,12 @@ data "exoscale_security_group" "by-name" {
 	})
 }
 
-func testAccDataSourceSecurityGroupAttributes(expected testAttrs) resource.TestCheckFunc {
+func testAccDataSourceSecurityGroupAttributes(ds string, expected testAttrs) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		for _, rs := range s.RootModule().Resources {
-			if rs.Type != "exoscale_security_group" {
-				continue
+		for name, res := range s.RootModule().Resources {
+			if name == ds {
+				return checkResourceAttributes(expected, res.Primary.Attributes)
 			}
-
-			return checkResourceAttributes(expected, rs.Primary.Attributes)
 		}
 
 		return errors.New("exoscale_security_group data source not found in the state")
