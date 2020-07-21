@@ -62,7 +62,7 @@ resource "exoscale_instance_pool" "webapp" {
 
 * `zone` - (Required) The name of the [zone][zone] to deploy the Instance Pool into.
 * `name` - (Required) The name of the Instance Pool.
-* `template_id` - (Required) (Required) The ID of the instance [template][template] to use when creating Compute instances. Usage of the [`compute_template`][compute_template] data source is recommended.
+* `template_id` - (Required) The ID of the instance [template][template] to use when creating Compute instances. Usage of the [`compute_template`][compute_template] data source is recommended.
 * `size` - (Required) The number of Compute instance members the Instance Pool manages.
 * `service_offering` - (Required) The managed Compute instances [size][size], e.g. `tiny`, `small`, `medium`, `large` etc.
 * `disk_size` - The managed Compute instances disk size.
