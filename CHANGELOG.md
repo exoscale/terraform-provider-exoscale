@@ -1,4 +1,12 @@
-## 0.18.0 (Unreleased)
+## 0.18.0 (July 22, 2020)
+
+FEATURES:
+
+- **New Data Source:** `exoscale_affinity` ([#58](https://github.com/exoscale/terraform-provider-exoscale/issues/58))
+- **New Data Source:** `exoscale_security_group` ([#59](https://github.com/exoscale/terraform-provider-exoscale/issues/59))
+- **New Data Source:** `exoscale_network` ([#60](https://github.com/exoscale/terraform-provider-exoscale/issues/60))
+- The `exoscale_compute` resource now supports a new `reverse_dns` attribute ([#56](https://github.com/exoscale/terraform-provider-exoscale/issues/56))
+
 ## 0.17.1 (June 22, 2020)
 
 BUG FIXES:
@@ -7,11 +15,11 @@ BUG FIXES:
 
 ## 0.17.0 (June 17, 2020)
 
-- **New Resources:** `exoscale_nlb`/`exoscale_nlb_service` ([#52](https://github.com/terraform-providers/terraform-provider-exoscale/issues/52))
+- **New Resources:** `exoscale_nlb`/`exoscale_nlb_service` ([#52](https://github.com/exoscale/terraform-provider-exoscale/issues/52))
 
 BUG FIXES:
 
-- Fix the `exoscale_instance_pool` resource `virtual_machines` attribute ([#53](https://github.com/terraform-providers/terraform-provider-exoscale/issues/53))
+- Fix the `exoscale_instance_pool` resource `virtual_machines` attribute ([#53](https://github.com/exoscale/terraform-provider-exoscale/issues/53))
 
 IMPROVEMENTS:
 
@@ -21,99 +29,99 @@ IMPROVEMENTS:
 
 BUG FIXES:
 
-- Fix the `exoscale_ssh_keypair` resource ([#50](https://github.com/terraform-providers/terraform-provider-exoscale/issues/50)), which `private_key` attribute was not set after requesting an SSH key pair creation by the API.
+- Fix the `exoscale_ssh_keypair` resource ([#50](https://github.com/exoscale/terraform-provider-exoscale/issues/50)), which `private_key` attribute was not set after requesting an SSH key pair creation by the API.
 
 ## 0.16.1 (February 11, 2020)
 
 BUG FIXES:
 
-- Fix the `exoscale_network` resource import method ([#46](https://github.com/terraform-providers/terraform-provider-exoscale/issues/46))
+- Fix the `exoscale_network` resource import method ([#46](https://github.com/exoscale/terraform-provider-exoscale/issues/46))
 
 ## 0.16.0 (January 22, 2020)
 
 FEATURES:
 
-- **New Data Source:** `exoscale_compute` ([#42](https://github.com/terraform-providers/terraform-provider-exoscale/issues/42))
-- **New Data Source:** `exoscale_compute_ipaddress` ([#31](https://github.com/terraform-providers/terraform-provider-exoscale/issues/31))
-- **New Data Source:** `exoscale_domain` ([#34](https://github.com/terraform-providers/terraform-provider-exoscale/issues/34))
-- **New Data Source:** `exoscale_domain_record` ([#33](https://github.com/terraform-providers/terraform-provider-exoscale/issues/33))
+- **New Data Source:** `exoscale_compute` ([#42](https://github.com/exoscale/terraform-provider-exoscale/issues/42))
+- **New Data Source:** `exoscale_compute_ipaddress` ([#31](https://github.com/exoscale/terraform-provider-exoscale/issues/31))
+- **New Data Source:** `exoscale_domain` ([#34](https://github.com/exoscale/terraform-provider-exoscale/issues/34))
+- **New Data Source:** `exoscale_domain_record` ([#33](https://github.com/exoscale/terraform-provider-exoscale/issues/33))
 
 CHANGES:
 
-- The `exoscale_compute` resource `key_pair` argument is now optional ([#38](https://github.com/terraform-providers/terraform-provider-exoscale/issues/38))
+- The `exoscale_compute` resource `key_pair` argument is now optional ([#38](https://github.com/exoscale/terraform-provider-exoscale/issues/38))
 
 IMPROVEMENTS:
 
-- Acceptance tests refactoring ([#35](https://github.com/terraform-providers/terraform-provider-exoscale/issues/35))
-- Fix configuration examples syntax ([#39](https://github.com/terraform-providers/terraform-provider-exoscale/issues/39))
+- Acceptance tests refactoring ([#35](https://github.com/exoscale/terraform-provider-exoscale/issues/35))
+- Fix configuration examples syntax ([#39](https://github.com/exoscale/terraform-provider-exoscale/issues/39))
 
 DEPRECATIONS:
 
-- The `exoscale_compute` resource `name` attribute is now deprecated, replaced by the new `hostname` attribute ([#44](https://github.com/terraform-providers/terraform-provider-exoscale/issues/44))
+- The `exoscale_compute` resource `name` attribute is now deprecated, replaced by the new `hostname` attribute ([#44](https://github.com/exoscale/terraform-provider-exoscale/issues/44))
 
 ## 0.15.0 (December 12, 2019)
 
 FEATURES:
 
-- **New Resource:** `exoscale_instance_pool` ([#11](https://github.com/terraform-providers/terraform-provider-exoscale/issues/11))
+- **New Resource:** `exoscale_instance_pool` ([#11](https://github.com/exoscale/terraform-provider-exoscale/issues/11))
 
 CHANGES:
 
-- The `exoscale_network` resource `network_offering` attribute is now deprecated ([#26](https://github.com/terraform-providers/terraform-provider-exoscale/issues/26))
+- The `exoscale_network` resource `network_offering` attribute is now deprecated ([#26](https://github.com/exoscale/terraform-provider-exoscale/issues/26))
 
 ## 0.14.0 (December 02, 2019)
 
 FEATURES:
 
-- The `exoscale_ipaddress` resource now supports a `description` attribute ([#18](https://github.com/terraform-providers/terraform-provider-exoscale/issues/18))
+- The `exoscale_ipaddress` resource now supports a `description` attribute ([#18](https://github.com/exoscale/terraform-provider-exoscale/issues/18))
 
 BUG FIXES:
 
-- Fix the `exoscale_compute` resource import method when importing a Compute instance with secondary IP addresses attached ([#23](https://github.com/terraform-providers/terraform-provider-exoscale/issues/23))
-- Fix the `exoscale_ipaddress` resource import method by IP address ([#24](https://github.com/terraform-providers/terraform-provider-exoscale/issues/24))
+- Fix the `exoscale_compute` resource import method when importing a Compute instance with secondary IP addresses attached ([#23](https://github.com/exoscale/terraform-provider-exoscale/issues/23))
+- Fix the `exoscale_ipaddress` resource import method by IP address ([#24](https://github.com/exoscale/terraform-provider-exoscale/issues/24))
 
 ## 0.13.2 (November 07, 2019)
 
 BUG FIXES:
 
-- Fix the `exoscale_compute` resource import method ([#20](https://github.com/terraform-providers/terraform-provider-exoscale/issues/20))
+- Fix the `exoscale_compute` resource import method ([#20](https://github.com/exoscale/terraform-provider-exoscale/issues/20))
 
 ## 0.13.1 (November 05, 2019)
 
 BUG FIXES:
 
-- Fix the `exoscale_domain_record` resource import method ([#12](https://github.com/terraform-providers/terraform-provider-exoscale/issues/12))
+- Fix the `exoscale_domain_record` resource import method ([#12](https://github.com/exoscale/terraform-provider-exoscale/issues/12))
 
 IMPROVEMENTS:
 
-- Add provider version to HTTP client User-Agent ([#16](https://github.com/terraform-providers/terraform-provider-exoscale/issues/16))
-- Prevent state changes when a `compute` resource is temporarily being migrated during a plan refresh ([#17](https://github.com/terraform-providers/terraform-provider-exoscale/issues/17))
+- Add provider version to HTTP client User-Agent ([#16](https://github.com/exoscale/terraform-provider-exoscale/issues/16))
+- Prevent state changes when a `compute` resource is temporarily being migrated during a plan refresh ([#17](https://github.com/exoscale/terraform-provider-exoscale/issues/17))
 
 CHANGES:
 
-- The `exoscale_compute` *template* attribute deprecated in version 0.13.0 has been reinstated ([#15](https://github.com/terraform-providers/terraform-provider-exoscale/issues/15)). Both `template` and `template_id` are exclusive, and referencing custom templates require the use of the *template_id* attribute with the `exoscale_compute_template` data source.
+- The `exoscale_compute` *template* attribute deprecated in version 0.13.0 has been reinstated ([#15](https://github.com/exoscale/terraform-provider-exoscale/issues/15)). Both `template` and `template_id` are exclusive, and referencing custom templates require the use of the *template_id* attribute with the `exoscale_compute_template` data source.
 
 ## 0.13.0 (October 15, 2019)
 
 DEPRECATIONS:
 
-- The `exoscale_compute` *template* attribute is now deprecated, replaced by `template_id`. See resource documentation for details ([#9](https://github.com/terraform-providers/terraform-provider-exoscale/issues/9))
-- The `exoscale_compute` *username* attribute is now deprecated, users wanting to use the *remote-exec* provisioner should now rely on the *exoscale_compute_template* data source `username` attribute. See resource documentation for details ([#9](https://github.com/terraform-providers/terraform-provider-exoscale/issues/9))
+- The `exoscale_compute` *template* attribute is now deprecated, replaced by `template_id`. See resource documentation for details ([#9](https://github.com/exoscale/terraform-provider-exoscale/issues/9))
+- The `exoscale_compute` *username* attribute is now deprecated, users wanting to use the *remote-exec* provisioner should now rely on the *exoscale_compute_template* data source `username` attribute. See resource documentation for details ([#9](https://github.com/exoscale/terraform-provider-exoscale/issues/9))
 
 IMPROVEMENTS:
 
-- Various documentation improvements ([#4](https://github.com/terraform-providers/terraform-provider-exoscale/issues/4), [#7](https://github.com/terraform-providers/terraform-provider-exoscale/issues/7))
+- Various documentation improvements ([#4](https://github.com/exoscale/terraform-provider-exoscale/issues/4), [#7](https://github.com/exoscale/terraform-provider-exoscale/issues/7))
 
 CHANGES:
 
-- Switch to the Terraform Plugin SDK ([#5](https://github.com/terraform-providers/terraform-provider-exoscale/issues/5))
-- Switch the HTTP client to [go-cleanhttp](https://github.com/hashicorp/go-cleanhttp) ([#10](https://github.com/terraform-providers/terraform-provider-exoscale/issues/10))
+- Switch to the Terraform Plugin SDK ([#5](https://github.com/exoscale/terraform-provider-exoscale/issues/5))
+- Switch the HTTP client to [go-cleanhttp](https://github.com/hashicorp/go-cleanhttp) ([#10](https://github.com/exoscale/terraform-provider-exoscale/issues/10))
 
 ## 0.12.1 (August 26, 2019)
 
 IMPROVEMENTS:
 
-- Improve exoscale_network resource API call resiliency ([#2](https://github.com/terraform-providers/terraform-provider-exoscale/issues/2))
+- Improve exoscale_network resource API call resiliency ([#2](https://github.com/exoscale/terraform-provider-exoscale/issues/2))
 
 CHANGES:
 
