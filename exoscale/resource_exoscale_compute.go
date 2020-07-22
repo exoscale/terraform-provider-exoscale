@@ -576,8 +576,6 @@ func resourceComputeUpdate(d *schema.ResourceData, meta interface{}) error {
 	startRequired := false
 	stopRequired := false
 
-	d.Partial(true)
-
 	commands := make([]partialCommand, 0)
 
 	// Update command is synchronous, hence it won't be put with the others
@@ -791,7 +789,6 @@ func resourceComputeUpdate(d *schema.ResourceData, meta interface{}) error {
 		if err := resourceComputeApply(d, m); err != nil {
 			return err
 		}
-		d.SetPartial("state")
 	}
 
 	// Update, we ignore the result as a full read is require for the user-data/volume
@@ -803,11 +800,6 @@ func resourceComputeUpdate(d *schema.ResourceData, meta interface{}) error {
 	if err := resourceComputeRead(d, meta); err != nil {
 		return err
 	}
-	d.SetPartial("user_data")
-	d.SetPartial("user_data_base64")
-	d.SetPartial("display_name")
-	d.SetPartial("hostname")
-	d.SetPartial("security_groups")
 
 	if (initialState == "Running" && rebootRequired) || startRequired {
 		commands = append(commands, partialCommand{
@@ -823,16 +815,7 @@ func resourceComputeUpdate(d *schema.ResourceData, meta interface{}) error {
 		if err != nil {
 			return err
 		}
-
-		d.SetPartial(cmd.partial)
-		if cmd.partials != nil {
-			for _, partial := range cmd.partials {
-				d.SetPartial(partial)
-			}
-		}
 	}
-
-	d.Partial(false)
 
 	log.Printf("[DEBUG] %s: update finished successfully", resourceComputeIDString(d))
 

@@ -41,7 +41,7 @@ func resourceSecurityGroupRules() *schema.Resource {
 					Optional: true,
 					Elem: &schema.Schema{
 						Type:         schema.TypeString,
-						ValidateFunc: validation.CIDRNetwork(0, 128),
+						ValidateFunc: validation.IsCIDRNetwork(0, 128),
 					},
 				},
 				"protocol": {

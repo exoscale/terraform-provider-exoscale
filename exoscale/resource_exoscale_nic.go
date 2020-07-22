@@ -180,8 +180,6 @@ func resourceNICUpdate(d *schema.ResourceData, meta interface{}) error {
 
 			ipAddress := net.ParseIP(n.(string))
 
-			d.SetPartial("ip_address")
-
 			_, err := client.RequestWithContext(ctx, egoscale.UpdateVMNicIP{
 				NicID:     id,
 				IPAddress: ipAddress,
@@ -192,8 +190,6 @@ func resourceNICUpdate(d *schema.ResourceData, meta interface{}) error {
 			}
 		}
 	}
-
-	d.Partial(false)
 
 	log.Printf("[DEBUG] %s: update finished successfully", resourceNICIDString(d))
 

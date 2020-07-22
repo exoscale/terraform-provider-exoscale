@@ -50,7 +50,6 @@ func updateTags(d *schema.ResourceData, key, resourceType string) ([]egoscale.Co
 	requests := make([]egoscale.Command, 0)
 
 	if d.HasChange(key) {
-		d.SetPartial(key)
 		o, n := d.GetChange(key)
 
 		oldTags := o.(map[string]interface{})

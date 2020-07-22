@@ -40,17 +40,17 @@ func resourceNetwork() *schema.Resource {
 		"start_ip": {
 			Type:         schema.TypeString,
 			Optional:     true,
-			ValidateFunc: validation.SingleIP(),
+			ValidateFunc: validation.IsIPAddress,
 		},
 		"end_ip": {
 			Type:         schema.TypeString,
 			Optional:     true,
-			ValidateFunc: validation.SingleIP(),
+			ValidateFunc: validation.IsIPAddress,
 		},
 		"netmask": {
 			Type:         schema.TypeString,
 			Optional:     true,
-			ValidateFunc: validation.SingleIP(),
+			ValidateFunc: validation.IsIPAddress,
 		},
 	}
 
