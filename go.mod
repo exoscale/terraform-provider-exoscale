@@ -1,4 +1,4 @@
-module github.com/terraform-providers/terraform-provider-exoscale
+module github.com/exoscale/terraform-provider-exoscale
 
 require (
 	github.com/deepmap/oapi-codegen v1.3.8 // indirect

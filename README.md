@@ -19,7 +19,7 @@ Building The Provider
 Clone repository:
 
 ```sh
-$ git clone https://github.com/terraform-providers/terraform-provider-exoscale
+$ git clone https://github.com/exoscale/terraform-provider-exoscale
 ```
 
 Enter the provider directory and build the provider

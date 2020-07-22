@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 	"gopkg.in/ini.v1"
 
-	"github.com/terraform-providers/terraform-provider-exoscale/version"
+	"github.com/exoscale/terraform-provider-exoscale/version"
 )
 
 const (
