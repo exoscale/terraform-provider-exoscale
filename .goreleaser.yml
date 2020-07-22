@@ -6,7 +6,7 @@ builds:
       - -mod=vendor
       - -trimpath
     ldflags:
-      - '-s -w -X {{.Env.GO_PKG}}/version.Version={{.Version}} -X {{.Env.GO_PKG}}/version.Commit={{.FullCommit}}'
+      - '-s -w -X {{.Env.GO_PKG}}/version.Version={{.Version}} -X {{.Env.GO_PKG}}/version.Commit={{.Commit}}'
     binary: '{{ .ProjectName }}_v{{ .Version }}'
     goos:
       - darwin
