@@ -1,22 +1,38 @@
 builds:
-  - main: main.go
-    binary: "terraform-provider-exoscale_{{.Tag}}"
+  - env:
+      - CGO_ENABLED=0
+    flags:
+      - -mod=vendor
+      - -trimpath
+    ldflags:
+      - '-s -w -X version.Version={{.Version}} -X version.Commit={{.Commit}}'
+    binary: '{{ .ProjectName }}_v{{ .Version }}'
     goos:
       - darwin
+      - freebsd
       - linux
       - windows
     goarch:
+      - '386'
       - amd64
-    env:
-      - CGO_ENABLED=0
+      - arm
+      - arm64
+    ignore:
+      - goos: darwin
+        goarch: '386'
 
-sign:
-  cmd: gpg
-  args: ["-u", "ops@exoscale.ch", "--detach-sign", "${artifact}"]
-  artifacts: all
+archives:
+  - format: zip
+    name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
 
+checksum:
+  name_template: '{{ .ProjectName }}_{{ .Version }}_SHA256SUMS'
+  algorithm: sha256
 
-dist: build
+signs:
+  - artifacts: checksum
+    cmd: gpg
+    args: ['-u', 'ops@exoscale.ch', '--detach-sign', '${artifact}']
 
 release:
   github:
@@ -24,3 +40,5 @@ release:
     name: terraform-provider-exoscale
   draft: true
 
+changelog:
+  skip: true

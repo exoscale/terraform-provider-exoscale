@@ -6,6 +6,7 @@ terraform.tfplan
 terraform.tfstate
 bin/
 build/
+dist/
 modules-dev/
 /pkg/
 website/.vagrant
