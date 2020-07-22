@@ -1,3 +1,9 @@
+## 0.18.2 (July 22, 2020)
+
+BUG FIXES:
+
+- Fixed Go module path following repository migration from github.com/terraform-providers
+
 ## 0.18.1 (July 22, 2020)
 
 BUG FIXES:
