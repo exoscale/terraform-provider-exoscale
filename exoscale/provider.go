@@ -11,6 +11,7 @@ import (
 
 	"github.com/exoscale/egoscale"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	tfmeta "github.com/hashicorp/terraform-plugin-sdk/meta"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 	"gopkg.in/ini.v1"
 
@@ -23,8 +24,10 @@ const (
 )
 
 func init() {
-	egoscale.UserAgent = fmt.Sprintf("Exoscale-Terraform-Provider/%s %s",
-		version.ProviderVersion,
+	userAgent = fmt.Sprintf("Exoscale-Terraform-Provider/%s (%s) Terraform-SDK/%s %s",
+		version.Version,
+		version.Commit,
+		tfmeta.SDKVersionString(),
 		egoscale.UserAgent)
 }
 

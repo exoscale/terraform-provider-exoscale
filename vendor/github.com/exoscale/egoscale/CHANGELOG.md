@@ -1,6 +1,27 @@
 Changelog
 =========
 
+0.28.0
+------
+
+- feature: add `Manager`/`ManagerID` fields to `VirtualMachine` structure (#438)
+- fix: HTTP request User Agent header handling (#439)
+
+0.27.0
+------
+
+- feature: Add `evictInstancePoolMembers` call to Instance Pool (#437)
+
+0.26.6
+------
+
+- change: Add support for Compute instance templates boot mode (#436)
+
+0.26.5
+------
+
+- fix: bug in the ListNetworkLoadBalancers call (#435)
+
 0.26.4
 ------
 

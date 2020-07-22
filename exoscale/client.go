@@ -1,6 +1,7 @@
 package exoscale
 
 import (
+	"net/http"
 	"time"
 
 	"github.com/exoscale/egoscale"
@@ -15,6 +16,9 @@ const defaultDNSEndpoint = "https://api.exoscale.com/dns"
 const defaultEnvironment = "api"
 const defaultTimeout = 5 * time.Minute
 const defaultGzipUserData = true
+
+// userAgent represents the User Agent to advertise in outgoing HTTP requests.
+var userAgent string
 
 // BaseConfig represents the provider structure
 type BaseConfig struct {
@@ -36,6 +40,7 @@ func getClient(endpoint string, meta interface{}) *egoscale.Client {
 	cs.Timeout = config.timeout
 	cs.HTTPClient = cleanhttp.DefaultPooledClient()
 	cs.HTTPClient.Timeout = config.timeout
+	cs.HTTPClient.Transport = &defaultTransport{transport: cs.HTTPClient.Transport}
 
 	if logging.IsDebugOrHigher() {
 		cs.HTTPClient.Transport = logging.NewTransport(
@@ -71,4 +76,20 @@ func getEnvironment(meta interface{}) string {
 		return defaultEnvironment
 	}
 	return config.environment
+}
+
+type defaultTransport struct {
+	transport http.RoundTripper
+}
+
+// RoundTrip executes a single HTTP transaction while augmenting requests with custom headers.
+func (t *defaultTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	req.Header.Add("User-Agent", userAgent)
+
+	resp, err := t.transport.RoundTrip(req)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
 }

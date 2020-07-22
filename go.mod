@@ -2,7 +2,7 @@ module github.com/terraform-providers/terraform-provider-exoscale
 
 require (
 	github.com/deepmap/oapi-codegen v1.3.8 // indirect
-	github.com/exoscale/egoscale v0.26.4
+	github.com/exoscale/egoscale v0.28.0
 	github.com/gofrs/uuid v3.3.0+incompatible // indirect
 	github.com/gopherjs/gopherjs v0.0.0-20190430165422-3e4dfb77656c // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.1
