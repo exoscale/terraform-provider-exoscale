@@ -1,11 +1,12 @@
 builds:
   - env:
       - CGO_ENABLED=0
+      - GO_PKG=github.com/exoscale/terraform-provider-exoscale
     flags:
       - -mod=vendor
       - -trimpath
     ldflags:
-      - '-s -w -X version.Version={{.Version}} -X version.Commit={{.Commit}}'
+      - '-s -w -X {{.Env.GO_PKG}}/version.Version={{.Version}} -X {{.Env.GO_PKG}}/version.Commit={{.FullCommit}}'
     binary: '{{ .ProjectName }}_v{{ .Version }}'
     goos:
       - darwin
