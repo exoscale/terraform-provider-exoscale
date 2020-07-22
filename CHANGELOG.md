@@ -1,3 +1,9 @@
+## 0.18.1 (July 22, 2020)
+
+BUG FIXES:
+
+- Fixed GoReleaser build configuration
+
 ## 0.18.0 (July 22, 2020)
 
 FEATURES:
