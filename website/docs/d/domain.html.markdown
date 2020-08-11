@@ -8,9 +8,8 @@ description: |-
 
 # exoscale\_domain
 
-Provides information on a domain name hosted on [Exoscale DNS][exodns].
+Provides information on a domain name hosted on [Exoscale DNS][exo-dns].
 
-[exodns]: https://www.exoscale.com/dns/
 
 ## Example Usage
 
@@ -20,13 +19,17 @@ data "exoscale_domain" "my-company-com" {
 }
 ```
 
-## Argument Reference
+
+## Arguments Reference
 
 * `name` - (Required) The name of the domain.
 
+
 ## Attributes Reference
 
-The following attributes are exported:
+In addition to the arguments listed above, the following attributes are exported:
 
-* `name` - Name of the Domain
-* `id` - ID of the Domain
+* `id` - The ID of the domain
+
+
+[exo-dns]: https://www.exoscale.com/dns/

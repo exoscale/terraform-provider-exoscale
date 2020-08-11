@@ -8,9 +8,8 @@ description: |-
 
 # exoscale\_security\_group
 
-Provides an Exoscale [Security Group][sg] resource. This can be used to create and delete Security Groups.
+Provides an Exoscale [Security Group][sg-doc] resource. This can be used to create and delete Security Groups.
 
-[sg]: https://community.exoscale.com/documentation/compute/security-groups/
 
 ## Example usage
 
@@ -25,13 +24,15 @@ resource "exoscale_security_group" "web" {
 }
 ```
 
-## Argument Reference
 
-The following attributes are exported:
+## Arguments Reference
+
+In addition to the arguments listed above, the following attributes are exported:
 
 * `name` - (Required) The name of the Security Group.
 * `description` - A free-form text describing the Anti-Affinity Group purpose.
-* `tags` - A dictionary of tags (key/value). To remove all tags, set attribute to `tags = {}`.
+* `tags` - A dictionary of tags (key/value). To remove all tags, set `tags = {}`.
+
 
 ## Import
 
@@ -45,6 +46,8 @@ $ terraform import exoscale_security_group.http http
 $ terraform import exoscale_security_group.http eb556678-ec59-4be6-8c54-0406ae0f6da6
 ```
 
-~> **NOTE:** Importing a `exoscale_security_group` resource also imports related [`exoscale_security_group_rule`][sgrule] resources.
+~> **NOTE:** Importing a `exoscale_security_group` resource also imports related [`exoscale_security_group_rule`][r-security_group_rule] resources.
 
-[sgrule]: security_group_rule.html
+
+[r-security_group_rule]: security_group_rule.html
+[sg-doc]: https://community.exoscale.com/documentation/compute/security-groups/

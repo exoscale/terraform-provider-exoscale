@@ -8,9 +8,8 @@ description: |-
 
 # exoscale\_compute
 
-Provides information on a Compute instance hosted on [Exoscale Compute][exocompute].
+Provides information on an [Exoscale Compute instance][compute-doc].
 
-[exocompute]: https://www.exoscale.com/compute/
 
 ## Example Usage
 
@@ -20,20 +19,18 @@ data "exoscale_compute" "my_server" {
 }
 ```
 
-## Argument Reference
+## Arguments Reference
 
-* `hostname` - The hostname of the Compute instance.
 * `id` - The ID of the Compute instance.
-* `tags` - The tags to find the Compute instance.
+* `hostname` - The hostname of the Compute instance.
+* `tags` - The tags to find the Compute instance (key: value).
+
 
 ## Attributes Reference
 
-The following attributes are exported:
+In addition to the arguments listed above, the following attributes are exported:
 
-* `id` - ID of the Compute instance.
-* `hostname` - Hostname of the Compute instance.
-* `tags` - Map of tags (key: value).
-* `created` - Date when the Compute instance was created.
+* `created` - Creation date of the Compute instance.
 * `zone` - Name of the zone.
 * `template` - Name of the template.
 * `size` - Current size of the Compute instance.
@@ -44,3 +41,6 @@ The following attributes are exported:
 * `ip_address` - Public IPv4 address of the Compute instance.
 * `ip6_address` - Public IPv6 address of the Compute instance (if IPv6 is enabled).
 * `private_network_ip_addresses` - List of Compute private IP addresses (in managed Private Networks only).
+
+
+[compute-doc]: https://www.exoscale.com/compute/

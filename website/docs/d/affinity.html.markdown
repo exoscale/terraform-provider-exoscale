@@ -8,10 +8,7 @@ description: |-
 
 # exoscale\_affinity
 
-Provides information on an [Anti-Affinity Group][ag] for use in other resources such as a [`exoscale_compute`][compute] resource.
-
-[ag]: https://community.exoscale.com/documentation/compute/anti-affinity-groups/
-[compute]: ../r/compute.html
+Provides information on an [Anti-Affinity Group][aag-doc] for use in other resources such as a [`exoscale_compute`][r-compute] resource.
 
 
 ## Example Usage
@@ -39,7 +36,7 @@ resource "exoscale_compute" "my_server" {
 ```
 
 
-## Argument Reference
+## Arguments Reference
 
 * `name` - The name of the Anti-Affinity Group (conflicts with `id`)
 * `id` - The ID of the Anti-Affinity Group (conflicts with `name`)
@@ -47,7 +44,11 @@ resource "exoscale_compute" "my_server" {
 
 ## Attributes Reference
 
-The following attributes are exported:
+In addition to the arguments listed above, the following attributes are exported:
 
-* `id` - ID of the Anti-Affinity Group
-* `name` - Name of the Anti-Affinity Group
+* n/a
+
+
+[aag-doc]: https://community.exoscale.com/documentation/compute/anti-affinity-groups/
+[r-compute]: ../r/compute.html
+

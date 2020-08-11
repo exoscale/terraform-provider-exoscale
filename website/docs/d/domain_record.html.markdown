@@ -8,14 +8,12 @@ description: |-
 
 # exoscale\_domain\_record
 
-Provides information on [domain records][record] hosted on [Exoscale DNS][exodns].
+Provides information on [domain records][r-domain_record] hosted on [Exoscale DNS][exo-dns].
 
-[exodns]: https://www.exoscale.com/dns/
-[record]: ../r/domain_record.html
 
 ## Example Usage
 
-The example below matches all Domain Records that match with name `mailserver` and Record type `MX`.
+The example below matches all domain records that match with name `mailserver` and Record type `MX`.
 
 ```hcl
 data "exoscale_domain" "mycompany" {
@@ -38,38 +36,37 @@ data "exoscale_domain_record" "mycompany_nameservers" {
 }
 
 output "first_domain_record_name" {
-  value = $(data.exoscale_domain_record.mycompany_mailservers.records.0.name)
+  value = data.exoscale_domain_record.mycompany_mailservers.records.0.name
 }
 
 output "first_domain_record_content" {
-  value = $(data.exoscale_domain_record.mycompany_nameservers.records.0.content)
+  value = data.exoscale_domain_record.mycompany_nameservers.records.0.content
 }
 ```
 
-## Argument Reference
 
-* `domain` - (Required) The name of the [domain][domain] where to look for Domain Records.
-* `filter`- (Required) One value is used to look up Domain Records or `name` and `record_type` together.
+## Arguments Reference
+
+* `domain` - (Required) The name of the [domain][r-domain] where to look for domain records.
+* `filter`- (Required) Filter to apply when looking up domain records.
 
 **filter**
 
-* `name` - The name matching the Domain Record name to lookup.
-* `id` - The ID matching the Domain Record ID to lookup.
-* `record_type` - The Record type matching the Domain Record type to lookup.
-* `content_regex` - A regular expression matching the Domain Record content to lookup.
+* `name` - The name matching the domain record name to lookup.
+* `id` - The ID matching the domain record ID to lookup.
+* `record_type` - The record type matching the domain record type to lookup.
+* `content_regex` - A regular expression matching the domain record content to lookup.
 
-
-[domain]: ../r/domain.html
 
 ## Attributes Reference
 
-The following attributes are exported:
+In addition to the arguments listed above, the following attributes are exported:
 
-**records**
+* `content` - The content of the domain record.
+* `prio` - The priority of the domain record.
 
-* `id` - Domain Record ID
-* `domain` - Domain Name where the Record is associate to.
-* `name` - Domain Record name
-* `content` - Domain Record content
-* `record_type` - Domain Record type
-* `prio` - Domain Record prio
+
+[exo-dns]: https://www.exoscale.com/dns/
+[r-domain]: ../r/domain.html
+[r-domain_record]: ../r/domain_record.html
+

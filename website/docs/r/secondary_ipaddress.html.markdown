@@ -8,22 +8,20 @@ description: |-
 
 # exoscale\_secondary\_ipaddress
 
-Provides a resource for assigning an existing Exoscale [Elastic IP][eip] to a [Compute instance][compute].
+Provides a resource for assigning an existing Exoscale [Elastic IP][r-ipaddress] to a [Compute instance][r-compute].
 
 ~> **NOTE:** The network interfaces of the Compute instance itself still have to be configured accordingly (unless using a *managed* Elastic IP).
 
-[eip]: ipaddress.html
-[compute]: compute.html
 
 ### Secondary IP Address
 
 ```hcl
 resource "exoscale_compute" "vm1" {
-  ...
+  # ...
 }
 
 resource "exoscale_ipaddress" "vip" {
-  ...
+  # ...
 }
 
 resource "exoscale_secondary_ipaddress" "vip" {
@@ -32,21 +30,25 @@ resource "exoscale_secondary_ipaddress" "vip" {
 }
 ```
 
-## Argument Reference
 
-* `compute_id` - (Required) The ID of the [Compute instance][compute].
-* `ip_address` - (Required) The [Elastic IP][eip] address to assign.
+## Arguments Reference
 
-[compute]: compute.html
-[eip]: ipaddress.html
+* `compute_id` - (Required) The ID of the [Compute instance][r-compute].
+* `ip_address` - (Required) The [Elastic IP][r-ipaddress] address to assign.
+
 
 ## Attributes Reference
 
-The following attributes are exported:
+In addition to the arguments listed above, the following attributes are exported:
 
 * `nic_id` - The ID of the NIC.
 * `network_id` - The ID of the Network the Compute instance NIC is attached to.
 
+
 ## Import
 
 This resource is automatically imported when importing an `exoscale_compute` resource.
+
+
+[r-compute]: compute.html
+[r-ipaddress]: ipaddress.html

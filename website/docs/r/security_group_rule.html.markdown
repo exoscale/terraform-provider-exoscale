@@ -8,15 +8,14 @@ description: |-
 
 # exoscale\_security\_group\_rule
 
-Provides an Exoscale [Security Group][sg] Rule resource. This can be used to create and delete Security Group Rules.
+Provides an Exoscale [Security Group][r-security_group] Rule resource. This can be used to create and delete Security Group Rules.
 
-[sg]: security_group.html
 
 ## Example usage
 
 ```hcl
 resource "exoscale_security_group" "webservers" {
-  ...
+  # ...
 }
 
 resource "exoscale_security_group_rule" "http" {
@@ -29,7 +28,8 @@ resource "exoscale_security_group_rule" "http" {
 }
 ```
 
-## Argument Reference
+
+## Arguments Reference
 
 * `security_group` - (Required) The Security Group name the rule applies to.
 * `security_group_id` - (Required) The Security Group ID the rule applies to.
@@ -42,16 +42,20 @@ resource "exoscale_security_group_rule" "http" {
 * `user_security_group_id` - A source (for ingress)/destination (for egress) Security Group ID to match (conflicts with `cidr`).
 * `user_security_group` - A source (for ingress)/destination (for egress) Security Group name to match (conflicts with `cidr`).
 
-[icmp]: https://en.wikipedia.org/wiki/Internet_Control_Message_Protocol#Control_messages
 
 ## Attributes Reference
 
-The following attributes are exported:
+In addition to the arguments listed above, the following attributes are exported:
 
 * `security_group` - The name of the Security Group the rule applies to.
 * `security_group_id` - The ID of the Security Group the rule applies to.
 * `user_security_group` - The name of the source (for ingress)/destination (for egress) Security Group to match.
 
+
 ## Import
 
 This resource is automatically imported when importing an `exoscale_security_group` resource.
+
+
+[icmp]: https://en.wikipedia.org/wiki/Internet_Control_Message_Protocol#Control_messages
+[r-security_group]: security_group.html

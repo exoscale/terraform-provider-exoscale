@@ -6,11 +6,10 @@ description: |-
   Provides information about a Compute template.
 ---
 
-# exoscale\_compute\_template
+# exoscale\_compute\_ipaddress
 
-Provides information on an Compute [IP Address][ip].
+Provides information on an Compute [Elastic IP address][eip-doc].
 
-[ip]: https://community.exoscale.com/documentation/compute/eip/
 
 ## Example Usage
 
@@ -25,7 +24,8 @@ data "exoscale_compute_ipaddress" "eip" {
 }
 ```
 
-## Argument Reference
+
+## Arguments Reference
 
 * `zone` - (Required) The name of the [zone][zone] where to look for the IP Address.
 * `ip_address` - The IP Address of the EIP.
@@ -33,14 +33,13 @@ data "exoscale_compute_ipaddress" "eip" {
 * `description` - The Description to find the IP Address.
 * `tags` - The tags to find the IP Address.
 
-[zone]: https://www.exoscale.com/datacenters/
 
 ## Attributes Reference
 
-The following attributes are exported:
+In addition to the arguments listed above, the following attributes are exported:
 
-* `zone` - Name of the zone.
-* `ip_address` - IP Address.
-* `id` - ID of the IP Address.
-* `description` - Description of the IP.
-* `tags` - Map of tags (key: value).
+* n/a
+
+
+[eip-doc]: https://community.exoscale.com/documentation/compute/eip/
+[zone]: https://www.exoscale.com/datacenters/

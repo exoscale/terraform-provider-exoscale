@@ -8,9 +8,8 @@ description: |-
 
 # exoscale\_nlb\_service
 
-Provides an Exoscale Network Load Balancer ([NLB][nlb]) service resource. This can be used to create, modify, and delete NLB services.
+Provides an Exoscale Network Load Balancer ([NLB][r-nlb]) service resource. This can be used to create, modify, and delete NLB services.
 
-[nlb]: nlb.html
 
 ## Example Usage
 
@@ -65,7 +64,7 @@ resource "exoscale_nlb_service" "website" {
 }
 ```
 
-## Argument Reference
+## Arguments Reference
 
 * `nlb_id` - (Required) The ID of the NLB to attach the service.
 * `zone` - (Required) The name of the [zone][zone] used by the NLB.
@@ -86,12 +85,22 @@ resource "exoscale_nlb_service" "website" {
 * `timeout` - The healthcheck timeout in seconds.
 * `retries` - The healthcheck retries.
 
-[zone]: https://www.exoscale.com/datacenters/
+
+## Attributes Reference
+
+In addition to the arguments listed above, the following attributes are exported:
+
+* n/a
+
 
 ## Import
 
-An existing NLB service can be imported as a resource by ID. Importing a NLB service imports the `exoscale_nlb_service` resource.
+An existing NLB service can be imported as a resource by ID.
 
 ```console
 $ terraform import exoscale_nlb_service.website 9ecc6b8b-73d4-4211-8ced-f7f29bb79524
 ```
+
+
+[r-nlb]: nlb.html
+[zone]: https://www.exoscale.com/datacenters/

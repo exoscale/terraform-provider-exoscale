@@ -58,11 +58,12 @@ resource "exoscale_instance_pool" "webapp" {
 }
 ```
 
+
 ## Argument Reference
 
 * `zone` - (Required) The name of the [zone][zone] to deploy the Instance Pool into.
 * `name` - (Required) The name of the Instance Pool.
-* `template_id` - (Required) The ID of the instance [template][template] to use when creating Compute instances. Usage of the [`compute_template`][compute_template] data source is recommended.
+* `template_id` - (Required) The ID of the instance [template][template] to use when creating Compute instances. Usage of the [`compute_template`][d-compute_template] data source is recommended.
 * `size` - (Required) The number of Compute instance members the Instance Pool manages.
 * `service_offering` - (Required) The managed Compute instances [size][size], e.g. `tiny`, `small`, `medium`, `large` etc.
 * `disk_size` - The managed Compute instances disk size.
@@ -70,15 +71,15 @@ resource "exoscale_instance_pool" "webapp" {
 * `user_data` - A [cloud-init][cloudinit] configuration to apply when creating Compute instances. Whenever possible don't base64-encode neither gzip it yourself, as this will be automatically taken care of on your behalf by the provider.
 * `key_pair` - The name of the [SSH key pair][sshkeypair] to install when creating Compute instances.
 * `security_group_ids` - A list of [Security Group][sg] IDs.
-* `network_ids` - A list of [Private Network][net] IDs.
+* `network_ids` - A list of [Private Network][privnetnet-doc] IDs.
 
-[template]: https://www.exoscale.com/templates/
-[zone]: https://www.exoscale.com/datacenters/
-[size]: https://www.exoscale.com/pricing/#/compute/
-[sshkeypair]: https://community.exoscale.com/documentation/compute/ssh-keypairs/
-[cloudinit]: http://cloudinit.readthedocs.io/en/latest/
-[compute_template]: ../d/compute_template.html
-[net]: https://community.exoscale.com/documentation/compute/private-networks/
+
+## Attributes Reference
+
+In addition to the arguments listed above, the following attributes are exported:
+
+* `virtual_machines` – The list of Instance Pool members (Compute instance names).
+
 
 ## Import
 
@@ -91,3 +92,12 @@ $ terraform import exoscale_instance_pool.pool mypool
 # By ID
 $ terraform import exoscale_instance_pool.pool eb556678-ec59-4be6-8c54-0406ae0f6da6
 ```
+
+
+[cloudinit]: http://cloudinit.readthedocs.io/en/latest/
+[d-compute_template]: ../d/compute_template.html
+[privnet-doc]: https://community.exoscale.com/documentation/compute/private-networks/
+[size]: https://www.exoscale.com/pricing/#/compute/
+[sshkeypair]: https://community.exoscale.com/documentation/compute/ssh-keypairs/
+[template]: https://www.exoscale.com/templates/
+[zone]: https://www.exoscale.com/datacenters/

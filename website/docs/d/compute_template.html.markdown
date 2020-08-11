@@ -8,10 +8,8 @@ description: |-
 
 # exoscale\_compute\_template
 
-Provides information on an Compute [template][templates] for use in other resources such as a [`exoscale_compute`][compute] resource.
+Provides information on a Compute [template][templates] for use in other resources such as a [`exoscale_compute`][r-compute] resource.
 
-[templates]: https://www.exoscale.com/templates/
-[compute]: ../r/compute.html
 
 ## Example Usage
 
@@ -34,19 +32,24 @@ resource "exoscale_compute" "my_server" {
 }
 ```
 
-## Argument Reference
+
+## Arguments Reference
 
 * `zone` - (Required) The name of the [zone][zone] where to look for the Compute template.
-* `name` - The name of the Compute template.
-* `id` - The ID of the Compute template.
+* `name` - The name of the Compute template (conflicts with `id`).
+* `id` - The ID of the Compute template (conflicts with `name`).
 * `filter` - A Compute template search filter, must be either `featured` (official Exoscale templates), `community` (community-contributed templates) or `mine` (custom templates private to my organization). Default is `featured`.
 
-[zone]: https://www.exoscale.com/datacenters/
+
 
 ## Attributes Reference
 
-The following attributes are exported:
+In addition to the arguments listed above, the following attributes are exported:
 
-* `id` - ID of the template
-* `name` - Name of the template
 * `username` - Username to use to log into a Compute Instance based on this template
+
+
+[r-compute]: ../r/compute.html
+[templates]: https://www.exoscale.com/templates/
+[zone]: https://www.exoscale.com/datacenters/
+

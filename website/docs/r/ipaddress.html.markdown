@@ -8,12 +8,10 @@ description: |-
 
 # exoscale\_ipaddress
 
-Provides an Exoscale [Elastic IP][eip] resource. This can be used to create, update and delete Elastic IPs.
+Provides an Exoscale [Elastic IP address][eip-doc] resource. This can be used to create, update and delete Elastic IPs.
 
-See [`exoscale_secondary_ipaddress`][secip] for usage with Compute instances.
+See [`exoscale_secondary_ipaddress`][r-secondary_ipaddress] for usage with Compute instances.
 
-[eip]: https://community.exoscale.com/documentation/compute/eip/
-[secip]: secondary_ipaddress.html
 
 ### Usage example
 
@@ -42,7 +40,8 @@ resource "exoscale_ipaddress" "myip" {
 }
 ```
 
-## Argument Reference
+
+## Arguments Reference
 
 * `zone` - (Required) The name of the [zone][zone] to create the Elastic IP into.
 * `description` - The description of the Elastic IP.
@@ -53,15 +52,15 @@ resource "exoscale_ipaddress" "myip" {
 * `healthcheck_timeout` - The time in seconds before considering a healthcheck probing failed (must be between `2` and `60`).
 * `healthcheck_strikes_ok` - The number of successful healthcheck probes before considering the target healthy (must be between `1` and `20`).
 * `healthcheck_strikes_fail` - The number of unsuccessful healthcheck probes before considering the target unhealthy (must be between `1` and `20`).
-* `tags` - A dictionary of tags (key/value). To remove all tags, set attribute to `tags = {}`.
+* `tags` - A dictionary of tags (key/value). To remove all tags, set `tags = {}`.
 
-[zone]: https://www.exoscale.com/datacenters/
 
 ## Attributes Reference
 
-The following attributes are exported:
+In addition to the arguments listed above, the following attributes are exported:
 
 * `ip_address` - The Elastic IP address.
+
 
 ## Import
 
@@ -74,3 +73,8 @@ $ terraform import exoscale_ipaddress.myip 159.100.251.224
 # By ID
 $ terraform import exoscale_ipaddress.myip eb556678-ec59-4be6-8c54-0406ae0f6da6
 ```
+
+
+[eip-doc]: https://community.exoscale.com/documentation/compute/eip/
+[r-secondary_ipaddress]: secondary_ipaddress.html
+[zone]: https://www.exoscale.com/datacenters/

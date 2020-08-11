@@ -8,10 +8,7 @@ description: |-
 
 # exoscale\_security\_group
 
-Provides information on a [Security Group][sg] for use in other resources such as a [`exoscale_instance_pool`][instancepool] resource.
-
-[sg]: https://community.exoscale.com/documentation/compute/security-groups/
-[compute]: ../r/compute.html
+Provides information on a [Security Group][sg-doc] for use in other resources such as a [`exoscale_instance_pool`][r-instance_pool] resource.
 
 
 ## Example Usage
@@ -41,7 +38,7 @@ resource "exoscale_instance_pool" "webservers" {
 ```
 
 
-## Argument Reference
+## Arguments Reference
 
 * `name` - The name of the Security Group (conflicts with `id`)
 * `id` - The ID of the Security Group (conflicts with `name`)
@@ -49,7 +46,12 @@ resource "exoscale_instance_pool" "webservers" {
 
 ## Attributes Reference
 
-The following attributes are exported:
+In addition to the arguments listed above, the following attributes are exported:
 
-* `id` - ID of the Security Group
-* `name` - Name of the Security Group
+* n/a
+
+
+[sg-doc]: https://community.exoscale.com/documentation/compute/security-groups/
+[r-compute]: ../r/compute.html
+[r-instance_pool]: ../r/instance_pool.html
+

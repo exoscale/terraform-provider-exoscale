@@ -8,15 +8,14 @@ description: |-
 
 # exoscale\_security\_group\_rules
 
-Provides a resource for assigning multiple rules to an existing Exoscale [Security Group][sg].
+Provides a resource for assigning multiple rules to an existing Exoscale [Security Group][r-security_group].
 
-[sg]: security_group.html
 
 ## Example usage
 
 ```hcl
 resource "exoscale_security_group" "webservers" {
-  ...
+  # ...
 }
 
 resource "exoscale_security_group_rules" "admin" {
@@ -46,15 +45,11 @@ resource "exoscale_security_group_rules" "web" {
 }
 ```
 
-## Argument Reference
 
-The following attributes are exported:
+## Arguments Reference
 
 * `security_group` - (Required) The Security Group name the rules apply to.
 * `security_group_id` - (Required) The Security Group ID the rules apply to.
-
-`egress` and `ingress` support the following:
-
 * `protocol` - (Required) The network protocol to match. Supported values are: `TCP`, `UDP`, `ICMP`, `ICMPv6`, `AH`, `ESP`, `GRE`, `IPIP` and `ALL`.
 * `description` - A free-form text describing the Security Group Rule purpose.
 * `ports` - A list of ports or port ranges (`start_port-end_port`).
@@ -62,11 +57,15 @@ The following attributes are exported:
 * `cidr_list` - A list of source (for ingress)/destination (for egress) IP subnet to match (conflicts with `user_security_group`).
 * `user_security_group_list` - A source (for ingress)/destination (for egress) of the traffic identified by a security group
 
-[icmp]: https://en.wikipedia.org/wiki/Internet_Control_Message_Protocol#Control_messages
 
 ## Attributes Reference
 
-The following attributes are exported:
+In addition to the arguments listed above, the following attributes are exported:
 
 * `security_group` - The name of the Security Group the rules apply to.
 * `security_group_id` - The ID of the Security Group the rules apply to.
+
+
+[icmp]: https://en.wikipedia.org/wiki/Internet_Control_Message_Protocol#Control_messages
+[r-security_group]: security_group.html
+

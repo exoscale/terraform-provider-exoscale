@@ -8,9 +8,8 @@ description: |-
 
 # exoscale\_affinity
 
-Provides an Exoscale [Anti-Affinity Group][aag]. This can be used to create and delete Anti-Affinity Groups.
+Provides an Exoscale [Anti-Affinity Group][aag-doc] resource. This can be used to create and delete Anti-Affinity Groups.
 
-[aag]: https://community.exoscale.com/documentation/compute/anti-affinity-groups/
 
 ## Example Usage
 
@@ -22,18 +21,21 @@ resource "exoscale_affinity" "cluster" {
 }
 ```
 
-## Argument Reference
+
+## Arguments Reference
 
 * `name` - (Required) The name of the Anti-Affinity Group.
 * `description` - A free-form text describing the Anti-Affinity Group purpose.
 * `type` - The type of the Anti-Affinity Group (`host anti-affinity` is the only supported value).
 
+
 ## Attributes Reference
 
-The following attributes are exported:
+In addition to the arguments listed above, the following attributes are exported:
 
 * `id` - The ID of the Anti-Affinity Group.
 * `virtual_machine_ids` - The IDs of the Compute instance resources member of the Anti-Affinity Group.
+
 
 ## Import
 
@@ -46,3 +48,7 @@ $ terraform import exoscale_affinity.mygroup mygroup
 # By ID
 $ terraform import exoscale_affinity.mygroup eb556678-ec59-4be6-8c54-0406ae0f6da6
 ```
+
+
+[aag-doc]: https://community.exoscale.com/documentation/compute/anti-affinity-groups/
+
