@@ -53,7 +53,7 @@ func resourceSecurityGroupRule() *schema.Resource {
 				Type:          schema.TypeString,
 				Optional:      true,
 				ForceNew:      true,
-				ValidateFunc:  validation.CIDRNetwork(0, 128),
+				ValidateFunc:  validation.IsCIDRNetwork(0, 128),
 				ConflictsWith: []string{"user_security_group"},
 			},
 			"protocol": {
@@ -437,13 +437,13 @@ func inferSecurityGroup(d *schema.ResourceData) (*egoscale.SecurityGroup, error)
 	var securityGroupID *egoscale.UUID
 	var securityGroupName string
 
-	if s, ok := d.GetOkExists("security_group_id"); ok {
+	if s, ok := d.GetOk("security_group_id"); ok {
 		var err error
 		securityGroupID, err = egoscale.ParseUUID(s.(string))
 		if err != nil {
 			return nil, err
 		}
-	} else if n, ok := d.GetOkExists("security_group"); ok {
+	} else if n, ok := d.GetOk("security_group"); ok {
 		securityGroupName = n.(string)
 	}
 

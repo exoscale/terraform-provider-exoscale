@@ -46,7 +46,7 @@ func dataSourceDomainRecord() *schema.Resource {
 						"content_regex": {
 							Type:          schema.TypeString,
 							Optional:      true,
-							ValidateFunc:  validation.ValidateRegexp,
+							ValidateFunc:  validation.StringIsValidRegExp,
 							ConflictsWith: []string{"filter.0.id", "filter.0.name", "filter.0.record_type"},
 						},
 					},

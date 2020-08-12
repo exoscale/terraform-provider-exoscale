@@ -159,7 +159,7 @@ func resourceIPAddressCreate(d *schema.ResourceData, meta interface{}) error {
 			"healthcheck_strikes_ok",
 			"healthcheck_strikes_fail",
 		} {
-			if _, ok := d.GetOkExists(k); ok {
+			if _, ok := d.GetOk(k); ok {
 				return fmt.Errorf("%q can only be specified with healthcheck_mode", k)
 			}
 		}
@@ -272,8 +272,6 @@ func resourceIPAddressUpdate(d *schema.ResourceData, meta interface{}) error {
 
 	client := GetComputeClient(meta)
 
-	d.Partial(true)
-
 	commands := make([]partialCommand, 0)
 
 	updateTags, err := updateTags(d, "tags", new(egoscale.IPAddress).ResourceType())
@@ -357,16 +355,7 @@ func resourceIPAddressUpdate(d *schema.ResourceData, meta interface{}) error {
 		if err != nil {
 			return err
 		}
-
-		d.SetPartial(cmd.partial)
-		if cmd.partials != nil {
-			for _, partial := range cmd.partials {
-				d.SetPartial(partial)
-			}
-		}
 	}
-
-	d.Partial(false)
 
 	log.Printf("[DEBUG] %s: update finished successfully", resourceIPAddressIDString(d))
 
