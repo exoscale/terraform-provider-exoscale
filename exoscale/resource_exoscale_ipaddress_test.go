@@ -11,23 +11,24 @@ import (
 )
 
 var (
-	testAccResourceIPAddressZoneName                            = testZoneName
-	testAccResourceIPAddressDescription                         = testDescription
-	testAccResourceIPAddressHealthcheckMode                     = "http"
-	testAccResourceIPAddressHealthcheckPort               int64 = 80
-	testAccResourceIPAddressHealthcheckPortUpdated        int64 = 8000
-	testAccResourceIPAddressHealthcheckPath                     = "/health"
-	testAccResourceIPAddressHealthcheckPathUpdated              = "/healthz"
-	testAccResourceIPAddressHealthcheckInterval           int64 = 10
-	testAccResourceIPAddressHealthcheckIntervalUpdated    int64 = 5
-	testAccResourceIPAddressHealthcheckTimeout            int64 = 5
-	testAccResourceIPAddressHealthcheckTimeoutUpdated     int64 = 2
-	testAccResourceIPAddressHealthcheckStrikesOk          int64 = 1
-	testAccResourceIPAddressHealthcheckStrikesOkUpdated   int64 = 2
-	testAccResourceIPAddressHealthcheckStrikesFail        int64 = 2
-	testAccResourceIPAddressHealthcheckStrikesFailUpdated int64 = 3
-
-	testAccIPAddressConfigCreate = fmt.Sprintf(`
+	testAccResourceIPAddressZoneName                             = testZoneName
+	testAccResourceIPAddressDescription                          = testDescription
+	testAccResourceIPAddressHealthcheckMode                      = "https"
+	testAccResourceIPAddressHealthcheckPort                int64 = 80
+	testAccResourceIPAddressHealthcheckPortUpdated         int64 = 8000
+	testAccResourceIPAddressHealthcheckPath                      = "/health"
+	testAccResourceIPAddressHealthcheckPathUpdated               = "/healthz"
+	testAccResourceIPAddressHealthcheckInterval            int64 = 10
+	testAccResourceIPAddressHealthcheckIntervalUpdated     int64 = 5
+	testAccResourceIPAddressHealthcheckTimeout             int64 = 5
+	testAccResourceIPAddressHealthcheckTimeoutUpdated      int64 = 2
+	testAccResourceIPAddressHealthcheckStrikesOk           int64 = 1
+	testAccResourceIPAddressHealthcheckStrikesOkUpdated    int64 = 2
+	testAccResourceIPAddressHealthcheckStrikesFail         int64 = 2
+	testAccResourceIPAddressHealthcheckStrikesFailUpdated  int64 = 3
+	testAccResourceIPAddressHealthcheckTLSSkipVerification bool  = true
+	testAccResourceIPAddressHealthcheckTLSSNI                    = "example.com"
+	testAccIPAddressConfigCreate                                 = fmt.Sprintf(`
 resource "exoscale_ipaddress" "eip" {
   zone = "%s"
   healthcheck_mode = "%s"
@@ -37,6 +38,8 @@ resource "exoscale_ipaddress" "eip" {
   healthcheck_timeout = %d
   healthcheck_strikes_ok = %d
   healthcheck_strikes_fail = %d
+  healthcheck_tls_skip_verify = %t
+  healthcheck_tls_sni = "%s"
   tags = {
     test = "acceptance"
   }
@@ -50,6 +53,8 @@ resource "exoscale_ipaddress" "eip" {
 		testAccResourceIPAddressHealthcheckTimeout,
 		testAccResourceIPAddressHealthcheckStrikesOk,
 		testAccResourceIPAddressHealthcheckStrikesFail,
+		testAccResourceIPAddressHealthcheckTLSSkipVerification,
+		testAccResourceIPAddressHealthcheckTLSSNI,
 	)
 
 	testAccIPAddressConfigUpdate = fmt.Sprintf(`
