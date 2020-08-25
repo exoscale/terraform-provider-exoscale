@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"time"
 
 	"github.com/exoscale/egoscale"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
@@ -87,22 +88,30 @@ func dataSourceComputeTemplateRead(d *schema.ResourceData, meta interface{}) err
 		}
 	}
 
-	resp, err := client.RequestWithContext(ctx, &req)
+	resp, err := client.ListWithContext(ctx, &req)
 	if err != nil {
 		return fmt.Errorf("templates list query failed: %s", err)
 	}
 
-	var template egoscale.Template
-	nt := resp.(*egoscale.ListTemplatesResponse).Count
-	switch {
-	case nt == 0:
+	if len(resp) == 0 {
 		return errors.New("template not found")
+	}
 
-	case nt > 1:
-		return errors.New("multiple results returned, expected only one")
+	// In case multiple results are returned, we pick the most recent item from the list.
+	var (
+		template     *egoscale.Template
+		templateDate time.Time
+	)
+	for _, t := range resp {
+		ts, err := time.Parse("2006-01-02T15:04:05-0700", t.(*egoscale.Template).Created)
+		if err != nil {
+			return fmt.Errorf("template creation date parsing error: %s", err)
+		}
 
-	default:
-		template = resp.(*egoscale.ListTemplatesResponse).Template[0]
+		if ts.After(templateDate) {
+			templateDate = ts
+			template = t.(*egoscale.Template)
+		}
 	}
 
 	d.SetId(template.ID.String())
