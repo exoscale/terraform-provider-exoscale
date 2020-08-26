@@ -48,24 +48,28 @@ resource "exoscale_security_group_rules" "web" {
 
 ## Arguments Reference
 
-* `security_group` - (Required) The Security Group name the rules apply to.
-* `security_group_id` - (Required) The Security Group ID the rules apply to.
+* `security_group` - (Required) The Security Group name the rules apply to (conflicts with `security_group_id`).
+* `security_group_id` - (Required) The Security Group ID the rules apply to (conficts with `security_group)`.
+* `ingress`/`egress` - A Security Group rule definition.
+
+`ingress`/`egress`:
+
 * `protocol` - (Required) The network protocol to match. Supported values are: `TCP`, `UDP`, `ICMP`, `ICMPv6`, `AH`, `ESP`, `GRE`, `IPIP` and `ALL`.
-* `description` - A free-form text describing the Security Group Rule purpose.
+* `description` - A free-form text describing the Security Group rule purpose.
 * `ports` - A list of ports or port ranges (`start_port-end_port`).
-* `icmp_type`/`icmp_code` - An `ICMP`/`ICMPv6` [type/code][icmp] to match.
-* `cidr_list` - A list of source (for ingress)/destination (for egress) IP subnet to match (conflicts with `user_security_group`).
-* `user_security_group_list` - A source (for ingress)/destination (for egress) of the traffic identified by a security group
+* `icmp_type`/`icmp_code` - An ICMP/ICMPv6 [type/code][icmp] to match.
+* `cidr_list` - A list of source (for ingress)/destination (for egress) IP subnet (in [CIDR notation][cidr]) to match.
+* `user_security_group_list` - A source (for ingress)/destination (for egress) of the traffic identified by a Security Group.
 
 
 ## Attributes Reference
 
 In addition to the arguments listed above, the following attributes are exported:
 
-* `security_group` - The name of the Security Group the rules apply to.
-* `security_group_id` - The ID of the Security Group the rules apply to.
+* n/a
 
 
+[cidr]: https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing#CIDR_notation
 [icmp]: https://en.wikipedia.org/wiki/Internet_Control_Message_Protocol#Control_messages
 [r-security_group]: security_group.html
 

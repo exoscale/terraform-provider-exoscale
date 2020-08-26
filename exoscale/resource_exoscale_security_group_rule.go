@@ -54,7 +54,7 @@ func resourceSecurityGroupRule() *schema.Resource {
 				Optional:      true,
 				ForceNew:      true,
 				ValidateFunc:  validation.IsCIDRNetwork(0, 128),
-				ConflictsWith: []string{"user_security_group"},
+				ConflictsWith: []string{"user_security_group", "user_security_group_id"},
 			},
 			"protocol": {
 				Type:         schema.TypeString,
