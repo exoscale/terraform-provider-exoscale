@@ -73,6 +73,7 @@ resource "exoscale_instance_pool" "pool" {
   size = %d
   disk_size = %d
   key_pair = exoscale_ssh_keypair.key.name
+  ipv6 = true
   user_data = <<EOF
 %s
 EOF
@@ -133,6 +134,7 @@ func TestAccResourceInstancePool(t *testing.T) {
 						"size":               ValidateString(fmt.Sprint(testAccResourceInstancePoolSizeUpdated)),
 						"disk_size":          ValidateString(fmt.Sprint(testAccResourceInstancePoolDiskSize)),
 						"key_pair":           ValidateString(testAccResourceInstancePoolSSHKeyName),
+						"ipv6":               ValidateString("true"),
 						"virtual_machines.#": ValidateStringNot("0"),
 					}),
 				),
@@ -153,6 +155,7 @@ func TestAccResourceInstancePool(t *testing.T) {
 							"size":             ValidateString(fmt.Sprint(testAccResourceInstancePoolSizeUpdated)),
 							"disk_size":        ValidateString(fmt.Sprint(testAccResourceInstancePoolDiskSize)),
 							"key_pair":         ValidateString(testAccResourceInstancePoolSSHKeyName),
+							"ipv6":             ValidateString("true"),
 						},
 						s[0].Attributes)
 				},
