@@ -8,7 +8,7 @@ description: |-
 
 # exoscale\_security\_group\_rule
 
-Provides an Exoscale [Security Group][r-security_group] Rule resource. This can be used to create and delete Security Group Rules.
+Provides an Exoscale [Security Group][r-security_group] rule resource. This can be used to create and delete Security Group rules.
 
 
 ## Example usage
@@ -35,21 +35,19 @@ resource "exoscale_security_group_rule" "http" {
 * `security_group_id` - (Required) The Security Group ID the rule applies to.
 * `type` - (Required) The traffic direction to match (`INGRESS` or `EGRESS`).
 * `protocol` - (Required) The network protocol to match. Supported values are: `TCP`, `UDP`, `ICMP`, `ICMPv6`, `AH`, `ESP`, `GRE`, `IPIP` and `ALL`.
-* `description` - A free-form text describing the Security Group Rule purpose.
+* `description` - A free-form text describing the Security Group rule purpose.
 * `start_port`/`end_port` - A `TCP`/`UDP` port range to match.
-* `icmp_type`/`icmp_code` - An `ICMP`/`ICMPv6` [type/code][icmp] to match.
-* `cidr` - A source (for ingress)/destination (for egress) IP subnet to match (conflicts with `user_security_group`).
-* `user_security_group_id` - A source (for ingress)/destination (for egress) Security Group ID to match (conflicts with `cidr`).
-* `user_security_group` - A source (for ingress)/destination (for egress) Security Group name to match (conflicts with `cidr`).
+* `icmp_type`/`icmp_code` - An ICMP/ICMPv6 [type/code][icmp] to match.
+* `cidr` - A source (for ingress)/destination (for egress) IP subnet (in [CIDR notation][cidr]) to match (conflicts with `user_security_group`/`security_group_id`).
+* `user_security_group_id` - A source (for ingress)/destination (for egress) Security Group ID to match (conflicts with `cidr`/`security_group)`).
+* `user_security_group` - A source (for ingress)/destination (for egress) Security Group name to match (conflicts with `cidr`/`security_group_id`).
 
 
 ## Attributes Reference
 
 In addition to the arguments listed above, the following attributes are exported:
 
-* `security_group` - The name of the Security Group the rule applies to.
-* `security_group_id` - The ID of the Security Group the rule applies to.
-* `user_security_group` - The name of the source (for ingress)/destination (for egress) Security Group to match.
+* n/a
 
 
 ## Import
@@ -57,5 +55,6 @@ In addition to the arguments listed above, the following attributes are exported
 This resource is automatically imported when importing an `exoscale_security_group` resource.
 
 
+[cidr]: https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing#CIDR_notation
 [icmp]: https://en.wikipedia.org/wiki/Internet_Control_Message_Protocol#Control_messages
 [r-security_group]: security_group.html
