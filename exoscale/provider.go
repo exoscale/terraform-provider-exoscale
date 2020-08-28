@@ -95,6 +95,7 @@ func Provider() terraform.ResourceProvider {
 				Description: fmt.Sprintf("Exoscale CloudStack API endpoint (by default: %s)", defaultComputeEndpoint),
 				DefaultFunc: schema.MultiEnvDefaultFunc([]string{
 					"EXOSCALE_ENDPOINT",
+					"EXOSCALE_API_ENDPOINT",
 					"EXOSCALE_COMPUTE_ENDPOINT",
 					"CLOUDSTACK_ENDPOINT",
 				}, defaultComputeEndpoint),

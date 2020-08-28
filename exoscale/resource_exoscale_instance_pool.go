@@ -83,6 +83,11 @@ func resourceInstancePool() *schema.Resource {
 				Type: schema.TypeString,
 			},
 		},
+		"ipv6": {
+			Type:     schema.TypeBool,
+			Optional: true,
+			Default:  false,
+		},
 		"state": {
 			Type:     schema.TypeString,
 			Optional: true,
@@ -188,6 +193,7 @@ func resourceInstancePoolCreate(d *schema.ResourceData, meta interface{}) error 
 		NetworkIDs:        networkIDs,
 		Size:              size,
 		RootDiskSize:      diskSize,
+		IPv6:              d.Get("ipv6").(bool),
 	}
 
 	resp, err = client.RequestWithContext(ctx, req)
@@ -308,6 +314,13 @@ func resourceInstancePoolUpdate(d *schema.ResourceData, meta interface{}) error 
 		req.TemplateID = egoscale.MustParseUUID(d.Get("template_id").(string))
 	}
 
+	if d.HasChange("ipv6") {
+		// IPv6 can only be enabled, not disabled.
+		if enableIPv6 := d.Get("ipv6").(bool); enableIPv6 {
+			req.IPv6 = true
+		}
+	}
+
 	var userData string
 	if d.HasChange("user_data") {
 		userData = base64.StdEncoding.EncodeToString([]byte(d.Get("user_data").(string)))
@@ -411,6 +424,9 @@ func resourceInstancePoolApply(ctx context.Context, client *egoscale.Client, d *
 		return err
 	}
 	if err := d.Set("template_id", instancePool.TemplateID.String()); err != nil {
+		return err
+	}
+	if err := d.Set("ipv6", instancePool.IPv6); err != nil {
 		return err
 	}
 
