@@ -160,6 +160,10 @@ func resourceIPAddressCreate(d *schema.ResourceData, meta interface{}) error {
 		if req.HealthcheckStrikesFail = int64(d.Get("healthcheck_strikes_fail").(int)); req.HealthcheckStrikesFail == 0 {
 			return errors.New("healthcheck_strikes_fail must be specified")
 		}
+
+		req.HealthcheckTLSSNI = d.Get("healthcheck_tls_sni").(string)
+
+		req.HealthcheckTLSSkipVerify = d.Get("healthcheck_tls_skip_verify").(bool)
 	} else {
 		for _, k := range []string{
 			"healthcheck_port",
@@ -310,8 +314,8 @@ func resourceIPAddressUpdate(d *schema.ResourceData, meta interface{}) error {
 		eipPartials = append(eipPartials, "healthcheck_path")
 		updateEIP.HealthcheckPath = d.Get("healthcheck_path").(string)
 		if healthcheckMode, ok := d.GetOk("healthcheck_mode"); ok {
-			if healthcheckMode == "http" && updateEIP.HealthcheckPath == "" {
-				return errors.New("healthcheck_path must be specified in \"http\" mode")
+			if (healthcheckMode == "http" || healthcheckMode == "https") && updateEIP.HealthcheckPath == "" {
+				return errors.New("healthcheck_path must be specified in \"http\" or \"https\" mode")
 			} else if healthcheckMode == "tcp" && updateEIP.HealthcheckPath != "" {
 				return errors.New("healthcheck_path must not be specified in \"tcp\" mode")
 			}
@@ -346,15 +350,23 @@ func resourceIPAddressUpdate(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 	if d.HasChange("healthcheck_tls_sni") {
+		healthcheckTLSSNI := d.Get("healthcheck_tls_sni").(string)
+		if healthcheckTLSSNI == "" {
+			return errors.New("healthcheck_tls_sni cannot be reset to an empty value")
+		}
 		eipPartials = append(eipPartials, "healthcheck_tls_sni")
-		updateEIP.HealthcheckTLSSNI = string(d.Get("healthcheck_tls_sni").(string))
+		updateEIP.HealthcheckTLSSNI = healthcheckTLSSNI
 		if healthcheckMode, ok := d.GetOk("healthcheck_mode"); ok && healthcheckMode != "https" {
 			return errors.New("healthcheck_tls_sni is only valid in https mode")
 		}
 	}
 	if d.HasChange("healthcheck_tls_skip_verify") {
+		healthcheckTLSSkipVerify := d.Get("healthcheck_tls_skip_verify").(bool)
+		if !healthcheckTLSSkipVerify {
+			return errors.New("healthcheck_tls_skip_verify cannot be disabled")
+		}
 		eipPartials = append(eipPartials, "healthcheck_tls_skip_verify")
-		updateEIP.HealthcheckTLSSkipVerify = bool(d.Get("healthcheck_tls_sni").(bool))
+		updateEIP.HealthcheckTLSSkipVerify = healthcheckTLSSkipVerify
 		if healthcheckMode, ok := d.GetOk("healthcheck_mode"); ok && healthcheckMode != "https" {
 			return errors.New("healthcheck_tls_skip_verify is only valid in https mode")
 		}
