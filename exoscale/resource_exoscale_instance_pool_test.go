@@ -22,6 +22,7 @@ var (
 	testAccResourceInstancePoolServiceOffering = "medium"
 	testAccResourceInstancePoolSize            = 2
 	testAccResourceInstancePoolDiskSize        = 10
+	testAccResourceInstancePoolDiskSizeUpdated = 20
 	testAccResourceInstancePoolSizeUpdated     = 1
 	testAccResourceInstancePoolUserData        = `#cloud-config
 package_upgrade: true
@@ -90,7 +91,7 @@ EOF
 		testAccResourceInstancePoolTemplateID,
 		testAccResourceInstancePoolServiceOffering,
 		testAccResourceInstancePoolSizeUpdated,
-		testAccResourceInstancePoolDiskSize,
+		testAccResourceInstancePoolDiskSizeUpdated,
 		testAccResourceInstancePoolUserData,
 	)
 )
@@ -132,7 +133,7 @@ func TestAccResourceInstancePool(t *testing.T) {
 						"template_id":        ValidateString(testAccResourceInstancePoolTemplateID),
 						"service_offering":   ValidateString(testAccResourceInstancePoolServiceOffering),
 						"size":               ValidateString(fmt.Sprint(testAccResourceInstancePoolSizeUpdated)),
-						"disk_size":          ValidateString(fmt.Sprint(testAccResourceInstancePoolDiskSize)),
+						"disk_size":          ValidateString(fmt.Sprint(testAccResourceInstancePoolDiskSizeUpdated)),
 						"key_pair":           ValidateString(testAccResourceInstancePoolSSHKeyName),
 						"ipv6":               ValidateString("true"),
 						"virtual_machines.#": ValidateStringNot("0"),
@@ -153,7 +154,7 @@ func TestAccResourceInstancePool(t *testing.T) {
 							"template_id":      ValidateString(testAccResourceInstancePoolTemplateID),
 							"service_offering": ValidateString(testAccResourceInstancePoolServiceOffering),
 							"size":             ValidateString(fmt.Sprint(testAccResourceInstancePoolSizeUpdated)),
-							"disk_size":        ValidateString(fmt.Sprint(testAccResourceInstancePoolDiskSize)),
+							"disk_size":        ValidateString(fmt.Sprint(testAccResourceInstancePoolDiskSizeUpdated)),
 							"key_pair":         ValidateString(testAccResourceInstancePoolSSHKeyName),
 							"ipv6":             ValidateString("true"),
 						},
