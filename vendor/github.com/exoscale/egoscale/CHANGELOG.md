@@ -1,6 +1,11 @@
 Changelog
 =========
 
+0.31.2
+------
+
+- fix: add missing TLS-specific parameters to `AssociateIPAddress`
+
 0.31.1
 ------
 

@@ -29,7 +29,7 @@ func resourceIPAddress() *schema.Resource {
 			Type:         schema.TypeString,
 			Description:  "Healthcheck probing mode",
 			Optional:     true,
-			ValidateFunc: validation.StringMatch(regexp.MustCompile("(?:tcp|http)"), `must be either "tcp" or "http"`),
+			ValidateFunc: validation.StringMatch(regexp.MustCompile("(?:tcp|https?)"), `must be either "tcp", "http", or "https"`),
 			ForceNew:     true,
 		},
 		"healthcheck_port": {
@@ -41,6 +41,16 @@ func resourceIPAddress() *schema.Resource {
 		"healthcheck_path": {
 			Type:        schema.TypeString,
 			Description: "Healthcheck probe HTTP request path, must be specified in \"http\" mode",
+			Optional:    true,
+		},
+		"healthcheck_tls_skip_verify": {
+			Type:        schema.TypeBool,
+			Description: "Healthcheck probe disable TLS verification",
+			Optional:    true,
+		},
+		"healthcheck_tls_sni": {
+			Type:        schema.TypeString,
+			Description: "Healthcheck probe set server name for TLS SNI",
 			Optional:    true,
 		},
 		"healthcheck_interval": {
@@ -127,8 +137,8 @@ func resourceIPAddressCreate(d *schema.ResourceData, meta interface{}) error {
 		}
 
 		req.HealthcheckPath = d.Get("healthcheck_path").(string)
-		if req.HealthcheckMode == "http" && req.HealthcheckPath == "" {
-			return errors.New("healthcheck_path must be specified in \"http\" mode")
+		if (req.HealthcheckMode == "http" || req.HealthcheckMode == "https") && req.HealthcheckPath == "" {
+			return errors.New("healthcheck_path must be specified in \"http\" or \"https\" mode")
 		} else if req.HealthcheckMode == "tcp" && req.HealthcheckPath != "" {
 			return errors.New("healthcheck_path must not be specified in \"tcp\" mode")
 		}
@@ -150,6 +160,10 @@ func resourceIPAddressCreate(d *schema.ResourceData, meta interface{}) error {
 		if req.HealthcheckStrikesFail = int64(d.Get("healthcheck_strikes_fail").(int)); req.HealthcheckStrikesFail == 0 {
 			return errors.New("healthcheck_strikes_fail must be specified")
 		}
+
+		req.HealthcheckTLSSNI = d.Get("healthcheck_tls_sni").(string)
+
+		req.HealthcheckTLSSkipVerify = d.Get("healthcheck_tls_skip_verify").(bool)
 	} else {
 		for _, k := range []string{
 			"healthcheck_port",
@@ -158,6 +172,8 @@ func resourceIPAddressCreate(d *schema.ResourceData, meta interface{}) error {
 			"healthcheck_timeout",
 			"healthcheck_strikes_ok",
 			"healthcheck_strikes_fail",
+			"healthcheck_tls_skip_verify",
+			"healthcheck_tls_sni",
 		} {
 			if _, ok := d.GetOk(k); ok {
 				return fmt.Errorf("%q can only be specified with healthcheck_mode", k)
@@ -298,8 +314,8 @@ func resourceIPAddressUpdate(d *schema.ResourceData, meta interface{}) error {
 		eipPartials = append(eipPartials, "healthcheck_path")
 		updateEIP.HealthcheckPath = d.Get("healthcheck_path").(string)
 		if healthcheckMode, ok := d.GetOk("healthcheck_mode"); ok {
-			if healthcheckMode == "http" && updateEIP.HealthcheckPath == "" {
-				return errors.New("healthcheck_path must be specified in \"http\" mode")
+			if (healthcheckMode == "http" || healthcheckMode == "https") && updateEIP.HealthcheckPath == "" {
+				return errors.New("healthcheck_path must be specified in \"http\" or \"https\" mode")
 			} else if healthcheckMode == "tcp" && updateEIP.HealthcheckPath != "" {
 				return errors.New("healthcheck_path must not be specified in \"tcp\" mode")
 			}
@@ -331,6 +347,28 @@ func resourceIPAddressUpdate(d *schema.ResourceData, meta interface{}) error {
 		updateEIP.HealthcheckStrikesFail = int64(d.Get("healthcheck_strikes_fail").(int))
 		if _, ok := d.GetOk("healthcheck_mode"); ok && updateEIP.HealthcheckStrikesFail == 0 {
 			return errors.New("healthcheck_strikes_fail must be specified")
+		}
+	}
+	if d.HasChange("healthcheck_tls_sni") {
+		healthcheckTLSSNI := d.Get("healthcheck_tls_sni").(string)
+		if healthcheckTLSSNI == "" {
+			return errors.New("healthcheck_tls_sni cannot be reset to an empty value")
+		}
+		eipPartials = append(eipPartials, "healthcheck_tls_sni")
+		updateEIP.HealthcheckTLSSNI = healthcheckTLSSNI
+		if healthcheckMode, ok := d.GetOk("healthcheck_mode"); ok && healthcheckMode != "https" {
+			return errors.New("healthcheck_tls_sni is only valid in https mode")
+		}
+	}
+	if d.HasChange("healthcheck_tls_skip_verify") {
+		healthcheckTLSSkipVerify := d.Get("healthcheck_tls_skip_verify").(bool)
+		if !healthcheckTLSSkipVerify {
+			return errors.New("healthcheck_tls_skip_verify cannot be disabled")
+		}
+		eipPartials = append(eipPartials, "healthcheck_tls_skip_verify")
+		updateEIP.HealthcheckTLSSkipVerify = healthcheckTLSSkipVerify
+		if healthcheckMode, ok := d.GetOk("healthcheck_mode"); ok && healthcheckMode != "https" {
+			return errors.New("healthcheck_tls_skip_verify is only valid in https mode")
 		}
 	}
 	if d.HasChange("description") {
@@ -419,6 +457,12 @@ func resourceIPAddressApply(d *schema.ResourceData, ip *egoscale.IPAddress) erro
 			return err
 		}
 		if err := d.Set("healthcheck_strikes_fail", ip.Healthcheck.StrikesFail); err != nil {
+			return err
+		}
+		if err := d.Set("healthcheck_tls_sni", ip.Healthcheck.TLSSNI); err != nil {
+			return err
+		}
+		if err := d.Set("healthcheck_tls_skip_verify", ip.Healthcheck.TLSSkipVerify); err != nil {
 			return err
 		}
 	}

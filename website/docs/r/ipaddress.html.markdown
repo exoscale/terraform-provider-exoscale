@@ -30,13 +30,14 @@ Managed EIP:
 resource "exoscale_ipaddress" "myip" {
   zone                     = "ch-dk-2"
   description              = "My elastic IP for load balancer"
-  healthcheck_mode         = "http"
+  healthcheck_mode         = "https"
   healthcheck_port         = 8000
   healthcheck_path         = "/status"
   healthcheck_interval     = 5
   healthcheck_timeout      = 2
   healthcheck_strikes_ok   = 2
   healthcheck_strikes_fail = 3
+  healthcheck_tls_sni      = "example.net"
 }
 ```
 
@@ -45,13 +46,15 @@ resource "exoscale_ipaddress" "myip" {
 
 * `zone` - (Required) The name of the [zone][zone] to create the Elastic IP into.
 * `description` - The description of the Elastic IP.
-* `healthcheck_mode` - The healthcheck probing mode (must be either `tcp` or `http`).
+* `healthcheck_mode` - The healthcheck probing mode (must be `tcp`, `http` or `https`).
 * `healthcheck_port` - The healthcheck service port to probe (must be between `1` and `65535`).
-* `healthcheck_path` - The healthcheck probe HTTP request path (must be specified in `http` mode).
+* `healthcheck_path` - The healthcheck probe HTTP request path (must be specified in `http`/`https` modes).
 * `healthcheck_interval` - The healthcheck probing interval in seconds (must be between `5` and `300`).
 * `healthcheck_timeout` - The time in seconds before considering a healthcheck probing failed (must be between `2` and `60`).
 * `healthcheck_strikes_ok` - The number of successful healthcheck probes before considering the target healthy (must be between `1` and `20`).
 * `healthcheck_strikes_fail` - The number of unsuccessful healthcheck probes before considering the target unhealthy (must be between `1` and `20`).
+* `healthcheck_tls_sni` - The healthcheck TLS server name to specify in `https` mode. Note: this parameter can only be changed to a non-empty value, it cannot be reset to its default empty value later on (requires a resource re-creation).
+* `healthcheck_tls_skip_verify` - Disable TLS certificate validation in `https` mode. Note: this parameter can only be changed to `true`, it cannot be reset to `false` later on (requires a resource re-creation).
 * `tags` - A dictionary of tags (key/value). To remove all tags, set `tags = {}`.
 
 

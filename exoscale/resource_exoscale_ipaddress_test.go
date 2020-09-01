@@ -13,7 +13,7 @@ import (
 var (
 	testAccResourceIPAddressZoneName                            = testZoneName
 	testAccResourceIPAddressDescription                         = testDescription
-	testAccResourceIPAddressHealthcheckMode                     = "http"
+	testAccResourceIPAddressHealthcheckMode                     = "https"
 	testAccResourceIPAddressHealthcheckPort               int64 = 80
 	testAccResourceIPAddressHealthcheckPortUpdated        int64 = 8000
 	testAccResourceIPAddressHealthcheckPath                     = "/health"
@@ -26,6 +26,8 @@ var (
 	testAccResourceIPAddressHealthcheckStrikesOkUpdated   int64 = 2
 	testAccResourceIPAddressHealthcheckStrikesFail        int64 = 2
 	testAccResourceIPAddressHealthcheckStrikesFailUpdated int64 = 3
+	testAccResourceIPAddressHealthcheckTLSSkipVerify            = true
+	testAccResourceIPAddressHealthcheckTLSSNI                   = "example.com"
 
 	testAccIPAddressConfigCreate = fmt.Sprintf(`
 resource "exoscale_ipaddress" "eip" {
@@ -63,6 +65,8 @@ resource "exoscale_ipaddress" "eip" {
   healthcheck_timeout = %d
   healthcheck_strikes_ok = %d
   healthcheck_strikes_fail = %d
+  healthcheck_tls_skip_verify = %t
+  healthcheck_tls_sni = "%s"
 }
 `,
 		testAccResourceIPAddressZoneName,
@@ -74,6 +78,8 @@ resource "exoscale_ipaddress" "eip" {
 		testAccResourceIPAddressHealthcheckTimeoutUpdated,
 		testAccResourceIPAddressHealthcheckStrikesOkUpdated,
 		testAccResourceIPAddressHealthcheckStrikesFailUpdated,
+		testAccResourceIPAddressHealthcheckTLSSkipVerify,
+		testAccResourceIPAddressHealthcheckTLSSNI,
 	)
 )
 
@@ -107,14 +113,16 @@ func TestAccResourceIPAddress(t *testing.T) {
 					testAccCheckIPAddressExists("exoscale_ipaddress.eip", eip),
 					testAccCheckIPAddressUpdate(eip),
 					testAccCheckIPAddressAttributes(testAttrs{
-						"description":              ValidateString(testAccResourceIPAddressDescription),
-						"healthcheck_mode":         ValidateString(testAccResourceIPAddressHealthcheckMode),
-						"healthcheck_port":         ValidateString(fmt.Sprint(testAccResourceIPAddressHealthcheckPortUpdated)),
-						"healthcheck_path":         ValidateString(testAccResourceIPAddressHealthcheckPathUpdated),
-						"healthcheck_interval":     ValidateString(fmt.Sprint(testAccResourceIPAddressHealthcheckIntervalUpdated)),
-						"healthcheck_timeout":      ValidateString(fmt.Sprint(testAccResourceIPAddressHealthcheckTimeoutUpdated)),
-						"healthcheck_strikes_ok":   ValidateString(fmt.Sprint(testAccResourceIPAddressHealthcheckStrikesOkUpdated)),
-						"healthcheck_strikes_fail": ValidateString(fmt.Sprint(testAccResourceIPAddressHealthcheckStrikesFailUpdated)),
+						"description":                 ValidateString(testAccResourceIPAddressDescription),
+						"healthcheck_mode":            ValidateString(testAccResourceIPAddressHealthcheckMode),
+						"healthcheck_port":            ValidateString(fmt.Sprint(testAccResourceIPAddressHealthcheckPortUpdated)),
+						"healthcheck_path":            ValidateString(testAccResourceIPAddressHealthcheckPathUpdated),
+						"healthcheck_interval":        ValidateString(fmt.Sprint(testAccResourceIPAddressHealthcheckIntervalUpdated)),
+						"healthcheck_timeout":         ValidateString(fmt.Sprint(testAccResourceIPAddressHealthcheckTimeoutUpdated)),
+						"healthcheck_strikes_ok":      ValidateString(fmt.Sprint(testAccResourceIPAddressHealthcheckStrikesOkUpdated)),
+						"healthcheck_strikes_fail":    ValidateString(fmt.Sprint(testAccResourceIPAddressHealthcheckStrikesFailUpdated)),
+						"healthcheck_tls_skip_verify": ValidateString(fmt.Sprint(testAccResourceIPAddressHealthcheckTLSSkipVerify)),
+						"healthcheck_tls_sni":         ValidateString(testAccResourceIPAddressHealthcheckTLSSNI),
 					}),
 				),
 			},
@@ -125,14 +133,16 @@ func TestAccResourceIPAddress(t *testing.T) {
 				ImportStateCheck: func(s []*terraform.InstanceState) error {
 					return checkResourceAttributes(
 						testAttrs{
-							"description":              ValidateString(testAccResourceIPAddressDescription),
-							"healthcheck_mode":         ValidateString(testAccResourceIPAddressHealthcheckMode),
-							"healthcheck_port":         ValidateString(fmt.Sprint(testAccResourceIPAddressHealthcheckPortUpdated)),
-							"healthcheck_path":         ValidateString(testAccResourceIPAddressHealthcheckPathUpdated),
-							"healthcheck_interval":     ValidateString(fmt.Sprint(testAccResourceIPAddressHealthcheckIntervalUpdated)),
-							"healthcheck_timeout":      ValidateString(fmt.Sprint(testAccResourceIPAddressHealthcheckTimeoutUpdated)),
-							"healthcheck_strikes_ok":   ValidateString(fmt.Sprint(testAccResourceIPAddressHealthcheckStrikesOkUpdated)),
-							"healthcheck_strikes_fail": ValidateString(fmt.Sprint(testAccResourceIPAddressHealthcheckStrikesFailUpdated)),
+							"description":                 ValidateString(testAccResourceIPAddressDescription),
+							"healthcheck_mode":            ValidateString(testAccResourceIPAddressHealthcheckMode),
+							"healthcheck_port":            ValidateString(fmt.Sprint(testAccResourceIPAddressHealthcheckPortUpdated)),
+							"healthcheck_path":            ValidateString(testAccResourceIPAddressHealthcheckPathUpdated),
+							"healthcheck_interval":        ValidateString(fmt.Sprint(testAccResourceIPAddressHealthcheckIntervalUpdated)),
+							"healthcheck_timeout":         ValidateString(fmt.Sprint(testAccResourceIPAddressHealthcheckTimeoutUpdated)),
+							"healthcheck_strikes_ok":      ValidateString(fmt.Sprint(testAccResourceIPAddressHealthcheckStrikesOkUpdated)),
+							"healthcheck_strikes_fail":    ValidateString(fmt.Sprint(testAccResourceIPAddressHealthcheckStrikesFailUpdated)),
+							"healthcheck_tls_skip_verify": ValidateString(fmt.Sprint(testAccResourceIPAddressHealthcheckTLSSkipVerify)),
+							"healthcheck_tls_sni":         ValidateString(testAccResourceIPAddressHealthcheckTLSSNI),
 						},
 						s[0].Attributes)
 				},
