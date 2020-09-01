@@ -64,3 +64,9 @@ In order to run the full suite of Acceptance tests, run `make testacc`.
 ```sh
 $ make testacc
 ```
+
+In order to test a specific part of the acceptance test suite, you may run:
+
+``` sh
+make GO_TEST_EXTRA_ARGS="-v -run ^TestAcc..." test-acc
+```
