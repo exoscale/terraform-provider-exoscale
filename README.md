@@ -1,5 +1,4 @@
-Terraform Provider
-==================
+# Exoscale Terraform Provider
 
 - Website: https://www.terraform.io
 - [![Actions Status](https://github.com/exoscale/terraform-provider-exoscale/workflows/CI/badge.svg)](https://github.com/exoscale/terraform-provider-exoscale/actions?query=workflow%3ACI)
@@ -8,65 +7,76 @@ Terraform Provider
 
 <img src="https://cdn.rawgit.com/hashicorp/terraform-website/master/content/source/assets/images/logo-hashicorp.svg" width="600px">
 
-Requirements
-------------
+
+## Requirements
 
 - [Terraform](https://www.terraform.io/downloads.html) 0.12+
 - [Go](https://golang.org/doc/install) 1.13+ (to build the provider plugin)
+- An [Exoscale](https://portal.exoscale.com/register) account
 
-Building The Provider
----------------------
 
-Clone repository:
+## Installation
 
-```sh
-$ git clone https://github.com/exoscale/terraform-provider-exoscale
-```
+### From the Terraform Registry (recommended)
 
-Enter the provider directory and build the provider
+The Exoscale provider is available on the [Terraform Registry][tf-exo-registry].
+To use it, simply execute the `terraform init` command in a directory containing
+Terraform configuration files referencing [Exoscale provider
+resources][tf-exo-doc]:
 
-```sh
-$ cd /path/to/terraform-provider-exoscale
-$ make build
-$ make install
-```
+```console
+$ terraform init
 
-Using the provider
-----------------------
-If you're building the provider, follow the instructions to [install it as a plugin.](https://www.terraform.io/docs/configuration/providers.html#third-party-plugins) After placing it into your plugins directory,  run `terraform init` to initialize it.
+Initializing the backend...
 
-Developing the Provider
----------------------------
+Initializing provider plugins...
+- Finding exoscale/exoscale versions matching "0.18.2"...
+- Installing exoscale/exoscale v0.18.2...
+- Installed exoscale/exoscale v0.18.2 (signed by a HashiCorp partner, key ID 8B58C61D4FFE0C86)
 
-If you wish to work on the provider, you'll first need [Go](http://www.golang.org) installed on your machine (version 1.13+ is *required*). You'll also need to correctly setup a [GOPATH](http://golang.org/doc/code.html#GOPATH), as well as adding `$GOPATH/bin` to your `$PATH`.
-
-To compile the provider, run `make build`. This will build the provider and put the provider binary in the `$GOPATH/bin` directory.
-
-```sh
-$ make build
-...
-$ $GOPATH/bin/terraform-provider-exoscale
 ...
 ```
 
-In order to test the provider, you can simply run `make test`.
 
-*Note:* Make sure no `CLOUDSTACK_KEY` or `CLOUDSTACK_SECRET` variables are set, and there's no `[cloudstack]` section in the CloudStack credentials file `~/.cloudstack.ini`.
+### From Sources
+
+If you prefer to build the plugin from sources, clone the GitHub repository
+locally and run the command `make build` from the root of the sources directory.
+Upon successful compilation, a `terraform-provider-exoscale_vdev` plugin binary
+file can be found in the `bin/` directory. Then, follow the Terraform
+documentation on [how to install provider plugins][tf-doc-provider-install].
+
+
+## Usage
+
+The complete and up-to-date documentation for the Exoscale provider is
+available on the [Terraform Registry][tf-exo-doc].  Additionally, you can find
+information on the general Terraform usage on the [HashiCorp Terraform
+website][tf-doc].
+
+
+## Contributing
+
+* If you think you've found a bug in the code or you have a question regarding
+  the usage of this software, please reach out to us by opening an issue in
+  this GitHub repository.
+* Contributions to this project are welcome: if you want to add a feature or a
+  fix a bug, please do so by opening a Pull Request in this GitHub repository.
+  In case of feature contribution, we kindly ask you to open an issue to
+  discuss it beforehand.
+* Code changes require associated *acceptance tests*: the complete provider
+  test suite (`make test-acc`) is executed as part of the project's GitHub
+  repository [CI workflow][tf-exo-gh-ci], however you can execute targeted
+  tests locally before submitting a Pull Request to ensure tests pass (e.g. for
+  the `exoscale_compute` resource only):
 
 ```sh
-$ make test
+make GO_TEST_EXTRA_ARGS="-v -run ^TestAccResourceCompute$" test-acc
 ```
 
-In order to run the full suite of Acceptance tests, run `make test-acc`.
 
-*Note:* Acceptance tests create real resources, and often cost money to run.
-
-```sh
-$ make test-acc
-```
-
-In order to test a specific part of the acceptance test suite, you may run:
-
-``` sh
-make GO_TEST_EXTRA_ARGS="-v -run ^TestAcc..." test-acc
-```
+[tf-doc-provider-install]: https://www.terraform.io/docs/configuration/provider-requirements.html#provider-installation
+[tf-doc]: https://www.terraform.io/docs/index.html
+[tf-exo-doc]: https://registry.terraform.io/providers/exoscale/exoscale/latest/docs
+[tf-exo-gh-ci]: https://github.com/exoscale/terraform-provider-exoscale/actions?query=workflow%3ACI
+[tf-exo-registry]: https://registry.terraform.io/providers/exoscale/exoscale/latest

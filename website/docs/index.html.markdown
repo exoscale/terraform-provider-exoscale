@@ -3,86 +3,187 @@ layout: "exoscale"
 page_title: "Provider: Exoscale"
 sidebar-current: "docs-exoscale-index"
 description: |-
-  The Exoscale provider is used to interact with the many resources offered by Exoscale.com. The provider needs to be configured with the proper credentials before it can be used.
+  The Exoscale provider can be used to manage infrastructure resources running on Exoscale.
 ---
+
 
 # Exoscale Provider
 
-## Usage
+## Configuration
 
-What follows below is the usage instructions for fully utilizing the Exoscale
-resource plugin.  Additional documentation can be found in the examples directory.
+The following provider-level settings are supported, either via [HCL
+parameters][tf-doc-provider] or environment variables:
 
-### Provider requirements
+* `key` / `EXOSCALE_API_KEY`: Exoscale account API key
+* `secret` / `EXOSCALE_API_SECRET`: Exoscale account API secret
+* `timeout`: Global async operations waiting time in seconds (default: `300`)
 
-```hcl
-provider "exoscale" {
-  version = "~> 0.15"
-  key = "EXO..."
-  secret = "..."
+At least an [Exoscale API key and secret][exo-iam] must be provided in order to
+use the Exoscale Terraform provider.
 
-  timeout = 60          # default: waits 60 seconds in total for a resource
-  delay = 5             # default: waits 5 seconds between each poll request
-}
-```
 
-# or
+### Example
 
 ```hcl
 provider "exoscale" {
-  version = "~> 0.15"
+  version = "~> 0.18.2"
+  key     = "EXOxxxxxxxxxxxxxxxxxxxxxxxx"
+  secret  = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 
-  config = "cloudstack.ini"   # default: filename
-  region = "cloudstack"       # default: section name
+  timeout = 120
 }
 ```
 
-You are required to provide at least the API token and secret key in order
-to make use of the remaining Terraform resources.
-
-The `timeout` is the maximum amount of time (in seconds, default: `60`) to wait
-for async tasks to complete. Currently, this is used during the creation of
-`compute` and `anti-affinity` resources.
-
-### `cloudstack.ini`
-
-```ini
-[cloudstack]
-
-endpoint = "https://api.exoscale.com/v1"
-key = "EXO..."
-secret = "..."
-```
-
-### Environment variables
-
-You can specify the following keys using those environment variables.
-
-- `key` - `EXOSCALE_KEY`, or `EXOSCALE_API_KEY`;
-
-- `secret` - `EXOSCALE_SECRET`, or `EXOSCALE_API_SECRET`;
-
-- `config` - `EXOSCALE_CONFIG`;
-
-- `region` - `EXOSCALE_REGION`;
-
-- `timeout` - `EXOSCALE_TIMEOUT` global timeout;
-
-- `compute_endpoint` - `EXOSCALE_ENDPOINT`, or `EXOSCALE_COMPUTE_ENDPOINT`;
-
-- `dns_endpoint` - `EXOSCALE_DNS_ENDPOINT`.
-
-## Timeouts
-
-All resources support controlling the waiting time of the four basic operations.
+Starting from Terraform 0.13.x:
 
 ```hcl
-resource "exoscale_..." "name" {
+terraform {
+  required_providers {
+    exoscale = {
+      source  = "exoscale/exoscale"
+      version = "0.18.2"
+    }
+  }
+}
+
+provider "exoscale" {
+  key = "EXOxxxxxxxxxxxxxxxxxxxxxxxx"
+  secret = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+}
+```
+
+
+### Fine-tuning Timeout durations
+
+In addition of the global `timeout` provider setting, the waiting time of async
+operations can be fine-tuned per resource and per operation type:
+
+```hcl
+resource "exoscale_instance_pool" "web" {
+  # ...
+
   timeouts {
     create = "1m"
-    read = "2m"
+    read   = "2m"
     update = "3m"
     delete = "4m"
   }
 }
 ```
+
+
+## Usage
+
+Here is a simple HCL configuration provisioning an Exoscale Compute instance:
+
+```hcl
+variable "exoscale_api_key" { type = string }
+variable "exoscale_api_secret" { type = string }
+
+terraform {
+  required_providers {
+    exoscale = {
+      source  = "exoscale/exoscale"
+      version = "0.18.2"
+    }
+  }
+}
+
+provider "exoscale" {
+  key    = var.exoscale_api_key
+  secret = var.exoscale_api_secret
+}
+
+locals {
+  zone = "ch-gva-2"
+}
+
+data "exoscale_compute_template" "ubuntu" {
+  zone = local.zone
+  name = "Linux Ubuntu 20.04 LTS 64-bit"
+}
+
+resource "exoscale_compute" "my-server" {
+  zone         = local.zone
+  display_name = "my-server"
+  size         = "Small"
+  template_id  = data.exoscale_compute_template.ubuntu.id
+  disk_size    = 50
+  key_pair     = "alice"
+  user_data    = <<EOF
+#cloud-config
+package_upgrade: true
+EOF
+}
+```
+
+```console
+$ terraform init
+
+Initializing the backend...
+
+Initializing provider plugins...
+- Finding exoscale/exoscale versions matching "0.18.2"...
+- Installing exoscale/exoscale v0.18.2...
+- Installed exoscale/exoscale v0.18.2 (signed by a HashiCorp partner, key ID 8B58C61D4FFE0C86)
+
+...
+
+$ terraform apply \
+    -var exoscale_api_key=$EXOSCALE_API_KEY \
+    -var exoscale_api_secret=$EXOSCALE_API_SECRET
+
+data.exoscale_compute_template.ubuntu: Refreshing state...
+
+An execution plan has been generated and is shown below.
+Resource actions are indicated with the following symbols:
+  + create
+
+Terraform will perform the following actions:
+
+  # exoscale_compute.my-server will be created
+  + resource "exoscale_compute" "my-server" {
+      + affinity_group_ids = (known after apply)
+      + affinity_groups    = (known after apply)
+      + disk_size          = 50
+      + display_name       = "my-server"
+      + gateway            = (known after apply)
+      + hostname           = (known after apply)
+      + id                 = (known after apply)
+      + ip4                = true
+      + ip6                = false
+      + ip6_address        = (known after apply)
+      + ip6_cidr           = (known after apply)
+      + ip_address         = (known after apply)
+      + key_pair           = "alice"
+      + name               = (known after apply)
+      + password           = (sensitive value)
+      + security_group_ids = (known after apply)
+      + security_groups    = (known after apply)
+      + size               = "Small"
+      + state              = (known after apply)
+      + tags               = (known after apply)
+      + template           = (known after apply)
+      + template_id        = "c19542b7-d269-4bd4-bf7c-2cae36d066d3"
+      + user_data          = <<~EOT
+            #cloud-config
+            package_upgrade: true
+        EOT
+      + user_data_base64   = (known after apply)
+      + username           = (known after apply)
+      + zone               = "ch-gva-2"
+    }
+
+Plan: 1 to add, 0 to change, 0 to destroy.
+
+Do you want to perform these actions?
+...
+```
+
+Additional documentation can be found in the [examples][tf-exo-gh-examples]
+directory of the source code.
+
+
+[exo-iam]: https://community.exoscale.com/documentation/iam/quick-start/
+[tf-doc-provider]: https://www.terraform.io/docs/configuration/providers.html
+[tf-exo-gh-examples]: https://github.com/exoscale/terraform-provider-exoscale/tree/master/examples
