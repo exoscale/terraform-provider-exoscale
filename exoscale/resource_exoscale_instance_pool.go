@@ -57,7 +57,6 @@ func resourceInstancePool() *schema.Resource {
 			Type:     schema.TypeInt,
 			Computed: true,
 			Optional: true,
-			ForceNew: true,
 		},
 		"description": {
 			Type:     schema.TypeString,
@@ -312,6 +311,10 @@ func resourceInstancePoolUpdate(d *schema.ResourceData, meta interface{}) error 
 
 	if d.HasChange("template_id") {
 		req.TemplateID = egoscale.MustParseUUID(d.Get("template_id").(string))
+	}
+
+	if d.HasChange("disk_size") {
+		req.RootDiskSize = d.Get("disk_size").(int)
 	}
 
 	if d.HasChange("ipv6") {
