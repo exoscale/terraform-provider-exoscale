@@ -76,6 +76,10 @@ func resourceNLBService() *schema.Resource {
 						Type:     schema.TypeString,
 						Optional: true,
 					},
+					"tls_sni": {
+						Type:     schema.TypeString,
+						Optional: true,
+					},
 				},
 			},
 		},
@@ -157,6 +161,7 @@ func resourceNLBServiceCreate(d *schema.ResourceData, meta interface{}) error {
 				Timeout:  time.Duration(healthcheck["timeout"].(int)) * time.Second,
 				Retries:  int64(healthcheck["retries"].(int)),
 				URI:      healthcheck["uri"].(string),
+				TLSSNI:   healthcheck["tls_sni"].(string),
 			},
 		},
 	)
@@ -256,6 +261,7 @@ func resourceNLBServiceUpdate(d *schema.ResourceData, meta interface{}) error {
 		service.Healthcheck.Port = uint16(healthcheck["port"].(int))
 		service.Healthcheck.Retries = int64(healthcheck["retries"].(int))
 		service.Healthcheck.URI = healthcheck["uri"].(string)
+		service.Healthcheck.TLSSNI = healthcheck["tls_sni"].(string)
 		service.Healthcheck.Interval = time.Duration(healthcheck["interval"].(int)) * time.Second
 		service.Healthcheck.Timeout = time.Duration(healthcheck["timeout"].(int)) * time.Second
 	}
@@ -356,6 +362,7 @@ func resourceNLBServiceApply(d *schema.ResourceData, service *egoscale.NetworkLo
 		"timeout":  int(service.Healthcheck.Timeout.Seconds()),
 		"retries":  int(service.Healthcheck.Retries),
 		"uri":      service.Healthcheck.URI,
+		"tls_sni":  service.Healthcheck.TLSSNI,
 	}
 
 	raw := d.Get("healthcheck").(*schema.Set)
