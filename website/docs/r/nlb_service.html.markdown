@@ -28,38 +28,39 @@ data "exoscale_compute_template" "website" {
 }
 
 resource "exoscale_instance_pool" "website" {
-  name = "instancepool-website"
-  description = "Instance Pool Website nodes"
-  template_id = data.exoscale_compute_template.website.id
+  name             = "instancepool-website"
+  description      = "Instance Pool Website nodes"
+  template_id      = data.exoscale_compute_template.website.id
   service_offering = "medium"
-  size = 3
-  zone = var.zone
+  size             = 3
+  zone             = var.zone
 }
 
 resource "exoscale_nlb" "website" {
-  name = "website"
+  name        = "website"
   description = "This is the Network Load Balancer for my website"
-  zone = var.zone
+  zone        = var.zone
 }
 
 resource "exoscale_nlb_service" "website" {
-  zone = exoscale_nlb.website.zone
-  name = "website"
-  description = "Website over HTTP"
-  nlb_id = exoscale_nlb.website.id
+  zone             = exoscale_nlb.website.zone
+  name             = "website-https"
+  description      = "Website over HTTPS"
+  nlb_id           = exoscale_nlb.website.id
   instance_pool_id = exoscale_instance_pool.website.id
-	protocol = "tcp"
-	port = 80
-	target_port = 8080
-	strategy = "round-robin"
+	protocol       = "tcp"
+	port           = 443
+	target_port    = 8443
+	strategy       = "round-robin"
 
   healthcheck {
-    port = 8080
-    mode = "http"
-    uri = "/healthz"
+    mode     = "https"
+    port     = 8443
+    uri      = "/healthz"
+    tls_sni  = "example.net"
     interval = 5
-    timeout = 3
-    retries = 1
+    timeout  = 3
+    retries  = 1
   }
 }
 ```
@@ -79,8 +80,9 @@ resource "exoscale_nlb_service" "website" {
 **healthcheck**
 
 * `port` - (Required) The healthcheck port.
-* `mode` - The healthcheck mode (tcp/http).
-* `uri` - The healthcheck URI, must be set only if `mode` is `http`.
+* `mode` - The healthcheck mode (`tcp`|`http`|`https`).
+* `uri` - The healthcheck URI, must be set only if `mode` is `http(s)`.
+* `tls_sni` - The healthcheck TLS SNI server name, only if `mode` is `https`.
 * `interval` - The healthcheck interval in seconds.
 * `timeout` - The healthcheck timeout in seconds.
 * `retries` - The healthcheck retries.
