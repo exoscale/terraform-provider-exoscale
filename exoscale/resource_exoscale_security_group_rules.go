@@ -605,6 +605,9 @@ func ruleToAuthorize(ctx context.Context, client *egoscale.Client, rule map[stri
 		req.IcmpType = uint8(rule["icmp_type"].(int))
 		req.IcmpCode = uint8(rule["icmp_code"].(int))
 		rs = append(rs, req)
+	} else if protocol == "AH" || protocol == "ESP" || protocol == "GRE" || protocol == "IPIP" {
+		req.Protocol = protocol
+		rs = append(rs, req)
 	} else {
 		ports := preparePorts(rule["ports"].(*schema.Set))
 		for _, portRange := range ports {
