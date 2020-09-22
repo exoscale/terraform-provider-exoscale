@@ -130,6 +130,9 @@ func resourceNLBExists(d *schema.ResourceData, meta interface{}) (bool, error) {
 
 	nlb, err := findNLB(ctx, d, meta)
 	if err != nil {
+		if err == egoscale.ErrNotFound {
+			return false, nil
+		}
 		return false, err
 	}
 
