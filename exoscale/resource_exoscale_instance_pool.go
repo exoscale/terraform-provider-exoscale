@@ -261,7 +261,7 @@ func findInstancePool(ctx context.Context, d *schema.ResourceData, meta interfac
 		instancePool = &resp.(*egoscale.GetInstancePoolResponse).InstancePools[0]
 	}
 	if instancePool == nil {
-		return nil, fmt.Errorf("Instance pool %q not found", d.Id())
+		return nil, egoscale.ErrNotFound
 	}
 
 	return instancePool, nil
@@ -272,6 +272,9 @@ func resourceInstancePoolExists(d *schema.ResourceData, meta interface{}) (bool,
 	defer cancel()
 
 	if _, err := findInstancePool(ctx, d, meta); err != nil {
+		if err == egoscale.ErrNotFound {
+			return false, nil
+		}
 		return false, err
 	}
 
