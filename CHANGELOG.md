@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.20.0 (September 22, 2020)
+
+IMPROVEMENTS:
+
+- The `exoscale_nlb_service` resource now supports HTTPS health checking ([#71](https://github.com/exoscale/terraform-provider-exoscale/pull/71))
+- `exoscale_security_group_rule*`: providing a port is no longer necessary for protocols AH, ESP, GRE and IPIP ([#78](https://github.com/exoscale/terraform-provider-exoscale/pull/78))
+
+BUG FIXES:
+
+- `exoscale_instance_pool`: improved non-existent Instance Pool handling ([#74](https://github.com/exoscale/terraform-provider-exoscale/pull/74))
+- `exoscale_nlb`: improved non-existent NLB handling ([#75](https://github.com/exoscale/terraform-provider-exoscale/pull/75))
+- `exoscale_network`: improved non-existent Private Network handling ([#77](https://github.com/exoscale/terraform-provider-exoscale/pull/77))
+
+
 ## 0.19.0 (September 2, 2020)
 
 IMPROVEMENTS:
@@ -10,7 +24,7 @@ IMPROVEMENTS:
 
 BUG FIXES:
 
-- Fixef the `exoscale_security_group_rule` resource documentation about conflicting parameters ([#67](https://github.com/exoscale/terraform-provider-exoscale/issues/67))
+- Fix the `exoscale_security_group_rule` resource documentation about conflicting parameters ([#67](https://github.com/exoscale/terraform-provider-exoscale/issues/67))
 
 CHANGES:
 
