@@ -197,7 +197,7 @@ func resourceNetworkFind(ctx context.Context, d *schema.ResourceData, meta inter
 		}
 	}
 
-	return nil, fmt.Errorf("no network found for ID %s", id)
+	return nil, egoscale.ErrNotFound
 }
 
 func resourceNetworkExists(d *schema.ResourceData, meta interface{}) (bool, error) {
@@ -206,6 +206,9 @@ func resourceNetworkExists(d *schema.ResourceData, meta interface{}) (bool, erro
 
 	networks, err := resourceNetworkFind(ctx, d, meta)
 	if err != nil {
+		if err == egoscale.ErrNotFound {
+			return false, nil
+		}
 		return false, err
 	}
 
