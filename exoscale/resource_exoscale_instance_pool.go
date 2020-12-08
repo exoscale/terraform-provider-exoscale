@@ -66,6 +66,15 @@ func resourceInstancePool() *schema.Resource {
 			Type:     schema.TypeString,
 			Optional: true,
 		},
+		"affinity_group_ids": {
+			Type:     schema.TypeSet,
+			Optional: true,
+			ForceNew: true,
+			Set:      schema.HashString,
+			Elem: &schema.Schema{
+				Type: schema.TypeString,
+			},
+		},
 		"security_group_ids": {
 			Type:     schema.TypeSet,
 			Optional: true,
@@ -154,6 +163,17 @@ func resourceInstancePoolCreate(d *schema.ResourceData, meta interface{}) error 
 		return err
 	}
 
+	antiAffinityGroupIDs := make([]egoscale.UUID, 0)
+	if aagIDsSet, ok := d.Get("affinity_group_ids").(*schema.Set); ok {
+		for _, v := range aagIDsSet.List() {
+			id, err := egoscale.ParseUUID(v.(string))
+			if err != nil {
+				return err
+			}
+			antiAffinityGroupIDs = append(antiAffinityGroupIDs, *id)
+		}
+	}
+
 	var securityGroupIDs []egoscale.UUID
 	if securityIDSet, ok := d.Get("security_group_ids").(*schema.Set); ok {
 		securityGroupIDs = make([]egoscale.UUID, securityIDSet.Len())
@@ -181,18 +201,19 @@ func resourceInstancePoolCreate(d *schema.ResourceData, meta interface{}) error 
 	userData := base64.StdEncoding.EncodeToString([]byte(d.Get("user_data").(string)))
 
 	req := &egoscale.CreateInstancePool{
-		Name:              name,
-		Description:       description,
-		KeyPair:           d.Get("key_pair").(string),
-		UserData:          userData,
-		ServiceOfferingID: serviceOffering.ID,
-		TemplateID:        egoscale.MustParseUUID(d.Get("template_id").(string)),
-		ZoneID:            zone.ID,
-		SecurityGroupIDs:  securityGroupIDs,
-		NetworkIDs:        networkIDs,
-		Size:              size,
-		RootDiskSize:      diskSize,
-		IPv6:              d.Get("ipv6").(bool),
+		Name:                 name,
+		Description:          description,
+		KeyPair:              d.Get("key_pair").(string),
+		UserData:             userData,
+		ServiceOfferingID:    serviceOffering.ID,
+		TemplateID:           egoscale.MustParseUUID(d.Get("template_id").(string)),
+		ZoneID:               zone.ID,
+		AntiAffinityGroupIDs: antiAffinityGroupIDs,
+		SecurityGroupIDs:     securityGroupIDs,
+		NetworkIDs:           networkIDs,
+		Size:                 size,
+		RootDiskSize:         diskSize,
+		IPv6:                 d.Get("ipv6").(bool),
 	}
 
 	resp, err = client.RequestWithContext(ctx, req)
@@ -233,7 +254,7 @@ func resourceInstancePoolRead(d *schema.ResourceData, meta interface{}) error {
 		return resourceInstancePoolApply(ctx, client, d, instancePool)
 	}
 
-	return fmt.Errorf("Instance pool %q not found", d.Id())
+	return fmt.Errorf("Instance Pool %q not found", d.Id())
 }
 
 func findInstancePool(ctx context.Context, d *schema.ResourceData, meta interface{}) (*egoscale.InstancePool, error) {
@@ -421,11 +442,9 @@ func resourceInstancePoolApply(ctx context.Context, client *egoscale.Client, d *
 	if err := d.Set("size", instancePool.Size); err != nil {
 		return err
 	}
-
 	if err := d.Set("disk_size", instancePool.RootDiskSize); err != nil {
 		return err
 	}
-
 	if err := d.Set("state", instancePool.State); err != nil {
 		return err
 	}
@@ -466,6 +485,14 @@ func resourceInstancePoolApply(ctx context.Context, client *egoscale.Client, d *
 	}
 
 	if err := d.Set("user_data", string(userData)); err != nil {
+		return err
+	}
+
+	antiAffinityGroupIDs := make([]string, len(instancePool.AntiAffinityGroupIDs))
+	for i, id := range instancePool.AntiAffinityGroupIDs {
+		antiAffinityGroupIDs[i] = id.String()
+	}
+	if err := d.Set("affinity_group_ids", antiAffinityGroupIDs); err != nil {
 		return err
 	}
 
