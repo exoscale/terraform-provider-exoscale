@@ -13,34 +13,48 @@ import (
 )
 
 var (
-	testAccResourceInstancePoolSSHKeyName      = testPrefix + "-" + testRandomString()
-	testAccResourceInstancePoolZoneName        = testZoneName
-	testAccResourceInstancePoolName            = testPrefix + "-" + testRandomString()
-	testAccResourceInstancePoolNameUpdated     = testAccResourceInstancePoolName + "-updated"
-	testAccResourceInstancePoolDescription     = testDescription
-	testAccResourceInstancePoolTemplateID      = testInstanceTemplateID
-	testAccResourceInstancePoolServiceOffering = "medium"
-	testAccResourceInstancePoolSize            = 2
-	testAccResourceInstancePoolDiskSize        = 10
-	testAccResourceInstancePoolDiskSizeUpdated = 20
-	testAccResourceInstancePoolSizeUpdated     = 1
-	testAccResourceInstancePoolUserData        = `#cloud-config
+	testAccResourceInstancePoolSSHKeyName            = testPrefix + "-" + testRandomString()
+	testAccResourceInstancePoolAntiAffinityGroupName = testPrefix + "-" + testRandomString()
+	testAccResourceInstancePoolSecurityGroupName     = testPrefix + "-" + testRandomString()
+	testAccResourceInstancePoolZoneName              = testZoneName
+	testAccResourceInstancePoolName                  = testPrefix + "-" + testRandomString()
+	testAccResourceInstancePoolNameUpdated           = testAccResourceInstancePoolName + "-updated"
+	testAccResourceInstancePoolDescription           = testDescription
+	testAccResourceInstancePoolDescriptionUpdated    = testDescription + " updated"
+	testAccResourceInstancePoolTemplateID            = testInstanceTemplateID
+	testAccResourceInstancePoolServiceOffering       = "small"
+	testAccResourceInstancePoolSize                  = 1
+	testAccResourceInstancePoolDiskSize              = 10
+	testAccResourceInstancePoolDiskSizeUpdated       = 20
+	testAccResourceInstancePoolSizeUpdated           = 1
+	testAccResourceInstancePoolUserData              = `#cloud-config
 package_upgrade: true
 `
 
 	testAccResourceInstancePoolConfigCreate = fmt.Sprintf(`
-resource "exoscale_ssh_keypair" "key" {
+resource "exoscale_ssh_keypair" "test" {
   name = "%s"
 }
 
-resource "exoscale_instance_pool" "pool" {
+resource "exoscale_affinity" "test" {
+  name = "%s"
+}
+
+resource "exoscale_security_group" "test" {
+  name = "%s"
+}
+
+resource "exoscale_instance_pool" "test" {
   zone = "%s"
   name = "%s"
+  description = "%s"
   template_id = "%s"
   service_offering = "%s"
   size = %d
   disk_size = %d
-  key_pair = exoscale_ssh_keypair.key.name
+  affinity_group_ids = [exoscale_affinity.test.id]
+  security_group_ids = [exoscale_security_group.test.id]
+  key_pair = exoscale_ssh_keypair.test.name
   user_data = <<EOF
 %s
 EOF
@@ -51,8 +65,11 @@ EOF
 }
 `,
 		testAccResourceInstancePoolSSHKeyName,
+		testAccResourceInstancePoolAntiAffinityGroupName,
+		testAccResourceInstancePoolSecurityGroupName,
 		testAccResourceInstancePoolZoneName,
 		testAccResourceInstancePoolName,
+		testAccResourceInstancePoolDescription,
 		testAccResourceInstancePoolTemplateID,
 		testAccResourceInstancePoolServiceOffering,
 		testAccResourceInstancePoolSize,
@@ -61,11 +78,19 @@ EOF
 	)
 
 	testAccResourceInstancePoolConfigUpdate = fmt.Sprintf(`
-resource "exoscale_ssh_keypair" "key" {
+resource "exoscale_ssh_keypair" "test" {
   name = "%s"
 }
 
-resource "exoscale_instance_pool" "pool" {
+resource "exoscale_affinity" "test" {
+  name = "%s"
+}
+
+resource "exoscale_security_group" "test" {
+  name = "%s"
+}
+
+resource "exoscale_instance_pool" "test" {
   zone = "%s"
   name = "%s"
   description = "%s"
@@ -73,7 +98,9 @@ resource "exoscale_instance_pool" "pool" {
   service_offering = "%s"
   size = %d
   disk_size = %d
-  key_pair = exoscale_ssh_keypair.key.name
+  affinity_group_ids = [exoscale_affinity.test.id]
+  security_group_ids = [exoscale_security_group.test.id]
+  key_pair = exoscale_ssh_keypair.test.name
   ipv6 = true
   user_data = <<EOF
 %s
@@ -85,9 +112,11 @@ EOF
 }
 `,
 		testAccResourceInstancePoolSSHKeyName,
+		testAccResourceInstancePoolAntiAffinityGroupName,
+		testAccResourceInstancePoolSecurityGroupName,
 		testAccResourceInstancePoolZoneName,
 		testAccResourceInstancePoolNameUpdated,
-		testAccResourceInstancePoolDescription,
+		testAccResourceInstancePoolDescriptionUpdated,
 		testAccResourceInstancePoolTemplateID,
 		testAccResourceInstancePoolServiceOffering,
 		testAccResourceInstancePoolSizeUpdated,
@@ -107,56 +136,63 @@ func TestAccResourceInstancePool(t *testing.T) {
 			{
 				Config: testAccResourceInstancePoolConfigCreate,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckResourceInstancePoolExists("exoscale_instance_pool.pool", pool),
+					testAccCheckResourceInstancePoolExists("exoscale_instance_pool.test", pool),
 					testAccCheckResourceInstancePool(pool),
 					testAccCheckResourceInstancePoolAttributes(testAttrs{
-						"zone":               ValidateString(testAccResourceInstancePoolZoneName),
-						"name":               ValidateString(testAccResourceInstancePoolName),
-						"template_id":        ValidateString(testAccResourceInstancePoolTemplateID),
-						"service_offering":   ValidateString(testAccResourceInstancePoolServiceOffering),
-						"size":               ValidateString(fmt.Sprint(testAccResourceInstancePoolSize)),
-						"disk_size":          ValidateString(fmt.Sprint(testAccResourceInstancePoolDiskSize)),
-						"key_pair":           ValidateString(testAccResourceInstancePoolSSHKeyName),
-						"virtual_machines.#": ValidateStringNot("0"),
+						"zone":                 ValidateString(testAccResourceInstancePoolZoneName),
+						"name":                 ValidateString(testAccResourceInstancePoolName),
+						"template_id":          ValidateString(testAccResourceInstancePoolTemplateID),
+						"service_offering":     ValidateString(testAccResourceInstancePoolServiceOffering),
+						"size":                 ValidateString(fmt.Sprint(testAccResourceInstancePoolSize)),
+						"disk_size":            ValidateString(fmt.Sprint(testAccResourceInstancePoolDiskSize)),
+						"affinity_group_ids.#": ValidateString("1"),
+						"security_group_ids.#": ValidateString("1"),
+						"key_pair":             ValidateString(testAccResourceInstancePoolSSHKeyName),
+						"virtual_machines.#":   ValidateString("1"),
 					}),
 				),
 			},
 			{
 				Config: testAccResourceInstancePoolConfigUpdate,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckResourceInstancePoolExists("exoscale_instance_pool.pool", pool),
+					testAccCheckResourceInstancePoolExists("exoscale_instance_pool.test", pool),
 					testAccCheckResourceInstancePool(pool),
 					testAccCheckResourceInstancePoolAttributes(testAttrs{
-						"zone":               ValidateString(testAccResourceInstancePoolZoneName),
-						"name":               ValidateString(testAccResourceInstancePoolNameUpdated),
-						"description":        ValidateString(testAccResourceInstancePoolDescription),
-						"template_id":        ValidateString(testAccResourceInstancePoolTemplateID),
-						"service_offering":   ValidateString(testAccResourceInstancePoolServiceOffering),
-						"size":               ValidateString(fmt.Sprint(testAccResourceInstancePoolSizeUpdated)),
-						"disk_size":          ValidateString(fmt.Sprint(testAccResourceInstancePoolDiskSizeUpdated)),
-						"key_pair":           ValidateString(testAccResourceInstancePoolSSHKeyName),
-						"ipv6":               ValidateString("true"),
-						"virtual_machines.#": ValidateStringNot("0"),
+						"zone":                 ValidateString(testAccResourceInstancePoolZoneName),
+						"name":                 ValidateString(testAccResourceInstancePoolNameUpdated),
+						"description":          ValidateString(testAccResourceInstancePoolDescriptionUpdated),
+						"template_id":          ValidateString(testAccResourceInstancePoolTemplateID),
+						"service_offering":     ValidateString(testAccResourceInstancePoolServiceOffering),
+						"size":                 ValidateString(fmt.Sprint(testAccResourceInstancePoolSizeUpdated)),
+						"disk_size":            ValidateString(fmt.Sprint(testAccResourceInstancePoolDiskSizeUpdated)),
+						"affinity_group_ids.#": ValidateString("1"),
+						"security_group_ids.#": ValidateString("1"),
+						"key_pair":             ValidateString(testAccResourceInstancePoolSSHKeyName),
+						"ipv6":                 ValidateString("true"),
+						"virtual_machines.#":   ValidateString("1"),
 					}),
 				),
 			},
 			{
-				ResourceName:            "exoscale_instance_pool.pool",
+				ResourceName:            "exoscale_instance_pool.test",
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"state"},
 				ImportStateCheck: func(s []*terraform.InstanceState) error {
 					return checkResourceAttributes(
 						testAttrs{
-							"zone":             ValidateString(testAccResourceInstancePoolZoneName),
-							"name":             ValidateString(testAccResourceInstancePoolNameUpdated),
-							"description":      ValidateString(testAccResourceInstancePoolDescription),
-							"template_id":      ValidateString(testAccResourceInstancePoolTemplateID),
-							"service_offering": ValidateString(testAccResourceInstancePoolServiceOffering),
-							"size":             ValidateString(fmt.Sprint(testAccResourceInstancePoolSizeUpdated)),
-							"disk_size":        ValidateString(fmt.Sprint(testAccResourceInstancePoolDiskSizeUpdated)),
-							"key_pair":         ValidateString(testAccResourceInstancePoolSSHKeyName),
-							"ipv6":             ValidateString("true"),
+							"zone":                 ValidateString(testAccResourceInstancePoolZoneName),
+							"name":                 ValidateString(testAccResourceInstancePoolNameUpdated),
+							"description":          ValidateString(testAccResourceInstancePoolDescriptionUpdated),
+							"template_id":          ValidateString(testAccResourceInstancePoolTemplateID),
+							"service_offering":     ValidateString(testAccResourceInstancePoolServiceOffering),
+							"size":                 ValidateString(fmt.Sprint(testAccResourceInstancePoolSizeUpdated)),
+							"disk_size":            ValidateString(fmt.Sprint(testAccResourceInstancePoolDiskSizeUpdated)),
+							"affinity_group_ids.#": ValidateString("1"),
+							"security_group_ids.#": ValidateString("1"),
+							"key_pair":             ValidateString(testAccResourceInstancePoolSSHKeyName),
+							"ipv6":                 ValidateString("true"),
+							"virtual_machines.#":   ValidateString("1"),
 						},
 						s[0].Attributes)
 				},

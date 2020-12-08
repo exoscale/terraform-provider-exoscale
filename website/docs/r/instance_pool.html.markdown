@@ -70,7 +70,8 @@ resource "exoscale_instance_pool" "webapp" {
 * `description` - The description of the Instance Pool.
 * `user_data` - A [cloud-init][cloudinit] configuration to apply when creating Compute instances. Whenever possible don't base64-encode neither gzip it yourself, as this will be automatically taken care of on your behalf by the provider.
 * `key_pair` - The name of the [SSH key pair][sshkeypair] to install when creating Compute instances.
-* `security_group_ids` - A list of [Security Group][sg] IDs.
+* `affinity_group_ids` - A list of [Anti-Affinity Group][r-affinity] IDs (at creation time only).
+* `security_group_ids` - A list of [Security Group][r-security_group] IDs (at creation time only).
 * `network_ids` - A list of [Private Network][privnetnet-doc] IDs.
 
 
@@ -97,6 +98,8 @@ $ terraform import exoscale_instance_pool.pool eb556678-ec59-4be6-8c54-0406ae0f6
 [cloudinit]: http://cloudinit.readthedocs.io/en/latest/
 [d-compute_template]: ../d/compute_template.html
 [privnet-doc]: https://community.exoscale.com/documentation/compute/private-networks/
+[r-affinity]: affinity.html
+[r-security_group]: security_group.html
 [size]: https://www.exoscale.com/pricing/#/compute/
 [sshkeypair]: https://community.exoscale.com/documentation/compute/ssh-keypairs/
 [template]: https://www.exoscale.com/templates/
