@@ -1,7 +1,7 @@
 # Exoscale Terraform Provider
 
 - Website: https://www.terraform.io
-- [![Actions Status](https://github.com/exoscale/terraform-provider-exoscale/workflows/CI/badge.svg)](https://github.com/exoscale/terraform-provider-exoscale/actions?query=workflow%3ACI)
+- [![Actions Status](https://github.com/exoscale/terraform-provider-exoscale/workflows/CI/badge.svg?branch=main)](https://github.com/exoscale/terraform-provider-exoscale/actions?query=workflow%3ACI+branch%3Amaster)
 - [![Gitter chat](https://badges.gitter.im/hashicorp-terraform/Lobby.png)](https://gitter.im/hashicorp-terraform/Lobby)
 - Mailing list: [Google Groups](http://groups.google.com/group/terraform-tool)
 
