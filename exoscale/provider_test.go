@@ -24,8 +24,10 @@ const (
 // testAttrs represents a map of expected resource attributes during acceptance tests.
 type testAttrs map[string]schema.SchemaValidateFunc
 
-var testAccProviders map[string]terraform.ResourceProvider
-var testAccProvider *schema.Provider
+var (
+	testAccProviders map[string]terraform.ResourceProvider
+	testAccProvider  *schema.Provider
+)
 
 var testEnvironment string
 
