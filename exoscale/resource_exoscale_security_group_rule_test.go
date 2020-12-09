@@ -230,10 +230,8 @@ func testAccCheckResourceSecurityGroupRuleDestroy(s *terraform.State) error {
 		sg := &egoscale.SecurityGroup{ID: sgID}
 		_, err = client.Get(sg)
 		if err != nil {
-			if r, ok := err.(*egoscale.ErrorResponse); ok {
-				if r.ErrorCode == egoscale.ParamError {
-					return nil
-				}
+			if errors.Is(err, egoscale.ErrNotFound) {
+				return nil
 			}
 			return err
 		}

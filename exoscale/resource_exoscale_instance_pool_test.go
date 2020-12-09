@@ -292,7 +292,7 @@ func testAccCheckResourceInstancePoolDestroy(s *terraform.State) error {
 		if instancePool.State == egoscale.InstancePoolDestroying {
 			return nil
 		}
-
 	}
+
 	return errors.New("instance pool still exists")
 }

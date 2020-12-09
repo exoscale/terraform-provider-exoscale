@@ -130,10 +130,8 @@ func testAccCheckResourceAffinityDestroy(s *terraform.State) error {
 
 		ag := &egoscale.AffinityGroup{ID: id}
 		if _, err = client.Get(ag); err != nil {
-			if r, ok := err.(*egoscale.ErrorResponse); ok {
-				if r.ErrorCode == egoscale.ParamError {
-					return nil
-				}
+			if errors.Is(err, egoscale.ErrNotFound) {
+				return nil
 			}
 			return err
 		}
