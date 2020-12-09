@@ -295,10 +295,8 @@ func testAccCheckResourceComputeDestroy(s *terraform.State) error {
 		vm := &egoscale.VirtualMachine{ID: id}
 		_, err = client.Get(vm)
 		if err != nil {
-			if r, ok := err.(*egoscale.ErrorResponse); ok {
-				if r.ErrorCode == egoscale.ParamError {
-					return nil
-				}
+			if errors.Is(err, egoscale.ErrNotFound) {
+				return nil
 			}
 			return err
 		}

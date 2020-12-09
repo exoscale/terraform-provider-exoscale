@@ -187,10 +187,8 @@ func testAccCheckResourceNetworkDestroy(s *terraform.State) error {
 		key := &egoscale.Network{ID: id}
 		_, err = client.Get(key)
 		if err != nil {
-			if r, ok := err.(*egoscale.ErrorResponse); ok {
-				if r.ErrorCode == egoscale.ParamError {
-					return nil
-				}
+			if errors.Is(err, egoscale.ErrNotFound) {
+				return nil
 			}
 			return err
 		}

@@ -208,10 +208,8 @@ func testAccCheckResourceNICDestroy(s *terraform.State) error {
 		nic := &egoscale.Nic{VirtualMachineID: vmID}
 		_, err = client.Get(nic)
 		if err != nil {
-			if r, ok := err.(*egoscale.ErrorResponse); ok {
-				if r.ErrorCode == egoscale.ParamError {
-					return nil
-				}
+			if errors.Is(err, egoscale.ErrNotFound) {
+				return nil
 			}
 			return err
 		}

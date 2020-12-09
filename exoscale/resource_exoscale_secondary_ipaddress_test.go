@@ -158,10 +158,8 @@ func testAccCheckResourceSecondaryIPAddressDestroy(s *terraform.State) error {
 		vm := &egoscale.VirtualMachine{ID: vmID}
 		_, err = client.Get(vm)
 		if err != nil {
-			if r, ok := err.(*egoscale.ErrorResponse); ok {
-				if r.ErrorCode == egoscale.ParamError {
-					return nil
-				}
+			if errors.Is(err, egoscale.ErrNotFound) {
+				return nil
 			}
 			return err
 		}

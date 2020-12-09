@@ -2,6 +2,7 @@ package exoscale
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/user"
@@ -305,7 +306,11 @@ func handleNotFound(d *schema.ResourceData, err error) error {
 			return nil
 		}
 		return r
+	} else if errors.Is(err, egoscale.ErrNotFound) {
+		d.SetId("")
+		return nil
 	}
+
 	return err
 }
 

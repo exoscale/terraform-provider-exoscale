@@ -1,6 +1,12 @@
 Changelog
 =========
 
+0.36.2
+------
+
+- fix: `CreateInstancePool.AntiAffinityGroupIDs` field is optional (#459)
+
+
 0.36.1
 ------
 
