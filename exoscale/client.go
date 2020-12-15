@@ -38,7 +38,7 @@ type BaseConfig struct {
 func getClient(endpoint string, meta interface{}) *egoscale.Client {
 	config := meta.(BaseConfig)
 
-	httpClient := cleanhttp.DefaultClient()
+	httpClient := cleanhttp.DefaultPooledClient()
 	httpClient.Transport = &defaultTransport{transport: httpClient.Transport}
 	if logging.IsDebugOrHigher() {
 		httpClient.Transport = logging.NewTransport(
