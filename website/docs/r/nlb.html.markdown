@@ -8,7 +8,7 @@ description: |-
 
 # exoscale\_nlb
 
-Provides an Exoscale Network Load Balancer (NLB) resource. This can be used to create, modify, and delete NLBs.
+Provides an Exoscale [Network Load Balancer][nlb-doc] (NLB) resource. This can be used to create, modify, and delete NLBs.
 
 
 ## Example Usage
@@ -54,6 +54,7 @@ $ terraform import exoscale_nlb.website eb556678-ec59-4be6-8c54-0406ae0f6da6
 ~> **NOTE:** Importing a NLB resource also imports related [`exoscale_nlb_service`][r-nlb_service] resources.
 
 
+[nlb-doc]: https://community.exoscale.com/documentation/compute/network-load-balancer/
 [r-nlb_service]: nlb_service.html
 [zone]: https://www.exoscale.com/datacenters/
 
