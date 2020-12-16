@@ -1,6 +1,11 @@
 Changelog
 =========
 
+0.37.1
+------
+
+- fix: `UpdateIPAddress.HealthcheckTLSSkipVerify` field always set to `false` (#462)
+
 0.37.0
 ------
 
