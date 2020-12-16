@@ -9,13 +9,15 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/logging"
 )
 
-const defaultConfig = "cloudstack.ini"
-const defaultProfile = "cloudstack"
-const defaultComputeEndpoint = "https://api.exoscale.com/v1"
-const defaultDNSEndpoint = "https://api.exoscale.com/dns"
-const defaultEnvironment = "api"
-const defaultTimeout = 5 * time.Minute
-const defaultGzipUserData = true
+const (
+	defaultConfig          = "cloudstack.ini"
+	defaultProfile         = "cloudstack"
+	defaultComputeEndpoint = "https://api.exoscale.com/v1"
+	defaultDNSEndpoint     = "https://api.exoscale.com/dns"
+	defaultEnvironment     = "api"
+	defaultTimeout         = 5 * time.Minute
+	defaultGzipUserData    = true
+)
 
 // userAgent represents the User Agent to advertise in outgoing HTTP requests.
 var userAgent string
@@ -35,21 +37,23 @@ type BaseConfig struct {
 
 func getClient(endpoint string, meta interface{}) *egoscale.Client {
 	config := meta.(BaseConfig)
-	cs := egoscale.NewClient(endpoint, config.key, config.secret)
 
-	cs.Timeout = config.timeout
-	cs.HTTPClient = cleanhttp.DefaultPooledClient()
-	cs.HTTPClient.Timeout = config.timeout
-	cs.HTTPClient.Transport = &defaultTransport{transport: cs.HTTPClient.Transport}
-
+	httpClient := cleanhttp.DefaultPooledClient()
+	httpClient.Transport = &defaultTransport{transport: httpClient.Transport}
 	if logging.IsDebugOrHigher() {
-		cs.HTTPClient.Transport = logging.NewTransport(
+		httpClient.Transport = logging.NewTransport(
 			"exoscale",
-			cs.HTTPClient.Transport,
+			httpClient.Transport,
 		)
 	}
 
-	return cs
+	return egoscale.NewClient(
+		endpoint,
+		config.key,
+		config.secret,
+		egoscale.WithHTTPClient(httpClient),
+		egoscale.WithTimeout(config.timeout),
+	)
 }
 
 // GetComputeClient builds a CloudStack client
