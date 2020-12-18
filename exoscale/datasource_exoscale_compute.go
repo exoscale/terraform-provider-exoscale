@@ -109,14 +109,17 @@ func dataSourceComputeRead(d *schema.ResourceData, meta interface{}) error {
 	computeName, byName := d.GetOk("hostname")
 	computeID, byID := d.GetOk("id")
 	computeTag, byTag := d.GetOk("tags")
+
 	switch {
-	case !byName && !byID && !byTag:
-		return errors.New("either hostname, id or tags must be specified")
-	case computeID != "":
+	case byName:
+		req.Name = computeName.(string)
+
+	case byID:
 		var err error
 		if req.ID, err = egoscale.ParseUUID(computeID.(string)); err != nil {
 			return fmt.Errorf("invalid value for id: %s", err)
 		}
+
 	case byTag:
 		for key, value := range computeTag.(map[string]interface{}) {
 			req.Tags = append(req.Tags, egoscale.ResourceTag{
@@ -124,97 +127,94 @@ func dataSourceComputeRead(d *schema.ResourceData, meta interface{}) error {
 				Value: value.(string),
 			})
 		}
+
 	default:
-		req.Name = computeName.(string)
+		return errors.New("either hostname, id or tags must be specified")
 	}
 
 	resp, err := client.GetWithContext(ctx, &req)
 	if err != nil {
 		return err
 	}
+	instance := resp.(*egoscale.VirtualMachine)
 
-	c := resp.(*egoscale.VirtualMachine)
+	// Querying VM NICs separately because the non-default NICs IP addresses
+	// are not returned in the CS listVirtualMachines operation results.
+	resp, err = client.RequestWithContext(ctx, &egoscale.ListNics{VirtualMachineID: instance.ID})
+	if err != nil {
+		return err
+	}
+	instance.Nic = resp.(*egoscale.ListNicsResponse).Nic
 
 	resp, err = client.GetWithContext(ctx, &egoscale.Volume{
-		VirtualMachineID: c.ID,
+		VirtualMachineID: instance.ID,
 		Type:             "ROOT",
 	})
 	if err != nil {
 		return err
 	}
+	diskSize := resp.(*egoscale.Volume).Size >> 30
 
-	ds := resp.(*egoscale.Volume).Size >> 30
-
-	resp, err = client.RequestWithContext(ctx, &egoscale.ListNics{
-		VirtualMachineID: c.ID,
-	})
-	if err != nil {
-		return err
-	}
-	n := resp.(*egoscale.ListNicsResponse).Nic
-
-	return dataSourceComputeApply(d, c, n, ds)
+	return dataSourceComputeApply(d, instance, diskSize)
 }
 
-func dataSourceComputeApply(d *schema.ResourceData, compute *egoscale.VirtualMachine, nics []egoscale.Nic, diskSize uint64) error {
-	d.SetId(compute.ID.String())
+func dataSourceComputeApply(d *schema.ResourceData, instance *egoscale.VirtualMachine, diskSize uint64) error {
+	d.SetId(instance.ID.String())
 
 	if err := d.Set("id", d.Id()); err != nil {
 		return err
 	}
-	if err := d.Set("hostname", compute.Name); err != nil {
+	if err := d.Set("hostname", instance.Name); err != nil {
 		return err
 	}
-	if err := d.Set("created", compute.Created); err != nil {
+	if err := d.Set("created", instance.Created); err != nil {
 		return err
 	}
-	if err := d.Set("zone", compute.ZoneName); err != nil {
+	if err := d.Set("zone", instance.ZoneName); err != nil {
 		return err
 	}
-	if err := d.Set("template", compute.TemplateName); err != nil {
+	if err := d.Set("template", instance.TemplateName); err != nil {
 		return err
 	}
-	if err := d.Set("size", compute.ServiceOfferingName); err != nil {
+	if err := d.Set("size", instance.ServiceOfferingName); err != nil {
 		return err
 	}
 	if err := d.Set("disk_size", diskSize); err != nil {
 		return err
 	}
-	if err := d.Set("cpu", compute.CPUNumber); err != nil {
+	if err := d.Set("cpu", instance.CPUNumber); err != nil {
 		return err
 	}
-	if err := d.Set("memory", compute.Memory); err != nil {
+	if err := d.Set("memory", instance.Memory); err != nil {
 		return err
 	}
-	if err := d.Set("state", compute.State); err != nil {
+	if err := d.Set("state", instance.State); err != nil {
 		return err
 	}
-	if err := d.Set("ip_address", compute.IP().String()); err != nil {
+	if err := d.Set("ip_address", instance.DefaultNic().IPAddress.String()); err != nil {
+		return err
+	}
+	if err := d.Set("ip6_address", instance.DefaultNic().IP6Address.String()); err != nil {
+		return err
+	}
+
+	privateNetworkIPs := make([]string, 0)
+	for _, nic := range instance.Nic {
+		if nic.IsDefault {
+			continue
+		}
+		privateNetworkIPs = append(privateNetworkIPs, nic.IPAddress.String())
+	}
+	if err := d.Set("private_network_ip_addresses", privateNetworkIPs); err != nil {
 		return err
 	}
 
 	tags := make(map[string]interface{})
-	for _, tag := range compute.Tags {
+	for _, tag := range instance.Tags {
 		tags[tag.Key] = tag.Value
 	}
 	if err := d.Set("tags", tags); err != nil {
 		return err
-	}
-
-	privateIP := make([]string, 0)
-	for _, nic := range nics {
-		switch {
-		case nic.IsDefault && nic.IP6Address != nil:
-			if err := d.Set("ip6_address", nic.IP6Address.String()); err != nil {
-				return err
-			}
-		case !nic.IsDefault && nic.IPAddress != nil:
-			privateIP = append(privateIP, nic.IPAddress.String())
-		}
-	}
-
-	if len(privateIP) > 0 {
-		return d.Set("private_network_ip_addresses", privateIP)
 	}
 
 	return nil
