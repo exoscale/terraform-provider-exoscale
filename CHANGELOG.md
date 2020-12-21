@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.21.0 (December 21, 2020)
+
+FEATURES:
+
+- **New Data Source:** `exoscale_nlb` ([#85](https://github.com/exoscale/terraform-provider-exoscale/pull/85))
+
+IMPROVEMENTS:
+
+- The `instance_pool` resource now supports Anti-Affinity Groups
+
+BUG FIXES:
+
+- Fix client API request tracing
+- Fix non-existing resource error method
+
+
 ## 0.20.0 (September 22, 2020)
 
 IMPROVEMENTS:
