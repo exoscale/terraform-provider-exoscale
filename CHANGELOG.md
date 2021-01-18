@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.21.1 (January 18, 2021)
+
+IMPROVEMENTS:
+
+- Updating a `exoscale_compute` resource's `security_groups`/`security_group_ids` attributes no longer reboots the related Compute instance
+
+
 ## 0.21.0 (December 21, 2020)
 
 FEATURES:
