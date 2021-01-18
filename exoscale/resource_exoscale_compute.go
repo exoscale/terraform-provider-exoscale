@@ -607,8 +607,6 @@ func resourceComputeUpdate(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	if d.HasChange("security_groups") {
-		rebootRequired = true
-
 		securityGroupIDs := make([]egoscale.UUID, 0)
 		if securitySet, ok := d.Get("security_groups").(*schema.Set); ok {
 			for _, group := range securitySet.List() {
@@ -624,10 +622,14 @@ func resourceComputeUpdate(d *schema.ResourceData, meta interface{}) error {
 			return errors.New("a Compute instance must have at least one Security Group, none found")
 		}
 
-		req.SecurityGroupIDs = securityGroupIDs
+		commands = append(commands, partialCommand{
+			partial: "security_groups",
+			request: &egoscale.UpdateVirtualMachineSecurityGroups{
+				ID:               id,
+				SecurityGroupIDs: securityGroupIDs,
+			},
+		})
 	} else if d.HasChange("security_group_ids") {
-		rebootRequired = true
-
 		securityGroupIDs := make([]egoscale.UUID, 0)
 		if securitySet, ok := d.Get("security_group_ids").(*schema.Set); ok {
 			for _, group := range securitySet.List() {
@@ -643,7 +645,13 @@ func resourceComputeUpdate(d *schema.ResourceData, meta interface{}) error {
 			return errors.New("a Compute instance must have at least one Security Group, none found")
 		}
 
-		req.SecurityGroupIDs = securityGroupIDs
+		commands = append(commands, partialCommand{
+			partial: "security_groups",
+			request: &egoscale.UpdateVirtualMachineSecurityGroups{
+				ID:               id,
+				SecurityGroupIDs: securityGroupIDs,
+			},
+		})
 	}
 
 	if d.HasChange("disk_size") {
