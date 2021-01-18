@@ -58,16 +58,16 @@ github.com/bgentry/go-netrc/netrc
 github.com/bgentry/speakeasy
 # github.com/davecgh/go-spew v1.1.1
 github.com/davecgh/go-spew/spew
-# github.com/deepmap/oapi-codegen v1.4.1
+# github.com/deepmap/oapi-codegen v1.4.2
 github.com/deepmap/oapi-codegen/pkg/runtime
 github.com/deepmap/oapi-codegen/pkg/types
-# github.com/exoscale/egoscale v0.37.1
+# github.com/exoscale/egoscale v0.39.1
 github.com/exoscale/egoscale
 github.com/exoscale/egoscale/api/v2
 github.com/exoscale/egoscale/internal/v2
 # github.com/fatih/color v1.7.0
 github.com/fatih/color
-# github.com/gofrs/uuid v3.3.0+incompatible
+# github.com/gofrs/uuid v4.0.0+incompatible
 github.com/gofrs/uuid
 # github.com/golang/protobuf v1.3.4
 github.com/golang/protobuf/proto
@@ -189,8 +189,9 @@ github.com/hashicorp/terraform-svchost/auth
 github.com/hashicorp/terraform-svchost/disco
 # github.com/hashicorp/yamux v0.0.0-20181012175058-2f1d1f20f75d
 github.com/hashicorp/yamux
-# github.com/jarcoal/httpmock v1.0.6
+# github.com/jarcoal/httpmock v1.0.7
 github.com/jarcoal/httpmock
+github.com/jarcoal/httpmock/internal
 # github.com/jmespath/go-jmespath v0.0.0-20180206201540-c2b33e8439af
 github.com/jmespath/go-jmespath
 # github.com/mattn/go-colorable v0.1.6
@@ -229,7 +230,7 @@ github.com/spf13/afero
 github.com/spf13/afero/mem
 # github.com/stretchr/objx v0.3.0
 github.com/stretchr/objx
-# github.com/stretchr/testify v1.6.1
+# github.com/stretchr/testify v1.7.0
 github.com/stretchr/testify/assert
 github.com/stretchr/testify/mock
 github.com/stretchr/testify/require
@@ -377,5 +378,5 @@ google.golang.org/grpc/tap
 google.golang.org/grpc/test/bufconn
 # gopkg.in/ini.v1 v1.48.0
 gopkg.in/ini.v1
-# gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
+# gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 gopkg.in/yaml.v3

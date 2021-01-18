@@ -1,6 +1,21 @@
 Changelog
 =========
 
+0.39.1
+------
+
+- fix: add missing `UpdateVirtualMachineSecurityGroups` operation metadata
+
+0.39.0
+------
+
+- feature: add `UpdateVirtualMachineSecurityGroups` operation (#464)
+
+0.38.0
+------
+
+- feature: add `SKSCluster.EvictNodepoolMembers()` and `ListSKSClusterVersions()` methods
+
 0.37.1
 ------
 
