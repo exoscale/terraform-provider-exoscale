@@ -70,7 +70,7 @@ github.com/emirpasic/gods/lists/arraylist
 github.com/emirpasic/gods/trees
 github.com/emirpasic/gods/trees/binaryheap
 github.com/emirpasic/gods/utils
-# github.com/exoscale/egoscale v0.39.1
+# github.com/exoscale/egoscale v0.41.0
 github.com/exoscale/egoscale
 github.com/exoscale/egoscale/api/v2
 github.com/exoscale/egoscale/internal/v2

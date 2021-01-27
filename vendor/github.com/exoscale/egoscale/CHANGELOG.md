@@ -1,6 +1,23 @@
 Changelog
 =========
 
+0.41.0
+------
+
+- feature: new method `ListZones()`
+
+0.40.1
+------
+
+- Improve API v2 async job tests and error reporting (#466)
+
+0.40.0
+------
+
+- feature: new method `UpgradeSKSCluster()`
+- feature: new fields `SKSCluster.Level` and `SKSCluster.CNI`
+- change: `SKSCluster.EnableExoscaleCloudController` replaced with `SKSCluster.AddOns`
+
 0.39.1
 ------
 
