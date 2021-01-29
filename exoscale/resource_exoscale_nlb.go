@@ -306,9 +306,12 @@ func findNLB(ctx context.Context, d *schema.ResourceData, meta interface{}) (*eg
 			return nil, err
 		}
 
-		nlb = n
-		if err := d.Set("zone", zone.Name); err != nil {
-			return nil, err
+		if n != nil {
+			nlb = n
+			if err := d.Set("zone", zone.Name); err != nil {
+				return nil, err
+			}
+			break
 		}
 	}
 
