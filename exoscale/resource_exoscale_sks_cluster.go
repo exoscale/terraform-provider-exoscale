@@ -1,0 +1,372 @@
+package exoscale
+
+import (
+	"context"
+	"fmt"
+	"log"
+
+	apiv2 "github.com/exoscale/egoscale/api/v2"
+
+	"github.com/exoscale/egoscale"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+)
+
+const (
+	defaultSKSClusterVersion      = "1.20.2"
+	defaultSKSClusterCNI          = "calico"
+	defaultSKSClusterServiceLevel = "pro"
+)
+
+var defaultSKSClusterAddOns = []string{"exoscale-cloud-controller"}
+
+func resourceSKSClusterIDString(d resourceIDStringer) string {
+	return resourceIDString(d, "exoscale_sks_cluster")
+}
+
+func resourceSKSCluster() *schema.Resource {
+	s := map[string]*schema.Schema{
+		"addons": {
+			Type:     schema.TypeSet,
+			Set:      schema.HashString,
+			Elem:     &schema.Schema{Type: schema.TypeString},
+			Optional: true,
+			Computed: true,
+			DefaultFunc: func() schema.SchemaDefaultFunc {
+				return func() (interface{}, error) { return defaultSKSClusterAddOns, nil }
+			}(),
+		},
+		"cni": {
+			Type:     schema.TypeString,
+			Optional: true,
+			Default:  defaultSKSClusterCNI,
+		},
+		"created_at": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"description": {
+			Type:     schema.TypeString,
+			Optional: true,
+		},
+		"endpoint": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"name": {
+			Type:     schema.TypeString,
+			Required: true,
+		},
+		"nodepools": {
+			Type:     schema.TypeSet,
+			Computed: true,
+			Set:      schema.HashString,
+			Elem:     &schema.Schema{Type: schema.TypeString},
+		},
+		"service_level": {
+			Type:     schema.TypeString,
+			Optional: true,
+			Default:  defaultSKSClusterServiceLevel,
+		},
+		"state": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"version": {
+			Type:     schema.TypeString,
+			Optional: true,
+			Default:  defaultSKSClusterVersion,
+		},
+		"zone": {
+			Type:     schema.TypeString,
+			Required: true,
+			ForceNew: true,
+		},
+	}
+
+	return &schema.Resource{
+		Schema: s,
+
+		Create: resourceSKSClusterCreate,
+		Read:   resourceSKSClusterRead,
+		Update: resourceSKSClusterUpdate,
+		Delete: resourceSKSClusterDelete,
+		Exists: resourceSKSClusterExists,
+
+		Importer: &schema.ResourceImporter{
+			State: resourceSKSClusterImport,
+		},
+
+		Timeouts: &schema.ResourceTimeout{
+			Create: schema.DefaultTimeout(defaultTimeout),
+			Read:   schema.DefaultTimeout(defaultTimeout),
+			Update: schema.DefaultTimeout(defaultTimeout),
+			Delete: schema.DefaultTimeout(defaultTimeout),
+		},
+	}
+}
+
+func resourceSKSClusterCreate(d *schema.ResourceData, meta interface{}) error {
+	log.Printf("[DEBUG] %s: beginning create", resourceSKSClusterIDString(d))
+
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutCreate))
+	defer cancel()
+	client := GetComputeClient(meta)
+
+	zone := d.Get("zone").(string)
+
+	addOns := defaultSKSClusterAddOns
+	if addonsSet, ok := d.Get("addons").(*schema.Set); ok && addonsSet.Len() > 0 {
+		addOns = make([]string, addonsSet.Len())
+		for i, a := range addonsSet.List() {
+			addOns[i] = a.(string)
+		}
+	}
+
+	ctx = apiv2.WithEndpoint(ctx, apiv2.NewReqEndpoint(getEnvironment(meta), zone))
+	cluster, err := client.CreateSKSCluster(
+		ctx,
+		zone,
+		&egoscale.SKSCluster{
+			Name:         d.Get("name").(string),
+			Description:  d.Get("description").(string),
+			Version:      d.Get("version").(string),
+			ServiceLevel: d.Get("service_level").(string),
+			CNI:          d.Get("cni").(string),
+			AddOns:       addOns,
+		},
+	)
+	if err != nil {
+		return err
+	}
+
+	d.SetId(cluster.ID)
+
+	log.Printf("[DEBUG] %s: create finished successfully", resourceSKSClusterIDString(d))
+
+	return resourceSKSClusterRead(d, meta)
+}
+
+func resourceSKSClusterRead(d *schema.ResourceData, meta interface{}) error {
+	log.Printf("[DEBUG] %s: beginning read", resourceSKSClusterIDString(d))
+
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
+	defer cancel()
+
+	cluster, err := findSKSCluster(ctx, d, meta)
+	if err != nil {
+		return err
+	}
+
+	if cluster == nil {
+		return fmt.Errorf("SKS cluster %q not found", d.Id())
+	}
+
+	log.Printf("[DEBUG] %s: read finished successfully", resourceSKSClusterIDString(d))
+
+	return resourceSKSClusterApply(d, cluster)
+}
+
+func resourceSKSClusterExists(d *schema.ResourceData, meta interface{}) (bool, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
+	defer cancel()
+
+	cluster, err := findSKSCluster(ctx, d, meta)
+	if err != nil {
+		if err == egoscale.ErrNotFound {
+			return false, nil
+		}
+		return false, err
+	}
+
+	if cluster == nil {
+		return false, nil
+	}
+
+	return true, nil
+}
+
+func resourceSKSClusterUpdate(d *schema.ResourceData, meta interface{}) error {
+	log.Printf("[DEBUG] %s: beginning update", resourceSKSClusterIDString(d))
+
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutUpdate))
+	defer cancel()
+	client := GetComputeClient(meta)
+
+	cluster, err := findSKSCluster(ctx, d, meta)
+	if err != nil {
+		return err
+	}
+
+	if cluster == nil {
+		return fmt.Errorf("SKS cluster %q not found", d.Id())
+	}
+
+	if d.HasChange("name") {
+		cluster.Name = d.Get("name").(string)
+	}
+
+	if d.HasChange("description") {
+		cluster.Description = d.Get("description").(string)
+	}
+
+	zone := d.Get("zone").(string)
+
+	ctx = apiv2.WithEndpoint(ctx, apiv2.NewReqEndpoint(getEnvironment(meta), zone))
+	if err = client.UpdateSKSCluster(ctx, zone, cluster); err != nil {
+		return err
+	}
+
+	log.Printf("[DEBUG] %s: update finished successfully", resourceSKSClusterIDString(d))
+
+	return resourceSKSClusterRead(d, meta)
+}
+
+func resourceSKSClusterDelete(d *schema.ResourceData, meta interface{}) error {
+	log.Printf("[DEBUG] %s: beginning delete", resourceSKSClusterIDString(d))
+
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutDelete))
+	defer cancel()
+
+	client := GetComputeClient(meta)
+
+	zone := d.Get("zone").(string)
+
+	ctx = apiv2.WithEndpoint(ctx, apiv2.NewReqEndpoint(getEnvironment(meta), zone))
+	err := client.DeleteSKSCluster(ctx, zone, d.Id())
+	if err != nil {
+		return err
+	}
+
+	log.Printf("[DEBUG] %s: delete finished successfully", resourceSKSClusterIDString(d))
+
+	return nil
+}
+
+func resourceSKSClusterImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	log.Printf("[DEBUG] %s: beginning import", resourceSKSClusterIDString(d))
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
+	defer cancel()
+
+	cluster, err := findSKSCluster(ctx, d, meta)
+	if err != nil {
+		return nil, err
+	}
+
+	if cluster == nil {
+		return nil, fmt.Errorf("SKS cluster %q not found", d.Id())
+	}
+
+	if err := resourceSKSClusterApply(d, cluster); err != nil {
+		return nil, err
+	}
+
+	resources := []*schema.ResourceData{d}
+	for _, nodepool := range cluster.Nodepools {
+		resource := resourceSKSNodepool()
+		d := resource.Data(nil)
+		d.SetType("exoscale_sks_nodepool")
+		d.SetId(nodepool.ID)
+		err := resourceSKSNodepoolApply(d, meta, nodepool)
+		if err != nil {
+			return nil, err
+		}
+
+		resources = append(resources, d)
+	}
+
+	log.Printf("[DEBUG] %s: import finished successfully", resourceSKSClusterIDString(d))
+
+	return resources, nil
+}
+
+func resourceSKSClusterApply(d *schema.ResourceData, cluster *egoscale.SKSCluster) error {
+	if err := d.Set("addons", cluster.AddOns); err != nil {
+		return err
+	}
+
+	if err := d.Set("cni", cluster.CNI); err != nil {
+		return err
+	}
+
+	if err := d.Set("created_at", cluster.CreatedAt.String()); err != nil {
+		return err
+	}
+
+	if err := d.Set("description", cluster.Description); err != nil {
+		return err
+	}
+
+	if err := d.Set("endpoint", cluster.Endpoint); err != nil {
+		return err
+	}
+
+	if err := d.Set("name", cluster.Name); err != nil {
+		return err
+	}
+
+	nodepools := make([]string, len(cluster.Nodepools))
+	for i, nodepool := range cluster.Nodepools {
+		nodepools[i] = nodepool.ID
+	}
+	if err := d.Set("nodepools", nodepools); err != nil {
+		return err
+	}
+
+	if err := d.Set("service_level", cluster.ServiceLevel); err != nil {
+		return err
+	}
+
+	if err := d.Set("state", cluster.State); err != nil {
+		return err
+	}
+
+	if err := d.Set("version", cluster.Version); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func findSKSCluster(ctx context.Context, d *schema.ResourceData, meta interface{}) (*egoscale.SKSCluster, error) {
+	client := GetComputeClient(meta)
+
+	if zone, ok := d.GetOk("zone"); ok {
+		ctx = apiv2.WithEndpoint(ctx, apiv2.NewReqEndpoint(getEnvironment(meta), zone.(string)))
+		cluster, err := client.GetSKSCluster(ctx, zone.(string), d.Id())
+		if err != nil {
+			return nil, err
+		}
+
+		return cluster, nil
+	}
+
+	zones, err := client.ListZones(apiv2.WithEndpoint(ctx, apiv2.NewReqEndpoint(getEnvironment(meta), defaultZone)))
+	if err != nil {
+		return nil, err
+	}
+
+	var cluster *egoscale.SKSCluster
+	for _, zone := range zones {
+		c, err := client.GetSKSCluster(
+			apiv2.WithEndpoint(ctx, apiv2.NewReqEndpoint(getEnvironment(meta), zone)),
+			zone,
+			d.Id())
+		if err != nil {
+			if err == egoscale.ErrNotFound {
+				continue
+			}
+
+			return nil, err
+		}
+
+		if c != nil {
+			cluster = c
+			if err := d.Set("zone", zone); err != nil {
+				return nil, err
+			}
+			break
+		}
+	}
+
+	return cluster, nil
+}

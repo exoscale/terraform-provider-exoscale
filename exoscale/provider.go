@@ -22,6 +22,7 @@ import (
 const (
 	legacyAPIVersion = "compute"
 	apiVersion       = "v1"
+	defaultZone      = "ch-gva-2"
 )
 
 func init() {
@@ -139,11 +140,11 @@ func Provider() terraform.ResourceProvider {
 
 		DataSourcesMap: map[string]*schema.Resource{
 			"exoscale_affinity":          dataSourceAffinity(),
+			"exoscale_compute":           dataSourceCompute(),
 			"exoscale_compute_ipaddress": dataSourceComputeIPAddress(),
 			"exoscale_compute_template":  dataSourceComputeTemplate(),
 			"exoscale_domain":            dataSourceDomain(),
 			"exoscale_domain_record":     dataSourceDomainRecord(),
-			"exoscale_compute":           dataSourceCompute(),
 			"exoscale_network":           dataSourceNetwork(),
 			"exoscale_nlb":               dataSourceNLB(),
 			"exoscale_security_group":    dataSourceSecurityGroup(),
@@ -152,18 +153,20 @@ func Provider() terraform.ResourceProvider {
 		ResourcesMap: map[string]*schema.Resource{
 			"exoscale_affinity":             resourceAffinity(),
 			"exoscale_compute":              resourceCompute(),
-			"exoscale_instance_pool":        resourceInstancePool(),
-			"exoscale_domain_record":        resourceDomainRecord(),
 			"exoscale_domain":               resourceDomain(),
+			"exoscale_domain_record":        resourceDomainRecord(),
+			"exoscale_instance_pool":        resourceInstancePool(),
 			"exoscale_ipaddress":            resourceIPAddress(),
 			"exoscale_network":              resourceNetwork(),
 			"exoscale_nic":                  resourceNIC(),
 			"exoscale_nlb":                  resourceNLB(),
 			"exoscale_nlb_service":          resourceNLBService(),
 			"exoscale_secondary_ipaddress":  resourceSecondaryIPAddress(),
+			"exoscale_security_group":       resourceSecurityGroup(),
 			"exoscale_security_group_rule":  resourceSecurityGroupRule(),
 			"exoscale_security_group_rules": resourceSecurityGroupRules(),
-			"exoscale_security_group":       resourceSecurityGroup(),
+			"exoscale_sks_cluster":          resourceSKSCluster(),
+			"exoscale_sks_nodepool":         resourceSKSNodepool(),
 			"exoscale_ssh_keypair":          resourceSSHKeypair(),
 		},
 
