@@ -34,6 +34,13 @@ In addition to the arguments listed above, the following attributes are exported
 * `tags` - A dictionary of tags (key/value). To remove all tags, set `tags = {}`.
 
 
+## Attributes Reference
+
+In addition to the arguments listed above, the following attributes are exported:
+
+* `id` - The ID of the Security Group.
+
+
 ## Import
 
 An existing Security Group can be imported as a resource by name or ID:

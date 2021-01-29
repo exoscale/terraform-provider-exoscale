@@ -79,6 +79,7 @@ EOF
 
 In addition to the arguments listed above, the following attributes are exported:
 
+* `id` - The ID of the Compute instance.
 * `name` - **Deprecated** The Compute instance *hostname*. Use the `hostname` attribute instead.
 * `username` - The user to use to connect to the Compute instance with SSH. If you've referenced a *custom template* in the resource, use the [`compute_template`][d-compute_template] data source `username` attribute instead.
 * `password` - The initial Compute instance password and/or encrypted password.

@@ -79,6 +79,7 @@ resource "exoscale_instance_pool" "webapp" {
 
 In addition to the arguments listed above, the following attributes are exported:
 
+* `id` – The ID of the Instance Pool.
 * `virtual_machines` – The list of Instance Pool members (Compute instance names).
 
 

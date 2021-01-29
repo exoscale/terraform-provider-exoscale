@@ -92,7 +92,7 @@ resource "exoscale_nlb_service" "website" {
 
 In addition to the arguments listed above, the following attributes are exported:
 
-* n/a
+* `id` - The ID of the NLB service.
 
 
 ## Import

@@ -56,7 +56,7 @@ resource "exoscale_network" "managed" {
 
 In addition to the arguments listed above, the following attributes are exported:
 
-* n/a
+* `id` - The ID of the Private Network.
 
 
 ## Import

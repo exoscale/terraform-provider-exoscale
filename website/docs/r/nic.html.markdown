@@ -40,6 +40,7 @@ resource "exoscale_nic" "oob" {
 
 In addition to the arguments listed above, the following attributes are exported:
 
+* `id` - The ID of the Compute instance NIC.
 * `mac_address` - The physical address (MAC) of the Compute instance NIC.
 
 
