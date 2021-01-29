@@ -37,6 +37,7 @@ resource "exoscale_nlb" "website" {
 
 In addition to the arguments listed above, the following attributes are exported:
 
+* `id` - The ID of the NLB.
 * `ip_address` - The public IP address of the NLB.
 * `state` - The current state of the NLB.
 * `created_at` - The creation date of the NLB.
