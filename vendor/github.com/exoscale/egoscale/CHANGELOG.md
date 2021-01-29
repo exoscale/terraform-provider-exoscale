@@ -1,6 +1,12 @@
 Changelog
 =========
 
+0.42.0
+------
+
+- feature: new `SKSNodepool.AntiAffinityGroupIDs` field
+- change: `SKSCluster.Level` field renamed as `SKSCluster.ServiceLevel`
+
 0.41.0
 ------
 
