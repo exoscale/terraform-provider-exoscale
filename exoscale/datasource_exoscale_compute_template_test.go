@@ -11,12 +11,7 @@ import (
 )
 
 const (
-	// Reference template used for tests: "Linux Ubuntu 20.04 LTS 64-bit" @ ch-gva-2 (featured)
-	// cs --region cloudstack listTemplates \
-	//     templatefilter=featured \
-	//     zoneid=1128bd56-b4d9-4ac6-a7b9-c715b187ce11 \
-	//     name="Linux Ubuntu 20.04 LTS 64-bit"
-	dataSourceComputeTemplateID       = "806adb6b-a35b-4033-b000-8bec1b986c8e"
+	dataSourceComputeTemplateID       = testInstanceTemplateID
 	dataSourceComputeTemplateName     = "Linux Ubuntu 20.04 LTS 64-bit"
 	dataSourceComputeTemplateUsername = "ubuntu"
 )
