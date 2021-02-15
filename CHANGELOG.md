@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.22.0 (February 15, 2021)
+
+FEATURES:
+
+- **New Resources:** `exoscale_sks_cluster`/`exoscale_sks_nodepool`
+
+
 ## 0.21.1 (January 18, 2021)
 
 IMPROVEMENTS:
