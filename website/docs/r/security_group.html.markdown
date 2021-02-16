@@ -17,10 +17,6 @@ Provides an Exoscale [Security Group][sg-doc] resource. This can be used to crea
 resource "exoscale_security_group" "web" {
   name        = "web"
   description = "Webservers"
-
-  tags = {
-    kind = "web"
-  }
 }
 ```
 
@@ -31,7 +27,6 @@ In addition to the arguments listed above, the following attributes are exported
 
 * `name` - (Required) The name of the Security Group.
 * `description` - A free-form text describing the Anti-Affinity Group purpose.
-* `tags` - A dictionary of tags (key/value). To remove all tags, set `tags = {}`.
 
 
 ## Attributes Reference
