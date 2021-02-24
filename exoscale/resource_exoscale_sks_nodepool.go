@@ -2,12 +2,14 @@ package exoscale
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
 
 	"github.com/exoscale/egoscale"
-	apiv2 "github.com/exoscale/egoscale/api/v2"
+	exov2 "github.com/exoscale/egoscale/v2"
+	exoapi "github.com/exoscale/egoscale/v2/api"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
@@ -125,7 +127,7 @@ func resourceSKSNodepoolCreate(d *schema.ResourceData, meta interface{}) error {
 
 	zone := d.Get("zone").(string)
 
-	ctx = apiv2.WithEndpoint(ctx, apiv2.NewReqEndpoint(getEnvironment(meta), zone))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	cluster, err := client.GetSKSCluster(ctx, zone, d.Get("cluster_id").(string))
 	if err != nil {
 		return err
@@ -157,7 +159,7 @@ func resourceSKSNodepoolCreate(d *schema.ResourceData, meta interface{}) error {
 
 	nodepool, err := cluster.AddNodepool(
 		ctx,
-		&egoscale.SKSNodepool{
+		&exov2.SKSNodepool{
 			Name:                 d.Get("name").(string),
 			Description:          d.Get("description").(string),
 			InstanceTypeID:       instanceType.ID.String(),
@@ -260,7 +262,7 @@ func resourceSKSNodepoolUpdate(d *schema.ResourceData, meta interface{}) error {
 		updated = true
 	}
 
-	ctx = apiv2.WithEndpoint(ctx, apiv2.NewReqEndpoint(getEnvironment(meta), zone))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	cluster, err := client.GetSKSCluster(ctx, zone, d.Get("cluster_id").(string))
 	if err != nil {
 		return err
@@ -292,13 +294,13 @@ func resourceSKSNodepoolDelete(d *schema.ResourceData, meta interface{}) error {
 
 	zone := d.Get("zone").(string)
 
-	ctx = apiv2.WithEndpoint(ctx, apiv2.NewReqEndpoint(getEnvironment(meta), zone))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	cluster, err := client.GetSKSCluster(ctx, zone, d.Get("cluster_id").(string))
 	if err != nil {
 		return err
 	}
 
-	if err = cluster.DeleteNodepool(ctx, &egoscale.SKSNodepool{ID: d.Id()}); err != nil {
+	if err = cluster.DeleteNodepool(ctx, &exov2.SKSNodepool{ID: d.Id()}); err != nil {
 		return err
 	}
 
@@ -307,7 +309,7 @@ func resourceSKSNodepoolDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func resourceSKSNodepoolApply(d *schema.ResourceData, meta interface{}, nodepool *egoscale.SKSNodepool) error {
+func resourceSKSNodepoolApply(d *schema.ResourceData, meta interface{}, nodepool *exov2.SKSNodepool) error {
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
 	defer cancel()
 	client := GetComputeClient(meta)
@@ -369,13 +371,13 @@ func resourceSKSNodepoolApply(d *schema.ResourceData, meta interface{}, nodepool
 	return nil
 }
 
-func findSKSNodepool(ctx context.Context, d *schema.ResourceData, meta interface{}) (*egoscale.SKSNodepool, error) {
+func findSKSNodepool(ctx context.Context, d *schema.ResourceData, meta interface{}) (*exov2.SKSNodepool, error) {
 	client := GetComputeClient(meta)
 
 	zone, okZone := d.GetOk("zone")
 	clusterID, okClusterID := d.GetOk("cluster_id")
 	if okZone && okClusterID {
-		ctx = apiv2.WithEndpoint(ctx, apiv2.NewReqEndpoint(getEnvironment(meta), zone.(string)))
+		ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone.(string)))
 		cluster, err := client.GetSKSCluster(ctx, zone.(string), clusterID.(string))
 		if err != nil {
 			return nil, err
@@ -388,17 +390,17 @@ func findSKSNodepool(ctx context.Context, d *schema.ResourceData, meta interface
 		}
 	}
 
-	zones, err := client.ListZones(apiv2.WithEndpoint(ctx, apiv2.NewReqEndpoint(getEnvironment(meta), defaultZone)))
+	zones, err := client.ListZones(exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), defaultZone)))
 	if err != nil {
 		return nil, err
 	}
 
 	for _, zone := range zones {
 		clusters, err := client.ListSKSClusters(
-			apiv2.WithEndpoint(ctx, apiv2.NewReqEndpoint(getEnvironment(meta), zone)),
+			exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone)),
 			zone)
 		if err != nil {
-			if err == egoscale.ErrNotFound {
+			if errors.Is(err, exoapi.ErrNotFound) {
 				continue
 			}
 

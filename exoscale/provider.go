@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/exoscale/egoscale"
+	exoapi "github.com/exoscale/egoscale/v2/api"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	tfmeta "github.com/hashicorp/terraform-plugin-sdk/meta"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
@@ -310,7 +311,7 @@ func handleNotFound(d *schema.ResourceData, err error) error {
 			return nil
 		}
 		return r
-	} else if errors.Is(err, egoscale.ErrNotFound) {
+	} else if errors.Is(err, egoscale.ErrNotFound) || errors.Is(err, exoapi.ErrNotFound) {
 		d.SetId("")
 		return nil
 	}

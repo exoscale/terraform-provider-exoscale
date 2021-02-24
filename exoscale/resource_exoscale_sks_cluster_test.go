@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/exoscale/egoscale"
-	apiv2 "github.com/exoscale/egoscale/api/v2"
+	exov2 "github.com/exoscale/egoscale/v2"
+	exoapi "github.com/exoscale/egoscale/v2/api"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
@@ -87,7 +87,7 @@ resource "exoscale_sks_nodepool" "test" {
 )
 
 func TestAccResourceSKSCluster(t *testing.T) {
-	sksCluster := new(egoscale.SKSCluster)
+	sksCluster := new(exov2.SKSCluster)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -164,7 +164,7 @@ func TestAccResourceSKSCluster(t *testing.T) {
 	})
 }
 
-func testAccCheckResourceSKSClusterExists(n string, sksCluster *egoscale.SKSCluster) resource.TestCheckFunc {
+func testAccCheckResourceSKSClusterExists(n string, sksCluster *exov2.SKSCluster) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -177,9 +177,9 @@ func testAccCheckResourceSKSClusterExists(n string, sksCluster *egoscale.SKSClus
 
 		client := GetComputeClient(testAccProvider.Meta())
 
-		ctx := apiv2.WithEndpoint(
+		ctx := exoapi.WithEndpoint(
 			context.Background(),
-			apiv2.NewReqEndpoint(testEnvironment, testZoneName),
+			exoapi.NewReqEndpoint(testEnvironment, testZoneName),
 		)
 		r, err := client.GetSKSCluster(ctx, testZoneName, rs.Primary.ID)
 		if err != nil {
@@ -190,7 +190,7 @@ func testAccCheckResourceSKSClusterExists(n string, sksCluster *egoscale.SKSClus
 	}
 }
 
-func testAccCheckResourceSKSCluster(sksCluster *egoscale.SKSCluster) resource.TestCheckFunc {
+func testAccCheckResourceSKSCluster(sksCluster *exov2.SKSCluster) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		if sksCluster.ID == "" {
 			return errors.New("SKS cluster ID is empty")
@@ -222,13 +222,13 @@ func testAccCheckResourceSKSClusterDestroy(s *terraform.State) error {
 			continue
 		}
 
-		ctx := apiv2.WithEndpoint(
+		ctx := exoapi.WithEndpoint(
 			context.Background(),
-			apiv2.NewReqEndpoint(testEnvironment, testZoneName),
+			exoapi.NewReqEndpoint(testEnvironment, testZoneName),
 		)
 
 		if _, err := client.GetSKSCluster(ctx, testZoneName, rs.Primary.ID); err != nil {
-			if err == egoscale.ErrNotFound {
+			if errors.Is(err, exoapi.ErrNotFound) {
 				return nil
 			}
 

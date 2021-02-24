@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/exoscale/egoscale"
+	exov2 "github.com/exoscale/egoscale/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
@@ -86,7 +86,7 @@ func dataSourceNLBRead(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("Network Load Balancers listing failed: %s", err)
 	}
 
-	var nlb *egoscale.NetworkLoadBalancer
+	var nlb *exov2.NetworkLoadBalancer
 	for _, n := range nlbs {
 		if byID && n.ID == nlbID {
 			nlb = n

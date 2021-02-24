@@ -1,10 +1,12 @@
 package exoscale
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/exoscale/egoscale"
+	exov2 "github.com/exoscale/egoscale/v2"
 	"github.com/hashicorp/go-cleanhttp"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/logging"
 )
@@ -39,7 +41,7 @@ func getClient(endpoint string, meta interface{}) *egoscale.Client {
 	config := meta.(BaseConfig)
 
 	httpClient := cleanhttp.DefaultPooledClient()
-	httpClient.Transport = &defaultTransport{transport: httpClient.Transport}
+	httpClient.Transport = &defaultTransport{next: httpClient.Transport}
 	if logging.IsDebugOrHigher() {
 		httpClient.Transport = logging.NewTransport(
 			"exoscale",
@@ -47,13 +49,39 @@ func getClient(endpoint string, meta interface{}) *egoscale.Client {
 		)
 	}
 
-	return egoscale.NewClient(
+	client := egoscale.NewClient(
 		endpoint,
 		config.key,
 		config.secret,
 		egoscale.WithHTTPClient(httpClient),
 		egoscale.WithTimeout(config.timeout),
+		egoscale.WithoutV2Client(),
 	)
+
+	// During the Exoscale API V1 -> V2 transition, we need to initialize the
+	// V2 client independently from the V1 client because of HTTP middleware
+	// (http.Transport) clashes.
+	// This can be removed once the only API used is V2.
+	clientExoV2, err := exov2.NewClient(
+		config.key,
+		config.secret,
+		exov2.ClientOptWithAPIEndpoint(endpoint),
+		exov2.ClientOptWithTimeout(config.timeout),
+		exov2.ClientOptWithHTTPClient(func() *http.Client {
+			hc := cleanhttp.DefaultPooledClient()
+			hc.Transport = &defaultTransport{next: hc.Transport}
+			if logging.IsDebugOrHigher() {
+				hc.Transport = logging.NewTransport("exoscale", hc.Transport)
+			}
+			return hc
+		}()),
+	)
+	if err != nil {
+		panic(fmt.Sprintf("unable to initialize Exoscale API V2 client: %v", err))
+	}
+	client.Client = clientExoV2
+
+	return client
 }
 
 // GetComputeClient builds a CloudStack client
@@ -83,14 +111,14 @@ func getEnvironment(meta interface{}) string {
 }
 
 type defaultTransport struct {
-	transport http.RoundTripper
+	next http.RoundTripper
 }
 
 // RoundTrip executes a single HTTP transaction while augmenting requests with custom headers.
 func (t *defaultTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	req.Header.Add("User-Agent", userAgent)
 
-	resp, err := t.transport.RoundTrip(req)
+	resp, err := t.next.RoundTrip(req)
 	if err != nil {
 		return nil, err
 	}

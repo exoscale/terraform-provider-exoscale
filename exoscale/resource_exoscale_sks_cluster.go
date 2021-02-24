@@ -2,12 +2,13 @@ package exoscale
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 
-	apiv2 "github.com/exoscale/egoscale/api/v2"
+	exov2 "github.com/exoscale/egoscale/v2"
+	exoapi "github.com/exoscale/egoscale/v2/api"
 
-	"github.com/exoscale/egoscale"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
@@ -122,11 +123,11 @@ func resourceSKSClusterCreate(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	ctx = apiv2.WithEndpoint(ctx, apiv2.NewReqEndpoint(getEnvironment(meta), zone))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	cluster, err := client.CreateSKSCluster(
 		ctx,
 		zone,
-		&egoscale.SKSCluster{
+		&exov2.SKSCluster{
 			Name:         d.Get("name").(string),
 			Description:  d.Get("description").(string),
 			Version:      d.Get("version").(string),
@@ -172,7 +173,7 @@ func resourceSKSClusterExists(d *schema.ResourceData, meta interface{}) (bool, e
 
 	cluster, err := findSKSCluster(ctx, d, meta)
 	if err != nil {
-		if err == egoscale.ErrNotFound {
+		if errors.Is(err, exoapi.ErrNotFound) {
 			return false, nil
 		}
 		return false, err
@@ -211,7 +212,7 @@ func resourceSKSClusterUpdate(d *schema.ResourceData, meta interface{}) error {
 
 	zone := d.Get("zone").(string)
 
-	ctx = apiv2.WithEndpoint(ctx, apiv2.NewReqEndpoint(getEnvironment(meta), zone))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	if err = client.UpdateSKSCluster(ctx, zone, cluster); err != nil {
 		return err
 	}
@@ -231,7 +232,7 @@ func resourceSKSClusterDelete(d *schema.ResourceData, meta interface{}) error {
 
 	zone := d.Get("zone").(string)
 
-	ctx = apiv2.WithEndpoint(ctx, apiv2.NewReqEndpoint(getEnvironment(meta), zone))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	err := client.DeleteSKSCluster(ctx, zone, d.Id())
 	if err != nil {
 		return err
@@ -279,7 +280,7 @@ func resourceSKSClusterImport(d *schema.ResourceData, meta interface{}) ([]*sche
 	return resources, nil
 }
 
-func resourceSKSClusterApply(d *schema.ResourceData, cluster *egoscale.SKSCluster) error {
+func resourceSKSClusterApply(d *schema.ResourceData, cluster *exov2.SKSCluster) error {
 	if err := d.Set("addons", cluster.AddOns); err != nil {
 		return err
 	}
@@ -327,11 +328,11 @@ func resourceSKSClusterApply(d *schema.ResourceData, cluster *egoscale.SKSCluste
 	return nil
 }
 
-func findSKSCluster(ctx context.Context, d *schema.ResourceData, meta interface{}) (*egoscale.SKSCluster, error) {
+func findSKSCluster(ctx context.Context, d *schema.ResourceData, meta interface{}) (*exov2.SKSCluster, error) {
 	client := GetComputeClient(meta)
 
 	if zone, ok := d.GetOk("zone"); ok {
-		ctx = apiv2.WithEndpoint(ctx, apiv2.NewReqEndpoint(getEnvironment(meta), zone.(string)))
+		ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone.(string)))
 		cluster, err := client.GetSKSCluster(ctx, zone.(string), d.Id())
 		if err != nil {
 			return nil, err
@@ -340,19 +341,19 @@ func findSKSCluster(ctx context.Context, d *schema.ResourceData, meta interface{
 		return cluster, nil
 	}
 
-	zones, err := client.ListZones(apiv2.WithEndpoint(ctx, apiv2.NewReqEndpoint(getEnvironment(meta), defaultZone)))
+	zones, err := client.ListZones(exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), defaultZone)))
 	if err != nil {
 		return nil, err
 	}
 
-	var cluster *egoscale.SKSCluster
+	var cluster *exov2.SKSCluster
 	for _, zone := range zones {
 		c, err := client.GetSKSCluster(
-			apiv2.WithEndpoint(ctx, apiv2.NewReqEndpoint(getEnvironment(meta), zone)),
+			exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone)),
 			zone,
 			d.Id())
 		if err != nil {
-			if err == egoscale.ErrNotFound {
+			if errors.Is(err, exoapi.ErrNotFound) {
 				continue
 			}
 

@@ -60,7 +60,7 @@ github.com/bgentry/go-netrc/netrc
 github.com/bgentry/speakeasy
 # github.com/davecgh/go-spew v1.1.1
 github.com/davecgh/go-spew/spew
-# github.com/deepmap/oapi-codegen v1.5.0
+# github.com/deepmap/oapi-codegen v1.5.1
 github.com/deepmap/oapi-codegen/pkg/runtime
 github.com/deepmap/oapi-codegen/pkg/types
 # github.com/emirpasic/gods v1.12.0
@@ -70,10 +70,11 @@ github.com/emirpasic/gods/lists/arraylist
 github.com/emirpasic/gods/trees
 github.com/emirpasic/gods/trees/binaryheap
 github.com/emirpasic/gods/utils
-# github.com/exoscale/egoscale v0.42.0
+# github.com/exoscale/egoscale v0.43.1
 github.com/exoscale/egoscale
-github.com/exoscale/egoscale/api/v2
-github.com/exoscale/egoscale/internal/v2
+github.com/exoscale/egoscale/v2
+github.com/exoscale/egoscale/v2/api
+github.com/exoscale/egoscale/v2/internal/public-api
 # github.com/fatih/color v1.7.0
 github.com/fatih/color
 # github.com/go-git/gcfg v1.5.0

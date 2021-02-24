@@ -280,6 +280,7 @@ func findInstancePool(ctx context.Context, d *schema.ResourceData, meta interfac
 		}
 
 		instancePool = &resp.(*egoscale.GetInstancePoolResponse).InstancePools[0]
+		break
 	}
 	if instancePool == nil {
 		return nil, egoscale.ErrNotFound
