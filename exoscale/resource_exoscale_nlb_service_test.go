@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/exoscale/egoscale"
-	apiv2 "github.com/exoscale/egoscale/api/v2"
+	exov2 "github.com/exoscale/egoscale/v2"
+	exoapi "github.com/exoscale/egoscale/v2/api"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
@@ -182,7 +182,7 @@ resource "exoscale_nlb_service" "service" {
 )
 
 func TestAccResourceNLBService(t *testing.T) {
-	service := new(egoscale.NetworkLoadBalancerService)
+	service := new(exov2.NetworkLoadBalancerService)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -263,7 +263,7 @@ func TestAccResourceNLBService(t *testing.T) {
 	})
 }
 
-func testAccCheckResourceNLBServiceExists(n string, service *egoscale.NetworkLoadBalancerService) resource.TestCheckFunc {
+func testAccCheckResourceNLBServiceExists(n string, service *exov2.NetworkLoadBalancerService) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -281,9 +281,9 @@ func testAccCheckResourceNLBServiceExists(n string, service *egoscale.NetworkLoa
 
 		client := GetComputeClient(testAccProvider.Meta())
 
-		ctx := apiv2.WithEndpoint(
+		ctx := exoapi.WithEndpoint(
 			context.Background(),
-			apiv2.NewReqEndpoint(testEnvironment, testAccResourceNLBServiceZoneName),
+			exoapi.NewReqEndpoint(testEnvironment, testAccResourceNLBServiceZoneName),
 		)
 		r, err := client.GetNetworkLoadBalancer(ctx, testAccResourceNLBServiceZoneName, nlbID)
 		if err != nil {
@@ -300,7 +300,7 @@ func testAccCheckResourceNLBServiceExists(n string, service *egoscale.NetworkLoa
 	}
 }
 
-func testAccCheckResourceNLBService(service *egoscale.NetworkLoadBalancerService) resource.TestCheckFunc {
+func testAccCheckResourceNLBService(service *exov2.NetworkLoadBalancerService) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		if service.ID == "" {
 			return errors.New("Network Load Balancer Service ID is empty")
@@ -337,9 +337,9 @@ func testAccCheckResourceNLBServiceDestroy(s *terraform.State) error {
 			return errors.New("resource nlb_id not set")
 		}
 
-		ctx := apiv2.WithEndpoint(
+		ctx := exoapi.WithEndpoint(
 			context.Background(),
-			apiv2.NewReqEndpoint(testEnvironment, testAccResourceNLBServiceZoneName),
+			exoapi.NewReqEndpoint(testEnvironment, testAccResourceNLBServiceZoneName),
 		)
 		nlb, err := client.GetNetworkLoadBalancer(
 			ctx,
@@ -347,7 +347,7 @@ func testAccCheckResourceNLBServiceDestroy(s *terraform.State) error {
 			nlbID,
 		)
 		if err != nil {
-			if err == egoscale.ErrNotFound {
+			if errors.Is(err, exoapi.ErrNotFound) {
 				return nil
 			}
 

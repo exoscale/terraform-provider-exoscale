@@ -7,7 +7,8 @@ import (
 	"time"
 
 	"github.com/exoscale/egoscale"
-	apiv2 "github.com/exoscale/egoscale/api/v2"
+	exov2 "github.com/exoscale/egoscale/v2"
+	exoapi "github.com/exoscale/egoscale/v2/api"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
@@ -131,7 +132,7 @@ func resourceNLBServiceCreate(d *schema.ResourceData, meta interface{}) error {
 
 	zone := d.Get("zone").(string)
 
-	ctx = apiv2.WithEndpoint(ctx, apiv2.NewReqEndpoint(getEnvironment(meta), zone))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	nlb, err := client.GetNetworkLoadBalancer(
 		ctx,
 		zone,
@@ -146,7 +147,7 @@ func resourceNLBServiceCreate(d *schema.ResourceData, meta interface{}) error {
 
 	service, err := nlb.AddService(
 		ctx,
-		&egoscale.NetworkLoadBalancerService{
+		&exov2.NetworkLoadBalancerService{
 			Name:           d.Get("name").(string),
 			Description:    d.Get("description").(string),
 			InstancePoolID: d.Get("instance_pool_id").(string),
@@ -154,7 +155,7 @@ func resourceNLBServiceCreate(d *schema.ResourceData, meta interface{}) error {
 			Port:           uint16(d.Get("port").(int)),
 			TargetPort:     uint16(d.Get("target_port").(int)),
 			Strategy:       d.Get("strategy").(string),
-			Healthcheck: egoscale.NetworkLoadBalancerServiceHealthcheck{
+			Healthcheck: exov2.NetworkLoadBalancerServiceHealthcheck{
 				Mode:     healthcheck["mode"].(string),
 				Port:     uint16(healthcheck["port"].(int)),
 				Interval: time.Duration(healthcheck["interval"].(int)) * time.Second,
@@ -268,7 +269,7 @@ func resourceNLBServiceUpdate(d *schema.ResourceData, meta interface{}) error {
 
 	zone := d.Get("zone").(string)
 
-	ctx = apiv2.WithEndpoint(ctx, apiv2.NewReqEndpoint(getEnvironment(meta), zone))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	nlb, err := client.GetNetworkLoadBalancer(
 		ctx,
 		zone,
@@ -301,7 +302,7 @@ func resourceNLBServiceDelete(d *schema.ResourceData, meta interface{}) error {
 
 	zone := d.Get("zone").(string)
 
-	ctx = apiv2.WithEndpoint(ctx, apiv2.NewReqEndpoint(getEnvironment(meta), zone))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	nlb, err := client.GetNetworkLoadBalancer(
 		ctx,
 		zone,
@@ -313,7 +314,7 @@ func resourceNLBServiceDelete(d *schema.ResourceData, meta interface{}) error {
 
 	err = nlb.DeleteService(
 		ctx,
-		&egoscale.NetworkLoadBalancerService{
+		&exov2.NetworkLoadBalancerService{
 			ID: d.Id(),
 		},
 	)
@@ -326,7 +327,7 @@ func resourceNLBServiceDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func resourceNLBServiceApply(d *schema.ResourceData, service *egoscale.NetworkLoadBalancerService) error {
+func resourceNLBServiceApply(d *schema.ResourceData, service *exov2.NetworkLoadBalancerService) error {
 	if err := d.Set("name", service.Name); err != nil {
 		return err
 	}
@@ -371,13 +372,13 @@ func resourceNLBServiceApply(d *schema.ResourceData, service *egoscale.NetworkLo
 	return d.Set("healthcheck", set)
 }
 
-func findNLBService(ctx context.Context, d *schema.ResourceData, meta interface{}) (*egoscale.NetworkLoadBalancerService, error) {
+func findNLBService(ctx context.Context, d *schema.ResourceData, meta interface{}) (*exov2.NetworkLoadBalancerService, error) {
 	client := GetComputeClient(meta)
 
 	zone, okZone := d.GetOk("zone")
 	nlbID, okNLBID := d.GetOk("nlb_id")
 	if okZone && okNLBID {
-		ctx = apiv2.WithEndpoint(ctx, apiv2.NewReqEndpoint(getEnvironment(meta), zone.(string)))
+		ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone.(string)))
 		nlb, err := client.GetNetworkLoadBalancer(ctx, zone.(string), nlbID.(string))
 		if err != nil {
 			return nil, err
@@ -397,7 +398,7 @@ func findNLBService(ctx context.Context, d *schema.ResourceData, meta interface{
 
 	for _, zone := range zones {
 		nlbs, err := client.ListNetworkLoadBalancers(
-			apiv2.WithEndpoint(ctx, apiv2.NewReqEndpoint(getEnvironment(meta), zone.Name)),
+			exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone.Name)),
 			zone.Name)
 		if err != nil {
 			return nil, err

@@ -76,8 +76,8 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/deepmap/oapi-codegen v1.3.11 h1:Nd3tDQfqgquLmCzyRONHzs5SJEwPPoQcFZxT8MKt1Hs=
 github.com/deepmap/oapi-codegen v1.3.11/go.mod h1:suMvK7+rKlx3+tpa8ByptmvoXbAV70wERKTOGH3hLp0=
-github.com/deepmap/oapi-codegen v1.5.0 h1:A/ZkNJH3WDWLZwVegxlYF/eJV4/cF7U4B8v9IYyrtFI=
-github.com/deepmap/oapi-codegen v1.5.0/go.mod h1:Eb1vtV3f58zvm37CJV4UAQ1bECb0fgAVvTdonC1ftJg=
+github.com/deepmap/oapi-codegen v1.5.1 h1:Xx8/OynzWhQeKFWr182hg6Ja2evS1gcqdja7qMn05yU=
+github.com/deepmap/oapi-codegen v1.5.1/go.mod h1:Eb1vtV3f58zvm37CJV4UAQ1bECb0fgAVvTdonC1ftJg=
 github.com/dgrijalva/jwt-go v3.2.0+incompatible/go.mod h1:E3ru+11k8xSBh+hMPgOLZmtrrCbhqsmaPHjLKYnJCaQ=
 github.com/emirpasic/gods v1.12.0 h1:QAUIPSaCu4G+POclxeqb3F+WPpdKqFGlw36+yOzGlrg=
 github.com/emirpasic/gods v1.12.0/go.mod h1:YfzfFFoVP/catgzJb4IKIqXjX78Ha8FMSDh3ymbK86o=
@@ -85,8 +85,8 @@ github.com/envoyproxy/go-control-plane v0.9.0/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymF
 github.com/envoyproxy/go-control-plane v0.9.1-0.20191026205805-5f8ba28d4473/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
 github.com/envoyproxy/go-control-plane v0.9.4/go.mod h1:6rpuAdCZL397s3pYoYcLgu1mIlRU8Am5FuJP05cCM98=
 github.com/envoyproxy/protoc-gen-validate v0.1.0/go.mod h1:iSmxcyjqTsJpI2R4NaDN7+kN2VEUnK/pcBlmesArF7c=
-github.com/exoscale/egoscale v0.42.0 h1:HJQWWPk/nZz2bgSHjR9dGIExU6rcDQ7UJTsUD1PPQ8I=
-github.com/exoscale/egoscale v0.42.0/go.mod h1:mpEXBpROAa/2i5GC0r33rfxG+TxSEka11g1PIXt9+zc=
+github.com/exoscale/egoscale v0.43.1 h1:Lhr0UOfg3t3Y56yh1DsYCjQuUHqFvsC8iUVqvub8+0Q=
+github.com/exoscale/egoscale v0.43.1/go.mod h1:mpEXBpROAa/2i5GC0r33rfxG+TxSEka11g1PIXt9+zc=
 github.com/fatih/color v1.7.0 h1:DkWD4oS2D8LGGgTQ6IvwJJXSL5Vp2ffcQg58nFV38Ys=
 github.com/fatih/color v1.7.0 h1:DkWD4oS2D8LGGgTQ6IvwJJXSL5Vp2ffcQg58nFV38Ys=
 github.com/fatih/color v1.7.0/go.mod h1:Zm6kSWBoL9eyXnKyktHP6abPY2pDugNf5KwzbycvMj4=

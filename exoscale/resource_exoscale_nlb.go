@@ -2,10 +2,12 @@ package exoscale
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 
-	apiv2 "github.com/exoscale/egoscale/api/v2"
+	exov2 "github.com/exoscale/egoscale/v2"
+	exoapi "github.com/exoscale/egoscale/v2/api"
 
 	"github.com/exoscale/egoscale"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
@@ -84,11 +86,11 @@ func resourceNLBCreate(d *schema.ResourceData, meta interface{}) error {
 
 	zone := d.Get("zone").(string)
 
-	ctx = apiv2.WithEndpoint(ctx, apiv2.NewReqEndpoint(getEnvironment(meta), zone))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	nlb, err := client.CreateNetworkLoadBalancer(
 		ctx,
 		zone,
-		&egoscale.NetworkLoadBalancer{
+		&exov2.NetworkLoadBalancer{
 			Name:        d.Get("name").(string),
 			Description: d.Get("description").(string),
 		},
@@ -130,7 +132,7 @@ func resourceNLBExists(d *schema.ResourceData, meta interface{}) (bool, error) {
 
 	nlb, err := findNLB(ctx, d, meta)
 	if err != nil {
-		if err == egoscale.ErrNotFound {
+		if errors.Is(err, exoapi.ErrNotFound) {
 			return false, nil
 		}
 		return false, err
@@ -170,7 +172,7 @@ func resourceNLBUpdate(d *schema.ResourceData, meta interface{}) error {
 
 	zone := d.Get("zone").(string)
 
-	ctx = apiv2.WithEndpoint(ctx, apiv2.NewReqEndpoint(getEnvironment(meta), zone))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	_, err = client.UpdateNetworkLoadBalancer(ctx, zone, nlb)
 	if err != nil {
 		return err
@@ -191,7 +193,7 @@ func resourceNLBDelete(d *schema.ResourceData, meta interface{}) error {
 
 	zone := d.Get("zone").(string)
 
-	ctx = apiv2.WithEndpoint(ctx, apiv2.NewReqEndpoint(getEnvironment(meta), zone))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	err := client.DeleteNetworkLoadBalancer(ctx, zone, d.Id())
 	if err != nil {
 		return err
@@ -240,7 +242,7 @@ func resourceNLBImport(d *schema.ResourceData, meta interface{}) ([]*schema.Reso
 	return resources, nil
 }
 
-func resourceNLBApply(d *schema.ResourceData, nlb *egoscale.NetworkLoadBalancer) error {
+func resourceNLBApply(d *schema.ResourceData, nlb *exov2.NetworkLoadBalancer) error {
 	if err := d.Set("name", nlb.Name); err != nil {
 		return err
 	}
@@ -273,11 +275,11 @@ func resourceNLBApply(d *schema.ResourceData, nlb *egoscale.NetworkLoadBalancer)
 	return nil
 }
 
-func findNLB(ctx context.Context, d *schema.ResourceData, meta interface{}) (*egoscale.NetworkLoadBalancer, error) {
+func findNLB(ctx context.Context, d *schema.ResourceData, meta interface{}) (*exov2.NetworkLoadBalancer, error) {
 	client := GetComputeClient(meta)
 
 	if zone, ok := d.GetOk("zone"); ok {
-		ctx = apiv2.WithEndpoint(ctx, apiv2.NewReqEndpoint(getEnvironment(meta), zone.(string)))
+		ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone.(string)))
 		nlb, err := client.GetNetworkLoadBalancer(ctx, zone.(string), d.Id())
 		if err != nil {
 			return nil, err
@@ -292,14 +294,14 @@ func findNLB(ctx context.Context, d *schema.ResourceData, meta interface{}) (*eg
 	}
 	zones := resp.(*egoscale.ListZonesResponse).Zone
 
-	var nlb *egoscale.NetworkLoadBalancer
+	var nlb *exov2.NetworkLoadBalancer
 	for _, zone := range zones {
 		n, err := client.GetNetworkLoadBalancer(
-			apiv2.WithEndpoint(ctx, apiv2.NewReqEndpoint(getEnvironment(meta), zone.Name)),
+			exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone.Name)),
 			zone.Name,
 			d.Id())
 		if err != nil {
-			if err == egoscale.ErrNotFound {
+			if errors.Is(err, exoapi.ErrNotFound) {
 				continue
 			}
 
