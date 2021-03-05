@@ -31,14 +31,6 @@ locals {
   zone = "%s"
 }
 
-data "exoscale_security_group" "default" {
-  name = "default"
-}
-	
-resource "exoscale_affinity" "test" {
-  name = "%s"
-}
-
 resource "exoscale_sks_cluster" "test" {
   zone = local.zone
   name = "%s"
@@ -56,8 +48,6 @@ resource "exoscale_sks_nodepool" "test" {
   instance_type = "%s"
   disk_size = %d
   size = %d
-  anti_affinity_group_ids = [exoscale_affinity.test.id]
-  security_group_ids = [data.exoscale_security_group.default.id]
 
   timeouts {
     delete = "10m"
@@ -65,7 +55,6 @@ resource "exoscale_sks_nodepool" "test" {
 }
 `,
 		testZoneName,
-		testAccResourceSKSNodepoolAntiAffinityGroupName,
 		testAccResourceSKSClusterName,
 		testAccResourceSKSNodepoolName,
 		testAccResourceSKSNodepoolDescription,
@@ -137,19 +126,17 @@ func TestAccResourceSKSNodepool(t *testing.T) {
 					testAccCheckResourceSKSNodepoolExists("exoscale_sks_nodepool.test", nodepool),
 					testAccCheckResourceSKSNodepool(nodepool),
 					testAccCheckResourceSKSNodepoolAttributes(testAttrs{
-						"created_at":                validation.NoZeroValues,
-						"description":               ValidateString(testAccResourceSKSNodepoolDescription),
-						"disk_size":                 ValidateString(fmt.Sprint(testAccResourceSKSNodepoolDiskSize)),
-						"id":                        validation.IsUUID,
-						"instance_pool_id":          validation.IsUUID,
-						"instance_type":             ValidateString(testAccResourceSKSNodepoolInstanceType),
-						"name":                      ValidateString(testAccResourceSKSNodepoolName),
-						"anti_affinity_group_ids.#": ValidateString("1"),
-						"security_group_ids.#":      ValidateString("1"),
-						"size":                      ValidateString(fmt.Sprint(testAccResourceSKSNodepoolSize)),
-						"state":                     validation.NoZeroValues,
-						"template_id":               validation.IsUUID,
-						"version":                   ValidateString(defaultSKSClusterVersion),
+						"created_at":       validation.NoZeroValues,
+						"description":      ValidateString(testAccResourceSKSNodepoolDescription),
+						"disk_size":        ValidateString(fmt.Sprint(testAccResourceSKSNodepoolDiskSize)),
+						"id":               validation.IsUUID,
+						"instance_pool_id": validation.IsUUID,
+						"instance_type":    ValidateString(testAccResourceSKSNodepoolInstanceType),
+						"name":             ValidateString(testAccResourceSKSNodepoolName),
+						"size":             ValidateString(fmt.Sprint(testAccResourceSKSNodepoolSize)),
+						"state":            validation.NoZeroValues,
+						"template_id":      validation.IsUUID,
+						"version":          ValidateString(defaultSKSClusterVersion),
 					}),
 				),
 			},

@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	defaultSKSClusterVersion      = "1.20.2"
+	defaultSKSClusterVersion      = "1.20.3"
 	defaultSKSClusterCNI          = "calico"
 	defaultSKSClusterServiceLevel = "pro"
 )

@@ -65,6 +65,6 @@ $ terraform import exoscale_sks_cluster.prod eb556678-ec59-4be6-8c54-0406ae0f6da
 
 [cni]: https://www.cni.dev/
 [r-sks_nodepool]: sks_nodepool.html
-[sks-doc]: #
+[sks-doc]: https://community.exoscale.com/documentation/sks/
 [zone]: https://www.exoscale.com/datacenters/
 
