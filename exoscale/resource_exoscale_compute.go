@@ -260,6 +260,9 @@ func resourceComputeCreate(d *schema.ResourceData, meta interface{}) error {
 
 	username := ""
 	templateID := ""
+
+	template:= (*egoscale.Template)(nil)
+
 	_, byName := d.GetOk("template")
 	_, byID := d.GetOk("template_id")
 	if !byName && !byID {
@@ -275,14 +278,22 @@ func resourceComputeCreate(d *schema.ResourceData, meta interface{}) error {
 		if err != nil {
 			return err
 		}
-
-		template := resp.(*egoscale.Template)
-		templateID = template.ID.String()
-		if name, ok := template.Details["username"]; username == "" && ok {
-			username = name
-		}
+		template = resp.(*egoscale.Template)
 	} else {
-		templateID = d.Get("template_id").(string)
+		id := egoscale.MustParseUUID(d.Get("template_id").(string))
+
+		resp, err = client.GetWithContext(ctx, &egoscale.ListTemplates{
+			ID:         id,
+		})
+		if err != nil {
+			return err
+		}
+		template = resp.(*egoscale.Template)
+
+	}
+	templateID = template.ID.String()
+	if name, ok := template.Details["username"]; username == "" && ok {
+		username = name
 	}
 
 	if username == "" {
