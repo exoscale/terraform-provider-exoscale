@@ -65,7 +65,6 @@ func resourceSKSNodepool() *schema.Resource {
 			Optional: true,
 			Set:      schema.HashString,
 			Elem:     &schema.Schema{Type: schema.TypeString},
-			ForceNew: true,
 		},
 		"security_group_ids": {
 			Type:     schema.TypeSet,
@@ -259,6 +258,26 @@ func resourceSKSNodepoolUpdate(d *schema.ResourceData, meta interface{}) error {
 			return err
 		}
 		nodepool.InstanceTypeID = resp.(*egoscale.ServiceOffering).ID.String()
+		updated = true
+	}
+
+	if d.HasChange("anti_affinity_group_ids") {
+		if antiAffinityIDSet, ok := d.Get("anti_affinity_group_ids").(*schema.Set); ok {
+			nodepool.AntiAffinityGroupIDs = make([]string, antiAffinityIDSet.Len())
+			for i, id := range antiAffinityIDSet.List() {
+				nodepool.AntiAffinityGroupIDs[i] = id.(string)
+			}
+		}
+		updated = true
+	}
+
+	if d.HasChange("security_group_ids") {
+		if securityIDSet, ok := d.Get("security_group_ids").(*schema.Set); ok {
+			nodepool.SecurityGroupIDs = make([]string, securityIDSet.Len())
+			for i, id := range securityIDSet.List() {
+				nodepool.SecurityGroupIDs[i] = id.(string)
+			}
+		}
 		updated = true
 	}
 

@@ -18,18 +18,48 @@ locals {
   zone = "de-fra-1"
 }
 
+resource "exoscale_security_group" "sks" {
+  name = "sks"
+}
+
+resource "exoscale_security_group_rules" "sks" {
+  security_group = exoscale_security_group.sks.name
+
+  ingress {
+    description              = "Calico traffic"
+    protocol                 = "UDP"
+    ports                    = ["4789"]
+    user_security_group_list = [exoscale_security_group.sks.name]
+  }
+
+  ingress {
+    description = "Nodes logs/exec"
+    protocol  = "TCP"
+    ports     = ["10250"]
+    cidr_list = ["0.0.0.0/0", "::/0"]
+  }
+
+  ingress {
+    description = "NodePort services"
+    protocol    = "TCP"
+    cidr_list   = ["0.0.0.0/0", "::/0"]
+    ports       = ["30000-32767"]
+  }
+}
+
 resource "exoscale_sks_cluster" "prod" {
   zone    = local.zone
   name    = "prod"
-  version = "1.20.0"
+  version = "1.20.3"
 }
 
 resource "exoscale_sks_nodepool" "ci-builders" {
-  zone          = local.zone
-  cluster_id    = exoscale_sks_cluster.prod.id
-  name          = "ci-builders"
-  instance_type = "medium"
-  size          = 3
+  zone               = local.zone
+  cluster_id         = exoscale_sks_cluster.prod.id
+  name               = "ci-builders"
+  instance_type      = "medium"
+  size               = 3
+  security_group_ids = [exoscale_security_group.sks.id]
 }
 ```
 
@@ -69,6 +99,6 @@ $ terraform import exoscale_sks_nodepool.ci-builders eb556678-ec59-4be6-8c54-040
 
 
 [r-sks_cluster]: sks_cluster.html
-[sks-doc]: #
+[sks-doc]: https://community.exoscale.com/documentation/sks/
 [zone]: https://www.exoscale.com/datacenters/
 

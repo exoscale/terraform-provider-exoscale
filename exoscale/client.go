@@ -3,6 +3,7 @@ package exoscale
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/exoscale/egoscale"
@@ -75,7 +76,12 @@ func getClient(endpoint string, meta interface{}) *egoscale.Client {
 			}
 			return hc
 		}()),
-	)
+		exov2.ClientOptCond(func() bool {
+			if v := os.Getenv("EXOSCALE_TRACE"); v != "" {
+				return true
+			}
+			return false
+		}, exov2.ClientOptWithTrace()))
 	if err != nil {
 		panic(fmt.Sprintf("unable to initialize Exoscale API V2 client: %v", err))
 	}

@@ -30,7 +30,7 @@ resource "exoscale_sks_cluster" "test" {
   description = "%s"
 
   timeouts {
-    delete = "10m"
+    create = "10m"
   }
 }
 
@@ -63,7 +63,7 @@ resource "exoscale_sks_cluster" "test" {
   description = "%s"
 
   timeouts {
-    delete = "10m"
+    create = "10m"
   }
 }
 
@@ -76,7 +76,7 @@ resource "exoscale_sks_nodepool" "test" {
   size = 1
 
   timeouts {
-    delete = "10m"
+    create = "10m"
   }
 }
 `,
