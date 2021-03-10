@@ -37,7 +37,7 @@ const (
 // testAttrs represents a map of expected resource attributes during acceptance tests.
 type testAttrs map[string]schema.SchemaValidateFunc
 
-// testRsourceStateValidationFunc represents a resource state validation function.
+// testResourceStateValidationFunc represents a resource state validation function.
 type testResourceStateValidationFunc func(state *terraform.InstanceState) error
 
 var (
