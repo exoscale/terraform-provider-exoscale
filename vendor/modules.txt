@@ -70,7 +70,7 @@ github.com/emirpasic/gods/lists/arraylist
 github.com/emirpasic/gods/trees
 github.com/emirpasic/gods/trees/binaryheap
 github.com/emirpasic/gods/utils
-# github.com/exoscale/egoscale v0.44.0
+# github.com/exoscale/egoscale v0.45.1
 github.com/exoscale/egoscale
 github.com/exoscale/egoscale/v2
 github.com/exoscale/egoscale/v2/api
@@ -313,6 +313,8 @@ github.com/sergi/go-diff/diffmatchpatch
 # github.com/spf13/afero v1.2.2
 github.com/spf13/afero
 github.com/spf13/afero/mem
+# github.com/ssgreg/repeat v1.5.1
+github.com/ssgreg/repeat
 # github.com/stretchr/objx v0.3.0
 github.com/stretchr/objx
 # github.com/stretchr/testify v1.7.0

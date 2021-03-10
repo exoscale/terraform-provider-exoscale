@@ -32,6 +32,10 @@ resource "exoscale_network" "web_privnet" {
   name = "web-privnet"
 }
 
+resource "exoscale_ipaddress" "eip" {
+  zone = var.zone
+}
+
 data "exoscale_compute_template" "mywebapp" {
   zone = var.zone
   name = "mywebapp"
@@ -51,6 +55,7 @@ resource "exoscale_instance_pool" "webapp" {
 
   security_group_ids = [exoscale_security_group.web.id]
   network_ids = [exoscale_network.web_privnet.id]
+  elastic_ip_ids = [exoscale_ipaddress.eip.id]
 
   timeouts {
     delete = "10m"
@@ -72,7 +77,8 @@ resource "exoscale_instance_pool" "webapp" {
 * `key_pair` - The name of the [SSH key pair][sshkeypair] to install when creating Compute instances.
 * `affinity_group_ids` - A list of [Anti-Affinity Group][r-affinity] IDs (at creation time only).
 * `security_group_ids` - A list of [Security Group][r-security_group] IDs (at creation time only).
-* `network_ids` - A list of [Private Network][privnetnet-doc] IDs.
+* `network_ids` - A list of [Private Network][privnet-doc] IDs.
+* `elastic_ip_ids` - A list of [Elastic IP][eip-doc] IDs.
 
 
 ## Attributes Reference
@@ -98,6 +104,7 @@ $ terraform import exoscale_instance_pool.pool eb556678-ec59-4be6-8c54-0406ae0f6
 
 [cloudinit]: http://cloudinit.readthedocs.io/en/latest/
 [d-compute_template]: ../d/compute_template.html
+[eip-doc]: https://community.exoscale.com/documentation/compute/eip/
 [privnet-doc]: https://community.exoscale.com/documentation/compute/private-networks/
 [r-affinity]: affinity.html
 [r-security_group]: security_group.html

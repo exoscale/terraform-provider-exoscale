@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
@@ -28,17 +29,22 @@ const (
 		    name="Linux Ubuntu 20.04 LTS 64-bit"
 	*/
 	testInstanceTemplateID = "23c0622f-34cd-44c3-b995-a56d436cff85"
+
+	testInstanceTypeIDTiny  = "b6cd1ff5-3a2f-4e9d-a4d1-8988c1191fe8"
+	testInstanceTypeIDSmall = "21624abb-764e-4def-81d7-9fc54b5957fb"
 )
 
 // testAttrs represents a map of expected resource attributes during acceptance tests.
 type testAttrs map[string]schema.SchemaValidateFunc
 
+// testRsourceStateValidationFunc represents a resource state validation function.
+type testResourceStateValidationFunc func(state *terraform.InstanceState) error
+
 var (
 	testAccProviders map[string]terraform.ResourceProvider
 	testAccProvider  *schema.Provider
+	testEnvironment  string
 )
-
-var testEnvironment string
 
 func init() {
 	testAccProvider = Provider().(*schema.Provider)
@@ -83,14 +89,59 @@ func checkResourceAttributes(want testAttrs, got map[string]string) error {
 				for _, e := range es {
 					errors[i] = e.Error()
 				}
+
 				if len(errors) > 0 {
-					return fmt.Errorf("invalid value for attribute %q:\n%s\n", attr, strings.Join(errors, "\n"))
+					return fmt.Errorf("invalid value for attribute %q:\n%s\n",
+						attr, strings.Join(errors, "\n"))
 				}
 			}
 		}
 	}
 
 	return nil
+}
+
+// checkResourceStateValidateAttributes compares a map of resource attributes against
+// a map of expected resource attributes and performs validation on the values.
+func checkResourceStateValidateAttributes(want testAttrs) testResourceStateValidationFunc {
+	return func(s *terraform.InstanceState) error {
+		return checkResourceAttributes(want, s.Attributes)
+	}
+}
+
+// checkResourceState executes the specified testResourceStateValidationFunc
+// functions against the state of the resource matching the specified
+// identifier r (e.g. "exoscale_compute.test"), and returns an error if any
+// test function returns an error.
+func checkResourceState(r string, tests ...testResourceStateValidationFunc) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		res, ok := s.RootModule().Resources[r]
+		if !ok {
+			return fmt.Errorf("resource %q not found in the state", r)
+		}
+
+		for _, t := range tests {
+			if err := t(res.Primary); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	}
+}
+
+func attrFromState(s *terraform.State, r, key string) (string, error) {
+	res, ok := s.RootModule().Resources[r]
+	if !ok {
+		return "", fmt.Errorf("no resource %q found in state", r)
+	}
+
+	v, ok := res.Primary.Attributes[key]
+	if !ok {
+		return "", fmt.Errorf("no attribute %q found in resource %q", key, r)
+	}
+
+	return v, nil
 }
 
 func TestCheckResourceAttributes(t *testing.T) {
