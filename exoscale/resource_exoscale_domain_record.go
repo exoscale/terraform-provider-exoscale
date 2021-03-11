@@ -117,11 +117,11 @@ func resourceDomainRecordExists(d *schema.ResourceData, meta interface{}) (bool,
 	if domain != "" {
 		record, err := client.GetRecord(ctx, domain, id)
 		if err != nil {
-			if _, ok := err.(*egoscale.DNSErrorResponse); !ok {
-				return false, err
+			if dnserr, ok := err.(*egoscale.DNSErrorResponse); ok && dnserr.Message == "Record not found" {
+				return false, nil
 			}
 
-			return true, err
+			return true, fmt.Errorf("Failed to get DNS record id %d for domain %q from Exoscale API: %s", id, domain, err)
 		}
 
 		return record != nil, nil
