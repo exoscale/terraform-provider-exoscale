@@ -313,6 +313,7 @@ func resourceInstancePoolUpdate(d *schema.ResourceData, meta interface{}) error 
 				}
 				return list
 			}()
+			updated = true
 		}
 	}
 
@@ -322,11 +323,13 @@ func resourceInstancePoolUpdate(d *schema.ResourceData, meta interface{}) error 
 			resetFields = append(resetFields, &instancePool.Description)
 		} else {
 			instancePool.Description = d.Get(resInstancePoolAttrDescription).(string)
+			updated = true
 		}
 	}
 
 	if d.HasChange(resInstancePoolAttrDiskSize) {
 		instancePool.DiskSize = int64(d.Get(resInstancePoolAttrDiskSize).(int))
+		updated = true
 	}
 
 	if d.HasChange(resInstancePoolAttrElasticIPIDs) {
@@ -341,6 +344,7 @@ func resourceInstancePoolUpdate(d *schema.ResourceData, meta interface{}) error 
 				}
 				return list
 			}()
+			updated = true
 		}
 	}
 
@@ -348,6 +352,7 @@ func resourceInstancePoolUpdate(d *schema.ResourceData, meta interface{}) error 
 		// IPv6 can only be enabled, not disabled.
 		if enableIPv6 := d.Get("ipv6").(bool); enableIPv6 {
 			instancePool.IPv6Enabled = true
+			updated = true
 		}
 	}
 
@@ -357,11 +362,13 @@ func resourceInstancePoolUpdate(d *schema.ResourceData, meta interface{}) error 
 			resetFields = append(resetFields, &instancePool.SSHKey)
 		} else {
 			instancePool.SSHKey = d.Get(resInstancePoolAttrKeyPair).(string)
+			updated = true
 		}
 	}
 
 	if d.HasChange(resInstancePoolAttrName) {
 		instancePool.Name = d.Get(resInstancePoolAttrName).(string)
+		updated = true
 	}
 
 	if d.HasChange(resInstancePoolAttrNetworkIDs) {
@@ -377,6 +384,7 @@ func resourceInstancePoolUpdate(d *schema.ResourceData, meta interface{}) error 
 				}
 				return list
 			}()
+			updated = true
 		}
 	}
 
@@ -393,6 +401,7 @@ func resourceInstancePoolUpdate(d *schema.ResourceData, meta interface{}) error 
 				}
 				return list
 			}()
+			updated = true
 		}
 	}
 
@@ -404,14 +413,17 @@ func resourceInstancePoolUpdate(d *schema.ResourceData, meta interface{}) error 
 			return err
 		}
 		instancePool.InstanceTypeID = resp.(*egoscale.ServiceOffering).ID.String()
+		updated = true
 	}
 
 	if d.HasChange(resInstancePoolAttrTemplateID) {
 		instancePool.TemplateID = d.Get(resInstancePoolAttrTemplateID).(string)
+		updated = true
 	}
 
 	if d.HasChange(resInstancePoolAttrUserData) {
 		instancePool.UserData = base64.StdEncoding.EncodeToString([]byte(d.Get(resInstancePoolAttrUserData).(string)))
+		updated = true
 	}
 
 	zone := d.Get(resInstancePoolAttrZone).(string)
@@ -419,12 +431,6 @@ func resourceInstancePoolUpdate(d *schema.ResourceData, meta interface{}) error 
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	if err = client.UpdateInstancePool(ctx, zone, instancePool); err != nil {
 		return err
-	}
-
-	if d.HasChange(resInstancePoolAttrSize) {
-		if err = instancePool.Scale(ctx, int64(d.Get(resInstancePoolAttrSize).(int))); err != nil {
-			return err
-		}
 	}
 
 	if updated {
@@ -435,6 +441,12 @@ func resourceInstancePoolUpdate(d *schema.ResourceData, meta interface{}) error 
 
 	for _, f := range resetFields {
 		if err = instancePool.ResetField(ctx, f); err != nil {
+			return err
+		}
+	}
+
+	if d.HasChange(resInstancePoolAttrSize) {
+		if err = instancePool.Scale(ctx, int64(d.Get(resInstancePoolAttrSize).(int))); err != nil {
 			return err
 		}
 	}
