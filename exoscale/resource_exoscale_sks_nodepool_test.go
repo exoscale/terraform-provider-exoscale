@@ -16,7 +16,6 @@ import (
 var (
 	testAccResourceSKSNodepoolAntiAffinityGroupName = testPrefix + "-" + testRandomString()
 	testAccResourceSKSNodepoolDescription           = testPrefix + "-" + testRandomString()
-	testAccResourceSKSNodepoolDescriptionUpdated    = testAccResourceSKSNodepoolDescription + "-updated"
 	testAccResourceSKSNodepoolDiskSize              = defaultSKSNodepoolDiskSize
 	testAccResourceSKSNodepoolDiskSizeUpdated       = defaultSKSNodepoolDiskSize * 2
 	testAccResourceSKSNodepoolInstanceType          = "small"
@@ -89,7 +88,6 @@ resource "exoscale_sks_nodepool" "test" {
   zone = local.zone
   cluster_id = exoscale_sks_cluster.test.id
   name = "%s"
-  description = "%s"
   instance_type = "%s"
   disk_size = %d
   size = %d
@@ -105,7 +103,6 @@ resource "exoscale_sks_nodepool" "test" {
 		testAccResourceSKSNodepoolAntiAffinityGroupName,
 		testAccResourceSKSClusterName,
 		testAccResourceSKSNodepoolNameUpdated,
-		testAccResourceSKSNodepoolDescriptionUpdated,
 		testAccResourceSKSNodepoolInstanceTypeUpdated,
 		testAccResourceSKSNodepoolDiskSizeUpdated,
 		testAccResourceSKSNodepoolSizeUpdated,
@@ -147,7 +144,7 @@ func TestAccResourceSKSNodepool(t *testing.T) {
 					testAccCheckResourceSKSNodepool(nodepool),
 					testAccCheckResourceSKSNodepoolAttributes(testAttrs{
 						"created_at":                validation.NoZeroValues,
-						"description":               ValidateString(testAccResourceSKSNodepoolDescriptionUpdated),
+						"description":               ValidateString(""),
 						"disk_size":                 ValidateString(fmt.Sprint(testAccResourceSKSNodepoolDiskSizeUpdated)),
 						"id":                        validation.IsUUID,
 						"instance_pool_id":          validation.IsUUID,
@@ -171,7 +168,7 @@ func TestAccResourceSKSNodepool(t *testing.T) {
 					return checkResourceAttributes(
 						testAttrs{
 							"created_at":                validation.NoZeroValues,
-							"description":               ValidateString(testAccResourceSKSNodepoolDescriptionUpdated),
+							"description":               ValidateString(""),
 							"disk_size":                 ValidateString(fmt.Sprint(testAccResourceSKSNodepoolDiskSizeUpdated)),
 							"id":                        validation.IsUUID,
 							"instance_pool_id":          validation.IsUUID,

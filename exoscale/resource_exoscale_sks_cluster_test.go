@@ -14,10 +14,9 @@ import (
 )
 
 var (
-	testAccResourceSKSClusterName               = testPrefix + "-" + testRandomString()
-	testAccResourceSKSClusterNameUpdated        = testAccResourceSKSClusterName + "-updated"
-	testAccResourceSKSClusterDescription        = testDescription
-	testAccResourceSKSClusterDescriptionUpdated = testDescription + "-updated"
+	testAccResourceSKSClusterName        = testPrefix + "-" + testRandomString()
+	testAccResourceSKSClusterNameUpdated = testAccResourceSKSClusterName + "-updated"
+	testAccResourceSKSClusterDescription = testDescription
 
 	testAccResourceSKSClusterConfigCreate = fmt.Sprintf(`
 locals {
@@ -60,7 +59,6 @@ locals {
 resource "exoscale_sks_cluster" "test" {
   zone = local.zone
   name = "%s"
-  description = "%s"
 
   timeouts {
     create = "10m"
@@ -82,7 +80,6 @@ resource "exoscale_sks_nodepool" "test" {
 `,
 		testZoneName,
 		testAccResourceSKSClusterNameUpdated,
-		testAccResourceSKSClusterDescriptionUpdated,
 	)
 )
 
@@ -123,7 +120,7 @@ func TestAccResourceSKSCluster(t *testing.T) {
 						"addons.791607250": ValidateString(defaultSKSClusterAddOns[0]),
 						"cni":              ValidateString(defaultSKSClusterCNI),
 						"created_at":       validation.NoZeroValues,
-						"description":      ValidateString(testAccResourceSKSClusterDescriptionUpdated),
+						"description":      ValidateString(""),
 						"endpoint":         validation.IsURLWithHTTPS,
 						"id":               validation.IsUUID,
 						"name":             ValidateString(testAccResourceSKSClusterNameUpdated),
@@ -147,7 +144,7 @@ func TestAccResourceSKSCluster(t *testing.T) {
 							"addons.791607250": ValidateString(defaultSKSClusterAddOns[0]),
 							"cni":              ValidateString(defaultSKSClusterCNI),
 							"created_at":       validation.NoZeroValues,
-							"description":      ValidateString(testAccResourceSKSClusterDescriptionUpdated),
+							"description":      ValidateString(""),
 							"endpoint":         validation.IsURLWithHTTPS,
 							"id":               validation.IsUUID,
 							"name":             ValidateString(testAccResourceSKSClusterNameUpdated),
