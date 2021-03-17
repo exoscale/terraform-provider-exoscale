@@ -233,7 +233,10 @@ func resourceSKSNodepoolUpdate(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("SKS Nodepool %q not found", d.Id())
 	}
 
-	var updated bool
+	var (
+		updated     bool
+		resetFields = make([]interface{}, 0)
+	)
 
 	if d.HasChange("name") {
 		nodepool.Name = d.Get("name").(string)
@@ -241,8 +244,13 @@ func resourceSKSNodepoolUpdate(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	if d.HasChange("description") {
-		nodepool.Description = d.Get("description").(string)
-		updated = true
+		if v := d.Get("description").(string); v == "" {
+			nodepool.Description = ""
+			resetFields = append(resetFields, &nodepool.Description)
+		} else {
+			nodepool.Description = d.Get("description").(string)
+			updated = true
+		}
 	}
 
 	if d.HasChange("disk_size") {
@@ -262,23 +270,37 @@ func resourceSKSNodepoolUpdate(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	if d.HasChange("anti_affinity_group_ids") {
-		if antiAffinityIDSet, ok := d.Get("anti_affinity_group_ids").(*schema.Set); ok {
-			nodepool.AntiAffinityGroupIDs = make([]string, antiAffinityIDSet.Len())
-			for i, id := range antiAffinityIDSet.List() {
-				nodepool.AntiAffinityGroupIDs[i] = id.(string)
-			}
+		set := d.Get("anti_affinity_group_ids").(*schema.Set)
+		if set.Len() == 0 {
+			nodepool.AntiAffinityGroupIDs = nil
+			resetFields = append(resetFields, &nodepool.AntiAffinityGroupIDs)
+		} else {
+			nodepool.AntiAffinityGroupIDs = func() []string {
+				list := make([]string, set.Len())
+				for i, v := range set.List() {
+					list[i] = v.(string)
+				}
+				return list
+			}()
+			updated = true
 		}
-		updated = true
 	}
 
 	if d.HasChange("security_group_ids") {
-		if securityIDSet, ok := d.Get("security_group_ids").(*schema.Set); ok {
-			nodepool.SecurityGroupIDs = make([]string, securityIDSet.Len())
-			for i, id := range securityIDSet.List() {
-				nodepool.SecurityGroupIDs[i] = id.(string)
-			}
+		set := d.Get("security_group_ids").(*schema.Set)
+		if set.Len() == 0 {
+			nodepool.SecurityGroupIDs = nil
+			resetFields = append(resetFields, &nodepool.SecurityGroupIDs)
+		} else {
+			nodepool.SecurityGroupIDs = func() []string {
+				list := make([]string, set.Len())
+				for i, v := range set.List() {
+					list[i] = v.(string)
+				}
+				return list
+			}()
+			updated = true
 		}
-		updated = true
 	}
 
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
@@ -289,6 +311,12 @@ func resourceSKSNodepoolUpdate(d *schema.ResourceData, meta interface{}) error {
 
 	if updated {
 		if err = cluster.UpdateNodepool(ctx, nodepool); err != nil {
+			return err
+		}
+	}
+
+	for _, f := range resetFields {
+		if err = cluster.ResetNodepoolField(ctx, nodepool, f); err != nil {
 			return err
 		}
 	}

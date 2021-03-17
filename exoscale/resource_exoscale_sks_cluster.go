@@ -202,19 +202,40 @@ func resourceSKSClusterUpdate(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("SKS cluster %q not found", d.Id())
 	}
 
+	var (
+		updated     bool
+		resetFields = make([]interface{}, 0)
+	)
+
 	if d.HasChange("name") {
 		cluster.Name = d.Get("name").(string)
+		updated = true
 	}
 
 	if d.HasChange("description") {
-		cluster.Description = d.Get("description").(string)
+		if v := d.Get("description").(string); v == "" {
+			cluster.Description = ""
+			resetFields = append(resetFields, &cluster.Description)
+		} else {
+			cluster.Description = d.Get("description").(string)
+			updated = true
+		}
 	}
 
 	zone := d.Get("zone").(string)
 
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
-	if err = client.UpdateSKSCluster(ctx, zone, cluster); err != nil {
-		return err
+
+	if updated {
+		if err = client.UpdateSKSCluster(ctx, zone, cluster); err != nil {
+			return err
+		}
+	}
+
+	for _, f := range resetFields {
+		if err = cluster.ResetField(ctx, f); err != nil {
+			return err
+		}
 	}
 
 	log.Printf("[DEBUG] %s: update finished successfully", resourceSKSClusterIDString(d))
