@@ -81,6 +81,11 @@ func resourceIPAddress() *schema.Resource {
 			Type:     schema.TypeString,
 			Optional: true,
 		},
+		"reverse_dns": {
+			Type:         schema.TypeString,
+			Optional:     true,
+			ValidateFunc: ValidateRegexp(`^.*\.$`),
+		},
 		"ip_address": {
 			Type:     schema.TypeString,
 			Computed: true,
@@ -194,6 +199,16 @@ func resourceIPAddressCreate(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
+	if reverseDNS := d.Get("reverse_dns").(string); reverseDNS != "" {
+		_, err := client.RequestWithContext(ctx, &egoscale.UpdateReverseDNSForPublicIPAddress{
+			ID:         elasticIP.ID,
+			DomainName: reverseDNS,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to set reverse DNS: %s", err)
+		}
+	}
+
 	cmd, err := createTags(d, "tags", elasticIP.ResourceType())
 	if err != nil {
 		return err
@@ -277,7 +292,7 @@ func resourceIPAddressRead(d *schema.ResourceData, meta interface{}) error {
 
 	log.Printf("[DEBUG] %s: read finished successfully", resourceIPAddressIDString(d))
 
-	return resourceIPAddressApply(d, resp.(*egoscale.IPAddress))
+	return resourceIPAddressApply(d, resp.(*egoscale.IPAddress), client)
 }
 
 func resourceIPAddressUpdate(d *schema.ResourceData, meta interface{}) error {
@@ -301,8 +316,14 @@ func resourceIPAddressUpdate(d *schema.ResourceData, meta interface{}) error {
 		})
 	}
 
+	id, err := egoscale.ParseUUID(d.Id())
+	if err != nil {
+		return err
+	}
+
 	eipPartials := make([]string, 0)
 	updateEIP := egoscale.UpdateIPAddress{}
+
 	if d.HasChange("healthcheck_port") {
 		eipPartials = append(eipPartials, "healthcheck_port")
 		updateEIP.HealthcheckPort = int64(d.Get("healthcheck_port").(int))
@@ -310,6 +331,7 @@ func resourceIPAddressUpdate(d *schema.ResourceData, meta interface{}) error {
 			return errors.New("healthcheck_port must be specified")
 		}
 	}
+
 	if d.HasChange("healthcheck_path") {
 		eipPartials = append(eipPartials, "healthcheck_path")
 		updateEIP.HealthcheckPath = d.Get("healthcheck_path").(string)
@@ -321,6 +343,7 @@ func resourceIPAddressUpdate(d *schema.ResourceData, meta interface{}) error {
 			}
 		}
 	}
+
 	if d.HasChange("healthcheck_interval") {
 		eipPartials = append(eipPartials, "healthcheck_interval")
 		updateEIP.HealthcheckInterval = int64(d.Get("healthcheck_interval").(int))
@@ -328,6 +351,7 @@ func resourceIPAddressUpdate(d *schema.ResourceData, meta interface{}) error {
 			return errors.New("healthcheck_interval must be specified")
 		}
 	}
+
 	if d.HasChange("healthcheck_timeout") {
 		eipPartials = append(eipPartials, "healthcheck_timeout")
 		updateEIP.HealthcheckTimeout = int64(d.Get("healthcheck_timeout").(int))
@@ -335,6 +359,7 @@ func resourceIPAddressUpdate(d *schema.ResourceData, meta interface{}) error {
 			return errors.New("healthcheck_timeout must be specified")
 		}
 	}
+
 	if d.HasChange("healthcheck_strikes_ok") {
 		eipPartials = append(eipPartials, "healthcheck_strikes_ok")
 		updateEIP.HealthcheckStrikesOk = int64(d.Get("healthcheck_strikes_ok").(int))
@@ -342,6 +367,7 @@ func resourceIPAddressUpdate(d *schema.ResourceData, meta interface{}) error {
 			return errors.New("healthcheck_strikes_ok must be specified")
 		}
 	}
+
 	if d.HasChange("healthcheck_strikes_fail") {
 		eipPartials = append(eipPartials, "healthcheck_strikes_fail")
 		updateEIP.HealthcheckStrikesFail = int64(d.Get("healthcheck_strikes_fail").(int))
@@ -349,6 +375,7 @@ func resourceIPAddressUpdate(d *schema.ResourceData, meta interface{}) error {
 			return errors.New("healthcheck_strikes_fail must be specified")
 		}
 	}
+
 	if d.HasChange("healthcheck_tls_sni") {
 		healthcheckTLSSNI := d.Get("healthcheck_tls_sni").(string)
 		if healthcheckTLSSNI == "" {
@@ -360,6 +387,7 @@ func resourceIPAddressUpdate(d *schema.ResourceData, meta interface{}) error {
 			return errors.New("healthcheck_tls_sni is only valid in https mode")
 		}
 	}
+
 	if d.HasChange("healthcheck_tls_skip_verify") {
 		healthcheckTLSSkipVerify := d.Get("healthcheck_tls_skip_verify").(bool)
 		if !healthcheckTLSSkipVerify {
@@ -371,16 +399,29 @@ func resourceIPAddressUpdate(d *schema.ResourceData, meta interface{}) error {
 			return errors.New("healthcheck_tls_skip_verify is only valid in https mode")
 		}
 	}
+
 	if d.HasChange("description") {
 		eipPartials = append(eipPartials, "description")
 		updateEIP.Description = d.Get("description").(string)
 	}
-	if len(eipPartials) > 0 {
-		id, err := egoscale.ParseUUID(d.Id())
-		if err != nil {
-			return err
-		}
 
+	if d.HasChange("reverse_dns") {
+		eipPartials = append(eipPartials, "reverse_dns")
+		if reverseDNS := d.Get("reverse_dns").(string); reverseDNS == "" {
+			commands = append(commands, partialCommand{
+				request: &egoscale.DeleteReverseDNSFromPublicIPAddress{ID: id},
+			})
+		} else {
+			commands = append(commands, partialCommand{
+				request: &egoscale.UpdateReverseDNSForPublicIPAddress{
+					ID:         id,
+					DomainName: reverseDNS,
+				},
+			})
+		}
+	}
+
+	if len(eipPartials) > 0 {
 		updateEIP.ID = id
 		commands = append(commands, partialCommand{
 			partials: eipPartials,
@@ -424,7 +465,7 @@ func resourceIPAddressDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func resourceIPAddressApply(d *schema.ResourceData, ip *egoscale.IPAddress) error {
+func resourceIPAddressApply(d *schema.ResourceData, ip *egoscale.IPAddress, client *egoscale.Client) error {
 	d.SetId(ip.ID.String())
 	if err := d.Set("ip_address", ip.IPAddress.String()); err != nil {
 		return err
@@ -436,7 +477,6 @@ func resourceIPAddressApply(d *schema.ResourceData, ip *egoscale.IPAddress) erro
 		return err
 	}
 
-	// healthcheck
 	if ip.Healthcheck != nil {
 		if err := d.Set("healthcheck_mode", ip.Healthcheck.Mode); err != nil {
 			return err
@@ -467,7 +507,16 @@ func resourceIPAddressApply(d *schema.ResourceData, ip *egoscale.IPAddress) erro
 		}
 	}
 
-	// tags
+	resp, err := client.Request(&egoscale.QueryReverseDNSForPublicIPAddress{ID: egoscale.MustParseUUID(d.Id())})
+	if err != nil {
+		return fmt.Errorf("failed to retrieve reverse DNS: %s", err)
+	}
+	if ip := resp.(*egoscale.IPAddress); len(ip.ReverseDNS) > 0 {
+		if err := d.Set("reverse_dns", ip.ReverseDNS[0].DomainName); err != nil {
+			return err
+		}
+	}
+
 	tags := make(map[string]interface{})
 	for _, tag := range ip.Tags {
 		tags[tag.Key] = tag.Value
