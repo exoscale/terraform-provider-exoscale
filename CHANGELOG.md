@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.23.0 (March 19, 2021)
+
+IMPROVEMENTS:
+
+- `exoscale_sks_cluster`/`exoscale_sks_nodepool`: add support for field resetting
+- `exoscale_ipaddress`: add support for reverse DNS ([#97](https://github.com/exoscale/terraform-provider-exoscale/pull/97))
+- `exoscale_instance_pool`: add support for Elastic IPs ([#95](https://github.com/exoscale/terraform-provider-exoscale/pull/95))
+- `sks_nodepool`: add support for Security Groups/Anti-Affinity Groups updating ([#92](https://github.com/exoscale/terraform-provider-exoscale/pull/92))
+
+BUG FIXES:
+
+- Fix "Error: dns error: Record not found" ([#94](https://github.com/exoscale/terraform-provider-exoscale/pull/94))
+
+
 ## 0.22.0 (February 15, 2021)
 
 FEATURES:
