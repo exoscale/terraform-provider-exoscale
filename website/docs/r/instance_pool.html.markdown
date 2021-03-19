@@ -14,43 +14,46 @@ Provides an Exoscale Instance Pool resource. This can be used to create, modify,
 ## Example Usage
 
 ```hcl
-resource "exoscale_ssh_keypair" "key" {
-  name = "terraform-mywebapp-keypair"
-}
-
 variable "zone" {
   default = "de-fra-1"
 }
 
-resource "exoscale_security_group" "web" {
-  name = "web"
-  description = "Security Group for webapp production"
+resource "exoscale_ssh_keypair" "webapp" {
+  name = "my-web-app"
 }
 
-resource "exoscale_network" "web_privnet" {
-  zone = var.zone
-  name = "web-privnet"
+resource "exoscale_security_group" "webapp" {
+  name = "webapp"
+  description = "my-web-app"
 }
 
-data "exoscale_compute_template" "mywebapp" {
+resource "exoscale_network" "webapp" {
   zone = var.zone
-  name = "mywebapp"
+  name = "my-web-app"
+}
+
+resource "exoscale_ipaddress" "webapp" {
+  zone = var.zone
+}
+
+data "exoscale_compute_template" "webapp" {
+  zone = var.zone
+  name = "my-web-app"
   filter = "mine"
 }
 
 resource "exoscale_instance_pool" "webapp" {
   zone = var.zone
-  name = "webapp"
-  template_id = data.exoscale_compute_template.mywebapp.id
+  name = "my-web-app"
+  template_id = data.exoscale_compute_template.webapp.id
   size = 3
   service_offering = "medium"
   disk_size = 50
-  description = "This is the production environment for my webapp"
   user_data = "#cloud-config\npackage_upgrade: true\n"
-  key_pair = exoscale_ssh_keypair.key.name
-
-  security_group_ids = [exoscale_security_group.web.id]
-  network_ids = [exoscale_network.web_privnet.id]
+  key_pair = exoscale_ssh_keypair.webapp.name
+  security_group_ids = [exoscale_security_group.webapp.id]
+  network_ids = [exoscale_network.webapp.id]
+  elastic_ip_ids = [exoscale_ipaddress.webapp.id]
 
   timeouts {
     delete = "10m"
@@ -72,7 +75,8 @@ resource "exoscale_instance_pool" "webapp" {
 * `key_pair` - The name of the [SSH key pair][sshkeypair] to install when creating Compute instances.
 * `affinity_group_ids` - A list of [Anti-Affinity Group][r-affinity] IDs (at creation time only).
 * `security_group_ids` - A list of [Security Group][r-security_group] IDs (at creation time only).
-* `network_ids` - A list of [Private Network][privnetnet-doc] IDs.
+* `network_ids` - A list of [Private Network][privnet-doc] IDs.
+* `elastic_ip_ids` - A list of [Elastic IP][eip-doc] IDs.
 
 
 ## Attributes Reference
@@ -98,6 +102,7 @@ $ terraform import exoscale_instance_pool.pool eb556678-ec59-4be6-8c54-0406ae0f6
 
 [cloudinit]: http://cloudinit.readthedocs.io/en/latest/
 [d-compute_template]: ../d/compute_template.html
+[eip-doc]: https://community.exoscale.com/documentation/compute/eip/
 [privnet-doc]: https://community.exoscale.com/documentation/compute/private-networks/
 [r-affinity]: affinity.html
 [r-security_group]: security_group.html
