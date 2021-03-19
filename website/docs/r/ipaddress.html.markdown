@@ -38,6 +38,7 @@ resource "exoscale_ipaddress" "myip" {
   healthcheck_strikes_ok   = 2
   healthcheck_strikes_fail = 3
   healthcheck_tls_sni      = "example.net"
+  reverse_dns              = "lb.example.net"
 }
 ```
 
@@ -55,6 +56,7 @@ resource "exoscale_ipaddress" "myip" {
 * `healthcheck_strikes_fail` - The number of unsuccessful healthcheck probes before considering the target unhealthy (must be between `1` and `20`).
 * `healthcheck_tls_sni` - The healthcheck TLS server name to specify in `https` mode. Note: this parameter can only be changed to a non-empty value, it cannot be reset to its default empty value later on (requires a resource re-creation).
 * `healthcheck_tls_skip_verify` - Disable TLS certificate validation in `https` mode. Note: this parameter can only be changed to `true`, it cannot be reset to `false` later on (requires a resource re-creation).
+* `reverse_dns` - A reverse DNS record to set for the Elastic IP.
 * `tags` - A dictionary of tags (key/value). To remove all tags, set `tags = {}`.
 
 

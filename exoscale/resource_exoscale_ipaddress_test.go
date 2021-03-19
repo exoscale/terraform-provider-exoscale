@@ -12,7 +12,10 @@ import (
 
 var (
 	testAccResourceIPAddressZoneName                            = testZoneName
-	testAccResourceIPAddressDescription                         = testDescription
+	testAccResourceIPAddressDescription                         = testPrefix + "-" + testRandomString()
+	testAccResourceIPAddressDescriptionUpdated                  = testAccResourceIPAddressDescription + "-updated"
+	testAccResourceIPAddressReverseDNS                          = "test.example.com."
+	testAccResourceIPAddressReverseDNSUpdated                   = "test-updated.example.com."
 	testAccResourceIPAddressHealthcheckMode                     = "https"
 	testAccResourceIPAddressHealthcheckPort               int64 = 80
 	testAccResourceIPAddressHealthcheckPortUpdated        int64 = 8000
@@ -30,7 +33,7 @@ var (
 	testAccResourceIPAddressHealthcheckTLSSNI                   = "example.com"
 
 	testAccIPAddressConfigCreate = fmt.Sprintf(`
-resource "exoscale_ipaddress" "eip" {
+resource "exoscale_ipaddress" "test" {
   zone = "%s"
   healthcheck_mode = "%s"
   healthcheck_port = %d
@@ -39,6 +42,7 @@ resource "exoscale_ipaddress" "eip" {
   healthcheck_timeout = %d
   healthcheck_strikes_ok = %d
   healthcheck_strikes_fail = %d
+  reverse_dns = "%s"
   tags = {
     test = "acceptance"
   }
@@ -52,10 +56,11 @@ resource "exoscale_ipaddress" "eip" {
 		testAccResourceIPAddressHealthcheckTimeout,
 		testAccResourceIPAddressHealthcheckStrikesOk,
 		testAccResourceIPAddressHealthcheckStrikesFail,
+		testAccResourceIPAddressReverseDNS,
 	)
 
 	testAccIPAddressConfigUpdate = fmt.Sprintf(`
-resource "exoscale_ipaddress" "eip" {
+resource "exoscale_ipaddress" "test" {
   zone = "%s"
   description = "%s"
   healthcheck_mode = "%s"
@@ -67,10 +72,11 @@ resource "exoscale_ipaddress" "eip" {
   healthcheck_strikes_fail = %d
   healthcheck_tls_skip_verify = %t
   healthcheck_tls_sni = "%s"
+  reverse_dns = "%s"
 }
 `,
 		testAccResourceIPAddressZoneName,
-		testAccResourceIPAddressDescription,
+		testAccResourceIPAddressDescriptionUpdated,
 		testAccResourceIPAddressHealthcheckMode,
 		testAccResourceIPAddressHealthcheckPortUpdated,
 		testAccResourceIPAddressHealthcheckPathUpdated,
@@ -80,6 +86,7 @@ resource "exoscale_ipaddress" "eip" {
 		testAccResourceIPAddressHealthcheckStrikesFailUpdated,
 		testAccResourceIPAddressHealthcheckTLSSkipVerify,
 		testAccResourceIPAddressHealthcheckTLSSNI,
+		testAccResourceIPAddressReverseDNSUpdated,
 	)
 )
 
@@ -94,7 +101,7 @@ func TestAccResourceIPAddress(t *testing.T) {
 			{
 				Config: testAccIPAddressConfigCreate,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckIPAddressExists("exoscale_ipaddress.eip", eip),
+					testAccCheckIPAddressExists("exoscale_ipaddress.test", eip),
 					testAccCheckIPAddressCreate(eip),
 					testAccCheckIPAddressAttributes(testAttrs{
 						"healthcheck_mode":         ValidateString(testAccResourceIPAddressHealthcheckMode),
@@ -104,16 +111,17 @@ func TestAccResourceIPAddress(t *testing.T) {
 						"healthcheck_timeout":      ValidateString(fmt.Sprint(testAccResourceIPAddressHealthcheckTimeout)),
 						"healthcheck_strikes_ok":   ValidateString(fmt.Sprint(testAccResourceIPAddressHealthcheckStrikesOk)),
 						"healthcheck_strikes_fail": ValidateString(fmt.Sprint(testAccResourceIPAddressHealthcheckStrikesFail)),
+						"reverse_dns":              ValidateString(testAccResourceIPAddressReverseDNS),
 					}),
 				),
 			},
 			{
 				Config: testAccIPAddressConfigUpdate,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckIPAddressExists("exoscale_ipaddress.eip", eip),
+					testAccCheckIPAddressExists("exoscale_ipaddress.test", eip),
 					testAccCheckIPAddressUpdate(eip),
 					testAccCheckIPAddressAttributes(testAttrs{
-						"description":                 ValidateString(testAccResourceIPAddressDescription),
+						"description":                 ValidateString(testAccResourceIPAddressDescriptionUpdated),
 						"healthcheck_mode":            ValidateString(testAccResourceIPAddressHealthcheckMode),
 						"healthcheck_port":            ValidateString(fmt.Sprint(testAccResourceIPAddressHealthcheckPortUpdated)),
 						"healthcheck_path":            ValidateString(testAccResourceIPAddressHealthcheckPathUpdated),
@@ -123,17 +131,18 @@ func TestAccResourceIPAddress(t *testing.T) {
 						"healthcheck_strikes_fail":    ValidateString(fmt.Sprint(testAccResourceIPAddressHealthcheckStrikesFailUpdated)),
 						"healthcheck_tls_skip_verify": ValidateString(fmt.Sprint(testAccResourceIPAddressHealthcheckTLSSkipVerify)),
 						"healthcheck_tls_sni":         ValidateString(testAccResourceIPAddressHealthcheckTLSSNI),
+						"reverse_dns":                 ValidateString(testAccResourceIPAddressReverseDNSUpdated),
 					}),
 				),
 			},
 			{
-				ResourceName:      "exoscale_ipaddress.eip",
+				ResourceName:      "exoscale_ipaddress.test",
 				ImportState:       true,
 				ImportStateVerify: true,
 				ImportStateCheck: func(s []*terraform.InstanceState) error {
 					return checkResourceAttributes(
 						testAttrs{
-							"description":                 ValidateString(testAccResourceIPAddressDescription),
+							"description":                 ValidateString(testAccResourceIPAddressDescriptionUpdated),
 							"healthcheck_mode":            ValidateString(testAccResourceIPAddressHealthcheckMode),
 							"healthcheck_port":            ValidateString(fmt.Sprint(testAccResourceIPAddressHealthcheckPortUpdated)),
 							"healthcheck_path":            ValidateString(testAccResourceIPAddressHealthcheckPathUpdated),
@@ -143,6 +152,7 @@ func TestAccResourceIPAddress(t *testing.T) {
 							"healthcheck_strikes_fail":    ValidateString(fmt.Sprint(testAccResourceIPAddressHealthcheckStrikesFailUpdated)),
 							"healthcheck_tls_skip_verify": ValidateString(fmt.Sprint(testAccResourceIPAddressHealthcheckTLSSkipVerify)),
 							"healthcheck_tls_sni":         ValidateString(testAccResourceIPAddressHealthcheckTLSSNI),
+							"reverse_dns":                 ValidateString(testAccResourceIPAddressReverseDNSUpdated),
 						},
 						s[0].Attributes)
 				},
