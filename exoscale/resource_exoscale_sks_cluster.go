@@ -13,7 +13,6 @@ import (
 )
 
 const (
-	defaultSKSClusterVersion      = "1.20.3"
 	defaultSKSClusterCNI          = "calico"
 	defaultSKSClusterServiceLevel = "pro"
 )
@@ -75,7 +74,7 @@ func resourceSKSCluster() *schema.Resource {
 		"version": {
 			Type:     schema.TypeString,
 			Optional: true,
-			Default:  defaultSKSClusterVersion,
+			Computed: true,
 		},
 		"zone": {
 			Type:     schema.TypeString,
@@ -109,11 +108,12 @@ func resourceSKSCluster() *schema.Resource {
 func resourceSKSClusterCreate(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] %s: beginning create", resourceSKSClusterIDString(d))
 
+	zone := d.Get("zone").(string)
+
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutCreate))
 	defer cancel()
 	client := GetComputeClient(meta)
-
-	zone := d.Get("zone").(string)
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 
 	addOns := defaultSKSClusterAddOns
 	if addonsSet, ok := d.Get("addons").(*schema.Set); ok && addonsSet.Len() > 0 {
@@ -123,14 +123,25 @@ func resourceSKSClusterCreate(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
+	version := d.Get("version").(string)
+	if version == "" {
+		versions, err := client.ListSKSClusterVersions(ctx)
+		if err != nil || len(versions) == 0 {
+			if len(versions) == 0 {
+				err = errors.New("no version returned by the API")
+			}
+			return fmt.Errorf("unable to retrieve SKS versions: %s", err)
+		}
+		version = versions[0]
+	}
+
 	cluster, err := client.CreateSKSCluster(
 		ctx,
 		zone,
 		&exov2.SKSCluster{
 			Name:         d.Get("name").(string),
 			Description:  d.Get("description").(string),
-			Version:      d.Get("version").(string),
+			Version:      version,
 			ServiceLevel: d.Get("service_level").(string),
 			CNI:          d.Get("cni").(string),
 			AddOns:       addOns,

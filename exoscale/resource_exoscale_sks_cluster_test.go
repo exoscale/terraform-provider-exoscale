@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"testing"
 
 	exov2 "github.com/exoscale/egoscale/v2"
@@ -11,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/stretchr/testify/assert"
 )
 
 var (
@@ -84,18 +86,55 @@ resource "exoscale_sks_nodepool" "test" {
 )
 
 func TestAccResourceSKSCluster(t *testing.T) {
-	sksCluster := new(exov2.SKSCluster)
+	var sksCluster exov2.SKSCluster
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
+		PreCheck: func() {
+			testAccPreCheck(t)
+		},
+
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckResourceSKSClusterDestroy,
 		Steps: []resource.TestStep{
-			{
+			{ // Create
 				Config: testAccResourceSKSClusterConfigCreate,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckResourceSKSClusterExists("exoscale_sks_cluster.test", sksCluster),
-					testAccCheckResourceSKSCluster(sksCluster),
+					testAccCheckResourceSKSClusterExists("exoscale_sks_cluster.test", &sksCluster),
+					func(s *terraform.State) error {
+						a := assert.New(t)
+
+						// Retrieve the latest SKS version available to test the
+						// exoscale_sks_cluster.version attribute default value.
+						client, err := exov2.NewClient(
+							os.Getenv("EXOSCALE_API_KEY"),
+							os.Getenv("EXOSCALE_API_SECRET"),
+							exov2.ClientOptCond(func() bool {
+								if v := os.Getenv("EXOSCALE_TRACE"); v != "" {
+									return true
+								}
+								return false
+							}, exov2.ClientOptWithTrace()))
+						if err != nil {
+							return fmt.Errorf("unable to initialize Exoscale client: %s", err)
+						}
+
+						versions, err := client.ListSKSClusterVersions(
+							exoapi.WithEndpoint(
+								context.Background(),
+								exoapi.NewReqEndpoint(os.Getenv("EXOSCALE_API_ENVIRONMENT"), testZoneName)),
+						)
+						if err != nil || len(versions) == 0 {
+							if len(versions) == 0 {
+								err = errors.New("no version returned by the API")
+							}
+							return fmt.Errorf("unable to retrieve SKS versions: %s", err)
+						}
+						latestVersion := versions[0]
+
+						a.Equal(latestVersion, sksCluster.Version)
+
+						return nil
+					},
 					testAccCheckResourceSKSClusterAttributes(testAttrs{
 						"addons.791607250": ValidateString(defaultSKSClusterAddOns[0]),
 						"cni":              ValidateString(defaultSKSClusterCNI),
@@ -106,16 +145,16 @@ func TestAccResourceSKSCluster(t *testing.T) {
 						"name":             ValidateString(testAccResourceSKSClusterName),
 						"service_level":    ValidateString(defaultSKSClusterServiceLevel),
 						"state":            validation.NoZeroValues,
-						"version":          ValidateString(defaultSKSClusterVersion),
-						"zone":             ValidateString(testZoneName),
+						"version":          validation.NoZeroValues,
+
+						"zone": ValidateString(testZoneName),
 					}),
 				),
 			},
-			{
+			{ // Update
 				Config: testAccResourceSKSClusterConfigUpdate,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckResourceSKSClusterExists("exoscale_sks_cluster.test", sksCluster),
-					testAccCheckResourceSKSCluster(sksCluster),
+					testAccCheckResourceSKSClusterExists("exoscale_sks_cluster.test", &sksCluster),
 					testAccCheckResourceSKSClusterAttributes(testAttrs{
 						"addons.791607250": ValidateString(defaultSKSClusterAddOns[0]),
 						"cni":              ValidateString(defaultSKSClusterCNI),
@@ -127,12 +166,12 @@ func TestAccResourceSKSCluster(t *testing.T) {
 						"nodepools.#":      ValidateString("1"),
 						"service_level":    ValidateString(defaultSKSClusterServiceLevel),
 						"state":            validation.NoZeroValues,
-						"version":          ValidateString(defaultSKSClusterVersion),
+						"version":          validation.NoZeroValues,
 						"zone":             ValidateString(testZoneName),
 					}),
 				),
 			},
-			{
+			{ // Import
 				ResourceName:            "exoscale_sks_cluster.test",
 				ImportState:             true,
 				ImportStateVerify:       true,
@@ -151,7 +190,7 @@ func TestAccResourceSKSCluster(t *testing.T) {
 							"nodepools.#":      ValidateString("1"),
 							"service_level":    ValidateString(defaultSKSClusterServiceLevel),
 							"state":            validation.NoZeroValues,
-							"version":          ValidateString(defaultSKSClusterVersion),
+							"version":          validation.NoZeroValues,
 							"zone":             ValidateString(testZoneName),
 						},
 					),
@@ -183,16 +222,7 @@ func testAccCheckResourceSKSClusterExists(n string, sksCluster *exov2.SKSCluster
 			return err
 		}
 
-		return Copy(sksCluster, r)
-	}
-}
-
-func testAccCheckResourceSKSCluster(sksCluster *exov2.SKSCluster) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		if sksCluster.ID == "" {
-			return errors.New("SKS cluster ID is empty")
-		}
-
+		*sksCluster = *r
 		return nil
 	}
 }

@@ -36,7 +36,7 @@ output "sks_endpoint" {
 * `name` - (Required) The name of the SKS cluster.
 * `description` - The description of the SKS cluster.
 * `service_level` - The service level of the SKS cluster control plane (default: `"pro"`).
-* `version` - The Kubernetes version of the SKS cluster control plane (default: `"1.20.2"`).
+* `version` - The Kubernetes version of the SKS cluster control plane (default: latest version available from the API).
 * `cni` - The Kubernetes [CNI][cni] plugin to be deployed in the SKS cluster control plane (default: `"calico"`).
 * `addons` - A list of optional add-ons to be deployed in the SKS cluster control plane (default: `["exoscale-cloud-controller"]`).
 
