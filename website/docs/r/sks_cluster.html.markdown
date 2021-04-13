@@ -38,7 +38,9 @@ output "sks_endpoint" {
 * `service_level` - The service level of the SKS cluster control plane (default: `"pro"`).
 * `version` - The Kubernetes version of the SKS cluster control plane (default: latest version available from the API).
 * `cni` - The Kubernetes [CNI][cni] plugin to be deployed in the SKS cluster control plane (default: `"calico"`).
-* `addons` - A list of optional add-ons to be deployed in the SKS cluster control plane (default: `["exoscale-cloud-controller"]`).
+* `exoscale_ccm` - Deploy the Exoscale [Cloud Controller Manager][exo-ccm] in the SKS cluster control plane (default: `true`).
+* `metrics_server` - Deploy the [Kubernetes Metrics Server][k8s-ms] in the SKS cluster control plane (default: `true`).
+* `addons` - A list of optional add-ons to be deployed in the SKS cluster control plane (default: `[]`).
 
 
 ## Attributes Reference
@@ -64,6 +66,8 @@ $ terraform import exoscale_sks_cluster.prod eb556678-ec59-4be6-8c54-0406ae0f6da
 
 
 [cni]: https://www.cni.dev/
+[exo-ccm]: https://github.com/exoscale/exoscale-cloud-controller-manager
+[k8s-ms]: https://github.com/kubernetes-sigs/metrics-server
 [r-sks_nodepool]: sks_nodepool.html
 [sks-doc]: https://community.exoscale.com/documentation/sks/
 [zone]: https://www.exoscale.com/datacenters/
