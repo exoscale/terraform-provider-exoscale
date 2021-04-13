@@ -29,6 +29,8 @@ resource "exoscale_sks_cluster" "test" {
   zone = local.zone
   name = "%s"
   description = "%s"
+  exoscale_ccm = true
+  metrics_server = false
 
   timeouts {
     create = "10m"
@@ -61,6 +63,8 @@ locals {
 resource "exoscale_sks_cluster" "test" {
   zone = local.zone
   name = "%s"
+  exoscale_ccm = true
+  metrics_server = false
 
   timeouts {
     create = "10m"
@@ -136,12 +140,14 @@ func TestAccResourceSKSCluster(t *testing.T) {
 						return nil
 					},
 					testAccCheckResourceSKSClusterAttributes(testAttrs{
-						"addons.791607250": ValidateString(defaultSKSClusterAddOns[0]),
+						"addons.791607250": validation.NoZeroValues,
 						"cni":              ValidateString(defaultSKSClusterCNI),
 						"created_at":       validation.NoZeroValues,
 						"description":      ValidateString(testAccResourceSKSClusterDescription),
 						"endpoint":         validation.IsURLWithHTTPS,
+						"exoscale_ccm":     ValidateString("true"),
 						"id":               validation.IsUUID,
+						"metrics_server":   ValidateString("false"),
 						"name":             ValidateString(testAccResourceSKSClusterName),
 						"service_level":    ValidateString(defaultSKSClusterServiceLevel),
 						"state":            validation.NoZeroValues,
@@ -156,12 +162,14 @@ func TestAccResourceSKSCluster(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckResourceSKSClusterExists("exoscale_sks_cluster.test", &sksCluster),
 					testAccCheckResourceSKSClusterAttributes(testAttrs{
-						"addons.791607250": ValidateString(defaultSKSClusterAddOns[0]),
+						"addons.791607250": validation.NoZeroValues,
 						"cni":              ValidateString(defaultSKSClusterCNI),
 						"created_at":       validation.NoZeroValues,
 						"description":      ValidateString(""),
 						"endpoint":         validation.IsURLWithHTTPS,
+						"exoscale_ccm":     ValidateString("true"),
 						"id":               validation.IsUUID,
+						"metrics_server":   ValidateString("false"),
 						"name":             ValidateString(testAccResourceSKSClusterNameUpdated),
 						"nodepools.#":      ValidateString("1"),
 						"service_level":    ValidateString(defaultSKSClusterServiceLevel),
@@ -180,12 +188,14 @@ func TestAccResourceSKSCluster(t *testing.T) {
 					testAccCheckResourceImportedAttributes(
 						"exoscale_sks_cluster",
 						testAttrs{
-							"addons.791607250": ValidateString(defaultSKSClusterAddOns[0]),
+							"addons.791607250": validation.NoZeroValues,
 							"cni":              ValidateString(defaultSKSClusterCNI),
 							"created_at":       validation.NoZeroValues,
 							"description":      ValidateString(""),
 							"endpoint":         validation.IsURLWithHTTPS,
+							"exoscale_ccm":     ValidateString("true"),
 							"id":               validation.IsUUID,
+							"metrics_server":   ValidateString("false"),
 							"name":             ValidateString(testAccResourceSKSClusterNameUpdated),
 							"nodepools.#":      ValidateString("1"),
 							"service_level":    ValidateString(defaultSKSClusterServiceLevel),

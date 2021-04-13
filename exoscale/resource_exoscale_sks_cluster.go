@@ -15,9 +15,10 @@ import (
 const (
 	defaultSKSClusterCNI          = "calico"
 	defaultSKSClusterServiceLevel = "pro"
-)
 
-var defaultSKSClusterAddOns = []string{"exoscale-cloud-controller"}
+	sksClusterAddonExoscaleCCM = "exoscale-cloud-controller"
+	sksClusterAddonMS          = "metrics-server"
+)
 
 func resourceSKSClusterIDString(d resourceIDStringer) string {
 	return resourceIDString(d, "exoscale_sks_cluster")
@@ -31,9 +32,6 @@ func resourceSKSCluster() *schema.Resource {
 			Elem:     &schema.Schema{Type: schema.TypeString},
 			Optional: true,
 			Computed: true,
-			DefaultFunc: func() schema.SchemaDefaultFunc {
-				return func() (interface{}, error) { return defaultSKSClusterAddOns, nil }
-			}(),
 		},
 		"cni": {
 			Type:     schema.TypeString,
@@ -51,6 +49,16 @@ func resourceSKSCluster() *schema.Resource {
 		"endpoint": {
 			Type:     schema.TypeString,
 			Computed: true,
+		},
+		"exoscale_ccm": {
+			Type:     schema.TypeBool,
+			Optional: true,
+			Default:  true,
+		},
+		"metrics_server": {
+			Type:     schema.TypeBool,
+			Optional: true,
+			Default:  true,
 		},
 		"name": {
 			Type:     schema.TypeString,
@@ -115,12 +123,20 @@ func resourceSKSClusterCreate(d *schema.ResourceData, meta interface{}) error {
 	client := GetComputeClient(meta)
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 
-	addOns := defaultSKSClusterAddOns
+	var addOns []string
 	if addonsSet, ok := d.Get("addons").(*schema.Set); ok && addonsSet.Len() > 0 {
 		addOns = make([]string, addonsSet.Len())
 		for i, a := range addonsSet.List() {
 			addOns[i] = a.(string)
 		}
+	}
+
+	if enableCCM := d.Get("exoscale_ccm").(bool); enableCCM && !in(addOns, sksClusterAddonExoscaleCCM) {
+		addOns = append(addOns, sksClusterAddonExoscaleCCM)
+	}
+
+	if enableMS := d.Get("metrics_server").(bool); enableMS && !in(addOns, sksClusterAddonMS) {
+		addOns = append(addOns, sksClusterAddonMS)
 	}
 
 	version := d.Get("version").(string)
@@ -330,6 +346,14 @@ func resourceSKSClusterApply(d *schema.ResourceData, cluster *exov2.SKSCluster) 
 	}
 
 	if err := d.Set("endpoint", cluster.Endpoint); err != nil {
+		return err
+	}
+
+	if err := d.Set("exoscale_ccm", in(cluster.AddOns, sksClusterAddonExoscaleCCM)); err != nil {
+		return err
+	}
+
+	if err := d.Set("metrics_server", in(cluster.AddOns, sksClusterAddonMS)); err != nil {
 		return err
 	}
 
