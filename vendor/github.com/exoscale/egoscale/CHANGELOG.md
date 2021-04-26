@@ -12,7 +12,6 @@ Changelog
 - feature: SKS: add SKSCluster.RotateCCMCredentials() method (#481)
 - feature: SKS: add SKSCluster.AuthorityCert() method (#480)
 
-
 0.45.1
 ------
 

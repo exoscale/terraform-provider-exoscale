@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/exoscale/egoscale"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 )
@@ -212,6 +213,20 @@ func resourceCompute() *schema.Resource {
 			Update: schema.DefaultTimeout(defaultTimeout),
 			Delete: schema.DefaultTimeout(defaultTimeout),
 		},
+
+		CustomizeDiff: customdiff.ComputedIf("ip_address", func(d *schema.ResourceDiff, meta interface{}) bool {
+			// Force recomputation of "ip_address" when old
+			// (current) IP address is "" and the VM's state
+			// transitions from "Stopped" to "Running".
+			old_state, new_state := d.GetChange("state")
+			old_ip, _ := d.GetChange("ip_address")
+			if old_ip.(string) == "" &&
+				old_state.(string) == "Stopped" &&
+				new_state.(string) == "Running" {
+				return true
+			}
+			return false
+		}),
 	}
 }
 
