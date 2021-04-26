@@ -11,6 +11,8 @@ import (
 )
 
 var (
+	testAccResourceComputeState              = "Stopped"
+	testAccResourceComputeStateUpdated       = "Running"
 	testAccResourceComputeSSHKeyName         = testPrefix + "-" + testRandomString()
 	testAccResourceComputeSecurityGroupName  = testPrefix + "-" + testRandomString()
 	testAccResourceComputeZoneName           = testZoneName
@@ -39,6 +41,7 @@ resource "exoscale_compute" "vm" {
   disk_size = "%s"
   key_pair = exoscale_ssh_keypair.key.name
   reverse_dns = "%s"
+  state = "%s"
 
   tags = {
     test = "terraform"
@@ -52,6 +55,7 @@ resource "exoscale_compute" "vm" {
 		testAccResourceComputeSize,
 		testAccResourceComputeDiskSize,
 		testAccResourceComputeReverseDNS,
+		testAccResourceComputeState,
 	)
 
 	testAccResourceComputeConfigCreateTemplateByID = fmt.Sprintf(`
@@ -67,6 +71,7 @@ resource "exoscale_compute" "vm" {
   disk_size = "%s"
   key_pair = exoscale_ssh_keypair.key.name
   reverse_dns = "%s"
+  state = "%s"
 
   tags = {
     test = "terraform"
@@ -80,6 +85,51 @@ resource "exoscale_compute" "vm" {
 		testAccResourceComputeSize,
 		testAccResourceComputeDiskSize,
 		testAccResourceComputeReverseDNS,
+		testAccResourceComputeState,
+	)
+
+	testAccResourceComputeStateUpdate = fmt.Sprintf(`
+resource "exoscale_ssh_keypair" "key" {
+  name = "%s"
+}
+
+resource "exoscale_domain" "dom" {
+  name = "%s"
+}
+
+resource "exoscale_compute" "vm" {
+  template_id = "%s"
+  zone = "%s"
+  display_name = "%s"
+  size = "%s"
+  disk_size = "%s"
+  key_pair = exoscale_ssh_keypair.key.name
+  reverse_dns = "%s"
+  state = "%s"
+
+  tags = {
+    test = "terraform"
+  }
+}
+
+resource "exoscale_domain_record" "vm" {
+  domain      = exoscale_domain.dom.id
+  name        = "%s"
+  ttl         = 60
+  record_type = "A"
+  content     = exoscale_compute.vm.ip_address
+}
+`,
+		testAccResourceComputeSSHKeyName,
+		testAccResourceDomainName,
+		testAccResourceComputeTemplateID,
+		testAccResourceComputeZoneName,
+		testAccResourceComputeDisplayName,
+		testAccResourceComputeSize,
+		testAccResourceComputeDiskSize,
+		testAccResourceComputeReverseDNS,
+		testAccResourceComputeStateUpdated,
+		testAccResourceComputeHostname,
 	)
 
 	testAccResourceComputeConfigUpdate = fmt.Sprintf(`
@@ -157,6 +207,8 @@ func TestAccResourceCompute(t *testing.T) {
 						"key_pair":     ValidateString(testAccResourceComputeSSHKeyName),
 						"tags.test":    ValidateString("terraform"),
 						"reverse_dns":  ValidateString(testAccResourceComputeReverseDNS),
+						"state":        ValidateString(testAccResourceComputeState),
+						"ip_address":   ValidateString(""),
 					}),
 				),
 			},
@@ -175,6 +227,31 @@ func TestAccResourceCompute(t *testing.T) {
 						"key_pair":     ValidateString(testAccResourceComputeSSHKeyName),
 						"tags.test":    ValidateString("terraform"),
 						"reverse_dns":  ValidateString(testAccResourceComputeReverseDNS),
+						"state":        ValidateString(testAccResourceComputeState),
+						"ip_address":   ValidateString(""),
+					}),
+				),
+			},
+			{
+				Config: testAccResourceComputeStateUpdate,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckResourceComputeExists("exoscale_compute.vm", vm),
+					testAccCheckResourceCompute(vm),
+					testAccCheckResourceComputeAttributes(testAttrs{
+						"template_id":  ValidateString(testAccResourceComputeTemplateID),
+						"display_name": ValidateString(testAccResourceComputeDisplayName),
+						"hostname":     ValidateString(testAccResourceComputeDisplayName),
+						"name":         ValidateString(testAccResourceComputeDisplayName),
+						"size":         ValidateString(testAccResourceComputeSize),
+						"disk_size":    ValidateString(testAccResourceComputeDiskSize),
+						"key_pair":     ValidateString(testAccResourceComputeSSHKeyName),
+						"tags.test":    ValidateString("terraform"),
+						"reverse_dns":  ValidateString(testAccResourceComputeReverseDNS),
+						"state":        ValidateString(testAccResourceComputeStateUpdated),
+						"ip_address":   ValidateIPv4String(),
+					}),
+					testAccCheckResourceDomainRecordAttributes(testAttrs{
+						"content": ValidateIPv4String(),
 					}),
 				),
 			},
@@ -196,6 +273,8 @@ func TestAccResourceCompute(t *testing.T) {
 						"ip6":               ValidateString("true"),
 						"user_data":         ValidateString("#cloud-config\npackage_upgrade: true\n"),
 						"reverse_dns":       ValidateString(testAccResourceComputeReverseDNSUpdated),
+						"state":             ValidateString(testAccResourceComputeStateUpdated),
+						"ip_address":        ValidateIPv4String(),
 					}),
 				),
 			},
