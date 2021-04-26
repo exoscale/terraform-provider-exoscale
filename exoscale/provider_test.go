@@ -28,7 +28,7 @@ const (
 		    zoneid=1128bd56-b4d9-4ac6-a7b9-c715b187ce11 \
 		    name="Linux Ubuntu 20.04 LTS 64-bit"
 	*/
-	testInstanceTemplateID = "23c0622f-34cd-44c3-b995-a56d436cff85"
+	testInstanceTemplateID = "a5ddefa9-7e98-40cb-94b3-e20348b878fa"
 
 	testInstanceTypeIDTiny  = "b6cd1ff5-3a2f-4e9d-a4d1-8988c1191fe8"
 	testInstanceTypeIDSmall = "21624abb-764e-4def-81d7-9fc54b5957fb"
