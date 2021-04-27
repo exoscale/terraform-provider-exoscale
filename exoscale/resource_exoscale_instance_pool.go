@@ -19,6 +19,7 @@ const (
 	defaultInstancePoolInstancePrefix = "pool"
 
 	resInstancePoolAttrAffinityGroupIDs = "affinity_group_ids"
+	resInstancePoolAttrDeployTargetID   = "deploy_target_id"
 	resInstancePoolAttrDescription      = "description"
 	resInstancePoolAttrDiskSize         = "disk_size"
 	resInstancePoolAttrElasticIPIDs     = "elastic_ip_ids"
@@ -49,6 +50,10 @@ func resourceInstancePool() *schema.Resource {
 			Optional: true,
 			Set:      schema.HashString,
 			Elem:     &schema.Schema{Type: schema.TypeString},
+		},
+		resInstancePoolAttrDeployTargetID: {
+			Type:     schema.TypeString,
+			Optional: true,
 		},
 		resInstancePoolAttrDescription: {
 			Type:     schema.TypeString,
@@ -170,6 +175,7 @@ func resourceInstancePoolCreate(d *schema.ResourceData, meta interface{}) error 
 	client := GetComputeClient(meta)
 
 	instancePool := &exov2.InstancePool{
+		DeployTargetID: d.Get(resInstancePoolAttrDeployTargetID).(string),
 		Description:    d.Get(resInstancePoolAttrDescription).(string),
 		DiskSize:       int64(d.Get(resInstancePoolAttrDiskSize).(int)),
 		Name:           d.Get(resInstancePoolAttrName).(string),
@@ -322,6 +328,16 @@ func resourceInstancePoolUpdate(d *schema.ResourceData, meta interface{}) error 
 				}
 				return list
 			}()
+			updated = true
+		}
+	}
+
+	if d.HasChange(resInstancePoolAttrDeployTargetID) {
+		if v := d.Get(resInstancePoolAttrDeployTargetID).(string); v == "" {
+			instancePool.DeployTargetID = ""
+			resetFields = append(resetFields, &instancePool.DeployTargetID)
+		} else {
+			instancePool.DeployTargetID = d.Get(resInstancePoolAttrDeployTargetID).(string)
 			updated = true
 		}
 	}
@@ -497,6 +513,10 @@ func resourceInstancePoolApply(ctx context.Context, client *egoscale.Client, d *
 		antiAffinityGroupIDs[i] = id
 	}
 	if err := d.Set(resInstancePoolAttrAffinityGroupIDs, antiAffinityGroupIDs); err != nil {
+		return err
+	}
+
+	if err := d.Set(resInstancePoolAttrDeployTargetID, instancePool.DeployTargetID); err != nil {
 		return err
 	}
 
