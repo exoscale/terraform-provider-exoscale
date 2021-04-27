@@ -173,8 +173,7 @@ func resourceNLBUpdate(d *schema.ResourceData, meta interface{}) error {
 	zone := d.Get("zone").(string)
 
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
-	_, err = client.UpdateNetworkLoadBalancer(ctx, zone, nlb)
-	if err != nil {
+	if err = client.UpdateNetworkLoadBalancer(ctx, zone, nlb); err != nil {
 		return err
 	}
 
