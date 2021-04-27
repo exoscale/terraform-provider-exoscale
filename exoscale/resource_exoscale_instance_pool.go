@@ -16,11 +16,14 @@ import (
 )
 
 const (
+	defaultInstancePoolInstancePrefix = "pool"
+
 	resInstancePoolAttrAffinityGroupIDs = "affinity_group_ids"
 	resInstancePoolAttrDescription      = "description"
 	resInstancePoolAttrDiskSize         = "disk_size"
 	resInstancePoolAttrElasticIPIDs     = "elastic_ip_ids"
 	resInstancePoolAttrID               = "id"
+	resInstancePoolAttrInstancePrefix   = "instance_prefix"
 	resInstancePoolAttrIPv6             = "ipv6"
 	resInstancePoolAttrKeyPair          = "key_pair"
 	resInstancePoolAttrName             = "name"
@@ -61,6 +64,11 @@ func resourceInstancePool() *schema.Resource {
 			Optional: true,
 			Set:      schema.HashString,
 			Elem:     &schema.Schema{Type: schema.TypeString},
+		},
+		resInstancePoolAttrInstancePrefix: {
+			Type:     schema.TypeString,
+			Optional: true,
+			Default:  defaultInstancePoolInstancePrefix,
 		},
 		resInstancePoolAttrIPv6: {
 			Type:     schema.TypeBool,
@@ -162,13 +170,14 @@ func resourceInstancePoolCreate(d *schema.ResourceData, meta interface{}) error 
 	client := GetComputeClient(meta)
 
 	instancePool := &exov2.InstancePool{
-		Description: d.Get(resInstancePoolAttrDescription).(string),
-		DiskSize:    int64(d.Get(resInstancePoolAttrDiskSize).(int)),
-		Name:        d.Get(resInstancePoolAttrName).(string),
-		SSHKey:      d.Get(resInstancePoolAttrKeyPair).(string),
-		Size:        int64(d.Get(resInstancePoolAttrSize).(int)),
-		TemplateID:  d.Get(resInstancePoolAttrTemplateID).(string),
-		UserData:    base64.StdEncoding.EncodeToString([]byte(d.Get(resInstancePoolAttrUserData).(string))),
+		Description:    d.Get(resInstancePoolAttrDescription).(string),
+		DiskSize:       int64(d.Get(resInstancePoolAttrDiskSize).(int)),
+		Name:           d.Get(resInstancePoolAttrName).(string),
+		InstancePrefix: d.Get(resInstancePoolAttrInstancePrefix).(string),
+		SSHKey:         d.Get(resInstancePoolAttrKeyPair).(string),
+		Size:           int64(d.Get(resInstancePoolAttrSize).(int)),
+		TemplateID:     d.Get(resInstancePoolAttrTemplateID).(string),
+		UserData:       base64.StdEncoding.EncodeToString([]byte(d.Get(resInstancePoolAttrUserData).(string))),
 	}
 
 	resp, err := client.GetWithContext(ctx, &egoscale.ServiceOffering{
@@ -348,6 +357,11 @@ func resourceInstancePoolUpdate(d *schema.ResourceData, meta interface{}) error 
 		}
 	}
 
+	if d.HasChange(resInstancePoolAttrInstancePrefix) {
+		instancePool.InstancePrefix = d.Get(resInstancePoolAttrInstancePrefix).(string)
+		updated = true
+	}
+
 	if d.HasChange(resInstancePoolAttrIPv6) {
 		// IPv6 can only be enabled, not disabled.
 		if enableIPv6 := d.Get("ipv6").(bool); enableIPv6 {
@@ -499,6 +513,10 @@ func resourceInstancePoolApply(ctx context.Context, client *egoscale.Client, d *
 		elasticIPIDs[i] = id
 	}
 	if err := d.Set(resInstancePoolAttrElasticIPIDs, elasticIPIDs); err != nil {
+		return err
+	}
+
+	if err := d.Set(resInstancePoolAttrInstancePrefix, instancePool.InstancePrefix); err != nil {
 		return err
 	}
 

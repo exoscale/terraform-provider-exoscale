@@ -25,6 +25,7 @@ var (
 	testAccResourceInstancePoolKeyPair                      = testPrefix + "-" + testRandomString()
 	testAccResourceInstancePoolName                         = testPrefix + "-" + testRandomString()
 	testAccResourceInstancePoolNameUpdated                  = testAccResourceInstancePoolName + "-updated"
+	testAccResourceInstancePoolInstancePrefix               = "pool-" + testAccResourceNLBInstancePoolName
 	testAccResourceInstancePoolNetwork                      = testPrefix + "-" + testRandomString()
 	testAccResourceInstancePoolServiceOffering              = "tiny"
 	testAccResourceInstancePoolServiceOfferingUpdated       = "small"
@@ -62,6 +63,7 @@ resource "exoscale_instance_pool" "test" {
   disk_size = %d
   affinity_group_ids = [exoscale_affinity.test.id]
   security_group_ids = [data.exoscale_security_group.default.id]
+  instance_prefix = "%s"
   user_data = "%s"
 
   timeouts {
@@ -76,6 +78,7 @@ resource "exoscale_instance_pool" "test" {
 		testAccResourceInstancePoolServiceOffering,
 		testAccResourceInstancePoolSize,
 		testAccResourceInstancePoolDiskSize,
+		testAccResourceInstancePoolInstancePrefix,
 		testAccResourceInstancePoolUserData,
 	)
 
@@ -162,9 +165,10 @@ func TestAccResourceInstancePool(t *testing.T) {
 						a.Len(instancePool.AntiAffinityGroupIDs, 1)
 						a.Equal(testAccResourceInstancePoolDescription, instancePool.Description)
 						a.Equal(testAccResourceInstancePoolDiskSize, instancePool.DiskSize)
-						a.Equal(false, instancePool.IPv6Enabled)
+						a.Equal(testAccResourceInstancePoolInstancePrefix, instancePool.InstancePrefix)
 						a.Len(instancePool.InstanceIDs, int(testAccResourceInstancePoolSize))
 						a.Equal(testInstanceTypeIDTiny, instancePool.InstanceTypeID)
+						a.Equal(false, instancePool.IPv6Enabled)
 						a.Equal(testAccResourceInstancePoolName, instancePool.Name)
 						a.Equal(testAccResourceInstancePoolSize, instancePool.Size)
 						a.Equal(templateID, instancePool.TemplateID)
@@ -180,6 +184,7 @@ func TestAccResourceInstancePool(t *testing.T) {
 						resInstancePoolAttrDescription:             ValidateString(testAccResourceInstancePoolDescription),
 						resInstancePoolAttrDiskSize:                ValidateString(fmt.Sprint(testAccResourceInstancePoolDiskSize)),
 						resInstancePoolAttrID:                      validation.IsUUID,
+						resInstancePoolAttrInstancePrefix:          ValidateString(testAccResourceInstancePoolInstancePrefix),
 						resInstancePoolAttrIPv6:                    ValidateString("false"),
 						resInstancePoolAttrName:                    ValidateString(testAccResourceInstancePoolName),
 						resInstancePoolAttrSecurityGroupIDs + ".#": ValidateString("1"),
@@ -204,16 +209,17 @@ func TestAccResourceInstancePool(t *testing.T) {
 						a.NoError(err, "unable to retrieve template ID from state")
 
 						a.Len(instancePool.AntiAffinityGroupIDs, 1)
-						a.True(instancePool.IPv6Enabled)
 						a.Empty(instancePool.Description)
 						a.Equal(testAccResourceInstancePoolDiskSizeUpdated, instancePool.DiskSize)
-						a.Equal(true, instancePool.IPv6Enabled)
+						a.Equal(defaultInstancePoolInstancePrefix, instancePool.InstancePrefix)
+						a.True(instancePool.IPv6Enabled)
 						a.Len(instancePool.InstanceIDs, int(testAccResourceInstancePoolSizeUpdated))
 						a.Equal(testInstanceTypeIDSmall, instancePool.InstanceTypeID)
-						a.Equal(testAccResourceInstancePoolKeyPair, instancePool.SSHKey)
+						a.Equal(true, instancePool.IPv6Enabled)
 						a.Equal(testAccResourceInstancePoolNameUpdated, instancePool.Name)
 						a.Len(instancePool.PrivateNetworkIDs, 1)
 						a.Equal(testAccResourceInstancePoolSizeUpdated, instancePool.Size)
+						a.Equal(testAccResourceInstancePoolKeyPair, instancePool.SSHKey)
 						a.Equal(templateID, instancePool.TemplateID)
 						a.Equal(
 							base64.StdEncoding.EncodeToString([]byte(testAccResourceInstancePoolUserDataUpdated)),
@@ -228,6 +234,7 @@ func TestAccResourceInstancePool(t *testing.T) {
 						resInstancePoolAttrDiskSize:                ValidateString(fmt.Sprint(testAccResourceInstancePoolDiskSizeUpdated)),
 						resInstancePoolAttrElasticIPIDs + ".#":     ValidateString("1"),
 						resInstancePoolAttrID:                      validation.IsUUID,
+						resInstancePoolAttrInstancePrefix:          ValidateString(defaultInstancePoolInstancePrefix),
 						resInstancePoolAttrIPv6:                    ValidateString("true"),
 						resInstancePoolAttrKeyPair:                 ValidateString(testAccResourceInstancePoolKeyPair),
 						resInstancePoolAttrName:                    ValidateString(testAccResourceInstancePoolNameUpdated),
@@ -253,6 +260,7 @@ func TestAccResourceInstancePool(t *testing.T) {
 							resInstancePoolAttrDiskSize:                ValidateString(fmt.Sprint(testAccResourceInstancePoolDiskSizeUpdated)),
 							resInstancePoolAttrElasticIPIDs + ".#":     ValidateString("1"),
 							resInstancePoolAttrID:                      validation.IsUUID,
+							resInstancePoolAttrInstancePrefix:          ValidateString(defaultInstancePoolInstancePrefix),
 							resInstancePoolAttrIPv6:                    ValidateString("true"),
 							resInstancePoolAttrKeyPair:                 ValidateString(testAccResourceInstancePoolKeyPair),
 							resInstancePoolAttrName:                    ValidateString(testAccResourceInstancePoolNameUpdated),
