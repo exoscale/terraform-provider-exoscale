@@ -79,6 +79,7 @@ resource "exoscale_instance_pool" "webapp" {
 * `security_group_ids` - A list of [Security Group][r-security_group] IDs (at creation time only).
 * `network_ids` - A list of [Private Network][privnet-doc] IDs.
 * `elastic_ip_ids` - A list of [Elastic IP][eip-doc] IDs.
+* `deploy_target_id` - A Deploy Target ID.
 
 
 ## Attributes Reference
