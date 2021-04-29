@@ -1,6 +1,11 @@
 Changelog
 =========
 
+0.48.1
+------
+
+- fix: v2: add support for `InstancePool.IPv6Enabled` field resetting
+
 0.48.0
 ------
 
