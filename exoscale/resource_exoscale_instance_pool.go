@@ -379,8 +379,10 @@ func resourceInstancePoolUpdate(d *schema.ResourceData, meta interface{}) error 
 	}
 
 	if d.HasChange(resInstancePoolAttrIPv6) {
-		// IPv6 can only be enabled, not disabled.
-		if enableIPv6 := d.Get("ipv6").(bool); enableIPv6 {
+		if enableIPv6 := d.Get("ipv6").(bool); !enableIPv6 {
+			instancePool.IPv6Enabled = false
+			resetFields = append(resetFields, &instancePool.IPv6Enabled)
+		} else {
 			instancePool.IPv6Enabled = true
 			updated = true
 		}
