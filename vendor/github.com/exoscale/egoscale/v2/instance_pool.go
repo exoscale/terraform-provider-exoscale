@@ -15,7 +15,7 @@ type InstancePool struct {
 	DiskSize             int64
 	ElasticIPIDs         []string `reset:"elastic-ips"`
 	ID                   string
-	IPv6Enabled          bool
+	IPv6Enabled          bool `reset:"ipv6-enabled"`
 	InstanceIDs          []string
 	InstancePrefix       string
 	InstanceTypeID       string
