@@ -61,6 +61,7 @@ resource "exoscale_instance_pool" "test" {
   service_offering = "%s"
   size = %d
   disk_size = %d
+  ipv6 = true
   affinity_group_ids = [exoscale_affinity.test.id]
   security_group_ids = [data.exoscale_security_group.default.id]
   instance_prefix = "%s"
@@ -116,7 +117,6 @@ resource "exoscale_instance_pool" "test" {
   service_offering = "%s"
   size = %d
   disk_size = %d
-  ipv6 = true
   key_pair = exoscale_ssh_keypair.test.name
   affinity_group_ids = [exoscale_affinity.test.id]
   network_ids = [exoscale_network.test.id]
@@ -168,7 +168,7 @@ func TestAccResourceInstancePool(t *testing.T) {
 						a.Equal(testAccResourceInstancePoolInstancePrefix, instancePool.InstancePrefix)
 						a.Len(instancePool.InstanceIDs, int(testAccResourceInstancePoolSize))
 						a.Equal(testInstanceTypeIDTiny, instancePool.InstanceTypeID)
-						a.Equal(false, instancePool.IPv6Enabled)
+						a.True(instancePool.IPv6Enabled)
 						a.Equal(testAccResourceInstancePoolName, instancePool.Name)
 						a.Equal(testAccResourceInstancePoolSize, instancePool.Size)
 						a.Equal(templateID, instancePool.TemplateID)
@@ -185,7 +185,7 @@ func TestAccResourceInstancePool(t *testing.T) {
 						resInstancePoolAttrDiskSize:                ValidateString(fmt.Sprint(testAccResourceInstancePoolDiskSize)),
 						resInstancePoolAttrID:                      validation.IsUUID,
 						resInstancePoolAttrInstancePrefix:          ValidateString(testAccResourceInstancePoolInstancePrefix),
-						resInstancePoolAttrIPv6:                    ValidateString("false"),
+						resInstancePoolAttrIPv6:                    ValidateString("true"),
 						resInstancePoolAttrName:                    ValidateString(testAccResourceInstancePoolName),
 						resInstancePoolAttrSecurityGroupIDs + ".#": ValidateString("1"),
 						resInstancePoolAttrServiceOffering:         ValidateString(testAccResourceInstancePoolServiceOffering),
@@ -212,10 +212,9 @@ func TestAccResourceInstancePool(t *testing.T) {
 						a.Empty(instancePool.Description)
 						a.Equal(testAccResourceInstancePoolDiskSizeUpdated, instancePool.DiskSize)
 						a.Equal(defaultInstancePoolInstancePrefix, instancePool.InstancePrefix)
-						a.True(instancePool.IPv6Enabled)
 						a.Len(instancePool.InstanceIDs, int(testAccResourceInstancePoolSizeUpdated))
 						a.Equal(testInstanceTypeIDSmall, instancePool.InstanceTypeID)
-						a.Equal(true, instancePool.IPv6Enabled)
+						a.False(instancePool.IPv6Enabled)
 						a.Equal(testAccResourceInstancePoolNameUpdated, instancePool.Name)
 						a.Len(instancePool.PrivateNetworkIDs, 1)
 						a.Equal(testAccResourceInstancePoolSizeUpdated, instancePool.Size)
@@ -235,7 +234,7 @@ func TestAccResourceInstancePool(t *testing.T) {
 						resInstancePoolAttrElasticIPIDs + ".#":     ValidateString("1"),
 						resInstancePoolAttrID:                      validation.IsUUID,
 						resInstancePoolAttrInstancePrefix:          ValidateString(defaultInstancePoolInstancePrefix),
-						resInstancePoolAttrIPv6:                    ValidateString("true"),
+						resInstancePoolAttrIPv6:                    ValidateString("false"),
 						resInstancePoolAttrKeyPair:                 ValidateString(testAccResourceInstancePoolKeyPair),
 						resInstancePoolAttrName:                    ValidateString(testAccResourceInstancePoolNameUpdated),
 						resInstancePoolAttrNetworkIDs + ".#":       ValidateString("1"),
@@ -261,7 +260,7 @@ func TestAccResourceInstancePool(t *testing.T) {
 							resInstancePoolAttrElasticIPIDs + ".#":     ValidateString("1"),
 							resInstancePoolAttrID:                      validation.IsUUID,
 							resInstancePoolAttrInstancePrefix:          ValidateString(defaultInstancePoolInstancePrefix),
-							resInstancePoolAttrIPv6:                    ValidateString("true"),
+							resInstancePoolAttrIPv6:                    ValidateString("false"),
 							resInstancePoolAttrKeyPair:                 ValidateString(testAccResourceInstancePoolKeyPair),
 							resInstancePoolAttrName:                    ValidateString(testAccResourceInstancePoolNameUpdated),
 							resInstancePoolAttrNetworkIDs + ".#":       ValidateString("1"),
