@@ -32,6 +32,8 @@ func resourceSKSCluster() *schema.Resource {
 			Elem:     &schema.Schema{Type: schema.TypeString},
 			Optional: true,
 			Computed: true,
+			Deprecated: "This attribute has been replaced by `exoscale_ccm`/`metrics_server` " +
+				"attributes, it will be removed in a future release.",
 		},
 		"cni": {
 			Type:     schema.TypeString,
