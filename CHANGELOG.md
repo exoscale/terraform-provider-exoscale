@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.24.0 (May 11, 2021)
+
+DEPRECATIONS:
+
+- `exoscale_sks_cluster`: the `addons` parameter is deprecated and replaced by `exoscale_ccm`/`metrics_server`
+
+CHANGES:
+
+- `exoscale_sks_cluster`: use latest available version advertised by the API by default
+
+IMPROVEMENTS:
+
+- `exoscale_instance_pool`: add support for Deploy Targets
+- `exoscale_instance_pool`: add support for instance prefix
+- `exoscale_instance_pool`: add support for `ipv6` attribute resetting
+
+
 ## 0.23.0 (March 19, 2021)
 
 IMPROVEMENTS:
