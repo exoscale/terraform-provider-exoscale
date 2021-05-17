@@ -205,6 +205,9 @@ func resourceSKSNodepoolExists(d *schema.ResourceData, meta interface{}) (bool, 
 
 	nodepool, err := findSKSNodepool(ctx, d, meta)
 	if err != nil {
+		if errors.Is(err, exoapi.ErrNotFound) {
+			return false, nil
+		}
 		return false, err
 	}
 
