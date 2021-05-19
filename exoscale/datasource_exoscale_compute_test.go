@@ -12,13 +12,13 @@ import (
 )
 
 var (
-	testAccDataSourceComputeZone         = testZoneName
-	testAccDataSourceComputeTagValue     = testPrefix + "-" + testRandomString()
-	testAccDataSourceComputeNetworkName  = testPrefix + "-" + testRandomString()
-	testAccDataSourceComputeTemplateName = testInstanceTemplateName
-	testAccDataSourceComputeName         = testPrefix + "-" + testRandomString()
-	testAccDataSourceComputeSize         = "Small"
-	testAccDataSourceComputeDiskSize     = "15"
+	testAccDataSourceComputeZone        = testZoneName
+	testAccDataSourceComputeTagValue    = testPrefix + "-" + testRandomString()
+	testAccDataSourceComputeNetworkName = testPrefix + "-" + testRandomString()
+	testAccDataSourceComputeTemplate    = testInstanceTemplateName
+	testAccDataSourceComputeName        = testPrefix + "-" + testRandomString()
+	testAccDataSourceComputeSize        = "Small"
+	testAccDataSourceComputeDiskSize    = "15"
 
 	testAccDataSourceComputeAttrs = testAttrs{
 		"cpu":                            validation.NoZeroValues,
@@ -33,7 +33,7 @@ var (
 		"size":                           ValidateString(testAccDataSourceComputeSize),
 		"state":                          ValidateString("Running"),
 		"tags.test":                      ValidateString(testAccDataSourceComputeTagValue),
-		"template":                       ValidateString(testAccDataSourceComputeTemplateName),
+		"template":                       ValidateString(testAccDataSourceComputeTemplate),
 		"zone":                           ValidateString(testAccDataSourceComputeZone),
 	}
 
@@ -69,7 +69,7 @@ resource "exoscale_nic" "test" {
 `,
 		testAccDataSourceComputeZone,
 		testAccDataSourceComputeName,
-		testAccDataSourceComputeTemplateName,
+		testAccDataSourceComputeTemplate,
 		testAccDataSourceComputeSize,
 		testAccDataSourceComputeDiskSize,
 		testAccDataSourceComputeTagValue,
