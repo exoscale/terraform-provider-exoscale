@@ -70,11 +70,13 @@ resource "exoscale_sks_nodepool" "ci-builders" {
 * `cluster_id` - (Required) The ID of the parent SKS cluster.
 * `size` - (Required) The number of Compute instances the SKS Nodepool manages.
 * `name` - (Required) The name of the SKS Nodepool.
+* `instance_prefix` - The string to add as prefix to managed Compute instances name (default `pool`).
 * `instance_type` (Required) - The type of Compute instances managed by the SKS Nodepool.
 * `disk_size` - The disk size of the Compute instances managed by the SKS Nodepool (default: `50`).
 * `anti_affinity_group_ids` - The list of Anti-Affinity Groups (IDs) the Compute instances managed by the SKS Nodepool are member of.
 * `security_group_ids` - The list of Security Groups (IDs) the Compute instances managed by the SKS Nodepool are member of.
 * `description` - The description of the SKS Nodepool.
+* `deploy_target_id` - A Deploy Target ID to deploy managed Compute instances to.
 
 
 ## Attributes Reference

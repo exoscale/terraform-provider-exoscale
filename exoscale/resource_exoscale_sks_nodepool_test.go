@@ -18,6 +18,7 @@ var (
 	testAccResourceSKSNodepoolDescription           = testPrefix + "-" + testRandomString()
 	testAccResourceSKSNodepoolDiskSize              = defaultSKSNodepoolDiskSize
 	testAccResourceSKSNodepoolDiskSizeUpdated       = defaultSKSNodepoolDiskSize * 2
+	testAccResourceSKSNodepoolInstancePrefix        = "test"
 	testAccResourceSKSNodepoolInstanceType          = "small"
 	testAccResourceSKSNodepoolInstanceTypeUpdated   = "medium"
 	testAccResourceSKSNodepoolName                  = testPrefix + "-" + testRandomString()
@@ -47,6 +48,7 @@ resource "exoscale_sks_nodepool" "test" {
   instance_type = "%s"
   disk_size = %d
   size = %d
+  instance_prefix = "%s"
 
   timeouts {
     delete = "10m"
@@ -60,6 +62,7 @@ resource "exoscale_sks_nodepool" "test" {
 		testAccResourceSKSNodepoolInstanceType,
 		testAccResourceSKSNodepoolDiskSize,
 		testAccResourceSKSNodepoolSize,
+		testAccResourceSKSNodepoolInstancePrefix,
 	)
 
 	testAccResourceSKSNodepoolConfigUpdate = fmt.Sprintf(`
@@ -128,6 +131,7 @@ func TestAccResourceSKSNodepool(t *testing.T) {
 						"disk_size":        ValidateString(fmt.Sprint(testAccResourceSKSNodepoolDiskSize)),
 						"id":               validation.IsUUID,
 						"instance_pool_id": validation.IsUUID,
+						"instance_prefix":  ValidateString(testAccResourceSKSNodepoolInstancePrefix),
 						"instance_type":    ValidateString(testAccResourceSKSNodepoolInstanceType),
 						"name":             ValidateString(testAccResourceSKSNodepoolName),
 						"size":             ValidateString(fmt.Sprint(testAccResourceSKSNodepoolSize)),
@@ -148,6 +152,7 @@ func TestAccResourceSKSNodepool(t *testing.T) {
 						"disk_size":                 ValidateString(fmt.Sprint(testAccResourceSKSNodepoolDiskSizeUpdated)),
 						"id":                        validation.IsUUID,
 						"instance_pool_id":          validation.IsUUID,
+						"instance_prefix":           ValidateString(defaultSKSNodepoolInstancePrefix),
 						"instance_type":             ValidateString(testAccResourceSKSNodepoolInstanceTypeUpdated),
 						"name":                      ValidateString(testAccResourceSKSNodepoolNameUpdated),
 						"anti_affinity_group_ids.#": ValidateString("1"),
@@ -172,6 +177,7 @@ func TestAccResourceSKSNodepool(t *testing.T) {
 							"disk_size":                 ValidateString(fmt.Sprint(testAccResourceSKSNodepoolDiskSizeUpdated)),
 							"id":                        validation.IsUUID,
 							"instance_pool_id":          validation.IsUUID,
+							"instance_prefix":           ValidateString(defaultSKSNodepoolInstancePrefix),
 							"instance_type":             ValidateString(testAccResourceSKSNodepoolInstanceTypeUpdated),
 							"name":                      ValidateString(testAccResourceSKSNodepoolNameUpdated),
 							"anti_affinity_group_ids.#": ValidateString("1"),
