@@ -98,10 +98,8 @@ github.com/envoyproxy/go-control-plane v0.9.0/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymF
 github.com/envoyproxy/go-control-plane v0.9.1-0.20191026205805-5f8ba28d4473/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
 github.com/envoyproxy/go-control-plane v0.9.4/go.mod h1:6rpuAdCZL397s3pYoYcLgu1mIlRU8Am5FuJP05cCM98=
 github.com/envoyproxy/protoc-gen-validate v0.1.0/go.mod h1:iSmxcyjqTsJpI2R4NaDN7+kN2VEUnK/pcBlmesArF7c=
-github.com/exoscale/egoscale v0.48.0 h1:+0030omuAgvZ6rLL443fXND++0cOlkK2xiG5FeLeURE=
-github.com/exoscale/egoscale v0.48.0/go.mod h1:pA0kDBbN+dyncVazLuGXcVf38WfuzbKa6ce5T0iex0w=
-github.com/exoscale/egoscale v0.48.1 h1:UEhZxsTO/l8hw0KP839u9SV1q6pSiNYiABAbvKA9x/8=
-github.com/exoscale/egoscale v0.48.1/go.mod h1:pA0kDBbN+dyncVazLuGXcVf38WfuzbKa6ce5T0iex0w=
+github.com/exoscale/egoscale v0.51.0 h1:fXjN4OpKLBc3fculOQPek/Um9kT72E0KpLytBAYWFPc=
+github.com/exoscale/egoscale v0.51.0/go.mod h1:pA0kDBbN+dyncVazLuGXcVf38WfuzbKa6ce5T0iex0w=
 github.com/fatih/color v1.7.0 h1:DkWD4oS2D8LGGgTQ6IvwJJXSL5Vp2ffcQg58nFV38Ys=
 github.com/fatih/color v1.7.0 h1:DkWD4oS2D8LGGgTQ6IvwJJXSL5Vp2ffcQg58nFV38Ys=
 github.com/fatih/color v1.7.0/go.mod h1:Zm6kSWBoL9eyXnKyktHP6abPY2pDugNf5KwzbycvMj4=
