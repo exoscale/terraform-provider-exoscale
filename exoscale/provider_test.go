@@ -15,17 +15,19 @@ import (
 
 // Common test environment information
 const (
-	testPrefix               = "test-terraform-exoscale-provider"
-	testDescription          = "Created by the terraform-exoscale provider"
-	testZoneName             = "ch-gva-2"
-	testInstanceTemplateName = "Linux Ubuntu 20.04 LTS 64-bit"
+	testPrefix                   = "test-terraform-exoscale-provider"
+	testDescription              = "Created by the terraform-exoscale provider"
+	testZoneName                 = "de-muc-1"
+	testInstanceTemplateName     = "Linux Ubuntu 20.04 LTS 64-bit"
+	testInstanceTemplateUsername = "ubuntu"
+	testInstanceTemplateFilter   = "featured"
 
 	/*
-		Reference template used for tests: "Linux Ubuntu 20.04 LTS 64-bit" @ ch-gva-2 (featured)
+		Reference template used for tests: "Linux Ubuntu 20.04 LTS 64-bit" @ de-muc-1 (featured)
 
 		cs --region cloudstack listTemplates \
 		    templatefilter=featured \
-		    zoneid=1128bd56-b4d9-4ac6-a7b9-c715b187ce11 \
+		    zoneid=85664334-0fd5-47bd-94a1-b4f40b1d2eb7 \
 		    name="Linux Ubuntu 20.04 LTS 64-bit"
 	*/
 	testInstanceTemplateID = "a5ddefa9-7e98-40cb-94b3-e20348b878fa"

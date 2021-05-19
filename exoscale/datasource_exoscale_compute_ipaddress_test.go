@@ -34,10 +34,10 @@ func TestAccDatasourceComputeIPAddress(t *testing.T) {
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: `
+				Config: fmt.Sprintf(`
 data "exoscale_compute_ipaddress" "ip_address" {
-  zone = "ch-gva-2"
-}`,
+  zone = "%s"
+}`, testAccDataSourceIPAddressZoneName),
 				ExpectError: regexp.MustCompile(`You must set at least one attribute "id", "ip_address", "tags" or "description"`),
 			},
 			{
@@ -45,9 +45,12 @@ data "exoscale_compute_ipaddress" "ip_address" {
 %s
 
 data "exoscale_compute_ipaddress" "ip_address" {
-  zone = "ch-gva-2"
+  zone = "%s"
   id   = "${exoscale_ipaddress.eip.id}"
-}`, testAccDataSourceIPAddressConfigCreate),
+}`,
+					testAccDataSourceIPAddressConfigCreate,
+					testAccDataSourceIPAddressZoneName,
+				),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDataSourceComputeIPAddressAttributes(testAttrs{
 						"description": ValidateString(testAccDataSourceIPAddressDescription),
@@ -59,9 +62,12 @@ data "exoscale_compute_ipaddress" "ip_address" {
 %s
 
 data "exoscale_compute_ipaddress" "ip_address" {
-  zone        = "ch-gva-2"
+  zone        = "%s"
   description = "${exoscale_ipaddress.eip.description}"
-}`, testAccDataSourceIPAddressConfigCreate),
+}`,
+					testAccDataSourceIPAddressConfigCreate,
+					testAccDataSourceIPAddressZoneName,
+				),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDataSourceComputeIPAddressAttributes(testAttrs{
 						"description": ValidateString(testAccDataSourceIPAddressDescription),
@@ -73,9 +79,12 @@ data "exoscale_compute_ipaddress" "ip_address" {
 %s
 
 data "exoscale_compute_ipaddress" "ip_address" {
-  zone       = "ch-gva-2"
+  zone       = "%s"
   ip_address = "${exoscale_ipaddress.eip.ip_address}"
-}`, testAccDataSourceIPAddressConfigCreate),
+}`,
+					testAccDataSourceIPAddressConfigCreate,
+					testAccDataSourceIPAddressZoneName,
+				),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDataSourceComputeIPAddressAttributes(testAttrs{
 						"description": ValidateString(testAccDataSourceIPAddressDescription),
@@ -87,9 +96,12 @@ data "exoscale_compute_ipaddress" "ip_address" {
 %s
 
 data "exoscale_compute_ipaddress" "ip_address" {
-  zone       = "ch-gva-2"
+  zone = "%s"
   tags = "${exoscale_ipaddress.eip.tags}"
-}`, testAccDataSourceIPAddressConfigCreate),
+}`,
+					testAccDataSourceIPAddressConfigCreate,
+					testAccDataSourceIPAddressZoneName,
+				),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDataSourceComputeIPAddressAttributes(testAttrs{
 						"description": ValidateString(testAccDataSourceIPAddressDescription),

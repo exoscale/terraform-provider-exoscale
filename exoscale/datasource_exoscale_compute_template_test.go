@@ -10,10 +10,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
 
-const (
-	dataSourceComputeTemplateID       = testInstanceTemplateID
-	dataSourceComputeTemplateName     = "Linux Ubuntu 20.04 LTS 64-bit"
-	dataSourceComputeTemplateUsername = "ubuntu"
+var (
+	testAccDataSourceComputeTemplateID       = testInstanceTemplateID
+	testAccDataSourceComputeTemplateName     = testInstanceTemplateName
+	testAccDataSourceComputeTemplateUsername = testInstanceTemplateUsername
+	testAccDataSourceComputeTemplateFilter   = testInstanceTemplateFilter
+	testAccDataSourceTemplateZone            = testZoneName
 )
 
 func TestAccDataSourceComputeTemplate(t *testing.T) {
@@ -22,39 +24,48 @@ func TestAccDataSourceComputeTemplate(t *testing.T) {
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: `
-data "exoscale_compute_template" "ubuntu_lts" {
-  zone = "ch-gva-2"
+				Config: fmt.Sprintf(`
+data "exoscale_compute_template" "test" {
+  zone = "%s"
 }`,
+					testAccDataSourceTemplateZone),
 				ExpectError: regexp.MustCompile("either name or id must be specified"),
 			},
 			{
 				Config: fmt.Sprintf(`
-data "exoscale_compute_template" "ubuntu_lts" {
-  zone   = "ch-gva-2"
+data "exoscale_compute_template" "test" {
+  zone   = "%s"
   name   = "%s"
-  filter = "featured"
-}`, dataSourceComputeTemplateName),
+  filter = "%s"
+}`,
+					testAccDataSourceTemplateZone,
+					testAccDataSourceComputeTemplateName,
+					testAccDataSourceComputeTemplateFilter,
+				),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDataSourceComputeTemplateAttributes(testAttrs{
-						"id":       ValidateString(dataSourceComputeTemplateID),
-						"name":     ValidateString(dataSourceComputeTemplateName),
-						"username": ValidateString(dataSourceComputeTemplateUsername),
+						"id":       ValidateString(testAccDataSourceComputeTemplateID),
+						"name":     ValidateString(testAccDataSourceComputeTemplateName),
+						"username": ValidateString(testAccDataSourceComputeTemplateUsername),
 					}),
 				),
 			},
 			{
 				Config: fmt.Sprintf(`
-data "exoscale_compute_template" "ubuntu_lts" {
-  zone   = "ch-gva-2"
+data "exoscale_compute_template" "test" {
+  zone   = "%s"
   id     = "%s"
-  filter = "featured"
-}`, dataSourceComputeTemplateID),
+  filter = "%s"
+}`,
+					testAccDataSourceTemplateZone,
+					testAccDataSourceComputeTemplateID,
+					testAccDataSourceComputeTemplateFilter,
+				),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDataSourceComputeTemplateAttributes(testAttrs{
-						"id":       ValidateString(dataSourceComputeTemplateID),
-						"name":     ValidateString(dataSourceComputeTemplateName),
-						"username": ValidateString(dataSourceComputeTemplateUsername),
+						"id":       ValidateString(testAccDataSourceComputeTemplateID),
+						"name":     ValidateString(testAccDataSourceComputeTemplateName),
+						"username": ValidateString(testAccDataSourceComputeTemplateUsername),
 					}),
 				),
 			},
