@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 	"github.com/ssgreg/repeat"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -25,7 +25,7 @@ var (
 	testAccResourceInstancePoolKeyPair                      = testPrefix + "-" + testRandomString()
 	testAccResourceInstancePoolName                         = testPrefix + "-" + testRandomString()
 	testAccResourceInstancePoolNameUpdated                  = testAccResourceInstancePoolName + "-updated"
-	testAccResourceInstancePoolInstancePrefix               = "pool-" + testAccResourceNLBInstancePoolName
+	testAccResourceInstancePoolInstancePrefix               = testRandomString()
 	testAccResourceInstancePoolNetwork                      = testPrefix + "-" + testRandomString()
 	testAccResourceInstancePoolServiceOffering              = "tiny"
 	testAccResourceInstancePoolServiceOfferingUpdated       = "small"
@@ -157,7 +157,7 @@ func TestAccResourceInstancePool(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckResourceInstancePoolExists(r, &instancePool),
 					func(s *terraform.State) error {
-						a := assert.New(t)
+						a := require.New(t)
 
 						templateID, err := attrFromState(s, "data.exoscale_compute_template.ubuntu", "id")
 						a.NoError(err, "unable to retrieve template ID from state")
@@ -203,7 +203,7 @@ func TestAccResourceInstancePool(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckResourceInstancePoolExists(r, &instancePool),
 					func(s *terraform.State) error {
-						a := assert.New(t)
+						a := require.New(t)
 
 						templateID, err := attrFromState(s, "data.exoscale_compute_template.debian", "id")
 						a.NoError(err, "unable to retrieve template ID from state")
