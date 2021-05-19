@@ -14,7 +14,8 @@ import (
 )
 
 const (
-	defaultSKSNodepoolDiskSize = 50
+	defaultSKSNodepoolDiskSize       = 50
+	defaultSKSNodepoolInstancePrefix = "pool"
 )
 
 func resourceSKSNodepoolIDString(d resourceIDStringer) string {
@@ -32,6 +33,10 @@ func resourceSKSNodepool() *schema.Resource {
 			Type:     schema.TypeString,
 			Computed: true,
 		},
+		"deploy_target_id": {
+			Type:     schema.TypeString,
+			Optional: true,
+		},
 		"description": {
 			Type:     schema.TypeString,
 			Optional: true,
@@ -44,6 +49,11 @@ func resourceSKSNodepool() *schema.Resource {
 		"instance_pool_id": {
 			Type:     schema.TypeString,
 			Computed: true,
+		},
+		"instance_prefix": {
+			Type:     schema.TypeString,
+			Optional: true,
+			Default:  defaultSKSNodepoolInstancePrefix,
 		},
 		"instance_type": {
 			Type:     schema.TypeString,
@@ -159,11 +169,13 @@ func resourceSKSNodepoolCreate(d *schema.ResourceData, meta interface{}) error {
 	nodepool, err := cluster.AddNodepool(
 		ctx,
 		&exov2.SKSNodepool{
-			Name:                 d.Get("name").(string),
-			Description:          d.Get("description").(string),
-			InstanceTypeID:       instanceType.ID.String(),
-			DiskSize:             int64(d.Get("disk_size").(int)),
 			AntiAffinityGroupIDs: antiAffinityGroupIDs,
+			DeployTargetID:       d.Get("deploy_target_id").(string),
+			Description:          d.Get("description").(string),
+			DiskSize:             int64(d.Get("disk_size").(int)),
+			InstancePrefix:       d.Get("instance_prefix").(string),
+			InstanceTypeID:       instanceType.ID.String(),
+			Name:                 d.Get("name").(string),
 			SecurityGroupIDs:     securityGroupIDs,
 			Size:                 int64(d.Get("size").(int)),
 		},
@@ -246,6 +258,16 @@ func resourceSKSNodepoolUpdate(d *schema.ResourceData, meta interface{}) error {
 		updated = true
 	}
 
+	if d.HasChange("deploy_target_id") {
+		if v := d.Get("deploy_target_id").(string); v == "" {
+			nodepool.DeployTargetID = ""
+			resetFields = append(resetFields, &nodepool.DeployTargetID)
+		} else {
+			nodepool.DeployTargetID = d.Get("deploy_target_id").(string)
+			updated = true
+		}
+	}
+
 	if d.HasChange("description") {
 		if v := d.Get("description").(string); v == "" {
 			nodepool.Description = ""
@@ -258,6 +280,11 @@ func resourceSKSNodepoolUpdate(d *schema.ResourceData, meta interface{}) error {
 
 	if d.HasChange("disk_size") {
 		nodepool.DiskSize = int64(d.Get("disk_size").(int))
+		updated = true
+	}
+
+	if d.HasChange("instance_prefix") {
+		nodepool.InstancePrefix = d.Get("instance_prefix").(string)
 		updated = true
 	}
 
@@ -368,6 +395,10 @@ func resourceSKSNodepoolApply(d *schema.ResourceData, meta interface{}, nodepool
 		return err
 	}
 
+	if err := d.Set("deploy_target_id", nodepool.DeployTargetID); err != nil {
+		return err
+	}
+
 	if err := d.Set("description", nodepool.Description); err != nil {
 		return err
 	}
@@ -377,6 +408,10 @@ func resourceSKSNodepoolApply(d *schema.ResourceData, meta interface{}, nodepool
 	}
 
 	if err := d.Set("instance_pool_id", nodepool.InstancePoolID); err != nil {
+		return err
+	}
+
+	if err := d.Set("instance_prefix", nodepool.InstancePrefix); err != nil {
 		return err
 	}
 
