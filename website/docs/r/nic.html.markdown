@@ -33,7 +33,7 @@ resource "exoscale_nic" "oob" {
 
 * `compute_id` - (Required) The [Compute instance][r-compute] ID.
 * `network_id` - (Required) The [Private Network][r-network] ID.
-* `ip_address` - The IP address to request as static DHCP lease if the NIC is attached to a *managed* Private Network (see the [`exoscale_network`][privnet] resource).
+* `ip_address` - The IP address to request as static DHCP lease if the NIC is attached to a *managed* Private Network (see the [`exoscale_network`][r-network] resource).
 
 
 ## Attributes Reference
