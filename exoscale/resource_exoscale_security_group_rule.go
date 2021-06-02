@@ -81,14 +81,14 @@ func resourceSecurityGroupRule() *schema.Resource {
 				Type:          schema.TypeInt,
 				Optional:      true,
 				ForceNew:      true,
-				ValidateFunc:  validation.IntBetween(0, 255),
+				ValidateFunc:  validation.IntBetween(-1, 255),
 				ConflictsWith: []string{"start_port", "end_port"},
 			},
 			"icmp_code": {
 				Type:          schema.TypeInt,
 				Optional:      true,
 				ForceNew:      true,
-				ValidateFunc:  validation.IntBetween(0, 255),
+				ValidateFunc:  validation.IntBetween(-1, 255),
 				ConflictsWith: []string{"start_port", "end_port"},
 			},
 			"user_security_group_id": {
@@ -190,8 +190,8 @@ func resourceSecurityGroupRuleCreate(d *schema.ResourceData, meta interface{}) e
 		Protocol:              d.Get("protocol").(string),
 		EndPort:               (uint16)(d.Get("end_port").(int)),
 		StartPort:             (uint16)(d.Get("start_port").(int)),
-		IcmpType:              (uint8)(d.Get("icmp_type").(int)),
-		IcmpCode:              (uint8)(d.Get("icmp_code").(int)),
+		IcmpType:              d.Get("icmp_type").(int),
+		IcmpCode:              d.Get("icmp_code").(int),
 		UserSecurityGroupList: groupList,
 	}
 

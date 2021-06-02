@@ -61,12 +61,12 @@ func resourceSecurityGroupRules() *schema.Resource {
 				"icmp_type": {
 					Type:         schema.TypeInt,
 					Optional:     true,
-					ValidateFunc: validation.IntBetween(0, 255),
+					ValidateFunc: validation.IntBetween(-1, 255),
 				},
 				"icmp_code": {
 					Type:         schema.TypeInt,
 					Optional:     true,
-					ValidateFunc: validation.IntBetween(0, 255),
+					ValidateFunc: validation.IntBetween(-1, 255),
 				},
 				"user_security_group_list": {
 					Type:     schema.TypeSet,
@@ -490,8 +490,8 @@ func readRules(rules *schema.Set, ruleFunc fetchRuleFunc) {
 
 			if strings.HasPrefix(prot, "ICMP") {
 				rule["protocol"] = strings.Replace(prot, "V6", "v6", -1)
-				rule["icmp_code"] = (int)(r.IcmpCode)
-				rule["icmp_type"] = (int)(r.IcmpType)
+				rule["icmp_code"] = r.IcmpCode
+				rule["icmp_type"] = r.IcmpType
 			} else {
 				if r.StartPort == r.EndPort {
 					ports.Add(fmt.Sprintf("%d", r.StartPort))
@@ -602,8 +602,8 @@ func ruleToAuthorize(ctx context.Context, client *egoscale.Client, rule map[stri
 
 	if strings.HasPrefix(protocol, "ICMP") {
 		req.Protocol = protocol
-		req.IcmpType = uint8(rule["icmp_type"].(int))
-		req.IcmpCode = uint8(rule["icmp_code"].(int))
+		req.IcmpType = rule["icmp_type"].(int)
+		req.IcmpCode = rule["icmp_code"].(int)
 		rs = append(rs, req)
 	} else if protocol == "AH" || protocol == "ESP" || protocol == "GRE" || protocol == "IPIP" {
 		req.Protocol = protocol
@@ -625,7 +625,6 @@ func ruleToAuthorize(ctx context.Context, client *egoscale.Client, rule map[stri
 	for _, req := range rs {
 		for _, c := range cidrSet.List() {
 			cidr, err := egoscale.ParseCIDR(c.(string))
-
 			if err != nil {
 				return nil, err
 			}

@@ -26,8 +26,8 @@ resource "exoscale_security_group_rules" "rules" {
 
   ingress {
     protocol = "ICMP"
-    icmp_type = 8
-    icmp_code = 0
+    icmp_type = -1
+    icmp_code = -1
     cidr_list = ["0.0.0.0/0"]
   }
 
@@ -66,8 +66,8 @@ resource "exoscale_security_group_rules" "rules" {
 
   ingress {
     protocol = "ICMP"
-    icmp_type = 8
-    icmp_code = 0
+    icmp_type = -1
+    icmp_code = -1
     cidr_list = ["0.0.0.0/0"]
   }
 
@@ -127,8 +127,8 @@ func TestAccResourceSecurityGroupRules(t *testing.T) {
 					testAccCheckSecurityGroupIngressRuleExists(sg, &egoscale.IngressRule{
 						CIDR:     egoscale.MustParseCIDR("0.0.0.0/0"),
 						Protocol: "ICMP",
-						IcmpType: 8,
-						IcmpCode: 0,
+						IcmpType: -1,
+						IcmpCode: -1,
 					}),
 					testAccCheckSecurityGroupIngressRuleExists(sg, &egoscale.IngressRule{
 						CIDR:     egoscale.MustParseCIDR("::/0"),

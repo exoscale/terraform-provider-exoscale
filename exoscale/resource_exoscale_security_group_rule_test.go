@@ -17,10 +17,10 @@ var (
 	testAccResourceSecurityGroupRuleWithCIDRCIDR      = "::/0"
 	testAccResourceSecurityGroupRuleWithCIDRStartPort = 2
 	testAccResourceSecurityGroupRuleWithCIDREndPort   = 1024
-	testAccResourceSecurityGroupRuleWithUSGProtocol   = "ICMPv6"
+	testAccResourceSecurityGroupRuleWithUSGProtocol   = "ICMP"
 	testAccResourceSecurityGroupRuleWithUSGType       = "INGRESS"
-	testAccResourceSecurityGroupRuleWithUSGICMPType   = 128
-	testAccResourceSecurityGroupRuleWithUSGICMPCode   = 0
+	testAccResourceSecurityGroupRuleWithUSGICMPType   = -1
+	testAccResourceSecurityGroupRuleWithUSGICMPCode   = -1
 
 	testAccResourceSecurityGroupRuleConfigWithCIDR = fmt.Sprintf(`
 resource "exoscale_security_group" "sg" {
