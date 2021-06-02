@@ -1,6 +1,40 @@
 Changelog
 =========
 
+0.56.0
+------
+
+- change: the `AuthorizeSecurityGroupIngress` struct now uses an `int` type for `Icmp(Code|Type)` fields (#499)
+
+0.55.0
+------
+
+- change: the `IngressRule`/`EgressRule` and `v2.SecurityGroupRule` structs now use an `int` type for the ICMP code/type storage (#498)
+
+0.54.0
+------
+
+- change: the `IngressRule`/`EgressRule` and `v2.SecurityGroupRule` structs now use an `int8` type for the ICMP code/type storage (#497)
+
+0.53.1
+------
+
+- fix: v2: only point to non-zero struct fields for optional API resource properties (#496)
+
+0.53.0
+------
+
+- feature: v2: add `Client.FindInstanceType()` method
+
+0.52.0
+------
+
+- feature: v2: make API async polling interval customizable
+- feature: v2: add `Client.Find*()` methods
+- feature: v2: add `Start`/`Stop` methods to `Instance`
+- feature: v2: add labels support for Network Load Balancers
+- fix: v2: fix Security Group parsing from API
+
 0.51.0
 ------
 
