@@ -6,13 +6,15 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 var (
 	testAccDataSourceNetworkZone           = testZoneName
-	testAccDataSourceNetworkName           = testPrefix + "-" + testRandomString()
+	testAccDataSourceNetworkName           = acctest.RandomWithPrefix(testPrefix)
 	testAccDataSourceNetworkDescription    = testDescription
 	testAccDataSourceNetworkStartIP        = "10.0.0.10"
 	testAccDataSourceNetworkEndIP          = "10.0.0.50"
@@ -36,8 +38,8 @@ resource "exoscale_network" "test" {
 
 func TestAccDataSourceNetwork(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`%s
@@ -57,7 +59,7 @@ data "exoscale_network" "by-id" {
 				Check: resource.ComposeTestCheckFunc(
 					testAccDataSourceNetworkAttributes("data.exoscale_network.by-id", testAttrs{
 						"zone":        ValidateString(testAccDataSourceNetworkZone),
-						"id":          ValidateUUID(),
+						"id":          validation.ToDiagFunc(validation.IsUUID),
 						"name":        ValidateString(testAccDataSourceNetworkName),
 						"description": ValidateString(testAccDataSourceNetworkDescription),
 						"start_ip":    ValidateString(testAccDataSourceNetworkStartIP),
@@ -76,7 +78,7 @@ data "exoscale_network" "by-name" {
 				Check: resource.ComposeTestCheckFunc(
 					testAccDataSourceNetworkAttributes("data.exoscale_network.by-name", testAttrs{
 						"zone":        ValidateString(testAccDataSourceNetworkZone),
-						"id":          ValidateUUID(),
+						"id":          validation.ToDiagFunc(validation.IsUUID),
 						"name":        ValidateString(testAccDataSourceNetworkName),
 						"description": ValidateString(testAccDataSourceNetworkDescription),
 						"start_ip":    ValidateString(testAccDataSourceNetworkStartIP),

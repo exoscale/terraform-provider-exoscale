@@ -6,29 +6,30 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 var (
 	testAccDataSourceComputeZone        = testZoneName
-	testAccDataSourceComputeTagValue    = testPrefix + "-" + testRandomString()
-	testAccDataSourceComputeNetworkName = testPrefix + "-" + testRandomString()
+	testAccDataSourceComputeTagValue    = acctest.RandomWithPrefix(testPrefix)
+	testAccDataSourceComputeNetworkName = acctest.RandomWithPrefix(testPrefix)
 	testAccDataSourceComputeTemplate    = testInstanceTemplateName
-	testAccDataSourceComputeName        = testPrefix + "-" + testRandomString()
+	testAccDataSourceComputeName        = acctest.RandomWithPrefix(testPrefix)
 	testAccDataSourceComputeSize        = "Small"
 	testAccDataSourceComputeDiskSize    = "15"
 
 	testAccDataSourceComputeAttrs = testAttrs{
-		"cpu":                            validation.NoZeroValues,
-		"created":                        validation.NoZeroValues,
+		"cpu":                            validation.ToDiagFunc(validation.NoZeroValues),
+		"created":                        validation.ToDiagFunc(validation.NoZeroValues),
 		"disk_size":                      ValidateString(testAccDataSourceComputeDiskSize),
 		"hostname":                       ValidateString(testAccDataSourceComputeName),
-		"id":                             validation.NoZeroValues,
-		"ip6_address":                    validation.IsIPv6Address,
-		"ip_address":                     validation.IsIPv4Address,
-		"memory":                         validation.NoZeroValues,
+		"id":                             validation.ToDiagFunc(validation.NoZeroValues),
+		"ip6_address":                    validation.ToDiagFunc(validation.IsIPv6Address),
+		"ip_address":                     validation.ToDiagFunc(validation.IsIPv4Address),
+		"memory":                         validation.ToDiagFunc(validation.NoZeroValues),
 		"private_network_ip_addresses.#": ValidateString("1"),
 		"size":                           ValidateString(testAccDataSourceComputeSize),
 		"state":                          ValidateString("Running"),
@@ -79,37 +80,9 @@ resource "exoscale_nic" "test" {
 
 func TestAccDatasourceCompute(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviders,
 		Steps: []resource.TestStep{
-			/*
-				For some reason, running these test steps without `ExpectNonEmptyPlan: true` triggers
-				the following error:
-
-				testing.go:684: Step 1 error: After applying this step and refreshing, the plan was not empty:
-
-					DIFF:
-
-					UPDATE: data.exoscale_compute.by-hostname
-					  cpu:                          "" => "<computed>"
-					  created:                      "" => "<computed>"
-					  disk_size:                    "" => "<computed>"
-					  hostname:                     "" => "test-terraform-exoscale-provider-tzo3jrm3fg"
-					  ip6_address:                  "" => "<computed>"
-					  ip_address:                   "" => "<computed>"
-					  memory:                       "" => "<computed>"
-					  private_network_ip_addresses: "" => "<computed>"
-					  size:                         "" => "<computed>"
-					  state:                        "" => "<computed>"
-					  template:                     "" => "<computed>"
-					  zone:                         "" => "<computed>"
-
-				Which seems to me similar to the problem discussed in this GitHub issue:
-					https://github.com/hashicorp/terraform/issues/20986
-
-				Note: this problem only manifests itself during tests, not during actual usage of the
-				data source (tested OK with the exact same configuration used in these tests).
-			*/
 			{
 				Config: fmt.Sprintf(`%s
 data "exoscale_compute" "error" {
@@ -124,7 +97,6 @@ data "exoscale_compute" "by-hostname" {
 }`, testAccDataSourceComputeCreate),
 				Check: testAccDataSourceComputeAttributes("data.exoscale_compute.by-hostname",
 					testAccDataSourceComputeAttrs),
-				ExpectNonEmptyPlan: true,
 			},
 			{
 				Config: fmt.Sprintf(`%s
@@ -134,7 +106,6 @@ data "exoscale_compute" "by-id" {
 }`, testAccDataSourceComputeCreate),
 				Check: testAccDataSourceComputeAttributes("data.exoscale_compute.by-id",
 					testAccDataSourceComputeAttrs),
-				ExpectNonEmptyPlan: true,
 			},
 			{
 				Config: fmt.Sprintf(`%s
@@ -144,7 +115,6 @@ data "exoscale_compute" "by-tags" {
 }`, testAccDataSourceComputeCreate),
 				Check: testAccDataSourceComputeAttributes("data.exoscale_compute.by-tags",
 					testAccDataSourceComputeAttrs),
-				ExpectNonEmptyPlan: true,
 			},
 		},
 	})

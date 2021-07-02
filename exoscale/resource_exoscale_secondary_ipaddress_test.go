@@ -7,14 +7,16 @@ import (
 	"testing"
 
 	"github.com/exoscale/egoscale"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 var (
 	testAccResourceSecondaryIPAddressZoneName          = testZoneName
-	testAccResourceSecondaryIPAddressSSHKeyName        = testPrefix + "-" + testRandomString()
-	testAccResourceSecondaryIPAddressComputeName       = testPrefix + "-" + testRandomString()
+	testAccResourceSecondaryIPAddressSSHKeyName        = acctest.RandomWithPrefix(testPrefix)
+	testAccResourceSecondaryIPAddressComputeName       = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceSecondaryIPAddressComputeTemplateID = testInstanceTemplateID
 
 	testAccResourceSecondaryIPAddressConfig = fmt.Sprintf(`
@@ -64,9 +66,9 @@ func TestAccResourceSecondaryIPAddress(t *testing.T) {
 	secondaryip := new(egoscale.NicSecondaryIP)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckResourceSecondaryIPAddressDestroy,
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviders,
+		CheckDestroy:      testAccCheckResourceSecondaryIPAddressDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccResourceSecondaryIPAddressConfig,
@@ -76,8 +78,8 @@ func TestAccResourceSecondaryIPAddress(t *testing.T) {
 					testAccCheckResourceSecondaryIPAddressExists("exoscale_secondary_ipaddress.ip", vm, secondaryip),
 					testAccCheckResourceSecondaryIPAddress(secondaryip),
 					testAccCheckResourceSecondaryIPAddressAttributes(testAttrs{
-						"nic_id":     ValidateUUID(),
-						"network_id": ValidateUUID(),
+						"nic_id":     validation.ToDiagFunc(validation.IsUUID),
+						"network_id": validation.ToDiagFunc(validation.IsUUID),
 					}),
 				),
 			},
@@ -88,8 +90,8 @@ func TestAccResourceSecondaryIPAddress(t *testing.T) {
 				ImportStateCheck: func(s []*terraform.InstanceState) error {
 					return checkResourceAttributes(
 						testAttrs{
-							"nic_id":     ValidateUUID(),
-							"network_id": ValidateUUID(),
+							"nic_id":     validation.ToDiagFunc(validation.IsUUID),
+							"network_id": validation.ToDiagFunc(validation.IsUUID),
 						},
 						s[0].Attributes)
 				},

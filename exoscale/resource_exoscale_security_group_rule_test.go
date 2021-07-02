@@ -6,12 +6,13 @@ import (
 	"testing"
 
 	"github.com/exoscale/egoscale"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 var (
-	testAccResourceSecurityGroupRuleSecurityGroupName = testPrefix + "-" + testRandomString()
+	testAccResourceSecurityGroupRuleSecurityGroupName = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceSecurityGroupRuleWithCIDRProtocol  = "TCP"
 	testAccResourceSecurityGroupRuleWithCIDRType      = "EGRESS"
 	testAccResourceSecurityGroupRuleWithCIDRCIDR      = "::/0"
@@ -72,9 +73,9 @@ func TestAccResourceSecurityGroupRule(t *testing.T) {
 	usg := new(egoscale.IngressRule)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckResourceSecurityGroupRuleDestroy,
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviders,
+		CheckDestroy:      testAccCheckResourceSecurityGroupRuleDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccResourceSecurityGroupRuleConfigWithCIDR,

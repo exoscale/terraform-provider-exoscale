@@ -4,15 +4,18 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/exoscale/egoscale"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 var (
-	testAccResourceDomainName = testPrefix + "-" + testRandomString() + ".net"
+	testAccResourceDomainName = acctest.RandomWithPrefix(testPrefix) + ".net"
 
 	testAccDNSDomainCreate = fmt.Sprintf(`
 resource "exoscale_domain" "exo" {
@@ -27,9 +30,9 @@ func TestAccResourceDomain(t *testing.T) {
 	domain := new(egoscale.DNSDomain)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckResourceDomainDestroy,
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviders,
+		CheckDestroy:      testAccCheckResourceDomainDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDNSDomainCreate,
@@ -40,8 +43,8 @@ func TestAccResourceDomain(t *testing.T) {
 						"name":       ValidateString(testAccResourceDomainName),
 						"state":      ValidateString("hosted"),
 						"auto_renew": ValidateString("false"),
-						"expires_on": ValidateString(""),
-						"token":      ValidateRegexp("^[0-9a-f]+$"),
+						"expires_on": validation.ToDiagFunc(validation.StringIsEmpty),
+						"token":      validation.ToDiagFunc(validation.StringMatch(regexp.MustCompile("^[0-9a-f]+$"), "")),
 					}),
 				),
 			},
@@ -55,8 +58,8 @@ func TestAccResourceDomain(t *testing.T) {
 							"name":       ValidateString(testAccResourceDomainName),
 							"state":      ValidateString("hosted"),
 							"auto_renew": ValidateString("false"),
-							"expires_on": ValidateString(""),
-							"token":      ValidateRegexp("^[0-9a-f]+$"),
+							"expires_on": validation.ToDiagFunc(validation.StringIsEmpty),
+							"token":      validation.ToDiagFunc(validation.StringMatch(regexp.MustCompile("^[0-9a-f]+$"), "")),
 						},
 						s[0].Attributes)
 				},

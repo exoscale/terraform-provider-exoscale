@@ -8,12 +8,13 @@ import (
 	"testing"
 
 	"github.com/exoscale/egoscale"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 var (
-	testAccResourceDomainRecordDomainName     = testPrefix + "-" + testRandomString() + ".net"
+	testAccResourceDomainRecordDomainName     = acctest.RandomWithPrefix(testPrefix) + ".net"
 	testAccResourceDomainRecordName           = "mail1"
 	testAccResourceDomainRecordNameUpdated    = "mail2"
 	testAccResourceDomainRecordType           = "MX"
@@ -74,9 +75,9 @@ func TestAccResourceDomainRecord(t *testing.T) {
 	record := new(egoscale.DNSRecord)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckResourceDomainRecordDestroy,
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviders,
+		CheckDestroy:      testAccCheckResourceDomainRecordDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccResourceDomainRecordConfigCreate,

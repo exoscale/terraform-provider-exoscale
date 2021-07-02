@@ -7,8 +7,8 @@ import (
 	"strconv"
 
 	"github.com/exoscale/egoscale"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 var supportedRecordTypes = []string{
@@ -66,7 +66,7 @@ func resourceDomainRecord() *schema.Resource {
 		Exists: resourceDomainRecordExists,
 
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 
 		Timeouts: &schema.ResourceTimeout{
@@ -93,7 +93,6 @@ func resourceDomainRecordCreate(d *schema.ResourceData, meta interface{}) error 
 		TTL:        d.Get("ttl").(int),
 		Prio:       d.Get("prio").(int),
 	})
-
 	if err != nil {
 		return err
 	}
@@ -222,7 +221,6 @@ func resourceDomainRecordUpdate(d *schema.ResourceData, meta interface{}) error 
 		TTL:     d.Get("ttl").(int),
 		Prio:    d.Get("prio").(int),
 	})
-
 	if err != nil {
 		return err
 	}

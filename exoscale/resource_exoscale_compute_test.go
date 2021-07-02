@@ -6,19 +6,20 @@ import (
 	"testing"
 
 	"github.com/exoscale/egoscale"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 var (
-	testAccResourceComputeSSHKeyName         = testPrefix + "-" + testRandomString()
-	testAccResourceComputeSecurityGroupName  = testPrefix + "-" + testRandomString()
+	testAccResourceComputeSSHKeyName         = acctest.RandomWithPrefix(testPrefix)
+	testAccResourceComputeSecurityGroupName  = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceComputeZoneName           = testZoneName
 	testAccResourceComputeTemplateName       = testInstanceTemplateName
 	testAccResourceComputeTemplateID         = testInstanceTemplateID
-	testAccResourceComputeDisplayName        = testPrefix + "-" + testRandomString()
+	testAccResourceComputeDisplayName        = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceComputeDisplayNameUpdated = testAccResourceComputeDisplayName + "-updated"
-	testAccResourceComputeHostname           = testPrefix + "-" + testRandomString()
+	testAccResourceComputeHostname           = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceComputeSize               = "Micro"
 	testAccResourceComputeSizeUpdated        = "Small"
 	testAccResourceComputeDiskSize           = "10"
@@ -136,9 +137,9 @@ func TestAccResourceCompute(t *testing.T) {
 	vm := new(egoscale.VirtualMachine)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckResourceComputeDestroy,
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviders,
+		CheckDestroy:      testAccCheckResourceComputeDestroy,
 		Steps: []resource.TestStep{
 			{
 				// This should go away once `template` attribute is phased out

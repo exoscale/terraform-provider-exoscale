@@ -7,15 +7,17 @@ import (
 	"testing"
 
 	"github.com/exoscale/egoscale"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 var (
 	testAccResourceNICZoneName          = testZoneName
-	testAccResourceNICSSHKeyName        = testPrefix + "-" + testRandomString()
-	testAccResourceNICSNetworkName      = testPrefix + "-" + testRandomString()
-	testAccResourceNICComputeName       = testPrefix + "-" + testRandomString()
+	testAccResourceNICSSHKeyName        = acctest.RandomWithPrefix(testPrefix)
+	testAccResourceNICSNetworkName      = acctest.RandomWithPrefix(testPrefix)
+	testAccResourceNICComputeName       = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceNICComputeTemplateID = testInstanceTemplateID
 	testAccResourceNICCIPAddress        = "10.0.0.1"
 	testAccResourceNICCIPAddressUpdated = "10.0.0.3"
@@ -103,9 +105,9 @@ func TestAccResourceNIC(t *testing.T) {
 	nic := new(egoscale.Nic)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckResourceNICDestroy,
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviders,
+		CheckDestroy:      testAccCheckResourceNICDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccResourceNICConfigCreate,
@@ -115,7 +117,7 @@ func TestAccResourceNIC(t *testing.T) {
 					testAccCheckResourceNICExists("exoscale_nic.nic", vm, nic),
 					testAccCheckResourceNIC(nic, net.ParseIP("10.0.0.1")),
 					testAccCheckResourceNICAttributes(testAttrs{
-						"mac_address": ValidateRegexp("^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$"),
+						"mac_address": validation.ToDiagFunc(validation.IsMACAddress),
 						"ip_address":  ValidateString(testAccResourceNICCIPAddress),
 					}),
 				),
@@ -127,7 +129,7 @@ func TestAccResourceNIC(t *testing.T) {
 					testAccCheckResourceNICExists("exoscale_nic.nic", vm, nic),
 					testAccCheckResourceNIC(nic, net.ParseIP("10.0.0.3")),
 					testAccCheckResourceNICAttributes(testAttrs{
-						"mac_address": ValidateRegexp("^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$"),
+						"mac_address": validation.ToDiagFunc(validation.IsMACAddress),
 						"ip_address":  ValidateString(testAccResourceNICCIPAddressUpdated),
 					}),
 				),

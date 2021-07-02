@@ -9,14 +9,15 @@ import (
 
 	exov2 "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/stretchr/testify/assert"
 )
 
 var (
-	testAccResourceSKSClusterName        = testPrefix + "-" + testRandomString()
+	testAccResourceSKSClusterName        = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceSKSClusterNameUpdated = testAccResourceSKSClusterName + "-updated"
 	testAccResourceSKSClusterDescription = testDescription
 
@@ -97,8 +98,8 @@ func TestAccResourceSKSCluster(t *testing.T) {
 			testAccPreCheck(t)
 		},
 
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckResourceSKSClusterDestroy,
+		ProviderFactories: testAccProviders,
+		CheckDestroy:      testAccCheckResourceSKSClusterDestroy,
 		Steps: []resource.TestStep{
 			{ // Create
 				Config: testAccResourceSKSClusterConfigCreate,
@@ -141,16 +142,16 @@ func TestAccResourceSKSCluster(t *testing.T) {
 					},
 					testAccCheckResourceSKSClusterAttributes(testAttrs{
 						"cni":            ValidateString(defaultSKSClusterCNI),
-						"created_at":     validation.NoZeroValues,
+						"created_at":     validation.ToDiagFunc(validation.NoZeroValues),
 						"description":    ValidateString(testAccResourceSKSClusterDescription),
-						"endpoint":       validation.IsURLWithHTTPS,
+						"endpoint":       validation.ToDiagFunc(validation.IsURLWithHTTPS),
 						"exoscale_ccm":   ValidateString("true"),
-						"id":             validation.IsUUID,
+						"id":             validation.ToDiagFunc(validation.IsUUID),
 						"metrics_server": ValidateString("false"),
 						"name":           ValidateString(testAccResourceSKSClusterName),
 						"service_level":  ValidateString(defaultSKSClusterServiceLevel),
-						"state":          validation.NoZeroValues,
-						"version":        validation.NoZeroValues,
+						"state":          validation.ToDiagFunc(validation.NoZeroValues),
+						"version":        validation.ToDiagFunc(validation.NoZeroValues),
 
 						"zone": ValidateString(testZoneName),
 					}),
@@ -162,17 +163,17 @@ func TestAccResourceSKSCluster(t *testing.T) {
 					testAccCheckResourceSKSClusterExists("exoscale_sks_cluster.test", &sksCluster),
 					testAccCheckResourceSKSClusterAttributes(testAttrs{
 						"cni":            ValidateString(defaultSKSClusterCNI),
-						"created_at":     validation.NoZeroValues,
+						"created_at":     validation.ToDiagFunc(validation.NoZeroValues),
 						"description":    ValidateString(""),
-						"endpoint":       validation.IsURLWithHTTPS,
+						"endpoint":       validation.ToDiagFunc(validation.IsURLWithHTTPS),
 						"exoscale_ccm":   ValidateString("true"),
-						"id":             validation.IsUUID,
+						"id":             validation.ToDiagFunc(validation.IsUUID),
 						"metrics_server": ValidateString("false"),
 						"name":           ValidateString(testAccResourceSKSClusterNameUpdated),
 						"nodepools.#":    ValidateString("1"),
 						"service_level":  ValidateString(defaultSKSClusterServiceLevel),
-						"state":          validation.NoZeroValues,
-						"version":        validation.NoZeroValues,
+						"state":          validation.ToDiagFunc(validation.NoZeroValues),
+						"version":        validation.ToDiagFunc(validation.NoZeroValues),
 						"zone":           ValidateString(testZoneName),
 					}),
 				),
@@ -187,17 +188,17 @@ func TestAccResourceSKSCluster(t *testing.T) {
 						"exoscale_sks_cluster",
 						testAttrs{
 							"cni":            ValidateString(defaultSKSClusterCNI),
-							"created_at":     validation.NoZeroValues,
+							"created_at":     validation.ToDiagFunc(validation.NoZeroValues),
 							"description":    ValidateString(""),
-							"endpoint":       validation.IsURLWithHTTPS,
+							"endpoint":       validation.ToDiagFunc(validation.IsURLWithHTTPS),
 							"exoscale_ccm":   ValidateString("true"),
-							"id":             validation.IsUUID,
+							"id":             validation.ToDiagFunc(validation.IsUUID),
 							"metrics_server": ValidateString("false"),
 							"name":           ValidateString(testAccResourceSKSClusterNameUpdated),
 							"nodepools.#":    ValidateString("1"),
 							"service_level":  ValidateString(defaultSKSClusterServiceLevel),
-							"state":          validation.NoZeroValues,
-							"version":        validation.NoZeroValues,
+							"state":          validation.ToDiagFunc(validation.NoZeroValues),
+							"version":        validation.ToDiagFunc(validation.NoZeroValues),
 							"zone":           ValidateString(testZoneName),
 						},
 					),

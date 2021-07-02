@@ -9,8 +9,8 @@ import (
 	"strings"
 
 	"github.com/exoscale/egoscale"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 type fetchRuleFunc func(identifier string) (*egoscale.IngressRule, bool)
@@ -489,7 +489,7 @@ func readRules(rules *schema.Set, ruleFunc fetchRuleFunc) {
 			}
 
 			if strings.HasPrefix(prot, "ICMP") {
-				rule["protocol"] = strings.Replace(prot, "V6", "v6", -1)
+				rule["protocol"] = strings.ReplaceAll(prot, "V6", "v6")
 				rule["icmp_code"] = r.IcmpCode
 				rule["icmp_type"] = r.IcmpType
 			} else {
@@ -600,7 +600,7 @@ func ruleToAuthorize(ctx context.Context, client *egoscale.Client, rule map[stri
 		Description: description,
 	}
 
-	if strings.HasPrefix(protocol, "ICMP") {
+	if strings.HasPrefix(protocol, "ICMP") { // nolint:gocritic
 		req.Protocol = protocol
 		req.IcmpType = rule["icmp_type"].(int)
 		req.IcmpCode = rule["icmp_code"].(int)

@@ -6,16 +6,18 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-var testAccDataSourceAffinityName = testPrefix + "-" + testRandomString()
+var testAccDataSourceAffinityName = acctest.RandomWithPrefix(testPrefix)
 
 func TestAccDataSourceAffinity(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: `
@@ -34,7 +36,7 @@ data "exoscale_affinity" "by-id" {
 }`, testAccDataSourceAffinityName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDataSourceAffinityAttributes("data.exoscale_affinity.by-id", testAttrs{
-						"id":   ValidateUUID(),
+						"id":   validation.ToDiagFunc(validation.IsUUID),
 						"name": ValidateString(testAccDataSourceAffinityName),
 					}),
 				),
@@ -50,7 +52,7 @@ data "exoscale_affinity" "by-name" {
 }`, testAccDataSourceAffinityName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDataSourceAffinityAttributes("data.exoscale_affinity.by-name", testAttrs{
-						"id":   ValidateUUID(),
+						"id":   validation.ToDiagFunc(validation.IsUUID),
 						"name": ValidateString(testAccDataSourceAffinityName),
 					}),
 				),

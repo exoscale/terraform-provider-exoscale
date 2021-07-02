@@ -8,18 +8,19 @@ import (
 
 	exov2 "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 var (
 	testAccResourceNLBZoneName = testZoneName
 
-	testAccResourceNLBInstancePoolName       = testPrefix + "-" + testRandomString()
+	testAccResourceNLBInstancePoolName       = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceNLBInstancePoolTemplateID = testInstanceTemplateID
 
-	testAccResourceNLBName               = testPrefix + "-" + testRandomString()
+	testAccResourceNLBName               = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceNLBNameUpdated        = testAccResourceNLBName + "-updated"
 	testAccResourceNLBDescription        = testDescription
 	testAccResourceNLBDescriptionUpdated = testDescription + "-updated"
@@ -151,9 +152,9 @@ func TestAccResourceNLB(t *testing.T) {
 	nlb := new(exov2.NetworkLoadBalancer)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckResourceNLBDestroy,
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviders,
+		CheckDestroy:      testAccCheckResourceNLBDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccResourceNLBConfigCreate,
@@ -164,6 +165,9 @@ func TestAccResourceNLB(t *testing.T) {
 						"zone":        ValidateString(testAccResourceNLBZoneName),
 						"name":        ValidateString(testAccResourceNLBName),
 						"description": ValidateString(testAccResourceNLBDescription),
+						"created_at":  validation.ToDiagFunc(validation.NoZeroValues),
+						"ip_address":  validation.ToDiagFunc(validation.IsIPv4Address),
+						"state":       validation.ToDiagFunc(validation.NoZeroValues),
 					}),
 				),
 			},
@@ -176,6 +180,9 @@ func TestAccResourceNLB(t *testing.T) {
 						"zone":        ValidateString(testAccResourceNLBZoneName),
 						"name":        ValidateString(testAccResourceNLBNameUpdated),
 						"description": ValidateString(testAccResourceNLBDescriptionUpdated),
+						"created_at":  validation.ToDiagFunc(validation.NoZeroValues),
+						"ip_address":  validation.ToDiagFunc(validation.IsIPv4Address),
+						"state":       validation.ToDiagFunc(validation.NoZeroValues),
 					}),
 				),
 			},
@@ -191,9 +198,9 @@ func TestAccResourceNLB(t *testing.T) {
 							"zone":        ValidateString(testAccResourceNLBZoneName),
 							"name":        ValidateString(testAccResourceNLBNameUpdated),
 							"description": ValidateString(testAccResourceNLBDescriptionUpdated),
-							"created_at":  validation.NoZeroValues,
-							"ip_address":  ValidateIPv4String(),
-							"state":       validation.NoZeroValues,
+							"created_at":  validation.ToDiagFunc(validation.NoZeroValues),
+							"ip_address":  validation.ToDiagFunc(validation.IsIPv4Address),
+							"state":       validation.ToDiagFunc(validation.NoZeroValues),
 						},
 					),
 					testAccCheckResourceImportedAttributes(

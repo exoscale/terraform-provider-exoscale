@@ -5,7 +5,7 @@ import (
 	"log"
 
 	"github.com/exoscale/egoscale"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func resourceSecurityGroupIDString(d resourceIDStringer) string {
@@ -25,12 +25,6 @@ func resourceSecurityGroup() *schema.Resource {
 				ForceNew: true,
 				Optional: true,
 			},
-			"tags": {
-				Type:     schema.TypeMap,
-				ForceNew: true,
-				Optional: true,
-				Removed:  "Tags cannot be set on security groups for the time being",
-			},
 		},
 
 		Create: resourceSecurityGroupCreate,
@@ -39,7 +33,7 @@ func resourceSecurityGroup() *schema.Resource {
 		Exists: resourceSecurityGroupExists,
 
 		Importer: &schema.ResourceImporter{
-			State: resourceSecurityGroupImport,
+			StateContext: resourceSecurityGroupImport,
 		},
 
 		Timeouts: &schema.ResourceTimeout{
@@ -150,8 +144,8 @@ func resourceSecurityGroupDelete(d *schema.ResourceData, meta interface{}) error
 	return nil
 }
 
-func resourceSecurityGroupImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
+func resourceSecurityGroupImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
 	defer cancel()
 
 	client := GetComputeClient(meta)

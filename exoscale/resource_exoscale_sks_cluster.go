@@ -9,7 +9,7 @@ import (
 	exov2 "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 const (
@@ -103,7 +103,7 @@ func resourceSKSCluster() *schema.Resource {
 		Exists: resourceSKSClusterExists,
 
 		Importer: &schema.ResourceImporter{
-			State: resourceSKSClusterImport,
+			StateContext: resourceSKSClusterImport,
 		},
 
 		Timeouts: &schema.ResourceTimeout{
@@ -294,9 +294,10 @@ func resourceSKSClusterDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func resourceSKSClusterImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+func resourceSKSClusterImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	log.Printf("[DEBUG] %s: beginning import", resourceSKSClusterIDString(d))
-	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
+
+	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
 	defer cancel()
 
 	cluster, err := findSKSCluster(ctx, d, meta)

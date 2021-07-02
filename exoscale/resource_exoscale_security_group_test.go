@@ -6,12 +6,13 @@ import (
 	"testing"
 
 	"github.com/exoscale/egoscale"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 var (
-	testAccResourceSecurityGroupName        = testPrefix + "-" + testRandomString()
+	testAccResourceSecurityGroupName        = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceSecurityGroupDescription = testDescription
 
 	testAccResourceSecurityGroupConfig = fmt.Sprintf(`
@@ -28,9 +29,9 @@ func TestAccResourceSecurityGroup(t *testing.T) {
 	sg := new(egoscale.SecurityGroup)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckResourceSecurityGroupDestroy,
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviders,
+		CheckDestroy:      testAccCheckResourceSecurityGroupDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccResourceSecurityGroupConfig,

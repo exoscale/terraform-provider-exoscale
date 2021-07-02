@@ -8,8 +8,8 @@ import (
 	"net"
 
 	"github.com/exoscale/egoscale"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 func resourceNetworkIDString(d resourceIDStringer) string {
@@ -66,7 +66,7 @@ func resourceNetwork() *schema.Resource {
 		Exists: resourceNetworkExists,
 
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 
 		Timeouts: &schema.ResourceTimeout{
@@ -117,7 +117,6 @@ func resourceNetworkCreate(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	resp, err := client.RequestWithContext(ctx, req)
-
 	if err != nil {
 		return err
 	}

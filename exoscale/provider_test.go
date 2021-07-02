@@ -2,20 +2,20 @@ package exoscale
 
 import (
 	"fmt"
-	"math/rand"
 	"os"
 	"strings"
 	"testing"
-	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/go-cty/cty"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 // Common test environment information
 const (
-	testPrefix                   = "test-terraform-exoscale-provider"
+	testPrefix                   = "test-terraform-exoscale"
 	testDescription              = "Created by the terraform-exoscale provider"
 	testZoneName                 = "de-muc-1"
 	testInstanceTemplateName     = "Linux Ubuntu 20.04 LTS 64-bit"
@@ -37,21 +37,23 @@ const (
 )
 
 // testAttrs represents a map of expected resource attributes during acceptance tests.
-type testAttrs map[string]schema.SchemaValidateFunc
+type testAttrs map[string]schema.SchemaValidateDiagFunc
 
 // testResourceStateValidationFunc represents a resource state validation function.
 type testResourceStateValidationFunc func(state *terraform.InstanceState) error
 
 var (
-	testAccProviders map[string]terraform.ResourceProvider
+	testAccProviders map[string]func() (*schema.Provider, error)
 	testAccProvider  *schema.Provider
 	testEnvironment  string
 )
 
 func init() {
-	testAccProvider = Provider().(*schema.Provider)
-	testAccProviders = map[string]terraform.ResourceProvider{
-		"exoscale": testAccProvider,
+	testAccProvider = Provider()
+	testAccProviders = map[string]func() (*schema.Provider, error){
+		"exoscale": func() (*schema.Provider, error) {
+			return testAccProvider, nil
+		},
 	}
 
 	testEnvironment = os.Getenv("EXOSCALE_API_ENVIRONMENT")
@@ -61,13 +63,9 @@ func init() {
 }
 
 func TestProvider(t *testing.T) {
-	if err := Provider().(*schema.Provider).InternalValidate(); err != nil {
+	if err := Provider().InternalValidate(); err != nil {
 		t.Fatalf("err: %s", err)
 	}
-}
-
-func TestProvider_impl(t *testing.T) {
-	var _ terraform.ResourceProvider = Provider()
 }
 
 func testAccPreCheck(t *testing.T) {
@@ -85,18 +83,16 @@ func checkResourceAttributes(want testAttrs, got map[string]string) error {
 		v, ok := got[attr]
 		if !ok {
 			return fmt.Errorf("expected attribute %q not found in map", attr)
-		} else if _, es := validateFunc(v, ""); len(es) > 0 {
-			for i := range es {
-				errors := make([]string, len(es))
-				for _, e := range es {
-					errors[i] = e.Error()
-				}
-
-				if len(errors) > 0 {
-					return fmt.Errorf("invalid value for attribute %q:\n%s\n",
-						attr, strings.Join(errors, "\n"))
+		} else if diags := validateFunc(v, cty.GetAttrPath(attr)); diags.HasError() {
+			errors := make([]string, 0)
+			for _, d := range diags {
+				if d.Severity == diag.Error {
+					errors = append(errors, d.Summary)
 				}
 			}
+
+			return fmt.Errorf("invalid value for attribute %q:\n%s\n", // nolint:revive
+				attr, strings.Join(errors, "\n"))
 		}
 	}
 
@@ -186,16 +182,4 @@ func TestCheckResourceAttributes(t *testing.T) {
 			t.Errorf("test case failed: %s: expected an error but got none", tc.desc)
 		}
 	}
-}
-
-func testRandomString() string {
-	chars := "1234567890abcdefghijklmnopqrstuvwxyz"
-
-	rand.Seed(time.Now().UnixNano())
-	b := make([]byte, 10)
-	for i := range b {
-		b[i] = chars[rand.Int63()%int64(len(chars))]
-	}
-
-	return string(b)
 }

@@ -9,29 +9,30 @@ import (
 
 	exov2 "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/ssgreg/repeat"
 	"github.com/stretchr/testify/require"
 )
 
 var (
-	testAccResourceInstancePoolAntiAffinityGroupName        = testPrefix + "-" + testRandomString()
+	testAccResourceInstancePoolAntiAffinityGroupName        = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceInstancePoolDescription                  = testDescription
 	testAccResourceInstancePoolDiskSize               int64 = 10
 	testAccResourceInstancePoolDiskSizeUpdated              = testAccResourceInstancePoolDiskSize * 2
-	testAccResourceInstancePoolKeyPair                      = testPrefix + "-" + testRandomString()
-	testAccResourceInstancePoolName                         = testPrefix + "-" + testRandomString()
+	testAccResourceInstancePoolKeyPair                      = acctest.RandomWithPrefix(testPrefix)
+	testAccResourceInstancePoolName                         = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceInstancePoolNameUpdated                  = testAccResourceInstancePoolName + "-updated"
 	testAccResourceInstancePoolInstancePrefix               = "test"
-	testAccResourceInstancePoolNetwork                      = testPrefix + "-" + testRandomString()
+	testAccResourceInstancePoolNetwork                      = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceInstancePoolServiceOffering              = "tiny"
 	testAccResourceInstancePoolServiceOfferingUpdated       = "small"
 	testAccResourceInstancePoolSize                   int64 = 1
 	testAccResourceInstancePoolSizeUpdated                  = testAccResourceInstancePoolSize * 2
 	testAccResourceInstancePoolZoneName                     = testZoneName
-	testAccResourceInstancePoolUserData                     = testRandomString()
+	testAccResourceInstancePoolUserData                     = acctest.RandString(10)
 	testAccResourceInstancePoolUserDataUpdated              = testAccResourceInstancePoolUserData + "-updated"
 
 	testAccResourceInstancePoolConfigCreate = fmt.Sprintf(`
@@ -146,9 +147,9 @@ func TestAccResourceInstancePool(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckResourceInstancePoolDestroy(&instancePool),
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviders,
+		CheckDestroy:      testAccCheckResourceInstancePoolDestroy(&instancePool),
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -184,14 +185,14 @@ func TestAccResourceInstancePool(t *testing.T) {
 						resInstancePoolAttrAffinityGroupIDs + ".#": ValidateString("1"),
 						resInstancePoolAttrDescription:             ValidateString(testAccResourceInstancePoolDescription),
 						resInstancePoolAttrDiskSize:                ValidateString(fmt.Sprint(testAccResourceInstancePoolDiskSize)),
-						resInstancePoolAttrID:                      validation.IsUUID,
+						resInstancePoolAttrID:                      validation.ToDiagFunc(validation.IsUUID),
 						resInstancePoolAttrInstancePrefix:          ValidateString(testAccResourceInstancePoolInstancePrefix),
 						resInstancePoolAttrIPv6:                    ValidateString("true"),
 						resInstancePoolAttrName:                    ValidateString(testAccResourceInstancePoolName),
 						resInstancePoolAttrSecurityGroupIDs + ".#": ValidateString("1"),
 						resInstancePoolAttrServiceOffering:         ValidateString(testAccResourceInstancePoolServiceOffering),
 						resInstancePoolAttrSize:                    ValidateString(fmt.Sprint(testAccResourceInstancePoolSize)),
-						resInstancePoolAttrTemplateID:              validation.IsUUID,
+						resInstancePoolAttrTemplateID:              validation.ToDiagFunc(validation.IsUUID),
 						resInstancePoolAttrVirtualMachines + ".#":  ValidateString(fmt.Sprint(testAccResourceInstancePoolSize)),
 						resInstancePoolAttrUserData:                ValidateString(testAccResourceInstancePoolUserData),
 						resInstancePoolAttrZone:                    ValidateString(testAccResourceInstancePoolZoneName),
@@ -235,7 +236,7 @@ func TestAccResourceInstancePool(t *testing.T) {
 						resInstancePoolAttrDescription:             ValidateString(""),
 						resInstancePoolAttrDiskSize:                ValidateString(fmt.Sprint(testAccResourceInstancePoolDiskSizeUpdated)),
 						resInstancePoolAttrElasticIPIDs + ".#":     ValidateString("1"),
-						resInstancePoolAttrID:                      validation.IsUUID,
+						resInstancePoolAttrID:                      validation.ToDiagFunc(validation.IsUUID),
 						resInstancePoolAttrInstancePrefix:          ValidateString(defaultInstancePoolInstancePrefix),
 						resInstancePoolAttrIPv6:                    ValidateString("false"),
 						resInstancePoolAttrKeyPair:                 ValidateString(testAccResourceInstancePoolKeyPair),
@@ -261,7 +262,7 @@ func TestAccResourceInstancePool(t *testing.T) {
 							resInstancePoolAttrDescription:             ValidateString(""),
 							resInstancePoolAttrDiskSize:                ValidateString(fmt.Sprint(testAccResourceInstancePoolDiskSizeUpdated)),
 							resInstancePoolAttrElasticIPIDs + ".#":     ValidateString("1"),
-							resInstancePoolAttrID:                      validation.IsUUID,
+							resInstancePoolAttrID:                      validation.ToDiagFunc(validation.IsUUID),
 							resInstancePoolAttrInstancePrefix:          ValidateString(defaultInstancePoolInstancePrefix),
 							resInstancePoolAttrIPv6:                    ValidateString("false"),
 							resInstancePoolAttrKeyPair:                 ValidateString(testAccResourceInstancePoolKeyPair),

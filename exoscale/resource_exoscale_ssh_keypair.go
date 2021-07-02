@@ -5,7 +5,7 @@ import (
 	"log"
 
 	"github.com/exoscale/egoscale"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func resourceSSHKeypairIDString(d resourceIDStringer) string {
@@ -42,7 +42,7 @@ func resourceSSHKeypair() *schema.Resource {
 		Exists: resourceSSHKeypairExists,
 
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 
 		Timeouts: &schema.ResourceTimeout{
