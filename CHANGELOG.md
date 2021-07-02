@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.25.0 (July 2, 2021)
+
+IMPROVEMENTS:
+
+- `exoscale_sks_nodepool`: add support for Deploy Target/Instance Prefix
+- `exoscale_compute`/`exoscale_instance_pool`: improve cloud-init userdata handling
+
+BUG FIXES:
+
+- `exoscale_security_group_rule*`: support -1 value for `icmp_(code|type)`
+- Fix non-existence detection logic for NLB service/SKS Nodepool
+
+
 ## 0.24.0 (May 11, 2021)
 
 DEPRECATIONS:
