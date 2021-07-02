@@ -2,7 +2,6 @@ package exoscale
 
 import (
 	"context"
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"log"
@@ -183,7 +182,6 @@ func resourceInstancePoolCreate(d *schema.ResourceData, meta interface{}) error 
 		SSHKey:         d.Get(resInstancePoolAttrKeyPair).(string),
 		Size:           int64(d.Get(resInstancePoolAttrSize).(int)),
 		TemplateID:     d.Get(resInstancePoolAttrTemplateID).(string),
-		UserData:       base64.StdEncoding.EncodeToString([]byte(d.Get(resInstancePoolAttrUserData).(string))),
 	}
 
 	resp, err := client.GetWithContext(ctx, &egoscale.ServiceOffering{
@@ -239,6 +237,13 @@ func resourceInstancePoolCreate(d *schema.ResourceData, meta interface{}) error 
 	}
 
 	zone := d.Get(resInstancePoolAttrZone).(string)
+	if v := d.Get(resInstancePoolAttrUserData).(string); v != "" {
+		userData, err := encodeUserData(v)
+		if err != nil {
+			return err
+		}
+		instancePool.UserData = userData
+	}
 
 	// FIXME: we have to reference the embedded egoscale/v2.Client explicitly
 	//  here because there is already a CreateInstancePool() method on the root
@@ -454,7 +459,10 @@ func resourceInstancePoolUpdate(d *schema.ResourceData, meta interface{}) error 
 	}
 
 	if d.HasChange(resInstancePoolAttrUserData) {
-		instancePool.UserData = base64.StdEncoding.EncodeToString([]byte(d.Get(resInstancePoolAttrUserData).(string)))
+		instancePool.UserData, err = encodeUserData(d.Get(resInstancePoolAttrUserData).(string))
+		if err != nil {
+			return err
+		}
 		updated = true
 	}
 
@@ -593,12 +601,14 @@ func resourceInstancePoolApply(ctx context.Context, client *egoscale.Client, d *
 		return err
 	}
 
-	userData, err := base64.StdEncoding.DecodeString(instancePool.UserData)
-	if err != nil {
-		return err
-	}
-	if err := d.Set(resInstancePoolAttrUserData, string(userData)); err != nil {
-		return err
+	if len(instancePool.UserData) > 0 {
+		userData, err := decodeUserData(instancePool.UserData)
+		if err != nil {
+			return fmt.Errorf("error decoding user data: %s", err)
+		}
+		if err := d.Set(resInstancePoolAttrUserData, userData); err != nil {
+			return err
+		}
 	}
 
 	instanceIDs := make([]string, len(instancePool.InstanceIDs))
