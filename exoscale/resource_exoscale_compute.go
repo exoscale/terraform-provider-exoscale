@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"regexp"
 	"strconv"
@@ -17,7 +18,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 )
 
-const computeHostnameRegexp = `^[a-zA-Z0-9][a-zA-Z0-9\-]+$`
+const (
+	computeHostnameRegexp    = `^[a-zA-Z0-9][a-zA-Z0-9\-]+$`
+	computeMaxUserDataLength = 32768
+)
 
 func resourceComputeIDString(d resourceIDStringer) string {
 	return resourceIDString(d, "exoscale_compute")
@@ -493,7 +497,6 @@ func resourceComputeRead(d *schema.ResourceData, meta interface{}) error {
 		VirtualMachineID: id,
 		Type:             "ROOT",
 	})
-
 	if err != nil {
 		return err
 	}
@@ -1111,25 +1114,60 @@ func prepareUserData(d *schema.ResourceData, meta interface{}, key string) (stri
 		return userData, true, nil
 	}
 
-	byteUserData := []byte(userData)
-
-	if meta.(BaseConfig).gzipUserData {
-		b := new(bytes.Buffer)
-		gz := gzip.NewWriter(b)
-
-		if _, err := gz.Write(byteUserData); err != nil {
-			return "", false, err
-		}
-		if err := gz.Flush(); err != nil {
-			return "", false, err
-		}
-		if err := gz.Close(); err != nil {
-			return "", false, err
-		}
-
-		byteUserData = b.Bytes()
+	b64UserData, err := encodeUserData(userData)
+	if err != nil {
+		return "", false, err
 	}
-	return base64.StdEncoding.EncodeToString(byteUserData), false, nil
+
+	return b64UserData, false, nil
+}
+
+func encodeUserData(data string) (string, error) {
+	b := new(bytes.Buffer)
+	gz := gzip.NewWriter(b)
+
+	if _, err := gz.Write([]byte(data)); err != nil {
+		return "", err
+	}
+	if err := gz.Flush(); err != nil {
+		return "", err
+	}
+	if err := gz.Close(); err != nil {
+		return "", err
+	}
+
+	b64UserData := base64.StdEncoding.EncodeToString(b.Bytes())
+
+	if len(b64UserData) >= computeMaxUserDataLength {
+		return "", fmt.Errorf("user-data maximum allowed length is %d bytes", computeMaxUserDataLength)
+	}
+
+	return b64UserData, nil
+}
+
+func decodeUserData(data string) (string, error) {
+	b64Decoded, err := base64.StdEncoding.DecodeString(data)
+	if err != nil {
+		return "", err
+	}
+
+	gz, err := gzip.NewReader(bytes.NewReader(b64Decoded))
+	if err != nil {
+		if errors.Is(err, gzip.ErrHeader) {
+			// User data are not compressed, returning as-is.
+			return string(b64Decoded), nil
+		}
+
+		return "", err
+	}
+	defer gz.Close()
+
+	userData, err := ioutil.ReadAll(gz)
+	if err != nil {
+		return "", err
+	}
+
+	return string(userData), nil
 }
 
 func reverseDNSApply(ctx context.Context, d *schema.ResourceData, client *egoscale.Client) error {

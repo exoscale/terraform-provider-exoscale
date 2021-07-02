@@ -2,7 +2,6 @@ package exoscale
 
 import (
 	"context"
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"testing"
@@ -25,14 +24,14 @@ var (
 	testAccResourceInstancePoolKeyPair                      = testPrefix + "-" + testRandomString()
 	testAccResourceInstancePoolName                         = testPrefix + "-" + testRandomString()
 	testAccResourceInstancePoolNameUpdated                  = testAccResourceInstancePoolName + "-updated"
-	testAccResourceInstancePoolInstancePrefix               = testRandomString()
+	testAccResourceInstancePoolInstancePrefix               = "test"
 	testAccResourceInstancePoolNetwork                      = testPrefix + "-" + testRandomString()
 	testAccResourceInstancePoolServiceOffering              = "tiny"
 	testAccResourceInstancePoolServiceOfferingUpdated       = "small"
 	testAccResourceInstancePoolSize                   int64 = 1
 	testAccResourceInstancePoolSizeUpdated                  = testAccResourceInstancePoolSize * 2
 	testAccResourceInstancePoolZoneName                     = testZoneName
-	testAccResourceInstancePoolUserData                     = "userdata"
+	testAccResourceInstancePoolUserData                     = testRandomString()
 	testAccResourceInstancePoolUserDataUpdated              = testAccResourceInstancePoolUserData + "-updated"
 
 	testAccResourceInstancePoolConfigCreate = fmt.Sprintf(`
@@ -162,6 +161,11 @@ func TestAccResourceInstancePool(t *testing.T) {
 						templateID, err := attrFromState(s, "data.exoscale_compute_template.ubuntu", "id")
 						a.NoError(err, "unable to retrieve template ID from state")
 
+						expectedUserData, err := encodeUserData(testAccResourceInstancePoolUserData)
+						if err != nil {
+							return err
+						}
+
 						a.Len(instancePool.AntiAffinityGroupIDs, 1)
 						a.Equal(testAccResourceInstancePoolDescription, instancePool.Description)
 						a.Equal(testAccResourceInstancePoolDiskSize, instancePool.DiskSize)
@@ -172,10 +176,7 @@ func TestAccResourceInstancePool(t *testing.T) {
 						a.Equal(testAccResourceInstancePoolName, instancePool.Name)
 						a.Equal(testAccResourceInstancePoolSize, instancePool.Size)
 						a.Equal(templateID, instancePool.TemplateID)
-						a.Equal(
-							base64.StdEncoding.EncodeToString([]byte(testAccResourceInstancePoolUserData)),
-							instancePool.UserData,
-						)
+						a.Equal(expectedUserData, instancePool.UserData)
 
 						return nil
 					},
@@ -208,6 +209,11 @@ func TestAccResourceInstancePool(t *testing.T) {
 						templateID, err := attrFromState(s, "data.exoscale_compute_template.debian", "id")
 						a.NoError(err, "unable to retrieve template ID from state")
 
+						expectedUserData, err := encodeUserData(testAccResourceInstancePoolUserDataUpdated)
+						if err != nil {
+							return err
+						}
+
 						a.Len(instancePool.AntiAffinityGroupIDs, 1)
 						a.Empty(instancePool.Description)
 						a.Equal(testAccResourceInstancePoolDiskSizeUpdated, instancePool.DiskSize)
@@ -220,10 +226,7 @@ func TestAccResourceInstancePool(t *testing.T) {
 						a.Equal(testAccResourceInstancePoolSizeUpdated, instancePool.Size)
 						a.Equal(testAccResourceInstancePoolKeyPair, instancePool.SSHKey)
 						a.Equal(templateID, instancePool.TemplateID)
-						a.Equal(
-							base64.StdEncoding.EncodeToString([]byte(testAccResourceInstancePoolUserDataUpdated)),
-							instancePool.UserData,
-						)
+						a.Equal(expectedUserData, instancePool.UserData)
 
 						return nil
 					},
