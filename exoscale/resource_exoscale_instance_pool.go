@@ -168,7 +168,10 @@ func resourceInstancePool() *schema.Resource {
 func resourceInstancePoolCreate(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] %s: beginning create", resourceInstancePoolIDString(d))
 
+	zone := d.Get(resInstancePoolAttrZone).(string)
+
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutCreate))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
 	client := GetComputeClient(meta)
@@ -236,7 +239,6 @@ func resourceInstancePoolCreate(d *schema.ResourceData, meta interface{}) error 
 		instancePool.IPv6Enabled = true
 	}
 
-	zone := d.Get(resInstancePoolAttrZone).(string)
 	if v := d.Get(resInstancePoolAttrUserData).(string); v != "" {
 		userData, err := encodeUserData(v)
 		if err != nil {
@@ -302,8 +304,12 @@ func resourceInstancePoolExists(d *schema.ResourceData, meta interface{}) (bool,
 func resourceInstancePoolUpdate(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] %s: beginning update", resourceInstancePoolIDString(d))
 
+	zone := d.Get(resInstancePoolAttrZone).(string)
+
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutUpdate))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
+
 	client := GetComputeClient(meta)
 
 	instancePool, err := findInstancePool(ctx, d, meta)
@@ -466,13 +472,6 @@ func resourceInstancePoolUpdate(d *schema.ResourceData, meta interface{}) error 
 		updated = true
 	}
 
-	zone := d.Get(resInstancePoolAttrZone).(string)
-
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
-	if err = client.UpdateInstancePool(ctx, zone, instancePool); err != nil {
-		return err
-	}
-
 	if updated {
 		if err = client.UpdateInstancePool(ctx, zone, instancePool); err != nil {
 			return err
@@ -499,14 +498,14 @@ func resourceInstancePoolUpdate(d *schema.ResourceData, meta interface{}) error 
 func resourceInstancePoolDelete(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] %s: beginning delete", resourceInstancePoolIDString(d))
 
+	zone := d.Get(resInstancePoolAttrZone).(string)
+
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutDelete))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
 	client := GetComputeClient(meta)
 
-	zone := d.Get(resInstancePoolAttrZone).(string)
-
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	err := client.DeleteInstancePool(ctx, zone, d.Id())
 	if err != nil {
 		return err

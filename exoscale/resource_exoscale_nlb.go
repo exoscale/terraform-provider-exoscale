@@ -79,14 +79,14 @@ func resourceNLB() *schema.Resource {
 func resourceNLBCreate(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] %s: beginning create", resourceNLBIDString(d))
 
+	zone := d.Get("zone").(string)
+
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutCreate))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
 	client := GetComputeClient(meta)
 
-	zone := d.Get("zone").(string)
-
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	nlb, err := client.CreateNetworkLoadBalancer(
 		ctx,
 		zone,
@@ -148,7 +148,10 @@ func resourceNLBExists(d *schema.ResourceData, meta interface{}) (bool, error) {
 func resourceNLBUpdate(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] %s: beginning update", resourceNLBIDString(d))
 
+	zone := d.Get("zone").(string)
+
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutUpdate))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
 	client := GetComputeClient(meta)
@@ -170,9 +173,6 @@ func resourceNLBUpdate(d *schema.ResourceData, meta interface{}) error {
 		nlb.Description = d.Get("description").(string)
 	}
 
-	zone := d.Get("zone").(string)
-
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	if err = client.UpdateNetworkLoadBalancer(ctx, zone, nlb); err != nil {
 		return err
 	}
@@ -185,14 +185,14 @@ func resourceNLBUpdate(d *schema.ResourceData, meta interface{}) error {
 func resourceNLBDelete(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] %s: beginning delete", resourceNLBIDString(d))
 
+	zone := d.Get("zone").(string)
+
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutDelete))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
 	client := GetComputeClient(meta)
 
-	zone := d.Get("zone").(string)
-
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	err := client.DeleteNetworkLoadBalancer(ctx, zone, d.Id())
 	if err != nil {
 		return err
