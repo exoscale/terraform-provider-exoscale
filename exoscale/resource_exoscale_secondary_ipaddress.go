@@ -9,7 +9,8 @@ import (
 	"strings"
 
 	"github.com/exoscale/egoscale"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 func resourceSecondaryIPAddressIDString(d resourceIDStringer) string {
@@ -29,7 +30,7 @@ func resourceSecondaryIPAddress() *schema.Resource {
 				Required:     true,
 				ForceNew:     true,
 				Description:  "Elastic IP address",
-				ValidateFunc: ValidateIPv4String(),
+				ValidateFunc: validation.IsIPAddress,
 			},
 			"nic_id": {
 				Type:     schema.TypeString,
@@ -47,7 +48,7 @@ func resourceSecondaryIPAddress() *schema.Resource {
 		Exists: resourceSecondaryIPAddressExists,
 
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 
 		Timeouts: &schema.ResourceTimeout{
@@ -236,7 +237,6 @@ func getSecondaryIP(d *schema.ResourceData, meta interface{}) (*egoscale.NicSeco
 		ID:               nicID,
 		VirtualMachineID: virtualMachineID,
 	})
-
 	if err != nil {
 		// XXX fugly hack in case the VM doesn't exist anymore
 		if r, ok := err.(*egoscale.ErrorResponse); ok {
@@ -306,7 +306,6 @@ func resourceSecondaryIPAddressDelete(d *schema.ResourceData, meta interface{}) 
 }
 
 func resourceSecondaryIPAddressApply(d *schema.ResourceData, secondaryIP *egoscale.NicSecondaryIP) error {
-
 	d.SetId(fmt.Sprintf("%s_%s", secondaryIP.NicID, secondaryIP.IPAddress.String()))
 
 	if secondaryIP.VirtualMachineID != nil {

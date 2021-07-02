@@ -7,7 +7,8 @@ import (
 	"net"
 
 	"github.com/exoscale/egoscale"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 func resourceNICIDString(d resourceIDStringer) string {
@@ -28,11 +29,11 @@ func resourceNIC() *schema.Resource {
 				ForceNew: true,
 			},
 			"ip_address": {
-				Type:         schema.TypeString,
-				Optional:     true,
-				Computed:     true,
-				Description:  "IP address",
-				ValidateFunc: ValidateIPv4String(),
+				Type:             schema.TypeString,
+				Optional:         true,
+				Computed:         true,
+				Description:      "IP address",
+				ValidateDiagFunc: validation.ToDiagFunc(validation.IsIPv4Address),
 			},
 			"netmask": {
 				Type:     schema.TypeString,
@@ -91,7 +92,6 @@ func resourceNICCreate(d *schema.ResourceData, meta interface{}) error {
 		VirtualMachineID: vmID,
 		IPAddress:        ip,
 	})
-
 	if err != nil {
 		return err
 	}
@@ -184,7 +184,6 @@ func resourceNICUpdate(d *schema.ResourceData, meta interface{}) error {
 				NicID:     id,
 				IPAddress: ipAddress,
 			})
-
 			if err != nil {
 				return err
 			}

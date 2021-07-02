@@ -10,7 +10,7 @@ import (
 	"github.com/exoscale/egoscale"
 	exov2 "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func resourceNLBServiceIDString(d resourceIDStringer) string {
@@ -111,7 +111,7 @@ func resourceNLBService() *schema.Resource {
 		Exists: resourceNLBServiceExists,
 
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 
 		Timeouts: &schema.ResourceTimeout{

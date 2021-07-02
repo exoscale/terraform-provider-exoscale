@@ -10,8 +10,8 @@
 
 ## Requirements
 
-- [Terraform](https://www.terraform.io/downloads.html) 0.12+
-- [Go](https://golang.org/doc/install) 1.13+ (to build the provider plugin)
+- [Terraform](https://www.terraform.io/downloads.html) 0.15+
+- [Go](https://golang.org/doc/install) 1.16+ (to build the provider plugin)
 - An [Exoscale](https://portal.exoscale.com/register) account
 
 

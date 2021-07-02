@@ -5,7 +5,7 @@ import (
 	"log"
 
 	"github.com/exoscale/egoscale"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func resourceDomainIDString(d resourceIDStringer) string {
@@ -44,7 +44,7 @@ func resourceDomain() *schema.Resource {
 		Exists: resourceDomainExists,
 
 		Importer: &schema.ResourceImporter{
-			State: resourceDomainImport,
+			StateContext: resourceDomainImport,
 		},
 
 		Timeouts: &schema.ResourceTimeout{
@@ -127,8 +127,8 @@ func resourceDomainDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func resourceDomainImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
+func resourceDomainImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
 	defer cancel()
 
 	client := GetDNSClient(meta)

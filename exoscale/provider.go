@@ -10,12 +10,13 @@ import (
 	"strings"
 	"time"
 
+	"gopkg.in/ini.v1"
+
 	"github.com/exoscale/egoscale"
 	exoapi "github.com/exoscale/egoscale/v2/api"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	tfmeta "github.com/hashicorp/terraform-plugin-sdk/meta"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
-	"gopkg.in/ini.v1"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	tfmeta "github.com/hashicorp/terraform-plugin-sdk/v2/meta"
 
 	"github.com/exoscale/terraform-provider-exoscale/version"
 )
@@ -34,8 +35,8 @@ func init() {
 		egoscale.UserAgent)
 }
 
-// Provider returns a terraform.ResourceProvider.
-func Provider() terraform.ResourceProvider {
+// Provider returns an Exoscale Provider.
+func Provider() *schema.Provider {
 	return &schema.Provider{
 		Schema: map[string]*schema.Schema{
 			"key": {
@@ -171,11 +172,13 @@ func Provider() terraform.ResourceProvider {
 			"exoscale_ssh_keypair":          resourceSSHKeypair(),
 		},
 
-		ConfigureFunc: providerConfigure,
+		ConfigureContextFunc: providerConfigure,
 	}
 }
 
-func providerConfigure(d *schema.ResourceData) (interface{}, error) {
+func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
 	key, keyOK := d.GetOk("key")
 	secret, secretOK := d.GetOk("secret")
 	endpoint := d.Get("compute_endpoint").(string)
@@ -191,7 +194,11 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 
 	if keyOK || secretOK {
 		if !keyOK || !secretOK {
-			return nil, fmt.Errorf("key (%#v) and secret (%#v) must be set", key.(string), secret.(string))
+			return nil, diag.Errorf(
+				"key (%#v) and secret (%#v) must be set",
+				key.(string),
+				secret.(string),
+			)
 		}
 	} else {
 		config := d.Get("config").(string)
@@ -235,29 +242,33 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		}
 
 		if config == "" {
-			return nil, fmt.Errorf("key (%s), secret are missing, or config file not found within: %s", key, strings.Join(inis, ", "))
+			return nil, diag.Errorf(
+				"key (%s), secret are missing, or config file not found within: %s",
+				key,
+				strings.Join(inis, ", "),
+			)
 		}
 
 		cfg, err := ini.LoadSources(ini.LoadOptions{IgnoreInlineComment: true}, config)
 		if err != nil {
-			return nil, fmt.Errorf("Config file not loaded: %s", err)
+			return nil, diag.Errorf("config file not loaded: %s", err)
 		}
 
 		section, err := cfg.GetSection(region.(string))
 		if err != nil {
 			sections := strings.Join(cfg.SectionStrings(), ", ")
-			return nil, fmt.Errorf("%s. Existing sections: %s", err, sections)
+			return nil, diag.Errorf("%s. Existing sections: %s", err, sections)
 		}
 
 		t, err := section.GetKey("key")
 		if err != nil {
-			return nil, err
+			return nil, diag.FromErr(err)
 		}
 		key = t.String()
 
 		s, err := section.GetKey("secret")
 		if err != nil {
-			return nil, err
+			return nil, diag.FromErr(err)
 		}
 		secret = s.String()
 
@@ -281,7 +292,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		gzipUserData:    d.Get("gzip_user_data").(bool),
 	}
 
-	return baseConfig, nil
+	return baseConfig, diags
 }
 
 func getZoneByName(ctx context.Context, client *egoscale.Client, zoneName string) (*egoscale.Zone, error) {

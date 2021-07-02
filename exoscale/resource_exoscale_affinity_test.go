@@ -6,12 +6,13 @@ import (
 	"testing"
 
 	"github.com/exoscale/egoscale"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 var (
-	testAccResourceAffinityName        = testPrefix + "-" + testRandomString()
+	testAccResourceAffinityName        = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceAffinityDescription = testDescription
 
 	testAccResourceAffinityConfig = fmt.Sprintf(`
@@ -29,9 +30,9 @@ func TestAccResourceAffinity(t *testing.T) {
 	ag := new(egoscale.AffinityGroup)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckResourceAffinityDestroy,
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviders,
+		CheckDestroy:      testAccCheckResourceAffinityDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccResourceAffinityConfig,

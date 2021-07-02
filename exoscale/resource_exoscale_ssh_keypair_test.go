@@ -6,14 +6,15 @@ import (
 	"testing"
 
 	"github.com/exoscale/egoscale"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 var (
-	testAccResourceSSHKeyName1 = testPrefix + "-" + testRandomString()
-	testAccResourceSSHKeyName2 = testPrefix + "-" + testRandomString()
+	testAccResourceSSHKeyName1 = acctest.RandomWithPrefix(testPrefix)
+	testAccResourceSSHKeyName2 = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceSSHKey2     = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDN7L45b4vO2ytH68ZU" +
 		"C5PMS1b7JG78zGslwcJ0zolE5BuxsCYor248/FKGC5TXrME+yBu/uLqaAkioq4Wp1PzP6Zy5jEowWQDO" +
 		"deER7uu1GgZShcvly2Oaf/UKLqTdwL+U3tCknqHY63fOAi1lBwmNTUu1uZ24iNiogfhXwQn7HJLQK9vf" +
@@ -42,9 +43,9 @@ func TestAccResourceSSHKeypair(t *testing.T) {
 	sshkey := new(egoscale.SSHKeyPair)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckResourceSSHKeypairDestroy,
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviders,
+		CheckDestroy:      testAccCheckResourceSSHKeypairDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccResourceSSHKeypairConfig,
@@ -53,8 +54,8 @@ func TestAccResourceSSHKeypair(t *testing.T) {
 					testAccCheckResourceSSHKeypair(sshkey),
 					testAccCheckResourceSSHKeypairAttributes(testAttrs{
 						"name":        ValidateString(testAccResourceSSHKeyName1),
-						"fingerprint": validation.NoZeroValues,
-						"private_key": validation.NoZeroValues,
+						"fingerprint": validation.ToDiagFunc(validation.NoZeroValues),
+						"private_key": validation.ToDiagFunc(validation.NoZeroValues),
 					}),
 				),
 			},

@@ -14,8 +14,8 @@ import (
 	"strings"
 
 	"github.com/exoscale/egoscale"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 const (
@@ -103,7 +103,7 @@ func resourceCompute() *schema.Resource {
 		"reverse_dns": {
 			Type:         schema.TypeString,
 			Optional:     true,
-			ValidateFunc: ValidateRegexp(`^.*\.$`),
+			ValidateFunc: validation.StringMatch(regexp.MustCompile(`^.*\.$`), ""),
 		},
 		"state": {
 			Type:     schema.TypeString,
@@ -207,7 +207,7 @@ func resourceCompute() *schema.Resource {
 		Exists: resourceComputeExists,
 
 		Importer: &schema.ResourceImporter{
-			State: resourceComputeImport,
+			StateContext: resourceComputeImport,
 		},
 
 		Timeouts: &schema.ResourceTimeout{
@@ -857,10 +857,10 @@ func resourceComputeDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func resourceComputeImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+func resourceComputeImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	log.Printf("[DEBUG] %s: beginning import", resourceComputeIDString(d))
 
-	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
+	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
 	defer cancel()
 
 	client := GetComputeClient(meta)

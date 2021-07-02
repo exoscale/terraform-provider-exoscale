@@ -9,8 +9,8 @@ import (
 	"regexp"
 
 	"github.com/exoscale/egoscale"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 func resourceIPAddressIDString(d resourceIDStringer) string {
@@ -84,7 +84,7 @@ func resourceIPAddress() *schema.Resource {
 		"reverse_dns": {
 			Type:         schema.TypeString,
 			Optional:     true,
-			ValidateFunc: ValidateRegexp(`^.*\.$`),
+			ValidateFunc: validation.StringMatch(regexp.MustCompile(`^.*\.$`), ""),
 		},
 		"ip_address": {
 			Type:     schema.TypeString,
@@ -104,7 +104,7 @@ func resourceIPAddress() *schema.Resource {
 		Exists: resourceIPAddressExists,
 
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 
 		Timeouts: &schema.ResourceTimeout{

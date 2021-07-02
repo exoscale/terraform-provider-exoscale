@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	"github.com/exoscale/egoscale"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 // supportedProtocols contains the allowed protocols
@@ -112,7 +112,7 @@ func resourceSecurityGroupRule() *schema.Resource {
 		Exists: resourceSecurityGroupRuleExists,
 
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 
 		Timeouts: &schema.ResourceTimeout{
@@ -415,7 +415,7 @@ func resourceSecurityGroupRuleApply(d *schema.ResourceData, group *egoscale.Secu
 		return err
 	}
 	protocol := strings.ToUpper(rule.Protocol)
-	protocol = strings.Replace(protocol, "V6", "v6", -1)
+	protocol = strings.ReplaceAll(protocol, "V6", "v6")
 	if err := d.Set("protocol", protocol); err != nil {
 		return err
 	}

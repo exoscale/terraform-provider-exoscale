@@ -6,13 +6,14 @@ import (
 	"testing"
 
 	"github.com/exoscale/egoscale"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 var (
 	testAccResourceNetworkZoneName       = testZoneName
-	testAccResourceNetworkName           = testPrefix + "-" + testRandomString()
+	testAccResourceNetworkName           = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceNetworkNameUpdated    = testAccResourceNetworkName + "-updated"
 	testAccResourceNetworkDisplayText    = testDescription
 	testAccResourceNetworkStartIP        = "10.0.0.10"
@@ -67,9 +68,9 @@ func TestAccResourceNetwork(t *testing.T) {
 	network := new(egoscale.Network)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckResourceNetworkDestroy,
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviders,
+		CheckDestroy:      testAccCheckResourceNetworkDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccResourceNetworkConfigCreate,

@@ -8,20 +8,21 @@ import (
 
 	exov2 "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 var (
-	testAccResourceSKSNodepoolAntiAffinityGroupName = testPrefix + "-" + testRandomString()
-	testAccResourceSKSNodepoolDescription           = testPrefix + "-" + testRandomString()
+	testAccResourceSKSNodepoolAntiAffinityGroupName = acctest.RandomWithPrefix(testPrefix)
+	testAccResourceSKSNodepoolDescription           = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceSKSNodepoolDiskSize              = defaultSKSNodepoolDiskSize
 	testAccResourceSKSNodepoolDiskSizeUpdated       = defaultSKSNodepoolDiskSize * 2
 	testAccResourceSKSNodepoolInstancePrefix        = "test"
 	testAccResourceSKSNodepoolInstanceType          = "small"
 	testAccResourceSKSNodepoolInstanceTypeUpdated   = "medium"
-	testAccResourceSKSNodepoolName                  = testPrefix + "-" + testRandomString()
+	testAccResourceSKSNodepoolName                  = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceSKSNodepoolNameUpdated           = testAccResourceSKSNodepoolName + "-updated"
 	testAccResourceSKSNodepoolSize                  = 1
 	testAccResourceSKSNodepoolSizeUpdated           = 2
@@ -116,9 +117,9 @@ func TestAccResourceSKSNodepool(t *testing.T) {
 	nodepool := new(exov2.SKSNodepool)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckResourceSKSNodepoolDestroy,
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviders,
+		CheckDestroy:      testAccCheckResourceSKSNodepoolDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccResourceSKSNodepoolConfigCreate,
@@ -126,18 +127,18 @@ func TestAccResourceSKSNodepool(t *testing.T) {
 					testAccCheckResourceSKSNodepoolExists("exoscale_sks_nodepool.test", nodepool),
 					testAccCheckResourceSKSNodepool(nodepool),
 					testAccCheckResourceSKSNodepoolAttributes(testAttrs{
-						"created_at":       validation.NoZeroValues,
+						"created_at":       validation.ToDiagFunc(validation.NoZeroValues),
 						"description":      ValidateString(testAccResourceSKSNodepoolDescription),
 						"disk_size":        ValidateString(fmt.Sprint(testAccResourceSKSNodepoolDiskSize)),
-						"id":               validation.IsUUID,
-						"instance_pool_id": validation.IsUUID,
+						"id":               validation.ToDiagFunc(validation.IsUUID),
+						"instance_pool_id": validation.ToDiagFunc(validation.IsUUID),
 						"instance_prefix":  ValidateString(testAccResourceSKSNodepoolInstancePrefix),
 						"instance_type":    ValidateString(testAccResourceSKSNodepoolInstanceType),
 						"name":             ValidateString(testAccResourceSKSNodepoolName),
 						"size":             ValidateString(fmt.Sprint(testAccResourceSKSNodepoolSize)),
-						"state":            validation.NoZeroValues,
-						"template_id":      validation.IsUUID,
-						"version":          validation.NoZeroValues,
+						"state":            validation.ToDiagFunc(validation.NoZeroValues),
+						"template_id":      validation.ToDiagFunc(validation.IsUUID),
+						"version":          validation.ToDiagFunc(validation.NoZeroValues),
 					}),
 				),
 			},
@@ -147,20 +148,20 @@ func TestAccResourceSKSNodepool(t *testing.T) {
 					testAccCheckResourceSKSNodepoolExists("exoscale_sks_nodepool.test", nodepool),
 					testAccCheckResourceSKSNodepool(nodepool),
 					testAccCheckResourceSKSNodepoolAttributes(testAttrs{
-						"created_at":                validation.NoZeroValues,
+						"created_at":                validation.ToDiagFunc(validation.NoZeroValues),
 						"description":               ValidateString(""),
 						"disk_size":                 ValidateString(fmt.Sprint(testAccResourceSKSNodepoolDiskSizeUpdated)),
-						"id":                        validation.IsUUID,
-						"instance_pool_id":          validation.IsUUID,
+						"id":                        validation.ToDiagFunc(validation.IsUUID),
+						"instance_pool_id":          validation.ToDiagFunc(validation.IsUUID),
 						"instance_prefix":           ValidateString(defaultSKSNodepoolInstancePrefix),
 						"instance_type":             ValidateString(testAccResourceSKSNodepoolInstanceTypeUpdated),
 						"name":                      ValidateString(testAccResourceSKSNodepoolNameUpdated),
 						"anti_affinity_group_ids.#": ValidateString("1"),
 						"security_group_ids.#":      ValidateString("1"),
 						"size":                      ValidateString(fmt.Sprint(testAccResourceSKSNodepoolSizeUpdated)),
-						"state":                     validation.NoZeroValues,
-						"template_id":               validation.IsUUID,
-						"version":                   validation.NoZeroValues,
+						"state":                     validation.ToDiagFunc(validation.NoZeroValues),
+						"template_id":               validation.ToDiagFunc(validation.IsUUID),
+						"version":                   validation.ToDiagFunc(validation.NoZeroValues),
 					}),
 				),
 			},
@@ -172,20 +173,20 @@ func TestAccResourceSKSNodepool(t *testing.T) {
 				ImportStateCheck: func(s []*terraform.InstanceState) error {
 					return checkResourceAttributes(
 						testAttrs{
-							"created_at":                validation.NoZeroValues,
+							"created_at":                validation.ToDiagFunc(validation.NoZeroValues),
 							"description":               ValidateString(""),
 							"disk_size":                 ValidateString(fmt.Sprint(testAccResourceSKSNodepoolDiskSizeUpdated)),
-							"id":                        validation.IsUUID,
-							"instance_pool_id":          validation.IsUUID,
+							"id":                        validation.ToDiagFunc(validation.IsUUID),
+							"instance_pool_id":          validation.ToDiagFunc(validation.IsUUID),
 							"instance_prefix":           ValidateString(defaultSKSNodepoolInstancePrefix),
 							"instance_type":             ValidateString(testAccResourceSKSNodepoolInstanceTypeUpdated),
 							"name":                      ValidateString(testAccResourceSKSNodepoolNameUpdated),
 							"anti_affinity_group_ids.#": ValidateString("1"),
 							"security_group_ids.#":      ValidateString("1"),
 							"size":                      ValidateString(fmt.Sprint(testAccResourceSKSNodepoolSizeUpdated)),
-							"state":                     validation.NoZeroValues,
-							"template_id":               validation.IsUUID,
-							"version":                   validation.NoZeroValues,
+							"state":                     validation.ToDiagFunc(validation.NoZeroValues),
+							"template_id":               validation.ToDiagFunc(validation.IsUUID),
+							"version":                   validation.ToDiagFunc(validation.NoZeroValues),
 						},
 						s[0].Attributes)
 				},

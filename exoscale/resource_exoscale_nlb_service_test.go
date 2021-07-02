@@ -8,18 +8,19 @@ import (
 
 	exov2 "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 var (
 	testAccResourceNLBServiceZoneName                   = testZoneName
-	testAccResourceNLBServiceInstancePoolName           = testPrefix + "-" + testRandomString()
+	testAccResourceNLBServiceInstancePoolName           = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceNLBServiceInstancePoolTemplateID     = testInstanceTemplateID
-	testAccResourceNLBServiceNlbName                    = testPrefix + "-" + testRandomString()
-	testAccResourceNLBServiceName                       = testPrefix + "-" + testRandomString()
+	testAccResourceNLBServiceNlbName                    = acctest.RandomWithPrefix(testPrefix)
+	testAccResourceNLBServiceName                       = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceNLBServiceNameUpdated                = testAccResourceNLBServiceName + "-updated"
-	testAccResourceNLBServiceDescription                = testPrefix + "-" + testRandomString()
+	testAccResourceNLBServiceDescription                = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceNLBServiceDescriptionUpdated         = testAccResourceNLBServiceDescription + "-updated"
 	testAccResourceNLBServicePort                       = "80"
 	testAccResourceNLBServicePortUpdated                = "443"
@@ -185,9 +186,9 @@ func TestAccResourceNLBService(t *testing.T) {
 	service := new(exov2.NetworkLoadBalancerService)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckResourceNLBServiceDestroy,
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviders,
+		CheckDestroy:      testAccCheckResourceNLBServiceDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccResourceNLBServiceConfigCreate,
@@ -195,18 +196,18 @@ func TestAccResourceNLBService(t *testing.T) {
 					testAccCheckResourceNLBServiceExists("exoscale_nlb_service.service", service),
 					testAccCheckResourceNLBService(service),
 					testAccCheckResourceNLBServiceAttributes(testAttrs{
-						"name":                            ValidateString(testAccResourceNLBServiceName),
-						"description":                     ValidateString(testAccResourceNLBServiceDescription),
-						"protocol":                        ValidateString(testAccResourceNLBServiceProtocol),
-						"port":                            ValidateString(testAccResourceNLBServicePort),
-						"target_port":                     ValidateString(testAccResourceNLBServiceTargetPort),
-						"strategy":                        ValidateString(testAccResourceNLBServiceStrategy),
-						"healthcheck.#":                   ValidateString("1"),
-						"healthcheck.1514854563.mode":     ValidateString(testAccResourceNLBServiceHealthcheckMode),
-						"healthcheck.1514854563.port":     ValidateString(testAccResourceNLBServiceHealthcheckPort),
-						"healthcheck.1514854563.interval": ValidateString(testAccResourceNLBServiceHealthcheckInterval),
-						"healthcheck.1514854563.timeout":  ValidateString(testAccResourceNLBServiceHealthcheckTimeout),
-						"healthcheck.1514854563.retries":  ValidateString(testAccResourceNLBServiceHealthcheckRetries),
+						"name":                   ValidateString(testAccResourceNLBServiceName),
+						"description":            ValidateString(testAccResourceNLBServiceDescription),
+						"protocol":               ValidateString(testAccResourceNLBServiceProtocol),
+						"port":                   ValidateString(testAccResourceNLBServicePort),
+						"target_port":            ValidateString(testAccResourceNLBServiceTargetPort),
+						"strategy":               ValidateString(testAccResourceNLBServiceStrategy),
+						"healthcheck.#":          ValidateString("1"),
+						"healthcheck.0.mode":     ValidateString(testAccResourceNLBServiceHealthcheckMode),
+						"healthcheck.0.port":     ValidateString(testAccResourceNLBServiceHealthcheckPort),
+						"healthcheck.0.interval": ValidateString(testAccResourceNLBServiceHealthcheckInterval),
+						"healthcheck.0.timeout":  ValidateString(testAccResourceNLBServiceHealthcheckTimeout),
+						"healthcheck.0.retries":  ValidateString(testAccResourceNLBServiceHealthcheckRetries),
 					}),
 				),
 			},
@@ -216,20 +217,20 @@ func TestAccResourceNLBService(t *testing.T) {
 					testAccCheckResourceNLBServiceExists("exoscale_nlb_service.service", service),
 					testAccCheckResourceNLBService(service),
 					testAccCheckResourceNLBServiceAttributes(testAttrs{
-						"name":                            ValidateString(testAccResourceNLBServiceNameUpdated),
-						"description":                     ValidateString(testAccResourceNLBServiceDescriptionUpdated),
-						"protocol":                        ValidateString(testAccResourceNLBServiceProtocol),
-						"port":                            ValidateString(testAccResourceNLBServicePortUpdated),
-						"target_port":                     ValidateString(testAccResourceNLBServiceTargetPortUpdated),
-						"strategy":                        ValidateString(testAccResourceNLBServiceStrategy),
-						"healthcheck.#":                   ValidateString("1"),
-						"healthcheck.4214407825.mode":     ValidateString(testAccResourceNLBServiceHealthcheckModeUpdated),
-						"healthcheck.4214407825.port":     ValidateString(testAccResourceNLBServiceHealthcheckPortUpdated),
-						"healthcheck.4214407825.uri":      ValidateString(testAccResourceNLBServiceHealthcheckURI),
-						"healthcheck.4214407825.tls_sni":  ValidateString(testAccResourceNLBServiceHealthcheckTLSSNI),
-						"healthcheck.4214407825.interval": ValidateString(testAccResourceNLBServiceHealthcheckIntervalUpdated),
-						"healthcheck.4214407825.timeout":  ValidateString(testAccResourceNLBServiceHealthcheckTimeoutUpdated),
-						"healthcheck.4214407825.retries":  ValidateString(testAccResourceNLBServiceHealthcheckRetriesUpdated),
+						"name":                   ValidateString(testAccResourceNLBServiceNameUpdated),
+						"description":            ValidateString(testAccResourceNLBServiceDescriptionUpdated),
+						"protocol":               ValidateString(testAccResourceNLBServiceProtocol),
+						"port":                   ValidateString(testAccResourceNLBServicePortUpdated),
+						"target_port":            ValidateString(testAccResourceNLBServiceTargetPortUpdated),
+						"strategy":               ValidateString(testAccResourceNLBServiceStrategy),
+						"healthcheck.#":          ValidateString("1"),
+						"healthcheck.0.mode":     ValidateString(testAccResourceNLBServiceHealthcheckModeUpdated),
+						"healthcheck.0.port":     ValidateString(testAccResourceNLBServiceHealthcheckPortUpdated),
+						"healthcheck.0.uri":      ValidateString(testAccResourceNLBServiceHealthcheckURI),
+						"healthcheck.0.tls_sni":  ValidateString(testAccResourceNLBServiceHealthcheckTLSSNI),
+						"healthcheck.0.interval": ValidateString(testAccResourceNLBServiceHealthcheckIntervalUpdated),
+						"healthcheck.0.timeout":  ValidateString(testAccResourceNLBServiceHealthcheckTimeoutUpdated),
+						"healthcheck.0.retries":  ValidateString(testAccResourceNLBServiceHealthcheckRetriesUpdated),
 					}),
 				),
 			},
@@ -241,20 +242,20 @@ func TestAccResourceNLBService(t *testing.T) {
 				ImportStateCheck: func(s []*terraform.InstanceState) error {
 					return checkResourceAttributes(
 						testAttrs{
-							"name":                            ValidateString(testAccResourceNLBServiceNameUpdated),
-							"description":                     ValidateString(testAccResourceNLBServiceDescriptionUpdated),
-							"protocol":                        ValidateString(testAccResourceNLBServiceProtocol),
-							"port":                            ValidateString(testAccResourceNLBServicePortUpdated),
-							"target_port":                     ValidateString(testAccResourceNLBServiceTargetPortUpdated),
-							"strategy":                        ValidateString(testAccResourceNLBServiceStrategy),
-							"healthcheck.#":                   ValidateString("1"),
-							"healthcheck.4214407825.mode":     ValidateString(testAccResourceNLBServiceHealthcheckModeUpdated),
-							"healthcheck.4214407825.port":     ValidateString(testAccResourceNLBServiceHealthcheckPortUpdated),
-							"healthcheck.4214407825.uri":      ValidateString(testAccResourceNLBServiceHealthcheckURI),
-							"healthcheck.4214407825.tls_sni":  ValidateString(testAccResourceNLBServiceHealthcheckTLSSNI),
-							"healthcheck.4214407825.interval": ValidateString(testAccResourceNLBServiceHealthcheckIntervalUpdated),
-							"healthcheck.4214407825.timeout":  ValidateString(testAccResourceNLBServiceHealthcheckTimeoutUpdated),
-							"healthcheck.4214407825.retries":  ValidateString(testAccResourceNLBServiceHealthcheckRetriesUpdated),
+							"name":                   ValidateString(testAccResourceNLBServiceNameUpdated),
+							"description":            ValidateString(testAccResourceNLBServiceDescriptionUpdated),
+							"protocol":               ValidateString(testAccResourceNLBServiceProtocol),
+							"port":                   ValidateString(testAccResourceNLBServicePortUpdated),
+							"target_port":            ValidateString(testAccResourceNLBServiceTargetPortUpdated),
+							"strategy":               ValidateString(testAccResourceNLBServiceStrategy),
+							"healthcheck.#":          ValidateString("1"),
+							"healthcheck.0.mode":     ValidateString(testAccResourceNLBServiceHealthcheckModeUpdated),
+							"healthcheck.0.port":     ValidateString(testAccResourceNLBServiceHealthcheckPortUpdated),
+							"healthcheck.0.uri":      ValidateString(testAccResourceNLBServiceHealthcheckURI),
+							"healthcheck.0.tls_sni":  ValidateString(testAccResourceNLBServiceHealthcheckTLSSNI),
+							"healthcheck.0.interval": ValidateString(testAccResourceNLBServiceHealthcheckIntervalUpdated),
+							"healthcheck.0.timeout":  ValidateString(testAccResourceNLBServiceHealthcheckTimeoutUpdated),
+							"healthcheck.0.retries":  ValidateString(testAccResourceNLBServiceHealthcheckRetriesUpdated),
 						},
 						s[0].Attributes)
 				},

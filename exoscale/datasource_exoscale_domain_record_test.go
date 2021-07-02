@@ -6,12 +6,13 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 var (
-	testAccDataSourceDomainRecordDomainName = testPrefix + "-" + testRandomString() + ".net"
+	testAccDataSourceDomainRecordDomainName = acctest.RandomWithPrefix(testPrefix) + ".net"
 	testAccDataSourceDomainRecordName1      = "mail1"
 	testAccDataSourceDomainRecordName2      = "mail2"
 	testAccDataSourceDomainRecordType       = "MX"
@@ -62,8 +63,8 @@ resource "exoscale_domain_record" "mx2" {
 
 func TestAccDataSourceDomainRecord(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
@@ -183,5 +184,4 @@ func testAccDataSourceDomainRecordAttributes(rsName string, expected testAttrs) 
 
 		return checkResourceAttributes(expected, rs.Primary.Attributes)
 	}
-
 }

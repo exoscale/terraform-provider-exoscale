@@ -10,7 +10,7 @@ import (
 	exoapi "github.com/exoscale/egoscale/v2/api"
 
 	"github.com/exoscale/egoscale"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func resourceNLBIDString(d resourceIDStringer) string {
@@ -64,7 +64,7 @@ func resourceNLB() *schema.Resource {
 		Exists: resourceNLBExists,
 
 		Importer: &schema.ResourceImporter{
-			State: resourceNLBImport,
+			StateContext: resourceNLBImport,
 		},
 
 		Timeouts: &schema.ResourceTimeout{
@@ -203,9 +203,10 @@ func resourceNLBDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func resourceNLBImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+func resourceNLBImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	log.Printf("[DEBUG] %s: beginning import", resourceNLBIDString(d))
-	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
+
+	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
 	defer cancel()
 
 	nlb, err := findNLB(ctx, d, meta)

@@ -6,13 +6,14 @@ import (
 	"testing"
 
 	"github.com/exoscale/egoscale"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 var (
 	testAccResourceIPAddressZoneName                            = testZoneName
-	testAccResourceIPAddressDescription                         = testPrefix + "-" + testRandomString()
+	testAccResourceIPAddressDescription                         = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceIPAddressDescriptionUpdated                  = testAccResourceIPAddressDescription + "-updated"
 	testAccResourceIPAddressReverseDNS                          = "test.example.com."
 	testAccResourceIPAddressReverseDNSUpdated                   = "test-updated.example.com."
@@ -94,9 +95,9 @@ func TestAccResourceIPAddress(t *testing.T) {
 	eip := new(egoscale.IPAddress)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckIPAddressDestroy,
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviders,
+		CheckDestroy:      testAccCheckIPAddressDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccIPAddressConfigCreate,
