@@ -67,7 +67,7 @@ resource "exoscale_nlb_service" "service" {
     mode = "http"
 	port = 80
 	interval = 5
-	timeout = 5
+	timeout = 3
 	retries = 1
 	uri = "/healthz"
   }
@@ -128,7 +128,7 @@ resource "exoscale_nlb_service" "service" {
 	mode = "http"
 	port = 80
 	interval = 5
-	timeout = 5
+	timeout = 3
 	retries = 1
 	uri = "/healthz"
   }
