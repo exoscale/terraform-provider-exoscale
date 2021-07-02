@@ -122,8 +122,9 @@ func resourceSKSClusterCreate(d *schema.ResourceData, meta interface{}) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutCreate))
 	defer cancel()
-	client := GetComputeClient(meta)
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
+
+	client := GetComputeClient(meta)
 
 	var addOns []string
 	if addonsSet, ok := d.Get("addons").(*schema.Set); ok && addonsSet.Len() > 0 {
@@ -218,8 +219,12 @@ func resourceSKSClusterExists(d *schema.ResourceData, meta interface{}) (bool, e
 func resourceSKSClusterUpdate(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] %s: beginning update", resourceSKSClusterIDString(d))
 
+	zone := d.Get("zone").(string)
+
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutUpdate))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
+
 	client := GetComputeClient(meta)
 
 	cluster, err := findSKSCluster(ctx, d, meta)
@@ -251,10 +256,6 @@ func resourceSKSClusterUpdate(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	zone := d.Get("zone").(string)
-
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
-
 	if updated {
 		if err = client.UpdateSKSCluster(ctx, zone, cluster); err != nil {
 			return err
@@ -275,14 +276,14 @@ func resourceSKSClusterUpdate(d *schema.ResourceData, meta interface{}) error {
 func resourceSKSClusterDelete(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] %s: beginning delete", resourceSKSClusterIDString(d))
 
+	zone := d.Get("zone").(string)
+
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutDelete))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
 	client := GetComputeClient(meta)
 
-	zone := d.Get("zone").(string)
-
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	err := client.DeleteSKSCluster(ctx, zone, d.Id())
 	if err != nil {
 		return err

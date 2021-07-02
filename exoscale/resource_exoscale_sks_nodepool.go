@@ -130,13 +130,14 @@ func resourceSKSNodepool() *schema.Resource {
 func resourceSKSNodepoolCreate(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] %s: beginning create", resourceSKSNodepoolIDString(d))
 
-	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutCreate))
-	defer cancel()
-	client := GetComputeClient(meta)
-
 	zone := d.Get("zone").(string)
 
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutCreate))
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
+	defer cancel()
+
+	client := GetComputeClient(meta)
+
 	cluster, err := client.GetSKSCluster(ctx, zone, d.Get("cluster_id").(string))
 	if err != nil {
 		return err
@@ -233,11 +234,13 @@ func resourceSKSNodepoolExists(d *schema.ResourceData, meta interface{}) (bool, 
 func resourceSKSNodepoolUpdate(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] %s: beginning update", resourceSKSNodepoolIDString(d))
 
-	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutUpdate))
-	defer cancel()
-	client := GetComputeClient(meta)
-
 	zone := d.Get("zone").(string)
+
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutUpdate))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
+	defer cancel()
+
+	client := GetComputeClient(meta)
 
 	nodepool, err := findSKSNodepool(ctx, d, meta)
 	if err != nil {
@@ -333,7 +336,6 @@ func resourceSKSNodepoolUpdate(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	cluster, err := client.GetSKSCluster(ctx, zone, d.Get("cluster_id").(string))
 	if err != nil {
 		return err
@@ -365,13 +367,14 @@ func resourceSKSNodepoolUpdate(d *schema.ResourceData, meta interface{}) error {
 func resourceSKSNodepoolDelete(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] %s: beginning delete", resourceSKSNodepoolIDString(d))
 
-	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutDelete))
-	defer cancel()
-	client := GetComputeClient(meta)
-
 	zone := d.Get("zone").(string)
 
+	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutDelete))
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
+	defer cancel()
+
+	client := GetComputeClient(meta)
+
 	cluster, err := client.GetSKSCluster(ctx, zone, d.Get("cluster_id").(string))
 	if err != nil {
 		return err
