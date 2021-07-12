@@ -46,13 +46,13 @@ In addition to the arguments listed above, the following attributes are exported
 
 ## Import
 
-An existing NLB can be imported as a resource by ID:
+An existing NLB can be imported as a resource by `<ID>@<ZONE>`:
 
 ```console
-$ terraform import exoscale_nlb.website eb556678-ec59-4be6-8c54-0406ae0f6da6
+$ terraform import exoscale_nlb.example eb556678-ec59-4be6-8c54-0406ae0f6da6@de-fra-1
 ```
 
-~> **NOTE:** Importing a NLB resource also imports related [`exoscale_nlb_service`][r-nlb_service] resources.
+~> **NOTE:** Importing a NLB resource doesn't import related [`exoscale_nlb_service`][r-nlb_service] resources.
 
 
 [nlb-doc]: https://community.exoscale.com/documentation/compute/network-load-balancer/

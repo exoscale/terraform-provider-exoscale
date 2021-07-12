@@ -3,12 +3,11 @@ package exoscale
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log"
 
 	exov2 "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
-
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -18,6 +17,20 @@ const (
 
 	sksClusterAddonExoscaleCCM = "exoscale-cloud-controller"
 	sksClusterAddonMS          = "metrics-server"
+
+	resSKSClusterAttrAddons        = "addons"
+	resSKSClusterAttrCNI           = "cni"
+	resSKSClusterAttrCreatedAt     = "created_at"
+	resSKSClusterAttrDescription   = "description"
+	resSKSClusterAttrEndpoint      = "endpoint"
+	resSKSClusterAttrExoscaleCCM   = "exoscale_ccm"
+	resSKSClusterAttrMetricsServer = "metrics_server"
+	resSKSClusterAttrName          = "name"
+	resSKSClusterAttrNodepools     = "nodepools"
+	resSKSClusterAttrServiceLevel  = "service_level"
+	resSKSClusterAttrState         = "state"
+	resSKSClusterAttrVersion       = "version"
+	resSKSClusterAttrZone          = "zone"
 )
 
 func resourceSKSClusterIDString(d resourceIDStringer) string {
@@ -26,7 +39,7 @@ func resourceSKSClusterIDString(d resourceIDStringer) string {
 
 func resourceSKSCluster() *schema.Resource {
 	s := map[string]*schema.Schema{
-		"addons": {
+		resSKSClusterAttrAddons: {
 			Type:     schema.TypeSet,
 			Set:      schema.HashString,
 			Elem:     &schema.Schema{Type: schema.TypeString},
@@ -35,58 +48,58 @@ func resourceSKSCluster() *schema.Resource {
 			Deprecated: "This attribute has been replaced by `exoscale_ccm`/`metrics_server` " +
 				"attributes, it will be removed in a future release.",
 		},
-		"cni": {
+		resSKSClusterAttrCNI: {
 			Type:     schema.TypeString,
 			Optional: true,
 			Default:  defaultSKSClusterCNI,
 		},
-		"created_at": {
+		resSKSClusterAttrCreatedAt: {
 			Type:     schema.TypeString,
 			Computed: true,
 		},
-		"description": {
+		resSKSClusterAttrDescription: {
 			Type:     schema.TypeString,
 			Optional: true,
 		},
-		"endpoint": {
+		resSKSClusterAttrEndpoint: {
 			Type:     schema.TypeString,
 			Computed: true,
 		},
-		"exoscale_ccm": {
+		resSKSClusterAttrExoscaleCCM: {
 			Type:     schema.TypeBool,
 			Optional: true,
 			Default:  true,
 		},
-		"metrics_server": {
+		resSKSClusterAttrMetricsServer: {
 			Type:     schema.TypeBool,
 			Optional: true,
 			Default:  true,
 		},
-		"name": {
+		resSKSClusterAttrName: {
 			Type:     schema.TypeString,
 			Required: true,
 		},
-		"nodepools": {
+		resSKSClusterAttrNodepools: {
 			Type:     schema.TypeSet,
 			Computed: true,
 			Set:      schema.HashString,
 			Elem:     &schema.Schema{Type: schema.TypeString},
 		},
-		"service_level": {
+		resSKSClusterAttrServiceLevel: {
 			Type:     schema.TypeString,
 			Optional: true,
 			Default:  defaultSKSClusterServiceLevel,
 		},
-		"state": {
+		resSKSClusterAttrState: {
 			Type:     schema.TypeString,
 			Computed: true,
 		},
-		"version": {
+		resSKSClusterAttrVersion: {
 			Type:     schema.TypeString,
 			Optional: true,
 			Computed: true,
 		},
-		"zone": {
+		resSKSClusterAttrZone: {
 			Type:     schema.TypeString,
 			Required: true,
 			ForceNew: true,
@@ -96,14 +109,13 @@ func resourceSKSCluster() *schema.Resource {
 	return &schema.Resource{
 		Schema: s,
 
-		Create: resourceSKSClusterCreate,
-		Read:   resourceSKSClusterRead,
-		Update: resourceSKSClusterUpdate,
-		Delete: resourceSKSClusterDelete,
-		Exists: resourceSKSClusterExists,
+		CreateContext: resourceSKSClusterCreate,
+		ReadContext:   resourceSKSClusterRead,
+		UpdateContext: resourceSKSClusterUpdate,
+		DeleteContext: resourceSKSClusterDelete,
 
 		Importer: &schema.ResourceImporter{
-			StateContext: resourceSKSClusterImport,
+			StateContext: zonedStateContextFunc,
 		},
 
 		Timeouts: &schema.ResourceTimeout{
@@ -115,170 +127,154 @@ func resourceSKSCluster() *schema.Resource {
 	}
 }
 
-func resourceSKSClusterCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceSKSClusterCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	log.Printf("[DEBUG] %s: beginning create", resourceSKSClusterIDString(d))
 
-	zone := d.Get("zone").(string)
+	zone := d.Get(resSKSClusterAttrZone).(string)
 
-	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutCreate))
+	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutCreate))
 	defer cancel()
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 
 	client := GetComputeClient(meta)
 
+	sksCluster := new(exov2.SKSCluster)
+
 	var addOns []string
-	if addonsSet, ok := d.Get("addons").(*schema.Set); ok && addonsSet.Len() > 0 {
+	if addonsSet, ok := d.Get(resSKSClusterAttrAddons).(*schema.Set); ok && addonsSet.Len() > 0 {
 		addOns = make([]string, addonsSet.Len())
 		for i, a := range addonsSet.List() {
 			addOns[i] = a.(string)
 		}
 	}
-
-	if enableCCM := d.Get("exoscale_ccm").(bool); enableCCM && !in(addOns, sksClusterAddonExoscaleCCM) {
+	if enableCCM := d.Get(resSKSClusterAttrExoscaleCCM).(bool); enableCCM && !in(addOns, sksClusterAddonExoscaleCCM) {
 		addOns = append(addOns, sksClusterAddonExoscaleCCM)
 	}
-
-	if enableMS := d.Get("metrics_server").(bool); enableMS && !in(addOns, sksClusterAddonMS) {
+	if enableMS := d.Get(resSKSClusterAttrMetricsServer).(bool); enableMS && !in(addOns, sksClusterAddonMS) {
 		addOns = append(addOns, sksClusterAddonMS)
 	}
+	if len(addOns) > 0 {
+		sksCluster.AddOns = &addOns
+	}
 
-	version := d.Get("version").(string)
+	if v, ok := d.GetOk(resSKSClusterAttrCNI); ok {
+		s := v.(string)
+		sksCluster.CNI = &s
+	}
+
+	if v, ok := d.GetOk(resSKSClusterAttrDescription); ok {
+		s := v.(string)
+		sksCluster.Description = &s
+	}
+
+	if v, ok := d.GetOk(resSKSClusterAttrName); ok {
+		s := v.(string)
+		sksCluster.Name = &s
+	}
+
+	if v, ok := d.GetOk(resSKSClusterAttrServiceLevel); ok {
+		s := v.(string)
+		sksCluster.ServiceLevel = &s
+	}
+
+	version := d.Get(resSKSClusterAttrVersion).(string)
 	if version == "" {
 		versions, err := client.ListSKSClusterVersions(ctx)
 		if err != nil || len(versions) == 0 {
 			if len(versions) == 0 {
 				err = errors.New("no version returned by the API")
 			}
-			return fmt.Errorf("unable to retrieve SKS versions: %s", err)
+			return diag.Errorf("error retrieving SKS versions: %s", err)
 		}
 		version = versions[0]
 	}
+	sksCluster.Version = &version
 
-	cluster, err := client.CreateSKSCluster(
-		ctx,
-		zone,
-		&exov2.SKSCluster{
-			Name:         d.Get("name").(string),
-			Description:  d.Get("description").(string),
-			Version:      version,
-			ServiceLevel: d.Get("service_level").(string),
-			CNI:          d.Get("cni").(string),
-			AddOns:       addOns,
-		},
-	)
+	sksCluster, err := client.CreateSKSCluster(ctx, zone, sksCluster)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
-	d.SetId(cluster.ID)
+	d.SetId(*sksCluster.ID)
 
 	log.Printf("[DEBUG] %s: create finished successfully", resourceSKSClusterIDString(d))
 
-	return resourceSKSClusterRead(d, meta)
+	return resourceSKSClusterRead(ctx, d, meta)
 }
 
-func resourceSKSClusterRead(d *schema.ResourceData, meta interface{}) error {
+func resourceSKSClusterRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	log.Printf("[DEBUG] %s: beginning read", resourceSKSClusterIDString(d))
 
-	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
-	defer cancel()
+	zone := d.Get(resSKSClusterAttrZone).(string)
 
-	cluster, err := findSKSCluster(ctx, d, meta)
-	if err != nil {
-		return err
-	}
-
-	if cluster == nil {
-		return fmt.Errorf("SKS cluster %q not found", d.Id())
-	}
-
-	log.Printf("[DEBUG] %s: read finished successfully", resourceSKSClusterIDString(d))
-
-	return resourceSKSClusterApply(d, cluster)
-}
-
-func resourceSKSClusterExists(d *schema.ResourceData, meta interface{}) (bool, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
-	defer cancel()
-
-	cluster, err := findSKSCluster(ctx, d, meta)
-	if err != nil {
-		if errors.Is(err, exoapi.ErrNotFound) {
-			return false, nil
-		}
-		return false, err
-	}
-
-	if cluster == nil {
-		return false, nil
-	}
-
-	return true, nil
-}
-
-func resourceSKSClusterUpdate(d *schema.ResourceData, meta interface{}) error {
-	log.Printf("[DEBUG] %s: beginning update", resourceSKSClusterIDString(d))
-
-	zone := d.Get("zone").(string)
-
-	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutUpdate))
+	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
 	client := GetComputeClient(meta)
 
-	cluster, err := findSKSCluster(ctx, d, meta)
+	sksCluster, err := client.GetSKSCluster(ctx, zone, d.Id())
 	if err != nil {
-		return err
+		if errors.Is(err, exoapi.ErrNotFound) {
+			// Resource doesn't exist anymore, signaling the core to remove it from the state.
+			d.SetId("")
+			return nil
+		}
+		return diag.FromErr(err)
 	}
 
-	if cluster == nil {
-		return fmt.Errorf("SKS cluster %q not found", d.Id())
+	log.Printf("[DEBUG] %s: read finished successfully", resourceSKSClusterIDString(d))
+
+	return resourceSKSClusterApply(ctx, d, sksCluster)
+}
+
+func resourceSKSClusterUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	log.Printf("[DEBUG] %s: beginning update", resourceSKSClusterIDString(d))
+
+	zone := d.Get(resSKSClusterAttrZone).(string)
+
+	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutUpdate))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
+	defer cancel()
+
+	client := GetComputeClient(meta)
+
+	sksCluster, err := client.GetSKSCluster(ctx, zone, d.Id())
+	if err != nil {
+		return diag.FromErr(err)
 	}
 
-	var (
-		updated     bool
-		resetFields = make([]interface{}, 0)
-	)
+	var updated bool
 
-	if d.HasChange("name") {
-		cluster.Name = d.Get("name").(string)
+	if d.HasChange(resSKSClusterAttrName) {
+		v := d.Get(resSKSClusterAttrName).(string)
+		sksCluster.Name = &v
 		updated = true
 	}
 
-	if d.HasChange("description") {
-		if v := d.Get("description").(string); v == "" {
-			cluster.Description = ""
-			resetFields = append(resetFields, &cluster.Description)
-		} else {
-			cluster.Description = d.Get("description").(string)
-			updated = true
-		}
+	if d.HasChange(resSKSClusterAttrDescription) {
+		v := d.Get(resSKSClusterAttrDescription).(string)
+		sksCluster.Description = &v
+		updated = true
 	}
 
 	if updated {
-		if err = client.UpdateSKSCluster(ctx, zone, cluster); err != nil {
-			return err
-		}
-	}
-
-	for _, f := range resetFields {
-		if err = cluster.ResetField(ctx, f); err != nil {
-			return err
+		if err = client.UpdateSKSCluster(ctx, zone, sksCluster); err != nil {
+			return diag.FromErr(err)
 		}
 	}
 
 	log.Printf("[DEBUG] %s: update finished successfully", resourceSKSClusterIDString(d))
 
-	return resourceSKSClusterRead(d, meta)
+	return resourceSKSClusterRead(ctx, d, meta)
 }
 
-func resourceSKSClusterDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceSKSClusterDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	log.Printf("[DEBUG] %s: beginning delete", resourceSKSClusterIDString(d))
 
-	zone := d.Get("zone").(string)
+	zone := d.Get(resSKSClusterAttrZone).(string)
 
-	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutDelete))
+	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutDelete))
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
@@ -286,7 +282,7 @@ func resourceSKSClusterDelete(d *schema.ResourceData, meta interface{}) error {
 
 	err := client.DeleteSKSCluster(ctx, zone, d.Id())
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	log.Printf("[DEBUG] %s: delete finished successfully", resourceSKSClusterIDString(d))
@@ -294,140 +290,60 @@ func resourceSKSClusterDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func resourceSKSClusterImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-	log.Printf("[DEBUG] %s: beginning import", resourceSKSClusterIDString(d))
-
-	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
-	defer cancel()
-
-	cluster, err := findSKSCluster(ctx, d, meta)
-	if err != nil {
-		return nil, err
-	}
-
-	if cluster == nil {
-		return nil, fmt.Errorf("SKS cluster %q not found", d.Id())
-	}
-
-	if err := resourceSKSClusterApply(d, cluster); err != nil {
-		return nil, err
-	}
-
-	resources := []*schema.ResourceData{d}
-	for _, nodepool := range cluster.Nodepools {
-		resource := resourceSKSNodepool()
-		d := resource.Data(nil)
-		d.SetType("exoscale_sks_nodepool")
-		d.SetId(nodepool.ID)
-		err := resourceSKSNodepoolApply(d, meta, nodepool)
-		if err != nil {
-			return nil, err
+func resourceSKSClusterApply(_ context.Context, d *schema.ResourceData, sksCluster *exov2.SKSCluster) diag.Diagnostics {
+	if sksCluster.AddOns != nil {
+		if err := d.Set(resSKSClusterAttrAddons, *sksCluster.AddOns); err != nil {
+			return diag.FromErr(err)
 		}
 
-		resources = append(resources, d)
+		if err := d.Set(resSKSClusterAttrExoscaleCCM, in(*sksCluster.AddOns, sksClusterAddonExoscaleCCM)); err != nil {
+			return diag.FromErr(err)
+		}
+
+		if err := d.Set(resSKSClusterAttrMetricsServer, in(*sksCluster.AddOns, sksClusterAddonMS)); err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
-	log.Printf("[DEBUG] %s: import finished successfully", resourceSKSClusterIDString(d))
-
-	return resources, nil
-}
-
-func resourceSKSClusterApply(d *schema.ResourceData, cluster *exov2.SKSCluster) error {
-	if err := d.Set("addons", cluster.AddOns); err != nil {
-		return err
+	if err := d.Set(resSKSClusterAttrCNI, defaultString(sksCluster.CNI, "")); err != nil {
+		return diag.FromErr(err)
 	}
 
-	if err := d.Set("cni", cluster.CNI); err != nil {
-		return err
+	if err := d.Set(resSKSClusterAttrCreatedAt, sksCluster.CreatedAt.String()); err != nil {
+		return diag.FromErr(err)
 	}
 
-	if err := d.Set("created_at", cluster.CreatedAt.String()); err != nil {
-		return err
+	if err := d.Set(resSKSClusterAttrDescription, defaultString(sksCluster.Description, "")); err != nil {
+		return diag.FromErr(err)
 	}
 
-	if err := d.Set("description", cluster.Description); err != nil {
-		return err
+	if err := d.Set(resSKSClusterAttrEndpoint, *sksCluster.Endpoint); err != nil {
+		return diag.FromErr(err)
 	}
 
-	if err := d.Set("endpoint", cluster.Endpoint); err != nil {
-		return err
+	if err := d.Set(resSKSClusterAttrName, *sksCluster.Name); err != nil {
+		return diag.FromErr(err)
 	}
 
-	if err := d.Set("exoscale_ccm", in(cluster.AddOns, sksClusterAddonExoscaleCCM)); err != nil {
-		return err
+	nodepools := make([]string, len(sksCluster.Nodepools))
+	for i, nodepool := range sksCluster.Nodepools {
+		nodepools[i] = *nodepool.ID
+	}
+	if err := d.Set(resSKSClusterAttrNodepools, nodepools); err != nil {
+		return diag.FromErr(err)
 	}
 
-	if err := d.Set("metrics_server", in(cluster.AddOns, sksClusterAddonMS)); err != nil {
-		return err
+	if err := d.Set(resSKSClusterAttrServiceLevel, *sksCluster.ServiceLevel); err != nil {
+		return diag.FromErr(err)
 	}
 
-	if err := d.Set("name", cluster.Name); err != nil {
-		return err
+	if err := d.Set(resSKSClusterAttrState, *sksCluster.State); err != nil {
+		return diag.FromErr(err)
 	}
 
-	nodepools := make([]string, len(cluster.Nodepools))
-	for i, nodepool := range cluster.Nodepools {
-		nodepools[i] = nodepool.ID
-	}
-	if err := d.Set("nodepools", nodepools); err != nil {
-		return err
-	}
-
-	if err := d.Set("service_level", cluster.ServiceLevel); err != nil {
-		return err
-	}
-
-	if err := d.Set("state", cluster.State); err != nil {
-		return err
-	}
-
-	if err := d.Set("version", cluster.Version); err != nil {
-		return err
+	if err := d.Set(resSKSClusterAttrVersion, *sksCluster.Version); err != nil {
+		return diag.FromErr(err)
 	}
 
 	return nil
-}
-
-func findSKSCluster(ctx context.Context, d *schema.ResourceData, meta interface{}) (*exov2.SKSCluster, error) {
-	client := GetComputeClient(meta)
-
-	if zone, ok := d.GetOk("zone"); ok {
-		ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone.(string)))
-		cluster, err := client.GetSKSCluster(ctx, zone.(string), d.Id())
-		if err != nil {
-			return nil, err
-		}
-
-		return cluster, nil
-	}
-
-	zones, err := client.ListZones(exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), defaultZone)))
-	if err != nil {
-		return nil, err
-	}
-
-	var cluster *exov2.SKSCluster
-	for _, zone := range zones {
-		c, err := client.GetSKSCluster(
-			exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone)),
-			zone,
-			d.Id())
-		if err != nil {
-			if errors.Is(err, exoapi.ErrNotFound) {
-				continue
-			}
-
-			return nil, err
-		}
-
-		if c != nil {
-			cluster = c
-			if err := d.Set("zone", zone); err != nil {
-				return nil, err
-			}
-			break
-		}
-	}
-
-	return cluster, nil
 }

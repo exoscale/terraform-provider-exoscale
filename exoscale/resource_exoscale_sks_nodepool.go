@@ -10,12 +10,30 @@ import (
 	"github.com/exoscale/egoscale"
 	exov2 "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 const (
-	defaultSKSNodepoolDiskSize       = 50
-	defaultSKSNodepoolInstancePrefix = "pool"
+	defaultSKSNodepoolDiskSize       int64 = 50
+	defaultSKSNodepoolInstancePrefix       = "pool"
+
+	resSKSNodepoolAttrAntiAffinityGroupIDs = "anti_affinity_group_ids"
+	resSKSNodepoolAttrClusterID            = "cluster_id"
+	resSKSNodepoolAttrCreatedAt            = "created_at"
+	resSKSNodepoolAttrDeployTargetID       = "deploy_target_id"
+	resSKSNodepoolAttrDescription          = "description"
+	resSKSNodepoolAttrDiskSize             = "disk_size"
+	resSKSNodepoolAttrInstancePoolID       = "instance_pool_id"
+	resSKSNodepoolAttrInstancePrefix       = "instance_prefix"
+	resSKSNodepoolAttrInstanceType         = "instance_type"
+	resSKSNodepoolAttrName                 = "name"
+	resSKSNodepoolAttrSecurityGroupIDs     = "security_group_ids"
+	resSKSNodepoolAttrSize                 = "size"
+	resSKSNodepoolAttrState                = "state"
+	resSKSNodepoolAttrTemplateID           = "template_id"
+	resSKSNodepoolAttrVersion              = "version"
+	resSKSNodepoolAttrZone                 = "zone"
 )
 
 func resourceSKSNodepoolIDString(d resourceIDStringer) string {
@@ -24,38 +42,44 @@ func resourceSKSNodepoolIDString(d resourceIDStringer) string {
 
 func resourceSKSNodepool() *schema.Resource {
 	s := map[string]*schema.Schema{
-		"cluster_id": {
+		resSKSNodepoolAttrAntiAffinityGroupIDs: {
+			Type:     schema.TypeSet,
+			Optional: true,
+			Set:      schema.HashString,
+			Elem:     &schema.Schema{Type: schema.TypeString},
+		},
+		resSKSNodepoolAttrClusterID: {
 			Type:     schema.TypeString,
 			Required: true,
 			ForceNew: true,
 		},
-		"created_at": {
+		resSKSNodepoolAttrCreatedAt: {
 			Type:     schema.TypeString,
 			Computed: true,
 		},
-		"deploy_target_id": {
+		resSKSNodepoolAttrDeployTargetID: {
 			Type:     schema.TypeString,
 			Optional: true,
 		},
-		"description": {
+		resSKSNodepoolAttrDescription: {
 			Type:     schema.TypeString,
 			Optional: true,
 		},
-		"disk_size": {
+		resSKSNodepoolAttrDiskSize: {
 			Type:     schema.TypeInt,
 			Optional: true,
 			Default:  defaultSKSNodepoolDiskSize,
 		},
-		"instance_pool_id": {
+		resSKSNodepoolAttrInstancePoolID: {
 			Type:     schema.TypeString,
 			Computed: true,
 		},
-		"instance_prefix": {
+		resSKSNodepoolAttrInstancePrefix: {
 			Type:     schema.TypeString,
 			Optional: true,
 			Default:  defaultSKSNodepoolInstancePrefix,
 		},
-		"instance_type": {
+		resSKSNodepoolAttrInstanceType: {
 			Type:     schema.TypeString,
 			Required: true,
 			ValidateFunc: func(val interface{}, key string) (warns []string, errs []error) {
@@ -66,39 +90,33 @@ func resourceSKSNodepool() *schema.Resource {
 				return
 			},
 		},
-		"name": {
+		resSKSNodepoolAttrName: {
 			Type:     schema.TypeString,
 			Required: true,
 		},
-		"anti_affinity_group_ids": {
+		resSKSNodepoolAttrSecurityGroupIDs: {
 			Type:     schema.TypeSet,
 			Optional: true,
 			Set:      schema.HashString,
 			Elem:     &schema.Schema{Type: schema.TypeString},
 		},
-		"security_group_ids": {
-			Type:     schema.TypeSet,
-			Optional: true,
-			Set:      schema.HashString,
-			Elem:     &schema.Schema{Type: schema.TypeString},
-		},
-		"size": {
+		resSKSNodepoolAttrSize: {
 			Type:     schema.TypeInt,
 			Required: true,
 		},
-		"state": {
+		resSKSNodepoolAttrState: {
 			Type:     schema.TypeString,
 			Computed: true,
 		},
-		"template_id": {
+		resSKSNodepoolAttrTemplateID: {
 			Type:     schema.TypeString,
 			Computed: true,
 		},
-		"version": {
+		resSKSNodepoolAttrVersion: {
 			Type:     schema.TypeString,
 			Computed: true,
 		},
-		"zone": {
+		resSKSNodepoolAttrZone: {
 			Type:     schema.TypeString,
 			Required: true,
 			ForceNew: true,
@@ -108,14 +126,31 @@ func resourceSKSNodepool() *schema.Resource {
 	return &schema.Resource{
 		Schema: s,
 
-		Create: resourceSKSNodepoolCreate,
-		Read:   resourceSKSNodepoolRead,
-		Update: resourceSKSNodepoolUpdate,
-		Delete: resourceSKSNodepoolDelete,
-		Exists: resourceSKSNodepoolExists,
+		CreateContext: resourceSKSNodepoolCreate,
+		ReadContext:   resourceSKSNodepoolRead,
+		UpdateContext: resourceSKSNodepoolUpdate,
+		DeleteContext: resourceSKSNodepoolDelete,
 
 		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
+			StateContext: func(ctx context.Context, d *schema.ResourceData, _ interface{}) ([]*schema.ResourceData, error) {
+				zonedRes, err := zonedStateContextFunc(ctx, d, nil)
+				if err != nil {
+					return nil, err
+				}
+				d = zonedRes[0]
+
+				parts := strings.SplitN(d.Id(), "/", 2)
+				if len(parts) != 2 {
+					return nil, fmt.Errorf(`invalid ID %q, expected format "<CLUSTER-ID>/<NODEPOOL-ID>@<ZONE>"`, d.Id())
+				}
+
+				d.SetId(parts[1])
+				if err := d.Set(resSKSNodepoolAttrClusterID, parts[0]); err != nil {
+					return nil, err
+				}
+
+				return []*schema.ResourceData{d}, nil
+			},
 		},
 
 		Timeouts: &schema.ResourceTimeout{
@@ -127,261 +162,265 @@ func resourceSKSNodepool() *schema.Resource {
 	}
 }
 
-func resourceSKSNodepoolCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceSKSNodepoolCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	log.Printf("[DEBUG] %s: beginning create", resourceSKSNodepoolIDString(d))
 
-	zone := d.Get("zone").(string)
+	zone := d.Get(resSKSNodepoolAttrZone).(string)
 
-	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutCreate))
+	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutCreate))
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
 	client := GetComputeClient(meta)
 
-	cluster, err := client.GetSKSCluster(ctx, zone, d.Get("cluster_id").(string))
+	sksCluster, err := client.GetSKSCluster(ctx, zone, d.Get(resSKSNodepoolAttrClusterID).(string))
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
-	resp, err := client.GetWithContext(ctx, &egoscale.ServiceOffering{
-		Name: d.Get("instance_type").(string),
-	})
+	sksNodepool := new(exov2.SKSNodepool)
+
+	if set, ok := d.Get(resSKSNodepoolAttrAntiAffinityGroupIDs).(*schema.Set); ok {
+		sksNodepool.AntiAffinityGroupIDs = func() (v *[]string) {
+			if l := set.Len(); l > 0 {
+				list := make([]string, l)
+				for i, v := range set.List() {
+					list[i] = v.(string)
+				}
+				v = &list
+			}
+			return
+		}()
+	}
+
+	if v, ok := d.GetOk(resSKSNodepoolAttrDeployTargetID); ok {
+		s := v.(string)
+		sksNodepool.DeployTargetID = &s
+	}
+
+	if v, ok := d.GetOk(resSKSNodepoolAttrDescription); ok {
+		s := v.(string)
+		sksNodepool.Description = &s
+	}
+
+	if v, ok := d.GetOk(resSKSNodepoolAttrDiskSize); ok {
+		i := int64(v.(int))
+		sksNodepool.DiskSize = &i
+	}
+
+	if v, ok := d.GetOk(resSKSNodepoolAttrInstancePrefix); ok {
+		s := v.(string)
+		sksNodepool.InstancePrefix = &s
+	}
+
+	instanceType, err := client.FindInstanceType(ctx, zone, d.Get(resSKSNodepoolAttrInstanceType).(string))
 	if err != nil {
-		return err
+		return diag.Errorf("error retrieving instance type: %s", err)
 	}
-	instanceType := resp.(*egoscale.ServiceOffering)
+	sksNodepool.InstanceTypeID = instanceType.ID
 
-	var antiAffinityGroupIDs []string
-	if antiAffinityIDSet, ok := d.Get("anti_affinity_group_ids").(*schema.Set); ok {
-		antiAffinityGroupIDs = make([]string, antiAffinityIDSet.Len())
-		for i, id := range antiAffinityIDSet.List() {
-			antiAffinityGroupIDs[i] = id.(string)
-		}
+	if v, ok := d.GetOk(resSKSNodepoolAttrName); ok {
+		s := v.(string)
+		sksNodepool.Name = &s
 	}
 
-	var securityGroupIDs []string
-	if securityIDSet, ok := d.Get("security_group_ids").(*schema.Set); ok {
-		securityGroupIDs = make([]string, securityIDSet.Len())
-		for i, id := range securityIDSet.List() {
-			securityGroupIDs[i] = id.(string)
-		}
+	if set, ok := d.Get(resSKSNodepoolAttrSecurityGroupIDs).(*schema.Set); ok {
+		sksNodepool.SecurityGroupIDs = func() (v *[]string) {
+			if l := set.Len(); l > 0 {
+				list := make([]string, l)
+				for i, v := range set.List() {
+					list[i] = v.(string)
+				}
+				v = &list
+			}
+			return
+		}()
 	}
 
-	nodepool, err := cluster.AddNodepool(
-		ctx,
-		&exov2.SKSNodepool{
-			AntiAffinityGroupIDs: antiAffinityGroupIDs,
-			DeployTargetID:       d.Get("deploy_target_id").(string),
-			Description:          d.Get("description").(string),
-			DiskSize:             int64(d.Get("disk_size").(int)),
-			InstancePrefix:       d.Get("instance_prefix").(string),
-			InstanceTypeID:       instanceType.ID.String(),
-			Name:                 d.Get("name").(string),
-			SecurityGroupIDs:     securityGroupIDs,
-			Size:                 int64(d.Get("size").(int)),
-		},
-	)
+	if v, ok := d.GetOk(resSKSNodepoolAttrSize); ok {
+		i := int64(v.(int))
+		sksNodepool.Size = &i
+	}
+
+	sksNodepool, err = sksCluster.AddNodepool(ctx, sksNodepool)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
-	d.SetId(nodepool.ID)
+	d.SetId(*sksNodepool.ID)
 
 	log.Printf("[DEBUG] %s: create finished successfully", resourceSKSNodepoolIDString(d))
 
-	return resourceSKSNodepoolRead(d, meta)
+	return resourceSKSNodepoolRead(ctx, d, meta)
 }
 
-func resourceSKSNodepoolRead(d *schema.ResourceData, meta interface{}) error {
+func resourceSKSNodepoolRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	log.Printf("[DEBUG] %s: beginning read", resourceSKSNodepoolIDString(d))
 
-	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
+	zone := d.Get(resSKSNodepoolAttrZone).(string)
+
+	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
-	nodepool, err := findSKSNodepool(ctx, d, meta)
+	client := GetComputeClient(meta)
+
+	sks, err := client.GetSKSCluster(ctx, zone, d.Get(resSKSNodepoolAttrClusterID).(string))
 	if err != nil {
-		return err
+		if errors.Is(err, exoapi.ErrNotFound) {
+			// Parent SKS cluster doesn't exist anymore, so does the SKS Nodepool.
+			d.SetId("")
+			return nil
+		}
+		return diag.FromErr(err)
 	}
 
-	if nodepool == nil {
-		return fmt.Errorf("SKS Nodepool %q not found", d.Id())
+	var sksNodepool *exov2.SKSNodepool
+	for _, np := range sks.Nodepools {
+		if *np.ID == d.Id() {
+			sksNodepool = np
+			break
+		}
+	}
+	if sksNodepool == nil {
+		// Resource doesn't exist anymore, signaling the core to remove it from the state.
+		d.SetId("")
+		return nil
 	}
 
 	log.Printf("[DEBUG] %s: read finished successfully", resourceSKSNodepoolIDString(d))
 
-	return resourceSKSNodepoolApply(d, meta, nodepool)
+	return resourceSKSNodepoolApply(ctx, client, d, sksNodepool)
 }
 
-func resourceSKSNodepoolExists(d *schema.ResourceData, meta interface{}) (bool, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
-	defer cancel()
-
-	nodepool, err := findSKSNodepool(ctx, d, meta)
-	if err != nil {
-		if errors.Is(err, exoapi.ErrNotFound) {
-			return false, nil
-		}
-		return false, err
-	}
-
-	if nodepool == nil {
-		return false, nil
-	}
-
-	return true, nil
-}
-
-func resourceSKSNodepoolUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceSKSNodepoolUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	log.Printf("[DEBUG] %s: beginning update", resourceSKSNodepoolIDString(d))
 
-	zone := d.Get("zone").(string)
+	zone := d.Get(resSKSNodepoolAttrZone).(string)
 
-	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutUpdate))
+	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutUpdate))
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
 	client := GetComputeClient(meta)
 
-	nodepool, err := findSKSNodepool(ctx, d, meta)
+	sksCluster, err := client.GetSKSCluster(ctx, zone, d.Get(resSKSNodepoolAttrClusterID).(string))
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
-	if nodepool == nil {
-		return fmt.Errorf("SKS Nodepool %q not found", d.Id())
-	}
-
-	var (
-		updated     bool
-		resetFields = make([]interface{}, 0)
-	)
-
-	if d.HasChange("name") {
-		nodepool.Name = d.Get("name").(string)
-		updated = true
-	}
-
-	if d.HasChange("deploy_target_id") {
-		if v := d.Get("deploy_target_id").(string); v == "" {
-			nodepool.DeployTargetID = ""
-			resetFields = append(resetFields, &nodepool.DeployTargetID)
-		} else {
-			nodepool.DeployTargetID = d.Get("deploy_target_id").(string)
-			updated = true
+	var sksNodepool *exov2.SKSNodepool
+	for _, np := range sksCluster.Nodepools {
+		if *np.ID == d.Id() {
+			sksNodepool = np
+			break
 		}
 	}
-
-	if d.HasChange("description") {
-		if v := d.Get("description").(string); v == "" {
-			nodepool.Description = ""
-			resetFields = append(resetFields, &nodepool.Description)
-		} else {
-			nodepool.Description = d.Get("description").(string)
-			updated = true
-		}
+	if sksNodepool == nil {
+		return diag.Errorf("SKS Nodepool %q not found", d.Id())
 	}
 
-	if d.HasChange("disk_size") {
-		nodepool.DiskSize = int64(d.Get("disk_size").(int))
+	var updated bool
+
+	if d.HasChange(resSKSNodepoolAttrAntiAffinityGroupIDs) {
+		set := d.Get(resSKSNodepoolAttrAntiAffinityGroupIDs).(*schema.Set)
+		sksNodepool.AntiAffinityGroupIDs = func() *[]string {
+			list := make([]string, set.Len())
+			for i, v := range set.List() {
+				list[i] = v.(string)
+			}
+			return &list
+		}()
 		updated = true
 	}
 
-	if d.HasChange("instance_prefix") {
-		nodepool.InstancePrefix = d.Get("instance_prefix").(string)
+	if d.HasChange(resSKSNodepoolAttrDeployTargetID) {
+		v := d.Get(resSKSNodepoolAttrDeployTargetID).(string)
+		sksNodepool.DeployTargetID = &v
 		updated = true
 	}
 
-	if d.HasChange("instance_type") {
-		resp, err := client.GetWithContext(ctx, &egoscale.ServiceOffering{
-			Name: d.Get("instance_type").(string),
-		})
+	if d.HasChange(resSKSNodepoolAttrDescription) {
+		v := d.Get(resSKSNodepoolAttrDescription).(string)
+		sksNodepool.Description = &v
+		updated = true
+	}
+
+	if d.HasChange(resSKSNodepoolAttrDiskSize) {
+		v := int64(d.Get(resSKSNodepoolAttrDiskSize).(int))
+		sksNodepool.DiskSize = &v
+		updated = true
+	}
+
+	if d.HasChange(resSKSNodepoolAttrInstancePrefix) {
+		v := d.Get(resSKSNodepoolAttrInstancePrefix).(string)
+		sksNodepool.InstancePrefix = &v
+		updated = true
+	}
+
+	if d.HasChange(resSKSNodepoolAttrInstanceType) {
+		instanceType, err := client.FindInstanceType(ctx, zone, d.Get(resSKSNodepoolAttrInstanceType).(string))
 		if err != nil {
-			return err
+			return diag.Errorf("error retrieving instance type: %s", err)
 		}
-		nodepool.InstanceTypeID = resp.(*egoscale.ServiceOffering).ID.String()
+		sksNodepool.InstanceTypeID = instanceType.ID
 		updated = true
 	}
 
-	if d.HasChange("anti_affinity_group_ids") {
-		set := d.Get("anti_affinity_group_ids").(*schema.Set)
-		if set.Len() == 0 {
-			nodepool.AntiAffinityGroupIDs = nil
-			resetFields = append(resetFields, &nodepool.AntiAffinityGroupIDs)
-		} else {
-			nodepool.AntiAffinityGroupIDs = func() []string {
-				list := make([]string, set.Len())
-				for i, v := range set.List() {
-					list[i] = v.(string)
-				}
-				return list
-			}()
-			updated = true
-		}
+	if d.HasChange(resSKSNodepoolAttrName) {
+		v := d.Get(resSKSNodepoolAttrName).(string)
+		sksNodepool.Name = &v
+		updated = true
 	}
 
-	if d.HasChange("security_group_ids") {
-		set := d.Get("security_group_ids").(*schema.Set)
-		if set.Len() == 0 {
-			nodepool.SecurityGroupIDs = nil
-			resetFields = append(resetFields, &nodepool.SecurityGroupIDs)
-		} else {
-			nodepool.SecurityGroupIDs = func() []string {
-				list := make([]string, set.Len())
-				for i, v := range set.List() {
-					list[i] = v.(string)
-				}
-				return list
-			}()
-			updated = true
-		}
-	}
-
-	cluster, err := client.GetSKSCluster(ctx, zone, d.Get("cluster_id").(string))
-	if err != nil {
-		return err
+	if d.HasChange(resSKSNodepoolAttrSecurityGroupIDs) {
+		set := d.Get(resSKSNodepoolAttrSecurityGroupIDs).(*schema.Set)
+		sksNodepool.SecurityGroupIDs = func() *[]string {
+			list := make([]string, set.Len())
+			for i, v := range set.List() {
+				list[i] = v.(string)
+			}
+			return &list
+		}()
+		updated = true
 	}
 
 	if updated {
-		if err = cluster.UpdateNodepool(ctx, nodepool); err != nil {
-			return err
+		if err = sksCluster.UpdateNodepool(ctx, sksNodepool); err != nil {
+			return diag.FromErr(err)
 		}
 	}
 
-	for _, f := range resetFields {
-		if err = cluster.ResetNodepoolField(ctx, nodepool, f); err != nil {
-			return err
-		}
-	}
-
-	if d.HasChange("size") {
-		if err = cluster.ScaleNodepool(ctx, nodepool, int64(d.Get("size").(int))); err != nil {
-			return err
+	if d.HasChange(resSKSNodepoolAttrSize) {
+		if err = sksCluster.ScaleNodepool(ctx, sksNodepool, int64(d.Get(resSKSNodepoolAttrSize).(int))); err != nil {
+			return diag.FromErr(err)
 		}
 	}
 
 	log.Printf("[DEBUG] %s: update finished successfully", resourceSKSNodepoolIDString(d))
 
-	return resourceSKSNodepoolRead(d, meta)
+	return resourceSKSNodepoolRead(ctx, d, meta)
 }
 
-func resourceSKSNodepoolDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceSKSNodepoolDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	log.Printf("[DEBUG] %s: beginning delete", resourceSKSNodepoolIDString(d))
 
-	zone := d.Get("zone").(string)
+	zone := d.Get(resSKSNodepoolAttrZone).(string)
 
-	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutDelete))
+	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutDelete))
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
 	client := GetComputeClient(meta)
 
-	cluster, err := client.GetSKSCluster(ctx, zone, d.Get("cluster_id").(string))
+	cluster, err := client.GetSKSCluster(ctx, zone, d.Get(resSKSNodepoolAttrClusterID).(string))
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
-	if err = cluster.DeleteNodepool(ctx, &exov2.SKSNodepool{ID: d.Id()}); err != nil {
-		return err
+	sksNodepoolID := d.Id()
+	if err = cluster.DeleteNodepool(ctx, &exov2.SKSNodepool{ID: &sksNodepoolID}); err != nil {
+		return diag.FromErr(err)
 	}
 
 	log.Printf("[DEBUG] %s: delete finished successfully", resourceSKSNodepoolIDString(d))
@@ -389,128 +428,87 @@ func resourceSKSNodepoolDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func resourceSKSNodepoolApply(d *schema.ResourceData, meta interface{}, nodepool *exov2.SKSNodepool) error {
-	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
-	defer cancel()
-	client := GetComputeClient(meta)
-
-	if err := d.Set("created_at", nodepool.CreatedAt.String()); err != nil {
-		return err
+func resourceSKSNodepoolApply(
+	ctx context.Context,
+	client *egoscale.Client,
+	d *schema.ResourceData,
+	sksNodepool *exov2.SKSNodepool,
+) diag.Diagnostics {
+	if sksNodepool.AntiAffinityGroupIDs != nil {
+		antiAffinityGroupIDs := make([]string, len(*sksNodepool.AntiAffinityGroupIDs))
+		for i, id := range *sksNodepool.AntiAffinityGroupIDs {
+			antiAffinityGroupIDs[i] = id
+		}
+		if err := d.Set(resSKSNodepoolAttrAntiAffinityGroupIDs, antiAffinityGroupIDs); err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
-	if err := d.Set("deploy_target_id", nodepool.DeployTargetID); err != nil {
-		return err
+	if err := d.Set(resSKSNodepoolAttrCreatedAt, sksNodepool.CreatedAt.String()); err != nil {
+		return diag.FromErr(err)
 	}
 
-	if err := d.Set("description", nodepool.Description); err != nil {
-		return err
+	if err := d.Set(resSKSNodepoolAttrDeployTargetID, defaultString(sksNodepool.DeployTargetID, "")); err != nil {
+		return diag.FromErr(err)
 	}
 
-	if err := d.Set("disk_size", nodepool.DiskSize); err != nil {
-		return err
+	if err := d.Set(resSKSNodepoolAttrDescription, defaultString(sksNodepool.Description, "")); err != nil {
+		return diag.FromErr(err)
 	}
 
-	if err := d.Set("instance_pool_id", nodepool.InstancePoolID); err != nil {
-		return err
+	if err := d.Set(resSKSNodepoolAttrDiskSize, *sksNodepool.DiskSize); err != nil {
+		return diag.FromErr(err)
 	}
 
-	if err := d.Set("instance_prefix", nodepool.InstancePrefix); err != nil {
-		return err
+	if err := d.Set(resSKSNodepoolAttrInstancePoolID, *sksNodepool.InstancePoolID); err != nil {
+		return diag.FromErr(err)
 	}
 
-	v, err := client.GetWithContext(ctx, &egoscale.ServiceOffering{
-		ID: egoscale.MustParseUUID(nodepool.InstanceTypeID),
-	})
+	if err := d.Set(resSKSNodepoolAttrInstancePrefix, defaultString(sksNodepool.InstancePrefix, "")); err != nil {
+		return diag.FromErr(err)
+	}
+
+	instanceType, err := client.GetInstanceType(
+		ctx,
+		d.Get(resSKSNodepoolAttrZone).(string),
+		*sksNodepool.InstanceTypeID,
+	)
 	if err != nil {
-		return err
+		return diag.Errorf("error retrieving instance type: %s", err)
 	}
-	if err := d.Set("instance_type", strings.ToLower(v.(*egoscale.ServiceOffering).Name)); err != nil {
-		return err
-	}
-
-	if err := d.Set("name", nodepool.Name); err != nil {
-		return err
+	if err := d.Set(resSKSNodepoolAttrInstanceType, *instanceType.Size); err != nil {
+		return diag.FromErr(err)
 	}
 
-	if err := d.Set("anti_affinity_group_ids", nodepool.AntiAffinityGroupIDs); err != nil {
-		return err
+	if err := d.Set(resSKSNodepoolAttrName, *sksNodepool.Name); err != nil {
+		return diag.FromErr(err)
 	}
 
-	if err := d.Set("security_group_ids", nodepool.SecurityGroupIDs); err != nil {
-		return err
+	if sksNodepool.SecurityGroupIDs != nil {
+		securityGroupIDs := make([]string, len(*sksNodepool.SecurityGroupIDs))
+		for i, id := range *sksNodepool.SecurityGroupIDs {
+			securityGroupIDs[i] = id
+		}
+		if err := d.Set(resSKSNodepoolAttrSecurityGroupIDs, securityGroupIDs); err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
-	if err := d.Set("size", nodepool.Size); err != nil {
-		return err
+	if err := d.Set(resSKSNodepoolAttrSize, *sksNodepool.Size); err != nil {
+		return diag.FromErr(err)
 	}
 
-	if err := d.Set("state", nodepool.State); err != nil {
-		return err
+	if err := d.Set(resSKSNodepoolAttrState, *sksNodepool.State); err != nil {
+		return diag.FromErr(err)
 	}
 
-	if err := d.Set("template_id", nodepool.TemplateID); err != nil {
-		return err
+	if err := d.Set(resSKSNodepoolAttrTemplateID, *sksNodepool.TemplateID); err != nil {
+		return diag.FromErr(err)
 	}
 
-	if err := d.Set("version", nodepool.Version); err != nil {
-		return err
+	if err := d.Set(resSKSNodepoolAttrVersion, *sksNodepool.Version); err != nil {
+		return diag.FromErr(err)
 	}
 
 	return nil
-}
-
-func findSKSNodepool(ctx context.Context, d *schema.ResourceData, meta interface{}) (*exov2.SKSNodepool, error) {
-	client := GetComputeClient(meta)
-
-	zone, okZone := d.GetOk("zone")
-	clusterID, okClusterID := d.GetOk("cluster_id")
-	if okZone && okClusterID {
-		ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone.(string)))
-		cluster, err := client.GetSKSCluster(ctx, zone.(string), clusterID.(string))
-		if err != nil {
-			return nil, err
-		}
-
-		for _, np := range cluster.Nodepools {
-			if np.ID == d.Id() {
-				return np, nil
-			}
-		}
-	}
-
-	zones, err := client.ListZones(exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), defaultZone)))
-	if err != nil {
-		return nil, err
-	}
-
-	for _, zone := range zones {
-		clusters, err := client.ListSKSClusters(
-			exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone)),
-			zone)
-		if err != nil {
-			if errors.Is(err, exoapi.ErrNotFound) {
-				continue
-			}
-
-			return nil, err
-		}
-
-		for _, cluster := range clusters {
-			for _, np := range cluster.Nodepools {
-				if np.ID == d.Id() {
-					if err := d.Set("zone", zone); err != nil {
-						return nil, err
-					}
-
-					if err := d.Set("cluster_id", cluster.ID); err != nil {
-						return nil, err
-					}
-
-					return np, nil
-				}
-			}
-		}
-	}
-
-	return nil, nil
 }

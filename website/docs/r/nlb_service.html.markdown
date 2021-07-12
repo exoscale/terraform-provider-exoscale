@@ -97,10 +97,10 @@ In addition to the arguments listed above, the following attributes are exported
 
 ## Import
 
-An existing NLB service can be imported as a resource by ID.
+An existing NLB service can be imported as a resource by `<NLB-ID>/<SERVICE-ID>@<ZONE>`:
 
 ```console
-$ terraform import exoscale_nlb_service.website 9ecc6b8b-73d4-4211-8ced-f7f29bb79524
+$ terraform import exoscale_nlb_service.example eb556678-ec59-4be6-8c54-0406ae0f6da6/9ecc6b8b-73d4-4211-8ced-f7f29bb79524@de-fra-1
 ```
 
 

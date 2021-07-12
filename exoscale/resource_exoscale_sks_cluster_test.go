@@ -19,7 +19,7 @@ import (
 var (
 	testAccResourceSKSClusterName        = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceSKSClusterNameUpdated = testAccResourceSKSClusterName + "-updated"
-	testAccResourceSKSClusterDescription = testDescription
+	testAccResourceSKSClusterDescription = acctest.RandString(10)
 
 	testAccResourceSKSClusterConfigCreate = fmt.Sprintf(`
 locals {
@@ -64,6 +64,7 @@ locals {
 resource "exoscale_sks_cluster" "test" {
   zone = local.zone
   name = "%s"
+  description = ""
   exoscale_ccm = true
   metrics_server = false
 
@@ -91,7 +92,10 @@ resource "exoscale_sks_nodepool" "test" {
 )
 
 func TestAccResourceSKSCluster(t *testing.T) {
-	var sksCluster exov2.SKSCluster
+	var (
+		r          = "exoscale_sks_cluster.test"
+		sksCluster exov2.SKSCluster
+	)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
@@ -99,12 +103,13 @@ func TestAccResourceSKSCluster(t *testing.T) {
 		},
 
 		ProviderFactories: testAccProviders,
-		CheckDestroy:      testAccCheckResourceSKSClusterDestroy,
+		CheckDestroy:      testAccCheckResourceSKSClusterDestroy(&sksCluster),
 		Steps: []resource.TestStep{
-			{ // Create
+			{
+				// Create
 				Config: testAccResourceSKSClusterConfigCreate,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckResourceSKSClusterExists("exoscale_sks_cluster.test", &sksCluster),
+					testAccCheckResourceSKSClusterExists(r, &sksCluster),
 					func(s *terraform.State) error {
 						a := assert.New(t)
 
@@ -136,81 +141,82 @@ func TestAccResourceSKSCluster(t *testing.T) {
 						}
 						latestVersion := versions[0]
 
-						a.Equal(latestVersion, sksCluster.Version)
+						a.Equal([]string{sksClusterAddonExoscaleCCM}, *sksCluster.AddOns)
+						a.Equal(defaultSKSClusterCNI, *sksCluster.CNI)
+						a.Equal(testAccResourceSKSClusterDescription, *sksCluster.Description)
+						a.Equal(testAccResourceSKSClusterName, *sksCluster.Name)
+						a.Equal(defaultSKSClusterServiceLevel, *sksCluster.ServiceLevel)
+						a.Equal(latestVersion, *sksCluster.Version)
 
 						return nil
 					},
-					testAccCheckResourceSKSClusterAttributes(testAttrs{
-						"cni":            ValidateString(defaultSKSClusterCNI),
-						"created_at":     validation.ToDiagFunc(validation.NoZeroValues),
-						"description":    ValidateString(testAccResourceSKSClusterDescription),
-						"endpoint":       validation.ToDiagFunc(validation.IsURLWithHTTPS),
-						"exoscale_ccm":   ValidateString("true"),
-						"id":             validation.ToDiagFunc(validation.IsUUID),
-						"metrics_server": ValidateString("false"),
-						"name":           ValidateString(testAccResourceSKSClusterName),
-						"service_level":  ValidateString(defaultSKSClusterServiceLevel),
-						"state":          validation.ToDiagFunc(validation.NoZeroValues),
-						"version":        validation.ToDiagFunc(validation.NoZeroValues),
-
-						"zone": ValidateString(testZoneName),
-					}),
+					checkResourceState(r, checkResourceStateValidateAttributes(testAttrs{
+						resSKSClusterAttrCNI:           ValidateString(defaultSKSClusterCNI),
+						resSKSClusterAttrCreatedAt:     validation.ToDiagFunc(validation.NoZeroValues),
+						resSKSClusterAttrDescription:   ValidateString(testAccResourceSKSClusterDescription),
+						resSKSClusterAttrEndpoint:      validation.ToDiagFunc(validation.IsURLWithHTTPS),
+						resSKSClusterAttrExoscaleCCM:   ValidateString("true"),
+						resSKSClusterAttrMetricsServer: ValidateString("false"),
+						resSKSClusterAttrName:          ValidateString(testAccResourceSKSClusterName),
+						resSKSClusterAttrServiceLevel:  ValidateString(defaultSKSClusterServiceLevel),
+						resSKSClusterAttrState:         validation.ToDiagFunc(validation.NoZeroValues),
+						resSKSClusterAttrVersion:       validation.ToDiagFunc(validation.NoZeroValues),
+					})),
 				),
 			},
-			{ // Update
+			{
+				// Update
 				Config: testAccResourceSKSClusterConfigUpdate,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckResourceSKSClusterExists("exoscale_sks_cluster.test", &sksCluster),
-					testAccCheckResourceSKSClusterAttributes(testAttrs{
-						"cni":            ValidateString(defaultSKSClusterCNI),
-						"created_at":     validation.ToDiagFunc(validation.NoZeroValues),
-						"description":    ValidateString(""),
-						"endpoint":       validation.ToDiagFunc(validation.IsURLWithHTTPS),
-						"exoscale_ccm":   ValidateString("true"),
-						"id":             validation.ToDiagFunc(validation.IsUUID),
-						"metrics_server": ValidateString("false"),
-						"name":           ValidateString(testAccResourceSKSClusterNameUpdated),
-						"nodepools.#":    ValidateString("1"),
-						"service_level":  ValidateString(defaultSKSClusterServiceLevel),
-						"state":          validation.ToDiagFunc(validation.NoZeroValues),
-						"version":        validation.ToDiagFunc(validation.NoZeroValues),
-						"zone":           ValidateString(testZoneName),
-					}),
+					testAccCheckResourceSKSClusterExists(r, &sksCluster),
+					checkResourceState(r, checkResourceStateValidateAttributes(testAttrs{
+						resSKSClusterAttrCNI:           ValidateString(defaultSKSClusterCNI),
+						resSKSClusterAttrCreatedAt:     validation.ToDiagFunc(validation.NoZeroValues),
+						resSKSClusterAttrDescription:   validation.ToDiagFunc(validation.StringIsEmpty),
+						resSKSClusterAttrEndpoint:      validation.ToDiagFunc(validation.IsURLWithHTTPS),
+						resSKSClusterAttrExoscaleCCM:   ValidateString("true"),
+						resSKSClusterAttrMetricsServer: ValidateString("false"),
+						resSKSClusterAttrName:          ValidateString(testAccResourceSKSClusterNameUpdated),
+						resSKSClusterAttrServiceLevel:  ValidateString(defaultSKSClusterServiceLevel),
+						resSKSClusterAttrState:         validation.ToDiagFunc(validation.NoZeroValues),
+						resSKSClusterAttrVersion:       validation.ToDiagFunc(validation.NoZeroValues),
+					})),
 				),
 			},
-			{ // Import
-				ResourceName:            "exoscale_sks_cluster.test",
-				ImportState:             true,
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"state"},
-				ImportStateCheck: composeImportStateCheckFunc(
-					testAccCheckResourceImportedAttributes(
-						"exoscale_sks_cluster",
+			{
+				// Import
+				ResourceName: r,
+				ImportStateIdFunc: func(sksCluster *exov2.SKSCluster) resource.ImportStateIdFunc {
+					return func(*terraform.State) (string, error) {
+						return fmt.Sprintf("%s@%s", *sksCluster.ID, testZoneName), nil
+					}
+				}(&sksCluster),
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateCheck: func(s []*terraform.InstanceState) error {
+					return checkResourceAttributes(
 						testAttrs{
-							"cni":            ValidateString(defaultSKSClusterCNI),
-							"created_at":     validation.ToDiagFunc(validation.NoZeroValues),
-							"description":    ValidateString(""),
-							"endpoint":       validation.ToDiagFunc(validation.IsURLWithHTTPS),
-							"exoscale_ccm":   ValidateString("true"),
-							"id":             validation.ToDiagFunc(validation.IsUUID),
-							"metrics_server": ValidateString("false"),
-							"name":           ValidateString(testAccResourceSKSClusterNameUpdated),
-							"nodepools.#":    ValidateString("1"),
-							"service_level":  ValidateString(defaultSKSClusterServiceLevel),
-							"state":          validation.ToDiagFunc(validation.NoZeroValues),
-							"version":        validation.ToDiagFunc(validation.NoZeroValues),
-							"zone":           ValidateString(testZoneName),
+							resSKSClusterAttrCNI:           ValidateString(defaultSKSClusterCNI),
+							resSKSClusterAttrCreatedAt:     validation.ToDiagFunc(validation.NoZeroValues),
+							resSKSClusterAttrDescription:   validation.ToDiagFunc(validation.StringIsEmpty),
+							resSKSClusterAttrEndpoint:      validation.ToDiagFunc(validation.IsURLWithHTTPS),
+							resSKSClusterAttrExoscaleCCM:   ValidateString("true"),
+							resSKSClusterAttrMetricsServer: ValidateString("false"),
+							resSKSClusterAttrName:          ValidateString(testAccResourceSKSClusterNameUpdated),
+							resSKSClusterAttrServiceLevel:  ValidateString(defaultSKSClusterServiceLevel),
+							resSKSClusterAttrState:         validation.ToDiagFunc(validation.NoZeroValues),
+							resSKSClusterAttrVersion:       validation.ToDiagFunc(validation.NoZeroValues),
 						},
-					),
-				),
+						s[0].Attributes)
+				},
 			},
 		},
 	})
 }
 
-func testAccCheckResourceSKSClusterExists(n string, sksCluster *exov2.SKSCluster) resource.TestCheckFunc {
+func testAccCheckResourceSKSClusterExists(r string, sksCluster *exov2.SKSCluster) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		rs, ok := s.RootModule().Resources[n]
+		rs, ok := s.RootModule().Resources[r]
 		if !ok {
 			return errors.New("resource not found in the state")
 		}
@@ -225,51 +231,33 @@ func testAccCheckResourceSKSClusterExists(n string, sksCluster *exov2.SKSCluster
 			context.Background(),
 			exoapi.NewReqEndpoint(testEnvironment, testZoneName),
 		)
-		r, err := client.GetSKSCluster(ctx, testZoneName, rs.Primary.ID)
+		res, err := client.GetSKSCluster(ctx, testZoneName, rs.Primary.ID)
 		if err != nil {
 			return err
 		}
 
-		*sksCluster = *r
+		*sksCluster = *res
 		return nil
 	}
 }
 
-func testAccCheckResourceSKSClusterAttributes(expected testAttrs) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		for _, rs := range s.RootModule().Resources {
-			if rs.Type != "exoscale_sks_cluster" {
-				continue
-			}
-
-			return checkResourceAttributes(expected, rs.Primary.Attributes)
-		}
-
-		return errors.New("resource not found in the state")
-	}
-}
-
-func testAccCheckResourceSKSClusterDestroy(s *terraform.State) error {
-	client := GetComputeClient(testAccProvider.Meta())
-
-	for _, rs := range s.RootModule().Resources {
-		if rs.Type != "exoscale_sks_cluster" {
-			continue
-		}
-
+func testAccCheckResourceSKSClusterDestroy(sksCluster *exov2.SKSCluster) resource.TestCheckFunc {
+	return func(_ *terraform.State) error {
+		client := GetComputeClient(testAccProvider.Meta())
 		ctx := exoapi.WithEndpoint(
 			context.Background(),
 			exoapi.NewReqEndpoint(testEnvironment, testZoneName),
 		)
 
-		if _, err := client.GetSKSCluster(ctx, testZoneName, rs.Primary.ID); err != nil {
+		_, err := client.GetSKSCluster(ctx, testZoneName, *sksCluster.ID)
+		if err != nil {
 			if errors.Is(err, exoapi.ErrNotFound) {
 				return nil
 			}
 
 			return err
 		}
-	}
 
-	return errors.New("SKS cluster still exists")
+		return errors.New("SKS cluster still exists")
+	}
 }

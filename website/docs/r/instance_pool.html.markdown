@@ -92,14 +92,10 @@ In addition to the arguments listed above, the following attributes are exported
 
 ## Import
 
-An existing Instance Pool can be imported as a resource by name or ID. Importing an Instance Pool imports the `exoscale_instance_pool` resource.
+An existing Instance Pool can be imported as a resource by `<ID>@<ZONE>`:
 
 ```console
-# By name
-$ terraform import exoscale_instance_pool.pool mypool
-
-# By ID
-$ terraform import exoscale_instance_pool.pool eb556678-ec59-4be6-8c54-0406ae0f6da6
+$ terraform import exoscale_instance_pool.example eb556678-ec59-4be6-8c54-0406ae0f6da6@de-fra-1
 ```
 
 

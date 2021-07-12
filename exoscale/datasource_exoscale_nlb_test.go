@@ -15,7 +15,7 @@ import (
 var (
 	testAccDataSourceNLBZone           = testZoneName
 	testAccDataSourceNLBName           = acctest.RandomWithPrefix(testPrefix)
-	testAccDataSourceNLBDescription    = testDescription
+	testAccDataSourceNLBDescription    = acctest.RandString(10)
 	testAccDataSourceNLBResourceConfig = fmt.Sprintf(`
 resource "exoscale_nlb" "test" {
   zone        = "%s"
@@ -50,13 +50,13 @@ data "exoscale_nlb" "by-id" {
 					testAccDataSourceNLBResourceConfig),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDataSourceNLBAttributes("data.exoscale_nlb.by-id", testAttrs{
-						"zone":        ValidateString(testAccDataSourceNLBZone),
-						"id":          validation.ToDiagFunc(validation.IsUUID),
-						"name":        ValidateString(testAccDataSourceNLBName),
-						"description": ValidateString(testAccDataSourceNLBDescription),
-						"created_at":  ValidateStringNot(""),
-						"state":       ValidateStringNot(""),
-						"ip_address":  validation.ToDiagFunc(validation.IsIPv4Address),
+						dsNLBAttrCreatedAt:   validation.ToDiagFunc(validation.NoZeroValues),
+						dsNLBAttrDescription: ValidateString(testAccDataSourceNLBDescription),
+						dsNLBAttrID:          validation.ToDiagFunc(validation.IsUUID),
+						dsNLBAttrIPAddress:   validation.ToDiagFunc(validation.IsIPv4Address),
+						dsNLBAttrName:        ValidateString(testAccDataSourceNLBName),
+						dsNLBAttrState:       validation.ToDiagFunc(validation.NoZeroValues),
+						dsNLBAttrZone:        ValidateString(testAccDataSourceNLBZone),
 					}),
 				),
 			},
@@ -69,13 +69,13 @@ data "exoscale_nlb" "by-name" {
 					testAccDataSourceNLBResourceConfig),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDataSourceNLBAttributes("data.exoscale_nlb.by-name", testAttrs{
-						"zone":        ValidateString(testAccDataSourceNLBZone),
-						"id":          validation.ToDiagFunc(validation.IsUUID),
-						"name":        ValidateString(testAccDataSourceNLBName),
-						"description": ValidateString(testAccDataSourceNLBDescription),
-						"created_at":  ValidateStringNot(""),
-						"state":       ValidateStringNot(""),
-						"ip_address":  validation.ToDiagFunc(validation.IsIPv4Address),
+						dsNLBAttrCreatedAt:   validation.ToDiagFunc(validation.NoZeroValues),
+						dsNLBAttrDescription: ValidateString(testAccDataSourceNLBDescription),
+						dsNLBAttrID:          validation.ToDiagFunc(validation.IsUUID),
+						dsNLBAttrIPAddress:   validation.ToDiagFunc(validation.IsIPv4Address),
+						dsNLBAttrName:        ValidateString(testAccDataSourceNLBName),
+						dsNLBAttrState:       validation.ToDiagFunc(validation.NoZeroValues),
+						dsNLBAttrZone:        ValidateString(testAccDataSourceNLBZone),
 					}),
 				),
 			},
@@ -83,14 +83,13 @@ data "exoscale_nlb" "by-name" {
 	})
 }
 
-func testAccDataSourceNLBAttributes(ds string, expected testAttrs) resource.TestCheckFunc {
+func testAccDataSourceNLBAttributes(r string, expected testAttrs) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		for name, res := range s.RootModule().Resources {
-			if name == ds {
-				return checkResourceAttributes(expected, res.Primary.Attributes)
-			}
+		ds, ok := s.RootModule().Resources[r]
+		if !ok {
+			return errors.New("data source not found in the state")
 		}
 
-		return errors.New("exoscale_nlb data source not found in the state")
+		return checkResourceAttributes(expected, ds.Primary.Attributes)
 	}
 }

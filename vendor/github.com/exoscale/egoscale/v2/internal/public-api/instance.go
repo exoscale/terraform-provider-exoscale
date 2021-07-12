@@ -12,11 +12,13 @@ func (i *Instance) UnmarshalJSON(data []byte) error {
 	raw := struct {
 		AntiAffinityGroups *[]AntiAffinityGroup `json:"anti-affinity-groups,omitempty"`
 		CreatedAt          *string              `json:"created-at,omitempty"`
+		DeployTarget       *DeployTarget        `json:"deploy-target,omitempty"`
 		DiskSize           *int64               `json:"disk-size,omitempty"`
 		ElasticIps         *[]ElasticIp         `json:"elastic-ips,omitempty"`
 		Id                 *string              `json:"id,omitempty"` // nolint:revive
 		InstanceType       *InstanceType        `json:"instance-type,omitempty"`
 		Ipv6Address        *string              `json:"ipv6-address,omitempty"`
+		Labels             *Labels              `json:"labels,omitempty"`
 		Manager            *Manager             `json:"manager,omitempty"`
 		Name               *string              `json:"name,omitempty"`
 		PrivateNetworks    *[]PrivateNetwork    `json:"private-networks,omitempty"`
@@ -42,11 +44,13 @@ func (i *Instance) UnmarshalJSON(data []byte) error {
 	}
 
 	i.AntiAffinityGroups = raw.AntiAffinityGroups
+	i.DeployTarget = raw.DeployTarget
 	i.DiskSize = raw.DiskSize
 	i.ElasticIps = raw.ElasticIps
 	i.Id = raw.Id
 	i.InstanceType = raw.InstanceType
 	i.Ipv6Address = raw.Ipv6Address
+	i.Labels = raw.Labels
 	i.Manager = raw.Manager
 	i.Name = raw.Name
 	i.PrivateNetworks = raw.PrivateNetworks
@@ -67,11 +71,13 @@ func (i *Instance) MarshalJSON() ([]byte, error) {
 	raw := struct {
 		AntiAffinityGroups *[]AntiAffinityGroup `json:"anti-affinity-groups,omitempty"`
 		CreatedAt          *string              `json:"created-at,omitempty"`
+		DeployTarget       *DeployTarget        `json:"deploy-target,omitempty"`
 		DiskSize           *int64               `json:"disk-size,omitempty"`
 		ElasticIps         *[]ElasticIp         `json:"elastic-ips,omitempty"`
 		Id                 *string              `json:"id,omitempty"` // nolint:revive
 		InstanceType       *InstanceType        `json:"instance-type,omitempty"`
 		Ipv6Address        *string              `json:"ipv6-address,omitempty"`
+		Labels             *Labels              `json:"labels,omitempty"`
 		Manager            *Manager             `json:"manager,omitempty"`
 		Name               *string              `json:"name,omitempty"`
 		PrivateNetworks    *[]PrivateNetwork    `json:"private-networks,omitempty"`
@@ -90,11 +96,13 @@ func (i *Instance) MarshalJSON() ([]byte, error) {
 	}
 
 	raw.AntiAffinityGroups = i.AntiAffinityGroups
+	raw.DeployTarget = i.DeployTarget
 	raw.DiskSize = i.DiskSize
 	raw.ElasticIps = i.ElasticIps
 	raw.Id = i.Id
 	raw.InstanceType = i.InstanceType
 	raw.Ipv6Address = i.Ipv6Address
+	raw.Labels = i.Labels
 	raw.Manager = i.Manager
 	raw.Name = i.Name
 	raw.PrivateNetworks = i.PrivateNetworks

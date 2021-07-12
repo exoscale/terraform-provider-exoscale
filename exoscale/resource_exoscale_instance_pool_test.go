@@ -19,7 +19,7 @@ import (
 
 var (
 	testAccResourceInstancePoolAntiAffinityGroupName        = acctest.RandomWithPrefix(testPrefix)
-	testAccResourceInstancePoolDescription                  = testDescription
+	testAccResourceInstancePoolDescription                  = acctest.RandString(10)
 	testAccResourceInstancePoolDiskSize               int64 = 10
 	testAccResourceInstancePoolDiskSizeUpdated              = testAccResourceInstancePoolDiskSize * 2
 	testAccResourceInstancePoolKeyPair                      = acctest.RandomWithPrefix(testPrefix)
@@ -31,7 +31,6 @@ var (
 	testAccResourceInstancePoolServiceOfferingUpdated       = "small"
 	testAccResourceInstancePoolSize                   int64 = 1
 	testAccResourceInstancePoolSizeUpdated                  = testAccResourceInstancePoolSize * 2
-	testAccResourceInstancePoolZoneName                     = testZoneName
 	testAccResourceInstancePoolUserData                     = acctest.RandString(10)
 	testAccResourceInstancePoolUserDataUpdated              = testAccResourceInstancePoolUserData + "-updated"
 
@@ -72,7 +71,7 @@ resource "exoscale_instance_pool" "test" {
   }
 }
 `,
-		testAccResourceInstancePoolZoneName,
+		testZoneName,
 		testAccResourceInstancePoolAntiAffinityGroupName,
 		testAccResourceInstancePoolName,
 		testAccResourceInstancePoolDescription,
@@ -113,10 +112,12 @@ resource "exoscale_ipaddress" "test" {
 resource "exoscale_instance_pool" "test" {
   zone = local.zone
   name = "%s"
+  description = ""
   template_id = data.exoscale_compute_template.debian.id
   service_offering = "%s"
   size = %d
   disk_size = %d
+  ipv6 = false
   key_pair = exoscale_ssh_keypair.test.name
   affinity_group_ids = [exoscale_affinity.test.id]
   network_ids = [exoscale_network.test.id]
@@ -128,7 +129,7 @@ resource "exoscale_instance_pool" "test" {
   }
 }
 `,
-		testAccResourceInstancePoolZoneName,
+		testZoneName,
 		testAccResourceInstancePoolNetwork,
 		testAccResourceInstancePoolKeyPair,
 		testAccResourceInstancePoolAntiAffinityGroupName,
@@ -167,17 +168,17 @@ func TestAccResourceInstancePool(t *testing.T) {
 							return err
 						}
 
-						a.Len(instancePool.AntiAffinityGroupIDs, 1)
-						a.Equal(testAccResourceInstancePoolDescription, instancePool.Description)
-						a.Equal(testAccResourceInstancePoolDiskSize, instancePool.DiskSize)
-						a.Equal(testAccResourceInstancePoolInstancePrefix, instancePool.InstancePrefix)
-						a.Len(instancePool.InstanceIDs, int(testAccResourceInstancePoolSize))
-						a.Equal(testInstanceTypeIDTiny, instancePool.InstanceTypeID)
-						a.True(instancePool.IPv6Enabled)
-						a.Equal(testAccResourceInstancePoolName, instancePool.Name)
-						a.Equal(testAccResourceInstancePoolSize, instancePool.Size)
-						a.Equal(templateID, instancePool.TemplateID)
-						a.Equal(expectedUserData, instancePool.UserData)
+						a.Len(*instancePool.AntiAffinityGroupIDs, 1)
+						a.Equal(testAccResourceInstancePoolDescription, *instancePool.Description)
+						a.Equal(testAccResourceInstancePoolDiskSize, *instancePool.DiskSize)
+						a.Equal(testAccResourceInstancePoolInstancePrefix, *instancePool.InstancePrefix)
+						a.Len(*instancePool.InstanceIDs, int(testAccResourceInstancePoolSize))
+						a.Equal(testInstanceTypeIDTiny, *instancePool.InstanceTypeID)
+						a.True(*instancePool.IPv6Enabled)
+						a.Equal(testAccResourceInstancePoolName, *instancePool.Name)
+						a.Equal(testAccResourceInstancePoolSize, *instancePool.Size)
+						a.Equal(templateID, *instancePool.TemplateID)
+						a.Equal(expectedUserData, *instancePool.UserData)
 
 						return nil
 					},
@@ -185,17 +186,17 @@ func TestAccResourceInstancePool(t *testing.T) {
 						resInstancePoolAttrAffinityGroupIDs + ".#": ValidateString("1"),
 						resInstancePoolAttrDescription:             ValidateString(testAccResourceInstancePoolDescription),
 						resInstancePoolAttrDiskSize:                ValidateString(fmt.Sprint(testAccResourceInstancePoolDiskSize)),
-						resInstancePoolAttrID:                      validation.ToDiagFunc(validation.IsUUID),
 						resInstancePoolAttrInstancePrefix:          ValidateString(testAccResourceInstancePoolInstancePrefix),
 						resInstancePoolAttrIPv6:                    ValidateString("true"),
 						resInstancePoolAttrName:                    ValidateString(testAccResourceInstancePoolName),
 						resInstancePoolAttrSecurityGroupIDs + ".#": ValidateString("1"),
 						resInstancePoolAttrServiceOffering:         ValidateString(testAccResourceInstancePoolServiceOffering),
 						resInstancePoolAttrSize:                    ValidateString(fmt.Sprint(testAccResourceInstancePoolSize)),
+						resInstancePoolAttrState:                   validation.ToDiagFunc(validation.NoZeroValues),
 						resInstancePoolAttrTemplateID:              validation.ToDiagFunc(validation.IsUUID),
-						resInstancePoolAttrVirtualMachines + ".#":  ValidateString(fmt.Sprint(testAccResourceInstancePoolSize)),
 						resInstancePoolAttrUserData:                ValidateString(testAccResourceInstancePoolUserData),
-						resInstancePoolAttrZone:                    ValidateString(testAccResourceInstancePoolZoneName),
+						resInstancePoolAttrVirtualMachines + ".#":  ValidateString(fmt.Sprint(testAccResourceInstancePoolSize)),
+						resInstancePoolAttrZone:                    ValidateString(testZoneName),
 					})),
 				),
 			},
@@ -215,28 +216,27 @@ func TestAccResourceInstancePool(t *testing.T) {
 							return err
 						}
 
-						a.Len(instancePool.AntiAffinityGroupIDs, 1)
-						a.Empty(instancePool.Description)
-						a.Equal(testAccResourceInstancePoolDiskSizeUpdated, instancePool.DiskSize)
-						a.Equal(defaultInstancePoolInstancePrefix, instancePool.InstancePrefix)
-						a.Len(instancePool.InstanceIDs, int(testAccResourceInstancePoolSizeUpdated))
-						a.Equal(testInstanceTypeIDSmall, instancePool.InstanceTypeID)
-						a.False(instancePool.IPv6Enabled)
-						a.Equal(testAccResourceInstancePoolNameUpdated, instancePool.Name)
-						a.Len(instancePool.PrivateNetworkIDs, 1)
-						a.Equal(testAccResourceInstancePoolSizeUpdated, instancePool.Size)
-						a.Equal(testAccResourceInstancePoolKeyPair, instancePool.SSHKey)
-						a.Equal(templateID, instancePool.TemplateID)
-						a.Equal(expectedUserData, instancePool.UserData)
+						a.Len(*instancePool.AntiAffinityGroupIDs, 1)
+						a.Empty(defaultString(instancePool.Description, ""))
+						a.Equal(testAccResourceInstancePoolDiskSizeUpdated, *instancePool.DiskSize)
+						a.Equal(defaultInstancePoolInstancePrefix, *instancePool.InstancePrefix)
+						a.Len(*instancePool.InstanceIDs, int(testAccResourceInstancePoolSizeUpdated))
+						a.Equal(testInstanceTypeIDSmall, *instancePool.InstanceTypeID)
+						a.False(*instancePool.IPv6Enabled)
+						a.Equal(testAccResourceInstancePoolNameUpdated, *instancePool.Name)
+						a.Len(*instancePool.PrivateNetworkIDs, 1)
+						a.Equal(testAccResourceInstancePoolSizeUpdated, *instancePool.Size)
+						a.Equal(testAccResourceInstancePoolKeyPair, *instancePool.SSHKey)
+						a.Equal(templateID, *instancePool.TemplateID)
+						a.Equal(expectedUserData, *instancePool.UserData)
 
 						return nil
 					},
 					checkResourceState(r, checkResourceStateValidateAttributes(testAttrs{
 						resInstancePoolAttrAffinityGroupIDs + ".#": ValidateString("1"),
-						resInstancePoolAttrDescription:             ValidateString(""),
+						resInstancePoolAttrDescription:             validation.ToDiagFunc(validation.StringIsEmpty),
 						resInstancePoolAttrDiskSize:                ValidateString(fmt.Sprint(testAccResourceInstancePoolDiskSizeUpdated)),
 						resInstancePoolAttrElasticIPIDs + ".#":     ValidateString("1"),
-						resInstancePoolAttrID:                      validation.ToDiagFunc(validation.IsUUID),
 						resInstancePoolAttrInstancePrefix:          ValidateString(defaultInstancePoolInstancePrefix),
 						resInstancePoolAttrIPv6:                    ValidateString("false"),
 						resInstancePoolAttrKeyPair:                 ValidateString(testAccResourceInstancePoolKeyPair),
@@ -244,6 +244,7 @@ func TestAccResourceInstancePool(t *testing.T) {
 						resInstancePoolAttrNetworkIDs + ".#":       ValidateString("1"),
 						resInstancePoolAttrServiceOffering:         ValidateString(testAccResourceInstancePoolServiceOfferingUpdated),
 						resInstancePoolAttrSize:                    ValidateString(fmt.Sprint(testAccResourceInstancePoolSizeUpdated)),
+						resInstancePoolAttrState:                   validation.ToDiagFunc(validation.NoZeroValues),
 						resInstancePoolAttrUserData:                ValidateString(testAccResourceInstancePoolUserDataUpdated),
 					})),
 					resource.TestCheckNoResourceAttr(r, resInstancePoolAttrSecurityGroupIDs+".#"),
@@ -251,18 +252,21 @@ func TestAccResourceInstancePool(t *testing.T) {
 			},
 			{
 				// Import
-				ResourceName:            r,
-				ImportState:             true,
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"state"},
+				ResourceName: r,
+				ImportStateIdFunc: func(instancePool *exov2.InstancePool) resource.ImportStateIdFunc {
+					return func(*terraform.State) (string, error) {
+						return fmt.Sprintf("%s@%s", *instancePool.ID, testZoneName), nil
+					}
+				}(&instancePool),
+				ImportState:       true,
+				ImportStateVerify: true,
 				ImportStateCheck: func(s []*terraform.InstanceState) error {
 					return checkResourceAttributes(
 						testAttrs{
 							resInstancePoolAttrAffinityGroupIDs + ".#": ValidateString("1"),
-							resInstancePoolAttrDescription:             ValidateString(""),
+							resInstancePoolAttrDescription:             validation.ToDiagFunc(validation.StringIsEmpty),
 							resInstancePoolAttrDiskSize:                ValidateString(fmt.Sprint(testAccResourceInstancePoolDiskSizeUpdated)),
 							resInstancePoolAttrElasticIPIDs + ".#":     ValidateString("1"),
-							resInstancePoolAttrID:                      validation.ToDiagFunc(validation.IsUUID),
 							resInstancePoolAttrInstancePrefix:          ValidateString(defaultInstancePoolInstancePrefix),
 							resInstancePoolAttrIPv6:                    ValidateString("false"),
 							resInstancePoolAttrKeyPair:                 ValidateString(testAccResourceInstancePoolKeyPair),
@@ -270,6 +274,7 @@ func TestAccResourceInstancePool(t *testing.T) {
 							resInstancePoolAttrNetworkIDs + ".#":       ValidateString("1"),
 							resInstancePoolAttrServiceOffering:         ValidateString(testAccResourceInstancePoolServiceOfferingUpdated),
 							resInstancePoolAttrSize:                    ValidateString(fmt.Sprint(testAccResourceInstancePoolSizeUpdated)),
+							resInstancePoolAttrState:                   validation.ToDiagFunc(validation.NoZeroValues),
 							resInstancePoolAttrUserData:                ValidateString(testAccResourceInstancePoolUserDataUpdated),
 						},
 						s[0].Attributes)
@@ -291,11 +296,12 @@ func testAccCheckResourceInstancePoolExists(r string, instancePool *exov2.Instan
 		}
 
 		client := GetComputeClient(testAccProvider.Meta())
-
-		res, err := client.Client.GetInstancePool(
+		ctx := exoapi.WithEndpoint(
 			context.Background(),
-			testAccResourceInstancePoolZoneName,
-			rs.Primary.ID)
+			exoapi.NewReqEndpoint(testEnvironment, testZoneName),
+		)
+
+		res, err := client.Client.GetInstancePool(ctx, testZoneName, rs.Primary.ID)
 		if err != nil {
 			return err
 		}
@@ -307,19 +313,18 @@ func testAccCheckResourceInstancePoolExists(r string, instancePool *exov2.Instan
 
 func testAccCheckResourceInstancePoolDestroy(instancePool *exov2.InstancePool) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		ctx := context.Background()
 		client := GetComputeClient(testAccProvider.Meta())
+		ctx := exoapi.WithEndpoint(
+			context.Background(),
+			exoapi.NewReqEndpoint(testEnvironment, testZoneName),
+		)
 
 		// The Exoscale API can be a bit slow to reflect the deletion operation
 		// in the Instance Pool state, so we give it the benefit of the doubt
 		// by retrying a few times before returning an error.
 		return repeat.Repeat(
 			repeat.Fn(func() error {
-				instancePool, err := client.Client.GetInstancePool(
-					ctx,
-					testAccResourceInstancePoolZoneName,
-					instancePool.ID,
-				)
+				instancePool, err := client.Client.GetInstancePool(ctx, testZoneName, *instancePool.ID)
 				if err != nil {
 					if errors.Is(err, exoapi.ErrNotFound) {
 						return nil
@@ -327,7 +332,7 @@ func testAccCheckResourceInstancePoolDestroy(instancePool *exov2.InstancePool) r
 					return err
 				}
 
-				if instancePool.State == "destroying" {
+				if *instancePool.State == "destroying" {
 					return nil
 				}
 
