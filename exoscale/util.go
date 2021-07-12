@@ -10,3 +10,30 @@ func in(list []string, v string) bool {
 
 	return false
 }
+
+// defaultString returns the value of the string pointer v if not nil, otherwise the default value specified.
+func defaultString(v *string, def string) string {
+	if v != nil {
+		return *v
+	}
+
+	return def
+}
+
+// defaultInt64 returns the value of the int64 pointer v if not nil, otherwise the default value specified.
+func defaultInt64(v *int64, def int64) int64 {
+	if v != nil {
+		return *v
+	}
+
+	return def
+}
+
+// defaultBool returns the value of the bool pointer v if not nil, otherwise the default value specified.
+func defaultBool(v *bool, def bool) bool {
+	if v != nil {
+		return *v
+	}
+
+	return def
+}

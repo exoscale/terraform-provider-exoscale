@@ -8,29 +8,96 @@ import (
 	papi "github.com/exoscale/egoscale/v2/internal/public-api"
 )
 
-// PrivateNetwork represents a Private Network.
-type PrivateNetwork struct {
-	Description string
-	EndIP       net.IP
-	ID          string
-	Name        string
-	Netmask     net.IP
-	StartIP     net.IP
+// PrivateNetworkLease represents a managed Private Network lease.
+type PrivateNetworkLease struct {
+	InstanceID *string
+	IPAddress  *net.IP
 }
 
-func privateNetworkFromAPI(p *papi.PrivateNetwork) *PrivateNetwork {
+// PrivateNetwork represents a Private Network.
+type PrivateNetwork struct {
+	Description *string
+	EndIP       *net.IP
+	ID          *string `req-for:"update"`
+	Name        *string `req-for:"create"`
+	Netmask     *net.IP
+	StartIP     *net.IP
+	Leases      []*PrivateNetworkLease
+
+	c    *Client
+	zone string
+}
+
+func privateNetworkFromAPI(client *Client, zone string, p *papi.PrivateNetwork) *PrivateNetwork {
 	return &PrivateNetwork{
-		Description: papi.OptionalString(p.Description),
-		EndIP:       net.ParseIP(papi.OptionalString(p.EndIp)),
-		ID:          *p.Id,
-		Name:        *p.Name,
-		Netmask:     net.ParseIP(papi.OptionalString(p.Netmask)),
-		StartIP:     net.ParseIP(papi.OptionalString(p.StartIp)),
+		Description: p.Description,
+		EndIP: func() (v *net.IP) {
+			if p.EndIp != nil {
+				ip := net.ParseIP(*p.EndIp)
+				v = &ip
+			}
+			return
+		}(),
+		ID:   p.Id,
+		Name: p.Name,
+		Netmask: func() (v *net.IP) {
+			if p.Netmask != nil {
+				ip := net.ParseIP(*p.Netmask)
+				v = &ip
+			}
+			return
+		}(),
+		StartIP: func() (v *net.IP) {
+			if p.StartIp != nil {
+				ip := net.ParseIP(*p.StartIp)
+				v = &ip
+			}
+			return
+		}(),
+		Leases: func() (v []*PrivateNetworkLease) {
+			if p.Leases != nil {
+				v = make([]*PrivateNetworkLease, len(*p.Leases))
+				for i, lease := range *p.Leases {
+					v[i] = &PrivateNetworkLease{
+						InstanceID: lease.InstanceId,
+						IPAddress:  func() *net.IP { ip := net.ParseIP(*lease.Ip); return &ip }(),
+					}
+				}
+			}
+			return
+		}(),
+
+		c:    client,
+		zone: zone,
 	}
 }
 
 func (p PrivateNetwork) get(ctx context.Context, client *Client, zone, id string) (interface{}, error) {
 	return client.GetPrivateNetwork(ctx, zone, id)
+}
+
+// UpdateInstanceIPAddress updates the IP address of a Compute instance attached to the managed Private Network.
+func (p *PrivateNetwork) UpdateInstanceIPAddress(ctx context.Context, instance *Instance, ip net.IP) error {
+	resp, err := p.c.UpdatePrivateNetworkInstanceIpWithResponse(
+		apiv2.WithZone(ctx, p.zone),
+		*p.ID,
+		papi.UpdatePrivateNetworkInstanceIpJSONRequestBody{
+			Instance: papi.Instance{Id: instance.ID},
+			Ip: func() *string {
+				s := ip.String()
+				return &s
+			}(),
+		})
+	if err != nil {
+		return err
+	}
+
+	_, err = papi.NewPoller().
+		WithTimeout(p.c.timeout).
+		WithInterval(p.c.pollInterval).
+		Poll(ctx, p.c.OperationPoller(p.zone, *resp.JSON200.Id))
+
+	return err
 }
 
 // CreatePrivateNetwork creates a Private Network in the specified zone.
@@ -39,15 +106,14 @@ func (c *Client) CreatePrivateNetwork(
 	zone string,
 	privateNetwork *PrivateNetwork,
 ) (*PrivateNetwork, error) {
+	if err := validateOperationParams(privateNetwork, "create"); err != nil {
+		return nil, err
+	}
+
 	resp, err := c.CreatePrivateNetworkWithResponse(
 		apiv2.WithZone(ctx, zone),
 		papi.CreatePrivateNetworkJSONRequestBody{
-			Description: func() *string {
-				if privateNetwork.Description != "" {
-					return &privateNetwork.Description
-				}
-				return nil
-			}(),
+			Description: privateNetwork.Description,
 			EndIp: func() (ip *string) {
 				if privateNetwork.EndIP != nil {
 					v := privateNetwork.EndIP.String()
@@ -55,7 +121,7 @@ func (c *Client) CreatePrivateNetwork(
 				}
 				return
 			}(),
-			Name: privateNetwork.Name,
+			Name: *privateNetwork.Name,
 			Netmask: func() (ip *string) {
 				if privateNetwork.Netmask != nil {
 					v := privateNetwork.Netmask.String()
@@ -97,7 +163,7 @@ func (c *Client) ListPrivateNetworks(ctx context.Context, zone string) ([]*Priva
 
 	if resp.JSON200.PrivateNetworks != nil {
 		for i := range *resp.JSON200.PrivateNetworks {
-			list = append(list, privateNetworkFromAPI(&(*resp.JSON200.PrivateNetworks)[i]))
+			list = append(list, privateNetworkFromAPI(c, zone, &(*resp.JSON200.PrivateNetworks)[i]))
 		}
 	}
 
@@ -111,7 +177,7 @@ func (c *Client) GetPrivateNetwork(ctx context.Context, zone, id string) (*Priva
 		return nil, err
 	}
 
-	return privateNetworkFromAPI(resp.JSON200), nil
+	return privateNetworkFromAPI(c, zone, resp.JSON200), nil
 }
 
 // FindPrivateNetwork attempts to find a Private Network by name or ID in the specified zone.
@@ -124,14 +190,14 @@ func (c *Client) FindPrivateNetwork(ctx context.Context, zone, v string) (*Priva
 
 	var found *PrivateNetwork
 	for _, r := range res {
-		if r.ID == v {
-			return c.GetPrivateNetwork(ctx, zone, r.ID)
+		if *r.ID == v {
+			return c.GetPrivateNetwork(ctx, zone, *r.ID)
 		}
 
 		// Historically, the Exoscale API allowed users to create multiple Private Networks sharing a common name.
 		// This function being expected to return one resource at most, in case the specified identifier is a name
 		// we have to check that there aren't more that one matching result before returning it.
-		if r.Name == v {
+		if *r.Name == v {
 			if found != nil {
 				return nil, apiv2.ErrTooManyFound
 			}
@@ -140,7 +206,7 @@ func (c *Client) FindPrivateNetwork(ctx context.Context, zone, v string) (*Priva
 	}
 
 	if found != nil {
-		return found, nil
+		return c.GetPrivateNetwork(ctx, zone, *found.ID)
 	}
 
 	return nil, apiv2.ErrNotFound
@@ -148,16 +214,15 @@ func (c *Client) FindPrivateNetwork(ctx context.Context, zone, v string) (*Priva
 
 // UpdatePrivateNetwork updates the specified Private Network in the specified zone.
 func (c *Client) UpdatePrivateNetwork(ctx context.Context, zone string, privateNetwork *PrivateNetwork) error {
+	if err := validateOperationParams(privateNetwork, "update"); err != nil {
+		return err
+	}
+
 	resp, err := c.UpdatePrivateNetworkWithResponse(
 		apiv2.WithZone(ctx, zone),
-		privateNetwork.ID,
+		*privateNetwork.ID,
 		papi.UpdatePrivateNetworkJSONRequestBody{
-			Description: func() *string {
-				if privateNetwork.Description != "" {
-					return &privateNetwork.Description
-				}
-				return nil
-			}(),
+			Description: privateNetwork.Description,
 			EndIp: func() (ip *string) {
 				if privateNetwork.EndIP != nil {
 					v := privateNetwork.EndIP.String()
@@ -165,7 +230,7 @@ func (c *Client) UpdatePrivateNetwork(ctx context.Context, zone string, privateN
 				}
 				return
 			}(),
-			Name: &privateNetwork.Name,
+			Name: privateNetwork.Name,
 			Netmask: func() (ip *string) {
 				if privateNetwork.Netmask != nil {
 					v := privateNetwork.Netmask.String()

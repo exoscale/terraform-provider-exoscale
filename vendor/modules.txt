@@ -11,12 +11,14 @@ cloud.google.com/go/storage
 # github.com/agext/levenshtein v1.2.2
 github.com/agext/levenshtein
 # github.com/apparentlymart/go-cidr v1.1.0
+## explicit
 github.com/apparentlymart/go-cidr/cidr
 # github.com/apparentlymart/go-textseg/v12 v12.0.0
 github.com/apparentlymart/go-textseg/v12/textseg
 # github.com/apparentlymart/go-textseg/v13 v13.0.0
 github.com/apparentlymart/go-textseg/v13/textseg
 # github.com/aws/aws-sdk-go v1.37.0
+## explicit
 github.com/aws/aws-sdk-go/aws
 github.com/aws/aws-sdk-go/aws/arn
 github.com/aws/aws-sdk-go/aws/awserr
@@ -73,7 +75,8 @@ github.com/davecgh/go-spew/spew
 # github.com/deepmap/oapi-codegen v1.6.1
 github.com/deepmap/oapi-codegen/pkg/runtime
 github.com/deepmap/oapi-codegen/pkg/types
-# github.com/exoscale/egoscale v0.56.0
+# github.com/exoscale/egoscale v0.62.2
+## explicit
 github.com/exoscale/egoscale
 github.com/exoscale/egoscale/v2
 github.com/exoscale/egoscale/v2/api
@@ -82,6 +85,7 @@ github.com/exoscale/egoscale/version
 # github.com/fatih/color v1.7.0
 github.com/fatih/color
 # github.com/gofrs/uuid v4.0.0+incompatible
+## explicit
 github.com/gofrs/uuid
 # github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e
 github.com/golang/groupcache/lru
@@ -97,13 +101,17 @@ github.com/golang/protobuf/ptypes/empty
 github.com/golang/protobuf/ptypes/timestamp
 # github.com/googleapis/gax-go/v2 v2.0.5
 github.com/googleapis/gax-go/v2
+# github.com/gopherjs/gopherjs v0.0.0-20190430165422-3e4dfb77656c
+## explicit
 # github.com/hashicorp/errwrap v1.0.0
 github.com/hashicorp/errwrap
 # github.com/hashicorp/go-checkpoint v0.5.0
 github.com/hashicorp/go-checkpoint
 # github.com/hashicorp/go-cleanhttp v0.5.2
+## explicit
 github.com/hashicorp/go-cleanhttp
 # github.com/hashicorp/go-cty v1.4.1-0.20200414143053-d3edf31b6320
+## explicit
 github.com/hashicorp/go-cty/cty
 github.com/hashicorp/go-cty/cty/convert
 github.com/hashicorp/go-cty/cty/gocty
@@ -127,6 +135,7 @@ github.com/hashicorp/go-uuid
 # github.com/hashicorp/go-version v1.3.0
 github.com/hashicorp/go-version
 # github.com/hashicorp/hcl/v2 v2.8.2
+## explicit
 github.com/hashicorp/hcl/v2
 github.com/hashicorp/hcl/v2/ext/customdecode
 github.com/hashicorp/hcl/v2/hclsyntax
@@ -151,6 +160,7 @@ github.com/hashicorp/terraform-plugin-go/tfprotov6/internal/toproto
 github.com/hashicorp/terraform-plugin-go/tfprotov6/server
 github.com/hashicorp/terraform-plugin-go/tftypes
 # github.com/hashicorp/terraform-plugin-sdk/v2 v2.7.0
+## explicit
 github.com/hashicorp/terraform-plugin-sdk/v2/diag
 github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest
 github.com/hashicorp/terraform-plugin-sdk/v2/helper/logging
@@ -172,6 +182,7 @@ github.com/hashicorp/terraform-plugin-sdk/v2/terraform
 # github.com/hashicorp/yamux v0.0.0-20181012175058-2f1d1f20f75d
 github.com/hashicorp/yamux
 # github.com/jarcoal/httpmock v1.0.8
+## explicit
 github.com/jarcoal/httpmock
 github.com/jarcoal/httpmock/internal
 # github.com/jmespath/go-jmespath v0.4.0
@@ -180,6 +191,8 @@ github.com/jmespath/go-jmespath
 github.com/jstemmer/go-junit-report
 github.com/jstemmer/go-junit-report/formatter
 github.com/jstemmer/go-junit-report/parser
+# github.com/jtolds/gls v4.2.1+incompatible
+## explicit
 # github.com/klauspost/compress v1.11.2
 github.com/klauspost/compress/fse
 github.com/klauspost/compress/huff0
@@ -208,11 +221,17 @@ github.com/oklog/run
 github.com/pkg/errors
 # github.com/pmezard/go-difflib v1.0.0
 github.com/pmezard/go-difflib/difflib
+# github.com/smartystreets/assertions v0.0.0-20180927180507-b2de0cb4f26d
+## explicit
+# github.com/smartystreets/goconvey v0.0.0-20180222194500-ef6db91d284a
+## explicit
 # github.com/ssgreg/repeat v1.5.1
+## explicit
 github.com/ssgreg/repeat
 # github.com/stretchr/objx v0.3.0
 github.com/stretchr/objx
 # github.com/stretchr/testify v1.7.0
+## explicit
 github.com/stretchr/testify/assert
 github.com/stretchr/testify/mock
 github.com/stretchr/testify/require
@@ -297,6 +316,7 @@ golang.org/x/text/transform
 golang.org/x/text/unicode/bidi
 golang.org/x/text/unicode/norm
 # golang.org/x/tools v0.0.0-20201028111035-eafbe7b904eb
+## explicit
 golang.org/x/tools/cmd/goimports
 golang.org/x/tools/go/ast/astutil
 golang.org/x/tools/go/gcexportdata
@@ -313,6 +333,7 @@ golang.org/x/tools/internal/imports
 golang.org/x/xerrors
 golang.org/x/xerrors/internal
 # google.golang.org/api v0.34.0
+## explicit
 google.golang.org/api/googleapi
 google.golang.org/api/googleapi/transport
 google.golang.org/api/internal
@@ -429,6 +450,7 @@ google.golang.org/protobuf/types/known/emptypb
 google.golang.org/protobuf/types/known/timestamppb
 google.golang.org/protobuf/types/pluginpb
 # gopkg.in/ini.v1 v1.48.0
+## explicit
 gopkg.in/ini.v1
 # gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 gopkg.in/yaml.v3

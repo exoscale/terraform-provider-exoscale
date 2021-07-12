@@ -1,6 +1,52 @@
 Changelog
 =========
 
+0.62.2
+------
+
+- v2: fix a crash in `NetworkLoadBalancer.AddService()` method
+
+0.62.1
+------
+
+- fix: v2: fix required params validation for NLB services
+
+0.62.0
+------
+
+- feature: v2: add support for Private Networks leases
+
+0.61.0
+------
+
+- feature: v2: add `PrivateNetwork.UpdateInstanceIPAddress()` method
+- feature: v2: add `Instance.Reboot()` method
+
+0.60.1
+------
+
+- fix: v2: don't return pointers to empty maps/slices
+
+0.60.0
+------
+
+- change: v2: API resource structs fields are now pointers instead of concrete types
+
+0.59.0
+------
+
+- change: v2: `Database*` structs fields are now pointers
+
+0.58.0
+------
+
+- feature: v2: add labels support for Compute instances
+
+0.57.0
+------
+
+- feature: v2: add support for Database Services
+
 0.56.0
 ------
 

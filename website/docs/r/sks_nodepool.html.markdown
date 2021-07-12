@@ -93,10 +93,10 @@ In addition to the arguments listed above, the following attributes are exported
 
 ## Import
 
-An existing SKS Nodepool can be imported as a resource by ID:
+An existing SKS Nodepool can be imported as a resource by `<CLUSTER-ID>/<NODEPOOL-ID>@<ZONE>`:
 
 ```console
-$ terraform import exoscale_sks_nodepool.ci-builders eb556678-ec59-4be6-8c54-0406ae0f6da6
+$ terraform import exoscale_sks_nodepool.ci-builders eb556678-ec59-4be6-8c54-0406ae0f6da6/8c08b92a-e673-47c7-866e-dc009f620a82@de-fra-1
 ```
 
 

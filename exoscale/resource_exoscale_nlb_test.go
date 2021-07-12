@@ -12,26 +12,24 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/stretchr/testify/require"
 )
 
 var (
-	testAccResourceNLBZoneName = testZoneName
-
 	testAccResourceNLBInstancePoolName       = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceNLBInstancePoolTemplateID = testInstanceTemplateID
 
-	testAccResourceNLBName               = acctest.RandomWithPrefix(testPrefix)
-	testAccResourceNLBNameUpdated        = testAccResourceNLBName + "-updated"
-	testAccResourceNLBDescription        = testDescription
-	testAccResourceNLBDescriptionUpdated = testDescription + "-updated"
+	testAccResourceNLBName        = acctest.RandomWithPrefix(testPrefix)
+	testAccResourceNLBNameUpdated = testAccResourceNLBName + "-updated"
+	testAccResourceNLBDescription = acctest.RandString(10)
 
 	testAccResourceNLBConfigCreate = fmt.Sprintf(`
-variable "zone" {
-  default = "%s"
+locals {
+  zone = "%s"
 }
 
-resource "exoscale_instance_pool" "pool" {
-  zone = var.zone
+resource "exoscale_instance_pool" "test" {
+  zone = local.zone
   name = "%s"
   template_id = "%s"
   service_offering = "medium"
@@ -43,22 +41,21 @@ resource "exoscale_instance_pool" "pool" {
   }
 }
 
-resource "exoscale_nlb" "nlb" {
+resource "exoscale_nlb" "test" {
   name = "%s"
   description = "%s"
-  zone = var.zone
+  zone = local.zone
 
   timeouts {
     delete = "10m"
   }
 }
 
-resource "exoscale_nlb_service" "service" {
-  zone = var.zone
+resource "exoscale_nlb_service" "test" {
+  zone = local.zone
   name = "%s"
-  description = "test"
-  nlb_id = exoscale_nlb.nlb.id
-  instance_pool_id = exoscale_instance_pool.pool.id
+  nlb_id = exoscale_nlb.test.id
+  instance_pool_id = exoscale_instance_pool.test.id
   protocol = "tcp"
   port = 80
   target_port = 80
@@ -78,7 +75,7 @@ resource "exoscale_nlb_service" "service" {
   }
 }
 `,
-		testAccResourceNLBZoneName,
+		testZoneName,
 		testAccResourceNLBInstancePoolName,
 		testAccResourceNLBInstancePoolTemplateID,
 		testAccResourceNLBName,
@@ -87,12 +84,12 @@ resource "exoscale_nlb_service" "service" {
 	)
 
 	testAccResourceNLBConfigUpdate = fmt.Sprintf(`
-variable "zone" {
-  default = "%s"
+locals {
+  zone = "%s"
 }
 
-resource "exoscale_instance_pool" "pool" {
-  zone = var.zone
+resource "exoscale_instance_pool" "test" {
+  zone = local.zone
   name = "%s"
   template_id = "%s"
   service_offering = "medium"
@@ -104,22 +101,21 @@ resource "exoscale_instance_pool" "pool" {
   }
 }
 
-resource "exoscale_nlb" "nlb" {
+resource "exoscale_nlb" "test" {
   name = "%s"
-  description = "%s"
-  zone = var.zone
+  description = ""
+  zone = local.zone
 
   timeouts {
     delete = "10m"
   }
 }
 
-resource "exoscale_nlb_service" "service" {
-  zone = var.zone
+resource "exoscale_nlb_service" "test" {
+  zone = local.zone
   name = "%s"
-  description = "test"
-  nlb_id = exoscale_nlb.nlb.id
-  instance_pool_id = exoscale_instance_pool.pool.id
+  nlb_id = exoscale_nlb.test.id
+  instance_pool_id = exoscale_instance_pool.test.id
   protocol = "tcp"
   port = 80
   target_port = 80
@@ -139,85 +135,110 @@ resource "exoscale_nlb_service" "service" {
   }
 }
 `,
-		testAccResourceNLBZoneName,
+		testZoneName,
 		testAccResourceNLBInstancePoolName,
 		testAccResourceNLBInstancePoolTemplateID,
 		testAccResourceNLBNameUpdated,
-		testAccResourceNLBDescriptionUpdated,
 		testAccResourceNLBName,
 	)
 )
 
 func TestAccResourceNLB(t *testing.T) {
-	nlb := new(exov2.NetworkLoadBalancer)
+	var (
+		r   = "exoscale_nlb.test"
+		nlb exov2.NetworkLoadBalancer
+	)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviders,
-		CheckDestroy:      testAccCheckResourceNLBDestroy,
+		CheckDestroy:      testAccCheckResourceNLBDestroy(&nlb),
 		Steps: []resource.TestStep{
 			{
+				// Create
 				Config: testAccResourceNLBConfigCreate,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckResourceNLBExists("exoscale_nlb.nlb", nlb),
-					testAccCheckResourceNLB(nlb),
-					testAccCheckResourceNLBAttributes(testAttrs{
-						"zone":        ValidateString(testAccResourceNLBZoneName),
-						"name":        ValidateString(testAccResourceNLBName),
-						"description": ValidateString(testAccResourceNLBDescription),
-						"created_at":  validation.ToDiagFunc(validation.NoZeroValues),
-						"ip_address":  validation.ToDiagFunc(validation.IsIPv4Address),
-						"state":       validation.ToDiagFunc(validation.NoZeroValues),
-					}),
+					testAccCheckResourceNLBExists(r, &nlb),
+					func(s *terraform.State) error {
+						a := require.New(t)
+
+						a.Equal(testAccResourceNLBDescription, *nlb.Description)
+						a.Equal(testAccResourceNLBName, *nlb.Name)
+						a.Len(nlb.Services, 1)
+
+						return nil
+					},
+					checkResourceState(r, checkResourceStateValidateAttributes(testAttrs{
+						resNLBAttrCreatedAt:   validation.ToDiagFunc(validation.NoZeroValues),
+						resNLBAttrDescription: ValidateString(testAccResourceNLBDescription),
+						resNLBAttrIPAddress:   validation.ToDiagFunc(validation.IsIPv4Address),
+						resNLBAttrName:        ValidateString(testAccResourceNLBName),
+						resNLBAttrState:       validation.ToDiagFunc(validation.NoZeroValues),
+						resNLBAttrZone:        ValidateString(testZoneName),
+
+						// Note: can't test the resNLBAttrServices attribute yet, as the
+						// exoscale_nlb_service resource is created after the exoscale_nlb
+						// being tested here: the return of resourceNLBRead() doesn't include
+						// the up-to-date list of services.
+					})),
 				),
 			},
 			{
+				// Update
 				Config: testAccResourceNLBConfigUpdate,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckResourceNLBExists("exoscale_nlb.nlb", nlb),
-					testAccCheckResourceNLB(nlb),
-					testAccCheckResourceNLBAttributes(testAttrs{
-						"zone":        ValidateString(testAccResourceNLBZoneName),
-						"name":        ValidateString(testAccResourceNLBNameUpdated),
-						"description": ValidateString(testAccResourceNLBDescriptionUpdated),
-						"created_at":  validation.ToDiagFunc(validation.NoZeroValues),
-						"ip_address":  validation.ToDiagFunc(validation.IsIPv4Address),
-						"state":       validation.ToDiagFunc(validation.NoZeroValues),
-					}),
+					testAccCheckResourceNLBExists(r, &nlb),
+					func(s *terraform.State) error {
+						a := require.New(t)
+
+						a.Empty(defaultString(nlb.Description, ""))
+						a.Equal(testAccResourceNLBNameUpdated, *nlb.Name)
+						a.Len(nlb.Services, 1)
+
+						return nil
+					},
+					checkResourceState(r, checkResourceStateValidateAttributes(testAttrs{
+						resNLBAttrCreatedAt:       validation.ToDiagFunc(validation.NoZeroValues),
+						resNLBAttrDescription:     validation.ToDiagFunc(validation.StringIsEmpty),
+						resNLBAttrIPAddress:       validation.ToDiagFunc(validation.IsIPv4Address),
+						resNLBAttrName:            ValidateString(testAccResourceNLBNameUpdated),
+						resNLBAttrServices + ".#": ValidateString("1"),
+						resNLBAttrState:           validation.ToDiagFunc(validation.NoZeroValues),
+						resNLBAttrZone:            ValidateString(testZoneName),
+					})),
 				),
 			},
 			{
-				ResourceName:            "exoscale_nlb.nlb",
-				ImportState:             true,
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"state"},
-				ImportStateCheck: composeImportStateCheckFunc(
-					testAccCheckResourceImportedAttributes(
-						"exoscale_nlb",
+				// Import
+				ResourceName: r,
+				ImportStateIdFunc: func(nlb *exov2.NetworkLoadBalancer) resource.ImportStateIdFunc {
+					return func(*terraform.State) (string, error) {
+						return fmt.Sprintf("%s@%s", *nlb.ID, testZoneName), nil
+					}
+				}(&nlb),
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateCheck: func(s []*terraform.InstanceState) error {
+					return checkResourceAttributes(
 						testAttrs{
-							"zone":        ValidateString(testAccResourceNLBZoneName),
-							"name":        ValidateString(testAccResourceNLBNameUpdated),
-							"description": ValidateString(testAccResourceNLBDescriptionUpdated),
-							"created_at":  validation.ToDiagFunc(validation.NoZeroValues),
-							"ip_address":  validation.ToDiagFunc(validation.IsIPv4Address),
-							"state":       validation.ToDiagFunc(validation.NoZeroValues),
+							resNLBAttrCreatedAt:       validation.ToDiagFunc(validation.NoZeroValues),
+							resNLBAttrDescription:     validation.ToDiagFunc(validation.StringIsEmpty),
+							resNLBAttrIPAddress:       validation.ToDiagFunc(validation.IsIPv4Address),
+							resNLBAttrName:            ValidateString(testAccResourceNLBNameUpdated),
+							resNLBAttrServices + ".#": ValidateString("1"),
+							resNLBAttrState:           validation.ToDiagFunc(validation.NoZeroValues),
+							resNLBAttrZone:            ValidateString(testZoneName),
 						},
-					),
-					testAccCheckResourceImportedAttributes(
-						"exoscale_nlb_service",
-						testAttrs{
-							"name": ValidateString(testAccResourceNLBName),
-						},
-					),
-				),
+						s[0].Attributes)
+				},
 			},
 		},
 	})
 }
 
-func testAccCheckResourceNLBExists(n string, nlb *exov2.NetworkLoadBalancer) resource.TestCheckFunc {
+func testAccCheckResourceNLBExists(r string, nlb *exov2.NetworkLoadBalancer) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		rs, ok := s.RootModule().Resources[n]
+		rs, ok := s.RootModule().Resources[r]
 		if !ok {
 			return errors.New("resource not found in the state")
 		}
@@ -227,61 +248,30 @@ func testAccCheckResourceNLBExists(n string, nlb *exov2.NetworkLoadBalancer) res
 		}
 
 		client := GetComputeClient(testAccProvider.Meta())
-
 		ctx := exoapi.WithEndpoint(
 			context.Background(),
-			exoapi.NewReqEndpoint(testEnvironment, testAccResourceNLBZoneName),
+			exoapi.NewReqEndpoint(testEnvironment, testZoneName),
 		)
-		r, err := client.GetNetworkLoadBalancer(ctx, testAccResourceNLBZoneName, rs.Primary.ID)
+
+		res, err := client.Client.GetNetworkLoadBalancer(ctx, testZoneName, rs.Primary.ID)
 		if err != nil {
 			return err
 		}
 
-		return Copy(nlb, r)
-	}
-}
-
-func testAccCheckResourceNLB(nlb *exov2.NetworkLoadBalancer) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		if nlb.ID == "" {
-			return errors.New("network load balancer ID is empty")
-		}
-
+		*nlb = *res
 		return nil
 	}
 }
 
-func testAccCheckResourceNLBAttributes(expected testAttrs) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		for _, rs := range s.RootModule().Resources {
-			if rs.Type != "exoscale_nlb" {
-				continue
-			}
-
-			return checkResourceAttributes(expected, rs.Primary.Attributes)
-		}
-
-		return errors.New("resource not found in the state")
-	}
-}
-
-func testAccCheckResourceNLBDestroy(s *terraform.State) error {
-	client := GetComputeClient(testAccProvider.Meta())
-
-	for _, rs := range s.RootModule().Resources {
-		if rs.Type != "exoscale_nlb" {
-			continue
-		}
-
+func testAccCheckResourceNLBDestroy(nlb *exov2.NetworkLoadBalancer) resource.TestCheckFunc {
+	return func(_ *terraform.State) error {
+		client := GetComputeClient(testAccProvider.Meta())
 		ctx := exoapi.WithEndpoint(
 			context.Background(),
-			exoapi.NewReqEndpoint(testEnvironment, testAccResourceNLBZoneName),
+			exoapi.NewReqEndpoint(testEnvironment, testZoneName),
 		)
-		_, err := client.GetNetworkLoadBalancer(
-			ctx,
-			testAccResourceNLBZoneName,
-			rs.Primary.ID,
-		)
+
+		_, err := client.GetNetworkLoadBalancer(ctx, testZoneName, *nlb.ID)
 		if err != nil {
 			if errors.Is(err, exoapi.ErrNotFound) {
 				return nil
@@ -289,7 +279,7 @@ func testAccCheckResourceNLBDestroy(s *terraform.State) error {
 
 			return err
 		}
-	}
 
-	return errors.New("network load balancer still exists")
+		return errors.New("Network Load Balancer still exists")
+	}
 }

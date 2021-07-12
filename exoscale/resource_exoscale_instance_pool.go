@@ -10,6 +10,7 @@ import (
 	"github.com/exoscale/egoscale"
 	exov2 "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -22,7 +23,6 @@ const (
 	resInstancePoolAttrDescription      = "description"
 	resInstancePoolAttrDiskSize         = "disk_size"
 	resInstancePoolAttrElasticIPIDs     = "elastic_ip_ids"
-	resInstancePoolAttrID               = "id"
 	resInstancePoolAttrInstancePrefix   = "instance_prefix"
 	resInstancePoolAttrIPv6             = "ipv6"
 	resInstancePoolAttrKeyPair          = "key_pair"
@@ -107,7 +107,6 @@ func resourceInstancePool() *schema.Resource {
 				if strings.ContainsAny(v, "ABCDEFGHIJKLMNOPQRSTUVWXYZ") {
 					errs = append(errs, fmt.Errorf("%q must be lowercase, got: %q", key, v))
 				}
-
 				return
 			},
 		},
@@ -146,14 +145,13 @@ func resourceInstancePool() *schema.Resource {
 	return &schema.Resource{
 		Schema: s,
 
-		Create: resourceInstancePoolCreate,
-		Read:   resourceInstancePoolRead,
-		Update: resourceInstancePoolUpdate,
-		Delete: resourceInstancePoolDelete,
-		Exists: resourceInstancePoolExists,
+		CreateContext: resourceInstancePoolCreate,
+		ReadContext:   resourceInstancePoolRead,
+		UpdateContext: resourceInstancePoolUpdate,
+		DeleteContext: resourceInstancePoolDelete,
 
 		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
+			StateContext: zonedStateContextFunc,
 		},
 
 		Timeouts: &schema.ResourceTimeout{
@@ -165,86 +163,126 @@ func resourceInstancePool() *schema.Resource {
 	}
 }
 
-func resourceInstancePoolCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceInstancePoolCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	log.Printf("[DEBUG] %s: beginning create", resourceInstancePoolIDString(d))
 
 	zone := d.Get(resInstancePoolAttrZone).(string)
 
-	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutCreate))
+	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutCreate))
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
 	client := GetComputeClient(meta)
 
-	instancePool := &exov2.InstancePool{
-		DeployTargetID: d.Get(resInstancePoolAttrDeployTargetID).(string),
-		Description:    d.Get(resInstancePoolAttrDescription).(string),
-		DiskSize:       int64(d.Get(resInstancePoolAttrDiskSize).(int)),
-		Name:           d.Get(resInstancePoolAttrName).(string),
-		InstancePrefix: d.Get(resInstancePoolAttrInstancePrefix).(string),
-		SSHKey:         d.Get(resInstancePoolAttrKeyPair).(string),
-		Size:           int64(d.Get(resInstancePoolAttrSize).(int)),
-		TemplateID:     d.Get(resInstancePoolAttrTemplateID).(string),
+	instancePool := new(exov2.InstancePool)
+
+	if v, ok := d.GetOk(resInstancePoolAttrDeployTargetID); ok {
+		s := v.(string)
+		instancePool.DeployTargetID = &s
 	}
 
-	resp, err := client.GetWithContext(ctx, &egoscale.ServiceOffering{
-		Name: d.Get(resInstancePoolAttrServiceOffering).(string),
-	})
-	if err != nil {
-		return err
+	if v, ok := d.GetOk(resInstancePoolAttrDescription); ok {
+		s := v.(string)
+		instancePool.Description = &s
 	}
-	instancePool.InstanceTypeID = resp.(*egoscale.ServiceOffering).ID.String()
+
+	if v, ok := d.GetOk(resInstancePoolAttrDiskSize); ok {
+		i := int64(v.(int))
+		instancePool.DiskSize = &i
+	}
+
+	if v, ok := d.GetOk(resInstancePoolAttrName); ok {
+		s := v.(string)
+		instancePool.Name = &s
+	}
+
+	if v, ok := d.GetOk(resInstancePoolAttrInstancePrefix); ok {
+		s := v.(string)
+		instancePool.InstancePrefix = &s
+	}
+
+	if v, ok := d.GetOk(resInstancePoolAttrKeyPair); ok {
+		s := v.(string)
+		instancePool.SSHKey = &s
+	}
+
+	if v, ok := d.GetOk(resInstancePoolAttrSize); ok {
+		i := int64(v.(int))
+		instancePool.Size = &i
+	}
+
+	if v, ok := d.GetOk(resInstancePoolAttrTemplateID); ok {
+		s := v.(string)
+		instancePool.TemplateID = &s
+	}
+
+	instanceType, err := client.FindInstanceType(ctx, zone, d.Get(resInstancePoolAttrServiceOffering).(string))
+	if err != nil {
+		return diag.Errorf("error retrieving instance type: %s", err)
+	}
+	instancePool.InstanceTypeID = instanceType.ID
 
 	if set, ok := d.Get(resInstancePoolAttrAffinityGroupIDs).(*schema.Set); ok {
-		instancePool.AntiAffinityGroupIDs = func() []string {
-			list := make([]string, set.Len())
-			for i, v := range set.List() {
-				list[i] = v.(string)
+		instancePool.AntiAffinityGroupIDs = func() (v *[]string) {
+			if l := set.Len(); l > 0 {
+				list := make([]string, l)
+				for i, v := range set.List() {
+					list[i] = v.(string)
+				}
+				v = &list
 			}
-			return list
+			return
 		}()
 	}
 
 	if set, ok := d.Get(resInstancePoolAttrSecurityGroupIDs).(*schema.Set); ok {
-		instancePool.SecurityGroupIDs = func() []string {
-			list := make([]string, set.Len())
-			for i, v := range set.List() {
-				list[i] = v.(string)
+		instancePool.SecurityGroupIDs = func() (v *[]string) {
+			if l := set.Len(); l > 0 {
+				list := make([]string, l)
+				for i, v := range set.List() {
+					list[i] = v.(string)
+				}
+				v = &list
 			}
-			return list
+			return
 		}()
 	}
 
 	if set, ok := d.Get(resInstancePoolAttrNetworkIDs).(*schema.Set); ok {
-		instancePool.PrivateNetworkIDs = func() []string {
-			list := make([]string, set.Len())
-			for i, v := range set.List() {
-				list[i] = v.(string)
+		instancePool.PrivateNetworkIDs = func() (v *[]string) {
+			if l := set.Len(); l > 0 {
+				list := make([]string, l)
+				for i, v := range set.List() {
+					list[i] = v.(string)
+				}
+				v = &list
 			}
-			return list
+			return
 		}()
 	}
 
 	if set, ok := d.Get(resInstancePoolAttrElasticIPIDs).(*schema.Set); ok {
-		instancePool.ElasticIPIDs = func() []string {
-			list := make([]string, set.Len())
-			for i, v := range set.List() {
-				list[i] = v.(string)
+		instancePool.ElasticIPIDs = func() (v *[]string) {
+			if l := set.Len(); l > 0 {
+				list := make([]string, l)
+				for i, v := range set.List() {
+					list[i] = v.(string)
+				}
+				v = &list
 			}
-			return list
+			return
 		}()
 	}
 
-	if enableIPv6 := d.Get(resInstancePoolAttrIPv6).(bool); enableIPv6 {
-		instancePool.IPv6Enabled = true
-	}
+	enableIPv6 := d.Get(resInstancePoolAttrIPv6).(bool)
+	instancePool.IPv6Enabled = &enableIPv6
 
 	if v := d.Get(resInstancePoolAttrUserData).(string); v != "" {
 		userData, err := encodeUserData(v)
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
-		instancePool.UserData = userData
+		instancePool.UserData = &userData
 	}
 
 	// FIXME: we have to reference the embedded egoscale/v2.Client explicitly
@@ -253,28 +291,34 @@ func resourceInstancePoolCreate(d *schema.ResourceData, meta interface{}) error 
 	//  use API V2-only calls.
 	instancePool, err = client.Client.CreateInstancePool(ctx, zone, instancePool)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
-	d.SetId(instancePool.ID)
+	d.SetId(*instancePool.ID)
 
 	log.Printf("[DEBUG] %s: create finished successfully", resourceInstancePoolIDString(d))
 
-	return resourceInstancePoolRead(d, meta)
+	return resourceInstancePoolRead(ctx, d, meta)
 }
 
-func resourceInstancePoolRead(d *schema.ResourceData, meta interface{}) error {
+func resourceInstancePoolRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	log.Printf("[DEBUG] %s: beginning read", resourceInstancePoolIDString(d))
 
-	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
+	zone := d.Get(resInstancePoolAttrZone).(string)
+
+	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
-	instancePool, err := findInstancePool(ctx, d, meta)
-	if err != nil {
-		return err
-	}
+	client := GetComputeClient(meta)
 
-	if instancePool == nil {
-		return fmt.Errorf("Instance Pool %q not found", d.Id())
+	instancePool, err := client.GetInstancePool(ctx, zone, d.Id())
+	if err != nil {
+		if errors.Is(err, exoapi.ErrNotFound) {
+			// Resource doesn't exist anymore, signaling the core to remove it from the state.
+			d.SetId("")
+			return nil
+		}
+		return diag.FromErr(err)
 	}
 
 	log.Printf("[DEBUG] %s: read finished successfully", resourceInstancePoolIDString(d))
@@ -282,225 +326,161 @@ func resourceInstancePoolRead(d *schema.ResourceData, meta interface{}) error {
 	return resourceInstancePoolApply(ctx, GetComputeClient(meta), d, instancePool)
 }
 
-func resourceInstancePoolExists(d *schema.ResourceData, meta interface{}) (bool, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
-	defer cancel()
-
-	instancePool, err := findInstancePool(ctx, d, meta)
-	if err != nil {
-		if errors.Is(err, exoapi.ErrNotFound) {
-			return false, nil
-		}
-		return false, err
-	}
-
-	if instancePool == nil {
-		return false, nil
-	}
-
-	return true, nil
-}
-
-func resourceInstancePoolUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceInstancePoolUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	log.Printf("[DEBUG] %s: beginning update", resourceInstancePoolIDString(d))
 
 	zone := d.Get(resInstancePoolAttrZone).(string)
 
-	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutUpdate))
+	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutUpdate))
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
 	client := GetComputeClient(meta)
 
-	instancePool, err := findInstancePool(ctx, d, meta)
+	instancePool, err := client.GetInstancePool(ctx, zone, d.Id())
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
-	if instancePool == nil {
-		return fmt.Errorf("Instance Pool %q not found", d.Id())
-	}
-
-	var (
-		updated     bool
-		resetFields = make([]interface{}, 0)
-	)
+	var updated bool
 
 	if d.HasChange(resInstancePoolAttrAffinityGroupIDs) {
 		set := d.Get(resInstancePoolAttrAffinityGroupIDs).(*schema.Set)
-		if set.Len() == 0 {
-			instancePool.AntiAffinityGroupIDs = nil
-			resetFields = append(resetFields, &instancePool.AntiAffinityGroupIDs)
-		} else {
-			instancePool.AntiAffinityGroupIDs = func() []string {
-				list := make([]string, set.Len())
-				for i, v := range set.List() {
-					list[i] = v.(string)
-				}
-				return list
-			}()
-			updated = true
-		}
+		instancePool.AntiAffinityGroupIDs = func() *[]string {
+			list := make([]string, set.Len())
+			for i, v := range set.List() {
+				list[i] = v.(string)
+			}
+			return &list
+		}()
+		updated = true
 	}
 
 	if d.HasChange(resInstancePoolAttrDeployTargetID) {
-		if v := d.Get(resInstancePoolAttrDeployTargetID).(string); v == "" {
-			instancePool.DeployTargetID = ""
-			resetFields = append(resetFields, &instancePool.DeployTargetID)
-		} else {
-			instancePool.DeployTargetID = d.Get(resInstancePoolAttrDeployTargetID).(string)
-			updated = true
-		}
+		v := d.Get(resInstancePoolAttrDeployTargetID).(string)
+		instancePool.DeployTargetID = &v
+		updated = true
 	}
 
 	if d.HasChange(resInstancePoolAttrDescription) {
-		if v := d.Get(resInstancePoolAttrDescription).(string); v == "" {
-			instancePool.Description = ""
-			resetFields = append(resetFields, &instancePool.Description)
-		} else {
-			instancePool.Description = d.Get(resInstancePoolAttrDescription).(string)
-			updated = true
-		}
+		v := d.Get(resInstancePoolAttrDescription).(string)
+		instancePool.Description = &v
+		updated = true
 	}
 
 	if d.HasChange(resInstancePoolAttrDiskSize) {
-		instancePool.DiskSize = int64(d.Get(resInstancePoolAttrDiskSize).(int))
+		v := int64(d.Get(resInstancePoolAttrDiskSize).(int))
+		instancePool.DiskSize = &v
 		updated = true
 	}
 
 	if d.HasChange(resInstancePoolAttrElasticIPIDs) {
 		set := d.Get(resInstancePoolAttrElasticIPIDs).(*schema.Set)
-		if set.Len() == 0 {
-			resetFields = append(resetFields, &instancePool.ElasticIPIDs)
-		} else {
-			instancePool.ElasticIPIDs = func() []string {
-				list := make([]string, set.Len())
-				for i, v := range set.List() {
-					list[i] = v.(string)
-				}
-				return list
-			}()
-			updated = true
-		}
+		instancePool.ElasticIPIDs = func() *[]string {
+			list := make([]string, set.Len())
+			for i, v := range set.List() {
+				list[i] = v.(string)
+			}
+			return &list
+		}()
+		updated = true
 	}
 
 	if d.HasChange(resInstancePoolAttrInstancePrefix) {
-		instancePool.InstancePrefix = d.Get(resInstancePoolAttrInstancePrefix).(string)
+		v := d.Get(resInstancePoolAttrInstancePrefix).(string)
+		instancePool.InstancePrefix = &v
 		updated = true
 	}
 
 	if d.HasChange(resInstancePoolAttrIPv6) {
-		if enableIPv6 := d.Get("ipv6").(bool); !enableIPv6 {
-			instancePool.IPv6Enabled = false
-			resetFields = append(resetFields, &instancePool.IPv6Enabled)
-		} else {
-			instancePool.IPv6Enabled = true
-			updated = true
-		}
+		v := d.Get(resInstancePoolAttrIPv6).(bool)
+		instancePool.IPv6Enabled = &v
+		updated = true
 	}
 
 	if d.HasChange(resInstancePoolAttrKeyPair) {
-		if v := d.Get(resInstancePoolAttrKeyPair).(string); v == "" {
-			instancePool.SSHKey = ""
-			resetFields = append(resetFields, &instancePool.SSHKey)
-		} else {
-			instancePool.SSHKey = d.Get(resInstancePoolAttrKeyPair).(string)
-			updated = true
-		}
+		v := d.Get(resInstancePoolAttrKeyPair).(string)
+		instancePool.SSHKey = &v
+		updated = true
 	}
 
 	if d.HasChange(resInstancePoolAttrName) {
-		instancePool.Name = d.Get(resInstancePoolAttrName).(string)
+		v := d.Get(resInstancePoolAttrName).(string)
+		instancePool.Name = &v
 		updated = true
 	}
 
 	if d.HasChange(resInstancePoolAttrNetworkIDs) {
 		set := d.Get(resInstancePoolAttrNetworkIDs).(*schema.Set)
-		if set.Len() == 0 {
-			instancePool.PrivateNetworkIDs = nil
-			resetFields = append(resetFields, &instancePool.PrivateNetworkIDs)
-		} else {
-			instancePool.PrivateNetworkIDs = func() []string {
-				list := make([]string, set.Len())
-				for i, v := range set.List() {
-					list[i] = v.(string)
-				}
-				return list
-			}()
-			updated = true
-		}
+		instancePool.PrivateNetworkIDs = func() *[]string {
+			list := make([]string, set.Len())
+			for i, v := range set.List() {
+				list[i] = v.(string)
+			}
+			return &list
+		}()
+		updated = true
 	}
 
 	if d.HasChange(resInstancePoolAttrSecurityGroupIDs) {
 		set := d.Get(resInstancePoolAttrSecurityGroupIDs).(*schema.Set)
-		if set.Len() == 0 {
-			instancePool.SecurityGroupIDs = nil
-			resetFields = append(resetFields, &instancePool.SecurityGroupIDs)
-		} else {
-			instancePool.SecurityGroupIDs = func() []string {
-				list := make([]string, set.Len())
-				for i, v := range set.List() {
-					list[i] = v.(string)
-				}
-				return list
-			}()
-			updated = true
-		}
+		instancePool.SecurityGroupIDs = func() *[]string {
+			list := make([]string, set.Len())
+			for i, v := range set.List() {
+				list[i] = v.(string)
+			}
+			return &list
+		}()
+		updated = true
 	}
 
 	if d.HasChange(resInstancePoolAttrServiceOffering) {
-		resp, err := client.GetWithContext(ctx, &egoscale.ServiceOffering{
-			Name: d.Get(resInstancePoolAttrServiceOffering).(string),
-		})
+		instanceType, err := client.FindInstanceType(ctx, zone, d.Get(resInstancePoolAttrServiceOffering).(string))
 		if err != nil {
-			return err
+			return diag.Errorf("error retrieving instance type: %s", err)
 		}
-		instancePool.InstanceTypeID = resp.(*egoscale.ServiceOffering).ID.String()
+		instancePool.InstanceTypeID = instanceType.ID
 		updated = true
 	}
 
 	if d.HasChange(resInstancePoolAttrTemplateID) {
-		instancePool.TemplateID = d.Get(resInstancePoolAttrTemplateID).(string)
+		v := d.Get(resInstancePoolAttrTemplateID).(string)
+		instancePool.TemplateID = &v
 		updated = true
 	}
 
 	if d.HasChange(resInstancePoolAttrUserData) {
-		instancePool.UserData, err = encodeUserData(d.Get(resInstancePoolAttrUserData).(string))
+		v, err := encodeUserData(d.Get(resInstancePoolAttrUserData).(string))
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
+		instancePool.UserData = &v
 		updated = true
 	}
 
 	if updated {
 		if err = client.UpdateInstancePool(ctx, zone, instancePool); err != nil {
-			return err
-		}
-	}
-
-	for _, f := range resetFields {
-		if err = instancePool.ResetField(ctx, f); err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 	}
 
 	if d.HasChange(resInstancePoolAttrSize) {
 		if err = instancePool.Scale(ctx, int64(d.Get(resInstancePoolAttrSize).(int))); err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 	}
 
 	log.Printf("[DEBUG] %s: update finished successfully", resourceInstancePoolIDString(d))
 
-	return resourceInstancePoolRead(d, meta)
+	return resourceInstancePoolRead(ctx, d, meta)
 }
 
-func resourceInstancePoolDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceInstancePoolDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	log.Printf("[DEBUG] %s: beginning delete", resourceInstancePoolIDString(d))
 
 	zone := d.Get(resInstancePoolAttrZone).(string)
 
-	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutDelete))
+	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutDelete))
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
@@ -508,7 +488,7 @@ func resourceInstancePoolDelete(d *schema.ResourceData, meta interface{}) error 
 
 	err := client.DeleteInstancePool(ctx, zone, d.Id())
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	log.Printf("[DEBUG] %s: delete finished successfully", resourceInstancePoolIDString(d))
@@ -516,151 +496,119 @@ func resourceInstancePoolDelete(d *schema.ResourceData, meta interface{}) error 
 	return nil
 }
 
-func resourceInstancePoolApply(ctx context.Context, client *egoscale.Client, d *schema.ResourceData, instancePool *exov2.InstancePool) error {
-	antiAffinityGroupIDs := make([]string, len(instancePool.AntiAffinityGroupIDs))
-	for i, id := range instancePool.AntiAffinityGroupIDs {
-		antiAffinityGroupIDs[i] = id
-	}
-	if err := d.Set(resInstancePoolAttrAffinityGroupIDs, antiAffinityGroupIDs); err != nil {
-		return err
-	}
-
-	if err := d.Set(resInstancePoolAttrDeployTargetID, instancePool.DeployTargetID); err != nil {
-		return err
+func resourceInstancePoolApply(ctx context.Context, client *egoscale.Client, d *schema.ResourceData, instancePool *exov2.InstancePool) diag.Diagnostics {
+	if instancePool.AntiAffinityGroupIDs != nil {
+		antiAffinityGroupIDs := make([]string, len(*instancePool.AntiAffinityGroupIDs))
+		for i, id := range *instancePool.AntiAffinityGroupIDs {
+			antiAffinityGroupIDs[i] = id
+		}
+		if err := d.Set(resInstancePoolAttrAffinityGroupIDs, antiAffinityGroupIDs); err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
-	if err := d.Set(resInstancePoolAttrDescription, instancePool.Description); err != nil {
-		return err
+	if err := d.Set(resInstancePoolAttrDeployTargetID, defaultString(instancePool.DeployTargetID, "")); err != nil {
+		return diag.FromErr(err)
 	}
 
-	if err := d.Set(resInstancePoolAttrDiskSize, instancePool.DiskSize); err != nil {
-		return err
+	if err := d.Set(resInstancePoolAttrDescription, defaultString(instancePool.Description, "")); err != nil {
+		return diag.FromErr(err)
 	}
 
-	elasticIPIDs := make([]string, len(instancePool.ElasticIPIDs))
-	for i, id := range instancePool.ElasticIPIDs {
-		elasticIPIDs[i] = id
-	}
-	if err := d.Set(resInstancePoolAttrElasticIPIDs, elasticIPIDs); err != nil {
-		return err
+	if err := d.Set(resInstancePoolAttrDiskSize, *instancePool.DiskSize); err != nil {
+		return diag.FromErr(err)
 	}
 
-	if err := d.Set(resInstancePoolAttrInstancePrefix, instancePool.InstancePrefix); err != nil {
-		return err
+	if instancePool.ElasticIPIDs != nil {
+		elasticIPIDs := make([]string, len(*instancePool.ElasticIPIDs))
+		for i, id := range *instancePool.ElasticIPIDs {
+			elasticIPIDs[i] = id
+		}
+		if err := d.Set(resInstancePoolAttrElasticIPIDs, elasticIPIDs); err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
-	if err := d.Set(resInstancePoolAttrIPv6, instancePool.IPv6Enabled); err != nil {
-		return err
+	if err := d.Set(resInstancePoolAttrInstancePrefix, defaultString(instancePool.InstancePrefix, "")); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set(resInstancePoolAttrIPv6, defaultBool(instancePool.IPv6Enabled, false)); err != nil {
+		return diag.FromErr(err)
 	}
 
 	if err := d.Set(resInstancePoolAttrKeyPair, instancePool.SSHKey); err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	if err := d.Set(resInstancePoolAttrName, instancePool.Name); err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
-	privateNetworkIDs := make([]string, len(instancePool.PrivateNetworkIDs))
-	for i, id := range instancePool.PrivateNetworkIDs {
-		privateNetworkIDs[i] = id
-	}
-	if err := d.Set(resInstancePoolAttrNetworkIDs, privateNetworkIDs); err != nil {
-		return err
-	}
-
-	securityGroupIDs := make([]string, len(instancePool.SecurityGroupIDs))
-	for i, id := range instancePool.SecurityGroupIDs {
-		securityGroupIDs[i] = id
-	}
-	if err := d.Set(resInstancePoolAttrSecurityGroupIDs, securityGroupIDs); err != nil {
-		return err
+	if instancePool.PrivateNetworkIDs != nil {
+		privateNetworkIDs := make([]string, len(*instancePool.PrivateNetworkIDs))
+		for i, id := range *instancePool.PrivateNetworkIDs {
+			privateNetworkIDs[i] = id
+		}
+		if err := d.Set(resInstancePoolAttrNetworkIDs, privateNetworkIDs); err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
-	resp, err := client.GetWithContext(ctx, &egoscale.ServiceOffering{
-		ID: egoscale.MustParseUUID(instancePool.InstanceTypeID),
-	})
+	if instancePool.SecurityGroupIDs != nil {
+		securityGroupIDs := make([]string, len(*instancePool.SecurityGroupIDs))
+		for i, id := range *instancePool.SecurityGroupIDs {
+			securityGroupIDs[i] = id
+		}
+		if err := d.Set(resInstancePoolAttrSecurityGroupIDs, securityGroupIDs); err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
+	instanceType, err := client.GetInstanceType(
+		ctx,
+		d.Get(resInstancePoolAttrZone).(string),
+		*instancePool.InstanceTypeID,
+	)
 	if err != nil {
-		return err
+		return diag.Errorf("error retrieving instance type: %s", err)
 	}
-	if err := d.Set(resInstancePoolAttrServiceOffering,
-		strings.ToLower(resp.(*egoscale.ServiceOffering).Name)); err != nil {
-		return err
+	instancePool.InstanceTypeID = instanceType.ID
+	if err := d.Set(resInstancePoolAttrServiceOffering, strings.ToLower(*instanceType.Size)); err != nil {
+		return diag.FromErr(err)
 	}
 
 	if err := d.Set(resInstancePoolAttrSize, instancePool.Size); err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	if err := d.Set(resInstancePoolAttrState, instancePool.State); err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	if err := d.Set(resInstancePoolAttrTemplateID, instancePool.TemplateID); err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
-	if len(instancePool.UserData) > 0 {
-		userData, err := decodeUserData(instancePool.UserData)
+	if instancePool.UserData != nil {
+		userData, err := decodeUserData(*instancePool.UserData)
 		if err != nil {
-			return fmt.Errorf("error decoding user data: %s", err)
+			return diag.Errorf("error decoding user data: %s", err)
 		}
 		if err := d.Set(resInstancePoolAttrUserData, userData); err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 	}
 
-	instanceIDs := make([]string, len(instancePool.InstanceIDs))
-	for i, id := range instancePool.InstanceIDs {
-		instanceIDs[i] = id
-	}
-	if err := d.Set(resInstancePoolAttrVirtualMachines, instanceIDs); err != nil {
-		return err
+	if instancePool.InstanceIDs != nil {
+		instanceIDs := make([]string, len(*instancePool.InstanceIDs))
+		for i, id := range *instancePool.InstanceIDs {
+			instanceIDs[i] = id
+		}
+		if err := d.Set(resInstancePoolAttrVirtualMachines, instanceIDs); err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
 	return nil
-}
-
-func findInstancePool(ctx context.Context, d *schema.ResourceData, meta interface{}) (*exov2.InstancePool, error) {
-	client := GetComputeClient(meta)
-
-	if zone, ok := d.GetOk(resInstancePoolAttrZone); ok {
-		ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone.(string)))
-		instancePool, err := client.GetInstancePool(ctx, zone.(string), d.Id())
-		if err != nil {
-			return nil, err
-		}
-
-		return instancePool, nil
-	}
-
-	zones, err := client.ListZones(exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), defaultZone)))
-	if err != nil {
-		return nil, err
-	}
-
-	var instancePool *exov2.InstancePool
-	for _, zone := range zones {
-		i, err := client.GetInstancePool(
-			exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone)),
-			zone,
-			d.Id())
-		if err != nil {
-			if errors.Is(err, exoapi.ErrNotFound) {
-				continue
-			}
-
-			return nil, err
-		}
-
-		if i != nil {
-			instancePool = i
-			if err := d.Set(resInstancePoolAttrZone, zone); err != nil {
-				return nil, err
-			}
-			break
-		}
-	}
-
-	return instancePool, nil
 }

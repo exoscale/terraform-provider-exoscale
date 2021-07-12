@@ -5,12 +5,41 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
-	"github.com/exoscale/egoscale"
 	exov2 "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+)
+
+const (
+	defaultNLBServiceHealthcheckInterval = 10
+	defaultNLBServiceHealthcheckMode     = "tcp"
+	defaultNLBServiceHealthcheckRetries  = 1
+	defaultNLBServiceHealthcheckTimeout  = 5
+	defaultNLBServiceProtocol            = "tcp"
+	defaulNLBServiceStrategy             = "round-robin"
+
+	resNLBServiceAttrDescription         = "description"
+	resNLBServiceAttrHealthcheck         = "healthcheck"
+	resNLBServiceAttrHealthcheckInterval = "interval"
+	resNLBServiceAttrHealthcheckMode     = "mode"
+	resNLBServiceAttrHealthcheckPort     = "port"
+	resNLBServiceAttrHealthcheckRetries  = "retries"
+	resNLBServiceAttrHealthcheckTimeout  = "timeout"
+	resNLBServiceAttrHealthcheckTLSSNI   = "tls_sni"
+	resNLBServiceAttrHealthcheckURI      = "uri"
+	resNLBServiceAttrInstancePoolID      = "instance_pool_id"
+	resNLBServiceAttrName                = "name"
+	resNLBServiceAttrNLBID               = "nlb_id"
+	resNLBServiceAttrPort                = "port"
+	resNLBServiceAttrProtocol            = "protocol"
+	resNLBServiceAttrStrategy            = "strategy"
+	resNLBServiceAttrState               = "state"
+	resNLBServiceAttrTargetPort          = "target_port"
+	resNLBServiceAttrZone                = "zone"
 )
 
 func resourceNLBServiceIDString(d resourceIDStringer) string {
@@ -19,99 +48,120 @@ func resourceNLBServiceIDString(d resourceIDStringer) string {
 
 func resourceNLBService() *schema.Resource {
 	s := map[string]*schema.Schema{
-		"zone": {
+		resNLBServiceAttrDescription: {
 			Type:     schema.TypeString,
-			Required: true,
-			ForceNew: true,
+			Optional: true,
 		},
-		"nlb_id": {
-			Type:     schema.TypeString,
-			Required: true,
-			ForceNew: true,
-		},
-		"name": {
-			Type:     schema.TypeString,
-			Required: true,
-		},
-		"instance_pool_id": {
-			Type:     schema.TypeString,
-			Required: true,
-		},
-		"port": {
-			Type:     schema.TypeInt,
-			Required: true,
-		},
-		"target_port": {
-			Type:     schema.TypeInt,
-			Required: true,
-		},
-		"healthcheck": {
+		resNLBServiceAttrHealthcheck: {
 			Type:     schema.TypeSet,
 			Required: true,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
-					"port": {
+					resNLBServiceAttrHealthcheckInterval: {
+						Type:     schema.TypeInt,
+						Optional: true,
+						Default:  defaultNLBServiceHealthcheckInterval,
+					},
+					resNLBServiceAttrHealthcheckMode: {
+						Type:     schema.TypeString,
+						Optional: true,
+						Default:  defaultNLBServiceHealthcheckMode,
+					},
+					resNLBServiceAttrHealthcheckPort: {
 						Type:     schema.TypeInt,
 						Required: true,
 					},
-					"mode": {
-						Type:     schema.TypeString,
-						Optional: true,
-						Default:  "tcp",
-					},
-					"interval": {
+					resNLBServiceAttrHealthcheckRetries: {
 						Type:     schema.TypeInt,
 						Optional: true,
-						Default:  10,
+						Default:  defaultNLBServiceHealthcheckRetries,
 					},
-					"timeout": {
+					resNLBServiceAttrHealthcheckTimeout: {
 						Type:     schema.TypeInt,
 						Optional: true,
-						Default:  5,
+						Default:  defaultNLBServiceHealthcheckTimeout,
 					},
-					"retries": {
-						Type:     schema.TypeInt,
-						Optional: true,
-						Default:  1,
-					},
-					"uri": {
+					resNLBServiceAttrHealthcheckTLSSNI: {
 						Type:     schema.TypeString,
 						Optional: true,
 					},
-					"tls_sni": {
+					resNLBServiceAttrHealthcheckURI: {
 						Type:     schema.TypeString,
 						Optional: true,
 					},
 				},
 			},
 		},
-		"protocol": {
+		resNLBServiceAttrInstancePoolID: {
 			Type:     schema.TypeString,
-			Optional: true,
-			Default:  "tcp",
+			Required: true,
 		},
-		"strategy": {
+		resNLBServiceAttrName: {
 			Type:     schema.TypeString,
-			Optional: true,
-			Default:  "round-robin",
+			Required: true,
 		},
-		"description": {
+		resNLBServiceAttrNLBID: {
+			Type:     schema.TypeString,
+			Required: true,
+			ForceNew: true,
+		},
+		resNLBServiceAttrPort: {
+			Type:     schema.TypeInt,
+			Required: true,
+		},
+		resNLBServiceAttrProtocol: {
 			Type:     schema.TypeString,
 			Optional: true,
+			Default:  defaultNLBServiceProtocol,
+		},
+		resNLBServiceAttrState: {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		resNLBServiceAttrStrategy: {
+			Type:     schema.TypeString,
+			Optional: true,
+			Default:  defaulNLBServiceStrategy,
+		},
+		resNLBServiceAttrTargetPort: {
+			Type:     schema.TypeInt,
+			Required: true,
+		},
+		resNLBServiceAttrZone: {
+			Type:     schema.TypeString,
+			Required: true,
+			ForceNew: true,
 		},
 	}
 
 	return &schema.Resource{
 		Schema: s,
 
-		Create: resourceNLBServiceCreate,
-		Read:   resourceNLBServiceRead,
-		Update: resourceNLBServiceUpdate,
-		Delete: resourceNLBServiceDelete,
-		Exists: resourceNLBServiceExists,
+		CreateContext: resourceNLBServiceCreate,
+		ReadContext:   resourceNLBServiceRead,
+		UpdateContext: resourceNLBServiceUpdate,
+		DeleteContext: resourceNLBServiceDelete,
 
 		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
+			StateContext: func(ctx context.Context, d *schema.ResourceData, _ interface{}) ([]*schema.ResourceData, error) {
+				zonedRes, err := zonedStateContextFunc(ctx, d, nil)
+				if err != nil {
+					return nil, err
+				}
+				d = zonedRes[0]
+
+				parts := strings.SplitN(d.Id(), "/", 2)
+				if len(parts) != 2 {
+					return nil, fmt.Errorf(`invalid ID %q, expected format "<NLB-ID>/<SERVICE-ID>@<ZONE>"`, d.Id())
+				}
+
+				d.SetId(parts[1])
+				if err := d.Set(resNLBServiceAttrNLBID, parts[0]); err != nil {
+					return nil, err
+				}
+
+				return []*schema.ResourceData{d}, nil
+			},
 		},
 
 		Timeouts: &schema.ResourceTimeout{
@@ -123,207 +173,264 @@ func resourceNLBService() *schema.Resource {
 	}
 }
 
-func resourceNLBServiceCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceNLBServiceCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	log.Printf("[DEBUG] %s: beginning create", resourceNLBServiceIDString(d))
 
-	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutCreate))
+	zone := d.Get(resNLBServiceAttrZone).(string)
+
+	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutCreate))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
 	client := GetComputeClient(meta)
 
-	zone := d.Get("zone").(string)
-
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
-	nlb, err := client.GetNetworkLoadBalancer(
-		ctx,
-		zone,
-		d.Get("nlb_id").(string),
-	)
+	nlb, err := client.GetNetworkLoadBalancer(ctx, zone, d.Get(resNLBServiceAttrNLBID).(string))
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
-	raw := d.Get("healthcheck").(*schema.Set)
-	healthcheck := raw.List()[0].(map[string]interface{})
+	healthcheck := d.Get("healthcheck").(*schema.Set).List()[0].(map[string]interface{})
+	nlbServiceHealthcheck := new(exov2.NetworkLoadBalancerServiceHealthcheck)
 
-	service, err := nlb.AddService(
-		ctx,
-		&exov2.NetworkLoadBalancerService{
-			Name:           d.Get("name").(string),
-			Description:    d.Get("description").(string),
-			InstancePoolID: d.Get("instance_pool_id").(string),
-			Protocol:       d.Get("protocol").(string),
-			Port:           uint16(d.Get("port").(int)),
-			TargetPort:     uint16(d.Get("target_port").(int)),
-			Strategy:       d.Get("strategy").(string),
-			Healthcheck: exov2.NetworkLoadBalancerServiceHealthcheck{
-				Mode:     healthcheck["mode"].(string),
-				Port:     uint16(healthcheck["port"].(int)),
-				Interval: time.Duration(healthcheck["interval"].(int)) * time.Second,
-				Timeout:  time.Duration(healthcheck["timeout"].(int)) * time.Second,
-				Retries:  int64(healthcheck["retries"].(int)),
-				URI:      healthcheck["uri"].(string),
-				TLSSNI:   healthcheck["tls_sni"].(string),
-			},
-		},
-	)
-	if err != nil {
-		return err
+	nlbServiceHealthcheckInterval := time.Duration(healthcheck[resNLBServiceAttrHealthcheckInterval].(int)) * time.Second
+	nlbServiceHealthcheck.Interval = &nlbServiceHealthcheckInterval
+
+	nlbServiceHealthcheckMode := healthcheck[resNLBServiceAttrHealthcheckMode].(string)
+	nlbServiceHealthcheck.Mode = &nlbServiceHealthcheckMode
+
+	nlbServiceHealthcheckPort := uint16(healthcheck[resNLBServiceAttrHealthcheckPort].(int))
+	nlbServiceHealthcheck.Port = &nlbServiceHealthcheckPort
+
+	nlbServiceHealthcheckRetries := int64(healthcheck[resNLBServiceAttrHealthcheckRetries].(int))
+	nlbServiceHealthcheck.Retries = &nlbServiceHealthcheckRetries
+
+	nlbServiceHealthcheckTimeout := time.Duration(healthcheck[resNLBServiceAttrHealthcheckTimeout].(int)) * time.Second
+	nlbServiceHealthcheck.Timeout = &nlbServiceHealthcheckTimeout
+
+	if strings.HasPrefix(nlbServiceHealthcheckMode, "http") {
+		if v, ok := healthcheck[resNLBServiceAttrHealthcheckTLSSNI]; ok && v.(string) != "" {
+			s := v.(string)
+			nlbServiceHealthcheck.TLSSNI = &s
+		}
+
+		if v, ok := healthcheck[resNLBServiceAttrHealthcheckURI]; ok {
+			s := v.(string)
+			nlbServiceHealthcheck.URI = &s
+		}
 	}
 
-	d.SetId(service.ID)
+	nlbService := new(exov2.NetworkLoadBalancerService)
+
+	nlbServiceName := d.Get(resNLBServiceAttrName).(string)
+	nlbService.Name = &nlbServiceName
+
+	if v, ok := d.GetOk(resNLBServiceAttrDescription); ok {
+		s := v.(string)
+		nlbService.Description = &s
+	}
+
+	nlbService.Healthcheck = nlbServiceHealthcheck
+
+	nlbServiceInstancePoolID := d.Get(resNLBServiceAttrInstancePoolID).(string)
+	nlbService.InstancePoolID = &nlbServiceInstancePoolID
+
+	nlbServicePort := uint16(d.Get(resNLBServiceAttrPort).(int))
+	nlbService.Port = &nlbServicePort
+
+	nlbServiceProtocol := d.Get(resNLBServiceAttrProtocol).(string)
+	nlbService.Protocol = &nlbServiceProtocol
+
+	nlbServiceStrategy := d.Get(resNLBServiceAttrStrategy).(string)
+	nlbService.Strategy = &nlbServiceStrategy
+
+	nlbServiceTargetPort := uint16(d.Get(resNLBServiceAttrTargetPort).(int))
+	nlbService.TargetPort = &nlbServiceTargetPort
+
+	nlbService, err = nlb.AddService(ctx, nlbService)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	d.SetId(*nlbService.ID)
 
 	log.Printf("[DEBUG] %s: create finished successfully", resourceNLBServiceIDString(d))
 
-	return resourceNLBServiceRead(d, meta)
+	return resourceNLBServiceRead(ctx, d, meta)
 }
 
-func resourceNLBServiceRead(d *schema.ResourceData, meta interface{}) error {
+func resourceNLBServiceRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	log.Printf("[DEBUG] %s: beginning read", resourceNLBServiceIDString(d))
 
-	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
+	zone := d.Get(resNLBServiceAttrZone).(string)
+
+	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
-	service, err := findNLBService(ctx, d, meta)
+	client := GetComputeClient(meta)
+
+	nlb, err := client.GetNetworkLoadBalancer(ctx, zone, d.Get(resNLBServiceAttrNLBID).(string))
 	if err != nil {
-		return err
+		if errors.Is(err, exoapi.ErrNotFound) {
+			// Parent NLB doesn't exist anymore, so does the NLB service.
+			d.SetId("")
+			return nil
+		}
+		return diag.FromErr(err)
 	}
 
-	if service == nil {
-		return fmt.Errorf("Network Load Balancer Service %q not found", d.Id())
+	var nlbService *exov2.NetworkLoadBalancerService
+	for _, s := range nlb.Services {
+		if *s.ID == d.Id() {
+			nlbService = s
+			break
+		}
+	}
+	if nlbService == nil {
+		// Resource doesn't exist anymore, signaling the core to remove it from the state.
+		d.SetId("")
+		return nil
 	}
 
 	log.Printf("[DEBUG] %s: read finished successfully", resourceNLBServiceIDString(d))
 
-	return resourceNLBServiceApply(d, service)
+	return resourceNLBServiceApply(ctx, d, nlbService)
 }
 
-func resourceNLBServiceExists(d *schema.ResourceData, meta interface{}) (bool, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
-	defer cancel()
-
-	service, err := findNLBService(ctx, d, meta)
-	if err != nil {
-		if errors.Is(err, exoapi.ErrNotFound) {
-			return false, nil
-		}
-		return false, err
-	}
-
-	if service == nil {
-		return false, nil
-	}
-
-	return true, nil
-}
-
-func resourceNLBServiceUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceNLBServiceUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	log.Printf("[DEBUG] %s: beginning update", resourceNLBServiceIDString(d))
 
-	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutUpdate))
+	zone := d.Get(resNLBServiceAttrZone).(string)
+
+	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutUpdate))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
 	client := GetComputeClient(meta)
 
-	service, err := findNLBService(ctx, d, meta)
+	nlb, err := client.GetNetworkLoadBalancer(ctx, zone, d.Get(resNLBServiceAttrNLBID).(string))
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
-	if service == nil {
-		return fmt.Errorf("Network Load Balancer Service %q not found", d.Id())
+	var nlbService *exov2.NetworkLoadBalancerService
+	for _, s := range nlb.Services {
+		if *s.ID == d.Id() {
+			nlbService = s
+			break
+		}
+	}
+	if nlbService == nil {
+		return diag.Errorf("Network Load Balancer Service %q not found", d.Id())
 	}
 
-	if d.HasChange("name") {
-		service.Name = d.Get("name").(string)
+	var updated bool
+
+	if d.HasChange(resNLBServiceAttrName) {
+		v := d.Get(resNLBServiceAttrName).(string)
+		nlbService.Name = &v
+		updated = true
 	}
 
-	if d.HasChange("description") {
-		service.Description = d.Get("description").(string)
+	if d.HasChange(resNLBServiceAttrDescription) {
+		v := d.Get(resNLBServiceAttrDescription).(string)
+		nlbService.Description = &v
+		updated = true
 	}
 
-	if d.HasChange("protocol") {
-		service.Protocol = d.Get("protocol").(string)
+	if d.HasChange(resNLBServiceAttrPort) {
+		v := uint16(d.Get(resNLBServiceAttrPort).(int))
+		nlbService.Port = &v
+		updated = true
 	}
 
-	if d.HasChange("strategy") {
-		service.Strategy = d.Get("strategy").(string)
+	if d.HasChange(resNLBServiceAttrProtocol) {
+		v := d.Get(resNLBServiceAttrProtocol).(string)
+		nlbService.Protocol = &v
+		updated = true
 	}
 
-	if d.HasChange("port") {
-		service.Port = uint16(d.Get("port").(int))
+	if d.HasChange(resNLBServiceAttrStrategy) {
+		v := d.Get(resNLBServiceAttrStrategy).(string)
+		nlbService.Strategy = &v
+		updated = true
 	}
 
-	if d.HasChange("target_port") {
-		service.TargetPort = uint16(d.Get("target_port").(int))
+	if d.HasChange(resNLBServiceAttrTargetPort) {
+		v := uint16(d.Get(resNLBServiceAttrTargetPort).(int))
+		nlbService.TargetPort = &v
+		updated = true
 	}
 
 	if d.HasChange("healthcheck") {
-		raw := d.Get("healthcheck").(*schema.Set)
-		healthcheck := raw.List()[0].(map[string]interface{})
+		healthcheck := d.Get("healthcheck").(*schema.Set).List()[0].(map[string]interface{})
 
-		service.Healthcheck.Mode = healthcheck["mode"].(string)
-		service.Healthcheck.Port = uint16(healthcheck["port"].(int))
-		service.Healthcheck.Retries = int64(healthcheck["retries"].(int))
-		service.Healthcheck.URI = healthcheck["uri"].(string)
-		service.Healthcheck.TLSSNI = healthcheck["tls_sni"].(string)
-		service.Healthcheck.Interval = time.Duration(healthcheck["interval"].(int)) * time.Second
-		service.Healthcheck.Timeout = time.Duration(healthcheck["timeout"].(int)) * time.Second
+		nlbServiceHealthcheckInterval := time.Duration(healthcheck[resNLBServiceAttrHealthcheckInterval].(int)) * time.Second
+		nlbService.Healthcheck.Interval = &nlbServiceHealthcheckInterval
+
+		nlbServiceHealthcheckMode := healthcheck[resNLBServiceAttrHealthcheckMode].(string)
+		nlbService.Healthcheck.Mode = &nlbServiceHealthcheckMode
+
+		nlbServiceHealthcheckPort := uint16(healthcheck[resNLBServiceAttrHealthcheckPort].(int))
+		nlbService.Healthcheck.Port = &nlbServiceHealthcheckPort
+
+		nlbServiceHealthcheckRetries := int64(healthcheck[resNLBServiceAttrHealthcheckRetries].(int))
+		nlbService.Healthcheck.Retries = &nlbServiceHealthcheckRetries
+
+		nlbServiceHealthcheckTimeout := time.Duration(healthcheck[resNLBServiceAttrHealthcheckTimeout].(int)) * time.Second
+		nlbService.Healthcheck.Timeout = &nlbServiceHealthcheckTimeout
+
+		if strings.HasPrefix(nlbServiceHealthcheckMode, "http") {
+			if v, ok := healthcheck[resNLBServiceAttrHealthcheckTLSSNI]; ok && v.(string) != "" {
+				s := v.(string)
+				nlbService.Healthcheck.TLSSNI = &s
+			}
+
+			if v, ok := healthcheck[resNLBServiceAttrHealthcheckURI]; ok {
+				s := v.(string)
+				nlbService.Healthcheck.URI = &s
+			}
+		}
+
+		updated = true
 	}
 
-	zone := d.Get("zone").(string)
+	if updated {
+		nlb, err := client.GetNetworkLoadBalancer(ctx, zone, d.Get(resNLBServiceAttrNLBID).(string))
+		if err != nil {
+			return diag.FromErr(err)
+		}
 
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
-	nlb, err := client.GetNetworkLoadBalancer(
-		ctx,
-		zone,
-		d.Get("nlb_id").(string),
-	)
-	if err != nil {
-		return err
-	}
-
-	err = nlb.UpdateService(
-		ctx,
-		service,
-	)
-	if err != nil {
-		return err
+		if err = nlb.UpdateService(ctx, nlbService); err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
 	log.Printf("[DEBUG] %s: update finished successfully", resourceNLBServiceIDString(d))
 
-	return resourceNLBServiceRead(d, meta)
+	return resourceNLBServiceRead(ctx, d, meta)
 }
 
-func resourceNLBServiceDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceNLBServiceDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	log.Printf("[DEBUG] %s: beginning delete", resourceNLBServiceIDString(d))
 
-	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutDelete))
+	zone := d.Get(resNLBServiceAttrZone).(string)
+
+	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutDelete))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
 	client := GetComputeClient(meta)
 
-	zone := d.Get("zone").(string)
-
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
-	nlb, err := client.GetNetworkLoadBalancer(
-		ctx,
-		zone,
-		d.Get("nlb_id").(string),
-	)
+	nlb, err := client.GetNetworkLoadBalancer(ctx, zone, d.Get(resNLBServiceAttrNLBID).(string))
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
-	err = nlb.DeleteService(
-		ctx,
-		&exov2.NetworkLoadBalancerService{
-			ID: d.Id(),
-		},
-	)
+	nlbServiceID := d.Id()
+	err = nlb.DeleteService(ctx, &exov2.NetworkLoadBalancerService{ID: &nlbServiceID})
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	log.Printf("[DEBUG] %s: delete finished successfully", resourceNLBServiceIDString(d))
@@ -331,98 +438,53 @@ func resourceNLBServiceDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func resourceNLBServiceApply(d *schema.ResourceData, service *exov2.NetworkLoadBalancerService) error {
-	if err := d.Set("name", service.Name); err != nil {
-		return err
+func resourceNLBServiceApply(_ context.Context, d *schema.ResourceData, nlbService *exov2.NetworkLoadBalancerService) diag.Diagnostics {
+	if err := d.Set(resNLBServiceAttrDescription, defaultString(nlbService.Description, "")); err != nil {
+		return diag.FromErr(err)
 	}
 
-	if err := d.Set("description", service.Description); err != nil {
-		return err
+	healthcheck := d.Get(resNLBServiceAttrHealthcheck).(*schema.Set)
+	if err := d.Set(resNLBServiceAttrHealthcheck, schema.NewSet(healthcheck.F, []interface{}{
+		map[string]interface{}{
+			resNLBServiceAttrHealthcheckInterval: int(nlbService.Healthcheck.Interval.Seconds()),
+			resNLBServiceAttrHealthcheckMode:     *nlbService.Healthcheck.Mode,
+			resNLBServiceAttrHealthcheckPort:     int(*nlbService.Healthcheck.Port),
+			resNLBServiceAttrHealthcheckRetries:  int(defaultInt64(nlbService.Healthcheck.Retries, 0)),
+			resNLBServiceAttrHealthcheckTLSSNI:   defaultString(nlbService.Healthcheck.TLSSNI, ""),
+			resNLBServiceAttrHealthcheckTimeout:  int(nlbService.Healthcheck.Timeout.Seconds()),
+			resNLBServiceAttrHealthcheckURI:      defaultString(nlbService.Healthcheck.URI, ""),
+		},
+	})); err != nil {
+		return diag.FromErr(err)
 	}
 
-	if err := d.Set("instance_pool_id", service.InstancePoolID); err != nil {
-		return err
+	if err := d.Set(resNLBServiceAttrInstancePoolID, *nlbService.InstancePoolID); err != nil {
+		return diag.FromErr(err)
 	}
 
-	if err := d.Set("protocol", service.Protocol); err != nil {
-		return err
+	if err := d.Set(resNLBServiceAttrName, *nlbService.Name); err != nil {
+		return diag.FromErr(err)
 	}
 
-	if err := d.Set("port", service.Port); err != nil {
-		return err
+	if err := d.Set(resNLBServiceAttrPort, *nlbService.Port); err != nil {
+		return diag.FromErr(err)
 	}
 
-	if err := d.Set("target_port", service.TargetPort); err != nil {
-		return err
+	if err := d.Set(resNLBServiceAttrProtocol, *nlbService.Protocol); err != nil {
+		return diag.FromErr(err)
 	}
 
-	if err := d.Set("strategy", service.Strategy); err != nil {
-		return err
+	if err := d.Set(resNLBServiceAttrState, *nlbService.State); err != nil {
+		return diag.FromErr(err)
 	}
 
-	healthcheck := map[string]interface{}{
-		"mode":     service.Healthcheck.Mode,
-		"port":     int(service.Healthcheck.Port),
-		"interval": int(service.Healthcheck.Interval.Seconds()),
-		"timeout":  int(service.Healthcheck.Timeout.Seconds()),
-		"retries":  int(service.Healthcheck.Retries),
-		"uri":      service.Healthcheck.URI,
-		"tls_sni":  service.Healthcheck.TLSSNI,
+	if err := d.Set(resNLBServiceAttrStrategy, *nlbService.Strategy); err != nil {
+		return diag.FromErr(err)
 	}
 
-	raw := d.Get("healthcheck").(*schema.Set)
-	set := schema.NewSet(raw.F, []interface{}{healthcheck})
-
-	return d.Set("healthcheck", set)
-}
-
-func findNLBService(ctx context.Context, d *schema.ResourceData, meta interface{}) (*exov2.NetworkLoadBalancerService, error) {
-	client := GetComputeClient(meta)
-
-	zone, okZone := d.GetOk("zone")
-	nlbID, okNLBID := d.GetOk("nlb_id")
-	if okZone && okNLBID {
-		ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone.(string)))
-		nlb, err := client.GetNetworkLoadBalancer(ctx, zone.(string), nlbID.(string))
-		if err != nil {
-			return nil, err
-		}
-		for _, s := range nlb.Services {
-			if s.ID == d.Id() {
-				return s, nil
-			}
-		}
+	if err := d.Set(resNLBServiceAttrTargetPort, *nlbService.TargetPort); err != nil {
+		return diag.FromErr(err)
 	}
 
-	resp, err := client.RequestWithContext(ctx, egoscale.ListZones{})
-	if err != nil {
-		return nil, err
-	}
-	zones := resp.(*egoscale.ListZonesResponse).Zone
-
-	for _, zone := range zones {
-		nlbs, err := client.ListNetworkLoadBalancers(
-			exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone.Name)),
-			zone.Name)
-		if err != nil {
-			return nil, err
-		}
-
-		for _, nlb := range nlbs {
-			for _, s := range nlb.Services {
-				if s.ID == d.Id() {
-					if err := d.Set("zone", zone.Name); err != nil {
-						return nil, err
-					}
-					if err := d.Set("nlb_id", nlb.ID); err != nil {
-						return nil, err
-					}
-
-					return s, nil
-				}
-			}
-		}
-	}
-
-	return nil, nil
+	return nil
 }

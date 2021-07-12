@@ -56,13 +56,13 @@ In addition to the arguments listed above, the following attributes are exported
 
 ## Import
 
-An existing SKS cluster can be imported as a resource by ID:
+An existing SKS cluster can be imported as a resource by specifying `ID@ZONE`:
 
 ```console
-$ terraform import exoscale_sks_cluster.prod eb556678-ec59-4be6-8c54-0406ae0f6da6
+$ terraform import exoscale_sks_cluster.example eb556678-ec59-4be6-8c54-0406ae0f6da6@de-fra-1
 ```
 
-~> **NOTE:** Importing a SKS cluster resource also imports related [`exoscale_sks_nodepool`][r-sks_nodepool] resources.
+~> **NOTE:** Importing a SKS cluster resource doesn't import related [`exoscale_sks_nodepool`][r-sks_nodepool] resources.
 
 
 [cni]: https://www.cni.dev/

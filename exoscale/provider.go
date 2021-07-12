@@ -24,7 +24,6 @@ import (
 const (
 	legacyAPIVersion = "compute"
 	apiVersion       = "v1"
-	defaultZone      = "ch-gva-2"
 )
 
 func init() {
@@ -341,4 +340,24 @@ func resourceIDString(d resourceIDStringer, name string) string {
 	}
 
 	return fmt.Sprintf("%s (ID = %s)", name, id)
+}
+
+// zonedStateContextFunc is an alternative resource importer function to be
+// used for importing zone-local resources, where the resource ID is expected
+// to be suffixed with "@ZONE" (e.g. "c01af84d-6ac6-4784-98bb-127c98be8258@ch-gva-2").
+// Upon successful execution, the returned resource state contains the ID of the
+// resource and the "zone" attribute set to the value parsed from the import ID.
+func zonedStateContextFunc(_ context.Context, d *schema.ResourceData, _ interface{}) ([]*schema.ResourceData, error) {
+	parts := strings.SplitN(d.Id(), "@", 2)
+	if len(parts) != 2 {
+		return nil, fmt.Errorf(`invalid ID %q, expected format "<ID>@<ZONE>"`, d.Id())
+	}
+
+	d.SetId(parts[0])
+
+	if err := d.Set("zone", parts[1]); err != nil {
+		return nil, err
+	}
+
+	return []*schema.ResourceData{d}, nil
 }
