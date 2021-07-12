@@ -19,6 +19,7 @@ const (
 	sksClusterAddonMS          = "metrics-server"
 
 	resSKSClusterAttrAddons        = "addons"
+	resSKSClusterAttrAutoUpgrade   = "auto_upgrade"
 	resSKSClusterAttrCNI           = "cni"
 	resSKSClusterAttrCreatedAt     = "created_at"
 	resSKSClusterAttrDescription   = "description"
@@ -47,6 +48,10 @@ func resourceSKSCluster() *schema.Resource {
 			Computed: true,
 			Deprecated: "This attribute has been replaced by `exoscale_ccm`/`metrics_server` " +
 				"attributes, it will be removed in a future release.",
+		},
+		resSKSClusterAttrAutoUpgrade: {
+			Type:     schema.TypeBool,
+			Optional: true,
 		},
 		resSKSClusterAttrCNI: {
 			Type:     schema.TypeString,
@@ -157,6 +162,10 @@ func resourceSKSClusterCreate(ctx context.Context, d *schema.ResourceData, meta 
 		sksCluster.AddOns = &addOns
 	}
 
+	if autoUpgrade := d.Get(resSKSClusterAttrAutoUpgrade).(bool); autoUpgrade {
+		sksCluster.AutoUpgrade = &autoUpgrade
+	}
+
 	if v, ok := d.GetOk(resSKSClusterAttrCNI); ok {
 		s := v.(string)
 		sksCluster.CNI = &s
@@ -246,6 +255,12 @@ func resourceSKSClusterUpdate(ctx context.Context, d *schema.ResourceData, meta 
 
 	var updated bool
 
+	if d.HasChange(resSKSClusterAttrAutoUpgrade) {
+		v := d.Get(resSKSClusterAttrAutoUpgrade).(bool)
+		sksCluster.AutoUpgrade = &v
+		updated = true
+	}
+
 	if d.HasChange(resSKSClusterAttrName) {
 		v := d.Get(resSKSClusterAttrName).(string)
 		sksCluster.Name = &v
@@ -303,6 +318,10 @@ func resourceSKSClusterApply(_ context.Context, d *schema.ResourceData, sksClust
 		if err := d.Set(resSKSClusterAttrMetricsServer, in(*sksCluster.AddOns, sksClusterAddonMS)); err != nil {
 			return diag.FromErr(err)
 		}
+	}
+
+	if err := d.Set(resSKSClusterAttrAutoUpgrade, defaultBool(sksCluster.AutoUpgrade, false)); err != nil {
+		return diag.FromErr(err)
 	}
 
 	if err := d.Set(resSKSClusterAttrCNI, defaultString(sksCluster.CNI, "")); err != nil {

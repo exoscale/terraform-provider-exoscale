@@ -32,6 +32,7 @@ resource "exoscale_sks_cluster" "test" {
   description = "%s"
   exoscale_ccm = true
   metrics_server = false
+  auto_upgrade = true
 
   timeouts {
     create = "10m"
@@ -67,6 +68,7 @@ resource "exoscale_sks_cluster" "test" {
   description = ""
   exoscale_ccm = true
   metrics_server = false
+  auto_upgrade = false
 
   timeouts {
     create = "10m"
@@ -142,6 +144,7 @@ func TestAccResourceSKSCluster(t *testing.T) {
 						latestVersion := versions[0]
 
 						a.Equal([]string{sksClusterAddonExoscaleCCM}, *sksCluster.AddOns)
+						a.True(defaultBool(sksCluster.AutoUpgrade, false))
 						a.Equal(defaultSKSClusterCNI, *sksCluster.CNI)
 						a.Equal(testAccResourceSKSClusterDescription, *sksCluster.Description)
 						a.Equal(testAccResourceSKSClusterName, *sksCluster.Name)
@@ -151,6 +154,7 @@ func TestAccResourceSKSCluster(t *testing.T) {
 						return nil
 					},
 					checkResourceState(r, checkResourceStateValidateAttributes(testAttrs{
+						resSKSClusterAttrAutoUpgrade:   ValidateString("true"),
 						resSKSClusterAttrCNI:           ValidateString(defaultSKSClusterCNI),
 						resSKSClusterAttrCreatedAt:     validation.ToDiagFunc(validation.NoZeroValues),
 						resSKSClusterAttrDescription:   ValidateString(testAccResourceSKSClusterDescription),
@@ -169,7 +173,17 @@ func TestAccResourceSKSCluster(t *testing.T) {
 				Config: testAccResourceSKSClusterConfigUpdate,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckResourceSKSClusterExists(r, &sksCluster),
+					func(s *terraform.State) error {
+						a := assert.New(t)
+
+						a.False(defaultBool(sksCluster.AutoUpgrade, false))
+						a.Empty(defaultString(sksCluster.Description, ""))
+						a.Equal(testAccResourceSKSClusterNameUpdated, *sksCluster.Name)
+
+						return nil
+					},
 					checkResourceState(r, checkResourceStateValidateAttributes(testAttrs{
+						resSKSClusterAttrAutoUpgrade:   ValidateString("false"),
 						resSKSClusterAttrCNI:           ValidateString(defaultSKSClusterCNI),
 						resSKSClusterAttrCreatedAt:     validation.ToDiagFunc(validation.NoZeroValues),
 						resSKSClusterAttrDescription:   validation.ToDiagFunc(validation.StringIsEmpty),
@@ -196,6 +210,7 @@ func TestAccResourceSKSCluster(t *testing.T) {
 				ImportStateCheck: func(s []*terraform.InstanceState) error {
 					return checkResourceAttributes(
 						testAttrs{
+							resSKSClusterAttrAutoUpgrade:   ValidateString("false"),
 							resSKSClusterAttrCNI:           ValidateString(defaultSKSClusterCNI),
 							resSKSClusterAttrCreatedAt:     validation.ToDiagFunc(validation.NoZeroValues),
 							resSKSClusterAttrDescription:   validation.ToDiagFunc(validation.StringIsEmpty),
