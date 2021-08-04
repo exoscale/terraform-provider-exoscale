@@ -6,9 +6,11 @@ description: |-
   Provides an Exoscale database service resource.
 ---
 
-# exoscale\_sks\_cluster
+# exoscale\_database (BETA)
 
 Provides an Exoscale [DBaaS][dbaas-doc] service resource. This can be used to create, modify, and delete database services.
+
+**Note:** this feature is currently in *beta*, changes to this resource can occur in upcoming releases of the provider.
 
 
 ## Example Usage
