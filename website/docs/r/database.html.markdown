@@ -36,7 +36,7 @@ resource "exoscale_database" "prod" {
     backup_hour   = 1
     backup_minute = 0
     ip_filter     = ["194.182.161.182/32"]
-    pglookout = {
+    pglookout     = {
       max_failover_replication_time_lag = 60
     }
   })
