@@ -25,8 +25,9 @@ var (
 	testAccResourceSKSNodepoolInstanceTypeUpdated         = "medium"
 	testAccResourceSKSNodepoolName                        = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceSKSNodepoolNameUpdated                 = testAccResourceSKSNodepoolName + "-updated"
-	testAccResourceSKSNodepoolSize                  int64 = 1
-	testAccResourceSKSNodepoolSizeUpdated                 = testAccResourceSKSNodepoolSize * 2
+	testAccResourceSKSNodepoolPrivateNetworkName          = acctest.RandomWithPrefix(testPrefix)
+	testAccResourceSKSNodepoolSize                  int64 = 2
+	testAccResourceSKSNodepoolSizeUpdated           int64 = 1
 
 	testAccResourceSKSNodepoolConfigCreate = fmt.Sprintf(`
 locals {
@@ -80,6 +81,14 @@ resource "exoscale_affinity" "test" {
   name = "%s"
 }
 
+resource "exoscale_network" "test" {
+  zone     = local.zone
+  name     = "%s"
+  start_ip = "10.0.0.20"
+  end_ip   = "10.0.0.253"
+  netmask  = "255.255.255.0"
+}
+
 resource "exoscale_sks_cluster" "test" {
   zone = local.zone
   name = "%s"
@@ -100,6 +109,7 @@ resource "exoscale_sks_nodepool" "test" {
   instance_prefix = "%s"
   anti_affinity_group_ids = [exoscale_affinity.test.id]
   security_group_ids = [data.exoscale_security_group.default.id]
+  private_network_ids = [exoscale_network.test.id]
 
   timeouts {
     delete = "10m"
@@ -108,6 +118,7 @@ resource "exoscale_sks_nodepool" "test" {
 	  `,
 		testZoneName,
 		testAccResourceSKSNodepoolAntiAffinityGroupName,
+		testAccResourceSKSNodepoolPrivateNetworkName,
 		testAccResourceSKSClusterName,
 		testAccResourceSKSNodepoolNameUpdated,
 		testAccResourceSKSNodepoolInstanceTypeUpdated,
@@ -176,6 +187,7 @@ func TestAccResourceSKSNodepool(t *testing.T) {
 						a.Equal(testAccResourceSKSNodepoolNameUpdated, *sksNodepool.Name)
 						a.Equal(defaultSKSNodepoolInstancePrefix, *sksNodepool.InstancePrefix)
 						a.Equal(testInstanceTypeIDMedium, *sksNodepool.InstanceTypeID)
+						a.Len(*sksNodepool.PrivateNetworkIDs, 1)
 						a.Len(*sksNodepool.SecurityGroupIDs, 1)
 						a.Equal(testAccResourceSKSNodepoolSizeUpdated, *sksNodepool.Size)
 
@@ -190,6 +202,7 @@ func TestAccResourceSKSNodepool(t *testing.T) {
 						resSKSNodepoolAttrInstancePrefix:              ValidateString(defaultSKSNodepoolInstancePrefix),
 						resSKSNodepoolAttrInstanceType:                ValidateString(testAccResourceSKSNodepoolInstanceTypeUpdated),
 						resSKSNodepoolAttrName:                        ValidateString(testAccResourceSKSNodepoolNameUpdated),
+						resSKSNodepoolAttrPrivateNetworkIDs + ".#":    ValidateString("1"),
 						resSKSNodepoolAttrSecurityGroupIDs + ".#":     ValidateString("1"),
 						resSKSNodepoolAttrSize:                        ValidateString(fmt.Sprint(testAccResourceSKSNodepoolSizeUpdated)),
 						resSKSNodepoolAttrState:                       validation.ToDiagFunc(validation.NoZeroValues),
@@ -223,6 +236,7 @@ func TestAccResourceSKSNodepool(t *testing.T) {
 							resSKSNodepoolAttrInstancePrefix:              ValidateString(defaultSKSNodepoolInstancePrefix),
 							resSKSNodepoolAttrInstanceType:                ValidateString(testAccResourceSKSNodepoolInstanceTypeUpdated),
 							resSKSNodepoolAttrName:                        ValidateString(testAccResourceSKSNodepoolNameUpdated),
+							resSKSNodepoolAttrPrivateNetworkIDs + ".#":    ValidateString("1"),
 							resSKSNodepoolAttrSecurityGroupIDs + ".#":     ValidateString("1"),
 							resSKSNodepoolAttrSize:                        ValidateString(fmt.Sprint(testAccResourceSKSNodepoolSizeUpdated)),
 							resSKSNodepoolAttrState:                       validation.ToDiagFunc(validation.NoZeroValues),

@@ -75,6 +75,7 @@ resource "exoscale_sks_nodepool" "ci-builders" {
 * `disk_size` - The disk size of the Compute instances managed by the SKS Nodepool (default: `50`).
 * `anti_affinity_group_ids` - The list of Anti-Affinity Groups (IDs) the Compute instances managed by the SKS Nodepool are member of.
 * `security_group_ids` - The list of Security Groups (IDs) the Compute instances managed by the SKS Nodepool are member of.
+* `private_network_ids` - The list of Private Networks (IDs) to be attached to the Compute instances managed by the SKS Nodepool.
 * `description` - The description of the SKS Nodepool.
 * `deploy_target_id` - A Deploy Target ID to deploy managed Compute instances to.
 

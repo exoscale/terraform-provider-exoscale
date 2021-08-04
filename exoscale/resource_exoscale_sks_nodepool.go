@@ -28,6 +28,7 @@ const (
 	resSKSNodepoolAttrInstancePrefix       = "instance_prefix"
 	resSKSNodepoolAttrInstanceType         = "instance_type"
 	resSKSNodepoolAttrName                 = "name"
+	resSKSNodepoolAttrPrivateNetworkIDs    = "private_network_ids"
 	resSKSNodepoolAttrSecurityGroupIDs     = "security_group_ids"
 	resSKSNodepoolAttrSize                 = "size"
 	resSKSNodepoolAttrState                = "state"
@@ -93,6 +94,12 @@ func resourceSKSNodepool() *schema.Resource {
 		resSKSNodepoolAttrName: {
 			Type:     schema.TypeString,
 			Required: true,
+		},
+		resSKSNodepoolAttrPrivateNetworkIDs: {
+			Type:     schema.TypeSet,
+			Optional: true,
+			Set:      schema.HashString,
+			Elem:     &schema.Schema{Type: schema.TypeString},
 		},
 		resSKSNodepoolAttrSecurityGroupIDs: {
 			Type:     schema.TypeSet,
@@ -222,6 +229,19 @@ func resourceSKSNodepoolCreate(ctx context.Context, d *schema.ResourceData, meta
 	if v, ok := d.GetOk(resSKSNodepoolAttrName); ok {
 		s := v.(string)
 		sksNodepool.Name = &s
+	}
+
+	if set, ok := d.Get(resSKSNodepoolAttrPrivateNetworkIDs).(*schema.Set); ok {
+		sksNodepool.PrivateNetworkIDs = func() (v *[]string) {
+			if l := set.Len(); l > 0 {
+				list := make([]string, l)
+				for i, v := range set.List() {
+					list[i] = v.(string)
+				}
+				v = &list
+			}
+			return
+		}()
 	}
 
 	if set, ok := d.Get(resSKSNodepoolAttrSecurityGroupIDs).(*schema.Set); ok {
@@ -373,6 +393,18 @@ func resourceSKSNodepoolUpdate(ctx context.Context, d *schema.ResourceData, meta
 		updated = true
 	}
 
+	if d.HasChange(resSKSNodepoolAttrPrivateNetworkIDs) {
+		set := d.Get(resSKSNodepoolAttrPrivateNetworkIDs).(*schema.Set)
+		sksNodepool.PrivateNetworkIDs = func() *[]string {
+			list := make([]string, set.Len())
+			for i, v := range set.List() {
+				list[i] = v.(string)
+			}
+			return &list
+		}()
+		updated = true
+	}
+
 	if d.HasChange(resSKSNodepoolAttrSecurityGroupIDs) {
 		set := d.Get(resSKSNodepoolAttrSecurityGroupIDs).(*schema.Set)
 		sksNodepool.SecurityGroupIDs = func() *[]string {
@@ -482,6 +514,16 @@ func resourceSKSNodepoolApply(
 
 	if err := d.Set(resSKSNodepoolAttrName, *sksNodepool.Name); err != nil {
 		return diag.FromErr(err)
+	}
+
+	if sksNodepool.PrivateNetworkIDs != nil {
+		privateNetworkIDs := make([]string, len(*sksNodepool.PrivateNetworkIDs))
+		for i, id := range *sksNodepool.PrivateNetworkIDs {
+			privateNetworkIDs[i] = id
+		}
+		if err := d.Set(resSKSNodepoolAttrPrivateNetworkIDs, privateNetworkIDs); err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
 	if sksNodepool.SecurityGroupIDs != nil {
