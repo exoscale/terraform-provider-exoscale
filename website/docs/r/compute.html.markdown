@@ -74,7 +74,6 @@ EOF
 * `tags` - A dictionary of tags (key/value). To remove all tags, set `tags = {}`.
 
 
-
 ## Attributes Reference
 
 In addition to the arguments listed above, the following attributes are exported:

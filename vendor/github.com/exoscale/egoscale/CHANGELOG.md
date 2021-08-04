@@ -1,6 +1,40 @@
 Changelog
 =========
 
+0.66.0
+------
+
+- feature: v2: add `Instance.Reset()` method
+- feature: v2: add `Instance.Scale()` method
+- feature: v2: add `Instance.ResizeDisk()` method
+
+0.65.1
+------
+
+- fix: v2: fix `RegisterSSHKey()` method
+
+0.65.0
+------
+
+- feature: v2: add support for SSH keys management
+
+0.64.1
+------
+
+- tests: v2: add resource API mocks
+
+0.64.0
+------
+
+- change: v2: replace `InstancePool.ManagerID` of type `string` with `InstancePool.Manager` field of type `*InstancePoolManager`.
+
+0.63.0
+------
+
+- feature: v2: add support for Private Networks to SKS Nodepools
+- feature: v2: add new `Client.RegisterTemplate()` method
+- change: v2: change `DatabaseService.UserConfig` type to pointer
+
 0.62.2
 ------
 
