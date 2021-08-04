@@ -338,12 +338,108 @@ func (i *Instance) PrivateNetworks(ctx context.Context) ([]*PrivateNetwork, erro
 	return nil, nil
 }
 
+// Reboot reboots the Compute instance.
+func (i *Instance) Reboot(ctx context.Context) error {
+	resp, err := i.c.RebootInstanceWithResponse(apiv2.WithZone(ctx, i.zone), *i.ID)
+	if err != nil {
+		return err
+	}
+
+	_, err = papi.NewPoller().
+		WithTimeout(i.c.timeout).
+		WithInterval(i.c.pollInterval).
+		Poll(ctx, i.c.OperationPoller(i.zone, *resp.JSON200.Id))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Reset resets the Compute instance to a base template state (the current instance template if not specified),
+// and optionally resizes the disk size.
+func (i *Instance) Reset(ctx context.Context, template *Template, diskSize int64) error {
+	resp, err := i.c.ResetInstanceWithResponse(
+		apiv2.WithZone(ctx, i.zone),
+		*i.ID,
+		papi.ResetInstanceJSONRequestBody{
+			DiskSize: func() (v *int64) {
+				if diskSize > 0 {
+					v = &diskSize
+				}
+				return
+			}(),
+			Template: func() (v *papi.Template) {
+				if template != nil {
+					v = &papi.Template{Id: template.ID}
+				}
+				return
+			}(),
+		})
+	if err != nil {
+		return err
+	}
+
+	_, err = papi.NewPoller().
+		WithTimeout(i.c.timeout).
+		WithInterval(i.c.pollInterval).
+		Poll(ctx, i.c.OperationPoller(i.zone, *resp.JSON200.Id))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// ResizeDisk resizes the Compute instance's disk to a larger size.
+func (i *Instance) ResizeDisk(ctx context.Context, size int64) error {
+	resp, err := i.c.ResizeInstanceDiskWithResponse(
+		apiv2.WithZone(ctx, i.zone),
+		*i.ID,
+		papi.ResizeInstanceDiskJSONRequestBody{DiskSize: size})
+	if err != nil {
+		return err
+	}
+
+	_, err = papi.NewPoller().
+		WithTimeout(i.c.timeout).
+		WithInterval(i.c.pollInterval).
+		Poll(ctx, i.c.OperationPoller(i.zone, *resp.JSON200.Id))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // RevertToSnapshot reverts the Compute instance storage volume to the specified Snapshot.
 func (i *Instance) RevertToSnapshot(ctx context.Context, snapshot *Snapshot) error {
 	resp, err := i.c.RevertInstanceToSnapshotWithResponse(
 		apiv2.WithZone(ctx, i.zone),
 		*i.ID,
 		papi.RevertInstanceToSnapshotJSONRequestBody{Id: *snapshot.ID})
+	if err != nil {
+		return err
+	}
+
+	_, err = papi.NewPoller().
+		WithTimeout(i.c.timeout).
+		WithInterval(i.c.pollInterval).
+		Poll(ctx, i.c.OperationPoller(i.zone, *resp.JSON200.Id))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Scale scales the Compute instance type.
+func (i *Instance) Scale(ctx context.Context, instanceType *InstanceType) error {
+	resp, err := i.c.ScaleInstanceWithResponse(
+		apiv2.WithZone(ctx, i.zone),
+		*i.ID,
+		papi.ScaleInstanceJSONRequestBody{InstanceType: papi.InstanceType{Id: instanceType.ID}},
+	)
 	if err != nil {
 		return err
 	}
@@ -366,24 +462,6 @@ func (i *Instance) SecurityGroups(ctx context.Context) ([]*SecurityGroup, error)
 		return res.([]*SecurityGroup), err
 	}
 	return nil, nil
-}
-
-// Reboot reboots the Compute instance.
-func (i *Instance) Reboot(ctx context.Context) error {
-	resp, err := i.c.RebootInstanceWithResponse(apiv2.WithZone(ctx, i.zone), *i.ID)
-	if err != nil {
-		return err
-	}
-
-	_, err = papi.NewPoller().
-		WithTimeout(i.c.timeout).
-		WithInterval(i.c.pollInterval).
-		Poll(ctx, i.c.OperationPoller(i.zone, *resp.JSON200.Id))
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 // Start starts the Compute instance.
@@ -420,6 +498,111 @@ func (i *Instance) Stop(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// ToAPIMock returns the low-level representation of the resource. This is intended for testing purposes.
+func (i Instance) ToAPIMock() interface{} {
+	return papi.Instance{
+		AntiAffinityGroups: func() *[]papi.AntiAffinityGroup {
+			if i.AntiAffinityGroupIDs != nil {
+				list := make([]papi.AntiAffinityGroup, len(*i.AntiAffinityGroupIDs))
+				for j, id := range *i.AntiAffinityGroupIDs {
+					id := id
+					list[j] = papi.AntiAffinityGroup{Id: &id}
+				}
+				return &list
+			}
+			return nil
+		}(),
+		CreatedAt:    i.CreatedAt,
+		DeployTarget: &papi.DeployTarget{Id: i.DeployTargetID},
+		DiskSize:     i.DiskSize,
+		ElasticIps: func() *[]papi.ElasticIp {
+			if i.ElasticIPIDs != nil {
+				list := make([]papi.ElasticIp, len(*i.ElasticIPIDs))
+				for j, id := range *i.ElasticIPIDs {
+					id := id
+					list[j] = papi.ElasticIp{Id: &id}
+				}
+				return &list
+			}
+			return nil
+		}(),
+		Id:           i.ID,
+		InstanceType: &papi.InstanceType{Id: i.InstanceTypeID},
+		Ipv6Address: func() *string {
+			if i.IPv6Address != nil {
+				v := i.IPv6Address.String()
+				return &v
+			}
+			return nil
+		}(),
+		Labels: func() *papi.Labels {
+			if i.Labels != nil {
+				return &papi.Labels{AdditionalProperties: *i.Labels}
+			}
+			return nil
+		}(),
+		Manager: func() *papi.Manager {
+			if i.Manager != nil {
+				return &papi.Manager{
+					Id:   &i.Manager.ID,
+					Type: (*papi.ManagerType)(&i.Manager.Type),
+				}
+			}
+			return nil
+		}(),
+		Name: i.Name,
+		PrivateNetworks: func() *[]papi.PrivateNetwork {
+			if i.PrivateNetworkIDs != nil {
+				list := make([]papi.PrivateNetwork, len(*i.PrivateNetworkIDs))
+				for j, id := range *i.PrivateNetworkIDs {
+					id := id
+					list[j] = papi.PrivateNetwork{Id: &id}
+				}
+				return &list
+			}
+			return nil
+		}(),
+		PublicIp: func() *string {
+			if i.PublicIPAddress != nil {
+				v := i.PublicIPAddress.String()
+				return &v
+			}
+			return nil
+		}(),
+		SecurityGroups: func() *[]papi.SecurityGroup {
+			if i.SecurityGroupIDs != nil {
+				list := make([]papi.SecurityGroup, len(*i.SecurityGroupIDs))
+				for j, id := range *i.SecurityGroupIDs {
+					id := id
+					list[j] = papi.SecurityGroup{Id: &id}
+				}
+				return &list
+			}
+			return nil
+		}(),
+		Snapshots: func() *[]papi.Snapshot {
+			if i.SnapshotIDs != nil {
+				list := make([]papi.Snapshot, len(*i.SnapshotIDs))
+				for j, id := range *i.SnapshotIDs {
+					id := id
+					list[j] = papi.Snapshot{Id: &id}
+				}
+				return &list
+			}
+			return nil
+		}(),
+		SshKey: func() *papi.SshKey {
+			if i.SSHKey != nil {
+				return &papi.SshKey{Name: i.SSHKey}
+			}
+			return nil
+		}(),
+		State:    (*papi.InstanceState)(i.State),
+		Template: &papi.Template{Id: i.TemplateID},
+		UserData: i.UserData,
+	}
 }
 
 // CreateInstance creates a Compute instance in the specified zone.
@@ -497,7 +680,7 @@ func (c *Client) CreateInstance(ctx context.Context, zone string, instance *Inst
 func (c *Client) ListInstances(ctx context.Context, zone string) ([]*Instance, error) {
 	list := make([]*Instance, 0)
 
-	resp, err := c.ListInstancesWithResponse(apiv2.WithZone(ctx, zone))
+	resp, err := c.ListInstancesWithResponse(apiv2.WithZone(ctx, zone), &papi.ListInstancesParams{})
 	if err != nil {
 		return nil, err
 	}
@@ -537,7 +720,7 @@ func (c *Client) FindInstance(ctx context.Context, zone, v string) (*Instance, e
 
 		// Historically, the Exoscale API allowed users to create multiple Compute instances sharing a common name.
 		// This function being expected to return one resource at most, in case the specified identifier is a name
-		// we have to check that there aren't more that one matching result before returning it.
+		// we have to check that there aren't more than one matching result before returning it.
 		if *r.Name == v {
 			if found != nil {
 				return nil, apiv2.ErrTooManyFound
