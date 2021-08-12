@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.26.0 (August 12, 2021)
+
+FEATURES:
+
+- **New Resource:** `exoscale_database` (BETA)
+
+IMPROVEMENTS:
+
+- `exoscale_sks_nodepool`: add support for Private Networks (#114)
+- `exoscale_sks_cluster`: add support for auto-upgrades
+- Upgrade to Terraform SDK v2
+
+
 ## 0.25.0 (July 2, 2021)
 
 IMPROVEMENTS:
