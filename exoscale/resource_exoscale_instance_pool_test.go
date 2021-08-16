@@ -18,21 +18,21 @@ import (
 )
 
 var (
-	testAccResourceInstancePoolAntiAffinityGroupName        = acctest.RandomWithPrefix(testPrefix)
-	testAccResourceInstancePoolDescription                  = acctest.RandString(10)
-	testAccResourceInstancePoolDiskSize               int64 = 10
-	testAccResourceInstancePoolDiskSizeUpdated              = testAccResourceInstancePoolDiskSize * 2
-	testAccResourceInstancePoolKeyPair                      = acctest.RandomWithPrefix(testPrefix)
-	testAccResourceInstancePoolName                         = acctest.RandomWithPrefix(testPrefix)
-	testAccResourceInstancePoolNameUpdated                  = testAccResourceInstancePoolName + "-updated"
-	testAccResourceInstancePoolInstancePrefix               = "test"
-	testAccResourceInstancePoolNetwork                      = acctest.RandomWithPrefix(testPrefix)
-	testAccResourceInstancePoolServiceOffering              = "tiny"
-	testAccResourceInstancePoolServiceOfferingUpdated       = "small"
-	testAccResourceInstancePoolSize                   int64 = 1
-	testAccResourceInstancePoolSizeUpdated                  = testAccResourceInstancePoolSize * 2
-	testAccResourceInstancePoolUserData                     = acctest.RandString(10)
-	testAccResourceInstancePoolUserDataUpdated              = testAccResourceInstancePoolUserData + "-updated"
+	testAccResourceInstancePoolAntiAffinityGroupName       = acctest.RandomWithPrefix(testPrefix)
+	testAccResourceInstancePoolDescription                 = acctest.RandString(10)
+	testAccResourceInstancePoolDiskSize              int64 = 10
+	testAccResourceInstancePoolDiskSizeUpdated             = testAccResourceInstancePoolDiskSize * 2
+	testAccResourceInstancePoolKeyPair                     = acctest.RandomWithPrefix(testPrefix)
+	testAccResourceInstancePoolName                        = acctest.RandomWithPrefix(testPrefix)
+	testAccResourceInstancePoolNameUpdated                 = testAccResourceInstancePoolName + "-updated"
+	testAccResourceInstancePoolInstancePrefix              = "test"
+	testAccResourceInstancePoolNetwork                     = acctest.RandomWithPrefix(testPrefix)
+	testAccResourceInstancePoolInstanceType                = "standard.tiny"
+	testAccResourceInstancePoolInstanceTypeUpdated         = "standard.small"
+	testAccResourceInstancePoolSize                  int64 = 1
+	testAccResourceInstancePoolSizeUpdated                 = testAccResourceInstancePoolSize * 2
+	testAccResourceInstancePoolUserData                    = acctest.RandString(10)
+	testAccResourceInstancePoolUserDataUpdated             = testAccResourceInstancePoolUserData + "-updated"
 
 	testAccResourceInstancePoolConfigCreate = fmt.Sprintf(`
 locals {
@@ -57,7 +57,7 @@ resource "exoscale_instance_pool" "test" {
   name = "%s"
   description = "%s"
   template_id = data.exoscale_compute_template.ubuntu.id
-  service_offering = "%s"
+  instance_type = "%s"
   size = %d
   disk_size = %d
   ipv6 = true
@@ -75,7 +75,7 @@ resource "exoscale_instance_pool" "test" {
 		testAccResourceInstancePoolAntiAffinityGroupName,
 		testAccResourceInstancePoolName,
 		testAccResourceInstancePoolDescription,
-		testAccResourceInstancePoolServiceOffering,
+		testAccResourceInstancePoolInstanceType,
 		testAccResourceInstancePoolSize,
 		testAccResourceInstancePoolDiskSize,
 		testAccResourceInstancePoolInstancePrefix,
@@ -114,7 +114,7 @@ resource "exoscale_instance_pool" "test" {
   name = "%s"
   description = ""
   template_id = data.exoscale_compute_template.debian.id
-  service_offering = "%s"
+  instance_type = "%s"
   size = %d
   disk_size = %d
   ipv6 = false
@@ -134,7 +134,7 @@ resource "exoscale_instance_pool" "test" {
 		testAccResourceInstancePoolKeyPair,
 		testAccResourceInstancePoolAntiAffinityGroupName,
 		testAccResourceInstancePoolNameUpdated,
-		testAccResourceInstancePoolServiceOfferingUpdated,
+		testAccResourceInstancePoolInstanceTypeUpdated,
 		testAccResourceInstancePoolSizeUpdated,
 		testAccResourceInstancePoolDiskSizeUpdated,
 		testAccResourceInstancePoolUserDataUpdated,
@@ -186,11 +186,11 @@ func TestAccResourceInstancePool(t *testing.T) {
 						resInstancePoolAttrAffinityGroupIDs + ".#": ValidateString("1"),
 						resInstancePoolAttrDescription:             ValidateString(testAccResourceInstancePoolDescription),
 						resInstancePoolAttrDiskSize:                ValidateString(fmt.Sprint(testAccResourceInstancePoolDiskSize)),
-						resInstancePoolAttrInstancePrefix:          ValidateString(testAccResourceInstancePoolInstancePrefix),
 						resInstancePoolAttrIPv6:                    ValidateString("true"),
+						resInstancePoolAttrInstancePrefix:          ValidateString(testAccResourceInstancePoolInstancePrefix),
+						resInstancePoolAttrInstanceType:            ValidateString(testAccResourceInstancePoolInstanceType),
 						resInstancePoolAttrName:                    ValidateString(testAccResourceInstancePoolName),
 						resInstancePoolAttrSecurityGroupIDs + ".#": ValidateString("1"),
-						resInstancePoolAttrServiceOffering:         ValidateString(testAccResourceInstancePoolServiceOffering),
 						resInstancePoolAttrSize:                    ValidateString(fmt.Sprint(testAccResourceInstancePoolSize)),
 						resInstancePoolAttrState:                   validation.ToDiagFunc(validation.NoZeroValues),
 						resInstancePoolAttrTemplateID:              validation.ToDiagFunc(validation.IsUUID),
@@ -238,11 +238,11 @@ func TestAccResourceInstancePool(t *testing.T) {
 						resInstancePoolAttrDiskSize:                ValidateString(fmt.Sprint(testAccResourceInstancePoolDiskSizeUpdated)),
 						resInstancePoolAttrElasticIPIDs + ".#":     ValidateString("1"),
 						resInstancePoolAttrInstancePrefix:          ValidateString(defaultInstancePoolInstancePrefix),
+						resInstancePoolAttrInstanceType:            ValidateString(testAccResourceInstancePoolInstanceTypeUpdated),
 						resInstancePoolAttrIPv6:                    ValidateString("false"),
 						resInstancePoolAttrKeyPair:                 ValidateString(testAccResourceInstancePoolKeyPair),
 						resInstancePoolAttrName:                    ValidateString(testAccResourceInstancePoolNameUpdated),
 						resInstancePoolAttrNetworkIDs + ".#":       ValidateString("1"),
-						resInstancePoolAttrServiceOffering:         ValidateString(testAccResourceInstancePoolServiceOfferingUpdated),
 						resInstancePoolAttrSize:                    ValidateString(fmt.Sprint(testAccResourceInstancePoolSizeUpdated)),
 						resInstancePoolAttrState:                   validation.ToDiagFunc(validation.NoZeroValues),
 						resInstancePoolAttrUserData:                ValidateString(testAccResourceInstancePoolUserDataUpdated),
@@ -268,11 +268,11 @@ func TestAccResourceInstancePool(t *testing.T) {
 							resInstancePoolAttrDiskSize:                ValidateString(fmt.Sprint(testAccResourceInstancePoolDiskSizeUpdated)),
 							resInstancePoolAttrElasticIPIDs + ".#":     ValidateString("1"),
 							resInstancePoolAttrInstancePrefix:          ValidateString(defaultInstancePoolInstancePrefix),
+							resInstancePoolAttrInstanceType:            ValidateString(testAccResourceInstancePoolInstanceTypeUpdated),
 							resInstancePoolAttrIPv6:                    ValidateString("false"),
 							resInstancePoolAttrKeyPair:                 ValidateString(testAccResourceInstancePoolKeyPair),
 							resInstancePoolAttrName:                    ValidateString(testAccResourceInstancePoolNameUpdated),
 							resInstancePoolAttrNetworkIDs + ".#":       ValidateString("1"),
-							resInstancePoolAttrServiceOffering:         ValidateString(testAccResourceInstancePoolServiceOfferingUpdated),
 							resInstancePoolAttrSize:                    ValidateString(fmt.Sprint(testAccResourceInstancePoolSizeUpdated)),
 							resInstancePoolAttrState:                   validation.ToDiagFunc(validation.NoZeroValues),
 							resInstancePoolAttrUserData:                ValidateString(testAccResourceInstancePoolUserDataUpdated),

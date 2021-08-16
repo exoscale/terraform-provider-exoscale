@@ -10,6 +10,7 @@ import (
 	"github.com/exoscale/egoscale"
 	exov2 "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
+	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -24,6 +25,7 @@ const (
 	resInstancePoolAttrDiskSize         = "disk_size"
 	resInstancePoolAttrElasticIPIDs     = "elastic_ip_ids"
 	resInstancePoolAttrInstancePrefix   = "instance_prefix"
+	resInstancePoolAttrInstanceType     = "instance_type"
 	resInstancePoolAttrIPv6             = "ipv6"
 	resInstancePoolAttrKeyPair          = "key_pair"
 	resInstancePoolAttrName             = "name"
@@ -74,6 +76,23 @@ func resourceInstancePool() *schema.Resource {
 			Optional: true,
 			Default:  defaultInstancePoolInstancePrefix,
 		},
+		resInstancePoolAttrInstanceType: {
+			// TODO: as long as "service_offering" is still deprecated but supported,
+			//  we cannot make "instance_type" required as it'd break existing configurations.
+			//  As soon as the "service_offering" parameter is phased out, the schema must be changed:
+			//  - Optional:true must become Required:true
+			//  - Computed:true must be removed
+			Type:          schema.TypeString,
+			Optional:      true,
+			Computed:      true,
+			ConflictsWith: []string{resInstancePoolAttrServiceOffering},
+			ValidateDiagFunc: func(v interface{}, _ cty.Path) diag.Diagnostics {
+				if !strings.Contains(v.(string), ".") {
+					return diag.Errorf(`invalid value %q, expected format "FAMILY.SIZE"`, v.(string))
+				}
+				return nil
+			},
+		},
 		resInstancePoolAttrIPv6: {
 			Type:     schema.TypeBool,
 			Optional: true,
@@ -100,8 +119,11 @@ func resourceInstancePool() *schema.Resource {
 			Elem:     &schema.Schema{Type: schema.TypeString},
 		},
 		resInstancePoolAttrServiceOffering: {
-			Type:     schema.TypeString,
-			Required: true,
+			Type:          schema.TypeString,
+			Optional:      true,
+			Computed:      true,
+			Deprecated:    `This attribute has been replaced by "instance_type".`,
+			ConflictsWith: []string{resInstancePoolAttrInstanceType},
 			ValidateFunc: func(val interface{}, key string) (warns []string, errs []error) {
 				v := val.(string)
 				if strings.ContainsAny(v, "ABCDEFGHIJKLMNOPQRSTUVWXYZ") {
@@ -216,7 +238,21 @@ func resourceInstancePoolCreate(ctx context.Context, d *schema.ResourceData, met
 		instancePool.TemplateID = &s
 	}
 
-	instanceType, err := client.FindInstanceType(ctx, zone, d.Get(resInstancePoolAttrServiceOffering).(string))
+	// FIXME: once the "instance_type" attribute has been made required, this check can be removed.
+	if d.Get(resInstancePoolAttrServiceOffering).(string) == "" &&
+		d.Get(resInstancePoolAttrInstanceType).(string) == "" {
+		return diag.Errorf(
+			"either %s or %s must be set",
+			resInstancePoolAttrServiceOffering,
+			resInstancePoolAttrInstanceType,
+		)
+	}
+	it := d.Get(resInstancePoolAttrServiceOffering).(string)
+	if v, ok := d.GetOk(resInstancePoolAttrInstanceType); ok {
+		it = v.(string)
+	}
+
+	instanceType, err := client.FindInstanceType(ctx, zone, it)
 	if err != nil {
 		return diag.Errorf("error retrieving instance type: %s", err)
 	}
@@ -434,8 +470,8 @@ func resourceInstancePoolUpdate(ctx context.Context, d *schema.ResourceData, met
 		updated = true
 	}
 
-	if d.HasChange(resInstancePoolAttrServiceOffering) {
-		instanceType, err := client.FindInstanceType(ctx, zone, d.Get(resInstancePoolAttrServiceOffering).(string))
+	if d.HasChange(resInstancePoolAttrInstanceType) {
+		instanceType, err := client.FindInstanceType(ctx, zone, d.Get(resInstancePoolAttrInstanceType).(string))
 		if err != nil {
 			return diag.Errorf("error retrieving instance type: %s", err)
 		}
@@ -573,7 +609,13 @@ func resourceInstancePoolApply(ctx context.Context, client *egoscale.Client, d *
 	if err != nil {
 		return diag.Errorf("error retrieving instance type: %s", err)
 	}
-	instancePool.InstanceTypeID = instanceType.ID
+	if err := d.Set(resInstancePoolAttrInstanceType, fmt.Sprintf(
+		"%s.%s",
+		strings.ToLower(*instanceType.Family),
+		strings.ToLower(*instanceType.Size),
+	)); err != nil {
+		return diag.FromErr(err)
+	}
 	if err := d.Set(resInstancePoolAttrServiceOffering, strings.ToLower(*instanceType.Size)); err != nil {
 		return diag.FromErr(err)
 	}
