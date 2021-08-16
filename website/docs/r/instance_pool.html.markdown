@@ -45,16 +45,16 @@ data "exoscale_compute_template" "webapp" {
 resource "exoscale_instance_pool" "webapp" {
   zone = var.zone
   name = "my-web-app"
-  template_id = data.exoscale_compute_template.webapp.id
   size = 3
-  service_offering = "medium"
+  template_id = data.exoscale_compute_template.webapp.id
+  instance_type = "medium"
   disk_size = 50
-  user_data = "#cloud-config\npackage_upgrade: true\n"
   key_pair = exoscale_ssh_keypair.webapp.name
   instance_prefix = "my-web-app"
   security_group_ids = [exoscale_security_group.webapp.id]
   network_ids = [exoscale_network.webapp.id]
   elastic_ip_ids = [exoscale_ipaddress.webapp.id]
+  user_data = "#cloud-config\npackage_upgrade: true\n"
 
   timeouts {
     delete = "10m"
@@ -69,7 +69,8 @@ resource "exoscale_instance_pool" "webapp" {
 * `name` - (Required) The name of the Instance Pool.
 * `template_id` - (Required) The ID of the instance [template][template] to use when creating Compute instances. Usage of the [`compute_template`][d-compute_template] data source is recommended.
 * `size` - (Required) The number of Compute instance members the Instance Pool manages.
-* `service_offering` - (Required) The managed Compute instances [size][size], e.g. `tiny`, `small`, `medium`, `large` etc.
+* `instance_type` -  (Required) The managed Compute instances [type][type] (format: `FAMILY.SIZE`, e.g. `standard.medium`, `memory.small`).
+* `service_offering` -  **Deprecated** The managed Compute instances [size][size], e.g. `tiny`, `small`, `medium`, `large` etc.
 * `disk_size` - The managed Compute instances disk size.
 * `description` - The description of the Instance Pool.
 * `user_data` - A [cloud-init][cloudinit] configuration to apply when creating Compute instances. Whenever possible don't base64-encode neither gzip it yourself, as this will be automatically taken care of on your behalf by the provider.
@@ -105,7 +106,7 @@ $ terraform import exoscale_instance_pool.example eb556678-ec59-4be6-8c54-0406ae
 [privnet-doc]: https://community.exoscale.com/documentation/compute/private-networks/
 [r-affinity]: affinity.html
 [r-security_group]: security_group.html
-[size]: https://www.exoscale.com/pricing/#/compute/
 [sshkeypair]: https://community.exoscale.com/documentation/compute/ssh-keypairs/
 [template]: https://www.exoscale.com/templates/
+[type]: https://www.exoscale.com/pricing/#/compute/
 [zone]: https://www.exoscale.com/datacenters/

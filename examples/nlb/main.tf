@@ -15,7 +15,7 @@ resource "exoscale_instance_pool" "website" {
   name = "instancepool-website"
   description = "test"
   template_id = data.exoscale_compute_template.website.id
-  service_offering = "medium"
+  instance_type = "standard.medium"
   size = 3
   zone = var.zone
 }
