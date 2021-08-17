@@ -40,9 +40,9 @@ func TestAccResourceAffinity(t *testing.T) {
 					testAccCheckResourceAffinityExists("exoscale_affinity.ag", ag),
 					testAccCheckResourceAffinity(ag),
 					testAccCheckResourceAffinityAttributes(testAttrs{
-						"name":        ValidateString(testAccResourceAffinityName),
-						"description": ValidateString(testAccResourceAffinityDescription),
-						"type":        ValidateString("host anti-affinity"),
+						"name":        validateString(testAccResourceAffinityName),
+						"description": validateString(testAccResourceAffinityDescription),
+						"type":        validateString("host anti-affinity"),
 					}),
 				),
 			},
@@ -53,9 +53,9 @@ func TestAccResourceAffinity(t *testing.T) {
 				ImportStateCheck: func(s []*terraform.InstanceState) error {
 					return checkResourceAttributes(
 						testAttrs{
-							"name":        ValidateString(testAccResourceAffinityName),
-							"description": ValidateString(testAccResourceAffinityDescription),
-							"type":        ValidateString("host anti-affinity"),
+							"name":        validateString(testAccResourceAffinityName),
+							"description": validateString(testAccResourceAffinityDescription),
+							"type":        validateString("host anti-affinity"),
 						},
 						s[0].Attributes)
 				},

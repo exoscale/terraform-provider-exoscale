@@ -118,7 +118,7 @@ func TestAccResourceNIC(t *testing.T) {
 					testAccCheckResourceNIC(nic, net.ParseIP("10.0.0.1")),
 					testAccCheckResourceNICAttributes(testAttrs{
 						"mac_address": validation.ToDiagFunc(validation.IsMACAddress),
-						"ip_address":  ValidateString(testAccResourceNICCIPAddress),
+						"ip_address":  validateString(testAccResourceNICCIPAddress),
 					}),
 				),
 			}, {
@@ -130,7 +130,7 @@ func TestAccResourceNIC(t *testing.T) {
 					testAccCheckResourceNIC(nic, net.ParseIP("10.0.0.3")),
 					testAccCheckResourceNICAttributes(testAttrs{
 						"mac_address": validation.ToDiagFunc(validation.IsMACAddress),
-						"ip_address":  ValidateString(testAccResourceNICCIPAddressUpdated),
+						"ip_address":  validateString(testAccResourceNICCIPAddressUpdated),
 					}),
 				),
 			},

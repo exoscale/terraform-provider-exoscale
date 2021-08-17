@@ -55,7 +55,7 @@ func resourceSecurityGroupRules() *schema.Resource {
 					Optional: true,
 					Elem: &schema.Schema{
 						Type:         schema.TypeString,
-						ValidateFunc: ValidatePortRange,
+						ValidateFunc: validatePortRange,
 					},
 				},
 				"icmp_type": {

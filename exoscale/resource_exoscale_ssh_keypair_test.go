@@ -53,7 +53,7 @@ func TestAccResourceSSHKeypair(t *testing.T) {
 					testAccCheckResourceSSHKeypairExists("exoscale_ssh_keypair.key", sshkey),
 					testAccCheckResourceSSHKeypair(sshkey),
 					testAccCheckResourceSSHKeypairAttributes(testAttrs{
-						"name":        ValidateString(testAccResourceSSHKeyName1),
+						"name":        validateString(testAccResourceSSHKeyName1),
 						"fingerprint": validation.ToDiagFunc(validation.NoZeroValues),
 						"private_key": validation.ToDiagFunc(validation.NoZeroValues),
 					}),
@@ -65,9 +65,9 @@ func TestAccResourceSSHKeypair(t *testing.T) {
 					testAccCheckResourceSSHKeypairExists("exoscale_ssh_keypair.key", sshkey),
 					testAccCheckResourceSSHKeypair(sshkey),
 					testAccCheckResourceSSHKeypairAttributes(testAttrs{
-						"name":        ValidateString(testAccResourceSSHKeyName2),
-						"public_key":  ValidateString(testAccResourceSSHKey2),
-						"fingerprint": ValidateString(testAccResourceSSHKeyFingerprint2),
+						"name":        validateString(testAccResourceSSHKeyName2),
+						"public_key":  validateString(testAccResourceSSHKey2),
+						"fingerprint": validateString(testAccResourceSSHKeyFingerprint2),
 					}),
 				),
 			},
@@ -79,8 +79,8 @@ func TestAccResourceSSHKeypair(t *testing.T) {
 				ImportStateCheck: func(s []*terraform.InstanceState) error {
 					return checkResourceAttributes(
 						testAttrs{
-							"name":        ValidateString(testAccResourceSSHKeyName2),
-							"fingerprint": ValidateString(testAccResourceSSHKeyFingerprint2),
+							"name":        validateString(testAccResourceSSHKeyName2),
+							"fingerprint": validateString(testAccResourceSSHKeyFingerprint2),
 						},
 						s[0].Attributes)
 				},

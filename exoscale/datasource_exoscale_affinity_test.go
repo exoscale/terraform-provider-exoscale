@@ -37,7 +37,7 @@ data "exoscale_affinity" "by-id" {
 				Check: resource.ComposeTestCheckFunc(
 					testAccDataSourceAffinityAttributes("data.exoscale_affinity.by-id", testAttrs{
 						"id":   validation.ToDiagFunc(validation.IsUUID),
-						"name": ValidateString(testAccDataSourceAffinityName),
+						"name": validateString(testAccDataSourceAffinityName),
 					}),
 				),
 			},
@@ -53,7 +53,7 @@ data "exoscale_affinity" "by-name" {
 				Check: resource.ComposeTestCheckFunc(
 					testAccDataSourceAffinityAttributes("data.exoscale_affinity.by-name", testAttrs{
 						"id":   validation.ToDiagFunc(validation.IsUUID),
-						"name": ValidateString(testAccDataSourceAffinityName),
+						"name": validateString(testAccDataSourceAffinityName),
 					}),
 				),
 			},

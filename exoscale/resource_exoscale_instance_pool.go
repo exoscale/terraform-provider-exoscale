@@ -10,7 +10,6 @@ import (
 	"github.com/exoscale/egoscale"
 	exov2 "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
-	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -82,16 +81,11 @@ func resourceInstancePool() *schema.Resource {
 			//  As soon as the "service_offering" parameter is phased out, the schema must be changed:
 			//  - Optional:true must become Required:true
 			//  - Computed:true must be removed
-			Type:          schema.TypeString,
-			Optional:      true,
-			Computed:      true,
-			ConflictsWith: []string{resInstancePoolAttrServiceOffering},
-			ValidateDiagFunc: func(v interface{}, _ cty.Path) diag.Diagnostics {
-				if !strings.Contains(v.(string), ".") {
-					return diag.Errorf(`invalid value %q, expected format "FAMILY.SIZE"`, v.(string))
-				}
-				return nil
-			},
+			Type:             schema.TypeString,
+			Optional:         true,
+			Computed:         true,
+			ConflictsWith:    []string{resInstancePoolAttrServiceOffering},
+			ValidateDiagFunc: validateComputeInstanceType,
 		},
 		resInstancePoolAttrIPv6: {
 			Type:     schema.TypeBool,

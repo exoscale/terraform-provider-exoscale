@@ -51,12 +51,12 @@ data "exoscale_nlb" "by-id" {
 				Check: resource.ComposeTestCheckFunc(
 					testAccDataSourceNLBAttributes("data.exoscale_nlb.by-id", testAttrs{
 						dsNLBAttrCreatedAt:   validation.ToDiagFunc(validation.NoZeroValues),
-						dsNLBAttrDescription: ValidateString(testAccDataSourceNLBDescription),
+						dsNLBAttrDescription: validateString(testAccDataSourceNLBDescription),
 						dsNLBAttrID:          validation.ToDiagFunc(validation.IsUUID),
 						dsNLBAttrIPAddress:   validation.ToDiagFunc(validation.IsIPv4Address),
-						dsNLBAttrName:        ValidateString(testAccDataSourceNLBName),
+						dsNLBAttrName:        validateString(testAccDataSourceNLBName),
 						dsNLBAttrState:       validation.ToDiagFunc(validation.NoZeroValues),
-						dsNLBAttrZone:        ValidateString(testAccDataSourceNLBZone),
+						dsNLBAttrZone:        validateString(testAccDataSourceNLBZone),
 					}),
 				),
 			},
@@ -70,12 +70,12 @@ data "exoscale_nlb" "by-name" {
 				Check: resource.ComposeTestCheckFunc(
 					testAccDataSourceNLBAttributes("data.exoscale_nlb.by-name", testAttrs{
 						dsNLBAttrCreatedAt:   validation.ToDiagFunc(validation.NoZeroValues),
-						dsNLBAttrDescription: ValidateString(testAccDataSourceNLBDescription),
+						dsNLBAttrDescription: validateString(testAccDataSourceNLBDescription),
 						dsNLBAttrID:          validation.ToDiagFunc(validation.IsUUID),
 						dsNLBAttrIPAddress:   validation.ToDiagFunc(validation.IsIPv4Address),
-						dsNLBAttrName:        ValidateString(testAccDataSourceNLBName),
+						dsNLBAttrName:        validateString(testAccDataSourceNLBName),
 						dsNLBAttrState:       validation.ToDiagFunc(validation.NoZeroValues),
-						dsNLBAttrZone:        ValidateString(testAccDataSourceNLBZone),
+						dsNLBAttrZone:        validateString(testAccDataSourceNLBZone),
 					}),
 				),
 			},

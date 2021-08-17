@@ -27,7 +27,7 @@ data "exoscale_domain" "domain" {
 }`, testAccDataSourceDomainName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDataSourceDomainAttributes(testAttrs{
-						"name": ValidateString(testAccDataSourceDomainName),
+						"name": validateString(testAccDataSourceDomainName),
 					}),
 				),
 			},
