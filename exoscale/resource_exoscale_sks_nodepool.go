@@ -81,15 +81,9 @@ func resourceSKSNodepool() *schema.Resource {
 			Default:  defaultSKSNodepoolInstancePrefix,
 		},
 		resSKSNodepoolAttrInstanceType: {
-			Type:     schema.TypeString,
-			Required: true,
-			ValidateFunc: func(val interface{}, key string) (warns []string, errs []error) {
-				v := val.(string)
-				if strings.ContainsAny(v, "ABCDEFGHIJKLMNOPQRSTUVWXYZ") {
-					errs = append(errs, fmt.Errorf("%q must be lowercase, got: %q", key, v))
-				}
-				return
-			},
+			Type:             schema.TypeString,
+			Required:         true,
+			ValidateDiagFunc: validateComputeInstanceType,
 		},
 		resSKSNodepoolAttrName: {
 			Type:     schema.TypeString,
@@ -508,7 +502,11 @@ func resourceSKSNodepoolApply(
 	if err != nil {
 		return diag.Errorf("error retrieving instance type: %s", err)
 	}
-	if err := d.Set(resSKSNodepoolAttrInstanceType, *instanceType.Size); err != nil {
+	if err := d.Set(resSKSNodepoolAttrInstanceType, fmt.Sprintf(
+		"%s.%s",
+		strings.ToLower(*instanceType.Family),
+		strings.ToLower(*instanceType.Size),
+	)); err != nil {
 		return diag.FromErr(err)
 	}
 

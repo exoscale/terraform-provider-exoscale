@@ -43,7 +43,7 @@ resource "exoscale_sks_nodepool" "test" {
   zone = local.zone
   cluster_id = exoscale_sks_cluster.test.id
   name = "test"
-  instance_type = "small"
+  instance_type = "standard.small"
   disk_size = 20
   size = 1
 
@@ -79,7 +79,7 @@ resource "exoscale_sks_nodepool" "test" {
   zone = local.zone
   cluster_id = exoscale_sks_cluster.test.id
   name = "test"
-  instance_type = "small"
+  instance_type = "standard.small"
   disk_size = 20
   size = 1
 

@@ -21,8 +21,8 @@ var (
 	testAccResourceSKSNodepoolDiskSize                    = defaultSKSNodepoolDiskSize
 	testAccResourceSKSNodepoolDiskSizeUpdated             = defaultSKSNodepoolDiskSize * 2
 	testAccResourceSKSNodepoolInstancePrefix              = "test"
-	testAccResourceSKSNodepoolInstanceType                = "small"
-	testAccResourceSKSNodepoolInstanceTypeUpdated         = "medium"
+	testAccResourceSKSNodepoolInstanceType                = "standard.small"
+	testAccResourceSKSNodepoolInstanceTypeUpdated         = "standard.medium"
 	testAccResourceSKSNodepoolName                        = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceSKSNodepoolNameUpdated                 = testAccResourceSKSNodepoolName + "-updated"
 	testAccResourceSKSNodepoolPrivateNetworkName          = acctest.RandomWithPrefix(testPrefix)
