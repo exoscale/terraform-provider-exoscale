@@ -70,8 +70,8 @@ resource "exoscale_sks_nodepool" "ci-builders" {
 * `cluster_id` - (Required) The ID of the parent SKS cluster.
 * `size` - (Required) The number of Compute instances the SKS Nodepool manages.
 * `name` - (Required) The name of the SKS Nodepool.
+* `instance_type` (Required) - The [type][type] of Compute instances managed by the SKS Nodepool (format: `FAMILY.SIZE`, e.g. `standard.medium`, `memory.huge`).
 * `instance_prefix` - The string to add as prefix to managed Compute instances name (default `pool`).
-* `instance_type` (Required) - The type of Compute instances managed by the SKS Nodepool.
 * `disk_size` - The disk size of the Compute instances managed by the SKS Nodepool (default: `50`).
 * `anti_affinity_group_ids` - The list of Anti-Affinity Groups (IDs) the Compute instances managed by the SKS Nodepool are member of.
 * `security_group_ids` - The list of Security Groups (IDs) the Compute instances managed by the SKS Nodepool are member of.
@@ -103,5 +103,6 @@ $ terraform import exoscale_sks_nodepool.ci-builders eb556678-ec59-4be6-8c54-040
 
 [r-sks_cluster]: sks_cluster.html
 [sks-doc]: https://community.exoscale.com/documentation/sks/
+[type]: https://www.exoscale.com/pricing/#/compute/
 [zone]: https://www.exoscale.com/datacenters/
 
