@@ -70,7 +70,7 @@ resource "exoscale_instance_pool" "webapp" {
 * `template_id` - (Required) The ID of the instance [template][template] to use when creating Compute instances. Usage of the [`compute_template`][d-compute_template] data source is recommended.
 * `size` - (Required) The number of Compute instance members the Instance Pool manages.
 * `instance_type` -  (Required) The managed Compute instances [type][type] (format: `FAMILY.SIZE`, e.g. `standard.medium`, `memory.small`).
-* `service_offering` -  **Deprecated** The managed Compute instances [size][size], e.g. `tiny`, `small`, `medium`, `large` etc.
+* `service_offering` - **Deprecated** The managed Compute instances size. Replaced by `instance_type`.
 * `disk_size` - The managed Compute instances disk size.
 * `description` - The description of the Instance Pool.
 * `user_data` - A [cloud-init][cloudinit] configuration to apply when creating Compute instances. Whenever possible don't base64-encode neither gzip it yourself, as this will be automatically taken care of on your behalf by the provider.
