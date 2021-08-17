@@ -94,8 +94,8 @@ data "exoscale_domain_record" "test_record" {
 					testAccDataSourceDomainRecordAttributes(
 						"data.exoscale_domain_record.test_record",
 						testAttrs{
-							"records.0.name":   ValidateString(testAccDataSourceDomainRecordName1),
-							"records.0.domain": ValidateString(testAccDataSourceDomainRecordDomainName),
+							"records.0.name":   validateString(testAccDataSourceDomainRecordName1),
+							"records.0.domain": validateString(testAccDataSourceDomainRecordDomainName),
 						},
 					),
 				),
@@ -116,8 +116,8 @@ data "exoscale_domain_record" "test_record" {
 					testAccDataSourceDomainRecordAttributes(
 						"data.exoscale_domain_record.test_record",
 						testAttrs{
-							"records.0.name":   ValidateString(testAccDataSourceDomainRecordName1),
-							"records.0.domain": ValidateString(testAccDataSourceDomainRecordDomainName),
+							"records.0.name":   validateString(testAccDataSourceDomainRecordName1),
+							"records.0.domain": validateString(testAccDataSourceDomainRecordDomainName),
 						},
 					),
 				),
@@ -138,8 +138,8 @@ data "exoscale_domain_record" "test_record" {
 					testAccDataSourceDomainRecordAttributes(
 						"data.exoscale_domain_record.test_record",
 						testAttrs{
-							"records.0.domain": ValidateString(testAccDataSourceDomainRecordDomainName),
-							"records.1.domain": ValidateString(testAccDataSourceDomainRecordDomainName),
+							"records.0.domain": validateString(testAccDataSourceDomainRecordDomainName),
+							"records.1.domain": validateString(testAccDataSourceDomainRecordDomainName),
 						},
 					),
 				),
@@ -160,8 +160,8 @@ data "exoscale_domain_record" "test_record" {
 					testAccDataSourceDomainRecordAttributes(
 						"data.exoscale_domain_record.test_record",
 						testAttrs{
-							"records.0.domain": ValidateString(testAccDataSourceDomainRecordDomainName),
-							"records.1.domain": ValidateString(testAccDataSourceDomainRecordDomainName),
+							"records.0.domain": validateString(testAccDataSourceDomainRecordDomainName),
+							"records.1.domain": validateString(testAccDataSourceDomainRecordDomainName),
 						},
 					),
 				),

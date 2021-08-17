@@ -39,8 +39,8 @@ func TestAccResourceSecurityGroup(t *testing.T) {
 					testAccCheckResourceSecurityGroupExists("exoscale_security_group.sg", sg),
 					testAccCheckResourceSecurityGroup(sg),
 					testAccCheckResourceSecurityGroupAttributes(testAttrs{
-						"name":        ValidateString(testAccResourceSecurityGroupName),
-						"description": ValidateString(testAccResourceSecurityGroupDescription),
+						"name":        validateString(testAccResourceSecurityGroupName),
+						"description": validateString(testAccResourceSecurityGroupDescription),
 					}),
 				),
 			},
@@ -51,8 +51,8 @@ func TestAccResourceSecurityGroup(t *testing.T) {
 				ImportStateCheck: func(s []*terraform.InstanceState) error {
 					return checkResourceAttributes(
 						testAttrs{
-							"name":        ValidateString(testAccResourceSecurityGroupName),
-							"description": ValidateString(testAccResourceSecurityGroupDescription),
+							"name":        validateString(testAccResourceSecurityGroupName),
+							"description": validateString(testAccResourceSecurityGroupDescription),
 						},
 						s[0].Attributes)
 				},

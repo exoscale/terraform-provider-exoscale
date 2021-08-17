@@ -167,25 +167,25 @@ func TestCheckResourceAttributes(t *testing.T) {
 	for _, tc := range []testCase{
 		{
 			desc:        "empty attributes map",
-			want:        testAttrs{"something": ValidateString("anything")},
+			want:        testAttrs{"something": validateString("anything")},
 			got:         nil,
 			expectError: true,
 		},
 		{
 			desc:        "attribute absent",
-			want:        testAttrs{"something": ValidateString("this")},
+			want:        testAttrs{"something": validateString("this")},
 			got:         map[string]string{"something else": "that"},
 			expectError: true,
 		},
 		{
 			desc:        "attribute with unexpected value",
-			want:        testAttrs{"something": ValidateString("this")},
+			want:        testAttrs{"something": validateString("this")},
 			got:         map[string]string{"something": "that"},
 			expectError: true,
 		},
 		{
 			desc: "attribute with expected value",
-			want: testAttrs{"something": ValidateString("this")},
+			want: testAttrs{"something": validateString("this")},
 			got:  map[string]string{"something": "this"},
 		},
 	} {

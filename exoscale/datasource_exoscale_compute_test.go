@@ -24,18 +24,18 @@ var (
 	testAccDataSourceComputeAttrs = testAttrs{
 		"cpu":                            validation.ToDiagFunc(validation.NoZeroValues),
 		"created":                        validation.ToDiagFunc(validation.NoZeroValues),
-		"disk_size":                      ValidateString(testAccDataSourceComputeDiskSize),
-		"hostname":                       ValidateString(testAccDataSourceComputeName),
+		"disk_size":                      validateString(testAccDataSourceComputeDiskSize),
+		"hostname":                       validateString(testAccDataSourceComputeName),
 		"id":                             validation.ToDiagFunc(validation.NoZeroValues),
 		"ip6_address":                    validation.ToDiagFunc(validation.IsIPv6Address),
 		"ip_address":                     validation.ToDiagFunc(validation.IsIPv4Address),
 		"memory":                         validation.ToDiagFunc(validation.NoZeroValues),
-		"private_network_ip_addresses.#": ValidateString("1"),
-		"size":                           ValidateString(testAccDataSourceComputeSize),
-		"state":                          ValidateString("Running"),
-		"tags.test":                      ValidateString(testAccDataSourceComputeTagValue),
-		"template":                       ValidateString(testAccDataSourceComputeTemplate),
-		"zone":                           ValidateString(testAccDataSourceComputeZone),
+		"private_network_ip_addresses.#": validateString("1"),
+		"size":                           validateString(testAccDataSourceComputeSize),
+		"state":                          validateString("Running"),
+		"tags.test":                      validateString(testAccDataSourceComputeTagValue),
+		"template":                       validateString(testAccDataSourceComputeTemplate),
+		"zone":                           validateString(testAccDataSourceComputeZone),
 	}
 
 	testAccDataSourceComputeCreate = fmt.Sprintf(`

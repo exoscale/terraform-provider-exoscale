@@ -5,12 +5,14 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/hashicorp/go-cty/cty"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-// ValidateString validates that the given field is a string and matches the expected value
-func ValidateString(str string) schema.SchemaValidateDiagFunc {
+// validateString validates that the given field is a string and matches the expected value.
+func validateString(str string) schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(func(i interface{}, k string) (s []string, es []error) {
 		value, ok := i.(string)
 		if !ok {
@@ -27,26 +29,8 @@ func ValidateString(str string) schema.SchemaValidateDiagFunc {
 	})
 }
 
-// ValidateStringNot validates that the given field is a string that doesn't match the specified value.
-func ValidateStringNot(str string) schema.SchemaValidateDiagFunc {
-	return validation.ToDiagFunc(func(i interface{}, k string) (s []string, es []error) {
-		value, ok := i.(string)
-		if !ok {
-			es = append(es, fmt.Errorf("expected type of %s to be string", k))
-			return
-		}
-
-		if value == str {
-			es = append(es, fmt.Errorf("string %q match expected value %q", value, str))
-			return
-		}
-
-		return
-	})
-}
-
-// ValidatePortRange validates that the given field contains a port range.
-func ValidatePortRange(i interface{}, k string) (s []string, es []error) {
+// validatePortRange validates that the given field contains a port range.
+func validatePortRange(i interface{}, k string) (s []string, es []error) {
 	value, ok := i.(string)
 	if !ok {
 		es = append(es, fmt.Errorf("expected type of %s to be string", k))
@@ -77,4 +61,18 @@ func ValidatePortRange(i interface{}, k string) (s []string, es []error) {
 	}
 
 	return
+}
+
+// validateComputeInstanceType validates that the given field contains a valid Exoscale Compute instance type.
+func validateComputeInstanceType(v interface{}, _ cty.Path) diag.Diagnostics {
+	value, ok := v.(string)
+	if !ok {
+		return diag.Errorf("expected field %q type to be string", v)
+	}
+
+	if !strings.Contains(value, ".") {
+		return diag.Errorf(`invalid value %q, expected format "FAMILY.SIZE"`, value)
+	}
+
+	return nil
 }

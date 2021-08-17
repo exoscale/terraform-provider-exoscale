@@ -170,11 +170,11 @@ func TestAccResourceNLB(t *testing.T) {
 					},
 					checkResourceState(r, checkResourceStateValidateAttributes(testAttrs{
 						resNLBAttrCreatedAt:   validation.ToDiagFunc(validation.NoZeroValues),
-						resNLBAttrDescription: ValidateString(testAccResourceNLBDescription),
+						resNLBAttrDescription: validateString(testAccResourceNLBDescription),
 						resNLBAttrIPAddress:   validation.ToDiagFunc(validation.IsIPv4Address),
-						resNLBAttrName:        ValidateString(testAccResourceNLBName),
+						resNLBAttrName:        validateString(testAccResourceNLBName),
 						resNLBAttrState:       validation.ToDiagFunc(validation.NoZeroValues),
-						resNLBAttrZone:        ValidateString(testZoneName),
+						resNLBAttrZone:        validateString(testZoneName),
 
 						// Note: can't test the resNLBAttrServices attribute yet, as the
 						// exoscale_nlb_service resource is created after the exoscale_nlb
@@ -201,10 +201,10 @@ func TestAccResourceNLB(t *testing.T) {
 						resNLBAttrCreatedAt:       validation.ToDiagFunc(validation.NoZeroValues),
 						resNLBAttrDescription:     validation.ToDiagFunc(validation.StringIsEmpty),
 						resNLBAttrIPAddress:       validation.ToDiagFunc(validation.IsIPv4Address),
-						resNLBAttrName:            ValidateString(testAccResourceNLBNameUpdated),
-						resNLBAttrServices + ".#": ValidateString("1"),
+						resNLBAttrName:            validateString(testAccResourceNLBNameUpdated),
+						resNLBAttrServices + ".#": validateString("1"),
 						resNLBAttrState:           validation.ToDiagFunc(validation.NoZeroValues),
-						resNLBAttrZone:            ValidateString(testZoneName),
+						resNLBAttrZone:            validateString(testZoneName),
 					})),
 				),
 			},
@@ -224,10 +224,10 @@ func TestAccResourceNLB(t *testing.T) {
 							resNLBAttrCreatedAt:       validation.ToDiagFunc(validation.NoZeroValues),
 							resNLBAttrDescription:     validation.ToDiagFunc(validation.StringIsEmpty),
 							resNLBAttrIPAddress:       validation.ToDiagFunc(validation.IsIPv4Address),
-							resNLBAttrName:            ValidateString(testAccResourceNLBNameUpdated),
-							resNLBAttrServices + ".#": ValidateString("1"),
+							resNLBAttrName:            validateString(testAccResourceNLBNameUpdated),
+							resNLBAttrServices + ".#": validateString("1"),
 							resNLBAttrState:           validation.ToDiagFunc(validation.NoZeroValues),
-							resNLBAttrZone:            ValidateString(testZoneName),
+							resNLBAttrZone:            validateString(testZoneName),
 						},
 						s[0].Attributes)
 				},

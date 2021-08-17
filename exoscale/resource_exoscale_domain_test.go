@@ -40,9 +40,9 @@ func TestAccResourceDomain(t *testing.T) {
 					testAccCheckResourceDomainExists("exoscale_domain.exo", domain),
 					testAccCheckResourceDomain(domain),
 					testAccCheckResourceDomainAttributes(testAttrs{
-						"name":       ValidateString(testAccResourceDomainName),
-						"state":      ValidateString("hosted"),
-						"auto_renew": ValidateString("false"),
+						"name":       validateString(testAccResourceDomainName),
+						"state":      validateString("hosted"),
+						"auto_renew": validateString("false"),
 						"expires_on": validation.ToDiagFunc(validation.StringIsEmpty),
 						"token":      validation.ToDiagFunc(validation.StringMatch(regexp.MustCompile("^[0-9a-f]+$"), "")),
 					}),
@@ -55,9 +55,9 @@ func TestAccResourceDomain(t *testing.T) {
 				ImportStateCheck: func(s []*terraform.InstanceState) error {
 					return checkResourceAttributes(
 						testAttrs{
-							"name":       ValidateString(testAccResourceDomainName),
-							"state":      ValidateString("hosted"),
-							"auto_renew": ValidateString("false"),
+							"name":       validateString(testAccResourceDomainName),
+							"state":      validateString("hosted"),
+							"auto_renew": validateString("false"),
 							"expires_on": validation.ToDiagFunc(validation.StringIsEmpty),
 							"token":      validation.ToDiagFunc(validation.StringMatch(regexp.MustCompile("^[0-9a-f]+$"), "")),
 						},

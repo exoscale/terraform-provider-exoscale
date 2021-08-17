@@ -44,9 +44,9 @@ data "exoscale_compute_template" "test" {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDataSourceComputeTemplateAttributes(testAttrs{
-						"id":       ValidateString(testAccDataSourceComputeTemplateID),
-						"name":     ValidateString(testAccDataSourceComputeTemplateName),
-						"username": ValidateString(testAccDataSourceComputeTemplateUsername),
+						"id":       validateString(testAccDataSourceComputeTemplateID),
+						"name":     validateString(testAccDataSourceComputeTemplateName),
+						"username": validateString(testAccDataSourceComputeTemplateUsername),
 					}),
 				),
 			},
@@ -63,9 +63,9 @@ data "exoscale_compute_template" "test" {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDataSourceComputeTemplateAttributes(testAttrs{
-						"id":       ValidateString(testAccDataSourceComputeTemplateID),
-						"name":     ValidateString(testAccDataSourceComputeTemplateName),
-						"username": ValidateString(testAccDataSourceComputeTemplateUsername),
+						"id":       validateString(testAccDataSourceComputeTemplateID),
+						"name":     validateString(testAccDataSourceComputeTemplateName),
+						"username": validateString(testAccDataSourceComputeTemplateUsername),
 					}),
 				),
 			},
