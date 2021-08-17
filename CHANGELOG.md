@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.27.0 (August 17, 2021)
+
+DEPRECATIONS:
+
+- `exoscale_instance_pool`: the `service_offering` parameter is deprecated and replaced by `instance_type`
+
+
 ## 0.26.0 (August 12, 2021)
 
 FEATURES:
