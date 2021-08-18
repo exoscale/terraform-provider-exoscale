@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.28.0 (August 18, 2021)
+
+CHANGES:
+
+- `exoscale_sks_nodepool`: the `instance_type` parameter now expects a `FAMILY.SIZE` format (e.g. `standard.small`, `memory.huge`...). Previous size-only values (e.g. `small`, `medium` etc.) must now be prefixed with `standard.`.
+
+
 ## 0.27.0 (August 17, 2021)
 
 DEPRECATIONS:
