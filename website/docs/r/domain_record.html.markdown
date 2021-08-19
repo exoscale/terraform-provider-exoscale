@@ -37,7 +37,7 @@ resource "exoscale_domain_record" "myserver_alias" {
 ## Arguments Reference
 
 * `domain` - (Required) The name of the [`exoscale_domain`][r-domain] to create the record into.
-* `name` - (Required) The name of the domain record.
+* `name` - (Required) The name of the domain record; leave blank (`""`) to create a root record (similar to using `@` in a DNS zone file).
 * `record_type` - (Required) The type of the domain record. Supported values are: `A`, `AAAA`, `ALIAS`, `CAA`, `CNAME`, `HINFO`, `MX`, `NAPTR`, `NS`, `POOL`, `SPF`, `SRV`, `SSHFP`, `TXT`, `URL`.
 * `content` - (Required) The value of the domain record.
 * `ttl` - The [Time To Live][ttl] of the domain record.
