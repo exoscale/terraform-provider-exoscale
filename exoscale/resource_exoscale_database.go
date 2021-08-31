@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"log"
 
-	exov2 "github.com/exoscale/egoscale/v2"
+	egoscale "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -166,12 +166,12 @@ func resourceDatabaseCreate(ctx context.Context, d *schema.ResourceData, meta in
 
 	client := GetComputeClient(meta)
 
-	database := new(exov2.DatabaseService)
+	database := new(egoscale.DatabaseService)
 
 	maintenanceDOW := d.Get(resDatabaseAttrMaintenanceDOW).(string)
 	maintenanceTime := d.Get(resDatabaseAttrMaintenanceTime).(string)
 	if maintenanceDOW != "" && maintenanceTime != "" {
-		database.Maintenance = &exov2.DatabaseServiceMaintenance{
+		database.Maintenance = &egoscale.DatabaseServiceMaintenance{
 			DOW:  maintenanceDOW,
 			Time: maintenanceTime,
 		}
@@ -271,7 +271,7 @@ func resourceDatabaseUpdate(ctx context.Context, d *schema.ResourceData, meta in
 	var updated bool
 
 	if d.HasChange(resDatabaseAttrMaintenanceDOW) || d.HasChange(resDatabaseAttrMaintenanceTime) {
-		database.Maintenance = &exov2.DatabaseServiceMaintenance{
+		database.Maintenance = &egoscale.DatabaseServiceMaintenance{
 			DOW:  d.Get(resDatabaseAttrMaintenanceDOW).(string),
 			Time: d.Get(resDatabaseAttrMaintenanceTime).(string),
 		}
@@ -321,7 +321,8 @@ func resourceDatabaseDelete(ctx context.Context, d *schema.ResourceData, meta in
 
 	client := GetComputeClient(meta)
 
-	err := client.DeleteDatabaseService(ctx, zone, d.Id())
+	databaseName := d.Id()
+	err := client.DeleteDatabaseService(ctx, zone, &egoscale.DatabaseService{Name: &databaseName})
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -334,7 +335,7 @@ func resourceDatabaseDelete(ctx context.Context, d *schema.ResourceData, meta in
 func resourceDatabaseApply(
 	_ context.Context,
 	d *schema.ResourceData,
-	database *exov2.DatabaseService,
+	database *egoscale.DatabaseService,
 ) diag.Diagnostics {
 	if err := d.Set(resDatabaseAttrCreatedAt, database.CreatedAt.String()); err != nil {
 		return diag.FromErr(err)

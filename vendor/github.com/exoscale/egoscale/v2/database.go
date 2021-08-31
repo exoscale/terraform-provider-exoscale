@@ -97,6 +97,46 @@ type DatabaseServiceBackup struct {
 	Date *time.Time
 }
 
+func databaseServiceBackupFromAPI(b *papi.DbaasServiceBackup) *DatabaseServiceBackup {
+	return &DatabaseServiceBackup{
+		Name: &b.BackupName,
+		Size: &b.DataSize,
+		Date: &b.BackupTime,
+	}
+}
+
+// DatabaseServiceComponent represents a Database Service component.
+type DatabaseServiceComponent struct {
+	Name *string
+	Info map[string]interface{}
+}
+
+func databaseServiceComponentFromAPI(c *papi.DbaasServiceComponents) *DatabaseServiceComponent {
+	info := map[string]interface{}{
+		"host":  c.Host,
+		"port":  c.Port,
+		"route": c.Route,
+		"usage": c.Usage,
+	}
+
+	if c.KafkaAuthenticationMethod != nil {
+		info["kafka_authenticated_method"] = c.KafkaAuthenticationMethod
+	}
+
+	if c.Path != nil {
+		info["path"] = c.Path
+	}
+
+	if c.Ssl != nil {
+		info["ssl"] = c.Ssl
+	}
+
+	return &DatabaseServiceComponent{
+		Name: &c.Component,
+		Info: info,
+	}
+}
+
 // DatabaseServiceMaintenance represents a Database Service maintenance.
 type DatabaseServiceMaintenance struct {
 	DOW  string
@@ -107,14 +147,6 @@ func databaseServiceMaintenanceFromAPI(m *papi.DbaasServiceMaintenance) *Databas
 	return &DatabaseServiceMaintenance{
 		DOW:  string(m.Dow),
 		Time: m.Time,
-	}
-}
-
-func databaseServiceBackupFromAPI(b *papi.DbaasServiceBackup) *DatabaseServiceBackup {
-	return &DatabaseServiceBackup{
-		Name: &b.BackupName,
-		Size: &b.DataSize,
-		Date: &b.BackupTime,
 	}
 }
 
@@ -136,6 +168,7 @@ func databaseServiceUserFromAPI(u *papi.DbaasServiceUser) *DatabaseServiceUser {
 // DatabaseService represents a Database Service.
 type DatabaseService struct {
 	Backups               []*DatabaseServiceBackup
+	Components            []*DatabaseServiceComponent
 	ConnectionInfo        map[string]interface{}
 	CreatedAt             *time.Time
 	DiskSize              *int64
@@ -166,6 +199,15 @@ func databaseServiceFromAPI(s *papi.DbaasService) *DatabaseService {
 				}
 			}
 			return backups
+		}(),
+		Components: func() []*DatabaseServiceComponent {
+			components := make([]*DatabaseServiceComponent, 0)
+			if s.Components != nil {
+				for _, c := range *s.Components {
+					components = append(components, databaseServiceComponentFromAPI(&c))
+				}
+			}
+			return components
 		}(),
 		ConnectionInfo: func() (v map[string]interface{}) {
 			if s.ConnectionInfo != nil {
@@ -228,6 +270,26 @@ func databaseServiceFromAPI(s *papi.DbaasService) *DatabaseService {
 	}
 }
 
+// GetDatabaseCACertificate returns the CA certificate required to access Database Services using a TLS connection.
+func (c *Client) GetDatabaseCACertificate(ctx context.Context, zone string) (string, error) {
+	resp, err := c.GetDbaasCaCertificateWithResponse(apiv2.WithZone(ctx, zone))
+	if err != nil {
+		return "", err
+	}
+
+	return *resp.JSON200.Certificate, nil
+}
+
+// GetDatabaseServiceType returns the Database Service type corresponding to the specified name.
+func (c *Client) GetDatabaseServiceType(ctx context.Context, zone, name string) (*DatabaseServiceType, error) {
+	resp, err := c.GetDbaasServiceTypeWithResponse(apiv2.WithZone(ctx, zone), name)
+	if err != nil {
+		return nil, err
+	}
+
+	return databaseServiceTypeFromAPI(resp.JSON200), nil
+}
+
 // ListDatabaseServiceTypes returns the list of existing Database Service types.
 func (c *Client) ListDatabaseServiceTypes(ctx context.Context, zone string) ([]*DatabaseServiceType, error) {
 	list := make([]*DatabaseServiceType, 0)
@@ -244,16 +306,6 @@ func (c *Client) ListDatabaseServiceTypes(ctx context.Context, zone string) ([]*
 	}
 
 	return list, nil
-}
-
-// GetDatabaseServiceType returns the Database Service type corresponding to the specified name.
-func (c *Client) GetDatabaseServiceType(ctx context.Context, zone, name string) (*DatabaseServiceType, error) {
-	resp, err := c.GetDbaasServiceTypeWithResponse(apiv2.WithZone(ctx, zone), name)
-	if err != nil {
-		return nil, err
-	}
-
-	return databaseServiceTypeFromAPI(resp.JSON200), nil
 }
 
 // CreateDatabaseService creates a Database Service.
@@ -300,6 +352,26 @@ func (c *Client) CreateDatabaseService(
 	return c.GetDatabaseService(ctx, zone, *databaseService.Name)
 }
 
+// DeleteDatabaseService deletes a Database Service.
+func (c *Client) DeleteDatabaseService(ctx context.Context, zone string, databaseService *DatabaseService) error {
+	_, err := c.TerminateDbaasServiceWithResponse(apiv2.WithZone(ctx, zone), *databaseService.Name)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// GetDatabaseService returns the Database Service corresponding to the specified name.
+func (c *Client) GetDatabaseService(ctx context.Context, zone, name string) (*DatabaseService, error) {
+	resp, err := c.GetDbaasServiceWithResponse(apiv2.WithZone(ctx, zone), name)
+	if err != nil {
+		return nil, err
+	}
+
+	return databaseServiceFromAPI(resp.JSON200), nil
+}
+
 // ListDatabaseServices returns the list of Database Services.
 func (c *Client) ListDatabaseServices(ctx context.Context, zone string) ([]*DatabaseService, error) {
 	list := make([]*DatabaseService, 0)
@@ -318,17 +390,7 @@ func (c *Client) ListDatabaseServices(ctx context.Context, zone string) ([]*Data
 	return list, nil
 }
 
-// GetDatabaseService returns the Database Service corresponding to the specified name.
-func (c *Client) GetDatabaseService(ctx context.Context, zone, name string) (*DatabaseService, error) {
-	resp, err := c.GetDbaasServiceWithResponse(apiv2.WithZone(ctx, zone), name)
-	if err != nil {
-		return nil, err
-	}
-
-	return databaseServiceFromAPI(resp.JSON200), nil
-}
-
-// UpdateDatabaseService updates the specified Database Service.
+// UpdateDatabaseService updates a Database Service.
 func (c *Client) UpdateDatabaseService(ctx context.Context, zone string, databaseService *DatabaseService) error {
 	_, err := c.UpdateDbaasServiceWithResponse(
 		apiv2.WithZone(ctx, zone),
@@ -360,16 +422,6 @@ func (c *Client) UpdateDatabaseService(ctx context.Context, zone string, databas
 				return
 			}(),
 		})
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// DeleteDatabaseService deletes the specified Database Service.
-func (c *Client) DeleteDatabaseService(ctx context.Context, zone, name string) error {
-	_, err := c.TerminateDbaasServiceWithResponse(apiv2.WithZone(ctx, zone), name)
 	if err != nil {
 		return err
 	}

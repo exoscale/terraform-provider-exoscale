@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	exov2 "github.com/exoscale/egoscale/v2"
+	egoscale "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -190,7 +190,7 @@ func resourceNLBServiceCreate(ctx context.Context, d *schema.ResourceData, meta 
 	}
 
 	healthcheck := d.Get("healthcheck").(*schema.Set).List()[0].(map[string]interface{})
-	nlbServiceHealthcheck := new(exov2.NetworkLoadBalancerServiceHealthcheck)
+	nlbServiceHealthcheck := new(egoscale.NetworkLoadBalancerServiceHealthcheck)
 
 	nlbServiceHealthcheckInterval := time.Duration(healthcheck[resNLBServiceAttrHealthcheckInterval].(int)) * time.Second
 	nlbServiceHealthcheck.Interval = &nlbServiceHealthcheckInterval
@@ -219,7 +219,7 @@ func resourceNLBServiceCreate(ctx context.Context, d *schema.ResourceData, meta 
 		}
 	}
 
-	nlbService := new(exov2.NetworkLoadBalancerService)
+	nlbService := new(egoscale.NetworkLoadBalancerService)
 
 	nlbServiceName := d.Get(resNLBServiceAttrName).(string)
 	nlbService.Name = &nlbServiceName
@@ -246,7 +246,7 @@ func resourceNLBServiceCreate(ctx context.Context, d *schema.ResourceData, meta 
 	nlbServiceTargetPort := uint16(d.Get(resNLBServiceAttrTargetPort).(int))
 	nlbService.TargetPort = &nlbServiceTargetPort
 
-	nlbService, err = nlb.AddService(ctx, nlbService)
+	nlbService, err = client.CreateNetworkLoadBalancerService(ctx, zone, nlb, nlbService)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -279,7 +279,7 @@ func resourceNLBServiceRead(ctx context.Context, d *schema.ResourceData, meta in
 		return diag.FromErr(err)
 	}
 
-	var nlbService *exov2.NetworkLoadBalancerService
+	var nlbService *egoscale.NetworkLoadBalancerService
 	for _, s := range nlb.Services {
 		if *s.ID == d.Id() {
 			nlbService = s
@@ -313,7 +313,7 @@ func resourceNLBServiceUpdate(ctx context.Context, d *schema.ResourceData, meta 
 		return diag.FromErr(err)
 	}
 
-	var nlbService *exov2.NetworkLoadBalancerService
+	var nlbService *egoscale.NetworkLoadBalancerService
 	for _, s := range nlb.Services {
 		if *s.ID == d.Id() {
 			nlbService = s
@@ -401,7 +401,7 @@ func resourceNLBServiceUpdate(ctx context.Context, d *schema.ResourceData, meta 
 			return diag.FromErr(err)
 		}
 
-		if err = nlb.UpdateService(ctx, nlbService); err != nil {
+		if err = client.UpdateNetworkLoadBalancerService(ctx, zone, nlb, nlbService); err != nil {
 			return diag.FromErr(err)
 		}
 	}
@@ -428,7 +428,7 @@ func resourceNLBServiceDelete(ctx context.Context, d *schema.ResourceData, meta 
 	}
 
 	nlbServiceID := d.Id()
-	err = nlb.DeleteService(ctx, &exov2.NetworkLoadBalancerService{ID: &nlbServiceID})
+	err = client.DeleteNetworkLoadBalancerService(ctx, zone, nlb, &egoscale.NetworkLoadBalancerService{ID: &nlbServiceID})
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -438,7 +438,7 @@ func resourceNLBServiceDelete(ctx context.Context, d *schema.ResourceData, meta 
 	return nil
 }
 
-func resourceNLBServiceApply(_ context.Context, d *schema.ResourceData, nlbService *exov2.NetworkLoadBalancerService) diag.Diagnostics {
+func resourceNLBServiceApply(_ context.Context, d *schema.ResourceData, nlbService *egoscale.NetworkLoadBalancerService) diag.Diagnostics {
 	if err := d.Set(resNLBServiceAttrDescription, defaultString(nlbService.Description, "")); err != nil {
 		return diag.FromErr(err)
 	}

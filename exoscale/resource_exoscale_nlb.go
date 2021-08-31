@@ -5,7 +5,7 @@ import (
 	"errors"
 	"log"
 
-	exov2 "github.com/exoscale/egoscale/v2"
+	egoscale "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 
@@ -93,7 +93,7 @@ func resourceNLBCreate(ctx context.Context, d *schema.ResourceData, meta interfa
 
 	client := GetComputeClient(meta)
 
-	nlb := new(exov2.NetworkLoadBalancer)
+	nlb := new(egoscale.NetworkLoadBalancer)
 
 	nlbName := d.Get(resNLBAttrName).(string)
 	nlb.Name = &nlbName
@@ -193,7 +193,8 @@ func resourceNLBDelete(ctx context.Context, d *schema.ResourceData, meta interfa
 
 	client := GetComputeClient(meta)
 
-	err := client.DeleteNetworkLoadBalancer(ctx, zone, d.Id())
+	nlbID := d.Id()
+	err := client.DeleteNetworkLoadBalancer(ctx, zone, &egoscale.NetworkLoadBalancer{ID: &nlbID})
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -203,7 +204,7 @@ func resourceNLBDelete(ctx context.Context, d *schema.ResourceData, meta interfa
 	return nil
 }
 
-func resourceNLBApply(_ context.Context, d *schema.ResourceData, nlb *exov2.NetworkLoadBalancer) diag.Diagnostics {
+func resourceNLBApply(_ context.Context, d *schema.ResourceData, nlb *egoscale.NetworkLoadBalancer) diag.Diagnostics {
 	if err := d.Set(resNLBAttrCreatedAt, nlb.CreatedAt.String()); err != nil {
 		return diag.FromErr(err)
 	}

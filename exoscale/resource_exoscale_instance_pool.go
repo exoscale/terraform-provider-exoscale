@@ -7,8 +7,7 @@ import (
 	"log"
 	"strings"
 
-	"github.com/exoscale/egoscale"
-	exov2 "github.com/exoscale/egoscale/v2"
+	egoscale "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -190,7 +189,7 @@ func resourceInstancePoolCreate(ctx context.Context, d *schema.ResourceData, met
 
 	client := GetComputeClient(meta)
 
-	instancePool := new(exov2.InstancePool)
+	instancePool := new(egoscale.InstancePool)
 
 	if v, ok := d.GetOk(resInstancePoolAttrDeployTargetID); ok {
 		s := v.(string)
@@ -353,7 +352,7 @@ func resourceInstancePoolRead(ctx context.Context, d *schema.ResourceData, meta 
 
 	log.Printf("[DEBUG] %s: read finished successfully", resourceInstancePoolIDString(d))
 
-	return resourceInstancePoolApply(ctx, GetComputeClient(meta), d, instancePool)
+	return resourceInstancePoolApply(ctx, GetComputeClient(meta).Client, d, instancePool)
 }
 
 func resourceInstancePoolUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -495,7 +494,12 @@ func resourceInstancePoolUpdate(ctx context.Context, d *schema.ResourceData, met
 	}
 
 	if d.HasChange(resInstancePoolAttrSize) {
-		if err = instancePool.Scale(ctx, int64(d.Get(resInstancePoolAttrSize).(int))); err != nil {
+		if err = client.ScaleInstancePool(
+			ctx,
+			zone,
+			instancePool,
+			int64(d.Get(resInstancePoolAttrSize).(int)),
+		); err != nil {
 			return diag.FromErr(err)
 		}
 	}
@@ -516,7 +520,8 @@ func resourceInstancePoolDelete(ctx context.Context, d *schema.ResourceData, met
 
 	client := GetComputeClient(meta)
 
-	err := client.DeleteInstancePool(ctx, zone, d.Id())
+	instancePoolID := d.Id()
+	err := client.DeleteInstancePool(ctx, zone, &egoscale.InstancePool{ID: &instancePoolID})
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -526,7 +531,7 @@ func resourceInstancePoolDelete(ctx context.Context, d *schema.ResourceData, met
 	return nil
 }
 
-func resourceInstancePoolApply(ctx context.Context, client *egoscale.Client, d *schema.ResourceData, instancePool *exov2.InstancePool) diag.Diagnostics {
+func resourceInstancePoolApply(ctx context.Context, client *egoscale.Client, d *schema.ResourceData, instancePool *egoscale.InstancePool) diag.Diagnostics {
 	if instancePool.AntiAffinityGroupIDs != nil {
 		antiAffinityGroupIDs := make([]string, len(*instancePool.AntiAffinityGroupIDs))
 		for i, id := range *instancePool.AntiAffinityGroupIDs {

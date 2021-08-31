@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"testing"
 
-	exov2 "github.com/exoscale/egoscale/v2"
+	egoscale "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -187,8 +187,8 @@ resource "exoscale_nlb_service" "test" {
 func TestAccResourceNLBService(t *testing.T) {
 	var (
 		r          = "exoscale_nlb_service.test"
-		nlb        exov2.NetworkLoadBalancer
-		nlbService exov2.NetworkLoadBalancerService
+		nlb        egoscale.NetworkLoadBalancer
+		nlbService egoscale.NetworkLoadBalancerService
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -291,8 +291,8 @@ func TestAccResourceNLBService(t *testing.T) {
 				// Import
 				ResourceName: r,
 				ImportStateIdFunc: func(
-					nlb *exov2.NetworkLoadBalancer,
-					nlbService *exov2.NetworkLoadBalancerService,
+					nlb *egoscale.NetworkLoadBalancer,
+					nlbService *egoscale.NetworkLoadBalancerService,
 				) resource.ImportStateIdFunc {
 					return func(*terraform.State) (string, error) {
 						return fmt.Sprintf("%s/%s@%s", *nlb.ID, *nlbService.ID, testZoneName), nil
@@ -327,7 +327,7 @@ func TestAccResourceNLBService(t *testing.T) {
 	})
 }
 
-func testAccCheckResourceNLBServiceExists(r string, nlbService *exov2.NetworkLoadBalancerService) resource.TestCheckFunc {
+func testAccCheckResourceNLBServiceExists(r string, nlbService *egoscale.NetworkLoadBalancerService) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[r]
 		if !ok {
