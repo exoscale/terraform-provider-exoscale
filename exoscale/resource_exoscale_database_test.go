@@ -7,7 +7,7 @@ import (
 	"regexp"
 	"testing"
 
-	exov2 "github.com/exoscale/egoscale/v2"
+	egoscale "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -107,7 +107,7 @@ resource "exoscale_database" "test" {
 func TestAccResourceDatabase(t *testing.T) {
 	var (
 		r        = "exoscale_database.test"
-		database exov2.DatabaseService
+		database egoscale.DatabaseService
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -126,7 +126,7 @@ func TestAccResourceDatabase(t *testing.T) {
 					func(s *terraform.State) error {
 						a := assert.New(t)
 
-						a.Equal(exov2.DatabaseServiceMaintenance{
+						a.Equal(egoscale.DatabaseServiceMaintenance{
 							DOW:  testAccResourceDatabaseMaintenanceDOW,
 							Time: testAccResourceDatabaseMaintenanceTime,
 						}, *database.Maintenance)
@@ -168,7 +168,7 @@ func TestAccResourceDatabase(t *testing.T) {
 					func(s *terraform.State) error {
 						a := assert.New(t)
 
-						a.Equal(exov2.DatabaseServiceMaintenance{
+						a.Equal(egoscale.DatabaseServiceMaintenance{
 							DOW:  testAccResourceDatabaseMaintenanceDOWUpdated,
 							Time: testAccResourceDatabaseMaintenanceTimeUpdated,
 						}, *database.Maintenance)
@@ -203,7 +203,7 @@ func TestAccResourceDatabase(t *testing.T) {
 			{
 				// Import
 				ResourceName: r,
-				ImportStateIdFunc: func(database *exov2.DatabaseService) resource.ImportStateIdFunc {
+				ImportStateIdFunc: func(database *egoscale.DatabaseService) resource.ImportStateIdFunc {
 					return func(*terraform.State) (string, error) {
 						return fmt.Sprintf("%s@%s", *database.Name, testZoneName), nil
 					}
@@ -235,7 +235,7 @@ func TestAccResourceDatabase(t *testing.T) {
 	})
 }
 
-func testAccCheckResourceDatabaseExists(r string, database *exov2.DatabaseService) resource.TestCheckFunc {
+func testAccCheckResourceDatabaseExists(r string, database *egoscale.DatabaseService) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[r]
 		if !ok {
@@ -262,7 +262,7 @@ func testAccCheckResourceDatabaseExists(r string, database *exov2.DatabaseServic
 	}
 }
 
-func testAccCheckResourceDatabaseDestroy(database *exov2.DatabaseService) resource.TestCheckFunc {
+func testAccCheckResourceDatabaseDestroy(database *egoscale.DatabaseService) resource.TestCheckFunc {
 	return func(_ *terraform.State) error {
 		client := GetComputeClient(testAccProvider.Meta())
 		ctx := exoapi.WithEndpoint(

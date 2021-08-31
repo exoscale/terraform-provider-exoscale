@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"testing"
 
-	exov2 "github.com/exoscale/egoscale/v2"
+	egoscale "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -131,8 +131,8 @@ resource "exoscale_sks_nodepool" "test" {
 func TestAccResourceSKSNodepool(t *testing.T) {
 	var (
 		r           = "exoscale_sks_nodepool.test"
-		sksCluster  exov2.SKSCluster
-		sksNodepool exov2.SKSNodepool
+		sksCluster  egoscale.SKSCluster
+		sksNodepool egoscale.SKSNodepool
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -215,8 +215,8 @@ func TestAccResourceSKSNodepool(t *testing.T) {
 				// Import
 				ResourceName: r,
 				ImportStateIdFunc: func(
-					sksCluster *exov2.SKSCluster,
-					sksNodepool *exov2.SKSNodepool,
+					sksCluster *egoscale.SKSCluster,
+					sksNodepool *egoscale.SKSNodepool,
 				) resource.ImportStateIdFunc {
 					return func(*terraform.State) (string, error) {
 						return fmt.Sprintf("%s/%s@%s", *sksCluster.ID, *sksNodepool.ID, testZoneName), nil
@@ -250,7 +250,7 @@ func TestAccResourceSKSNodepool(t *testing.T) {
 	})
 }
 
-func testAccCheckResourceSKSNodepoolExists(r string, sksNodepool *exov2.SKSNodepool) resource.TestCheckFunc {
+func testAccCheckResourceSKSNodepoolExists(r string, sksNodepool *egoscale.SKSNodepool) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[r]
 		if !ok {

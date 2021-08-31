@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	exov2 "github.com/exoscale/egoscale/v2"
+	egoscale "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -144,7 +144,7 @@ resource "exoscale_instance_pool" "test" {
 func TestAccResourceInstancePool(t *testing.T) {
 	var (
 		r            = "exoscale_instance_pool.test"
-		instancePool exov2.InstancePool
+		instancePool egoscale.InstancePool
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -253,7 +253,7 @@ func TestAccResourceInstancePool(t *testing.T) {
 			{
 				// Import
 				ResourceName: r,
-				ImportStateIdFunc: func(instancePool *exov2.InstancePool) resource.ImportStateIdFunc {
+				ImportStateIdFunc: func(instancePool *egoscale.InstancePool) resource.ImportStateIdFunc {
 					return func(*terraform.State) (string, error) {
 						return fmt.Sprintf("%s@%s", *instancePool.ID, testZoneName), nil
 					}
@@ -284,7 +284,7 @@ func TestAccResourceInstancePool(t *testing.T) {
 	})
 }
 
-func testAccCheckResourceInstancePoolExists(r string, instancePool *exov2.InstancePool) resource.TestCheckFunc {
+func testAccCheckResourceInstancePoolExists(r string, instancePool *egoscale.InstancePool) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[r]
 		if !ok {
@@ -311,7 +311,7 @@ func testAccCheckResourceInstancePoolExists(r string, instancePool *exov2.Instan
 	}
 }
 
-func testAccCheckResourceInstancePoolDestroy(instancePool *exov2.InstancePool) resource.TestCheckFunc {
+func testAccCheckResourceInstancePoolDestroy(instancePool *egoscale.InstancePool) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		client := GetComputeClient(testAccProvider.Meta())
 		ctx := exoapi.WithEndpoint(

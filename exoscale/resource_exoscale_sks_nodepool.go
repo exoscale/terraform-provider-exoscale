@@ -7,8 +7,7 @@ import (
 	"log"
 	"strings"
 
-	"github.com/exoscale/egoscale"
-	exov2 "github.com/exoscale/egoscale/v2"
+	egoscale "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -179,7 +178,7 @@ func resourceSKSNodepoolCreate(ctx context.Context, d *schema.ResourceData, meta
 		return diag.FromErr(err)
 	}
 
-	sksNodepool := new(exov2.SKSNodepool)
+	sksNodepool := new(egoscale.SKSNodepool)
 
 	if set, ok := d.Get(resSKSNodepoolAttrAntiAffinityGroupIDs).(*schema.Set); ok {
 		sksNodepool.AntiAffinityGroupIDs = func() (v *[]string) {
@@ -256,7 +255,7 @@ func resourceSKSNodepoolCreate(ctx context.Context, d *schema.ResourceData, meta
 		sksNodepool.Size = &i
 	}
 
-	sksNodepool, err = sksCluster.AddNodepool(ctx, sksNodepool)
+	sksNodepool, err = client.CreateSKSNodepool(ctx, zone, sksCluster, sksNodepool)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -289,7 +288,7 @@ func resourceSKSNodepoolRead(ctx context.Context, d *schema.ResourceData, meta i
 		return diag.FromErr(err)
 	}
 
-	var sksNodepool *exov2.SKSNodepool
+	var sksNodepool *egoscale.SKSNodepool
 	for _, np := range sks.Nodepools {
 		if *np.ID == d.Id() {
 			sksNodepool = np
@@ -304,7 +303,7 @@ func resourceSKSNodepoolRead(ctx context.Context, d *schema.ResourceData, meta i
 
 	log.Printf("[DEBUG] %s: read finished successfully", resourceSKSNodepoolIDString(d))
 
-	return resourceSKSNodepoolApply(ctx, client, d, sksNodepool)
+	return resourceSKSNodepoolApply(ctx, client.Client, d, sksNodepool)
 }
 
 func resourceSKSNodepoolUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -323,7 +322,7 @@ func resourceSKSNodepoolUpdate(ctx context.Context, d *schema.ResourceData, meta
 		return diag.FromErr(err)
 	}
 
-	var sksNodepool *exov2.SKSNodepool
+	var sksNodepool *egoscale.SKSNodepool
 	for _, np := range sksCluster.Nodepools {
 		if *np.ID == d.Id() {
 			sksNodepool = np
@@ -412,13 +411,19 @@ func resourceSKSNodepoolUpdate(ctx context.Context, d *schema.ResourceData, meta
 	}
 
 	if updated {
-		if err = sksCluster.UpdateNodepool(ctx, sksNodepool); err != nil {
+		if err = client.UpdateSKSNodepool(ctx, zone, sksCluster, sksNodepool); err != nil {
 			return diag.FromErr(err)
 		}
 	}
 
 	if d.HasChange(resSKSNodepoolAttrSize) {
-		if err = sksCluster.ScaleNodepool(ctx, sksNodepool, int64(d.Get(resSKSNodepoolAttrSize).(int))); err != nil {
+		if err = client.ScaleSKSNodepool(
+			ctx,
+			zone,
+			sksCluster,
+			sksNodepool,
+			int64(d.Get(resSKSNodepoolAttrSize).(int)),
+		); err != nil {
 			return diag.FromErr(err)
 		}
 	}
@@ -439,13 +444,13 @@ func resourceSKSNodepoolDelete(ctx context.Context, d *schema.ResourceData, meta
 
 	client := GetComputeClient(meta)
 
-	cluster, err := client.GetSKSCluster(ctx, zone, d.Get(resSKSNodepoolAttrClusterID).(string))
+	sksCluster, err := client.GetSKSCluster(ctx, zone, d.Get(resSKSNodepoolAttrClusterID).(string))
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	sksNodepoolID := d.Id()
-	if err = cluster.DeleteNodepool(ctx, &exov2.SKSNodepool{ID: &sksNodepoolID}); err != nil {
+	if err = client.DeleteSKSNodepool(ctx, zone, sksCluster, &egoscale.SKSNodepool{ID: &sksNodepoolID}); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -458,7 +463,7 @@ func resourceSKSNodepoolApply(
 	ctx context.Context,
 	client *egoscale.Client,
 	d *schema.ResourceData,
-	sksNodepool *exov2.SKSNodepool,
+	sksNodepool *egoscale.SKSNodepool,
 ) diag.Diagnostics {
 	if sksNodepool.AntiAffinityGroupIDs != nil {
 		antiAffinityGroupIDs := make([]string, len(*sksNodepool.AntiAffinityGroupIDs))

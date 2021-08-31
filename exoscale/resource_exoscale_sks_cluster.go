@@ -5,7 +5,7 @@ import (
 	"errors"
 	"log"
 
-	exov2 "github.com/exoscale/egoscale/v2"
+	egoscale "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -143,7 +143,7 @@ func resourceSKSClusterCreate(ctx context.Context, d *schema.ResourceData, meta 
 
 	client := GetComputeClient(meta)
 
-	sksCluster := new(exov2.SKSCluster)
+	sksCluster := new(egoscale.SKSCluster)
 
 	var addOns []string
 	if addonsSet, ok := d.Get(resSKSClusterAttrAddons).(*schema.Set); ok && addonsSet.Len() > 0 {
@@ -295,7 +295,8 @@ func resourceSKSClusterDelete(ctx context.Context, d *schema.ResourceData, meta 
 
 	client := GetComputeClient(meta)
 
-	err := client.DeleteSKSCluster(ctx, zone, d.Id())
+	clusterID := d.Id()
+	err := client.DeleteSKSCluster(ctx, zone, &egoscale.SKSCluster{ID: &clusterID})
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -305,7 +306,7 @@ func resourceSKSClusterDelete(ctx context.Context, d *schema.ResourceData, meta 
 	return nil
 }
 
-func resourceSKSClusterApply(_ context.Context, d *schema.ResourceData, sksCluster *exov2.SKSCluster) diag.Diagnostics {
+func resourceSKSClusterApply(_ context.Context, d *schema.ResourceData, sksCluster *egoscale.SKSCluster) diag.Diagnostics {
 	if sksCluster.AddOns != nil {
 		if err := d.Set(resSKSClusterAttrAddons, *sksCluster.AddOns); err != nil {
 			return diag.FromErr(err)

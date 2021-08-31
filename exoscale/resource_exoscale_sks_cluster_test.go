@@ -7,7 +7,7 @@ import (
 	"os"
 	"testing"
 
-	exov2 "github.com/exoscale/egoscale/v2"
+	egoscale "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -96,7 +96,7 @@ resource "exoscale_sks_nodepool" "test" {
 func TestAccResourceSKSCluster(t *testing.T) {
 	var (
 		r          = "exoscale_sks_cluster.test"
-		sksCluster exov2.SKSCluster
+		sksCluster egoscale.SKSCluster
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -117,15 +117,15 @@ func TestAccResourceSKSCluster(t *testing.T) {
 
 						// Retrieve the latest SKS version available to test the
 						// exoscale_sks_cluster.version attribute default value.
-						client, err := exov2.NewClient(
+						client, err := egoscale.NewClient(
 							os.Getenv("EXOSCALE_API_KEY"),
 							os.Getenv("EXOSCALE_API_SECRET"),
-							exov2.ClientOptCond(func() bool {
+							egoscale.ClientOptCond(func() bool {
 								if v := os.Getenv("EXOSCALE_TRACE"); v != "" {
 									return true
 								}
 								return false
-							}, exov2.ClientOptWithTrace()))
+							}, egoscale.ClientOptWithTrace()))
 						if err != nil {
 							return fmt.Errorf("unable to initialize Exoscale client: %s", err)
 						}
@@ -200,7 +200,7 @@ func TestAccResourceSKSCluster(t *testing.T) {
 			{
 				// Import
 				ResourceName: r,
-				ImportStateIdFunc: func(sksCluster *exov2.SKSCluster) resource.ImportStateIdFunc {
+				ImportStateIdFunc: func(sksCluster *egoscale.SKSCluster) resource.ImportStateIdFunc {
 					return func(*terraform.State) (string, error) {
 						return fmt.Sprintf("%s@%s", *sksCluster.ID, testZoneName), nil
 					}
@@ -229,7 +229,7 @@ func TestAccResourceSKSCluster(t *testing.T) {
 	})
 }
 
-func testAccCheckResourceSKSClusterExists(r string, sksCluster *exov2.SKSCluster) resource.TestCheckFunc {
+func testAccCheckResourceSKSClusterExists(r string, sksCluster *egoscale.SKSCluster) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[r]
 		if !ok {
@@ -256,7 +256,7 @@ func testAccCheckResourceSKSClusterExists(r string, sksCluster *exov2.SKSCluster
 	}
 }
 
-func testAccCheckResourceSKSClusterDestroy(sksCluster *exov2.SKSCluster) resource.TestCheckFunc {
+func testAccCheckResourceSKSClusterDestroy(sksCluster *egoscale.SKSCluster) resource.TestCheckFunc {
 	return func(_ *terraform.State) error {
 		client := GetComputeClient(testAccProvider.Meta())
 		ctx := exoapi.WithEndpoint(
