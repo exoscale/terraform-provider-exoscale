@@ -26,6 +26,7 @@ const (
 	resInstancePoolAttrInstanceType     = "instance_type"
 	resInstancePoolAttrIPv6             = "ipv6"
 	resInstancePoolAttrKeyPair          = "key_pair"
+	resInstancePoolAttrLabels           = "labels"
 	resInstancePoolAttrName             = "name"
 	resInstancePoolAttrNetworkIDs       = "network_ids"
 	resInstancePoolAttrSecurityGroupIDs = "security_group_ids"
@@ -93,6 +94,11 @@ func resourceInstancePool() *schema.Resource {
 		},
 		resInstancePoolAttrKeyPair: {
 			Type:     schema.TypeString,
+			Optional: true,
+		},
+		resInstancePoolAttrLabels: {
+			Type:     schema.TypeMap,
+			Elem:     &schema.Schema{Type: schema.TypeString},
 			Optional: true,
 		},
 		resInstancePoolAttrName: {
@@ -219,6 +225,14 @@ func resourceInstancePoolCreate(ctx context.Context, d *schema.ResourceData, met
 	if v, ok := d.GetOk(resInstancePoolAttrKeyPair); ok {
 		s := v.(string)
 		instancePool.SSHKey = &s
+	}
+
+	if l, ok := d.GetOk(resInstancePoolAttrLabels); ok {
+		labels := make(map[string]string)
+		for k, v := range l.(map[string]interface{}) {
+			labels[k] = v.(string)
+		}
+		instancePool.Labels = &labels
 	}
 
 	if v, ok := d.GetOk(resInstancePoolAttrSize); ok {
@@ -433,6 +447,15 @@ func resourceInstancePoolUpdate(ctx context.Context, d *schema.ResourceData, met
 		updated = true
 	}
 
+	if d.HasChange(resInstancePoolAttrLabels) {
+		labels := make(map[string]string)
+		for k, v := range d.Get(resInstancePoolAttrLabels).(map[string]interface{}) {
+			labels[k] = v.(string)
+		}
+		instancePool.Labels = &labels
+		updated = true
+	}
+
 	if d.HasChange(resInstancePoolAttrName) {
 		v := d.Get(resInstancePoolAttrName).(string)
 		instancePool.Name = &v
@@ -573,6 +596,10 @@ func resourceInstancePoolApply(ctx context.Context, client *egoscale.Client, d *
 	}
 
 	if err := d.Set(resInstancePoolAttrKeyPair, instancePool.SSHKey); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set(resInstancePoolAttrLabels, instancePool.Labels); err != nil {
 		return diag.FromErr(err)
 	}
 

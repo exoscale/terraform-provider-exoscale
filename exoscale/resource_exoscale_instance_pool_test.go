@@ -23,6 +23,8 @@ var (
 	testAccResourceInstancePoolDiskSize              int64 = 10
 	testAccResourceInstancePoolDiskSizeUpdated             = testAccResourceInstancePoolDiskSize * 2
 	testAccResourceInstancePoolKeyPair                     = acctest.RandomWithPrefix(testPrefix)
+	testAccResourceInstancePoolLabelValue                  = acctest.RandomWithPrefix(testPrefix)
+	testAccResourceInstancePoolLabelValueUpdated           = testAccResourceInstancePoolLabelValue + "-updated"
 	testAccResourceInstancePoolName                        = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceInstancePoolNameUpdated                 = testAccResourceInstancePoolName + "-updated"
 	testAccResourceInstancePoolInstancePrefix              = "test"
@@ -65,6 +67,9 @@ resource "exoscale_instance_pool" "test" {
   security_group_ids = [data.exoscale_security_group.default.id]
   instance_prefix = "%s"
   user_data = "%s"
+  labels = {
+    test = "%s"
+  }
 
   timeouts {
     delete = "10m"
@@ -80,6 +85,7 @@ resource "exoscale_instance_pool" "test" {
 		testAccResourceInstancePoolDiskSize,
 		testAccResourceInstancePoolInstancePrefix,
 		testAccResourceInstancePoolUserData,
+		testAccResourceInstancePoolLabelValue,
 	)
 
 	testAccResourceInstancePoolConfigUpdate = fmt.Sprintf(`
@@ -123,6 +129,9 @@ resource "exoscale_instance_pool" "test" {
   network_ids = [exoscale_network.test.id]
   elastic_ip_ids = [exoscale_ipaddress.test.id]
   user_data = "%s"
+  labels = {
+    test = "%s"
+  }
 
   timeouts {
     delete = "10m"
@@ -138,6 +147,7 @@ resource "exoscale_instance_pool" "test" {
 		testAccResourceInstancePoolSizeUpdated,
 		testAccResourceInstancePoolDiskSizeUpdated,
 		testAccResourceInstancePoolUserDataUpdated,
+		testAccResourceInstancePoolLabelValueUpdated,
 	)
 )
 
@@ -175,6 +185,7 @@ func TestAccResourceInstancePool(t *testing.T) {
 						a.Len(*instancePool.InstanceIDs, int(testAccResourceInstancePoolSize))
 						a.Equal(testInstanceTypeIDTiny, *instancePool.InstanceTypeID)
 						a.True(*instancePool.IPv6Enabled)
+						a.Equal(testAccResourceInstancePoolLabelValue, (*instancePool.Labels)["test"])
 						a.Equal(testAccResourceInstancePoolName, *instancePool.Name)
 						a.Equal(testAccResourceInstancePoolSize, *instancePool.Size)
 						a.Equal(templateID, *instancePool.TemplateID)
@@ -189,6 +200,7 @@ func TestAccResourceInstancePool(t *testing.T) {
 						resInstancePoolAttrIPv6:                    validateString("true"),
 						resInstancePoolAttrInstancePrefix:          validateString(testAccResourceInstancePoolInstancePrefix),
 						resInstancePoolAttrInstanceType:            validateString(testAccResourceInstancePoolInstanceType),
+						resInstancePoolAttrLabels + ".test":        validateString(testAccResourceInstancePoolLabelValue),
 						resInstancePoolAttrName:                    validateString(testAccResourceInstancePoolName),
 						resInstancePoolAttrSecurityGroupIDs + ".#": validateString("1"),
 						resInstancePoolAttrSize:                    validateString(fmt.Sprint(testAccResourceInstancePoolSize)),
@@ -223,6 +235,7 @@ func TestAccResourceInstancePool(t *testing.T) {
 						a.Len(*instancePool.InstanceIDs, int(testAccResourceInstancePoolSizeUpdated))
 						a.Equal(testInstanceTypeIDSmall, *instancePool.InstanceTypeID)
 						a.False(*instancePool.IPv6Enabled)
+						a.Equal(testAccResourceInstancePoolLabelValueUpdated, (*instancePool.Labels)["test"])
 						a.Equal(testAccResourceInstancePoolNameUpdated, *instancePool.Name)
 						a.Len(*instancePool.PrivateNetworkIDs, 1)
 						a.Equal(testAccResourceInstancePoolSizeUpdated, *instancePool.Size)
@@ -241,6 +254,7 @@ func TestAccResourceInstancePool(t *testing.T) {
 						resInstancePoolAttrInstanceType:            validateString(testAccResourceInstancePoolInstanceTypeUpdated),
 						resInstancePoolAttrIPv6:                    validateString("false"),
 						resInstancePoolAttrKeyPair:                 validateString(testAccResourceInstancePoolKeyPair),
+						resInstancePoolAttrLabels + ".test":        validateString(testAccResourceInstancePoolLabelValueUpdated),
 						resInstancePoolAttrName:                    validateString(testAccResourceInstancePoolNameUpdated),
 						resInstancePoolAttrNetworkIDs + ".#":       validateString("1"),
 						resInstancePoolAttrSize:                    validateString(fmt.Sprint(testAccResourceInstancePoolSizeUpdated)),
@@ -271,6 +285,7 @@ func TestAccResourceInstancePool(t *testing.T) {
 							resInstancePoolAttrInstanceType:            validateString(testAccResourceInstancePoolInstanceTypeUpdated),
 							resInstancePoolAttrIPv6:                    validateString("false"),
 							resInstancePoolAttrKeyPair:                 validateString(testAccResourceInstancePoolKeyPair),
+							resInstancePoolAttrLabels + ".test":        validateString(testAccResourceInstancePoolLabelValueUpdated),
 							resInstancePoolAttrName:                    validateString(testAccResourceInstancePoolNameUpdated),
 							resInstancePoolAttrNetworkIDs + ".#":       validateString("1"),
 							resInstancePoolAttrSize:                    validateString(fmt.Sprint(testAccResourceInstancePoolSizeUpdated)),

@@ -56,6 +56,11 @@ resource "exoscale_instance_pool" "webapp" {
   elastic_ip_ids = [exoscale_ipaddress.webapp.id]
   user_data = "#cloud-config\npackage_upgrade: true\n"
 
+  labels = {
+    app = "webapp"
+    env = "prod"
+  }
+
   timeouts {
     delete = "10m"
   }
@@ -82,6 +87,7 @@ resource "exoscale_instance_pool" "webapp" {
 * `network_ids` - A list of [Private Network][privnet-doc] IDs.
 * `elastic_ip_ids` - A list of [Elastic IP][eip-doc] IDs.
 * `deploy_target_id` - A Deploy Target ID.
+* `labels` - A map of key/value labels.
 
 
 ## Attributes Reference
