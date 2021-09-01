@@ -26,6 +26,7 @@ const (
 	resSKSClusterAttrEndpoint      = "endpoint"
 	resSKSClusterAttrExoscaleCCM   = "exoscale_ccm"
 	resSKSClusterAttrMetricsServer = "metrics_server"
+	resSKSClusterAttrLabels        = "labels"
 	resSKSClusterAttrName          = "name"
 	resSKSClusterAttrNodepools     = "nodepools"
 	resSKSClusterAttrServiceLevel  = "service_level"
@@ -79,6 +80,11 @@ func resourceSKSCluster() *schema.Resource {
 			Type:     schema.TypeBool,
 			Optional: true,
 			Default:  true,
+		},
+		resSKSClusterAttrLabels: {
+			Type:     schema.TypeMap,
+			Elem:     &schema.Schema{Type: schema.TypeString},
+			Optional: true,
 		},
 		resSKSClusterAttrName: {
 			Type:     schema.TypeString,
@@ -176,6 +182,14 @@ func resourceSKSClusterCreate(ctx context.Context, d *schema.ResourceData, meta 
 		sksCluster.Description = &s
 	}
 
+	if l, ok := d.GetOk(resSKSClusterAttrLabels); ok {
+		labels := make(map[string]string)
+		for k, v := range l.(map[string]interface{}) {
+			labels[k] = v.(string)
+		}
+		sksCluster.Labels = &labels
+	}
+
 	if v, ok := d.GetOk(resSKSClusterAttrName); ok {
 		s := v.(string)
 		sksCluster.Name = &s
@@ -261,6 +275,15 @@ func resourceSKSClusterUpdate(ctx context.Context, d *schema.ResourceData, meta 
 		updated = true
 	}
 
+	if d.HasChange(resSKSClusterAttrLabels) {
+		labels := make(map[string]string)
+		for k, v := range d.Get(resSKSClusterAttrLabels).(map[string]interface{}) {
+			labels[k] = v.(string)
+		}
+		sksCluster.Labels = &labels
+		updated = true
+	}
+
 	if d.HasChange(resSKSClusterAttrName) {
 		v := d.Get(resSKSClusterAttrName).(string)
 		sksCluster.Name = &v
@@ -338,6 +361,10 @@ func resourceSKSClusterApply(_ context.Context, d *schema.ResourceData, sksClust
 	}
 
 	if err := d.Set(resSKSClusterAttrEndpoint, *sksCluster.Endpoint); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set(resSKSClusterAttrLabels, sksCluster.Labels); err != nil {
 		return diag.FromErr(err)
 	}
 

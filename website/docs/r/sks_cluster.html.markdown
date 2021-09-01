@@ -22,6 +22,10 @@ resource "exoscale_sks_cluster" "prod" {
   zone    = local.zone
   name    = "prod"
   version = "1.20.2"
+  
+  labels = {
+    env = "prod"
+  }
 }
 
 output "sks_endpoint" {
@@ -42,6 +46,7 @@ output "sks_endpoint" {
 * `metrics_server` - Deploy the [Kubernetes Metrics Server][k8s-ms] in the SKS cluster control plane (default: `true`).
 * `auto_upgrade` - Enable automatic upgrading of the SKS cluster control plane Kubernetes version (default: `false`).
 * `addons` - **Deprecated** A list of optional add-ons to be deployed in the SKS cluster control plane (default: `[]`).
+* `labels` - A map of key/value labels.
 
 
 ## Attributes Reference
