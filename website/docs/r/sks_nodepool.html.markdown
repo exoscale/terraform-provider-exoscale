@@ -60,6 +60,10 @@ resource "exoscale_sks_nodepool" "ci-builders" {
   instance_type      = "medium"
   size               = 3
   security_group_ids = [exoscale_security_group.sks.id]
+  
+  labels = {
+    role = "ci-builders"
+  }
 }
 ```
 
@@ -78,6 +82,7 @@ resource "exoscale_sks_nodepool" "ci-builders" {
 * `private_network_ids` - The list of Private Networks (IDs) to be attached to the Compute instances managed by the SKS Nodepool.
 * `description` - The description of the SKS Nodepool.
 * `deploy_target_id` - A Deploy Target ID to deploy managed Compute instances to.
+* `labels` - A map of key/value labels.
 
 
 ## Attributes Reference

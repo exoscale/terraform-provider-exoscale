@@ -26,6 +26,7 @@ const (
 	resSKSNodepoolAttrInstancePoolID       = "instance_pool_id"
 	resSKSNodepoolAttrInstancePrefix       = "instance_prefix"
 	resSKSNodepoolAttrInstanceType         = "instance_type"
+	resSKSNodepoolAttrLabels               = "labels"
 	resSKSNodepoolAttrName                 = "name"
 	resSKSNodepoolAttrPrivateNetworkIDs    = "private_network_ids"
 	resSKSNodepoolAttrSecurityGroupIDs     = "security_group_ids"
@@ -83,6 +84,11 @@ func resourceSKSNodepool() *schema.Resource {
 			Type:             schema.TypeString,
 			Required:         true,
 			ValidateDiagFunc: validateComputeInstanceType,
+		},
+		resSKSNodepoolAttrLabels: {
+			Type:     schema.TypeMap,
+			Elem:     &schema.Schema{Type: schema.TypeString},
+			Optional: true,
 		},
 		resSKSNodepoolAttrName: {
 			Type:     schema.TypeString,
@@ -218,6 +224,14 @@ func resourceSKSNodepoolCreate(ctx context.Context, d *schema.ResourceData, meta
 		return diag.Errorf("error retrieving instance type: %s", err)
 	}
 	sksNodepool.InstanceTypeID = instanceType.ID
+
+	if l, ok := d.GetOk(resSKSNodepoolAttrLabels); ok {
+		labels := make(map[string]string)
+		for k, v := range l.(map[string]interface{}) {
+			labels[k] = v.(string)
+		}
+		sksNodepool.Labels = &labels
+	}
 
 	if v, ok := d.GetOk(resSKSNodepoolAttrName); ok {
 		s := v.(string)
@@ -380,6 +394,15 @@ func resourceSKSNodepoolUpdate(ctx context.Context, d *schema.ResourceData, meta
 		updated = true
 	}
 
+	if d.HasChange(resSKSNodepoolAttrLabels) {
+		labels := make(map[string]string)
+		for k, v := range d.Get(resSKSNodepoolAttrLabels).(map[string]interface{}) {
+			labels[k] = v.(string)
+		}
+		sksNodepool.Labels = &labels
+		updated = true
+	}
+
 	if d.HasChange(resSKSNodepoolAttrName) {
 		v := d.Get(resSKSNodepoolAttrName).(string)
 		sksNodepool.Name = &v
@@ -512,6 +535,10 @@ func resourceSKSNodepoolApply(
 		strings.ToLower(*instanceType.Family),
 		strings.ToLower(*instanceType.Size),
 	)); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set(resSKSNodepoolAttrLabels, sksNodepool.Labels); err != nil {
 		return diag.FromErr(err)
 	}
 

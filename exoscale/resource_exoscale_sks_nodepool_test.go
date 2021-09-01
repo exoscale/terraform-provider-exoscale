@@ -23,6 +23,8 @@ var (
 	testAccResourceSKSNodepoolInstancePrefix              = "test"
 	testAccResourceSKSNodepoolInstanceType                = "standard.small"
 	testAccResourceSKSNodepoolInstanceTypeUpdated         = "standard.medium"
+	testAccResourceSKSNodepoolLabelValue                  = acctest.RandomWithPrefix(testPrefix)
+	testAccResourceSKSNodepoolLabelValueUpdated           = testAccResourceSKSNodepoolLabelValue + "-updated"
 	testAccResourceSKSNodepoolName                        = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceSKSNodepoolNameUpdated                 = testAccResourceSKSNodepoolName + "-updated"
 	testAccResourceSKSNodepoolPrivateNetworkName          = acctest.RandomWithPrefix(testPrefix)
@@ -52,6 +54,9 @@ resource "exoscale_sks_nodepool" "test" {
   disk_size = %d
   size = %d
   instance_prefix = "%s"
+  labels = {
+    test = "%s"
+  }
 
   timeouts {
     delete = "10m"
@@ -66,6 +71,7 @@ resource "exoscale_sks_nodepool" "test" {
 		testAccResourceSKSNodepoolDiskSize,
 		testAccResourceSKSNodepoolSize,
 		testAccResourceSKSNodepoolInstancePrefix,
+		testAccResourceSKSNodepoolLabelValue,
 	)
 
 	testAccResourceSKSNodepoolConfigUpdate = fmt.Sprintf(`
@@ -110,6 +116,9 @@ resource "exoscale_sks_nodepool" "test" {
   anti_affinity_group_ids = [exoscale_affinity.test.id]
   security_group_ids = [data.exoscale_security_group.default.id]
   private_network_ids = [exoscale_network.test.id]
+  labels = {
+    test = "%s"
+  }
 
   timeouts {
     delete = "10m"
@@ -125,6 +134,7 @@ resource "exoscale_sks_nodepool" "test" {
 		testAccResourceSKSNodepoolDiskSizeUpdated,
 		testAccResourceSKSNodepoolSizeUpdated,
 		defaultSKSNodepoolInstancePrefix,
+		testAccResourceSKSNodepoolLabelValueUpdated,
 	)
 )
 
@@ -151,6 +161,7 @@ func TestAccResourceSKSNodepool(t *testing.T) {
 
 						a.Equal(testAccResourceSKSNodepoolDescription, *sksNodepool.Description)
 						a.Equal(testAccResourceSKSNodepoolDiskSize, *sksNodepool.DiskSize)
+						a.Equal(testAccResourceSKSNodepoolLabelValue, (*sksNodepool.Labels)["test"])
 						a.Equal(testAccResourceSKSNodepoolName, *sksNodepool.Name)
 						a.Equal(testAccResourceSKSNodepoolInstancePrefix, *sksNodepool.InstancePrefix)
 						a.Equal(testInstanceTypeIDSmall, *sksNodepool.InstanceTypeID)
@@ -159,17 +170,18 @@ func TestAccResourceSKSNodepool(t *testing.T) {
 						return nil
 					},
 					checkResourceState(r, checkResourceStateValidateAttributes(testAttrs{
-						resSKSNodepoolAttrCreatedAt:      validation.ToDiagFunc(validation.NoZeroValues),
-						resSKSNodepoolAttrDescription:    validateString(testAccResourceSKSNodepoolDescription),
-						resSKSNodepoolAttrDiskSize:       validateString(fmt.Sprint(testAccResourceSKSNodepoolDiskSize)),
-						resSKSNodepoolAttrInstancePoolID: validation.ToDiagFunc(validation.IsUUID),
-						resSKSNodepoolAttrInstancePrefix: validateString(testAccResourceSKSNodepoolInstancePrefix),
-						resSKSNodepoolAttrInstanceType:   validateString(testAccResourceSKSNodepoolInstanceType),
-						resSKSNodepoolAttrName:           validateString(testAccResourceSKSNodepoolName),
-						resSKSNodepoolAttrSize:           validateString(fmt.Sprint(testAccResourceSKSNodepoolSize)),
-						resSKSNodepoolAttrState:          validation.ToDiagFunc(validation.NoZeroValues),
-						resSKSNodepoolAttrTemplateID:     validation.ToDiagFunc(validation.IsUUID),
-						resSKSNodepoolAttrVersion:        validation.ToDiagFunc(validation.NoZeroValues),
+						resSKSNodepoolAttrCreatedAt:       validation.ToDiagFunc(validation.NoZeroValues),
+						resSKSNodepoolAttrDescription:     validateString(testAccResourceSKSNodepoolDescription),
+						resSKSNodepoolAttrDiskSize:        validateString(fmt.Sprint(testAccResourceSKSNodepoolDiskSize)),
+						resSKSNodepoolAttrInstancePoolID:  validation.ToDiagFunc(validation.IsUUID),
+						resSKSNodepoolAttrInstancePrefix:  validateString(testAccResourceSKSNodepoolInstancePrefix),
+						resSKSNodepoolAttrInstanceType:    validateString(testAccResourceSKSNodepoolInstanceType),
+						resSKSClusterAttrLabels + ".test": validateString(testAccResourceSKSNodepoolLabelValue),
+						resSKSNodepoolAttrName:            validateString(testAccResourceSKSNodepoolName),
+						resSKSNodepoolAttrSize:            validateString(fmt.Sprint(testAccResourceSKSNodepoolSize)),
+						resSKSNodepoolAttrState:           validation.ToDiagFunc(validation.NoZeroValues),
+						resSKSNodepoolAttrTemplateID:      validation.ToDiagFunc(validation.IsUUID),
+						resSKSNodepoolAttrVersion:         validation.ToDiagFunc(validation.NoZeroValues),
 					})),
 				),
 			},
@@ -184,6 +196,7 @@ func TestAccResourceSKSNodepool(t *testing.T) {
 						a.Len(*sksNodepool.AntiAffinityGroupIDs, 1)
 						a.Empty(defaultString(sksNodepool.Description, ""))
 						a.Equal(testAccResourceSKSNodepoolDiskSizeUpdated, *sksNodepool.DiskSize)
+						a.Equal(testAccResourceSKSNodepoolLabelValueUpdated, (*sksNodepool.Labels)["test"])
 						a.Equal(testAccResourceSKSNodepoolNameUpdated, *sksNodepool.Name)
 						a.Equal(defaultSKSNodepoolInstancePrefix, *sksNodepool.InstancePrefix)
 						a.Equal(testInstanceTypeIDMedium, *sksNodepool.InstanceTypeID)
@@ -201,6 +214,7 @@ func TestAccResourceSKSNodepool(t *testing.T) {
 						resSKSNodepoolAttrInstancePoolID:              validation.ToDiagFunc(validation.IsUUID),
 						resSKSNodepoolAttrInstancePrefix:              validateString(defaultSKSNodepoolInstancePrefix),
 						resSKSNodepoolAttrInstanceType:                validateString(testAccResourceSKSNodepoolInstanceTypeUpdated),
+						resSKSClusterAttrLabels + ".test":             validateString(testAccResourceSKSNodepoolLabelValueUpdated),
 						resSKSNodepoolAttrName:                        validateString(testAccResourceSKSNodepoolNameUpdated),
 						resSKSNodepoolAttrPrivateNetworkIDs + ".#":    validateString("1"),
 						resSKSNodepoolAttrSecurityGroupIDs + ".#":     validateString("1"),
@@ -235,6 +249,7 @@ func TestAccResourceSKSNodepool(t *testing.T) {
 							resSKSNodepoolAttrInstancePoolID:              validation.ToDiagFunc(validation.IsUUID),
 							resSKSNodepoolAttrInstancePrefix:              validateString(defaultSKSNodepoolInstancePrefix),
 							resSKSNodepoolAttrInstanceType:                validateString(testAccResourceSKSNodepoolInstanceTypeUpdated),
+							resSKSClusterAttrLabels + ".test":             validateString(testAccResourceSKSNodepoolLabelValueUpdated),
 							resSKSNodepoolAttrName:                        validateString(testAccResourceSKSNodepoolNameUpdated),
 							resSKSNodepoolAttrPrivateNetworkIDs + ".#":    validateString("1"),
 							resSKSNodepoolAttrSecurityGroupIDs + ".#":     validateString("1"),
