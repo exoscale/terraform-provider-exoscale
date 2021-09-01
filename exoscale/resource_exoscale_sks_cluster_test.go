@@ -17,9 +17,11 @@ import (
 )
 
 var (
-	testAccResourceSKSClusterName        = acctest.RandomWithPrefix(testPrefix)
-	testAccResourceSKSClusterNameUpdated = testAccResourceSKSClusterName + "-updated"
-	testAccResourceSKSClusterDescription = acctest.RandString(10)
+	testAccResourceSKSClusterLabelValue        = acctest.RandomWithPrefix(testPrefix)
+	testAccResourceSKSClusterLabelValueUpdated = testAccResourceSKSClusterLabelValue + "-updated"
+	testAccResourceSKSClusterName              = acctest.RandomWithPrefix(testPrefix)
+	testAccResourceSKSClusterNameUpdated       = testAccResourceSKSClusterName + "-updated"
+	testAccResourceSKSClusterDescription       = acctest.RandString(10)
 
 	testAccResourceSKSClusterConfigCreate = fmt.Sprintf(`
 locals {
@@ -33,6 +35,9 @@ resource "exoscale_sks_cluster" "test" {
   exoscale_ccm = true
   metrics_server = false
   auto_upgrade = true
+  labels = {
+    test = "%s"
+  }
 
   timeouts {
     create = "10m"
@@ -55,6 +60,7 @@ resource "exoscale_sks_nodepool" "test" {
 		testZoneName,
 		testAccResourceSKSClusterName,
 		testAccResourceSKSClusterDescription,
+		testAccResourceSKSClusterLabelValue,
 	)
 
 	testAccResourceSKSClusterConfigUpdate = fmt.Sprintf(`
@@ -69,6 +75,9 @@ resource "exoscale_sks_cluster" "test" {
   exoscale_ccm = true
   metrics_server = false
   auto_upgrade = false
+  labels = {
+    test = "%s"
+  }
 
   timeouts {
     create = "10m"
@@ -90,6 +99,7 @@ resource "exoscale_sks_nodepool" "test" {
 `,
 		testZoneName,
 		testAccResourceSKSClusterNameUpdated,
+		testAccResourceSKSClusterLabelValueUpdated,
 	)
 )
 
@@ -147,6 +157,7 @@ func TestAccResourceSKSCluster(t *testing.T) {
 						a.True(defaultBool(sksCluster.AutoUpgrade, false))
 						a.Equal(defaultSKSClusterCNI, *sksCluster.CNI)
 						a.Equal(testAccResourceSKSClusterDescription, *sksCluster.Description)
+						a.Equal(testAccResourceSKSClusterLabelValue, (*sksCluster.Labels)["test"])
 						a.Equal(testAccResourceSKSClusterName, *sksCluster.Name)
 						a.Equal(defaultSKSClusterServiceLevel, *sksCluster.ServiceLevel)
 						a.Equal(latestVersion, *sksCluster.Version)
@@ -154,17 +165,18 @@ func TestAccResourceSKSCluster(t *testing.T) {
 						return nil
 					},
 					checkResourceState(r, checkResourceStateValidateAttributes(testAttrs{
-						resSKSClusterAttrAutoUpgrade:   validateString("true"),
-						resSKSClusterAttrCNI:           validateString(defaultSKSClusterCNI),
-						resSKSClusterAttrCreatedAt:     validation.ToDiagFunc(validation.NoZeroValues),
-						resSKSClusterAttrDescription:   validateString(testAccResourceSKSClusterDescription),
-						resSKSClusterAttrEndpoint:      validation.ToDiagFunc(validation.IsURLWithHTTPS),
-						resSKSClusterAttrExoscaleCCM:   validateString("true"),
-						resSKSClusterAttrMetricsServer: validateString("false"),
-						resSKSClusterAttrName:          validateString(testAccResourceSKSClusterName),
-						resSKSClusterAttrServiceLevel:  validateString(defaultSKSClusterServiceLevel),
-						resSKSClusterAttrState:         validation.ToDiagFunc(validation.NoZeroValues),
-						resSKSClusterAttrVersion:       validation.ToDiagFunc(validation.NoZeroValues),
+						resSKSClusterAttrAutoUpgrade:      validateString("true"),
+						resSKSClusterAttrCNI:              validateString(defaultSKSClusterCNI),
+						resSKSClusterAttrCreatedAt:        validation.ToDiagFunc(validation.NoZeroValues),
+						resSKSClusterAttrDescription:      validateString(testAccResourceSKSClusterDescription),
+						resSKSClusterAttrEndpoint:         validation.ToDiagFunc(validation.IsURLWithHTTPS),
+						resSKSClusterAttrExoscaleCCM:      validateString("true"),
+						resSKSClusterAttrMetricsServer:    validateString("false"),
+						resSKSClusterAttrLabels + ".test": validateString(testAccResourceSKSClusterLabelValue),
+						resSKSClusterAttrName:             validateString(testAccResourceSKSClusterName),
+						resSKSClusterAttrServiceLevel:     validateString(defaultSKSClusterServiceLevel),
+						resSKSClusterAttrState:            validation.ToDiagFunc(validation.NoZeroValues),
+						resSKSClusterAttrVersion:          validation.ToDiagFunc(validation.NoZeroValues),
 					})),
 				),
 			},
@@ -178,22 +190,24 @@ func TestAccResourceSKSCluster(t *testing.T) {
 
 						a.False(defaultBool(sksCluster.AutoUpgrade, false))
 						a.Empty(defaultString(sksCluster.Description, ""))
+						a.Equal(testAccResourceSKSClusterLabelValueUpdated, (*sksCluster.Labels)["test"])
 						a.Equal(testAccResourceSKSClusterNameUpdated, *sksCluster.Name)
 
 						return nil
 					},
 					checkResourceState(r, checkResourceStateValidateAttributes(testAttrs{
-						resSKSClusterAttrAutoUpgrade:   validateString("false"),
-						resSKSClusterAttrCNI:           validateString(defaultSKSClusterCNI),
-						resSKSClusterAttrCreatedAt:     validation.ToDiagFunc(validation.NoZeroValues),
-						resSKSClusterAttrDescription:   validation.ToDiagFunc(validation.StringIsEmpty),
-						resSKSClusterAttrEndpoint:      validation.ToDiagFunc(validation.IsURLWithHTTPS),
-						resSKSClusterAttrExoscaleCCM:   validateString("true"),
-						resSKSClusterAttrMetricsServer: validateString("false"),
-						resSKSClusterAttrName:          validateString(testAccResourceSKSClusterNameUpdated),
-						resSKSClusterAttrServiceLevel:  validateString(defaultSKSClusterServiceLevel),
-						resSKSClusterAttrState:         validation.ToDiagFunc(validation.NoZeroValues),
-						resSKSClusterAttrVersion:       validation.ToDiagFunc(validation.NoZeroValues),
+						resSKSClusterAttrAutoUpgrade:      validateString("false"),
+						resSKSClusterAttrCNI:              validateString(defaultSKSClusterCNI),
+						resSKSClusterAttrCreatedAt:        validation.ToDiagFunc(validation.NoZeroValues),
+						resSKSClusterAttrDescription:      validation.ToDiagFunc(validation.StringIsEmpty),
+						resSKSClusterAttrEndpoint:         validation.ToDiagFunc(validation.IsURLWithHTTPS),
+						resSKSClusterAttrExoscaleCCM:      validateString("true"),
+						resSKSClusterAttrMetricsServer:    validateString("false"),
+						resSKSClusterAttrLabels + ".test": validateString(testAccResourceSKSClusterLabelValueUpdated),
+						resSKSClusterAttrName:             validateString(testAccResourceSKSClusterNameUpdated),
+						resSKSClusterAttrServiceLevel:     validateString(defaultSKSClusterServiceLevel),
+						resSKSClusterAttrState:            validation.ToDiagFunc(validation.NoZeroValues),
+						resSKSClusterAttrVersion:          validation.ToDiagFunc(validation.NoZeroValues),
 					})),
 				),
 			},
@@ -210,17 +224,18 @@ func TestAccResourceSKSCluster(t *testing.T) {
 				ImportStateCheck: func(s []*terraform.InstanceState) error {
 					return checkResourceAttributes(
 						testAttrs{
-							resSKSClusterAttrAutoUpgrade:   validateString("false"),
-							resSKSClusterAttrCNI:           validateString(defaultSKSClusterCNI),
-							resSKSClusterAttrCreatedAt:     validation.ToDiagFunc(validation.NoZeroValues),
-							resSKSClusterAttrDescription:   validation.ToDiagFunc(validation.StringIsEmpty),
-							resSKSClusterAttrEndpoint:      validation.ToDiagFunc(validation.IsURLWithHTTPS),
-							resSKSClusterAttrExoscaleCCM:   validateString("true"),
-							resSKSClusterAttrMetricsServer: validateString("false"),
-							resSKSClusterAttrName:          validateString(testAccResourceSKSClusterNameUpdated),
-							resSKSClusterAttrServiceLevel:  validateString(defaultSKSClusterServiceLevel),
-							resSKSClusterAttrState:         validation.ToDiagFunc(validation.NoZeroValues),
-							resSKSClusterAttrVersion:       validation.ToDiagFunc(validation.NoZeroValues),
+							resSKSClusterAttrAutoUpgrade:      validateString("false"),
+							resSKSClusterAttrCNI:              validateString(defaultSKSClusterCNI),
+							resSKSClusterAttrCreatedAt:        validation.ToDiagFunc(validation.NoZeroValues),
+							resSKSClusterAttrDescription:      validation.ToDiagFunc(validation.StringIsEmpty),
+							resSKSClusterAttrEndpoint:         validation.ToDiagFunc(validation.IsURLWithHTTPS),
+							resSKSClusterAttrExoscaleCCM:      validateString("true"),
+							resSKSClusterAttrMetricsServer:    validateString("false"),
+							resSKSClusterAttrLabels + ".test": validateString(testAccResourceSKSClusterLabelValueUpdated),
+							resSKSClusterAttrName:             validateString(testAccResourceSKSClusterNameUpdated),
+							resSKSClusterAttrServiceLevel:     validateString(defaultSKSClusterServiceLevel),
+							resSKSClusterAttrState:            validation.ToDiagFunc(validation.NoZeroValues),
+							resSKSClusterAttrVersion:          validation.ToDiagFunc(validation.NoZeroValues),
 						},
 						s[0].Attributes)
 				},
