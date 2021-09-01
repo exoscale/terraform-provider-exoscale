@@ -16,6 +16,7 @@ const (
 	resNLBAttrCreatedAt   = "created_at"
 	resNLBAttrDescription = "description"
 	resNLBAttrIPAddress   = "ip_address"
+	resNLBAttrLabels      = "labels"
 	resNLBAttrName        = "name"
 	resNLBAttrServices    = "services"
 	resNLBAttrState       = "state"
@@ -39,6 +40,11 @@ func resourceNLB() *schema.Resource {
 		resNLBAttrIPAddress: {
 			Type:     schema.TypeString,
 			Computed: true,
+		},
+		resNLBAttrLabels: {
+			Type:     schema.TypeMap,
+			Elem:     &schema.Schema{Type: schema.TypeString},
+			Optional: true,
 		},
 		resNLBAttrName: {
 			Type:     schema.TypeString,
@@ -94,6 +100,14 @@ func resourceNLBCreate(ctx context.Context, d *schema.ResourceData, meta interfa
 	client := GetComputeClient(meta)
 
 	nlb := new(egoscale.NetworkLoadBalancer)
+
+	if l, ok := d.GetOk(resNLBAttrLabels); ok {
+		labels := make(map[string]string)
+		for k, v := range l.(map[string]interface{}) {
+			labels[k] = v.(string)
+		}
+		nlb.Labels = &labels
+	}
 
 	nlbName := d.Get(resNLBAttrName).(string)
 	nlb.Name = &nlbName
@@ -159,6 +173,15 @@ func resourceNLBUpdate(ctx context.Context, d *schema.ResourceData, meta interfa
 
 	var updated bool
 
+	if d.HasChange(resNLBAttrLabels) {
+		labels := make(map[string]string)
+		for k, v := range d.Get(resNLBAttrLabels).(map[string]interface{}) {
+			labels[k] = v.(string)
+		}
+		nlb.Labels = &labels
+		updated = true
+	}
+
 	if d.HasChange(resNLBAttrName) {
 		v := d.Get(resNLBAttrName).(string)
 		nlb.Name = &v
@@ -214,6 +237,10 @@ func resourceNLBApply(_ context.Context, d *schema.ResourceData, nlb *egoscale.N
 	}
 
 	if err := d.Set(resNLBAttrIPAddress, nlb.IPAddress.String()); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set(resNLBAttrLabels, nlb.Labels); err != nil {
 		return diag.FromErr(err)
 	}
 

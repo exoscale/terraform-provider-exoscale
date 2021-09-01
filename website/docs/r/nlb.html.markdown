@@ -22,6 +22,10 @@ resource "exoscale_nlb" "website" {
   zone = var.zone
   name = "website"
   description = "This is the Network Load Balancer for my website"
+
+  labels = {
+    env = "prod"
+  }
 }
 ```
 
@@ -31,6 +35,7 @@ resource "exoscale_nlb" "website" {
 * `zone` - (Required) The name of the [zone][zone] to deploy the NLB into.
 * `name` - (Required) The name of the NLB.
 * `description` - The description of the NLB.
+* `labels` - A map of key/value labels.
 
 
 ## Attributes Reference
