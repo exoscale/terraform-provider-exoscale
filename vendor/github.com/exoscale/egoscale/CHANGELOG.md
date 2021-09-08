@@ -1,6 +1,31 @@
 Changelog
 =========
 
+0.72.2
+------
+
+- fix: v2: update Exoscale API endpoint prefix
+
+0.72.1
+------
+
+- fix: v2: fix `Client.UpdateElasticIP()` method
+
+0.72.0
+------
+
+- feature: v2: add `AntiAffinityGroup.InstanceIDs` field
+
+0.71.1
+------
+
+- fix: v2: fix `Client.CreateSecurityGroupRule()` method
+
+0.71.0
+------
+
+- feature: v2: add `Client.UpgradeSKSClusterServiceLevel()` method
+
 0.70.0
 ------
 
