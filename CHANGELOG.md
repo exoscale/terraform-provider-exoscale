@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.29.0 (September 9, 2021)
+
+IMPROVEMENTS:
+
+- `exoscale_instance_pool`: add support for labels
+- `exoscale_nlb`: add support for labels
+- `exoscale_sks_cluster`/`exoscale_sks_nodepool`: add support for labels
+
+
 ## 0.28.0 (August 18, 2021)
 
 CHANGES:
