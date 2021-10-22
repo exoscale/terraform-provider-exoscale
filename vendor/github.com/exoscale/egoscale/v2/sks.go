@@ -10,6 +10,33 @@ import (
 	"github.com/exoscale/egoscale/v2/oapi"
 )
 
+// ListSKSClusterVersionsOpt represents an ListSKSClusterVersions operation option.
+type ListSKSClusterVersionsOpt func(params *oapi.ListSksClusterVersionsParams)
+
+// ListSKSClusterVersionsWithDeprecated includes deprecated results when listing SKS Cluster versions
+// nolint:gocritic
+func ListSKSClusterVersionsWithDeprecated(v bool) ListSKSClusterVersionsOpt {
+	return func(p *oapi.ListSksClusterVersionsParams) {
+		if v {
+			vs := "true"
+			p.IncludeDeprecated = &vs
+		}
+	}
+}
+
+// SKSNodepoolTaint represents an SKS Nodepool Kubernetes Node taint.
+type SKSNodepoolTaint struct {
+	Effect string
+	Value  string
+}
+
+func sksNodepoolTaintFromAPI(t *oapi.SksNodepoolTaint) *SKSNodepoolTaint {
+	return &SKSNodepoolTaint{
+		Effect: string(t.Effect),
+		Value:  t.Value,
+	}
+}
+
 // SKSNodepool represents an SKS Nodepool.
 type SKSNodepool struct {
 	AddOns               *[]string
@@ -18,7 +45,7 @@ type SKSNodepool struct {
 	DeployTargetID       *string
 	Description          *string
 	DiskSize             *int64  `req-for:"create"`
-	ID                   *string `req-for:"update,scale,evict,delete"`
+	ID                   *string `req-for:"update,delete"`
 	InstancePoolID       *string
 	InstancePrefix       *string
 	InstanceTypeID       *string `req-for:"create"`
@@ -28,6 +55,7 @@ type SKSNodepool struct {
 	SecurityGroupIDs     *[]string
 	Size                 *int64 `req-for:"create"`
 	State                *string
+	Taints               *map[string]*SKSNodepoolTaint
 	TemplateID           *string
 	Version              *string
 }
@@ -45,8 +73,8 @@ func sksNodepoolFromAPI(n *oapi.SksNodepool) *SKSNodepool {
 			return
 		}(),
 		AntiAffinityGroupIDs: func() (v *[]string) {
-			ids := make([]string, 0)
 			if n.AntiAffinityGroups != nil && len(*n.AntiAffinityGroups) > 0 {
+				ids := make([]string, 0)
 				for _, item := range *n.AntiAffinityGroups {
 					item := item
 					ids = append(ids, *item.Id)
@@ -76,8 +104,8 @@ func sksNodepoolFromAPI(n *oapi.SksNodepool) *SKSNodepool {
 		}(),
 		Name: n.Name,
 		PrivateNetworkIDs: func() (v *[]string) {
-			ids := make([]string, 0)
 			if n.PrivateNetworks != nil && len(*n.PrivateNetworks) > 0 {
+				ids := make([]string, 0)
 				for _, item := range *n.PrivateNetworks {
 					item := item
 					ids = append(ids, *item.Id)
@@ -87,8 +115,8 @@ func sksNodepoolFromAPI(n *oapi.SksNodepool) *SKSNodepool {
 			return
 		}(),
 		SecurityGroupIDs: func() (v *[]string) {
-			ids := make([]string, 0)
 			if n.SecurityGroups != nil && len(*n.SecurityGroups) > 0 {
+				ids := make([]string, 0)
 				for _, item := range *n.SecurityGroups {
 					item := item
 					ids = append(ids, *item.Id)
@@ -97,8 +125,18 @@ func sksNodepoolFromAPI(n *oapi.SksNodepool) *SKSNodepool {
 			}
 			return
 		}(),
-		Size:       n.Size,
-		State:      (*string)(n.State),
+		Size:  n.Size,
+		State: (*string)(n.State),
+		Taints: func() (v *map[string]*SKSNodepoolTaint) {
+			if n.Taints != nil && len(n.Taints.AdditionalProperties) > 0 {
+				taints := make(map[string]*SKSNodepoolTaint)
+				for k, t := range n.Taints.AdditionalProperties {
+					taints[k] = sksNodepoolTaintFromAPI(&t)
+				}
+				v = &taints
+			}
+			return
+		}(),
 		TemplateID: n.Template.Id,
 		Version:    n.Version,
 	}
@@ -112,16 +150,17 @@ type SKSCluster struct {
 	CreatedAt    *time.Time
 	Description  *string
 	Endpoint     *string
-	ID           *string `req-for:"update"`
+	ID           *string `req-for:"update,delete"`
 	Labels       *map[string]string
 	Name         *string `req-for:"create"`
 	Nodepools    []*SKSNodepool
 	ServiceLevel *string `req-for:"create"`
 	State        *string
 	Version      *string `req-for:"create"`
+	Zone         *string
 }
 
-func sksClusterFromAPI(c *oapi.SksCluster) *SKSCluster {
+func sksClusterFromAPI(c *oapi.SksCluster, zone string) *SKSCluster {
 	return &SKSCluster{
 		AddOns: func() (v *[]string) {
 			if c.Addons != nil {
@@ -159,115 +198,7 @@ func sksClusterFromAPI(c *oapi.SksCluster) *SKSCluster {
 		ServiceLevel: (*string)(c.Level),
 		State:        (*string)(c.State),
 		Version:      c.Version,
-	}
-}
-
-// ToAPIMock returns the low-level representation of the resource. This is intended for testing purposes.
-func (c SKSCluster) ToAPIMock() interface{} {
-	return oapi.SksCluster{
-		Addons: func() *[]oapi.SksClusterAddons {
-			if c.AddOns != nil {
-				list := make([]oapi.SksClusterAddons, len(*c.AddOns))
-				for i, a := range *c.AddOns {
-					a := a
-					list[i] = oapi.SksClusterAddons(a)
-				}
-				return &list
-			}
-			return nil
-		}(),
-		AutoUpgrade: c.AutoUpgrade,
-		Cni:         (*oapi.SksClusterCni)(c.CNI),
-		CreatedAt:   c.CreatedAt,
-		Description: c.Description,
-		Endpoint:    c.Endpoint,
-		Id:          c.ID,
-		Labels: func() *oapi.Labels {
-			if c.Labels != nil {
-				return &oapi.Labels{AdditionalProperties: *c.Labels}
-			}
-			return nil
-		}(),
-		Level: (*oapi.SksClusterLevel)(c.ServiceLevel),
-		Name:  c.Name,
-		Nodepools: func() *[]oapi.SksNodepool {
-			list := make([]oapi.SksNodepool, len(c.Nodepools))
-			for j, n := range c.Nodepools {
-				list[j] = oapi.SksNodepool{
-					Addons: func() *[]oapi.SksNodepoolAddons {
-						if n.AddOns != nil {
-							list := make([]oapi.SksNodepoolAddons, len(*n.AddOns))
-							for i, a := range *n.AddOns {
-								a := a
-								list[i] = oapi.SksNodepoolAddons(a)
-							}
-							return &list
-						}
-						return nil
-					}(),
-					AntiAffinityGroups: func() *[]oapi.AntiAffinityGroup {
-						if n.AntiAffinityGroupIDs != nil {
-							list := make([]oapi.AntiAffinityGroup, len(*n.AntiAffinityGroupIDs))
-							for i, id := range *n.AntiAffinityGroupIDs {
-								id := id
-								list[i] = oapi.AntiAffinityGroup{Id: &id}
-							}
-							return &list
-						}
-						return nil
-					}(),
-					CreatedAt: n.CreatedAt,
-					DeployTarget: func() *oapi.DeployTarget {
-						if n.DeployTargetID != nil {
-							return &oapi.DeployTarget{Id: n.DeployTargetID}
-						}
-						return nil
-					}(),
-					Description:    n.Description,
-					DiskSize:       n.DiskSize,
-					Id:             n.ID,
-					InstancePool:   &oapi.InstancePool{Id: n.InstancePoolID},
-					InstancePrefix: n.InstancePrefix,
-					InstanceType:   &oapi.InstanceType{Id: n.InstanceTypeID},
-					Labels: func() *oapi.Labels {
-						if n.Labels != nil {
-							return &oapi.Labels{AdditionalProperties: *n.Labels}
-						}
-						return nil
-					}(),
-					Name: n.Name,
-					PrivateNetworks: func() *[]oapi.PrivateNetwork {
-						if n.PrivateNetworkIDs != nil {
-							list := make([]oapi.PrivateNetwork, len(*n.PrivateNetworkIDs))
-							for i, id := range *n.PrivateNetworkIDs {
-								id := id
-								list[i] = oapi.PrivateNetwork{Id: &id}
-							}
-							return &list
-						}
-						return nil
-					}(),
-					SecurityGroups: func() *[]oapi.SecurityGroup {
-						if n.SecurityGroupIDs != nil {
-							list := make([]oapi.SecurityGroup, len(*n.SecurityGroupIDs))
-							for i, id := range *n.SecurityGroupIDs {
-								id := id
-								list[i] = oapi.SecurityGroup{Id: &id}
-							}
-							return &list
-						}
-						return nil
-					}(),
-					Size:     n.Size,
-					State:    (*oapi.SksNodepoolState)(n.State),
-					Template: &oapi.Template{Id: n.TemplateID},
-					Version:  n.Version,
-				}
-			}
-			return &list
-		}(),
-		State:   (*oapi.SksClusterState)(c.State),
-		Version: c.Version,
+		Zone:         &zone,
 	}
 }
 
@@ -325,6 +256,9 @@ func (c *Client) CreateSKSNodepool(
 	cluster *SKSCluster,
 	nodepool *SKSNodepool,
 ) (*SKSNodepool, error) {
+	if err := validateOperationParams(cluster, "update"); err != nil {
+		return nil, err
+	}
 	if err := validateOperationParams(nodepool, "create"); err != nil {
 		return nil, err
 	}
@@ -394,6 +328,19 @@ func (c *Client) CreateSKSNodepool(
 				return
 			}(),
 			Size: *nodepool.Size,
+			Taints: func() (v *oapi.SksNodepoolTaints) {
+				if nodepool.Taints != nil {
+					taints := oapi.SksNodepoolTaints{AdditionalProperties: map[string]oapi.SksNodepoolTaint{}}
+					for k, t := range *nodepool.Taints {
+						taints.AdditionalProperties[k] = oapi.SksNodepoolTaint{
+							Effect: (oapi.SksNodepoolTaintEffect)(t.Effect),
+							Value:  t.Value,
+						}
+					}
+					v = &taints
+				}
+				return
+			}(),
 		})
 	if err != nil {
 		return nil, err
@@ -417,6 +364,10 @@ func (c *Client) CreateSKSNodepool(
 
 // DeleteSKSCluster deletes an SKS cluster.
 func (c *Client) DeleteSKSCluster(ctx context.Context, zone string, cluster *SKSCluster) error {
+	if err := validateOperationParams(cluster, "delete"); err != nil {
+		return err
+	}
+
 	resp, err := c.DeleteSksClusterWithResponse(apiv2.WithZone(ctx, zone), *cluster.ID)
 	if err != nil {
 		return err
@@ -435,6 +386,9 @@ func (c *Client) DeleteSKSCluster(ctx context.Context, zone string, cluster *SKS
 
 // DeleteSKSNodepool deletes an SKS Nodepool.
 func (c *Client) DeleteSKSNodepool(ctx context.Context, zone string, cluster *SKSCluster, nodepool *SKSNodepool) error {
+	if err := validateOperationParams(cluster, "update"); err != nil {
+		return err
+	}
 	if err := validateOperationParams(nodepool, "delete"); err != nil {
 		return err
 	}
@@ -464,7 +418,10 @@ func (c *Client) EvictSKSNodepoolMembers(
 	nodepool *SKSNodepool,
 	members []string,
 ) error {
-	if err := validateOperationParams(nodepool, "evict"); err != nil {
+	if err := validateOperationParams(cluster, "update"); err != nil {
+		return err
+	}
+	if err := validateOperationParams(nodepool, "update"); err != nil {
 		return err
 	}
 
@@ -512,7 +469,7 @@ func (c *Client) GetSKSCluster(ctx context.Context, zone, id string) (*SKSCluste
 		return nil, err
 	}
 
-	return sksClusterFromAPI(resp.JSON200), nil
+	return sksClusterFromAPI(resp.JSON200, zone), nil
 }
 
 // GetSKSClusterAuthorityCert returns the SKS cluster base64-encoded certificate content for the specified authority.
@@ -522,6 +479,10 @@ func (c *Client) GetSKSClusterAuthorityCert(
 	cluster *SKSCluster,
 	authority string,
 ) (string, error) {
+	if err := validateOperationParams(cluster, "update"); err != nil {
+		return "", err
+	}
+
 	if authority == "" {
 		return "", errors.New("authority not specified")
 	}
@@ -549,6 +510,10 @@ func (c *Client) GetSKSClusterKubeconfig(
 	groups []string,
 	d time.Duration,
 ) (string, error) {
+	if err := validateOperationParams(cluster, "update"); err != nil {
+		return "", err
+	}
+
 	if user == "" {
 		return "", errors.New("user not specified")
 	}
@@ -585,7 +550,7 @@ func (c *Client) ListSKSClusters(ctx context.Context, zone string) ([]*SKSCluste
 
 	if resp.JSON200.SksClusters != nil {
 		for i := range *resp.JSON200.SksClusters {
-			list = append(list, sksClusterFromAPI(&(*resp.JSON200.SksClusters)[i]))
+			list = append(list, sksClusterFromAPI(&(*resp.JSON200.SksClusters)[i], zone))
 		}
 	}
 
@@ -593,10 +558,16 @@ func (c *Client) ListSKSClusters(ctx context.Context, zone string) ([]*SKSCluste
 }
 
 // ListSKSClusterVersions returns the list of Kubernetes versions supported during SKS cluster creation.
-func (c *Client) ListSKSClusterVersions(ctx context.Context) ([]string, error) {
+func (c *Client) ListSKSClusterVersions(ctx context.Context, opts ...ListSKSClusterVersionsOpt) ([]string, error) {
 	list := make([]string, 0)
 
-	resp, err := c.ListSksClusterVersionsWithResponse(ctx)
+	params := oapi.ListSksClusterVersionsParams{}
+
+	for _, opt := range opts {
+		opt(&params)
+	}
+
+	resp, err := c.ListSksClusterVersionsWithResponse(ctx, &params)
 	if err != nil {
 		return nil, err
 	}
@@ -614,6 +585,10 @@ func (c *Client) ListSKSClusterVersions(ctx context.Context) ([]string, error) {
 // RotateSKSClusterCCMCredentials rotates the Exoscale IAM credentials managed by the SKS control plane for the
 // Kubernetes Exoscale Cloud Controller Manager.
 func (c *Client) RotateSKSClusterCCMCredentials(ctx context.Context, zone string, cluster *SKSCluster) error {
+	if err := validateOperationParams(cluster, "update"); err != nil {
+		return err
+	}
+
 	resp, err := c.RotateSksCcmCredentialsWithResponse(apiv2.WithZone(ctx, zone), *cluster.ID)
 	if err != nil {
 		return err
@@ -638,7 +613,10 @@ func (c *Client) ScaleSKSNodepool(
 	nodepool *SKSNodepool,
 	size int64,
 ) error {
-	if err := validateOperationParams(nodepool, "scale"); err != nil {
+	if err := validateOperationParams(cluster, "update"); err != nil {
+		return err
+	}
+	if err := validateOperationParams(nodepool, "update"); err != nil {
 		return err
 	}
 
@@ -705,6 +683,9 @@ func (c *Client) UpdateSKSNodepool(
 	cluster *SKSCluster,
 	nodepool *SKSNodepool,
 ) error {
+	if err := validateOperationParams(cluster, "update"); err != nil {
+		return err
+	}
 	if err := validateOperationParams(nodepool, "update"); err != nil {
 		return err
 	}
@@ -769,6 +750,19 @@ func (c *Client) UpdateSKSNodepool(
 				}
 				return
 			}(),
+			Taints: func() (v *oapi.SksNodepoolTaints) {
+				if nodepool.Taints != nil {
+					taints := oapi.SksNodepoolTaints{AdditionalProperties: map[string]oapi.SksNodepoolTaint{}}
+					for k, t := range *nodepool.Taints {
+						taints.AdditionalProperties[k] = oapi.SksNodepoolTaint{
+							Effect: (oapi.SksNodepoolTaintEffect)(t.Effect),
+							Value:  t.Value,
+						}
+					}
+					v = &taints
+				}
+				return
+			}(),
 		})
 	if err != nil {
 		return err
@@ -787,6 +781,10 @@ func (c *Client) UpdateSKSNodepool(
 
 // UpgradeSKSCluster upgrades an SKS cluster to the requested Kubernetes version.
 func (c *Client) UpgradeSKSCluster(ctx context.Context, zone string, cluster *SKSCluster, version string) error {
+	if err := validateOperationParams(cluster, "update"); err != nil {
+		return err
+	}
+
 	resp, err := c.UpgradeSksClusterWithResponse(
 		apiv2.WithZone(ctx, zone),
 		*cluster.ID,
@@ -808,6 +806,10 @@ func (c *Client) UpgradeSKSCluster(ctx context.Context, zone string, cluster *SK
 
 // UpgradeSKSClusterServiceLevel upgrades an SKS cluster to service level "pro".
 func (c *Client) UpgradeSKSClusterServiceLevel(ctx context.Context, zone string, cluster *SKSCluster) error {
+	if err := validateOperationParams(cluster, "update"); err != nil {
+		return err
+	}
+
 	resp, err := c.UpgradeSksClusterServiceLevelWithResponse(apiv2.WithZone(ctx, zone), *cluster.ID)
 	if err != nil {
 		return err

@@ -17,14 +17,15 @@ type SnapshotExport struct {
 // Snapshot represents a Snapshot.
 type Snapshot struct {
 	CreatedAt  *time.Time
-	ID         *string
+	ID         *string `req-for:"update,delete"`
 	InstanceID *string
 	Name       *string
 	Size       *int64
 	State      *string
+	Zone       *string
 }
 
-func snapshotFromAPI(s *oapi.Snapshot) *Snapshot {
+func snapshotFromAPI(s *oapi.Snapshot, zone string) *Snapshot {
 	return &Snapshot{
 		CreatedAt:  s.CreatedAt,
 		ID:         s.Id,
@@ -32,11 +33,16 @@ func snapshotFromAPI(s *oapi.Snapshot) *Snapshot {
 		Name:       s.Name,
 		Size:       s.Size,
 		State:      (*string)(s.State),
+		Zone:       &zone,
 	}
 }
 
 // DeleteSnapshot deletes a Snapshot.
 func (c *Client) DeleteSnapshot(ctx context.Context, zone string, snapshot *Snapshot) error {
+	if err := validateOperationParams(snapshot, "delete"); err != nil {
+		return err
+	}
+
 	resp, err := c.DeleteSnapshotWithResponse(apiv2.WithZone(ctx, zone), *snapshot.ID)
 	if err != nil {
 		return err
@@ -55,6 +61,10 @@ func (c *Client) DeleteSnapshot(ctx context.Context, zone string, snapshot *Snap
 
 // ExportSnapshot exports a Snapshot and returns the exported Snapshot information.
 func (c *Client) ExportSnapshot(ctx context.Context, zone string, snapshot *Snapshot) (*SnapshotExport, error) {
+	if err := validateOperationParams(snapshot, "update"); err != nil {
+		return nil, err
+	}
+
 	resp, err := c.ExportSnapshotWithResponse(apiv2.WithZone(ctx, zone), *snapshot.ID)
 	if err != nil {
 		return nil, err
@@ -86,7 +96,7 @@ func (c *Client) GetSnapshot(ctx context.Context, zone, id string) (*Snapshot, e
 		return nil, err
 	}
 
-	return snapshotFromAPI(resp.JSON200), nil
+	return snapshotFromAPI(resp.JSON200, zone), nil
 }
 
 // ListSnapshots returns the list of existing Snapshots.
@@ -100,7 +110,7 @@ func (c *Client) ListSnapshots(ctx context.Context, zone string) ([]*Snapshot, e
 
 	if resp.JSON200.Snapshots != nil {
 		for i := range *resp.JSON200.Snapshots {
-			list = append(list, snapshotFromAPI(&(*resp.JSON200.Snapshots)[i]))
+			list = append(list, snapshotFromAPI(&(*resp.JSON200.Snapshots)[i], zone))
 		}
 	}
 

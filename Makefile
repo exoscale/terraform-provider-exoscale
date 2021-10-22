@@ -10,6 +10,8 @@ GO_LD_FLAGS := -ldflags "-s -w -X $(PACKAGE)/version.Version=${VERSION} \
 
 GO_BIN_OUTPUT_NAME = terraform-provider-exoscale_v$(VERSION)
 
+GO_BUILD_EXTRA_ARGS = -v -trimpath
+
 EXTRA_ARGS := -parallel=3 -count=1 -failfast
 
 .PHONY: test-acc test-verbose test

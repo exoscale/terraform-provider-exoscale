@@ -355,7 +355,7 @@ func resourceSecurityGroupRuleRead(d *schema.ResourceData, meta interface{}) err
 		return resourceSecurityGroupRuleApply(d, sg, (egoscale.EgressRule)(ingressRule))
 	}
 
-	d.SetId("") // FIXME: wat
+	d.SetId("")
 
 	log.Printf("[DEBUG] %s: read finished successfully", resourceSecurityGroupRuleIDString(d))
 

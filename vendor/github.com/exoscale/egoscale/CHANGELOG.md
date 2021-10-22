@@ -1,6 +1,66 @@
 Changelog
 =========
 
+0.80.2
+------
+
+- change: v2: refresh code generated from public API spec
+
+0.80.1
+------
+
+- change: v2: refresh code generated from public API spec
+
+0.80.0
+------
+
+- feature: v2: add new `CopyTemplate()`/`UpdateTemplate()` methods
+
+0.79.0
+------
+
+- feature: v2: `ListSKSClusterVersions()` method now accepts an additional `ListSKSClusterVersionsOpt` variadic argument
+
+0.78.0
+------
+
+- change: v2: type-specific `DatabaseService` methods have been removed, to be re-implemented in a future version; use `v2/oapi` methods for type-specific operations in the meantime.
+
+0.77.0
+------
+
+- change: v2: switch to func-based options passing
+
+0.76.0
+------
+
+- feature: v2: add support for SKS Nodepool taints
+
+0.75.0
+------
+
+- feature: v2: add `StartInstanceOpt` options
+
+0.74.0
+------
+
+- feature: v2: add a new `Zone` struct field to zone-local API resources
+
+0.73.2
+------
+
+- fix: v2: add missing operations params validation
+
+0.73.1
+------
+
+- fix: v2: `SecurityGroup`: return external sources when present
+
+0.73.0
+------
+
+- feature: v2: add `Client.AddExternalSourceToSecurityGroup()`/`Client.RemoveExternalSourceFromSecurityGroup()` methods
+
 0.72.2
 ------
 
