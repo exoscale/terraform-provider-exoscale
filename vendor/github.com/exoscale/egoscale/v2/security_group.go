@@ -73,17 +73,19 @@ func securityGroupRuleFromAPI(r *oapi.SecurityGroupRule) *SecurityGroupRule {
 
 // SecurityGroup represents a Security Group.
 type SecurityGroup struct {
-	Description *string
-	ID          *string
-	Name        *string `req-for:"create"`
-	Rules       []*SecurityGroupRule
+	Description     *string
+	ID              *string `req-for:"update,delete"`
+	Name            *string `req-for:"create"`
+	ExternalSources *[]string
+	Rules           []*SecurityGroupRule
 }
 
 func securityGroupFromAPI(s *oapi.SecurityGroup) *SecurityGroup {
 	return &SecurityGroup{
-		Description: s.Description,
-		ID:          s.Id,
-		Name:        s.Name,
+		Description:     s.Description,
+		ID:              s.Id,
+		Name:            s.Name,
+		ExternalSources: s.ExternalSources,
 		Rules: func() (rules []*SecurityGroupRule) {
 			if s.Rules != nil {
 				rules = make([]*SecurityGroupRule, 0)
@@ -133,6 +135,9 @@ func (c *Client) CreateSecurityGroupRule(
 	securityGroup *SecurityGroup,
 	rule *SecurityGroupRule,
 ) (*SecurityGroupRule, error) {
+	if err := validateOperationParams(securityGroup, "update"); err != nil {
+		return nil, err
+	}
 	if err := validateOperationParams(rule, "create"); err != nil {
 		return nil, err
 	}
@@ -230,6 +235,10 @@ func (c *Client) CreateSecurityGroupRule(
 
 // DeleteSecurityGroup deletes a Security Group.
 func (c *Client) DeleteSecurityGroup(ctx context.Context, zone string, securityGroup *SecurityGroup) error {
+	if err := validateOperationParams(securityGroup, "delete"); err != nil {
+		return err
+	}
+
 	resp, err := c.DeleteSecurityGroupWithResponse(apiv2.WithZone(ctx, zone), *securityGroup.ID)
 	if err != nil {
 		return err
@@ -253,6 +262,9 @@ func (c *Client) DeleteSecurityGroupRule(
 	securityGroup *SecurityGroup,
 	rule *SecurityGroupRule,
 ) error {
+	if err := validateOperationParams(securityGroup, "update"); err != nil {
+		return err
+	}
 	if err := validateOperationParams(rule, "delete"); err != nil {
 		return err
 	}
@@ -315,4 +327,70 @@ func (c *Client) ListSecurityGroups(ctx context.Context, zone string) ([]*Securi
 	}
 
 	return list, nil
+}
+
+// AddExternalSourceToSecurityGroup adds a new external source to a
+// Security Group. This operation is idempotent.
+func (c *Client) AddExternalSourceToSecurityGroup(
+	ctx context.Context,
+	zone string,
+	securityGroup *SecurityGroup,
+	cidr string,
+) error {
+	if err := validateOperationParams(securityGroup, "update"); err != nil {
+		return err
+	}
+
+	resp, err := c.AddExternalSourceToSecurityGroupWithResponse(
+		apiv2.WithZone(ctx, zone),
+		*securityGroup.ID,
+		oapi.AddExternalSourceToSecurityGroupJSONRequestBody{
+			Cidr: cidr,
+		})
+	if err != nil {
+		return err
+	}
+
+	_, err = oapi.NewPoller().
+		WithTimeout(c.timeout).
+		WithInterval(c.pollInterval).
+		Poll(ctx, c.OperationPoller(zone, *resp.JSON200.Id))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// RemoveExternalSourceFromSecurityGroup removes an external source from
+// a Security Group. This operation is idempotent.
+func (c *Client) RemoveExternalSourceFromSecurityGroup(
+	ctx context.Context,
+	zone string,
+	securityGroup *SecurityGroup,
+	cidr string,
+) error {
+	if err := validateOperationParams(securityGroup, "update"); err != nil {
+		return err
+	}
+
+	resp, err := c.RemoveExternalSourceFromSecurityGroupWithResponse(
+		apiv2.WithZone(ctx, zone),
+		*securityGroup.ID,
+		oapi.RemoveExternalSourceFromSecurityGroupJSONRequestBody{
+			Cidr: cidr,
+		})
+	if err != nil {
+		return err
+	}
+
+	_, err = oapi.NewPoller().
+		WithTimeout(c.timeout).
+		WithInterval(c.pollInterval).
+		Poll(ctx, c.OperationPoller(zone, *resp.JSON200.Id))
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

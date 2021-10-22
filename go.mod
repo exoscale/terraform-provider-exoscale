@@ -3,7 +3,7 @@ module github.com/exoscale/terraform-provider-exoscale
 require (
 	github.com/apparentlymart/go-cidr v1.1.0 // indirect
 	github.com/aws/aws-sdk-go v1.37.0 // indirect
-	github.com/exoscale/egoscale v0.72.2
+	github.com/exoscale/egoscale v0.80.2
 	github.com/gofrs/uuid v4.0.0+incompatible // indirect
 	github.com/gopherjs/gopherjs v0.0.0-20190430165422-3e4dfb77656c // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2
@@ -16,6 +16,7 @@ require (
 	github.com/smartystreets/goconvey v0.0.0-20180222194500-ef6db91d284a // indirect
 	github.com/ssgreg/repeat v1.5.1
 	github.com/stretchr/testify v1.7.0
+	github.com/xeipuuv/gojsonschema v1.2.0
 	golang.org/x/tools v0.0.0-20201028111035-eafbe7b904eb // indirect
 	google.golang.org/api v0.34.0 // indirect
 	gopkg.in/ini.v1 v1.48.0

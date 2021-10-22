@@ -18,14 +18,15 @@ type PrivateNetworkLease struct {
 type PrivateNetwork struct {
 	Description *string
 	EndIP       *net.IP
-	ID          *string `req-for:"update"`
+	ID          *string `req-for:"update,delete"`
 	Name        *string `req-for:"create"`
 	Netmask     *net.IP
 	StartIP     *net.IP
 	Leases      []*PrivateNetworkLease
+	Zone        *string
 }
 
-func privateNetworkFromAPI(p *oapi.PrivateNetwork) *PrivateNetwork {
+func privateNetworkFromAPI(p *oapi.PrivateNetwork, zone string) *PrivateNetwork {
 	return &PrivateNetwork{
 		Description: p.Description,
 		EndIP: func() (v *net.IP) {
@@ -63,6 +64,7 @@ func privateNetworkFromAPI(p *oapi.PrivateNetwork) *PrivateNetwork {
 			}
 			return
 		}(),
+		Zone: &zone,
 	}
 }
 
@@ -120,6 +122,10 @@ func (c *Client) CreatePrivateNetwork(
 
 // DeletePrivateNetwork deletes a Private Network.
 func (c *Client) DeletePrivateNetwork(ctx context.Context, zone string, privateNetwork *PrivateNetwork) error {
+	if err := validateOperationParams(privateNetwork, "delete"); err != nil {
+		return err
+	}
+
 	resp, err := c.DeletePrivateNetworkWithResponse(apiv2.WithZone(ctx, zone), *privateNetwork.ID)
 	if err != nil {
 		return err
@@ -175,7 +181,7 @@ func (c *Client) GetPrivateNetwork(ctx context.Context, zone, id string) (*Priva
 		return nil, err
 	}
 
-	return privateNetworkFromAPI(resp.JSON200), nil
+	return privateNetworkFromAPI(resp.JSON200, zone), nil
 }
 
 // ListPrivateNetworks returns the list of existing Private Networks.
@@ -189,7 +195,7 @@ func (c *Client) ListPrivateNetworks(ctx context.Context, zone string) ([]*Priva
 
 	if resp.JSON200.PrivateNetworks != nil {
 		for i := range *resp.JSON200.PrivateNetworks {
-			list = append(list, privateNetworkFromAPI(&(*resp.JSON200.PrivateNetworks)[i]))
+			list = append(list, privateNetworkFromAPI(&(*resp.JSON200.PrivateNetworks)[i], zone))
 		}
 	}
 
@@ -254,6 +260,13 @@ func (c *Client) UpdatePrivateNetworkInstanceIPAddress(
 	privateNetwork *PrivateNetwork,
 	ip net.IP,
 ) error {
+	if err := validateOperationParams(instance, "update"); err != nil {
+		return err
+	}
+	if err := validateOperationParams(privateNetwork, "update"); err != nil {
+		return err
+	}
+
 	resp, err := c.UpdatePrivateNetworkInstanceIpWithResponse(
 		apiv2.WithZone(ctx, zone),
 		*privateNetwork.ID,
