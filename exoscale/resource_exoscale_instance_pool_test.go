@@ -20,6 +20,7 @@ import (
 var (
 	testAccResourceInstancePoolAntiAffinityGroupName       = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceInstancePoolDescription                 = acctest.RandString(10)
+	testAccResourceInstancePoolDescriptionUpdated          = testAccResourceInstancePoolDescription + "-updated"
 	testAccResourceInstancePoolDiskSize              int64 = 10
 	testAccResourceInstancePoolDiskSizeUpdated             = testAccResourceInstancePoolDiskSize * 2
 	testAccResourceInstancePoolKeyPair                     = acctest.RandomWithPrefix(testPrefix)
@@ -118,7 +119,7 @@ resource "exoscale_ipaddress" "test" {
 resource "exoscale_instance_pool" "test" {
   zone = local.zone
   name = "%s"
-  description = ""
+  description = "%s"
   template_id = data.exoscale_compute_template.debian.id
   instance_type = "%s"
   size = %d
@@ -143,6 +144,7 @@ resource "exoscale_instance_pool" "test" {
 		testAccResourceInstancePoolKeyPair,
 		testAccResourceInstancePoolAntiAffinityGroupName,
 		testAccResourceInstancePoolNameUpdated,
+		testAccResourceInstancePoolDescriptionUpdated,
 		testAccResourceInstancePoolInstanceTypeUpdated,
 		testAccResourceInstancePoolSizeUpdated,
 		testAccResourceInstancePoolDiskSizeUpdated,
@@ -229,7 +231,7 @@ func TestAccResourceInstancePool(t *testing.T) {
 						}
 
 						a.Len(*instancePool.AntiAffinityGroupIDs, 1)
-						a.Empty(defaultString(instancePool.Description, ""))
+						a.Equal(testAccResourceInstancePoolDescriptionUpdated, *instancePool.Description)
 						a.Equal(testAccResourceInstancePoolDiskSizeUpdated, *instancePool.DiskSize)
 						a.Equal(defaultInstancePoolInstancePrefix, *instancePool.InstancePrefix)
 						a.Len(*instancePool.InstanceIDs, int(testAccResourceInstancePoolSizeUpdated))
@@ -247,7 +249,7 @@ func TestAccResourceInstancePool(t *testing.T) {
 					},
 					checkResourceState(r, checkResourceStateValidateAttributes(testAttrs{
 						resInstancePoolAttrAffinityGroupIDs + ".#": validateString("1"),
-						resInstancePoolAttrDescription:             validation.ToDiagFunc(validation.StringIsEmpty),
+						resInstancePoolAttrDescription:             validateString(testAccResourceInstancePoolDescriptionUpdated),
 						resInstancePoolAttrDiskSize:                validateString(fmt.Sprint(testAccResourceInstancePoolDiskSizeUpdated)),
 						resInstancePoolAttrElasticIPIDs + ".#":     validateString("1"),
 						resInstancePoolAttrInstancePrefix:          validateString(defaultInstancePoolInstancePrefix),
@@ -278,7 +280,7 @@ func TestAccResourceInstancePool(t *testing.T) {
 					return checkResourceAttributes(
 						testAttrs{
 							resInstancePoolAttrAffinityGroupIDs + ".#": validateString("1"),
-							resInstancePoolAttrDescription:             validation.ToDiagFunc(validation.StringIsEmpty),
+							resInstancePoolAttrDescription:             validateString(testAccResourceInstancePoolDescriptionUpdated),
 							resInstancePoolAttrDiskSize:                validateString(fmt.Sprint(testAccResourceInstancePoolDiskSizeUpdated)),
 							resInstancePoolAttrElasticIPIDs + ".#":     validateString("1"),
 							resInstancePoolAttrInstancePrefix:          validateString(defaultInstancePoolInstancePrefix),
