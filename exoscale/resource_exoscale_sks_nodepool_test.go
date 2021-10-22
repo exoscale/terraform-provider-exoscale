@@ -18,6 +18,7 @@ import (
 var (
 	testAccResourceSKSNodepoolAntiAffinityGroupName       = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceSKSNodepoolDescription                 = acctest.RandomWithPrefix(testPrefix)
+	testAccResourceSKSNodepoolDescriptionUpdated          = testAccResourceSKSNodepoolDescription + "-updated"
 	testAccResourceSKSNodepoolDiskSize                    = defaultSKSNodepoolDiskSize
 	testAccResourceSKSNodepoolDiskSizeUpdated             = defaultSKSNodepoolDiskSize * 2
 	testAccResourceSKSNodepoolInstancePrefix              = "test"
@@ -108,7 +109,7 @@ resource "exoscale_sks_nodepool" "test" {
   zone = local.zone
   cluster_id = exoscale_sks_cluster.test.id
   name = "%s"
-  description = ""
+  description = "%s"
   instance_type = "%s"
   disk_size = %d
   size = %d
@@ -130,6 +131,7 @@ resource "exoscale_sks_nodepool" "test" {
 		testAccResourceSKSNodepoolPrivateNetworkName,
 		testAccResourceSKSClusterName,
 		testAccResourceSKSNodepoolNameUpdated,
+		testAccResourceSKSNodepoolDescriptionUpdated,
 		testAccResourceSKSNodepoolInstanceTypeUpdated,
 		testAccResourceSKSNodepoolDiskSizeUpdated,
 		testAccResourceSKSNodepoolSizeUpdated,
@@ -194,7 +196,7 @@ func TestAccResourceSKSNodepool(t *testing.T) {
 						a := require.New(t)
 
 						a.Len(*sksNodepool.AntiAffinityGroupIDs, 1)
-						a.Empty(defaultString(sksNodepool.Description, ""))
+						a.Equal(testAccResourceSKSNodepoolDescriptionUpdated, *sksNodepool.Description)
 						a.Equal(testAccResourceSKSNodepoolDiskSizeUpdated, *sksNodepool.DiskSize)
 						a.Equal(testAccResourceSKSNodepoolLabelValueUpdated, (*sksNodepool.Labels)["test"])
 						a.Equal(testAccResourceSKSNodepoolNameUpdated, *sksNodepool.Name)
@@ -209,7 +211,7 @@ func TestAccResourceSKSNodepool(t *testing.T) {
 					checkResourceState(r, checkResourceStateValidateAttributes(testAttrs{
 						resSKSNodepoolAttrAntiAffinityGroupIDs + ".#": validateString("1"),
 						resSKSNodepoolAttrCreatedAt:                   validation.ToDiagFunc(validation.NoZeroValues),
-						resSKSNodepoolAttrDescription:                 validation.ToDiagFunc(validation.StringIsEmpty),
+						resSKSNodepoolAttrDescription:                 validateString(testAccResourceSKSNodepoolDescriptionUpdated),
 						resSKSNodepoolAttrDiskSize:                    validateString(fmt.Sprint(testAccResourceSKSNodepoolDiskSizeUpdated)),
 						resSKSNodepoolAttrInstancePoolID:              validation.ToDiagFunc(validation.IsUUID),
 						resSKSNodepoolAttrInstancePrefix:              validateString(defaultSKSNodepoolInstancePrefix),
@@ -244,7 +246,7 @@ func TestAccResourceSKSNodepool(t *testing.T) {
 							resSKSNodepoolAttrAntiAffinityGroupIDs + ".#": validateString("1"),
 							resSKSNodepoolAttrCreatedAt:                   validation.ToDiagFunc(validation.NoZeroValues),
 							resSKSNodepoolAttrClusterID:                   validation.ToDiagFunc(validation.IsUUID),
-							resSKSNodepoolAttrDescription:                 validation.ToDiagFunc(validation.StringIsEmpty),
+							resSKSNodepoolAttrDescription:                 validateString(testAccResourceSKSNodepoolDescriptionUpdated),
 							resSKSNodepoolAttrDiskSize:                    validateString(fmt.Sprint(testAccResourceSKSNodepoolDiskSizeUpdated)),
 							resSKSNodepoolAttrInstancePoolID:              validation.ToDiagFunc(validation.IsUUID),
 							resSKSNodepoolAttrInstancePrefix:              validateString(defaultSKSNodepoolInstancePrefix),

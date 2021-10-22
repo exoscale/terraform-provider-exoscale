@@ -23,6 +23,7 @@ var (
 	testAccResourceNLBServiceName                       = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceNLBServiceNameUpdated                = testAccResourceNLBServiceName + "-updated"
 	testAccResourceNLBServiceDescription                = acctest.RandomWithPrefix(testPrefix)
+	testAccResourceNLBServiceDescriptionUpdated         = testAccResourceNLBServiceDescription + "-updated"
 	testAccResourceNLBServicePort                       = "80"
 	testAccResourceNLBServicePortUpdated                = "443"
 	testAccResourceNLBServiceTargetPort                 = "8080"
@@ -142,7 +143,7 @@ resource "exoscale_nlb" "test" {
 resource "exoscale_nlb_service" "test" {
   zone = local.zone
   name = "%s"
-  description = ""
+  description = "%s"
   nlb_id = exoscale_nlb.test.id
   instance_pool_id = exoscale_instance_pool.test.id
   protocol = "%s"
@@ -170,6 +171,7 @@ resource "exoscale_nlb_service" "test" {
 		testAccResourceNLBServiceInstancePoolTemplateID,
 		testAccResourceNLBServiceNLBName,
 		testAccResourceNLBServiceNameUpdated,
+		testAccResourceNLBServiceDescriptionUpdated,
 		testAccResourceNLBServiceProtocolUpdated,
 		testAccResourceNLBServicePortUpdated,
 		testAccResourceNLBServiceTargetPortUpdated,
@@ -251,7 +253,7 @@ func TestAccResourceNLBService(t *testing.T) {
 						instancePoolID, err := attrFromState(s, "exoscale_instance_pool.test", "id")
 						a.NoError(err, "unable to retrieve Instance Pool ID from state")
 
-						a.Empty(defaultString(nlbService.Description, ""))
+						a.Equal(testAccResourceNLBServiceDescriptionUpdated, *nlbService.Description)
 						a.Equal(testAccResourceNLBServiceHealthcheckIntervalUpdated, fmt.Sprint(int(nlbService.Healthcheck.Interval.Seconds())))
 						a.Equal(testAccResourceNLBServiceHealthcheckModeUpdated, *nlbService.Healthcheck.Mode)
 						a.Equal(testAccResourceNLBServiceHealthcheckPortUpdated, fmt.Sprint(*nlbService.Healthcheck.Port))
@@ -269,7 +271,7 @@ func TestAccResourceNLBService(t *testing.T) {
 						return nil
 					},
 					checkResourceState(r, checkResourceStateValidateAttributes(testAttrs{
-						resNLBServiceAttrDescription:                                                validation.ToDiagFunc(validation.StringIsEmpty),
+						resNLBServiceAttrDescription:                                                validateString(testAccResourceNLBServiceDescriptionUpdated),
 						resNLBServiceAttrHealthcheck + ".#":                                         validateString("1"),
 						resNLBServiceAttrHealthcheck + ".0." + resNLBServiceAttrHealthcheckInterval: validateString(testAccResourceNLBServiceHealthcheckIntervalUpdated),
 						resNLBServiceAttrHealthcheck + ".0." + resNLBServiceAttrHealthcheckMode:     validateString(testAccResourceNLBServiceHealthcheckModeUpdated),
@@ -303,7 +305,7 @@ func TestAccResourceNLBService(t *testing.T) {
 				ImportStateCheck: func(s []*terraform.InstanceState) error {
 					return checkResourceAttributes(
 						testAttrs{
-							resNLBServiceAttrDescription:                                                validation.ToDiagFunc(validation.StringIsEmpty),
+							resNLBServiceAttrDescription:                                                validateString(testAccResourceNLBServiceDescriptionUpdated),
 							resNLBServiceAttrHealthcheck + ".#":                                         validateString("1"),
 							resNLBServiceAttrHealthcheck + ".0." + resNLBServiceAttrHealthcheckInterval: validateString(testAccResourceNLBServiceHealthcheckIntervalUpdated),
 							resNLBServiceAttrHealthcheck + ".0." + resNLBServiceAttrHealthcheckMode:     validateString(testAccResourceNLBServiceHealthcheckModeUpdated),

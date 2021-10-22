@@ -21,9 +21,10 @@ var (
 	testAccResourceNLBInstancePoolName       = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceNLBInstancePoolTemplateID = testInstanceTemplateID
 
-	testAccResourceNLBName        = acctest.RandomWithPrefix(testPrefix)
-	testAccResourceNLBNameUpdated = testAccResourceNLBName + "-updated"
-	testAccResourceNLBDescription = acctest.RandString(10)
+	testAccResourceNLBName               = acctest.RandomWithPrefix(testPrefix)
+	testAccResourceNLBNameUpdated        = testAccResourceNLBName + "-updated"
+	testAccResourceNLBDescription        = acctest.RandString(10)
+	testAccResourceNLBDescriptionUpdated = testAccResourceNLBDescription + "-updated"
 
 	testAccResourceNLBConfigCreate = fmt.Sprintf(`
 locals {
@@ -109,7 +110,7 @@ resource "exoscale_instance_pool" "test" {
 
 resource "exoscale_nlb" "test" {
   name = "%s"
-  description = ""
+  description = "%s"
   zone = local.zone
   labels = {
     test = "%s"
@@ -148,6 +149,7 @@ resource "exoscale_nlb_service" "test" {
 		testAccResourceNLBInstancePoolName,
 		testAccResourceNLBInstancePoolTemplateID,
 		testAccResourceNLBNameUpdated,
+		testAccResourceNLBDescriptionUpdated,
 		testAccResourceNLBLabelValueUpdated,
 		testAccResourceNLBName,
 	)
@@ -203,7 +205,7 @@ func TestAccResourceNLB(t *testing.T) {
 					func(s *terraform.State) error {
 						a := require.New(t)
 
-						a.Empty(defaultString(nlb.Description, ""))
+						a.Equal(testAccResourceNLBDescriptionUpdated, *nlb.Description)
 						a.Equal(testAccResourceNLBLabelValueUpdated, (*nlb.Labels)["test"])
 						a.Equal(testAccResourceNLBNameUpdated, *nlb.Name)
 						a.Len(nlb.Services, 1)
@@ -212,7 +214,7 @@ func TestAccResourceNLB(t *testing.T) {
 					},
 					checkResourceState(r, checkResourceStateValidateAttributes(testAttrs{
 						resNLBAttrCreatedAt:        validation.ToDiagFunc(validation.NoZeroValues),
-						resNLBAttrDescription:      validation.ToDiagFunc(validation.StringIsEmpty),
+						resNLBAttrDescription:      validateString(testAccResourceNLBDescriptionUpdated),
 						resNLBAttrIPAddress:        validation.ToDiagFunc(validation.IsIPv4Address),
 						resNLBAttrLabels + ".test": validateString(testAccResourceNLBLabelValueUpdated),
 						resNLBAttrName:             validateString(testAccResourceNLBNameUpdated),
@@ -236,7 +238,7 @@ func TestAccResourceNLB(t *testing.T) {
 					return checkResourceAttributes(
 						testAttrs{
 							resNLBAttrCreatedAt:        validation.ToDiagFunc(validation.NoZeroValues),
-							resNLBAttrDescription:      validation.ToDiagFunc(validation.StringIsEmpty),
+							resNLBAttrDescription:      validateString(testAccResourceNLBDescriptionUpdated),
 							resNLBAttrIPAddress:        validation.ToDiagFunc(validation.IsIPv4Address),
 							resNLBAttrLabels + ".test": validateString(testAccResourceNLBLabelValueUpdated),
 							resNLBAttrName:             validateString(testAccResourceNLBNameUpdated),

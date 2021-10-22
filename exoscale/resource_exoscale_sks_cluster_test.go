@@ -17,11 +17,12 @@ import (
 )
 
 var (
-	testAccResourceSKSClusterLabelValue        = acctest.RandomWithPrefix(testPrefix)
-	testAccResourceSKSClusterLabelValueUpdated = testAccResourceSKSClusterLabelValue + "-updated"
-	testAccResourceSKSClusterName              = acctest.RandomWithPrefix(testPrefix)
-	testAccResourceSKSClusterNameUpdated       = testAccResourceSKSClusterName + "-updated"
-	testAccResourceSKSClusterDescription       = acctest.RandString(10)
+	testAccResourceSKSClusterLabelValue         = acctest.RandomWithPrefix(testPrefix)
+	testAccResourceSKSClusterLabelValueUpdated  = testAccResourceSKSClusterLabelValue + "-updated"
+	testAccResourceSKSClusterName               = acctest.RandomWithPrefix(testPrefix)
+	testAccResourceSKSClusterNameUpdated        = testAccResourceSKSClusterName + "-updated"
+	testAccResourceSKSClusterDescription        = acctest.RandString(10)
+	testAccResourceSKSClusterDescriptionUpdated = testAccResourceSKSClusterDescription + "-updated"
 
 	testAccResourceSKSClusterConfigCreate = fmt.Sprintf(`
 locals {
@@ -71,7 +72,7 @@ locals {
 resource "exoscale_sks_cluster" "test" {
   zone = local.zone
   name = "%s"
-  description = ""
+  description = "%s"
   exoscale_ccm = true
   metrics_server = false
   auto_upgrade = false
@@ -99,6 +100,7 @@ resource "exoscale_sks_nodepool" "test" {
 `,
 		testZoneName,
 		testAccResourceSKSClusterNameUpdated,
+		testAccResourceSKSClusterDescriptionUpdated,
 		testAccResourceSKSClusterLabelValueUpdated,
 	)
 )
@@ -189,7 +191,7 @@ func TestAccResourceSKSCluster(t *testing.T) {
 						a := assert.New(t)
 
 						a.False(defaultBool(sksCluster.AutoUpgrade, false))
-						a.Empty(defaultString(sksCluster.Description, ""))
+						a.Equal(testAccResourceSKSClusterDescriptionUpdated, *sksCluster.Description)
 						a.Equal(testAccResourceSKSClusterLabelValueUpdated, (*sksCluster.Labels)["test"])
 						a.Equal(testAccResourceSKSClusterNameUpdated, *sksCluster.Name)
 
@@ -199,7 +201,7 @@ func TestAccResourceSKSCluster(t *testing.T) {
 						resSKSClusterAttrAutoUpgrade:      validateString("false"),
 						resSKSClusterAttrCNI:              validateString(defaultSKSClusterCNI),
 						resSKSClusterAttrCreatedAt:        validation.ToDiagFunc(validation.NoZeroValues),
-						resSKSClusterAttrDescription:      validation.ToDiagFunc(validation.StringIsEmpty),
+						resSKSClusterAttrDescription:      validateString(testAccResourceSKSClusterDescriptionUpdated),
 						resSKSClusterAttrEndpoint:         validation.ToDiagFunc(validation.IsURLWithHTTPS),
 						resSKSClusterAttrExoscaleCCM:      validateString("true"),
 						resSKSClusterAttrMetricsServer:    validateString("false"),
@@ -227,7 +229,7 @@ func TestAccResourceSKSCluster(t *testing.T) {
 							resSKSClusterAttrAutoUpgrade:      validateString("false"),
 							resSKSClusterAttrCNI:              validateString(defaultSKSClusterCNI),
 							resSKSClusterAttrCreatedAt:        validation.ToDiagFunc(validation.NoZeroValues),
-							resSKSClusterAttrDescription:      validation.ToDiagFunc(validation.StringIsEmpty),
+							resSKSClusterAttrDescription:      validateString(testAccResourceSKSClusterDescriptionUpdated),
 							resSKSClusterAttrEndpoint:         validation.ToDiagFunc(validation.IsURLWithHTTPS),
 							resSKSClusterAttrExoscaleCCM:      validateString("true"),
 							resSKSClusterAttrMetricsServer:    validateString("false"),
