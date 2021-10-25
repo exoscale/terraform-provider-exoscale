@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.30.0 (October 25, 2021)
+
+CHANGES:
+
+- The `exoscale_database` resource has been overhauled, and now requires type-specific parameters to be specified in a dedicated block. See documentation for more information.
+
+
 ## 0.29.0 (September 9, 2021)
 
 IMPROVEMENTS:
