@@ -39,7 +39,6 @@ release:
   github:
     owner: exoscale
     name: terraform-provider-exoscale
-  draft: true
 
 changelog:
   skip: true
