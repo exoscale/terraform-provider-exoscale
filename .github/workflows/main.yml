@@ -8,6 +8,7 @@ on:
     - '**.md'
     - 'website/**'
     - 'examples/**'
+    - '.goreleaser.yml'
     tags-ignore:
     - 'v*' # Don't run CI tests on release tags
 
