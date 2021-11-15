@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.30.1 (November 15, 2021)
+
+BUG FIXES:
+
+- Fix Exoscale API errors related to resources sending empty strings
+
+
 ## 0.30.0 (October 25, 2021)
 
 CHANGES:
