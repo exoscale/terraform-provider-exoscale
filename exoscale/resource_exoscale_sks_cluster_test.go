@@ -21,6 +21,13 @@ var (
 	testAccResourceSKSClusterLabelValueUpdated  = testAccResourceSKSClusterLabelValue + "-updated"
 	testAccResourceSKSClusterName               = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceSKSClusterNameUpdated        = testAccResourceSKSClusterName + "-updated"
+	testAccResourceSKSClusterOIDCClientID       = acctest.RandString(10)
+	testAccResourceSKSClusterOIDCGroupsClaim    = acctest.RandString(10)
+	testAccResourceSKSClusterOIDCGroupsPrefix   = acctest.RandString(10)
+	testAccResourceSKSClusterOIDCIssuerURL      = "https://id.example.net"
+	testAccResourceSKSClusterOIDCRequiredClaim  = acctest.RandString(10)
+	testAccResourceSKSClusterOIDCUsernameClaim  = acctest.RandString(10)
+	testAccResourceSKSClusterOIDCUsernamePrefix = acctest.RandString(10)
 	testAccResourceSKSClusterDescription        = acctest.RandString(10)
 	testAccResourceSKSClusterDescriptionUpdated = testAccResourceSKSClusterDescription + "-updated"
 
@@ -38,6 +45,16 @@ resource "exoscale_sks_cluster" "test" {
   auto_upgrade = true
   labels = {
     test = "%s"
+  }
+
+  oidc {
+    client_id  = "%s"
+	groups_claim = "%s"
+	groups_prefix = "%s"
+    issuer_url = "%s"
+	required_claim = "test=%s"
+	username_claim = "%s"
+	username_prefix = "%s"
   }
 
   timeouts {
@@ -62,6 +79,13 @@ resource "exoscale_sks_nodepool" "test" {
 		testAccResourceSKSClusterName,
 		testAccResourceSKSClusterDescription,
 		testAccResourceSKSClusterLabelValue,
+		testAccResourceSKSClusterOIDCClientID,
+		testAccResourceSKSClusterOIDCGroupsClaim,
+		testAccResourceSKSClusterOIDCGroupsPrefix,
+		testAccResourceSKSClusterOIDCIssuerURL,
+		testAccResourceSKSClusterOIDCRequiredClaim,
+		testAccResourceSKSClusterOIDCUsernameClaim,
+		testAccResourceSKSClusterOIDCUsernamePrefix,
 	)
 
 	testAccResourceSKSClusterConfigUpdate = fmt.Sprintf(`
@@ -223,6 +247,17 @@ func TestAccResourceSKSCluster(t *testing.T) {
 				}(&sksCluster),
 				ImportState:       true,
 				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"oidc.#",
+					"oidc.0.%",
+					resSKSClusterAttrOIDC(resSKSClusterAttrOIDCClientID),
+					resSKSClusterAttrOIDC(resSKSClusterAttrOIDCGroupsClaim),
+					resSKSClusterAttrOIDC(resSKSClusterAttrOIDCGroupsPrefix),
+					resSKSClusterAttrOIDC(resSKSClusterAttrOIDCIssuerURL),
+					resSKSClusterAttrOIDC(resSKSClusterAttrOIDCRequiredClaim),
+					resSKSClusterAttrOIDC(resSKSClusterAttrOIDCUsernameClaim),
+					resSKSClusterAttrOIDC(resSKSClusterAttrOIDCUsernamePrefix),
+				},
 				ImportStateCheck: func(s []*terraform.InstanceState) error {
 					return checkResourceAttributes(
 						testAttrs{
