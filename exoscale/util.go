@@ -37,3 +37,12 @@ func defaultBool(v *bool, def bool) bool {
 
 	return def
 }
+
+// nonEmptyStringPtr returns a non-nil pointer to s if the string is not empty, otherwise nil.
+func nonEmptyStringPtr(s string) *string {
+	if s != "" {
+		return &s
+	}
+
+	return nil
+}

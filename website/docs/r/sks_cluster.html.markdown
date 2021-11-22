@@ -45,9 +45,18 @@ output "sks_endpoint" {
 * `exoscale_ccm` - Deploy the Exoscale [Cloud Controller Manager][exo-ccm] in the SKS cluster control plane (default: `true`).
 * `metrics_server` - Deploy the [Kubernetes Metrics Server][k8s-ms] in the SKS cluster control plane (default: `true`).
 * `auto_upgrade` - Enable automatic upgrading of the SKS cluster control plane Kubernetes version (default: `false`).
-* `addons` - **Deprecated** A list of optional add-ons to be deployed in the SKS cluster control plane (default: `[]`).
+* `oidc` - An OpenID Connect configuration to provide to the Kubernetes API server. Structure is documented below.
 * `labels` - A map of key/value labels.
+ 
+The `oidc` block supports:
 
+* `client_id` - (Required) The OpenID client ID.
+* `issuer_url` - (Required) The OpenID provider URL.
+* `groups_claim` - An OpenID JWT claim to use as the user's group.
+* `groups_prefix` - An OpenID prefix prepended to group claims.
+* `required_claim` - A `KEY=VALUE` pair that describes a required claim in the OpenID Token.
+* `username_claim` - An OpenID JWT claim to use as the user name.
+* `username_prefix` - An OpenID prefix prepended to username claims.
 
 ## Attributes Reference
 

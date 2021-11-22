@@ -3,6 +3,7 @@ package exoscale
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 
 	egoscale "github.com/exoscale/egoscale/v2"
@@ -18,21 +19,28 @@ const (
 	sksClusterAddonExoscaleCCM = "exoscale-cloud-controller"
 	sksClusterAddonMS          = "metrics-server"
 
-	resSKSClusterAttrAddons        = "addons"
-	resSKSClusterAttrAutoUpgrade   = "auto_upgrade"
-	resSKSClusterAttrCNI           = "cni"
-	resSKSClusterAttrCreatedAt     = "created_at"
-	resSKSClusterAttrDescription   = "description"
-	resSKSClusterAttrEndpoint      = "endpoint"
-	resSKSClusterAttrExoscaleCCM   = "exoscale_ccm"
-	resSKSClusterAttrMetricsServer = "metrics_server"
-	resSKSClusterAttrLabels        = "labels"
-	resSKSClusterAttrName          = "name"
-	resSKSClusterAttrNodepools     = "nodepools"
-	resSKSClusterAttrServiceLevel  = "service_level"
-	resSKSClusterAttrState         = "state"
-	resSKSClusterAttrVersion       = "version"
-	resSKSClusterAttrZone          = "zone"
+	resSKSClusterAttrAddons             = "addons"
+	resSKSClusterAttrAutoUpgrade        = "auto_upgrade"
+	resSKSClusterAttrCNI                = "cni"
+	resSKSClusterAttrCreatedAt          = "created_at"
+	resSKSClusterAttrDescription        = "description"
+	resSKSClusterAttrEndpoint           = "endpoint"
+	resSKSClusterAttrExoscaleCCM        = "exoscale_ccm"
+	resSKSClusterAttrLabels             = "labels"
+	resSKSClusterAttrMetricsServer      = "metrics_server"
+	resSKSClusterAttrName               = "name"
+	resSKSClusterAttrNodepools          = "nodepools"
+	resSKSClusterAttrOIDCClientID       = "client_id"
+	resSKSClusterAttrOIDCGroupsClaim    = "groups_claim"
+	resSKSClusterAttrOIDCGroupsPrefix   = "groups_prefix"
+	resSKSClusterAttrOIDCIssuerURL      = "issuer_url"
+	resSKSClusterAttrOIDCRequiredClaim  = "required_claim"
+	resSKSClusterAttrOIDCUsernameClaim  = "username_claim"
+	resSKSClusterAttrOIDCUsernamePrefix = "username_prefix"
+	resSKSClusterAttrServiceLevel       = "service_level"
+	resSKSClusterAttrState              = "state"
+	resSKSClusterAttrVersion            = "version"
+	resSKSClusterAttrZone               = "zone"
 )
 
 func resourceSKSClusterIDString(d resourceIDStringer) string {
@@ -95,6 +103,44 @@ func resourceSKSCluster() *schema.Resource {
 			Computed: true,
 			Set:      schema.HashString,
 			Elem:     &schema.Schema{Type: schema.TypeString},
+		},
+		"oidc": {
+			Type:     schema.TypeList,
+			MaxItems: 1,
+			Optional: true,
+			Computed: true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					resSKSClusterAttrOIDCClientID: {
+						Type:     schema.TypeString,
+						Required: true,
+					},
+					resSKSClusterAttrOIDCGroupsClaim: {
+						Type:     schema.TypeString,
+						Optional: true,
+					},
+					resSKSClusterAttrOIDCGroupsPrefix: {
+						Type:     schema.TypeString,
+						Optional: true,
+					},
+					resSKSClusterAttrOIDCIssuerURL: {
+						Type:     schema.TypeString,
+						Required: true,
+					},
+					resSKSClusterAttrOIDCRequiredClaim: {
+						Type:     schema.TypeString,
+						Optional: true,
+					},
+					resSKSClusterAttrOIDCUsernameClaim: {
+						Type:     schema.TypeString,
+						Optional: true,
+					},
+					resSKSClusterAttrOIDCUsernamePrefix: {
+						Type:     schema.TypeString,
+						Optional: true,
+					},
+				},
+			},
 		},
 		resSKSClusterAttrServiceLevel: {
 			Type:     schema.TypeString,
@@ -213,7 +259,43 @@ func resourceSKSClusterCreate(ctx context.Context, d *schema.ResourceData, meta 
 	}
 	sksCluster.Version = &version
 
-	sksCluster, err := client.CreateSKSCluster(ctx, zone, sksCluster)
+	var opts []egoscale.CreateSKSClusterOpt
+
+	if v, ok := d.GetOk(resSKSClusterAttrOIDC(resSKSClusterAttrOIDCClientID)); ok {
+		sksClusterOIDCConfig := egoscale.SKSClusterOIDCConfig{ClientID: nonEmptyStringPtr(v.(string))}
+
+		if v, ok := d.GetOk(resSKSClusterAttrOIDC(resSKSClusterAttrOIDCGroupsClaim)); ok {
+			sksClusterOIDCConfig.GroupsClaim = nonEmptyStringPtr(v.(string))
+		}
+
+		if v, ok := d.GetOk(resSKSClusterAttrOIDC(resSKSClusterAttrOIDCIssuerURL)); ok {
+			sksClusterOIDCConfig.IssuerURL = nonEmptyStringPtr(v.(string))
+		}
+
+		if v, ok := d.GetOk(resSKSClusterAttrOIDC(resSKSClusterAttrOIDCGroupsPrefix)); ok {
+			sksClusterOIDCConfig.GroupsPrefix = nonEmptyStringPtr(v.(string))
+		}
+
+		if v, ok := d.GetOk(resSKSClusterAttrOIDC(resSKSClusterAttrOIDCIssuerURL)); ok {
+			sksClusterOIDCConfig.IssuerURL = nonEmptyStringPtr(v.(string))
+		}
+
+		if v, ok := d.GetOk(resSKSClusterAttrOIDC(resSKSClusterAttrOIDCRequiredClaim)); ok {
+			sksClusterOIDCConfig.RequiredClaim = nonEmptyStringPtr(v.(string))
+		}
+
+		if v, ok := d.GetOk(resSKSClusterAttrOIDC(resSKSClusterAttrOIDCUsernameClaim)); ok {
+			sksClusterOIDCConfig.UsernameClaim = nonEmptyStringPtr(v.(string))
+		}
+
+		if v, ok := d.GetOk(resSKSClusterAttrOIDC(resSKSClusterAttrOIDCUsernamePrefix)); ok {
+			sksClusterOIDCConfig.UsernamePrefix = nonEmptyStringPtr(v.(string))
+		}
+
+		opts = append(opts, egoscale.CreateSKSClusterWithOIDC(&sksClusterOIDCConfig))
+	}
+
+	sksCluster, err := client.CreateSKSCluster(ctx, zone, sksCluster, opts...)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -394,3 +476,6 @@ func resourceSKSClusterApply(_ context.Context, d *schema.ResourceData, sksClust
 
 	return nil
 }
+
+// resSKSClusterAttrOIDC returns a database resource attribute key formatted for an "oidc {}" block.
+func resSKSClusterAttrOIDC(a string) string { return fmt.Sprintf("oidc.0.%s", a) }

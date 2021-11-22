@@ -1,6 +1,16 @@
 Changelog
 =========
 
+0.83.0
+------
+
+- feature: v2: add support for IAM access key resources
+
+0.82.1
+------
+
+- change: v2: refresh code generated from public API spec
+
 0.82.0
 ------
 
