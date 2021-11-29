@@ -39,13 +39,13 @@ output "sks_endpoint" {
 * `zone` - (Required) The name of the [zone][zone] to deploy the SKS cluster into.
 * `name` - (Required) The name of the SKS cluster.
 * `description` - The description of the SKS cluster.
-* `service_level` - The service level of the SKS cluster control plane (default: `"pro"`).
-* `version` - The Kubernetes version of the SKS cluster control plane (default: latest version available from the API).
-* `cni` - The Kubernetes [CNI][cni] plugin to be deployed in the SKS cluster control plane (default: `"calico"`).
-* `exoscale_ccm` - Deploy the Exoscale [Cloud Controller Manager][exo-ccm] in the SKS cluster control plane (default: `true`).
-* `metrics_server` - Deploy the [Kubernetes Metrics Server][k8s-ms] in the SKS cluster control plane (default: `true`).
+* `service_level` - The service level of the SKS cluster control plane (default: `"pro"`). Can only be set during creation.
+* `version` - The Kubernetes version of the SKS cluster control plane (default: latest version available from the API). Can only be set during creation.
+* `cni` - The Kubernetes [CNI][cni] plugin to be deployed in the SKS cluster control plane (default: `"calico"`). Can only be set during creation.
+* `exoscale_ccm` - Deploy the Exoscale [Cloud Controller Manager][exo-ccm] in the SKS cluster control plane (default: `true`). Can only be set during creation.
+* `metrics_server` - Deploy the [Kubernetes Metrics Server][k8s-ms] in the SKS cluster control plane (default: `true`). Can only be set during creation.
 * `auto_upgrade` - Enable automatic upgrading of the SKS cluster control plane Kubernetes version (default: `false`).
-* `oidc` - An OpenID Connect configuration to provide to the Kubernetes API server. Structure is documented below.
+* `oidc` - An OpenID Connect configuration to provide to the Kubernetes API server. Can only be set during creation. Structure is documented below.
 * `labels` - A map of key/value labels.
  
 The `oidc` block supports:
