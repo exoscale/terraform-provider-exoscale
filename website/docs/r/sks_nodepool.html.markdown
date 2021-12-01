@@ -57,7 +57,7 @@ resource "exoscale_sks_nodepool" "ci-builders" {
   zone               = local.zone
   cluster_id         = exoscale_sks_cluster.prod.id
   name               = "ci-builders"
-  instance_type      = "medium"
+  instance_type      = "standard.medium"
   size               = 3
   security_group_ids = [exoscale_security_group.sks.id]
   
