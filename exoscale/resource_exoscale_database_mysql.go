@@ -265,11 +265,7 @@ func resourceDatabaseUpdateMysql(
 	return nil
 }
 
-func resourceDatabaseApplyMysql(
-	ctx context.Context,
-	d *schema.ResourceData,
-	client *egoscale.Client,
-) error {
+func resourceDatabaseApplyMysql(ctx context.Context, d *schema.ResourceData, client *egoscale.Client) error {
 	res, err := client.GetDbaasServiceMysqlWithResponse(ctx, oapi.DbaasServiceName(d.Id()))
 	if err != nil {
 		return err
