@@ -47,7 +47,7 @@ resource "exoscale_instance_pool" "webapp" {
   name = "my-web-app"
   size = 3
   template_id = data.exoscale_compute_template.webapp.id
-  instance_type = "medium"
+  instance_type = "standard.medium"
   disk_size = 50
   key_pair = exoscale_ssh_keypair.webapp.name
   instance_prefix = "my-web-app"
