@@ -193,11 +193,7 @@ func resourceDatabaseUpdateRedis(
 	return nil
 }
 
-func resourceDatabaseApplyRedis(
-	ctx context.Context,
-	d *schema.ResourceData,
-	client *egoscale.Client,
-) error {
+func resourceDatabaseApplyRedis(ctx context.Context, d *schema.ResourceData, client *egoscale.Client) error {
 	res, err := client.GetDbaasServiceRedisWithResponse(ctx, oapi.DbaasServiceName(d.Id()))
 	if err != nil {
 		return err

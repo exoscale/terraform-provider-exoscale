@@ -317,11 +317,7 @@ func resourceDatabaseUpdatePg(
 	return nil
 }
 
-func resourceDatabaseApplyPg(
-	ctx context.Context,
-	d *schema.ResourceData,
-	client *egoscale.Client,
-) error {
+func resourceDatabaseApplyPg(ctx context.Context, d *schema.ResourceData, client *egoscale.Client) error {
 	res, err := client.GetDbaasServicePgWithResponse(ctx, oapi.DbaasServiceName(d.Id()))
 	if err != nil {
 		return err

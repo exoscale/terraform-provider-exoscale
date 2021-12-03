@@ -152,7 +152,7 @@ func resourceNLBRead(ctx context.Context, d *schema.ResourceData, meta interface
 
 	log.Printf("[DEBUG] %s: read finished successfully", resourceNLBIDString(d))
 
-	return resourceNLBApply(ctx, d, nlb)
+	return diag.FromErr(resourceNLBApply(ctx, d, nlb))
 }
 
 func resourceNLBUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -227,25 +227,25 @@ func resourceNLBDelete(ctx context.Context, d *schema.ResourceData, meta interfa
 	return nil
 }
 
-func resourceNLBApply(_ context.Context, d *schema.ResourceData, nlb *egoscale.NetworkLoadBalancer) diag.Diagnostics {
+func resourceNLBApply(_ context.Context, d *schema.ResourceData, nlb *egoscale.NetworkLoadBalancer) error {
 	if err := d.Set(resNLBAttrCreatedAt, nlb.CreatedAt.String()); err != nil {
-		return diag.FromErr(err)
+		return err
 	}
 
 	if err := d.Set(resNLBAttrDescription, defaultString(nlb.Description, "")); err != nil {
-		return diag.FromErr(err)
+		return err
 	}
 
 	if err := d.Set(resNLBAttrIPAddress, nlb.IPAddress.String()); err != nil {
-		return diag.FromErr(err)
+		return err
 	}
 
 	if err := d.Set(resNLBAttrLabels, nlb.Labels); err != nil {
-		return diag.FromErr(err)
+		return err
 	}
 
 	if err := d.Set(resNLBAttrName, *nlb.Name); err != nil {
-		return diag.FromErr(err)
+		return err
 	}
 
 	services := make([]string, len(nlb.Services))
@@ -253,11 +253,11 @@ func resourceNLBApply(_ context.Context, d *schema.ResourceData, nlb *egoscale.N
 		services[i] = *service.ID
 	}
 	if err := d.Set(resNLBAttrServices, services); err != nil {
-		return diag.FromErr(err)
+		return err
 	}
 
 	if err := d.Set(resNLBAttrState, *nlb.State); err != nil {
-		return diag.FromErr(err)
+		return err
 	}
 
 	return nil

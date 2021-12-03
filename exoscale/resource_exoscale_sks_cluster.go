@@ -335,7 +335,7 @@ func resourceSKSClusterRead(ctx context.Context, d *schema.ResourceData, meta in
 
 	log.Printf("[DEBUG] %s: read finished successfully", resourceSKSClusterIDString(d))
 
-	return resourceSKSClusterApply(ctx, d, sksCluster)
+	return diag.FromErr(resourceSKSClusterApply(ctx, d, sksCluster))
 }
 
 func resourceSKSClusterUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -416,47 +416,47 @@ func resourceSKSClusterDelete(ctx context.Context, d *schema.ResourceData, meta 
 	return nil
 }
 
-func resourceSKSClusterApply(_ context.Context, d *schema.ResourceData, sksCluster *egoscale.SKSCluster) diag.Diagnostics {
+func resourceSKSClusterApply(_ context.Context, d *schema.ResourceData, sksCluster *egoscale.SKSCluster) error {
 	if sksCluster.AddOns != nil {
 		if err := d.Set(resSKSClusterAttrAddons, *sksCluster.AddOns); err != nil {
-			return diag.FromErr(err)
+			return err
 		}
 
 		if err := d.Set(resSKSClusterAttrExoscaleCCM, in(*sksCluster.AddOns, sksClusterAddonExoscaleCCM)); err != nil {
-			return diag.FromErr(err)
+			return err
 		}
 
 		if err := d.Set(resSKSClusterAttrMetricsServer, in(*sksCluster.AddOns, sksClusterAddonMS)); err != nil {
-			return diag.FromErr(err)
+			return err
 		}
 	}
 
 	if err := d.Set(resSKSClusterAttrAutoUpgrade, defaultBool(sksCluster.AutoUpgrade, false)); err != nil {
-		return diag.FromErr(err)
+		return err
 	}
 
 	if err := d.Set(resSKSClusterAttrCNI, defaultString(sksCluster.CNI, "")); err != nil {
-		return diag.FromErr(err)
+		return err
 	}
 
 	if err := d.Set(resSKSClusterAttrCreatedAt, sksCluster.CreatedAt.String()); err != nil {
-		return diag.FromErr(err)
+		return err
 	}
 
 	if err := d.Set(resSKSClusterAttrDescription, defaultString(sksCluster.Description, "")); err != nil {
-		return diag.FromErr(err)
+		return err
 	}
 
 	if err := d.Set(resSKSClusterAttrEndpoint, *sksCluster.Endpoint); err != nil {
-		return diag.FromErr(err)
+		return err
 	}
 
 	if err := d.Set(resSKSClusterAttrLabels, sksCluster.Labels); err != nil {
-		return diag.FromErr(err)
+		return err
 	}
 
 	if err := d.Set(resSKSClusterAttrName, *sksCluster.Name); err != nil {
-		return diag.FromErr(err)
+		return err
 	}
 
 	nodepools := make([]string, len(sksCluster.Nodepools))
@@ -464,19 +464,19 @@ func resourceSKSClusterApply(_ context.Context, d *schema.ResourceData, sksClust
 		nodepools[i] = *nodepool.ID
 	}
 	if err := d.Set(resSKSClusterAttrNodepools, nodepools); err != nil {
-		return diag.FromErr(err)
+		return err
 	}
 
 	if err := d.Set(resSKSClusterAttrServiceLevel, *sksCluster.ServiceLevel); err != nil {
-		return diag.FromErr(err)
+		return err
 	}
 
 	if err := d.Set(resSKSClusterAttrState, *sksCluster.State); err != nil {
-		return diag.FromErr(err)
+		return err
 	}
 
 	if err := d.Set(resSKSClusterAttrVersion, *sksCluster.Version); err != nil {
-		return diag.FromErr(err)
+		return err
 	}
 
 	return nil

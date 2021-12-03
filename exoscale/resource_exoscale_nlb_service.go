@@ -294,7 +294,7 @@ func resourceNLBServiceRead(ctx context.Context, d *schema.ResourceData, meta in
 
 	log.Printf("[DEBUG] %s: read finished successfully", resourceNLBServiceIDString(d))
 
-	return resourceNLBServiceApply(ctx, d, nlbService)
+	return diag.FromErr(resourceNLBServiceApply(ctx, d, nlbService))
 }
 
 func resourceNLBServiceUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -438,9 +438,13 @@ func resourceNLBServiceDelete(ctx context.Context, d *schema.ResourceData, meta 
 	return nil
 }
 
-func resourceNLBServiceApply(_ context.Context, d *schema.ResourceData, nlbService *egoscale.NetworkLoadBalancerService) diag.Diagnostics {
+func resourceNLBServiceApply(
+	_ context.Context,
+	d *schema.ResourceData,
+	nlbService *egoscale.NetworkLoadBalancerService,
+) error {
 	if err := d.Set(resNLBServiceAttrDescription, defaultString(nlbService.Description, "")); err != nil {
-		return diag.FromErr(err)
+		return err
 	}
 
 	healthcheck := d.Get(resNLBServiceAttrHealthcheck).(*schema.Set)
@@ -455,35 +459,35 @@ func resourceNLBServiceApply(_ context.Context, d *schema.ResourceData, nlbServi
 			resNLBServiceAttrHealthcheckURI:      defaultString(nlbService.Healthcheck.URI, ""),
 		},
 	})); err != nil {
-		return diag.FromErr(err)
+		return err
 	}
 
 	if err := d.Set(resNLBServiceAttrInstancePoolID, *nlbService.InstancePoolID); err != nil {
-		return diag.FromErr(err)
+		return err
 	}
 
 	if err := d.Set(resNLBServiceAttrName, *nlbService.Name); err != nil {
-		return diag.FromErr(err)
+		return err
 	}
 
 	if err := d.Set(resNLBServiceAttrPort, *nlbService.Port); err != nil {
-		return diag.FromErr(err)
+		return err
 	}
 
 	if err := d.Set(resNLBServiceAttrProtocol, *nlbService.Protocol); err != nil {
-		return diag.FromErr(err)
+		return err
 	}
 
 	if err := d.Set(resNLBServiceAttrState, *nlbService.State); err != nil {
-		return diag.FromErr(err)
+		return err
 	}
 
 	if err := d.Set(resNLBServiceAttrStrategy, *nlbService.Strategy); err != nil {
-		return diag.FromErr(err)
+		return err
 	}
 
 	if err := d.Set(resNLBServiceAttrTargetPort, *nlbService.TargetPort); err != nil {
-		return diag.FromErr(err)
+		return err
 	}
 
 	return nil
