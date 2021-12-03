@@ -128,7 +128,8 @@ func resourceSKSCluster() *schema.Resource {
 						Required: true,
 					},
 					resSKSClusterAttrOIDCRequiredClaim: {
-						Type:     schema.TypeString,
+						Type:     schema.TypeMap,
+						Elem:     &schema.Schema{Type: schema.TypeString},
 						Optional: true,
 					},
 					resSKSClusterAttrOIDCUsernameClaim: {
@@ -280,8 +281,12 @@ func resourceSKSClusterCreate(ctx context.Context, d *schema.ResourceData, meta 
 			sksClusterOIDCConfig.IssuerURL = nonEmptyStringPtr(v.(string))
 		}
 
-		if v, ok := d.GetOk(resSKSClusterAttrOIDC(resSKSClusterAttrOIDCRequiredClaim)); ok {
-			sksClusterOIDCConfig.RequiredClaim = nonEmptyStringPtr(v.(string))
+		if c, ok := d.GetOk(resSKSClusterAttrOIDC(resSKSClusterAttrOIDCRequiredClaim)); ok {
+			claims := make(map[string]string)
+			for k, v := range c.(map[string]interface{}) {
+				claims[k] = v.(string)
+			}
+			sksClusterOIDCConfig.RequiredClaim = &claims
 		}
 
 		if v, ok := d.GetOk(resSKSClusterAttrOIDC(resSKSClusterAttrOIDCUsernameClaim)); ok {

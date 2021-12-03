@@ -1,6 +1,26 @@
 Changelog
 =========
 
+0.84.1
+------
+
+- fix: v2: fix `CreateSecurityGroupRule()` method (#547)
+
+0.84.0
+------
+
+- change: v2: `SKSClusterOIDCConfig` struct field `RequiredClaim` now is a `map[string]string` type instead of a string
+
+0.83.2
+------
+
+- change: v2: refresh code generated from public API spec
+
+0.83.1
+------
+
+- change: v2: refresh code generated from public API spec
+
 0.83.0
 ------
 

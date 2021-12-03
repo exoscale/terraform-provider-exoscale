@@ -54,7 +54,7 @@ The `oidc` block supports:
 * `issuer_url` - (Required) The OpenID provider URL.
 * `groups_claim` - An OpenID JWT claim to use as the user's group.
 * `groups_prefix` - An OpenID prefix prepended to group claims.
-* `required_claim` - A `KEY=VALUE` pair that describes a required claim in the OpenID Token.
+* `required_claim` - A map of key/value pairs that describes a required claim in the OpenID Token.
 * `username_claim` - An OpenID JWT claim to use as the user name.
 * `username_prefix` - An OpenID prefix prepended to username claims.
 

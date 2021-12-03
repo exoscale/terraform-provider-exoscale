@@ -17,19 +17,19 @@ import (
 )
 
 var (
-	testAccResourceSKSClusterLabelValue         = acctest.RandomWithPrefix(testPrefix)
-	testAccResourceSKSClusterLabelValueUpdated  = testAccResourceSKSClusterLabelValue + "-updated"
-	testAccResourceSKSClusterName               = acctest.RandomWithPrefix(testPrefix)
-	testAccResourceSKSClusterNameUpdated        = testAccResourceSKSClusterName + "-updated"
-	testAccResourceSKSClusterOIDCClientID       = acctest.RandString(10)
-	testAccResourceSKSClusterOIDCGroupsClaim    = acctest.RandString(10)
-	testAccResourceSKSClusterOIDCGroupsPrefix   = acctest.RandString(10)
-	testAccResourceSKSClusterOIDCIssuerURL      = "https://id.example.net"
-	testAccResourceSKSClusterOIDCRequiredClaim  = acctest.RandString(10)
-	testAccResourceSKSClusterOIDCUsernameClaim  = acctest.RandString(10)
-	testAccResourceSKSClusterOIDCUsernamePrefix = acctest.RandString(10)
-	testAccResourceSKSClusterDescription        = acctest.RandString(10)
-	testAccResourceSKSClusterDescriptionUpdated = testAccResourceSKSClusterDescription + "-updated"
+	testAccResourceSKSClusterLabelValue             = acctest.RandomWithPrefix(testPrefix)
+	testAccResourceSKSClusterLabelValueUpdated      = testAccResourceSKSClusterLabelValue + "-updated"
+	testAccResourceSKSClusterName                   = acctest.RandomWithPrefix(testPrefix)
+	testAccResourceSKSClusterNameUpdated            = testAccResourceSKSClusterName + "-updated"
+	testAccResourceSKSClusterOIDCClientID           = acctest.RandString(10)
+	testAccResourceSKSClusterOIDCGroupsClaim        = acctest.RandString(10)
+	testAccResourceSKSClusterOIDCGroupsPrefix       = acctest.RandString(10)
+	testAccResourceSKSClusterOIDCIssuerURL          = "https://id.example.net"
+	testAccResourceSKSClusterOIDCRequiredClaimValue = acctest.RandString(10)
+	testAccResourceSKSClusterOIDCUsernameClaim      = acctest.RandString(10)
+	testAccResourceSKSClusterOIDCUsernamePrefix     = acctest.RandString(10)
+	testAccResourceSKSClusterDescription            = acctest.RandString(10)
+	testAccResourceSKSClusterDescriptionUpdated     = testAccResourceSKSClusterDescription + "-updated"
 
 	testAccResourceSKSClusterConfigCreate = fmt.Sprintf(`
 locals {
@@ -52,7 +52,7 @@ resource "exoscale_sks_cluster" "test" {
 	groups_claim = "%s"
 	groups_prefix = "%s"
     issuer_url = "%s"
-	required_claim = "test=%s"
+	required_claim = { test = "%s" }
 	username_claim = "%s"
 	username_prefix = "%s"
   }
@@ -83,7 +83,7 @@ resource "exoscale_sks_nodepool" "test" {
 		testAccResourceSKSClusterOIDCGroupsClaim,
 		testAccResourceSKSClusterOIDCGroupsPrefix,
 		testAccResourceSKSClusterOIDCIssuerURL,
-		testAccResourceSKSClusterOIDCRequiredClaim,
+		testAccResourceSKSClusterOIDCRequiredClaimValue,
 		testAccResourceSKSClusterOIDCUsernameClaim,
 		testAccResourceSKSClusterOIDCUsernamePrefix,
 	)
@@ -136,10 +136,7 @@ func TestAccResourceSKSCluster(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck: func() {
-			testAccPreCheck(t)
-		},
-
+		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviders,
 		CheckDestroy:      testAccCheckResourceSKSClusterDestroy(&sksCluster),
 		Steps: []resource.TestStep{
