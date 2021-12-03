@@ -31,6 +31,9 @@ var (
 	testAccResourceSKSNodepoolPrivateNetworkName          = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceSKSNodepoolSize                  int64 = 2
 	testAccResourceSKSNodepoolSizeUpdated           int64 = 1
+	testAccResourceSKSNodepoolTaintEffect                 = "NoSchedule"
+	testAccResourceSKSNodepoolTaintValue                  = "test"
+	testAccResourceSKSNodepoolTaintValueUpdated           = "test-updated"
 
 	testAccResourceSKSNodepoolConfigCreate = fmt.Sprintf(`
 locals {
@@ -55,9 +58,8 @@ resource "exoscale_sks_nodepool" "test" {
   disk_size = %d
   size = %d
   instance_prefix = "%s"
-  labels = {
-    test = "%s"
-  }
+  labels = { test = "%s" }
+  taints = { test = "%s:%s" }
 
   timeouts {
     delete = "10m"
@@ -73,6 +75,8 @@ resource "exoscale_sks_nodepool" "test" {
 		testAccResourceSKSNodepoolSize,
 		testAccResourceSKSNodepoolInstancePrefix,
 		testAccResourceSKSNodepoolLabelValue,
+		testAccResourceSKSNodepoolTaintValue,
+		testAccResourceSKSNodepoolTaintEffect,
 	)
 
 	testAccResourceSKSNodepoolConfigUpdate = fmt.Sprintf(`
@@ -117,9 +121,8 @@ resource "exoscale_sks_nodepool" "test" {
   anti_affinity_group_ids = [exoscale_affinity.test.id]
   security_group_ids = [data.exoscale_security_group.default.id]
   private_network_ids = [exoscale_network.test.id]
-  labels = {
-    test = "%s"
-  }
+  labels = { test = "%s" }
+  taints = { test = "%s:%s" }
 
   timeouts {
     delete = "10m"
@@ -137,6 +140,8 @@ resource "exoscale_sks_nodepool" "test" {
 		testAccResourceSKSNodepoolSizeUpdated,
 		defaultSKSNodepoolInstancePrefix,
 		testAccResourceSKSNodepoolLabelValueUpdated,
+		testAccResourceSKSNodepoolTaintValueUpdated,
+		testAccResourceSKSNodepoolTaintEffect,
 	)
 )
 
@@ -168,22 +173,31 @@ func TestAccResourceSKSNodepool(t *testing.T) {
 						a.Equal(testAccResourceSKSNodepoolInstancePrefix, *sksNodepool.InstancePrefix)
 						a.Equal(testInstanceTypeIDSmall, *sksNodepool.InstanceTypeID)
 						a.Equal(testAccResourceSKSNodepoolSize, *sksNodepool.Size)
+						a.Equal(&egoscale.SKSNodepoolTaint{
+							Effect: testAccResourceSKSNodepoolTaintEffect,
+							Value:  testAccResourceSKSNodepoolTaintValue,
+						}, (*sksNodepool.Taints)["test"])
 
 						return nil
 					},
 					checkResourceState(r, checkResourceStateValidateAttributes(testAttrs{
-						resSKSNodepoolAttrCreatedAt:       validation.ToDiagFunc(validation.NoZeroValues),
-						resSKSNodepoolAttrDescription:     validateString(testAccResourceSKSNodepoolDescription),
-						resSKSNodepoolAttrDiskSize:        validateString(fmt.Sprint(testAccResourceSKSNodepoolDiskSize)),
-						resSKSNodepoolAttrInstancePoolID:  validation.ToDiagFunc(validation.IsUUID),
-						resSKSNodepoolAttrInstancePrefix:  validateString(testAccResourceSKSNodepoolInstancePrefix),
-						resSKSNodepoolAttrInstanceType:    validateString(testAccResourceSKSNodepoolInstanceType),
-						resSKSClusterAttrLabels + ".test": validateString(testAccResourceSKSNodepoolLabelValue),
-						resSKSNodepoolAttrName:            validateString(testAccResourceSKSNodepoolName),
-						resSKSNodepoolAttrSize:            validateString(fmt.Sprint(testAccResourceSKSNodepoolSize)),
-						resSKSNodepoolAttrState:           validation.ToDiagFunc(validation.NoZeroValues),
-						resSKSNodepoolAttrTemplateID:      validation.ToDiagFunc(validation.IsUUID),
-						resSKSNodepoolAttrVersion:         validation.ToDiagFunc(validation.NoZeroValues),
+						resSKSNodepoolAttrCreatedAt:        validation.ToDiagFunc(validation.NoZeroValues),
+						resSKSNodepoolAttrDescription:      validateString(testAccResourceSKSNodepoolDescription),
+						resSKSNodepoolAttrDiskSize:         validateString(fmt.Sprint(testAccResourceSKSNodepoolDiskSize)),
+						resSKSNodepoolAttrInstancePoolID:   validation.ToDiagFunc(validation.IsUUID),
+						resSKSNodepoolAttrInstancePrefix:   validateString(testAccResourceSKSNodepoolInstancePrefix),
+						resSKSNodepoolAttrInstanceType:     validateString(testAccResourceSKSNodepoolInstanceType),
+						resSKSNodepoolAttrLabels + ".test": validateString(testAccResourceSKSNodepoolLabelValue),
+						resSKSNodepoolAttrName:             validateString(testAccResourceSKSNodepoolName),
+						resSKSNodepoolAttrSize:             validateString(fmt.Sprint(testAccResourceSKSNodepoolSize)),
+						resSKSNodepoolAttrState:            validation.ToDiagFunc(validation.NoZeroValues),
+						resSKSNodepoolAttrTaints + ".test": validateString(fmt.Sprintf(
+							"%s:%s",
+							testAccResourceSKSNodepoolTaintValue,
+							testAccResourceSKSNodepoolTaintEffect,
+						)),
+						resSKSNodepoolAttrTemplateID: validation.ToDiagFunc(validation.IsUUID),
+						resSKSNodepoolAttrVersion:    validation.ToDiagFunc(validation.NoZeroValues),
 					})),
 				),
 			},
@@ -205,6 +219,10 @@ func TestAccResourceSKSNodepool(t *testing.T) {
 						a.Len(*sksNodepool.PrivateNetworkIDs, 1)
 						a.Len(*sksNodepool.SecurityGroupIDs, 1)
 						a.Equal(testAccResourceSKSNodepoolSizeUpdated, *sksNodepool.Size)
+						a.Equal(&egoscale.SKSNodepoolTaint{
+							Effect: testAccResourceSKSNodepoolTaintEffect,
+							Value:  testAccResourceSKSNodepoolTaintValueUpdated,
+						}, (*sksNodepool.Taints)["test"])
 
 						return nil
 					},
@@ -216,14 +234,19 @@ func TestAccResourceSKSNodepool(t *testing.T) {
 						resSKSNodepoolAttrInstancePoolID:              validation.ToDiagFunc(validation.IsUUID),
 						resSKSNodepoolAttrInstancePrefix:              validateString(defaultSKSNodepoolInstancePrefix),
 						resSKSNodepoolAttrInstanceType:                validateString(testAccResourceSKSNodepoolInstanceTypeUpdated),
-						resSKSClusterAttrLabels + ".test":             validateString(testAccResourceSKSNodepoolLabelValueUpdated),
+						resSKSNodepoolAttrLabels + ".test":            validateString(testAccResourceSKSNodepoolLabelValueUpdated),
 						resSKSNodepoolAttrName:                        validateString(testAccResourceSKSNodepoolNameUpdated),
 						resSKSNodepoolAttrPrivateNetworkIDs + ".#":    validateString("1"),
 						resSKSNodepoolAttrSecurityGroupIDs + ".#":     validateString("1"),
 						resSKSNodepoolAttrSize:                        validateString(fmt.Sprint(testAccResourceSKSNodepoolSizeUpdated)),
 						resSKSNodepoolAttrState:                       validation.ToDiagFunc(validation.NoZeroValues),
-						resSKSNodepoolAttrTemplateID:                  validation.ToDiagFunc(validation.IsUUID),
-						resSKSNodepoolAttrVersion:                     validation.ToDiagFunc(validation.NoZeroValues),
+						resSKSNodepoolAttrTaints + ".test": validateString(fmt.Sprintf(
+							"%s:%s",
+							testAccResourceSKSNodepoolTaintValueUpdated,
+							testAccResourceSKSNodepoolTaintEffect,
+						)),
+						resSKSNodepoolAttrTemplateID: validation.ToDiagFunc(validation.IsUUID),
+						resSKSNodepoolAttrVersion:    validation.ToDiagFunc(validation.NoZeroValues),
 					})),
 				),
 			},
@@ -244,21 +267,26 @@ func TestAccResourceSKSNodepool(t *testing.T) {
 					return checkResourceAttributes(
 						testAttrs{
 							resSKSNodepoolAttrAntiAffinityGroupIDs + ".#": validateString("1"),
-							resSKSNodepoolAttrCreatedAt:                   validation.ToDiagFunc(validation.NoZeroValues),
 							resSKSNodepoolAttrClusterID:                   validation.ToDiagFunc(validation.IsUUID),
+							resSKSNodepoolAttrCreatedAt:                   validation.ToDiagFunc(validation.NoZeroValues),
 							resSKSNodepoolAttrDescription:                 validateString(testAccResourceSKSNodepoolDescriptionUpdated),
 							resSKSNodepoolAttrDiskSize:                    validateString(fmt.Sprint(testAccResourceSKSNodepoolDiskSizeUpdated)),
 							resSKSNodepoolAttrInstancePoolID:              validation.ToDiagFunc(validation.IsUUID),
 							resSKSNodepoolAttrInstancePrefix:              validateString(defaultSKSNodepoolInstancePrefix),
 							resSKSNodepoolAttrInstanceType:                validateString(testAccResourceSKSNodepoolInstanceTypeUpdated),
-							resSKSClusterAttrLabels + ".test":             validateString(testAccResourceSKSNodepoolLabelValueUpdated),
+							resSKSNodepoolAttrLabels + ".test":            validateString(testAccResourceSKSNodepoolLabelValueUpdated),
 							resSKSNodepoolAttrName:                        validateString(testAccResourceSKSNodepoolNameUpdated),
 							resSKSNodepoolAttrPrivateNetworkIDs + ".#":    validateString("1"),
 							resSKSNodepoolAttrSecurityGroupIDs + ".#":     validateString("1"),
 							resSKSNodepoolAttrSize:                        validateString(fmt.Sprint(testAccResourceSKSNodepoolSizeUpdated)),
 							resSKSNodepoolAttrState:                       validation.ToDiagFunc(validation.NoZeroValues),
-							resSKSNodepoolAttrTemplateID:                  validation.ToDiagFunc(validation.IsUUID),
-							resSKSNodepoolAttrVersion:                     validation.ToDiagFunc(validation.NoZeroValues),
+							resSKSNodepoolAttrTaints + ".test": validateString(fmt.Sprintf(
+								"%s:%s",
+								testAccResourceSKSNodepoolTaintValueUpdated,
+								testAccResourceSKSNodepoolTaintEffect,
+							)),
+							resSKSNodepoolAttrTemplateID: validation.ToDiagFunc(validation.IsUUID),
+							resSKSNodepoolAttrVersion:    validation.ToDiagFunc(validation.NoZeroValues),
 						},
 						s[0].Attributes)
 				},

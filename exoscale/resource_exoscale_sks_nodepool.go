@@ -32,6 +32,7 @@ const (
 	resSKSNodepoolAttrSecurityGroupIDs     = "security_group_ids"
 	resSKSNodepoolAttrSize                 = "size"
 	resSKSNodepoolAttrState                = "state"
+	resSKSNodepoolAttrTaints               = "taints"
 	resSKSNodepoolAttrTemplateID           = "template_id"
 	resSKSNodepoolAttrVersion              = "version"
 	resSKSNodepoolAttrZone                 = "zone"
@@ -113,6 +114,11 @@ func resourceSKSNodepool() *schema.Resource {
 		resSKSNodepoolAttrState: {
 			Type:     schema.TypeString,
 			Computed: true,
+		},
+		resSKSNodepoolAttrTaints: {
+			Type:     schema.TypeMap,
+			Elem:     &schema.Schema{Type: schema.TypeString},
+			Optional: true,
 		},
 		resSKSNodepoolAttrTemplateID: {
 			Type:     schema.TypeString,
@@ -269,6 +275,18 @@ func resourceSKSNodepoolCreate(ctx context.Context, d *schema.ResourceData, meta
 		sksNodepool.Size = &i
 	}
 
+	if t, ok := d.GetOk(resSKSNodepoolAttrTaints); ok {
+		taints := make(map[string]*egoscale.SKSNodepoolTaint)
+		for k, v := range t.(map[string]interface{}) {
+			taint, err := parseSKSNodepoolTaint(v.(string))
+			if err != nil {
+				return diag.Errorf("invalid taint %q: %s", v.(string), err)
+			}
+			taints[k] = taint
+		}
+		sksNodepool.Taints = &taints
+	}
+
 	sksNodepool, err = client.CreateSKSNodepool(ctx, zone, sksCluster, sksNodepool)
 	if err != nil {
 		return diag.FromErr(err)
@@ -317,7 +335,7 @@ func resourceSKSNodepoolRead(ctx context.Context, d *schema.ResourceData, meta i
 
 	log.Printf("[DEBUG] %s: read finished successfully", resourceSKSNodepoolIDString(d))
 
-	return resourceSKSNodepoolApply(ctx, client.Client, d, sksNodepool)
+	return diag.FromErr(resourceSKSNodepoolApply(ctx, client.Client, d, sksNodepool))
 }
 
 func resourceSKSNodepoolUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -433,6 +451,19 @@ func resourceSKSNodepoolUpdate(ctx context.Context, d *schema.ResourceData, meta
 		updated = true
 	}
 
+	if d.HasChange(resSKSNodepoolAttrTaints) {
+		taints := make(map[string]*egoscale.SKSNodepoolTaint)
+		for k, v := range d.Get(resSKSNodepoolAttrTaints).(map[string]interface{}) {
+			taint, err := parseSKSNodepoolTaint(v.(string))
+			if err != nil {
+				return diag.Errorf("invalid taint %q: %s", v.(string), err)
+			}
+			taints[k] = taint
+		}
+		sksNodepool.Taints = &taints
+		updated = true
+	}
+
 	if updated {
 		if err = client.UpdateSKSNodepool(ctx, zone, sksCluster, sksNodepool); err != nil {
 			return diag.FromErr(err)
@@ -487,39 +518,39 @@ func resourceSKSNodepoolApply(
 	client *egoscale.Client,
 	d *schema.ResourceData,
 	sksNodepool *egoscale.SKSNodepool,
-) diag.Diagnostics {
+) error {
 	if sksNodepool.AntiAffinityGroupIDs != nil {
 		antiAffinityGroupIDs := make([]string, len(*sksNodepool.AntiAffinityGroupIDs))
 		for i, id := range *sksNodepool.AntiAffinityGroupIDs {
 			antiAffinityGroupIDs[i] = id
 		}
 		if err := d.Set(resSKSNodepoolAttrAntiAffinityGroupIDs, antiAffinityGroupIDs); err != nil {
-			return diag.FromErr(err)
+			return err
 		}
 	}
 
 	if err := d.Set(resSKSNodepoolAttrCreatedAt, sksNodepool.CreatedAt.String()); err != nil {
-		return diag.FromErr(err)
+		return err
 	}
 
 	if err := d.Set(resSKSNodepoolAttrDeployTargetID, defaultString(sksNodepool.DeployTargetID, "")); err != nil {
-		return diag.FromErr(err)
+		return err
 	}
 
 	if err := d.Set(resSKSNodepoolAttrDescription, defaultString(sksNodepool.Description, "")); err != nil {
-		return diag.FromErr(err)
+		return err
 	}
 
 	if err := d.Set(resSKSNodepoolAttrDiskSize, *sksNodepool.DiskSize); err != nil {
-		return diag.FromErr(err)
+		return err
 	}
 
 	if err := d.Set(resSKSNodepoolAttrInstancePoolID, *sksNodepool.InstancePoolID); err != nil {
-		return diag.FromErr(err)
+		return err
 	}
 
 	if err := d.Set(resSKSNodepoolAttrInstancePrefix, defaultString(sksNodepool.InstancePrefix, "")); err != nil {
-		return diag.FromErr(err)
+		return err
 	}
 
 	instanceType, err := client.GetInstanceType(
@@ -528,22 +559,22 @@ func resourceSKSNodepoolApply(
 		*sksNodepool.InstanceTypeID,
 	)
 	if err != nil {
-		return diag.Errorf("error retrieving instance type: %s", err)
+		return fmt.Errorf("error retrieving instance type: %w", err)
 	}
 	if err := d.Set(resSKSNodepoolAttrInstanceType, fmt.Sprintf(
 		"%s.%s",
 		strings.ToLower(*instanceType.Family),
 		strings.ToLower(*instanceType.Size),
 	)); err != nil {
-		return diag.FromErr(err)
+		return err
 	}
 
 	if err := d.Set(resSKSNodepoolAttrLabels, sksNodepool.Labels); err != nil {
-		return diag.FromErr(err)
+		return err
 	}
 
 	if err := d.Set(resSKSNodepoolAttrName, *sksNodepool.Name); err != nil {
-		return diag.FromErr(err)
+		return err
 	}
 
 	if sksNodepool.PrivateNetworkIDs != nil {
@@ -552,7 +583,7 @@ func resourceSKSNodepoolApply(
 			privateNetworkIDs[i] = id
 		}
 		if err := d.Set(resSKSNodepoolAttrPrivateNetworkIDs, privateNetworkIDs); err != nil {
-			return diag.FromErr(err)
+			return err
 		}
 	}
 
@@ -562,25 +593,56 @@ func resourceSKSNodepoolApply(
 			securityGroupIDs[i] = id
 		}
 		if err := d.Set(resSKSNodepoolAttrSecurityGroupIDs, securityGroupIDs); err != nil {
-			return diag.FromErr(err)
+			return err
 		}
 	}
 
 	if err := d.Set(resSKSNodepoolAttrSize, *sksNodepool.Size); err != nil {
-		return diag.FromErr(err)
+		return err
 	}
 
 	if err := d.Set(resSKSNodepoolAttrState, *sksNodepool.State); err != nil {
-		return diag.FromErr(err)
+		return err
+	}
+
+	if sksNodepool.Taints != nil {
+		taints := make(map[string]string)
+		for k, v := range *sksNodepool.Taints {
+			taints[k] = fmt.Sprintf("%s:%s", v.Value, v.Effect)
+		}
+		if err := d.Set(resSKSNodepoolAttrTaints, taints); err != nil {
+			return err
+		}
 	}
 
 	if err := d.Set(resSKSNodepoolAttrTemplateID, *sksNodepool.TemplateID); err != nil {
-		return diag.FromErr(err)
+		return err
 	}
 
 	if err := d.Set(resSKSNodepoolAttrVersion, *sksNodepool.Version); err != nil {
-		return diag.FromErr(err)
+		return err
 	}
 
 	return nil
+}
+
+// parseSKSNodepoolTaint parses a CLI-formatted Kubernetes Node taint
+// description formatted as VALUE:EFFECT, and returns discrete values
+// for the value/effect as egoscale.SKSNodepoolTaint, or an error if
+// the input value parsing failed.
+func parseSKSNodepoolTaint(v string) (*egoscale.SKSNodepoolTaint, error) {
+	parts := strings.SplitN(v, ":", 2)
+	if len(parts) != 2 {
+		return nil, errors.New("expected format VALUE:EFFECT")
+	}
+	taintValue, taintEffect := parts[0], parts[1]
+
+	if taintValue == "" || taintEffect == "" {
+		return nil, errors.New("expected format VALUE:EFFECT")
+	}
+
+	return &egoscale.SKSNodepoolTaint{
+		Effect: taintEffect,
+		Value:  taintValue,
+	}, nil
 }
