@@ -1,34 +1,46 @@
 package exoscale
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"net"
+	"os"
 	"strconv"
 	"strings"
 	"testing"
 
-	"github.com/exoscale/egoscale"
+	egoscale "github.com/exoscale/egoscale/v2"
+	exoapi "github.com/exoscale/egoscale/v2/api"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/stretchr/testify/require"
 )
 
 var (
-	testAccResourceSecurityGroupRulesSecurityGroupName = acctest.RandomWithPrefix(testPrefix)
+	testAccResourceSecurityGroupRulesTestSecurityGroupName       = acctest.RandomWithPrefix(testPrefix)
+	testAccResourceSecurityGroupRulesICMPCode0             int64 = 0
+	testAccResourceSecurityGroupRulesICMPType8             int64 = 8
+	testAccResourceSecurityGroupRulesICMPv6Type128         int64 = 128
 
 	testAccResourceSecurityGroupRulesConfigCreate = fmt.Sprintf(`
-resource "exoscale_security_group" "sg" {
+data "exoscale_security_group" "default" {
+  name = "default"
+}
+
+resource "exoscale_security_group" "test" {
   name = "%s"
 }
 
 resource "exoscale_security_group_rules" "rules" {
-  security_group_id = exoscale_security_group.sg.id
+  security_group_id = exoscale_security_group.test.id
 
   ingress {
     protocol = "ICMP"
-    icmp_type = -1
-    icmp_code = -1
+    icmp_type = 8
+    icmp_code = 0
     cidr_list = ["0.0.0.0/0"]
   }
 
@@ -43,32 +55,36 @@ resource "exoscale_security_group_rules" "rules" {
     protocol = "TCP"
     cidr_list = ["10.0.0.0/24", "::/0"]
     ports = ["22", "8000-8888"]
-    user_security_group_list = [exoscale_security_group.sg.name, "default"]
+    user_security_group_list = [exoscale_security_group.test.name, data.exoscale_security_group.default.name]
   }
 
   egress {
     protocol = "UDP"
     cidr_list = ["192.168.0.0/24", "::/0"]
     ports = ["44", "2375-2377"]
-    user_security_group_list = ["default"]
+    user_security_group_list = [data.exoscale_security_group.default.name]
   }
 }
 `,
-		testAccResourceSecurityGroupRulesSecurityGroupName,
+		testAccResourceSecurityGroupRulesTestSecurityGroupName,
 	)
 
 	testAccResourceSecurityGroupRulesConfigUpdate = fmt.Sprintf(`
-resource "exoscale_security_group" "sg" {
+data "exoscale_security_group" "default" {
+  name = "default"
+}
+
+resource "exoscale_security_group" "test" {
   name = "%s"
 }
 
 resource "exoscale_security_group_rules" "rules" {
-  security_group_id = exoscale_security_group.sg.id
+  security_group_id = exoscale_security_group.test.id
 
   ingress {
     protocol = "ICMP"
-    icmp_type = -1
-    icmp_code = -1
+    icmp_type = 8
+    icmp_code = 0
     cidr_list = ["0.0.0.0/0"]
   }
 
@@ -83,18 +99,18 @@ resource "exoscale_security_group_rules" "rules" {
     protocol = "TCP"
     cidr_list = ["10.0.0.0/24", "::/0"]
     ports = ["2222", "8000-8888"]
-    user_security_group_list = [exoscale_security_group.sg.name, "default"]
+    user_security_group_list = [exoscale_security_group.test.name, data.exoscale_security_group.default.name]
   }
 
   egress {
     protocol = "UDP"
     cidr_list = ["192.168.0.0/24", "::/0"]
     ports = ["4444", "2375-2377"]
-    user_security_group_list = ["default"]
+    user_security_group_list = [data.exoscale_security_group.default.name]
   }
 }
 `,
-		testAccResourceSecurityGroupRulesSecurityGroupName,
+		testAccResourceSecurityGroupRulesTestSecurityGroupName,
 	)
 )
 
@@ -113,150 +129,221 @@ func TestPreparePorts(t *testing.T) {
 }
 
 func TestAccResourceSecurityGroupRules(t *testing.T) {
-	sg := new(egoscale.SecurityGroup)
+	testSecurityGroup := new(egoscale.SecurityGroup)
+	defaultSecurityGroup := new(egoscale.SecurityGroup)
+	mustParseCIDR := func(t *testing.T, cidr string) *net.IPNet {
+		_, cidrp, err := net.ParseCIDR(cidr)
+		if err != nil {
+			t.Fatalf("unable to parse CIDR %q: %s", cidr, err)
+		}
+		return cidrp
+	}
+	portValPtr := func(p int) *uint16 {
+		portVal := uint16(p)
+		return &portVal
+	}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
+		PreCheck: func() {
+			testAccPreCheck(t)
+
+			// Retrieve the current organization's default Security Group.
+			client, err := egoscale.NewClient(
+				os.Getenv("EXOSCALE_API_KEY"),
+				os.Getenv("EXOSCALE_API_SECRET"),
+				egoscale.ClientOptCond(func() bool {
+					if v := os.Getenv("EXOSCALE_TRACE"); v != "" {
+						return true
+					}
+					return false
+				}, egoscale.ClientOptWithTrace()))
+			if err != nil {
+				t.Fatalf("unable to initialize Exoscale client: %s", err)
+			}
+
+			defaultSecurityGroup, err = client.FindSecurityGroup(
+				exoapi.WithEndpoint(
+					context.Background(),
+					exoapi.NewReqEndpoint(os.Getenv("EXOSCALE_API_ENVIRONMENT"), testZoneName)),
+				testZoneName,
+				"default",
+			)
+			if err != nil {
+				t.Fatalf("unable to retrieve default Security Group: %s", err)
+			}
+		},
 		ProviderFactories: testAccProviders,
-		CheckDestroy:      testAccCheckResourceSecurityGroupRulesDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccResourceSecurityGroupRulesConfigCreate,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckResourceSecurityGroupExists("exoscale_security_group.sg", sg),
+					testAccCheckResourceSecurityGroupExists("exoscale_security_group.test", testSecurityGroup),
+					testAccCheckResourceSecurityGroupExists("data.exoscale_security_group.default", defaultSecurityGroup),
+					func(_ *terraform.State) error {
+						require.NotNil(t, testSecurityGroup.ID)
+						require.NotNil(t, defaultSecurityGroup.ID)
+						return nil
+					},
 					testAccCheckSecurityGroupHasManyRules(16),
-					testAccCheckSecurityGroupIngressRuleExists(sg, &egoscale.IngressRule{
-						CIDR:     egoscale.MustParseCIDR("0.0.0.0/0"),
-						Protocol: "ICMP",
-						IcmpType: -1,
-						IcmpCode: -1,
+					testAccCheckSecurityGroupRuleExists(testSecurityGroup, &egoscale.SecurityGroupRule{
+						FlowDirection: nonEmptyStringPtr("ingress"),
+						Network:       mustParseCIDR(t, "0.0.0.0/0"),
+						Protocol:      nonEmptyStringPtr("icmp"),
+						ICMPCode:      &testAccResourceSecurityGroupRulesICMPCode0,
+						ICMPType:      &testAccResourceSecurityGroupRulesICMPType8,
 					}),
-					testAccCheckSecurityGroupIngressRuleExists(sg, &egoscale.IngressRule{
-						CIDR:     egoscale.MustParseCIDR("::/0"),
-						Protocol: "ICMPv6",
-						IcmpType: 128,
-						IcmpCode: 0,
+					testAccCheckSecurityGroupRuleExists(testSecurityGroup, &egoscale.SecurityGroupRule{
+						FlowDirection: nonEmptyStringPtr("ingress"),
+						Network:       mustParseCIDR(t, "::/0"),
+						Protocol:      nonEmptyStringPtr("icmpv6"),
+						ICMPType:      &testAccResourceSecurityGroupRulesICMPv6Type128,
+						ICMPCode:      &testAccResourceSecurityGroupRulesICMPCode0,
 					}),
-					testAccCheckSecurityGroupIngressRuleExists(sg, &egoscale.IngressRule{
-						CIDR:      egoscale.MustParseCIDR("10.0.0.0/24"),
-						StartPort: 22,
-						EndPort:   22,
-						Protocol:  "TCP",
+					testAccCheckSecurityGroupRuleExists(testSecurityGroup, &egoscale.SecurityGroupRule{
+						FlowDirection: nonEmptyStringPtr("ingress"),
+						Network:       mustParseCIDR(t, "10.0.0.0/24"),
+						StartPort:     portValPtr(22),
+						EndPort:       portValPtr(22),
+						Protocol:      nonEmptyStringPtr("tcp"),
 					}),
-					testAccCheckSecurityGroupIngressRuleExists(sg, &egoscale.IngressRule{
-						CIDR:      egoscale.MustParseCIDR("::/0"),
-						StartPort: 22,
-						EndPort:   22,
-						Protocol:  "TCP",
+					testAccCheckSecurityGroupRuleExists(testSecurityGroup, &egoscale.SecurityGroupRule{
+						FlowDirection: nonEmptyStringPtr("ingress"),
+						Network:       mustParseCIDR(t, "::/0"),
+						StartPort:     portValPtr(22),
+						EndPort:       portValPtr(22),
+						Protocol:      nonEmptyStringPtr("tcp"),
 					}),
-					testAccCheckSecurityGroupIngressRuleExists(sg, &egoscale.IngressRule{
-						CIDR:      egoscale.MustParseCIDR("10.0.0.0/24"),
-						StartPort: 8000,
-						EndPort:   8888,
-						Protocol:  "TCP",
+					testAccCheckSecurityGroupRuleExists(testSecurityGroup, &egoscale.SecurityGroupRule{
+						FlowDirection: nonEmptyStringPtr("ingress"),
+						Network:       mustParseCIDR(t, "10.0.0.0/24"),
+						StartPort:     portValPtr(8000),
+						EndPort:       portValPtr(8888),
+						Protocol:      nonEmptyStringPtr("tcp"),
 					}),
-					testAccCheckSecurityGroupIngressRuleExists(sg, &egoscale.IngressRule{
-						CIDR:      egoscale.MustParseCIDR("::/0"),
-						StartPort: 8000,
-						EndPort:   8888,
-						Protocol:  "TCP",
+					testAccCheckSecurityGroupRuleExists(testSecurityGroup, &egoscale.SecurityGroupRule{
+						FlowDirection: nonEmptyStringPtr("ingress"),
+						Network:       mustParseCIDR(t, "::/0"),
+						StartPort:     portValPtr(8000),
+						EndPort:       portValPtr(8888),
+						Protocol:      nonEmptyStringPtr("tcp"),
 					}),
-					testAccCheckSecurityGroupIngressRuleExists(sg, &egoscale.IngressRule{
-						SecurityGroupName: testAccResourceSecurityGroupRulesSecurityGroupName,
-						StartPort:         22,
-						EndPort:           22,
-						Protocol:          "TCP",
+					testAccCheckSecurityGroupRuleExists(testSecurityGroup, &egoscale.SecurityGroupRule{
+						FlowDirection:   nonEmptyStringPtr("ingress"),
+						SecurityGroupID: testSecurityGroup.ID,
+						StartPort:       portValPtr(22),
+						EndPort:         portValPtr(22),
+						Protocol:        nonEmptyStringPtr("tcp"),
 					}),
-					testAccCheckSecurityGroupIngressRuleExists(sg, &egoscale.IngressRule{
-						SecurityGroupName: "default",
-						StartPort:         22,
-						EndPort:           22,
-						Protocol:          "TCP",
+					testAccCheckSecurityGroupRuleExists(testSecurityGroup, &egoscale.SecurityGroupRule{
+						FlowDirection:   nonEmptyStringPtr("ingress"),
+						SecurityGroupID: defaultSecurityGroup.ID,
+						StartPort:       portValPtr(22),
+						EndPort:         portValPtr(22),
+						Protocol:        nonEmptyStringPtr("tcp"),
 					}),
-					testAccCheckSecurityGroupIngressRuleExists(sg, &egoscale.IngressRule{
-						SecurityGroupName: testAccResourceSecurityGroupRulesSecurityGroupName,
-						StartPort:         8000,
-						EndPort:           8888,
-						Protocol:          "TCP",
+					testAccCheckSecurityGroupRuleExists(testSecurityGroup, &egoscale.SecurityGroupRule{
+						FlowDirection:   nonEmptyStringPtr("ingress"),
+						SecurityGroupID: testSecurityGroup.ID,
+						StartPort:       portValPtr(8000),
+						EndPort:         portValPtr(8888),
+						Protocol:        nonEmptyStringPtr("tcp"),
 					}),
-					testAccCheckSecurityGroupIngressRuleExists(sg, &egoscale.IngressRule{
-						SecurityGroupName: "default",
-						StartPort:         8000,
-						EndPort:           8888,
-						Protocol:          "TCP",
+					testAccCheckSecurityGroupRuleExists(testSecurityGroup, &egoscale.SecurityGroupRule{
+						FlowDirection:   nonEmptyStringPtr("ingress"),
+						SecurityGroupID: defaultSecurityGroup.ID,
+						StartPort:       portValPtr(8000),
+						EndPort:         portValPtr(8888),
+						Protocol:        nonEmptyStringPtr("tcp"),
 					}),
-					testAccCheckSecurityGroupEgressRuleExists(sg, &egoscale.EgressRule{
-						CIDR:      egoscale.MustParseCIDR("192.168.0.0/24"),
-						StartPort: 44,
-						EndPort:   44,
-						Protocol:  "UDP",
+					testAccCheckSecurityGroupRuleExists(testSecurityGroup, &egoscale.SecurityGroupRule{
+						FlowDirection: nonEmptyStringPtr("egress"),
+						Network:       mustParseCIDR(t, "192.168.0.0/24"),
+						StartPort:     portValPtr(44),
+						EndPort:       portValPtr(44),
+						Protocol:      nonEmptyStringPtr("udp"),
 					}),
-					testAccCheckSecurityGroupEgressRuleExists(sg, &egoscale.EgressRule{
-						CIDR:      egoscale.MustParseCIDR("::/0"),
-						StartPort: 44,
-						EndPort:   44,
-						Protocol:  "UDP",
+					testAccCheckSecurityGroupRuleExists(testSecurityGroup, &egoscale.SecurityGroupRule{
+						FlowDirection: nonEmptyStringPtr("egress"),
+						Network:       mustParseCIDR(t, "::/0"),
+						StartPort:     portValPtr(44),
+						EndPort:       portValPtr(44),
+						Protocol:      nonEmptyStringPtr("udp"),
 					}),
-					testAccCheckSecurityGroupEgressRuleExists(sg, &egoscale.EgressRule{
-						CIDR:      egoscale.MustParseCIDR("192.168.0.0/24"),
-						StartPort: 2375,
-						EndPort:   2377,
-						Protocol:  "UDP",
+					testAccCheckSecurityGroupRuleExists(testSecurityGroup, &egoscale.SecurityGroupRule{
+						FlowDirection: nonEmptyStringPtr("egress"),
+						Network:       mustParseCIDR(t, "192.168.0.0/24"),
+						StartPort:     portValPtr(2375),
+						EndPort:       portValPtr(2377),
+						Protocol:      nonEmptyStringPtr("udp"),
 					}),
-					testAccCheckSecurityGroupEgressRuleExists(sg, &egoscale.EgressRule{
-						CIDR:      egoscale.MustParseCIDR("::/0"),
-						StartPort: 2375,
-						EndPort:   2377,
-						Protocol:  "UDP",
+					testAccCheckSecurityGroupRuleExists(testSecurityGroup, &egoscale.SecurityGroupRule{
+						FlowDirection: nonEmptyStringPtr("egress"),
+						Network:       mustParseCIDR(t, "::/0"),
+						StartPort:     portValPtr(2375),
+						EndPort:       portValPtr(2377),
+						Protocol:      nonEmptyStringPtr("udp"),
 					}),
-					testAccCheckSecurityGroupEgressRuleExists(sg, &egoscale.EgressRule{
-						SecurityGroupName: "default",
-						StartPort:         44,
-						EndPort:           44,
-						Protocol:          "UDP",
+					testAccCheckSecurityGroupRuleExists(testSecurityGroup, &egoscale.SecurityGroupRule{
+						FlowDirection:   nonEmptyStringPtr("egress"),
+						SecurityGroupID: defaultSecurityGroup.ID,
+						StartPort:       portValPtr(44),
+						EndPort:         portValPtr(44),
+						Protocol:        nonEmptyStringPtr("udp"),
 					}),
-					testAccCheckSecurityGroupEgressRuleExists(sg, &egoscale.EgressRule{
-						SecurityGroupName: "default",
-						StartPort:         2375,
-						EndPort:           2377,
-						Protocol:          "UDP",
+					testAccCheckSecurityGroupRuleExists(testSecurityGroup, &egoscale.SecurityGroupRule{
+						FlowDirection:   nonEmptyStringPtr("egress"),
+						SecurityGroupID: defaultSecurityGroup.ID,
+						StartPort:       portValPtr(2375),
+						EndPort:         portValPtr(2377),
+						Protocol:        nonEmptyStringPtr("udp"),
 					}),
 				),
 			},
 			{
 				Config: testAccResourceSecurityGroupRulesConfigUpdate,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckResourceSecurityGroupExists("exoscale_security_group.sg", sg),
-					testAccCheckSecurityGroupHasManyRules(16),
-					testAccCheckSecurityGroupIngressRuleExists(sg, &egoscale.IngressRule{
-						SecurityGroupName: testAccResourceSecurityGroupRulesSecurityGroupName,
-						StartPort:         2222,
-						EndPort:           2222,
-						Protocol:          "TCP",
+					testAccCheckResourceSecurityGroupExists("exoscale_security_group.test", testSecurityGroup),
+					testAccCheckResourceSecurityGroupExists("data.exoscale_security_group.default", defaultSecurityGroup),
+					func(_ *terraform.State) error {
+						require.NotNil(t, testSecurityGroup.ID)
+						require.NotNil(t, defaultSecurityGroup.ID)
+						return nil
+					},
+					testAccCheckResourceSecurityGroupExists("exoscale_security_group.test", testSecurityGroup),
+					testAccCheckSecurityGroupRuleExists(testSecurityGroup, &egoscale.SecurityGroupRule{
+						FlowDirection:   nonEmptyStringPtr("ingress"),
+						SecurityGroupID: testSecurityGroup.ID,
+						StartPort:       portValPtr(2222),
+						EndPort:         portValPtr(2222),
+						Protocol:        nonEmptyStringPtr("tcp"),
 					}),
-					testAccCheckSecurityGroupIngressRuleExists(sg, &egoscale.IngressRule{
-						SecurityGroupName: "default",
-						StartPort:         2222,
-						EndPort:           2222,
-						Protocol:          "TCP",
+					testAccCheckSecurityGroupRuleExists(testSecurityGroup, &egoscale.SecurityGroupRule{
+						FlowDirection:   nonEmptyStringPtr("ingress"),
+						SecurityGroupID: defaultSecurityGroup.ID,
+						StartPort:       portValPtr(2222),
+						EndPort:         portValPtr(2222),
+						Protocol:        nonEmptyStringPtr("tcp"),
 					}),
-					testAccCheckSecurityGroupEgressRuleExists(sg, &egoscale.EgressRule{
-						CIDR:      egoscale.MustParseCIDR("192.168.0.0/24"),
-						StartPort: 4444,
-						EndPort:   4444,
-						Protocol:  "UDP",
+					testAccCheckSecurityGroupRuleExists(testSecurityGroup, &egoscale.SecurityGroupRule{
+						FlowDirection:   nonEmptyStringPtr("egress"),
+						SecurityGroupID: defaultSecurityGroup.ID,
+						StartPort:       portValPtr(44),
+						EndPort:         portValPtr(44),
+						Protocol:        nonEmptyStringPtr("udp"),
 					}),
-					testAccCheckSecurityGroupEgressRuleExists(sg, &egoscale.EgressRule{
-						CIDR:      egoscale.MustParseCIDR("::/0"),
-						StartPort: 4444,
-						EndPort:   4444,
-						Protocol:  "UDP",
+					testAccCheckSecurityGroupRuleExists(testSecurityGroup, &egoscale.SecurityGroupRule{
+						FlowDirection: nonEmptyStringPtr("egress"),
+						Network:       mustParseCIDR(t, "::/0"),
+						StartPort:     portValPtr(44),
+						EndPort:       portValPtr(44),
+						Protocol:      nonEmptyStringPtr("udp"),
 					}),
-					testAccCheckSecurityGroupEgressRuleExists(sg, &egoscale.EgressRule{
-						SecurityGroupName: "default",
-						StartPort:         4444,
-						EndPort:           4444,
-						Protocol:          "UDP",
+					testAccCheckSecurityGroupRuleExists(testSecurityGroup, &egoscale.SecurityGroupRule{
+						FlowDirection:   nonEmptyStringPtr("egress"),
+						SecurityGroupID: defaultSecurityGroup.ID,
+						StartPort:       portValPtr(44),
+						EndPort:         portValPtr(44),
+						Protocol:        nonEmptyStringPtr("udp"),
 					}),
 				),
 			},
@@ -264,88 +351,95 @@ func TestAccResourceSecurityGroupRules(t *testing.T) {
 	})
 }
 
-func testAccCheckSecurityGroupHasManyRules(quantity int) resource.TestCheckFunc {
+func testAccCheckSecurityGroupHasManyRules(expected int) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		for _, rs := range s.RootModule().Resources {
 			if rs.Type != "exoscale_security_group_rules" {
 				continue
 			}
 
-			total := 0
-			for k, id := range rs.Primary.Attributes {
+			actual := 0
+			for k, v := range rs.Primary.Attributes {
 				if strings.HasSuffix(k, ".ids.#") {
-					count, _ := strconv.Atoi(id)
-					total += count
+					count, _ := strconv.Atoi(v)
+					actual += count
 				}
 			}
 
-			if total != quantity {
-				return fmt.Errorf("number of rules doesn't match, want %d != has %d", quantity, total)
+			if actual != expected {
+				return fmt.Errorf("number of rules doesn't match, want %d != got %d", expected, actual)
 			}
 
 			return nil
 		}
 
-		return errors.New("Could not find any security group rules")
+		return errors.New("could not find any Security Group rules")
 	}
 }
 
-func testAccCheckSecurityGroupIngressRuleExists(sg *egoscale.SecurityGroup, rule *egoscale.IngressRule) resource.TestCheckFunc {
+func testAccCheckSecurityGroupRuleExists(
+	securityGroup *egoscale.SecurityGroup,
+	expected *egoscale.SecurityGroupRule,
+) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		for _, r := range sg.IngressRule {
-			if strings.EqualFold(r.Protocol, rule.Protocol) && r.StartPort == rule.StartPort && r.EndPort == rule.EndPort && r.IcmpCode == rule.IcmpCode && r.IcmpType == rule.IcmpType {
-				if r.CIDR != nil && rule.CIDR != nil && r.CIDR.Equal(*rule.CIDR) {
+		for _, r := range securityGroup.Rules {
+			if *r.FlowDirection == *expected.FlowDirection && *r.Protocol == *expected.Protocol {
+				if strings.HasPrefix(*r.Protocol, "icmp") &&
+					*r.ICMPCode == *expected.ICMPCode && *r.ICMPType == *expected.ICMPType {
 					return nil
 				}
-				if r.SecurityGroupName != "" && r.SecurityGroupName == rule.SecurityGroupName {
-					return nil
-				}
-			}
-		}
 
-		return fmt.Errorf("rule not found %#v", rule)
-	}
-}
-
-func testAccCheckSecurityGroupEgressRuleExists(sg *egoscale.SecurityGroup, rule *egoscale.EgressRule) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		for _, r := range sg.EgressRule {
-			if strings.EqualFold(r.Protocol, rule.Protocol) && r.StartPort == rule.StartPort && r.EndPort == rule.EndPort && r.IcmpCode == rule.IcmpCode && r.IcmpType == rule.IcmpType {
-				if r.CIDR != nil && rule.CIDR != nil && r.CIDR.Equal(*rule.CIDR) {
+				if r.StartPort != nil && expected.StartPort != nil &&
+					*r.StartPort == *expected.StartPort && *r.EndPort == *expected.EndPort {
 					return nil
 				}
-				if r.SecurityGroupName != "" && r.SecurityGroupName == rule.SecurityGroupName {
+
+				if r.Network != nil && expected.Network != nil &&
+					r.Network.String() == expected.Network.String() {
+					return nil
+				}
+
+				if defaultString(r.SecurityGroupID, "") == defaultString(expected.SecurityGroupID, "") {
 					return nil
 				}
 			}
 		}
 
-		return fmt.Errorf("rule not found %#v", rule)
+		return fmt.Errorf("rule %s not found",
+			fmt.Sprintf(
+				"%s/protocol=%s/startport=%d/endport=%d/%s",
+				*expected.FlowDirection,
+				func() string {
+					if strings.HasPrefix(*expected.Protocol, "icmp") {
+						return fmt.Sprintf(
+							"%s(type:%d,code:%d)",
+							*expected.Protocol,
+							*expected.ICMPType,
+							*expected.ICMPType,
+						)
+					}
+					return *expected.Protocol
+				}(),
+				func() uint16 {
+					if expected.StartPort != nil {
+						return *expected.StartPort
+					}
+					return 0
+				}(),
+				func() uint16 {
+					if expected.EndPort != nil {
+						return *expected.EndPort
+					}
+					return 0
+				}(),
+				func() string {
+					if expected.Network != nil {
+						return "network=" + expected.Network.String()
+					} else {
+						return "securitygroupid=" + *expected.SecurityGroupID
+					}
+				}(),
+			),
+		)
 	}
-}
-
-func testAccCheckResourceSecurityGroupRulesDestroy(s *terraform.State) error {
-	client := GetComputeClient(testAccProvider.Meta())
-
-	for _, rs := range s.RootModule().Resources {
-		if rs.Type != "exoscale_security_group_rules" {
-			continue
-		}
-
-		sgID, err := egoscale.ParseUUID(rs.Primary.Attributes["security_group_id"])
-		if err != nil {
-			return err
-		}
-
-		sg := &egoscale.SecurityGroup{ID: sgID}
-		_, err = client.Get(sg)
-		if err != nil {
-			if errors.Is(err, egoscale.ErrNotFound) {
-				return nil
-			}
-			return err
-		}
-	}
-
-	return errors.New("Security Group Rules still exist")
 }

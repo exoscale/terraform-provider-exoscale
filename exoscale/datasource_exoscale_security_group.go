@@ -2,72 +2,78 @@ package exoscale
 
 import (
 	"context"
-	"errors"
-	"fmt"
+	"log"
 
-	"github.com/exoscale/egoscale"
+	exoapi "github.com/exoscale/egoscale/v2/api"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+)
+
+const (
+	dsSecurityGroupAttrID   = "id"
+	dsSecurityGroupAttrName = "name"
 )
 
 func dataSourceSecurityGroup() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			"id": {
+			dsSecurityGroupAttrID: {
 				Type:          schema.TypeString,
-				Description:   "ID of the Security Group",
 				Optional:      true,
-				ConflictsWith: []string{"name"},
+				ConflictsWith: []string{dsSecurityGroupAttrName},
 			},
-			"name": {
+			dsSecurityGroupAttrName: {
 				Type:          schema.TypeString,
-				Description:   "Name of the Security Group",
 				Optional:      true,
-				ConflictsWith: []string{"id"},
+				ConflictsWith: []string{dsSecurityGroupAttrID},
 			},
 		},
 
-		Read: dataSourceSecurityGroupRead,
+		ReadContext: dataSourceSecurityGroupRead,
 	}
 }
 
-func dataSourceSecurityGroupRead(d *schema.ResourceData, meta interface{}) error {
-	var err error
+func dataSourceSecurityGroupRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	log.Printf("[DEBUG] %s: beginning read", resourceSecurityGroupIDString(d))
 
-	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutCreate))
+	zone := defaultZone
+
+	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
 	client := GetComputeClient(meta)
 
-	req := egoscale.ListSecurityGroups{}
-
-	sgName, byName := d.GetOk("name")
-	sgID, byID := d.GetOk("id")
-	if !byName && !byID {
-		return errors.New("either name or id must be specified")
+	securityGroupID, bySecurityGroupID := d.GetOk(dsSecurityGroupAttrID)
+	securityGroupName, bySecurityGroupName := d.GetOk(dsSecurityGroupAttrName)
+	if !bySecurityGroupID && !bySecurityGroupName {
+		return diag.Errorf(
+			"either %s or %s must be specified",
+			dsSecurityGroupAttrName,
+			dsSecurityGroupAttrID,
+		)
 	}
 
-	req.SecurityGroupName = sgName.(string)
-
-	if sgID != "" {
-		if req.ID, err = egoscale.ParseUUID(sgID.(string)); err != nil {
-			return fmt.Errorf("invalid value for id: %s", err)
-		}
-	}
-
-	resp, err := client.GetWithContext(ctx, &req)
+	securityGroup, err := client.FindSecurityGroup(
+		ctx,
+		zone, func() string {
+			if bySecurityGroupID {
+				return securityGroupID.(string)
+			}
+			return securityGroupName.(string)
+		}(),
+	)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
-	sg := resp.(*egoscale.SecurityGroup)
 
-	d.SetId(sg.ID.String())
+	d.SetId(*securityGroup.ID)
 
-	if err := d.Set("id", d.Id()); err != nil {
-		return err
+	if err := d.Set(dsSecurityGroupAttrName, *securityGroup.Name); err != nil {
+		return diag.FromErr(err)
 	}
-	if err := d.Set("name", sg.Name); err != nil {
-		return err
-	}
+
+	log.Printf("[DEBUG] %s: read finished successfully", resourceSecurityGroupIDString(d))
 
 	return nil
 }

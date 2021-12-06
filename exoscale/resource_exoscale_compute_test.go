@@ -133,7 +133,6 @@ EOF
 )
 
 func TestAccResourceCompute(t *testing.T) {
-	sg := new(egoscale.SecurityGroup)
 	vm := new(egoscale.VirtualMachine)
 
 	resource.Test(t, resource.TestCase{
@@ -182,7 +181,6 @@ func TestAccResourceCompute(t *testing.T) {
 			{
 				Config: testAccResourceComputeConfigUpdate,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckResourceSecurityGroupExists("exoscale_security_group.sg", sg),
 					testAccCheckResourceComputeExists("exoscale_compute.vm", vm),
 					testAccCheckResourceCompute(vm),
 					testAccCheckResourceComputeAttributes(testAttrs{

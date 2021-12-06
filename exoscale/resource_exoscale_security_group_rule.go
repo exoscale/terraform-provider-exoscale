@@ -5,16 +5,41 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net"
 	"strings"
 
-	"github.com/exoscale/egoscale"
+	egoscale "github.com/exoscale/egoscale/v2"
+	exoapi "github.com/exoscale/egoscale/v2/api"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-// supportedProtocols contains the allowed protocols
-var supportedProtocols = []string{
-	"TCP", "UDP", "ICMP", "ICMPv6", "AH", "ESP", "GRE", "IPIP", "ALL",
+const (
+	resSecurityGroupRuleAttrNetwork               = "cidr"
+	resSecurityGroupRuleAttrDescription           = "description"
+	resSecurityGroupRuleAttrEndPort               = "end_port"
+	resSecurityGroupRuleAttrFlowDirection         = "type"
+	resSecurityGroupRuleAttrICMPCode              = "icmp_code"
+	resSecurityGroupRuleAttrICMPType              = "icmp_type"
+	resSecurityGroupRuleAttrProtocol              = "protocol"
+	resSecurityGroupRuleAttrSecurityGroupID       = "security_group_id"
+	resSecurityGroupRuleAttrSecurityGroupName     = "security_group"
+	resSecurityGroupRuleAttrStartPort             = "start_port"
+	resSecurityGroupRuleAttrUserSecurityGroupID   = "user_security_group_id"
+	resSecurityGroupRuleAttrUserSecurityGroupName = "user_security_group"
+)
+
+var securityGroupRuleProtocols = []string{
+	"AH",
+	"ALL",
+	"ESP",
+	"GRE",
+	"ICMP",
+	"ICMPv6",
+	"IPIP",
+	"TCP",
+	"UDP",
 }
 
 func resourceSecurityGroupRuleIDString(d resourceIDStringer) string {
@@ -24,95 +49,127 @@ func resourceSecurityGroupRuleIDString(d resourceIDStringer) string {
 func resourceSecurityGroupRule() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			"type": {
-				Type:         schema.TypeString,
-				Required:     true,
-				ForceNew:     true,
-				ValidateFunc: validation.StringInSlice([]string{"INGRESS", "EGRESS"}, true),
-			},
-			"security_group_id": {
-				Type:          schema.TypeString,
-				Optional:      true,
-				Computed:      true,
-				ForceNew:      true,
-				ConflictsWith: []string{"security_group"},
-			},
-			"security_group": {
-				Type:          schema.TypeString,
-				Optional:      true,
-				Computed:      true,
-				ForceNew:      true,
-				ConflictsWith: []string{"security_group_id"},
-			},
-			"description": {
+			resSecurityGroupRuleAttrDescription: {
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
 			},
-			"cidr": {
-				Type:          schema.TypeString,
-				Optional:      true,
-				ForceNew:      true,
-				ValidateFunc:  validation.IsCIDRNetwork(0, 128),
-				ConflictsWith: []string{"user_security_group", "user_security_group_id"},
+			resSecurityGroupRuleAttrEndPort: {
+				Type:         schema.TypeInt,
+				Optional:     true,
+				ForceNew:     true,
+				ValidateFunc: validation.IntBetween(0, 65535),
+				ConflictsWith: []string{
+					resSecurityGroupRuleAttrICMPCode,
+					resSecurityGroupRuleAttrICMPType,
+				},
 			},
-			"protocol": {
+			resSecurityGroupRuleAttrFlowDirection: {
+				Type:         schema.TypeString,
+				Required:     true,
+				ForceNew:     true,
+				ValidateFunc: validation.StringInSlice([]string{"INGRESS", "EGRESS"}, false),
+			},
+			resSecurityGroupRuleAttrICMPCode: {
+				Type:         schema.TypeInt,
+				Optional:     true,
+				ForceNew:     true,
+				ValidateFunc: validation.IntBetween(0, 255),
+				ConflictsWith: []string{
+					resSecurityGroupRuleAttrEndPort,
+					resSecurityGroupRuleAttrStartPort,
+				},
+			},
+			resSecurityGroupRuleAttrICMPType: {
+				Type:         schema.TypeInt,
+				Optional:     true,
+				ForceNew:     true,
+				ValidateFunc: validation.IntBetween(0, 255),
+				ConflictsWith: []string{
+					resSecurityGroupRuleAttrEndPort,
+					resSecurityGroupRuleAttrStartPort,
+				},
+			},
+			resSecurityGroupRuleAttrNetwork: {
 				Type:         schema.TypeString,
 				Optional:     true,
-				Default:      "TCP",
 				ForceNew:     true,
-				ValidateFunc: validation.StringInSlice(supportedProtocols, true),
+				ValidateFunc: validation.IsCIDRNetwork(0, 128),
+				ConflictsWith: []string{
+					resSecurityGroupRuleAttrUserSecurityGroupID,
+					resSecurityGroupRuleAttrUserSecurityGroupName,
+				},
 			},
-			"start_port": {
-				Type:          schema.TypeInt,
-				Optional:      true,
-				ForceNew:      true,
-				ValidateFunc:  validation.IntBetween(0, 65535),
-				ConflictsWith: []string{"icmp_type", "icmp_code"},
+			resSecurityGroupRuleAttrProtocol: {
+				Type:         schema.TypeString,
+				Optional:     true,
+				ForceNew:     true,
+				Default:      "TCP",
+				ValidateFunc: validation.StringInSlice(securityGroupRuleProtocols, true),
 			},
-			"end_port": {
-				Type:          schema.TypeInt,
-				Optional:      true,
-				ForceNew:      true,
-				ValidateFunc:  validation.IntBetween(0, 65535),
-				ConflictsWith: []string{"icmp_type", "icmp_code"},
-			},
-			"icmp_type": {
-				Type:          schema.TypeInt,
-				Optional:      true,
-				ForceNew:      true,
-				ValidateFunc:  validation.IntBetween(-1, 255),
-				ConflictsWith: []string{"start_port", "end_port"},
-			},
-			"icmp_code": {
-				Type:          schema.TypeInt,
-				Optional:      true,
-				ForceNew:      true,
-				ValidateFunc:  validation.IntBetween(-1, 255),
-				ConflictsWith: []string{"start_port", "end_port"},
-			},
-			"user_security_group_id": {
-				Type:          schema.TypeString,
-				Optional:      true,
-				ForceNew:      true,
-				ConflictsWith: []string{"cidr", "user_security_group"},
-			},
-			"user_security_group": {
+			resSecurityGroupRuleAttrSecurityGroupID: {
 				Type:          schema.TypeString,
 				Optional:      true,
 				Computed:      true,
 				ForceNew:      true,
-				ConflictsWith: []string{"cidr", "user_security_group_id"},
+				ConflictsWith: []string{resSecurityGroupRuleAttrSecurityGroupName},
+			},
+			resSecurityGroupRuleAttrSecurityGroupName: {
+				Type:          schema.TypeString,
+				Optional:      true,
+				Computed:      true,
+				ForceNew:      true,
+				ConflictsWith: []string{resSecurityGroupRuleAttrSecurityGroupID},
+			},
+			resSecurityGroupRuleAttrStartPort: {
+				Type:         schema.TypeInt,
+				Optional:     true,
+				ForceNew:     true,
+				ValidateFunc: validation.IntBetween(0, 65535),
+				ConflictsWith: []string{
+					resSecurityGroupRuleAttrICMPCode,
+					resSecurityGroupRuleAttrICMPType,
+				},
+			},
+			resSecurityGroupRuleAttrUserSecurityGroupID: {
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+				ConflictsWith: []string{
+					resSecurityGroupRuleAttrNetwork,
+					resSecurityGroupRuleAttrUserSecurityGroupName,
+				},
+			},
+			resSecurityGroupRuleAttrUserSecurityGroupName: {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+				ForceNew: true,
+				ConflictsWith: []string{
+					resSecurityGroupRuleAttrNetwork,
+					resSecurityGroupRuleAttrUserSecurityGroupID,
+				},
 			},
 		},
 
-		Create: resourceSecurityGroupRuleCreate,
-		Read:   resourceSecurityGroupRuleRead,
-		Delete: resourceSecurityGroupRuleDelete,
-		Exists: resourceSecurityGroupRuleExists,
+		CreateContext: resourceSecurityGroupRuleCreate,
+		ReadContext:   resourceSecurityGroupRuleRead,
+		DeleteContext: resourceSecurityGroupRuleDelete,
 
 		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
+			StateContext: func(ctx context.Context, d *schema.ResourceData, _ interface{}) ([]*schema.ResourceData, error) {
+				parts := strings.SplitN(d.Id(), "/", 2)
+				if len(parts) != 2 {
+					return nil, fmt.Errorf(`invalid ID %q, expected format "<SECURITY-GROUP-ID>/<SECURITY-GROUP-RULE-ID>"`, d.Id())
+				}
+
+				d.SetId(parts[1])
+				if err := d.Set(resSecurityGroupRuleAttrSecurityGroupID, parts[0]); err != nil {
+					return nil, err
+				}
+
+				return []*schema.ResourceData{d}, nil
+			},
 		},
 
 		Timeouts: &schema.ResourceTimeout{
@@ -123,268 +180,181 @@ func resourceSecurityGroupRule() *schema.Resource {
 	}
 }
 
-func resourceSecurityGroupRuleCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceSecurityGroupRuleCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	log.Printf("[DEBUG] %s: beginning create", resourceSecurityGroupRuleIDString(d))
 
-	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutCreate))
+	zone := defaultZone
+
+	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutCreate))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
 	client := GetComputeClient(meta)
 
-	sg, err := inferSecurityGroup(d)
-	if err != nil {
-		return err
+	securityGroupID, bySecurityGroupID := d.GetOk(resSecurityGroupRuleAttrSecurityGroupID)
+	securityGroupName, bySecurityGroupName := d.GetOk(resSecurityGroupRuleAttrSecurityGroupName)
+	if !bySecurityGroupID && !bySecurityGroupName {
+		return diag.Errorf(
+			"either %s or %s must be specified",
+			resSecurityGroupRuleAttrSecurityGroupName,
+			resSecurityGroupRuleAttrSecurityGroupID,
+		)
 	}
 
-	resp, err := client.GetWithContext(ctx, sg)
-	if err != nil {
-		return err
-	}
-
-	securityGroup := resp.(*egoscale.SecurityGroup)
-
-	cidrList := make([]egoscale.CIDR, 0)
-	groupList := make([]egoscale.UserSecurityGroup, 0)
-
-	cidr, cidrOk := d.GetOk("cidr")
-	if cidrOk {
-		c, err := egoscale.ParseCIDR(cidr.(string))
-		if err != nil {
-			return err
-		}
-		cidrList = append(cidrList, *c)
-	} else {
-		userSecurityGroupID := d.Get("user_security_group_id").(string)
-		userSecurityGroupName := d.Get("user_security_group").(string)
-
-		if userSecurityGroupID == "" && userSecurityGroupName == "" {
-			return errors.New("No CIDR, User Security Group ID or Name were provided")
-		}
-
-		group := &egoscale.SecurityGroup{
-			Name: userSecurityGroupName,
-		}
-
-		if userSecurityGroupID != "" {
-			id, err := egoscale.ParseUUID(userSecurityGroupID)
-			if err != nil {
-				return err
+	securityGroup, err := client.FindSecurityGroup(
+		ctx,
+		zone, func() string {
+			if bySecurityGroupID {
+				return securityGroupID.(string)
 			}
-			group.ID = id
-		}
-
-		resp, err := client.GetWithContext(ctx, group)
-		if err != nil {
-			return err
-		}
-
-		g := resp.(*egoscale.SecurityGroup)
-		groupList = append(groupList, g.UserSecurityGroup())
-	}
-
-	var req egoscale.Command // nolint: megacheck
-	req = &egoscale.AuthorizeSecurityGroupIngress{
-		SecurityGroupID:       securityGroup.ID,
-		CIDRList:              cidrList,
-		Description:           d.Get("description").(string),
-		Protocol:              d.Get("protocol").(string),
-		EndPort:               (uint16)(d.Get("end_port").(int)),
-		StartPort:             (uint16)(d.Get("start_port").(int)),
-		IcmpType:              d.Get("icmp_type").(int),
-		IcmpCode:              d.Get("icmp_code").(int),
-		UserSecurityGroupList: groupList,
-	}
-
-	trafficType := strings.ToUpper(d.Get("type").(string))
-	if trafficType == "EGRESS" {
-		req = (*egoscale.AuthorizeSecurityGroupEgress)(req.(*egoscale.AuthorizeSecurityGroupIngress))
-	}
-
-	resp, err = client.RequestWithContext(ctx, req)
+			return securityGroupName.(string)
+		}(),
+	)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
-	sg = resp.(*egoscale.SecurityGroup)
-
-	// The rule allowed for creation produces only one rule!
-	if err := d.Set("type", trafficType); err != nil {
-		return err
+	securityGroupRule := &egoscale.SecurityGroupRule{
+		Description:   nonEmptyStringPtr(d.Get(resSecurityGroupRuleAttrDescription).(string)),
+		FlowDirection: nonEmptyStringPtr(strings.ToLower(d.Get(resSecurityGroupRuleAttrFlowDirection).(string))),
+		Protocol:      nonEmptyStringPtr(strings.ToLower(d.Get(resSecurityGroupRuleAttrProtocol).(string))),
 	}
-	if trafficType == "EGRESS" {
-		if len(sg.EgressRule) != 1 {
-			return errors.New("no security group rules were created, aborting")
+
+	if v, ok := d.GetOk(resSecurityGroupRuleAttrEndPort); ok && v.(int) > 0 {
+		port := uint16(v.(int))
+		securityGroupRule.EndPort = &port
+	}
+
+	if strings.HasPrefix(*securityGroupRule.Protocol, "icmp") {
+		icmpCode := int64(d.Get(resSecurityGroupRuleAttrICMPCode).(int))
+		icmpType := int64(d.Get(resSecurityGroupRuleAttrICMPType).(int))
+		securityGroupRule.ICMPCode = &icmpCode
+		securityGroupRule.ICMPType = &icmpType
+	}
+
+	if v, ok := d.GetOk(resSecurityGroupRuleAttrNetwork); ok {
+		_, network, err := net.ParseCIDR(v.(string))
+		if err != nil {
+			return diag.FromErr(err)
 		}
+		securityGroupRule.Network = network
+	} else {
+		userSecurityGroupID, byID := d.GetOk(resSecurityGroupRuleAttrUserSecurityGroupID)
+		userSecurityGroupName, _ := d.GetOk(resSecurityGroupRuleAttrUserSecurityGroupName)
 
-		return resourceSecurityGroupRuleApply(d, securityGroup, sg.EgressRule[0])
+		userSecurityGroup, err := client.FindSecurityGroup(
+			ctx,
+			zone, func() string {
+				if byID {
+					return userSecurityGroupID.(string)
+				}
+				return userSecurityGroupName.(string)
+			}(),
+		)
+		if err != nil {
+			return diag.Errorf("unable to retrieve Security Group: %v", err)
+		}
+		securityGroupRule.SecurityGroupID = userSecurityGroup.ID
 	}
 
-	if len(sg.IngressRule) != 1 {
-		return errors.New("no security group rules were created, aborting")
+	if v, ok := d.GetOk(resSecurityGroupRuleAttrStartPort); ok && v.(int) > 0 {
+		port := uint16(v.(int))
+		securityGroupRule.StartPort = &port
 	}
+
+	securityGroupRule, err = client.CreateSecurityGroupRule(ctx, zone, securityGroup, securityGroupRule)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	d.SetId(*securityGroupRule.ID)
 
 	log.Printf("[DEBUG] %s: create finished successfully", resourceSecurityGroupRuleIDString(d))
 
-	// FIXME: use resourceSecurityGroupRuleRead()
-	return resourceSecurityGroupRuleApply(d, securityGroup, (egoscale.EgressRule)(sg.IngressRule[0]))
+	return resourceSecurityGroupRuleRead(ctx, d, meta)
 }
 
-func resourceSecurityGroupRuleExists(d *schema.ResourceData, meta interface{}) (bool, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
-	defer cancel()
-
-	client := GetComputeClient(meta)
-
-	sg, err := inferSecurityGroup(d)
-	if err != nil {
-		return false, err
-	}
-
-	var ingressRule egoscale.IngressRule
-	var egressRule egoscale.EgressRule
-
-	id := d.Id()
-	req, err := sg.ListRequest()
-	if err != nil {
-		return false, err
-	}
-	client.PaginateWithContext(ctx, req, func(i interface{}, e error) bool {
-		if e != nil {
-			err = e
-			return false
-		}
-
-		s, ok := i.(*egoscale.SecurityGroup)
-		if !ok {
-			err = fmt.Errorf("type SecurityGroup was expected got %T", i)
-			return false
-		}
-
-		for _, rule := range s.EgressRule {
-			if rule.RuleID.String() == id {
-				sg = s
-				egressRule = rule
-				return false
-			}
-		}
-		for _, rule := range s.IngressRule {
-			if rule.RuleID.String() == id {
-				sg = s
-				ingressRule = rule
-				return false
-			}
-		}
-
-		return true
-	})
-
-	if err != nil {
-		e := handleNotFound(d, err)
-		return d.Id() != "", e
-	}
-
-	if egressRule.RuleID != nil || ingressRule.RuleID != nil {
-		return true, nil
-	}
-
-	return false, nil
-}
-
-func resourceSecurityGroupRuleRead(d *schema.ResourceData, meta interface{}) error {
+func resourceSecurityGroupRuleRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	log.Printf("[DEBUG] %s: beginning read", resourceSecurityGroupRuleIDString(d))
 
-	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
+	zone := defaultZone
+
+	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
 	client := GetComputeClient(meta)
 
-	sg, err := inferSecurityGroup(d)
-	if err != nil {
-		return err
-	}
-
-	var ingressRule egoscale.IngressRule
-	var egressRule egoscale.EgressRule
-
-	id := d.Id()
-	req, err := sg.ListRequest()
-	if err != nil {
-		return err
-	}
-	client.PaginateWithContext(ctx, req, func(i interface{}, e error) bool {
-		if e != nil {
-			err = e
-			return false
-		}
-
-		s, ok := i.(*egoscale.SecurityGroup)
-		if !ok {
-			err = fmt.Errorf("type SecurityGroup was expected got %T", i)
-			return false
-		}
-
-		for _, rule := range s.EgressRule {
-			if rule.RuleID.String() == id {
-				sg = s
-				egressRule = rule
-				return false
+	securityGroup, err := client.FindSecurityGroup(
+		ctx,
+		zone, func() string {
+			if v, ok := d.GetOk(resSecurityGroupRuleAttrSecurityGroupID); ok {
+				return v.(string)
+			} else {
+				return d.Get(resSecurityGroupRuleAttrSecurityGroupName).(string)
 			}
-		}
-		for _, rule := range s.IngressRule {
-			if rule.RuleID.String() == id {
-				sg = s
-				ingressRule = rule
-				return false
-			}
-		}
-
-		return true
-	})
-
+		}(),
+	)
 	if err != nil {
-		return handleNotFound(d, err)
+		if errors.Is(err, exoapi.ErrNotFound) {
+			// Parent Security Group doesn't exist anymore, so does the Security Group rule.
+			d.SetId("")
+			return nil
+		}
+		return diag.FromErr(err)
 	}
 
-	if egressRule.RuleID != nil {
-		d.Set("type", "EGRESS") // nolint: errcheck
-		return resourceSecurityGroupRuleApply(d, sg, egressRule)
+	var securityGroupRule *egoscale.SecurityGroupRule
+	for _, r := range securityGroup.Rules {
+		if *r.ID == d.Id() {
+			securityGroupRule = r
+			break
+		}
 	}
-
-	if ingressRule.RuleID != nil {
-		d.Set("type", "INGRESS") // nolint: errcheck
-		return resourceSecurityGroupRuleApply(d, sg, (egoscale.EgressRule)(ingressRule))
+	if securityGroupRule == nil {
+		// Resource doesn't exist anymore, signaling the core to remove it from the state.
+		d.SetId("")
+		return nil
 	}
-
-	d.SetId("")
 
 	log.Printf("[DEBUG] %s: read finished successfully", resourceSecurityGroupRuleIDString(d))
 
-	return nil
+	return diag.FromErr(resourceSecurityGroupRuleApply(ctx, d, meta, securityGroup, securityGroupRule))
 }
 
-func resourceSecurityGroupRuleDelete(d *schema.ResourceData, meta interface{}) error {
-	var req egoscale.Command
-
+func resourceSecurityGroupRuleDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	log.Printf("[DEBUG] %s: beginning delete", resourceSecurityGroupRuleIDString(d))
 
-	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutDelete))
+	zone := defaultZone
+
+	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutDelete))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
 	client := GetComputeClient(meta)
 
-	id, err := egoscale.ParseUUID(d.Id())
+	securityGroup, err := client.FindSecurityGroup(
+		ctx,
+		zone, func() string {
+			if v, ok := d.GetOk(resSecurityGroupRuleAttrSecurityGroupID); ok {
+				return v.(string)
+			} else {
+				return d.Get(resSecurityGroupRuleAttrSecurityGroupName).(string)
+			}
+		}(),
+	)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
-	if d.Get("type").(string) == "EGRESS" {
-		req = &egoscale.RevokeSecurityGroupEgress{ID: id}
-	} else {
-		req = &egoscale.RevokeSecurityGroupIngress{ID: id}
-	}
-
-	if err := client.BooleanRequestWithContext(ctx, req); err != nil {
-		return err
+	securityGroupRuleID := d.Id()
+	if err := client.DeleteSecurityGroupRule(
+		ctx,
+		zone,
+		securityGroup,
+		&egoscale.SecurityGroupRule{ID: &securityGroupRuleID},
+	); err != nil {
+		return diag.FromErr(err)
 	}
 
 	log.Printf("[DEBUG] %s: delete finished successfully", resourceSecurityGroupRuleIDString(d))
@@ -392,63 +362,99 @@ func resourceSecurityGroupRuleDelete(d *schema.ResourceData, meta interface{}) e
 	return nil
 }
 
-func resourceSecurityGroupRuleApply(d *schema.ResourceData, group *egoscale.SecurityGroup, rule egoscale.EgressRule) error {
-	d.SetId(rule.RuleID.String())
-	cidr := ""
-	if rule.CIDR != nil {
-		cidr = rule.CIDR.String()
-	}
+func resourceSecurityGroupRuleApply(
+	ctx context.Context,
+	d *schema.ResourceData,
+	meta interface{},
+	securityGroup *egoscale.SecurityGroup,
+	securityGroupRule *egoscale.SecurityGroupRule,
+) error {
+	zone := defaultZone
 
-	if err := d.Set("cidr", cidr); err != nil {
-		return err
-	}
-	if err := d.Set("icmp_type", rule.IcmpType); err != nil {
-		return err
-	}
-	if err := d.Set("icmp_code", rule.IcmpCode); err != nil {
-		return err
-	}
-	if err := d.Set("start_port", rule.StartPort); err != nil {
-		return err
-	}
-	if err := d.Set("end_port", rule.EndPort); err != nil {
-		return err
-	}
-	protocol := strings.ToUpper(rule.Protocol)
-	protocol = strings.ReplaceAll(protocol, "V6", "v6")
-	if err := d.Set("protocol", protocol); err != nil {
-		return err
-	}
-	if err := d.Set("user_security_group", rule.SecurityGroupName); err != nil {
+	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutCreate))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
+	defer cancel()
+
+	client := GetComputeClient(meta)
+
+	if err := d.Set(
+		resSecurityGroupRuleAttrDescription,
+		defaultString(securityGroupRule.Description, ""),
+	); err != nil {
 		return err
 	}
 
-	if err := d.Set("security_group_id", group.ID.String()); err != nil {
+	if securityGroupRule.EndPort != nil {
+		if err := d.Set(resSecurityGroupRuleAttrEndPort, *securityGroupRule.EndPort); err != nil {
+			return err
+		}
+	}
+
+	if err := d.Set(
+		resSecurityGroupRuleAttrFlowDirection,
+		strings.ToUpper(*securityGroupRule.FlowDirection),
+	); err != nil {
 		return err
 	}
-	if err := d.Set("security_group", group.Name); err != nil {
+
+	if securityGroupRule.ICMPCode != nil {
+		if err := d.Set(resSecurityGroupRuleAttrICMPCode, *securityGroupRule.ICMPCode); err != nil {
+			return err
+		}
+	}
+
+	if securityGroupRule.ICMPType != nil {
+		if err := d.Set(resSecurityGroupRuleAttrICMPType, *securityGroupRule.ICMPType); err != nil {
+			return err
+		}
+	}
+
+	if securityGroupRule.Network != nil {
+		if err := d.Set(resSecurityGroupRuleAttrNetwork, securityGroupRule.Network.String()); err != nil {
+			return err
+		}
+	}
+
+	protocol := strings.ReplaceAll(
+		strings.ToUpper(*securityGroupRule.Protocol),
+		"V6",
+		"v6",
+	)
+	if err := d.Set(resSecurityGroupRuleAttrProtocol, protocol); err != nil {
 		return err
+	}
+
+	if err := d.Set(resSecurityGroupRuleAttrSecurityGroupID, *securityGroup.ID); err != nil {
+		return err
+	}
+
+	if err := d.Set(resSecurityGroupRuleAttrSecurityGroupName, *securityGroup.Name); err != nil {
+		return err
+	}
+
+	if securityGroupRule.StartPort != nil {
+		if err := d.Set(resSecurityGroupRuleAttrStartPort, *securityGroupRule.StartPort); err != nil {
+			return err
+		}
+	}
+
+	if securityGroupRule.SecurityGroupID != nil {
+		userSecurityGroup, err := client.GetSecurityGroup(ctx, zone, *securityGroupRule.SecurityGroupID)
+		if err != nil {
+			return fmt.Errorf(
+				"unable to retrieve Security Group %s: %w",
+				*securityGroupRule.SecurityGroupID,
+				err,
+			)
+		}
+
+		if err := d.Set(resSecurityGroupRuleAttrUserSecurityGroupID, *userSecurityGroup.ID); err != nil {
+			return err
+		}
+		if err := d.Set(resSecurityGroupRuleAttrUserSecurityGroupName, *userSecurityGroup.Name); err != nil {
+			return err
+		}
 	}
 
 	return nil
-}
-
-func inferSecurityGroup(d *schema.ResourceData) (*egoscale.SecurityGroup, error) {
-	var securityGroupID *egoscale.UUID
-	var securityGroupName string
-
-	if s, ok := d.GetOk("security_group_id"); ok {
-		var err error
-		securityGroupID, err = egoscale.ParseUUID(s.(string))
-		if err != nil {
-			return nil, err
-		}
-	} else if n, ok := d.GetOk("security_group"); ok {
-		securityGroupName = n.(string)
-	}
-
-	return &egoscale.SecurityGroup{
-		ID:   securityGroupID,
-		Name: securityGroupName,
-	}, nil
 }

@@ -2,18 +2,34 @@ package exoscale
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"math/rand"
+	"net"
 	"strconv"
 	"strings"
 
-	"github.com/exoscale/egoscale"
+	egoscale "github.com/exoscale/egoscale/v2"
+	exoapi "github.com/exoscale/egoscale/v2/api"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-type fetchRuleFunc func(identifier string) (*egoscale.IngressRule, bool)
+type fetchRuleFunc func(identifier string) (*egoscale.SecurityGroupRule, bool)
+
+const (
+	resSecurityGroupRulesAttrCIDRList              = "cidr_list"
+	resSecurityGroupRulesAttrDescription           = "description"
+	resSecurityGroupRulesAttrICMPCode              = "icmp_code"
+	resSecurityGroupRulesAttrICMPType              = "icmp_type"
+	resSecurityGroupRulesAttrPorts                 = "ports"
+	resSecurityGroupRulesAttrProtocol              = "protocol"
+	resSecurityGroupRulesAttrSecurityGroupID       = "security_group_id"
+	resSecurityGroupRulesAttrSecurityGroupName     = "security_group"
+	resSecurityGroupRulesAttrUserSecurityGroupList = "user_security_group_list"
+)
 
 func resourceSecurityGroupRulesIDString(d resourceIDStringer) string {
 	return resourceIDString(d, "exoscale_security_group_rules")
@@ -25,18 +41,7 @@ func resourceSecurityGroupRules() *schema.Resource {
 		Optional: true,
 		Elem: &schema.Resource{
 			Schema: map[string]*schema.Schema{
-				"ids": {
-					Type:     schema.TypeSet,
-					Computed: true,
-					Elem: &schema.Schema{
-						Type: schema.TypeString,
-					},
-				},
-				"description": {
-					Type:     schema.TypeString,
-					Optional: true,
-				},
-				"cidr_list": {
+				resSecurityGroupRulesAttrCIDRList: {
 					Type:     schema.TypeSet,
 					Optional: true,
 					Elem: &schema.Schema{
@@ -44,13 +49,21 @@ func resourceSecurityGroupRules() *schema.Resource {
 						ValidateFunc: validation.IsCIDRNetwork(0, 128),
 					},
 				},
-				"protocol": {
-					Type:         schema.TypeString,
-					Optional:     true,
-					Default:      "TCP",
-					ValidateFunc: validation.StringInSlice(supportedProtocols, true),
+				resSecurityGroupRulesAttrDescription: {
+					Type:     schema.TypeString,
+					Optional: true,
 				},
-				"ports": {
+				resSecurityGroupRulesAttrICMPCode: {
+					Type:         schema.TypeInt,
+					Optional:     true,
+					ValidateFunc: validation.IntBetween(0, 255),
+				},
+				resSecurityGroupRulesAttrICMPType: {
+					Type:         schema.TypeInt,
+					Optional:     true,
+					ValidateFunc: validation.IntBetween(0, 255),
+				},
+				resSecurityGroupRulesAttrPorts: {
 					Type:     schema.TypeSet,
 					Optional: true,
 					Elem: &schema.Schema{
@@ -58,22 +71,25 @@ func resourceSecurityGroupRules() *schema.Resource {
 						ValidateFunc: validatePortRange,
 					},
 				},
-				"icmp_type": {
-					Type:         schema.TypeInt,
+				resSecurityGroupRulesAttrProtocol: {
+					Type:         schema.TypeString,
 					Optional:     true,
-					ValidateFunc: validation.IntBetween(-1, 255),
+					Default:      "TCP",
+					ValidateFunc: validation.StringInSlice(securityGroupRuleProtocols, true),
 				},
-				"icmp_code": {
-					Type:         schema.TypeInt,
-					Optional:     true,
-					ValidateFunc: validation.IntBetween(-1, 255),
-				},
-				"user_security_group_list": {
+				resSecurityGroupRulesAttrUserSecurityGroupList: {
 					Type:     schema.TypeSet,
 					Optional: true,
 					Elem: &schema.Schema{
 						Type: schema.TypeString,
 					},
+				},
+
+				// This attribute is intended for internal bookkeeping, not for to public usage.
+				"ids": {
+					Type:     schema.TypeSet,
+					Computed: true,
+					Elem:     &schema.Schema{Type: schema.TypeString},
 				},
 			},
 		},
@@ -81,28 +97,28 @@ func resourceSecurityGroupRules() *schema.Resource {
 
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			"security_group_id": {
+			resSecurityGroupRulesAttrSecurityGroupID: {
 				Type:          schema.TypeString,
 				Optional:      true,
 				Computed:      true,
 				ForceNew:      true,
-				ConflictsWith: []string{"security_group"},
+				ConflictsWith: []string{resSecurityGroupRulesAttrSecurityGroupName},
 			},
-			"security_group": {
+			resSecurityGroupRulesAttrSecurityGroupName: {
 				Type:          schema.TypeString,
 				Optional:      true,
 				Computed:      true,
 				ForceNew:      true,
-				ConflictsWith: []string{"security_group_id"},
+				ConflictsWith: []string{resSecurityGroupRulesAttrSecurityGroupID},
 			},
 			"ingress": ruleSchema,
 			"egress":  ruleSchema,
 		},
 
-		Create: resourceSecurityGroupRulesCreate,
-		Read:   resourceSecurityGroupRulesRead,
-		Update: resourceSecurityGroupRulesUpdate,
-		Delete: resourceSecurityGroupRulesDelete,
+		CreateContext: resourceSecurityGroupRulesCreate,
+		ReadContext:   resourceSecurityGroupRulesRead,
+		UpdateContext: resourceSecurityGroupRulesUpdate,
+		DeleteContext: resourceSecurityGroupRulesDelete,
 
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(defaultTimeout),
@@ -113,155 +129,159 @@ func resourceSecurityGroupRules() *schema.Resource {
 	}
 }
 
-func resourceSecurityGroupRulesCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceSecurityGroupRulesCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	log.Printf("[DEBUG] %s: beginning create", resourceSecurityGroupRulesIDString(d))
 
-	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutCreate))
+	zone := defaultZone
+
+	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutCreate))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
 	client := GetComputeClient(meta)
 
-	sg, err := inferSecurityGroup(d)
-	if err != nil {
-		return err
+	securityGroupID, bySecurityGroupID := d.GetOk(resSecurityGroupRulesAttrSecurityGroupID)
+	securityGroupName, bySecurityGroupName := d.GetOk(resSecurityGroupRulesAttrSecurityGroupName)
+	if !bySecurityGroupID && !bySecurityGroupName {
+		return diag.Errorf(
+			"either %s or %s must be specified",
+			resSecurityGroupRulesAttrSecurityGroupName,
+			resSecurityGroupRulesAttrSecurityGroupID,
+		)
 	}
 
-	resp, err := client.GetWithContext(ctx, sg)
+	securityGroup, err := client.FindSecurityGroup(
+		ctx,
+		zone, func() string {
+			if bySecurityGroupID {
+				return securityGroupID.(string)
+			}
+			return securityGroupName.(string)
+		}(),
+	)
 	if err != nil {
-		if e := handleNotFound(d, err); e != nil {
-			return e
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set(resSecurityGroupRulesAttrSecurityGroupName, *securityGroup.Name); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set(resSecurityGroupRulesAttrSecurityGroupID, *securityGroup.ID); err != nil {
+		return diag.FromErr(err)
+	}
+
+	for _, flowDirection := range []string{"ingress", "egress"} {
+		rules := d.Get(flowDirection).(*schema.Set)
+
+		if rules.Len() > 0 {
+			for _, r := range rules.List() {
+				rule := r.(map[string]interface{})
+				ids := rule["ids"].(*schema.Set)
+
+				rulesToAdd, err := securityGroupRulesToAdd(ctx, zone, client.Client, rule)
+				if err != nil {
+					return diag.FromErr(err)
+				}
+
+				for _, ruleToAdd := range rulesToAdd {
+					ruleToAdd.FlowDirection = nonEmptyStringPtr(flowDirection)
+					securityGroupRule, err := client.CreateSecurityGroupRule(
+						ctx,
+						zone,
+						securityGroup,
+						&ruleToAdd,
+					)
+					if err != nil {
+						return diag.FromErr(err)
+					}
+
+					id, err := ruleToID(ctx, zone, client.Client, securityGroupRule)
+					if err != nil {
+						diag.FromErr(err)
+					}
+					ids.Add(id)
+				}
+			}
 		}
 	}
-
-	sg = resp.(*egoscale.SecurityGroup)
 
 	d.SetId(fmt.Sprintf("%d", rand.Uint64()))
-	if err := d.Set("security_group", sg.Name); err != nil {
-		return err
-	}
-	if err := d.Set("security_group_id", sg.ID.String()); err != nil {
-		return err
-	}
-
-	if rules := d.Get("ingress").(*schema.Set); rules.Len() > 0 {
-		for _, r := range rules.List() {
-			rule := r.(map[string]interface{})
-			ids := rule["ids"].(*schema.Set)
-			reqs, err := ruleToAuthorize(ctx, client, rule)
-			if err != nil {
-				return err
-			}
-
-			for _, req := range reqs {
-				req.SecurityGroupID = sg.ID
-				resp, err := client.RequestWithContext(ctx, req)
-				if err != nil {
-					return err
-				}
-
-				sg := resp.(*egoscale.SecurityGroup)
-				if len(sg.IngressRule) != 1 {
-					return fmt.Errorf("one ingress was supposed to be created. Does %#v already exist?", req)
-				}
-				rule := sg.IngressRule[0]
-				id := ingressRuleToID(rule)
-				ids.Add(id)
-			}
-		}
-	}
-
-	if rules := d.Get("egress").(*schema.Set); rules.Len() > 0 {
-		for _, r := range rules.List() {
-			rule := r.(map[string]interface{})
-			ids := rule["ids"].(*schema.Set)
-			reqs, err := ruleToAuthorize(ctx, client, rule)
-			if err != nil {
-				return err
-			}
-
-			for _, req := range reqs {
-				req.SecurityGroupID = sg.ID
-				ereq := (*egoscale.AuthorizeSecurityGroupEgress)(&req)
-				resp, err := client.RequestWithContext(ctx, ereq)
-				if err != nil {
-					return err
-				}
-
-				sg := resp.(*egoscale.SecurityGroup)
-				if len(sg.EgressRule) != 1 {
-					return fmt.Errorf("one egress was supposed to be created. Does %#v already exist?", ereq)
-				}
-				rule := sg.EgressRule[0]
-				id := egressRuleToID(rule)
-				ids.Add(id)
-
-				log.Printf("[DEBUG] rule %s was built!\n", id)
-			}
-
-			log.Printf("[DEBUG] Ingress RuleID %+v\n", ids)
-		}
-	}
 
 	log.Printf("[DEBUG] %s: create finished successfully", resourceSecurityGroupRulesIDString(d))
 
-	return resourceSecurityGroupRulesRead(d, meta)
+	return resourceSecurityGroupRulesRead(ctx, d, meta)
 }
 
-func resourceSecurityGroupRulesRead(d *schema.ResourceData, meta interface{}) error {
+func resourceSecurityGroupRulesRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	log.Printf("[DEBUG] %s: beginning read", resourceSecurityGroupRulesIDString(d))
 
-	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
+	zone := defaultZone
+
+	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
 	client := GetComputeClient(meta)
 
-	sg, err := inferSecurityGroup(d)
+	securityGroup, err := client.FindSecurityGroup(
+		ctx,
+		zone, func() string {
+			if v, ok := d.GetOk(resSecurityGroupRulesAttrSecurityGroupID); ok {
+				return v.(string)
+			} else {
+				return d.Get(resSecurityGroupRulesAttrSecurityGroupName).(string)
+			}
+		}(),
+	)
 	if err != nil {
-		return err
+		if errors.Is(err, exoapi.ErrNotFound) {
+			// Parent Security Group doesn't exist anymore, so do the Security Group rules.
+			d.SetId("")
+			return nil
+		}
+		return diag.FromErr(err)
 	}
 
-	resp, err := client.GetWithContext(ctx, sg)
-	if err != nil {
-		return handleNotFound(d, err)
-	}
-
-	sg = resp.(*egoscale.SecurityGroup)
-
-	ingressRules := make(map[string]int, len(sg.IngressRule))
-	for i, rule := range sg.IngressRule {
-		id := ingressRuleToID(rule)
-		ingressRules[id] = i
+	ruleIDs := make(map[string]int, len(securityGroup.Rules))
+	for i, rule := range securityGroup.Rules {
+		id, err := ruleToID(ctx, zone, client.Client, rule)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		ruleIDs[id] = i
 	}
 
 	if rules := d.Get("ingress").(*schema.Set); rules.Len() > 0 {
-		readRules(rules, func(identifier string) (*egoscale.IngressRule, bool) {
-			idx, ok := ingressRules[identifier]
+		err := readRules(ctx, zone, client.Client, rules, func(id string) (*egoscale.SecurityGroupRule, bool) {
+			idx, ok := ruleIDs[id]
 			if !ok {
 				return nil, false
 			}
-			return &sg.IngressRule[idx], true
+			return securityGroup.Rules[idx], true
 		})
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
 		if err := d.Set("ingress", rules); err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 	}
 
-	egressRules := make(map[string]int, len(sg.EgressRule))
-	for i, rule := range sg.EgressRule {
-		id := egressRuleToID(rule)
-		egressRules[id] = i
-	}
-
 	if rules := d.Get("egress").(*schema.Set); rules.Len() > 0 {
-		readRules(rules, func(identifier string) (*egoscale.IngressRule, bool) {
-			idx, ok := egressRules[identifier]
+		err := readRules(ctx, zone, client.Client, rules, func(id string) (*egoscale.SecurityGroupRule, bool) {
+			idx, ok := ruleIDs[id]
 			if !ok {
 				return nil, false
 			}
-			return (*egoscale.IngressRule)(&sg.EgressRule[idx]), true
+			return securityGroup.Rules[idx], true
 		})
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
 		if err := d.Set("egress", rules); err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 	}
 
@@ -270,165 +290,119 @@ func resourceSecurityGroupRulesRead(d *schema.ResourceData, meta interface{}) er
 	return nil
 }
 
-func resourceSecurityGroupRulesUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceSecurityGroupRulesUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	log.Printf("[DEBUG] %s: beginning update", resourceSecurityGroupRulesIDString(d))
 
-	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutCreate))
+	zone := defaultZone
+
+	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
 	client := GetComputeClient(meta)
 
-	sgID, err := egoscale.ParseUUID(d.Get("security_group_id").(string))
+	securityGroup, err := client.GetSecurityGroup(ctx, zone, d.Get(resSecurityGroupRulesAttrSecurityGroupID).(string))
 	if err != nil {
-		return err
+		if errors.Is(err, exoapi.ErrNotFound) {
+			// Parent Security Group doesn't exist anymore, so do the Security Group rules.
+			d.SetId("")
+			return nil
+		}
+		return diag.FromErr(err)
 	}
 
-	if d.HasChange("ingress") {
-		o, n := d.GetChange("ingress")
-		old := o.(*schema.Set)
-		new := n.(*schema.Set)
+	for _, flowDirection := range []string{"ingress", "egress"} {
+		if d.HasChange(flowDirection) {
+			o, n := d.GetChange(flowDirection)
+			old := o.(*schema.Set)
+			cur := n.(*schema.Set)
 
-		toRemove := old.Difference(new)
-		toAdd := new.Difference(old)
+			toRemove := old.Difference(cur)
+			toAdd := cur.Difference(old)
 
-		for _, r := range toRemove.List() {
-			rule := r.(map[string]interface{})
-			ids := rule["ids"].(*schema.Set)
-			reqs, err := ruleToRevoke(rule)
-			if err != nil {
-				return err
-			}
-
-			for identifier, req := range reqs {
-				if err := client.BooleanRequestWithContext(ctx, req); err != nil {
-					return err
-				}
-
-				ids.Remove(identifier)
-			}
-		}
-
-		for _, r := range toAdd.List() {
-			rule := r.(map[string]interface{})
-			ids := rule["ids"].(*schema.Set)
-			reqs, err := ruleToAuthorize(ctx, client, rule)
-			if err != nil {
-				return err
-			}
-
-			for _, req := range reqs {
-				req.SecurityGroupID = sgID
-				resp, err := client.RequestWithContext(ctx, req)
+			for _, r := range toRemove.List() {
+				rule := r.(map[string]interface{})
+				ids := rule["ids"].(*schema.Set)
+				rulesToRemove, err := securityGroupRulesToRemove(rule)
 				if err != nil {
-					return err
+					return diag.FromErr(err)
 				}
 
-				sg := resp.(*egoscale.SecurityGroup)
-				if len(sg.IngressRule) != 1 {
-					return fmt.Errorf("one ingress was supposed to be updated. Does %#v already exist?", req)
+				for identifier, securityGroupRule := range rulesToRemove {
+					if err := client.DeleteSecurityGroupRule(ctx, zone, securityGroup, &securityGroupRule); err != nil {
+						return diag.FromErr(err)
+					}
+					ids.Remove(identifier)
 				}
-				rule := sg.IngressRule[0]
-				id := ingressRuleToID(rule)
-				ids.Add(id)
-			}
-		}
-	}
-
-	if d.HasChange("egress") {
-		o, n := d.GetChange("egress")
-		old := o.(*schema.Set)
-		new := n.(*schema.Set)
-
-		toRemove := old.Difference(new)
-		toAdd := new.Difference(old)
-
-		for _, r := range toRemove.List() {
-			rule := r.(map[string]interface{})
-			ids := rule["ids"].(*schema.Set)
-			reqs, err := ruleToRevoke(rule)
-			if err != nil {
-				return err
 			}
 
-			for identifier, req := range reqs {
-				if err := client.BooleanRequestWithContext(ctx, (egoscale.RevokeSecurityGroupEgress)(req)); err != nil {
-					return err
-				}
-
-				ids.Remove(identifier)
-			}
-		}
-
-		for _, r := range toAdd.List() {
-			rule := r.(map[string]interface{})
-			ids := rule["ids"].(*schema.Set)
-			reqs, err := ruleToAuthorize(ctx, client, rule)
-			if err != nil {
-				return err
-			}
-
-			for _, req := range reqs {
-				req.SecurityGroupID = sgID
-				ereq := (egoscale.AuthorizeSecurityGroupEgress)(req)
-				resp, err := client.RequestWithContext(ctx, ereq)
+			for _, r := range toAdd.List() {
+				rule := r.(map[string]interface{})
+				ids := rule["ids"].(*schema.Set)
+				rulesToAdd, err := securityGroupRulesToAdd(ctx, zone, client.Client, rule)
 				if err != nil {
-					return err
+					return diag.FromErr(err)
 				}
 
-				sg := resp.(*egoscale.SecurityGroup)
-				if len(sg.EgressRule) != 1 {
-					return fmt.Errorf("one egress was supposed to be updated. Does %#v already exist?", ereq)
+				for _, ruleToAdd := range rulesToAdd {
+					ruleToAdd.FlowDirection = nonEmptyStringPtr(flowDirection)
+					securityGroupRule, err := client.CreateSecurityGroupRule(ctx, zone, securityGroup, &ruleToAdd)
+					if err != nil {
+						return diag.FromErr(err)
+					}
+					id, err := ruleToID(ctx, zone, client.Client, securityGroupRule)
+					if err != nil {
+						return diag.FromErr(err)
+					}
+					ids.Add(id)
 				}
-				rule := sg.EgressRule[0]
-				id := egressRuleToID(rule)
-				ids.Add(id)
 			}
 		}
 	}
 
 	log.Printf("[DEBUG] %s: update finished successfully", resourceSecurityGroupRulesIDString(d))
 
-	return resourceSecurityGroupRulesRead(d, meta)
+	return resourceSecurityGroupRulesRead(ctx, d, meta)
 }
 
-func resourceSecurityGroupRulesDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceSecurityGroupRulesDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	log.Printf("[DEBUG] %s: beginning delete", resourceSecurityGroupRulesIDString(d))
 
-	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutDelete))
+	zone := defaultZone
+
+	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
 	client := GetComputeClient(meta)
 
-	if rules := d.Get("ingress").(*schema.Set); rules.Len() > 0 {
-		for _, r := range rules.List() {
-			rule := r.(map[string]interface{})
-			ids := rule["ids"].(*schema.Set)
-			reqs, err := ruleToRevoke(rule)
-			if err != nil {
-				return err
-			}
-
-			for identifier, req := range reqs {
-				if err := client.BooleanRequestWithContext(ctx, req); err != nil {
-					return err
-				}
-
-				ids.Remove(identifier)
-			}
+	securityGroup, err := client.GetSecurityGroup(ctx, zone, d.Get(resSecurityGroupRulesAttrSecurityGroupID).(string))
+	if err != nil {
+		if errors.Is(err, exoapi.ErrNotFound) {
+			// Parent Security Group doesn't exist anymore, so do the Security Group rules.
+			d.SetId("")
+			return nil
 		}
+		return diag.FromErr(err)
 	}
 
-	if rules := d.Get("egress").(*schema.Set); rules.Len() > 0 {
+	rules := d.
+		Get("ingress").(*schema.Set).
+		Union(d.Get("egress").(*schema.Set))
+
+	if rules.Len() > 0 {
 		for _, r := range rules.List() {
 			rule := r.(map[string]interface{})
 			ids := rule["ids"].(*schema.Set)
-			reqs, err := ruleToRevoke(rule)
+
+			securityGroupRules, err := securityGroupRulesToRemove(rule)
 			if err != nil {
-				return err
+				return diag.FromErr(err)
 			}
-			for identifier, req := range reqs {
-				if err := client.BooleanRequestWithContext(ctx, (*egoscale.RevokeSecurityGroupEgress)(&req)); err != nil {
-					return err
+
+			for identifier, securityGroupRule := range securityGroupRules {
+				if err := client.DeleteSecurityGroupRule(ctx, zone, securityGroup, &securityGroupRule); err != nil {
+					return diag.FromErr(err)
 				}
 
 				ids.Remove(identifier)
@@ -442,7 +416,13 @@ func resourceSecurityGroupRulesDelete(d *schema.ResourceData, meta interface{}) 
 }
 
 // readRules performs the reconciliation of the rules using the ruleFunc
-func readRules(rules *schema.Set, ruleFunc fetchRuleFunc) {
+func readRules(
+	ctx context.Context,
+	zone string,
+	client *egoscale.Client,
+	rules *schema.Set,
+	ruleFunc fetchRuleFunc,
+) error {
 	for _, r := range rules.List() {
 		rule := r.(map[string]interface{})
 		rules.Remove(r)
@@ -456,9 +436,9 @@ func readRules(rules *schema.Set, ruleFunc fetchRuleFunc) {
 		// For the time being, there is no needs to keep track of that
 		// (big) matrix, if anything goes wrong, we have to make
 		// sure, the set of rules has to be recreated.
-		cidrLen := rule["cidr_list"].(*schema.Set).Len()
-		userSecurityGroupLen := rule["user_security_group_list"].(*schema.Set).Len()
-		portsLen := rule["ports"].(*schema.Set).Len()
+		cidrLen := rule[resSecurityGroupRulesAttrCIDRList].(*schema.Set).Len()
+		userSecurityGroupLen := rule[resSecurityGroupRulesAttrUserSecurityGroupList].(*schema.Set).Len()
+		portsLen := rule[resSecurityGroupRulesAttrPorts].(*schema.Set).Len()
 
 		expectedLen := (cidrLen + userSecurityGroupLen) * portsLen
 		actualLen := 0
@@ -477,26 +457,37 @@ func readRules(rules *schema.Set, ruleFunc fetchRuleFunc) {
 			}
 			actualLen++
 
-			prot := strings.ToUpper(r.Protocol)
-			rule["protocol"] = prot
-			rule["description"] = r.Description
-			if r.CIDR != nil {
-				cidrList.Add(r.CIDR.String())
+			protocol := strings.ToUpper(*r.Protocol)
+			rule[resSecurityGroupRulesAttrProtocol] = protocol
+			rule[resSecurityGroupRulesAttrDescription] = defaultString(r.Description, "")
+			if r.Network != nil {
+				cidrList.Add(r.Network.String())
 			}
 
-			if r.SecurityGroupName != "" {
-				userSecurityGroupList.Add(r.SecurityGroupName)
+			if r.SecurityGroupID != nil {
+				userSecurityGroup, err := client.GetSecurityGroup(ctx, zone, *r.SecurityGroupID)
+				if err != nil {
+					return fmt.Errorf("unable to retrieve Security Group: %w", err)
+				}
+				userSecurityGroupList.Add(*userSecurityGroup.Name)
 			}
 
-			if strings.HasPrefix(prot, "ICMP") {
-				rule["protocol"] = strings.ReplaceAll(prot, "V6", "v6")
-				rule["icmp_code"] = r.IcmpCode
-				rule["icmp_type"] = r.IcmpType
+			if strings.HasPrefix(protocol, "ICMP") {
+				rule[resSecurityGroupRulesAttrProtocol] = strings.ReplaceAll(protocol, "V6", "v6")
+				rule[resSecurityGroupRulesAttrICMPCode] = int(*r.ICMPCode)
+				rule[resSecurityGroupRulesAttrICMPType] = int(*r.ICMPType)
 			} else {
-				if r.StartPort == r.EndPort {
-					ports.Add(fmt.Sprintf("%d", r.StartPort))
+				var startPort, endPort uint16
+				if r.StartPort != nil {
+					startPort = *r.StartPort
+				}
+				if r.EndPort != nil {
+					endPort = *r.EndPort
+				}
+				if startPort == endPort {
+					ports.Add(fmt.Sprintf("%d", startPort))
 				} else {
-					ports.Add(fmt.Sprintf("%d-%d", r.StartPort, r.EndPort))
+					ports.Add(fmt.Sprintf("%d-%d", startPort, endPort))
 				}
 			}
 		}
@@ -512,42 +503,59 @@ func readRules(rules *schema.Set, ruleFunc fetchRuleFunc) {
 		}
 
 		rule["ids"] = ids
-		rule["cidr_list"] = cidrList
-		rule["ports"] = ports
-		rule["user_security_group_list"] = userSecurityGroupList
-
+		rule[resSecurityGroupRulesAttrPorts] = ports
+		rule[resSecurityGroupRulesAttrCIDRList] = cidrList
+		rule[resSecurityGroupRulesAttrUserSecurityGroupList] = userSecurityGroupList
 		rules.Add(rule)
 	}
+
+	return nil
 }
 
-func ingressRuleToID(rule egoscale.IngressRule) string {
-	p := strings.ToLower(rule.Protocol)
-	if strings.HasPrefix(p, "icmp") {
-		return fmt.Sprintf("%s_%s_%d:%d", rule.RuleID, p, rule.IcmpType, rule.IcmpCode)
+func ruleToID(
+	ctx context.Context,
+	zone string,
+	client *egoscale.Client,
+	securityGroupRule *egoscale.SecurityGroupRule,
+) (string, error) {
+	var id string
+
+	protocol := strings.ToLower(*securityGroupRule.Protocol)
+	if strings.HasPrefix(protocol, "icmp") {
+		id = fmt.Sprintf(
+			"%s_%s_%d:%d",
+			*securityGroupRule.ID,
+			protocol,
+			*securityGroupRule.ICMPType,
+			*securityGroupRule.ICMPCode,
+		)
+	} else {
+		var name string
+		if securityGroupRule.Network != nil {
+			name = securityGroupRule.Network.String()
+		} else {
+			userSecurityGroup, err := client.GetSecurityGroup(ctx, zone, *securityGroupRule.SecurityGroupID)
+			if err != nil {
+				return "", fmt.Errorf("unable to retrieve Security Group: %w", err)
+			}
+			name = *userSecurityGroup.Name
+		}
+
+		id = fmt.Sprintf(
+			"%s_%s_%s_%d-%d",
+			*securityGroupRule.ID,
+			*securityGroupRule.Protocol,
+			name,
+			*securityGroupRule.StartPort,
+			*securityGroupRule.EndPort,
+		)
 	}
 
-	name := rule.SecurityGroupName
-	if rule.CIDR != nil {
-		name = rule.CIDR.String()
-	}
-
-	return fmt.Sprintf("%s_%s_%s_%d-%d", rule.RuleID, rule.Protocol, name, rule.StartPort, rule.EndPort)
+	return id, nil
 }
 
-func egressRuleToID(rule egoscale.EgressRule) string {
-	p := strings.ToLower(rule.Protocol)
-	if strings.HasPrefix(p, "icmp") {
-		return fmt.Sprintf("%s_%s_%d:%d", rule.RuleID, p, rule.IcmpType, rule.IcmpCode)
-	}
-
-	name := rule.SecurityGroupName
-	if rule.CIDR != nil {
-		name = rule.CIDR.String()
-	}
-
-	return fmt.Sprintf("%s_%s_%s_%d-%d", rule.RuleID, rule.Protocol, name, rule.StartPort, rule.EndPort)
-}
-
+// preparePorts converts a list of network port specification
+// strings (format: START[-END]) into a list of start/end uint16 couples.
 func preparePorts(values *schema.Set) [][2]uint16 {
 	ports := make([][2]uint16, values.Len())
 	for i, v := range values.List() {
@@ -568,95 +576,84 @@ func preparePorts(values *schema.Set) [][2]uint16 {
 	return ports
 }
 
-// ruleToRevoke converts a rule (or rules) into a list of revoke requests.
-func ruleToRevoke(rule map[string]interface{}) (map[string]egoscale.RevokeSecurityGroupIngress, error) {
+// securityGroupRulesToRemove expands a configuration rule block into a list of
+// egoscale.SecurityGroupRule to be removed.
+func securityGroupRulesToRemove(rule map[string]interface{}) (map[string]egoscale.SecurityGroupRule, error) {
 	ids := rule["ids"].(*schema.Set)
-	reqs := make(map[string]egoscale.RevokeSecurityGroupIngress, ids.Len())
+	rules := make(map[string]egoscale.SecurityGroupRule, ids.Len())
 
 	for _, identifier := range ids.List() {
 		metas := strings.SplitN(identifier.(string), "_", 2)
-
-		id, err := egoscale.ParseUUID(metas[0])
-		if err != nil {
-			return nil, err
-		}
-
-		reqs[identifier.(string)] = egoscale.RevokeSecurityGroupIngress{
-			ID: id,
-		}
+		id := metas[0]
+		rules[identifier.(string)] = egoscale.SecurityGroupRule{ID: &id}
 	}
 
-	return reqs, nil
+	return rules, nil
 }
 
-// ruleToAuthorize converts a rule (or rules) into a list of authorize requests.
-func ruleToAuthorize(ctx context.Context, client *egoscale.Client, rule map[string]interface{}) ([]egoscale.AuthorizeSecurityGroupIngress, error) {
-	description := rule["description"].(string)
-	protocol := rule["protocol"].(string)
+// securityGroupRulesToAdd expands an ingress/egress rule configuration block
+// into a list of egoscale.SecurityGroupRule to be added.
+func securityGroupRulesToAdd(
+	ctx context.Context,
+	zone string,
+	client *egoscale.Client,
+	rule map[string]interface{},
+) ([]egoscale.SecurityGroupRule, error) {
+	protocol := strings.ToLower(rule[resSecurityGroupRulesAttrProtocol].(string))
 
-	rs := []egoscale.AuthorizeSecurityGroupIngress{}
-
-	req := egoscale.AuthorizeSecurityGroupIngress{
-		Description: description,
+	baseRules := make([]egoscale.SecurityGroupRule, 0)
+	securityGroupRule := egoscale.SecurityGroupRule{
+		Description: nonEmptyStringPtr(rule[resSecurityGroupRulesAttrDescription].(string)),
 	}
 
-	if strings.HasPrefix(protocol, "ICMP") { // nolint:gocritic
-		req.Protocol = protocol
-		req.IcmpType = rule["icmp_type"].(int)
-		req.IcmpCode = rule["icmp_code"].(int)
-		rs = append(rs, req)
+	if strings.HasPrefix(protocol, "icmp") { // nolint:gocritic
+		icmpCode := int64(rule[resSecurityGroupRulesAttrICMPCode].(int))
+		icmpType := int64(rule[resSecurityGroupRulesAttrICMPType].(int))
+		securityGroupRule.Protocol = &protocol
+		securityGroupRule.ICMPCode = &icmpCode
+		securityGroupRule.ICMPType = &icmpType
+		baseRules = append(baseRules, securityGroupRule)
 	} else if protocol == "AH" || protocol == "ESP" || protocol == "GRE" || protocol == "IPIP" {
-		req.Protocol = protocol
-		rs = append(rs, req)
+		securityGroupRule.Protocol = &protocol
+		baseRules = append(baseRules, securityGroupRule)
 	} else {
-		ports := preparePorts(rule["ports"].(*schema.Set))
+		ports := preparePorts(rule[resSecurityGroupRulesAttrPorts].(*schema.Set))
 		for _, portRange := range ports {
-			req.Protocol = strings.ToLower(protocol)
-			req.StartPort = portRange[0]
-			req.EndPort = portRange[1]
-
-			rs = append(rs, req)
+			portRange := portRange
+			securityGroupRule.Protocol = &protocol
+			securityGroupRule.StartPort = &portRange[0]
+			securityGroupRule.EndPort = &portRange[1]
+			baseRules = append(baseRules, securityGroupRule)
 		}
 	}
 
-	reqs := []egoscale.AuthorizeSecurityGroupIngress{}
+	expandedRules := make([]egoscale.SecurityGroupRule, 0)
 
-	cidrSet := rule["cidr_list"].(*schema.Set)
-	for _, req := range rs {
+	cidrSet := rule[resSecurityGroupRulesAttrCIDRList].(*schema.Set)
+	for _, r := range baseRules {
+		er := r
 		for _, c := range cidrSet.List() {
-			cidr, err := egoscale.ParseCIDR(c.(string))
+			_, network, err := net.ParseCIDR(c.(string))
 			if err != nil {
 				return nil, err
 			}
-
-			req.CIDRList = []egoscale.CIDR{*cidr}
-			reqs = append(reqs, req)
+			er.Network = network
+			expandedRules = append(expandedRules, er)
 		}
-		req.CIDRList = []egoscale.CIDR{}
 	}
 
-	userSecurityGroupSet := rule["user_security_group_list"].(*schema.Set)
-	for _, req := range rs {
-		for _, u := range userSecurityGroupSet.List() {
-			_, err := egoscale.ParseUUID(u.(string))
-			if err == nil {
-				return nil, fmt.Errorf("user_security_group_list must be referenced by name only, got ID %q", u.(string))
-			}
-
-			sg := &egoscale.SecurityGroup{
-				Name: u.(string),
-			}
-
-			resp, err := client.GetWithContext(ctx, sg)
+	userSecurityGroupSet := rule[resSecurityGroupRulesAttrUserSecurityGroupList].(*schema.Set)
+	for _, r := range baseRules {
+		er := r
+		for _, x := range userSecurityGroupSet.List() {
+			userSecurityGroup, err := client.FindSecurityGroup(ctx, zone, x.(string))
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("unable to retrieve Security Group %q: %w", x.(string), err)
 			}
-
-			sg = resp.(*egoscale.SecurityGroup)
-			req.UserSecurityGroupList = []egoscale.UserSecurityGroup{sg.UserSecurityGroup()}
-			reqs = append(reqs, req)
+			er.SecurityGroupID = userSecurityGroup.ID
+			expandedRules = append(expandedRules, er)
 		}
 	}
 
-	return reqs, nil
+	return expandedRules, nil
 }

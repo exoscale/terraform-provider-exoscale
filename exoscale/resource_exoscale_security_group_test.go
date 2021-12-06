@@ -1,58 +1,116 @@
 package exoscale
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"testing"
 
-	"github.com/exoscale/egoscale"
+	egoscale "github.com/exoscale/egoscale/v2"
+	exoapi "github.com/exoscale/egoscale/v2/api"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/stretchr/testify/assert"
 )
 
 var (
-	testAccResourceSecurityGroupName        = acctest.RandomWithPrefix(testPrefix)
-	testAccResourceSecurityGroupDescription = testDescription
+	testAccResourceSecurityGroupName                   = acctest.RandomWithPrefix(testPrefix)
+	testAccResourceSecurityGroupExternalSources        = []string{"1.1.1.1/32", "2.2.2.2/32"}
+	testAccResourceSecurityGroupExternalSourcesUpdated = []string{"2.2.2.2/32", "3.3.3.3/32"}
+	testAccResourceSecurityGroupDescription            = acctest.RandString(10)
 
-	testAccResourceSecurityGroupConfig = fmt.Sprintf(`
-resource "exoscale_security_group" "sg" {
-  name = "%s"
-  description = "%s"
+	testAccResourceSecurityGroupConfigCreate = fmt.Sprintf(`
+resource "exoscale_security_group" "test" {
+  name             = "%s"
+  external_sources = ["%s"]
+  description      = "%s"
 }
 `,
 		testAccResourceSecurityGroupName,
-		testAccResourceSecurityGroupDescription)
+		strings.Join(testAccResourceSecurityGroupExternalSources, `","`),
+		testAccResourceSecurityGroupDescription,
+	)
+
+	testAccResourceSecurityGroupConfigUpdate = fmt.Sprintf(`
+resource "exoscale_security_group" "test" {
+  name             = "%s"
+  external_sources = ["%s"]
+  description      = "%s"
+}
+`,
+		testAccResourceSecurityGroupName,
+		strings.Join(testAccResourceSecurityGroupExternalSourcesUpdated, `","`),
+		testAccResourceSecurityGroupDescription,
+	)
 )
 
 func TestAccResourceSecurityGroup(t *testing.T) {
-	sg := new(egoscale.SecurityGroup)
+	var (
+		r             = "exoscale_security_group.test"
+		securityGroup egoscale.SecurityGroup
+	)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviders,
-		CheckDestroy:      testAccCheckResourceSecurityGroupDestroy,
+		CheckDestroy:      testAccCheckResourceSecurityGroupDestroy(&securityGroup),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceSecurityGroupConfig,
+				// Create
+				Config: testAccResourceSecurityGroupConfigCreate,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckResourceSecurityGroupExists("exoscale_security_group.sg", sg),
-					testAccCheckResourceSecurityGroup(sg),
-					testAccCheckResourceSecurityGroupAttributes(testAttrs{
-						"name":        validateString(testAccResourceSecurityGroupName),
-						"description": validateString(testAccResourceSecurityGroupDescription),
-					}),
+					testAccCheckResourceSecurityGroupExists(r, &securityGroup),
+					func(s *terraform.State) error {
+						a := assert.New(t)
+
+						a.Equal(testAccResourceSecurityGroupDescription, *securityGroup.Description)
+						a.ElementsMatch(testAccResourceSecurityGroupExternalSources, *securityGroup.ExternalSources)
+						a.Equal(testAccResourceSecurityGroupName, *securityGroup.Name)
+
+						return nil
+					},
+					checkResourceState(r, checkResourceStateValidateAttributes(testAttrs{
+						resSecurityGroupAttrDescription:            validateString(testAccResourceSecurityGroupDescription),
+						resSecurityGroupAttrExternalSources + ".0": validateString(testAccResourceSecurityGroupExternalSources[0]),
+						resSecurityGroupAttrExternalSources + ".1": validateString(testAccResourceSecurityGroupExternalSources[1]),
+						resSecurityGroupAttrName:                   validateString(testAccResourceSecurityGroupName),
+					})),
 				),
 			},
 			{
-				ResourceName:      "exoscale_security_group.sg",
+				// Update
+				Config: testAccResourceSecurityGroupConfigUpdate,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckResourceSecurityGroupExists(r, &securityGroup),
+					func(s *terraform.State) error {
+						a := assert.New(t)
+
+						a.ElementsMatch(testAccResourceSecurityGroupExternalSourcesUpdated, *securityGroup.ExternalSources)
+
+						return nil
+					},
+					checkResourceState(r, checkResourceStateValidateAttributes(testAttrs{
+						resSecurityGroupAttrDescription:            validateString(testAccResourceSecurityGroupDescription),
+						resSecurityGroupAttrExternalSources + ".0": validateString(testAccResourceSecurityGroupExternalSourcesUpdated[0]),
+						resSecurityGroupAttrExternalSources + ".1": validateString(testAccResourceSecurityGroupExternalSourcesUpdated[1]),
+						resSecurityGroupAttrName:                   validateString(testAccResourceSecurityGroupName),
+					})),
+				),
+			},
+			{
+				// Import
+				ResourceName:      r,
 				ImportState:       true,
 				ImportStateVerify: true,
 				ImportStateCheck: func(s []*terraform.InstanceState) error {
 					return checkResourceAttributes(
 						testAttrs{
-							"name":        validateString(testAccResourceSecurityGroupName),
-							"description": validateString(testAccResourceSecurityGroupDescription),
+							resSecurityGroupAttrDescription:            validateString(testAccResourceSecurityGroupDescription),
+							resSecurityGroupAttrExternalSources + ".0": validateString(testAccResourceSecurityGroupExternalSourcesUpdated[0]),
+							resSecurityGroupAttrExternalSources + ".1": validateString(testAccResourceSecurityGroupExternalSourcesUpdated[1]),
+							resSecurityGroupAttrName:                   validateString(testAccResourceSecurityGroupName),
 						},
 						s[0].Attributes)
 				},
@@ -61,9 +119,9 @@ func TestAccResourceSecurityGroup(t *testing.T) {
 	})
 }
 
-func testAccCheckResourceSecurityGroupExists(n string, sg *egoscale.SecurityGroup) resource.TestCheckFunc {
+func testAccCheckResourceSecurityGroupExists(r string, securityGroup *egoscale.SecurityGroup) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		rs, ok := s.RootModule().Resources[n]
+		rs, ok := s.RootModule().Resources[r]
 		if !ok {
 			return errors.New("resource not found in the state")
 		}
@@ -72,68 +130,33 @@ func testAccCheckResourceSecurityGroupExists(n string, sg *egoscale.SecurityGrou
 			return errors.New("resource ID not set")
 		}
 
-		id, err := egoscale.ParseUUID(rs.Primary.ID)
-		if err != nil {
-			return err
-		}
-
 		client := GetComputeClient(testAccProvider.Meta())
-		resp, err := client.Get(&egoscale.SecurityGroup{
-			ID: id,
-		})
+
+		ctx := exoapi.WithEndpoint(context.Background(), exoapi.NewReqEndpoint(testEnvironment, testZoneName))
+		res, err := client.GetSecurityGroup(ctx, testZoneName, rs.Primary.ID)
 		if err != nil {
 			return err
 		}
 
-		return Copy(sg, resp.(*egoscale.SecurityGroup))
-	}
-}
-
-func testAccCheckResourceSecurityGroup(sg *egoscale.SecurityGroup) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		if sg.ID == nil {
-			return errors.New("Security Group ID is nil")
-		}
-
+		*securityGroup = *res
 		return nil
 	}
 }
 
-func testAccCheckResourceSecurityGroupAttributes(expected testAttrs) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		for _, rs := range s.RootModule().Resources {
-			if rs.Type != "exoscale_security_group" {
-				continue
-			}
+func testAccCheckResourceSecurityGroupDestroy(securityGroup *egoscale.SecurityGroup) resource.TestCheckFunc {
+	return func(_ *terraform.State) error {
+		client := GetComputeClient(testAccProvider.Meta())
+		ctx := exoapi.WithEndpoint(context.Background(), exoapi.NewReqEndpoint(testEnvironment, testZoneName))
 
-			return checkResourceAttributes(expected, rs.Primary.Attributes)
-		}
-
-		return errors.New("resource not found in the state")
-	}
-}
-
-func testAccCheckResourceSecurityGroupDestroy(s *terraform.State) error {
-	client := GetComputeClient(testAccProvider.Meta())
-
-	for _, rs := range s.RootModule().Resources {
-		if rs.Type != "exoscale_security_group" {
-			continue
-		}
-
-		id, err := egoscale.ParseUUID(rs.Primary.ID)
+		_, err := client.GetSecurityGroup(ctx, testZoneName, *securityGroup.ID)
 		if err != nil {
-			return err
-		}
-
-		key := &egoscale.SecurityGroup{ID: id}
-		_, err = client.Get(key)
-		if err != nil {
-			if errors.Is(err, egoscale.ErrNotFound) {
+			if errors.Is(err, exoapi.ErrNotFound) {
 				return nil
 			}
+
 			return err
 		}
+
+		return errors.New("Security Group still exists")
 	}
-	return errors.New("Security Group still exists")
 }
