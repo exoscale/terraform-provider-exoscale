@@ -47,12 +47,18 @@ resource "exoscale_security_group_rule" "http" {
 
 In addition to the arguments listed above, the following attributes are exported:
 
-* n/a
+* `id` - The ID of the Security Group rule.
 
 
 ## Import
 
-This resource is automatically imported when importing an `exoscale_security_group` resource.
+An existing Security Group rule can be imported as a resource by `<SECURITY-GROUP-ID>/<SECURITY-GROUP-RULE-ID>`:
+
+```console
+$ terraform import exoscale_security_group_rule.http eb556678-ec59-4be6-8c54-0406ae0f6da6/846831cb-a0fc-454b-9abd-cb526559fcf9
+```
+
+~> **NOTE:** This resource is automatically imported when importing an `exoscale_security_group` resource.
 
 
 [cidr]: https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing#CIDR_notation

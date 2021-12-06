@@ -36,8 +36,8 @@ data "exoscale_security_group" "by-id" {
 }`, testAccDataSourceSecurityGroupName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDataSourceSecurityGroupAttributes("data.exoscale_security_group.by-id", testAttrs{
-						"id":   validation.ToDiagFunc(validation.IsUUID),
-						"name": validateString(testAccDataSourceSecurityGroupName),
+						dsSecurityGroupAttrID:   validation.ToDiagFunc(validation.IsUUID),
+						dsSecurityGroupAttrName: validateString(testAccDataSourceSecurityGroupName),
 					}),
 				),
 			},
@@ -52,8 +52,8 @@ data "exoscale_security_group" "by-name" {
 }`, testAccDataSourceSecurityGroupName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDataSourceSecurityGroupAttributes("data.exoscale_security_group.by-name", testAttrs{
-						"id":   validation.ToDiagFunc(validation.IsUUID),
-						"name": validateString(testAccDataSourceSecurityGroupName),
+						dsSecurityGroupAttrID:   validation.ToDiagFunc(validation.IsUUID),
+						dsSecurityGroupAttrName: validateString(testAccDataSourceSecurityGroupName),
 					}),
 				),
 			},

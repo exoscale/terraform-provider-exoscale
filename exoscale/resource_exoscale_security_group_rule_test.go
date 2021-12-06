@@ -1,146 +1,200 @@
 package exoscale
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"testing"
 
-	"github.com/exoscale/egoscale"
+	egoscale "github.com/exoscale/egoscale/v2"
+	exoapi "github.com/exoscale/egoscale/v2/api"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/stretchr/testify/require"
 )
 
 var (
-	testAccResourceSecurityGroupRuleSecurityGroupName = acctest.RandomWithPrefix(testPrefix)
-	testAccResourceSecurityGroupRuleWithCIDRProtocol  = "TCP"
-	testAccResourceSecurityGroupRuleWithCIDRType      = "EGRESS"
-	testAccResourceSecurityGroupRuleWithCIDRCIDR      = "::/0"
-	testAccResourceSecurityGroupRuleWithCIDRStartPort = 2
-	testAccResourceSecurityGroupRuleWithCIDREndPort   = 1024
-	testAccResourceSecurityGroupRuleWithUSGProtocol   = "ICMP"
-	testAccResourceSecurityGroupRuleWithUSGType       = "INGRESS"
-	testAccResourceSecurityGroupRuleWithUSGICMPType   = -1
-	testAccResourceSecurityGroupRuleWithUSGICMPCode   = -1
+	testAccResourceSecurityGroupRule1Description          = acctest.RandomWithPrefix(testPrefix)
+	testAccResourceSecurityGroupRule1EndPort       uint16 = 2
+	testAccResourceSecurityGroupRule1FlowDirection        = "INGRESS"
+	testAccResourceSecurityGroupRule1Network              = "1.2.3.4/32"
+	testAccResourceSecurityGroupRule1Protocol             = "TCP"
+	testAccResourceSecurityGroupRule1StartPort     uint16 = 1
+	testAccResourceSecurityGroupRule2Description          = acctest.RandomWithPrefix(testPrefix)
+	testAccResourceSecurityGroupRule2FlowDirection        = "EGRESS"
+	testAccResourceSecurityGroupRule2ICMPCode      int64  = 0
+	testAccResourceSecurityGroupRule2ICMPType      int64  = 8
+	testAccResourceSecurityGroupRule2Protocol             = "ICMP"
 
-	testAccResourceSecurityGroupRuleConfigWithCIDR = fmt.Sprintf(`
-resource "exoscale_security_group" "sg" {
+	testAccResourceSecurityGroupRule1ConfigCreate = fmt.Sprintf(`
+resource "exoscale_security_group" "test" {
   name = "%s"
 }
 
-resource "exoscale_security_group_rule" "cidr" {
-  security_group_id = exoscale_security_group.sg.id
-  protocol = "%s"
-  type = "%s"
-  cidr = "%s"
-  start_port = %d
-  end_port = %d
+resource "exoscale_security_group_rule" "test" {
+  security_group_id = exoscale_security_group.test.id
+  cidr              = "%s"
+  description       = "%s"
+  end_port          = %d
+  protocol          = "%s"
+  start_port        = %d
+  type              = "%s"
 }
 `,
-		testAccResourceSecurityGroupRuleSecurityGroupName,
-		testAccResourceSecurityGroupRuleWithCIDRProtocol,
-		testAccResourceSecurityGroupRuleWithCIDRType,
-		testAccResourceSecurityGroupRuleWithCIDRCIDR,
-		testAccResourceSecurityGroupRuleWithCIDRStartPort,
-		testAccResourceSecurityGroupRuleWithCIDREndPort,
+		testAccResourceSecurityGroupName,
+		testAccResourceSecurityGroupRule1Network,
+		testAccResourceSecurityGroupRule1Description,
+		testAccResourceSecurityGroupRule1EndPort,
+		testAccResourceSecurityGroupRule1Protocol,
+		testAccResourceSecurityGroupRule1StartPort,
+		testAccResourceSecurityGroupRule1FlowDirection,
 	)
 
-	testAccResourceSecurityGroupRuleConfigWithUSG = fmt.Sprintf(`
-resource "exoscale_security_group" "sg" {
+	testAccResourceSecurityGroupRule2ConfigCreate = fmt.Sprintf(`
+resource "exoscale_security_group" "test" {
   name = "%s"
 }
 
-resource "exoscale_security_group_rule" "usg" {
-  security_group = exoscale_security_group.sg.name
-  protocol = "%s"
-  type = "%s"
-  icmp_type = %d
-  icmp_code = %d
-  user_security_group = exoscale_security_group.sg.name
+resource "exoscale_security_group_rule" "test" {
+  security_group         = exoscale_security_group.test.name
+  description            = "%s"
+  icmp_code              = %d
+  icmp_type              = %d
+  protocol               = "%s"
+  type                   = "%s"
+  user_security_group_id = exoscale_security_group.test.id
 }
 `,
-		testAccResourceSecurityGroupRuleSecurityGroupName,
-		testAccResourceSecurityGroupRuleWithUSGProtocol,
-		testAccResourceSecurityGroupRuleWithUSGType,
-		testAccResourceSecurityGroupRuleWithUSGICMPType,
-		testAccResourceSecurityGroupRuleWithUSGICMPCode,
+		testAccResourceSecurityGroupName,
+		testAccResourceSecurityGroupRule2Description,
+		testAccResourceSecurityGroupRule2ICMPCode,
+		testAccResourceSecurityGroupRule2ICMPType,
+		testAccResourceSecurityGroupRule2Protocol,
+		testAccResourceSecurityGroupRule2FlowDirection,
 	)
 )
 
 func TestAccResourceSecurityGroupRule(t *testing.T) {
-	sg := new(egoscale.SecurityGroup)
-	cidr := new(egoscale.EgressRule)
-	usg := new(egoscale.IngressRule)
+	var (
+		r                 = "exoscale_security_group_rule.test"
+		securityGroup     egoscale.SecurityGroup
+		securityGroupRule egoscale.SecurityGroupRule
+	)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviders,
-		CheckDestroy:      testAccCheckResourceSecurityGroupRuleDestroy,
+		CheckDestroy:      testAccCheckResourceSecurityGroupRuleDestroy(r),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceSecurityGroupRuleConfigWithCIDR,
+				// Create - rule #1
+				Config: testAccResourceSecurityGroupRule1ConfigCreate,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckResourceSecurityGroupExists("exoscale_security_group.sg", sg),
-					testAccCheckEgressRuleExists("exoscale_security_group_rule.cidr", sg, cidr),
-					testAccCheckResourceSecurityGroupRule(cidr),
-					testAccCheckResourceSecurityGroupRule((*egoscale.EgressRule)(usg)),
-					testAccCheckResourceSecurityGroupRuleAttributes(testAttrs{
-						"security_group": validateString(testAccResourceSecurityGroupRuleSecurityGroupName),
-						"protocol":       validateString(testAccResourceSecurityGroupRuleWithCIDRProtocol),
-						"type":           validateString(testAccResourceSecurityGroupRuleWithCIDRType),
-						"cidr":           validateString(testAccResourceSecurityGroupRuleWithCIDRCIDR),
-						"start_port":     validateString(fmt.Sprint(testAccResourceSecurityGroupRuleWithCIDRStartPort)),
-						"end_port":       validateString(fmt.Sprint(testAccResourceSecurityGroupRuleWithCIDREndPort)),
-					}),
+					testAccCheckResourceSecurityGroupExists("exoscale_security_group.test", &securityGroup),
+					testAccCheckResourceSecurityGroupRuleExists(r, &securityGroupRule),
+					func(s *terraform.State) error {
+						a := require.New(t)
+
+						a.Equal(testAccResourceSecurityGroupRule1Description, *securityGroupRule.Description)
+						a.Equal(testAccResourceSecurityGroupRule1EndPort, *securityGroupRule.EndPort)
+						a.Equal(testAccResourceSecurityGroupRule1FlowDirection, strings.ToUpper(*securityGroupRule.FlowDirection))
+						a.Equal(testAccResourceSecurityGroupRule1Network, securityGroupRule.Network.String())
+						a.Equal(testAccResourceSecurityGroupRule1Protocol, strings.ToUpper(*securityGroupRule.Protocol))
+						a.Equal(testAccResourceSecurityGroupRule1StartPort, *securityGroupRule.StartPort)
+
+						return nil
+					},
+					checkResourceState(r, checkResourceStateValidateAttributes(testAttrs{
+						resSecurityGroupRuleAttrDescription:   validateString(testAccResourceSecurityGroupRule1Description),
+						resSecurityGroupRuleAttrEndPort:       validateString(fmt.Sprint(testAccResourceSecurityGroupRule1EndPort)),
+						resSecurityGroupRuleAttrFlowDirection: validateString(testAccResourceSecurityGroupRule1FlowDirection),
+						resSecurityGroupRuleAttrNetwork:       validateString(testAccResourceSecurityGroupRule1Network),
+						resSecurityGroupRuleAttrProtocol:      validateString(testAccResourceSecurityGroupRule1Protocol),
+						resSecurityGroupRuleAttrStartPort:     validateString(fmt.Sprint(testAccResourceSecurityGroupRule1StartPort)),
+					})),
 				),
 			},
 			{
-				ResourceName:      "exoscale_security_group_rule.cidr",
+				// Import - rule #1
+				ResourceName: r,
+				ImportStateIdFunc: func(
+					securityGroup *egoscale.SecurityGroup,
+					securityGroupRule *egoscale.SecurityGroupRule,
+				) resource.ImportStateIdFunc {
+					return func(*terraform.State) (string, error) {
+						return fmt.Sprintf("%s/%s", *securityGroup.ID, *securityGroupRule.ID), nil
+					}
+				}(&securityGroup, &securityGroupRule),
 				ImportState:       true,
 				ImportStateVerify: true,
 				ImportStateCheck: func(s []*terraform.InstanceState) error {
 					return checkResourceAttributes(
 						testAttrs{
-							"security_group": validateString(testAccResourceSecurityGroupRuleSecurityGroupName),
-							"protocol":       validateString(testAccResourceSecurityGroupRuleWithCIDRProtocol),
-							"type":           validateString(testAccResourceSecurityGroupRuleWithCIDRType),
-							"cidr":           validateString(testAccResourceSecurityGroupRuleWithCIDRCIDR),
-							"start_port":     validateString(fmt.Sprint(testAccResourceSecurityGroupRuleWithCIDRStartPort)),
-							"end_port":       validateString(fmt.Sprint(testAccResourceSecurityGroupRuleWithCIDREndPort)),
+							resSecurityGroupRuleAttrDescription:   validateString(testAccResourceSecurityGroupRule1Description),
+							resSecurityGroupRuleAttrEndPort:       validateString(fmt.Sprint(testAccResourceSecurityGroupRule1EndPort)),
+							resSecurityGroupRuleAttrFlowDirection: validateString(testAccResourceSecurityGroupRule1FlowDirection),
+							resSecurityGroupRuleAttrNetwork:       validateString(testAccResourceSecurityGroupRule1Network),
+							resSecurityGroupRuleAttrProtocol:      validateString(testAccResourceSecurityGroupRule1Protocol),
+							resSecurityGroupRuleAttrStartPort:     validateString(fmt.Sprint(testAccResourceSecurityGroupRule1StartPort)),
 						},
 						s[0].Attributes)
 				},
 			},
 			{
-				Config: testAccResourceSecurityGroupRuleConfigWithUSG,
+				// Create - rule #2
+				Config: testAccResourceSecurityGroupRule2ConfigCreate,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckResourceSecurityGroupExists("exoscale_security_group.sg", sg),
-					testAccCheckIngressRuleExists("exoscale_security_group_rule.usg", sg, usg),
-					testAccCheckResourceSecurityGroupRule(usg),
-					testAccCheckResourceSecurityGroupRule((*egoscale.EgressRule)(usg)),
-					testAccCheckResourceSecurityGroupRuleAttributes(testAttrs{
-						"security_group":      validateString(testAccResourceSecurityGroupRuleSecurityGroupName),
-						"protocol":            validateString(testAccResourceSecurityGroupRuleWithUSGProtocol),
-						"type":                validateString(testAccResourceSecurityGroupRuleWithUSGType),
-						"icmp_type":           validateString(fmt.Sprint(testAccResourceSecurityGroupRuleWithUSGICMPType)),
-						"icmp_code":           validateString(fmt.Sprint(testAccResourceSecurityGroupRuleWithUSGICMPCode)),
-						"user_security_group": validateString(testAccResourceSecurityGroupRuleSecurityGroupName),
-					}),
+					testAccCheckResourceSecurityGroupExists("exoscale_security_group.test", &securityGroup),
+					testAccCheckResourceSecurityGroupRuleExists(r, &securityGroupRule),
+					func(s *terraform.State) error {
+						a := require.New(t)
+
+						a.Equal(testAccResourceSecurityGroupRule2Description, *securityGroupRule.Description)
+						a.Equal(testAccResourceSecurityGroupRule2FlowDirection, strings.ToUpper(*securityGroupRule.FlowDirection))
+						a.Equal(testAccResourceSecurityGroupRule2ICMPCode, *securityGroupRule.ICMPCode)
+						a.Equal(testAccResourceSecurityGroupRule2ICMPType, *securityGroupRule.ICMPType)
+						a.Equal(testAccResourceSecurityGroupRule2Protocol, strings.ToUpper(*securityGroupRule.Protocol))
+						a.Equal(*securityGroup.ID, *securityGroupRule.SecurityGroupID)
+
+						return nil
+					},
+					checkResourceState(r, checkResourceStateValidateAttributes(testAttrs{
+						resSecurityGroupRuleAttrDescription:           validateString(testAccResourceSecurityGroupRule2Description),
+						resSecurityGroupRuleAttrFlowDirection:         validateString(testAccResourceSecurityGroupRule2FlowDirection),
+						resSecurityGroupRuleAttrICMPCode:              validateString(fmt.Sprint(testAccResourceSecurityGroupRule2ICMPCode)),
+						resSecurityGroupRuleAttrICMPType:              validateString(fmt.Sprint(testAccResourceSecurityGroupRule2ICMPType)),
+						resSecurityGroupRuleAttrProtocol:              validateString(testAccResourceSecurityGroupRule2Protocol),
+						resSecurityGroupRuleAttrUserSecurityGroupID:   validation.ToDiagFunc(validation.IsUUID),
+						resSecurityGroupRuleAttrUserSecurityGroupName: validation.ToDiagFunc(validation.NoZeroValues),
+					})),
 				),
 			},
 			{
-				ResourceName:      "exoscale_security_group_rule.usg",
+				// Import - rule #2
+				ResourceName: r,
+				ImportStateIdFunc: func(
+					securityGroup *egoscale.SecurityGroup,
+					securityGroupRule *egoscale.SecurityGroupRule,
+				) resource.ImportStateIdFunc {
+					return func(*terraform.State) (string, error) {
+						return fmt.Sprintf("%s/%s", *securityGroup.ID, *securityGroupRule.ID), nil
+					}
+				}(&securityGroup, &securityGroupRule),
 				ImportState:       true,
 				ImportStateVerify: true,
 				ImportStateCheck: func(s []*terraform.InstanceState) error {
 					return checkResourceAttributes(
 						testAttrs{
-							"security_group":      validateString(testAccResourceSecurityGroupRuleSecurityGroupName),
-							"protocol":            validateString(testAccResourceSecurityGroupRuleWithUSGProtocol),
-							"type":                validateString(testAccResourceSecurityGroupRuleWithUSGType),
-							"icmp_type":           validateString(fmt.Sprint(testAccResourceSecurityGroupRuleWithUSGICMPType)),
-							"icmp_code":           validateString(fmt.Sprint(testAccResourceSecurityGroupRuleWithUSGICMPCode)),
-							"user_security_group": validateString(testAccResourceSecurityGroupRuleSecurityGroupName),
+							resSecurityGroupRuleAttrDescription:           validateString(testAccResourceSecurityGroupRule2Description),
+							resSecurityGroupRuleAttrFlowDirection:         validateString(testAccResourceSecurityGroupRule2FlowDirection),
+							resSecurityGroupRuleAttrICMPCode:              validateString(fmt.Sprint(testAccResourceSecurityGroupRule2ICMPCode)),
+							resSecurityGroupRuleAttrICMPType:              validateString(fmt.Sprint(testAccResourceSecurityGroupRule2ICMPType)),
+							resSecurityGroupRuleAttrProtocol:              validateString(testAccResourceSecurityGroupRule2Protocol),
+							resSecurityGroupRuleAttrUserSecurityGroupID:   validation.ToDiagFunc(validation.IsUUID),
+							resSecurityGroupRuleAttrUserSecurityGroupName: validation.ToDiagFunc(validation.NoZeroValues),
 						},
 						s[0].Attributes)
 				},
@@ -149,9 +203,12 @@ func TestAccResourceSecurityGroupRule(t *testing.T) {
 	})
 }
 
-func testAccCheckEgressRuleExists(n string, sg *egoscale.SecurityGroup, rule *egoscale.EgressRule) resource.TestCheckFunc {
+func testAccCheckResourceSecurityGroupRuleExists(
+	r string,
+	securityGroupRule *egoscale.SecurityGroupRule,
+) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		rs, ok := s.RootModule().Resources[n]
+		rs, ok := s.RootModule().Resources[r]
 		if !ok {
 			return errors.New("resource not found in the state")
 		}
@@ -160,17 +217,33 @@ func testAccCheckEgressRuleExists(n string, sg *egoscale.SecurityGroup, rule *eg
 			return errors.New("resource ID not set")
 		}
 
-		if len(sg.EgressRule) == 0 {
-			return errors.New("no egress rules found")
+		securityGroupID, ok := rs.Primary.Attributes[resSecurityGroupRuleAttrSecurityGroupID]
+		if !ok {
+			return fmt.Errorf("resource attribute %q not set", resSecurityGroupRuleAttrSecurityGroupID)
 		}
 
-		return Copy(rule, sg.EgressRule[0])
+		client := GetComputeClient(testAccProvider.Meta())
+		ctx := exoapi.WithEndpoint(context.Background(), exoapi.NewReqEndpoint(testEnvironment, testZoneName))
+
+		securityGroup, err := client.GetSecurityGroup(ctx, testZoneName, securityGroupID)
+		if err != nil {
+			return err
+		}
+
+		for _, r := range securityGroup.Rules {
+			if *r.ID == rs.Primary.ID {
+				*securityGroupRule = *r
+				return nil
+			}
+		}
+
+		return fmt.Errorf("resource Security Group rule %q not found", rs.Primary.ID)
 	}
 }
 
-func testAccCheckIngressRuleExists(n string, sg *egoscale.SecurityGroup, rule *egoscale.IngressRule) resource.TestCheckFunc {
+func testAccCheckResourceSecurityGroupRuleDestroy(r string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		rs, ok := s.RootModule().Resources[n]
+		rs, ok := s.RootModule().Resources[r]
 		if !ok {
 			return errors.New("resource not found in the state")
 		}
@@ -179,64 +252,29 @@ func testAccCheckIngressRuleExists(n string, sg *egoscale.SecurityGroup, rule *e
 			return errors.New("resource ID not set")
 		}
 
-		if len(sg.IngressRule) == 0 {
-			return errors.New("no Ingress rules found")
+		securityGroupID, ok := rs.Primary.Attributes[resSecurityGroupRuleAttrSecurityGroupID]
+		if !ok {
+			return fmt.Errorf("resource attribute %q not set", resSecurityGroupRuleAttrUserSecurityGroupID)
 		}
 
-		return Copy(rule, sg.IngressRule[0])
-	}
-}
+		client := GetComputeClient(testAccProvider.Meta())
+		ctx := exoapi.WithEndpoint(context.Background(), exoapi.NewReqEndpoint(testEnvironment, testZoneName))
 
-func testAccCheckResourceSecurityGroupRule(v interface{}) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		switch v.(type) {
-		case egoscale.IngressRule, egoscale.EgressRule:
-			r, _ := v.(egoscale.IngressRule)
-			if r.RuleID == nil {
-				return errors.New("security group rule id is nil")
+		securityGroup, err := client.GetSecurityGroup(ctx, testZoneName, securityGroupID)
+		if err != nil {
+			if errors.Is(err, exoapi.ErrNotFound) {
+				return nil
+			}
+
+			return err
+		}
+
+		for _, r := range securityGroup.Rules {
+			if *r.ID == rs.Primary.ID {
+				return errors.New("Security Group rule still exists")
 			}
 		}
 
 		return nil
 	}
-}
-
-func testAccCheckResourceSecurityGroupRuleAttributes(expected testAttrs) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		for _, rs := range s.RootModule().Resources {
-			if rs.Type != "exoscale_security_group_rule" {
-				continue
-			}
-
-			return checkResourceAttributes(expected, rs.Primary.Attributes)
-		}
-
-		return errors.New("security_group_rule resource not found in the state")
-	}
-}
-
-func testAccCheckResourceSecurityGroupRuleDestroy(s *terraform.State) error {
-	client := GetComputeClient(testAccProvider.Meta())
-
-	for _, rs := range s.RootModule().Resources {
-		if rs.Type != "exoscale_security_group_rule" {
-			continue
-		}
-
-		sgID, err := egoscale.ParseUUID(rs.Primary.Attributes["security_group_id"])
-		if err != nil {
-			return err
-		}
-
-		sg := &egoscale.SecurityGroup{ID: sgID}
-		_, err = client.Get(sg)
-		if err != nil {
-			if errors.Is(err, egoscale.ErrNotFound) {
-				return nil
-			}
-			return err
-		}
-	}
-
-	return errors.New("Security Group Rule still exists")
 }
