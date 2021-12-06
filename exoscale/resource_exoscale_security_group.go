@@ -144,8 +144,7 @@ func resourceSecurityGroupUpdate(ctx context.Context, d *schema.ResourceData, me
 		old := o.(*schema.Set)
 		cur := n.(*schema.Set)
 
-		added := cur.Difference(old)
-		if added.Len() > 0 {
+		if added := cur.Difference(old); added.Len() > 0 {
 			for _, cidr := range added.List() {
 				if err := client.AddExternalSourceToSecurityGroup(
 					ctx,
@@ -158,8 +157,7 @@ func resourceSecurityGroupUpdate(ctx context.Context, d *schema.ResourceData, me
 			}
 		}
 
-		removed := old.Difference(cur)
-		if removed.Len() > 0 {
+		if removed := old.Difference(cur); removed.Len() > 0 {
 			for _, cidr := range removed.List() {
 				if err := client.RemoveExternalSourceFromSecurityGroup(
 					ctx,
@@ -189,8 +187,9 @@ func resourceSecurityGroupDelete(ctx context.Context, d *schema.ResourceData, me
 
 	client := GetComputeClient(meta)
 
-	securityGroupID := d.Id()
-	if err := client.DeleteSecurityGroup(ctx, zone, &egoscale.SecurityGroup{ID: &securityGroupID}); err != nil {
+	if err := client.DeleteSecurityGroup(ctx, zone, &egoscale.SecurityGroup{
+		ID: nonEmptyStringPtr(d.Id()),
+	}); err != nil {
 		return diag.FromErr(err)
 	}
 
