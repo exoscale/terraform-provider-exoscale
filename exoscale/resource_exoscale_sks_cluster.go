@@ -482,5 +482,5 @@ func resourceSKSClusterApply(_ context.Context, d *schema.ResourceData, sksClust
 	return nil
 }
 
-// resSKSClusterAttrOIDC returns a database resource attribute key formatted for an "oidc {}" block.
+// resSKSClusterAttrOIDC returns a sks_cluster resource attribute key formatted for an "oidc {}" block.
 func resSKSClusterAttrOIDC(a string) string { return fmt.Sprintf("oidc.0.%s", a) }
