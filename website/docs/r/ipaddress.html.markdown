@@ -12,6 +12,8 @@ Provides an Exoscale [Elastic IP address][eip-doc] resource. This can be used to
 
 See [`exoscale_secondary_ipaddress`][r-secondary_ipaddress] for usage with Compute instances.
 
+!> **WARNING:** This resource is deprecated and will be removed in the next major version.
+
 
 ### Usage example
 
