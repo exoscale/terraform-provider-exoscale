@@ -1,16 +1,14 @@
 ---
 layout: "exoscale"
-page_title: "Exoscale: exoscale_affinity"
-sidebar_current: "docs-exoscale-affinity"
+page_title: "Exoscale: exoscale_anti_affinity_group"
+sidebar_current: "docs-exoscale-anti-affinity-group"
 description: |-
   Provides information about an Anti-Affinity Group.
 ---
 
-# exoscale\_affinity
+# exoscale\_anti\_affinity\_group
 
 Provides information on an [Anti-Affinity Group][aag-doc] for use in other resources such as a [`exoscale_compute`][r-compute] resource.
-
-!> **WARNING:** This data source is deprecated and will be removed in the next major version.
 
 
 ## Example Usage
@@ -20,7 +18,7 @@ locals {
   zone = "ch-gva-2"
 }
 
-data "exoscale_affinity" "web" {
+data "exoscale_anti_affinity_group" "web" {
   name = "web"
 }
 
@@ -33,7 +31,7 @@ resource "exoscale_compute" "my_server" {
   zone               = local.zone
   template_id        = data.exoscale_compute_template.ubuntu.id
   disk_size          = 20
-  affinity_group_ids = [data.exoscale_affinity.web.id]
+  affinity_group_ids = [data.exoscale_anti_affinity_group.web.id]
 }
 ```
 
@@ -48,7 +46,7 @@ resource "exoscale_compute" "my_server" {
 
 In addition to the arguments listed above, the following attributes are exported:
 
-* n/a
+* `instances` - A list of Compute instance IDs belonging to the Anti-Affinity Group.
 
 
 [aag-doc]: https://community.exoscale.com/documentation/compute/anti-affinity-groups/
