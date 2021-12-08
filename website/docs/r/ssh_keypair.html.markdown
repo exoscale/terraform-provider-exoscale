@@ -10,6 +10,8 @@ description: |-
 
 Provides an Exoscale [SSH Keypair][ssh-keypairs-doc] resource. This can be used to create and delete SSH Keypairs.
 
+!> **WARNING:** This resource is deprecated and will be removed in the next major version.
+
 
 ## Example Usage
 

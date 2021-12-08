@@ -18,7 +18,7 @@ variable "zone" {
   default = "de-fra-1"
 }
 
-resource "exoscale_ssh_keypair" "webapp" {
+resource "exoscale_ssh_key" "webapp" {
   name = "my-web-app"
 }
 
@@ -49,7 +49,7 @@ resource "exoscale_instance_pool" "webapp" {
   template_id = data.exoscale_compute_template.webapp.id
   instance_type = "standard.medium"
   disk_size = 50
-  key_pair = exoscale_ssh_keypair.webapp.name
+  key_pair = exoscale_ssh_key.webapp.name
   instance_prefix = "my-web-app"
   security_group_ids = [exoscale_security_group.webapp.id]
   network_ids = [exoscale_network.webapp.id]
