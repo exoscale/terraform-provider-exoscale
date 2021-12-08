@@ -10,6 +10,7 @@ description: |-
 
 Provides an Exoscale Compute instance [Private Network][privnet-doc] Interface (NIC) resource. This can be used to create, update and delete Compute instance NICs.
 
+!> **WARNING:** This resource is deprecated and will be removed in the next major version.
 
 ## Usage
 
