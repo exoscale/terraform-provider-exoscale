@@ -156,6 +156,7 @@ func Provider() *schema.Provider {
 			"exoscale_domain_record":       dataSourceDomainRecord(),
 			"exoscale_network":             dataSourceNetwork(),
 			"exoscale_nlb":                 dataSourceNLB(),
+			"exoscale_private_network":     dataSourcePrivateNetwork(),
 			"exoscale_security_group":      dataSourceSecurityGroup(),
 		},
 
