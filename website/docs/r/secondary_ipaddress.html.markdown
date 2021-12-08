@@ -12,6 +12,8 @@ Provides a resource for assigning an existing Exoscale [Elastic IP][r-ipaddress]
 
 ~> **NOTE:** The network interfaces of the Compute instance itself still have to be configured accordingly (unless using a *managed* Elastic IP).
 
+!> **WARNING:** This resource is deprecated and will be removed in the next major version.
+
 
 ### Secondary IP Address
 

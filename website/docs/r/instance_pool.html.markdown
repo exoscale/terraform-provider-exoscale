@@ -32,7 +32,7 @@ resource "exoscale_network" "webapp" {
   name = "my-web-app"
 }
 
-resource "exoscale_ipaddress" "webapp" {
+resource "exoscale_elastic_ip" "webapp" {
   zone = var.zone
 }
 
@@ -52,8 +52,8 @@ resource "exoscale_instance_pool" "webapp" {
   key_pair = exoscale_ssh_key.webapp.name
   instance_prefix = "my-web-app"
   security_group_ids = [exoscale_security_group.webapp.id]
-  network_ids = [exoscale_network.webapp.id]
-  elastic_ip_ids = [exoscale_ipaddress.webapp.id]
+  network_ids = [exoscale_private_network.webapp.id]
+  elastic_ip_ids = [exoscale_elastic_ip.webapp.id]
   user_data = "#cloud-config\npackage_upgrade: true\n"
 
   labels = {
