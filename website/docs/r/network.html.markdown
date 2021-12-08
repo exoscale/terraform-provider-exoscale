@@ -12,6 +12,8 @@ Provides an Exoscale [Private Network][privnet-doc] resource. This can be used t
 
 See [`exoscale_nic`][r-nic] for usage with Compute instances.
 
+!> **WARNING:** This resource is deprecated and will be removed in the next major version.
+
 
 ## Usage
 

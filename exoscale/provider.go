@@ -173,6 +173,7 @@ func Provider() *schema.Provider {
 			"exoscale_nic":                  resourceNIC(),
 			"exoscale_nlb":                  resourceNLB(),
 			"exoscale_nlb_service":          resourceNLBService(),
+			"exoscale_private_network":      resourcePrivateNetwork(),
 			"exoscale_secondary_ipaddress":  resourceSecondaryIPAddress(),
 			"exoscale_security_group":       resourceSecurityGroup(),
 			"exoscale_security_group_rule":  resourceSecurityGroupRule(),
