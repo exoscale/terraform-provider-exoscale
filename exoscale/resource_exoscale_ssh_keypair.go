@@ -50,6 +50,8 @@ func resourceSSHKeypair() *schema.Resource {
 			Read:   schema.DefaultTimeout(defaultTimeout),
 			Delete: schema.DefaultTimeout(defaultTimeout),
 		},
+
+		DeprecationMessage: "replaced by exoscale_ssh_key",
 	}
 }
 

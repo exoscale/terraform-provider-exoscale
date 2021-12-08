@@ -176,6 +176,7 @@ func Provider() *schema.Provider {
 			"exoscale_security_group_rules": resourceSecurityGroupRules(),
 			"exoscale_sks_cluster":          resourceSKSCluster(),
 			"exoscale_sks_nodepool":         resourceSKSNodepool(),
+			"exoscale_ssh_key":              resourceSSHKey(),
 			"exoscale_ssh_keypair":          resourceSSHKeypair(),
 		},
 
