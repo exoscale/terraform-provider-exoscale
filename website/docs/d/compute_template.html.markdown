@@ -20,15 +20,15 @@ locals {
 
 data "exoscale_compute_template" "ubuntu" {
   zone = local.zone
-  name = "Linux Ubuntu 18.04 LTS 64-bit"
+  name = "Linux Ubuntu 20.04 LTS 64-bit"
 }
 
-resource "exoscale_compute" "my_server" {
+resource "exoscale_compute_instance" "my-server" {
   zone         = local.zone
-  display_name = "my server"
+  name         = "my-server"
+  type         = "standard.medium"
   template_id  = data.exoscale_compute_template.ubuntu.id
-  disk_size    = 10
-  key_pair     = "my key"
+  disk_size    = 20
 }
 ```
 

@@ -103,14 +103,14 @@ data "exoscale_compute_template" "ubuntu" {
   name = "Linux Ubuntu 20.04 LTS 64-bit"
 }
 
-resource "exoscale_compute" "my-server" {
-  zone         = local.zone
-  display_name = "my-server"
-  size         = "Small"
-  template_id  = data.exoscale_compute_template.ubuntu.id
-  disk_size    = 50
-  key_pair     = "alice"
-  user_data    = <<EOF
+resource "exoscale_compute_instance" "my-server" {
+  zone        = local.zone
+  name        = "my-server"
+  type        = "standard.medium"
+  template_id = data.exoscale_compute_template.ubuntu.id
+  disk_size   = 50
+  ssh_key     = "alice"
+  user_data   = <<EOF
 #cloud-config
 package_upgrade: true
 EOF
@@ -123,9 +123,9 @@ $ terraform init
 Initializing the backend...
 
 Initializing provider plugins...
-- Finding exoscale/exoscale versions matching "0.18.2"...
-- Installing exoscale/exoscale v0.18.2...
-- Installed exoscale/exoscale v0.18.2 (signed by a HashiCorp partner, key ID 8B58C61D4FFE0C86)
+- Finding exoscale/exoscale versions matching "0.31.0"...
+- Installing exoscale/exoscale v0.31.0...
+- Installed exoscale/exoscale v0.31.0 (signed by a HashiCorp partner, key ID XXXXXXXXXXXXXXXX)
 
 ...
 
@@ -133,50 +133,38 @@ $ terraform apply \
     -var exoscale_api_key=$EXOSCALE_API_KEY \
     -var exoscale_api_secret=$EXOSCALE_API_SECRET
 
-data.exoscale_compute_template.ubuntu: Refreshing state...
-
-An execution plan has been generated and is shown below.
-Resource actions are indicated with the following symbols:
+Terraform used the selected providers to generate the following execution plan. Resource actions are indicated with the following symbols:
   + create
 
 Terraform will perform the following actions:
 
-  # exoscale_compute.my-server will be created
-  + resource "exoscale_compute" "my-server" {
-      + affinity_group_ids = (known after apply)
-      + affinity_groups    = (known after apply)
-      + disk_size          = 50
-      + display_name       = "my-server"
-      + gateway            = (known after apply)
-      + hostname           = (known after apply)
-      + id                 = (known after apply)
-      + ip4                = true
-      + ip6                = false
-      + ip6_address        = (known after apply)
-      + ip6_cidr           = (known after apply)
-      + ip_address         = (known after apply)
-      + key_pair           = "alice"
-      + name               = (known after apply)
-      + password           = (sensitive value)
-      + security_group_ids = (known after apply)
-      + security_groups    = (known after apply)
-      + size               = "Small"
-      + state              = (known after apply)
-      + tags               = (known after apply)
-      + template           = (known after apply)
-      + template_id        = "c19542b7-d269-4bd4-bf7c-2cae36d066d3"
-      + user_data          = <<~EOT
+  # exoscale_compute_instance.my-server will be created
+  + resource "exoscale_compute_instance" "my-server" {
+      + created_at        = (known after apply)
+      + disk_size         = 50
+      + id                = (known after apply)
+      + ipv6              = false
+      + ipv6_address      = (known after apply)
+      + name              = "my-server"
+      + public_ip_address = (known after apply)
+      + ssh_key           = "alice"
+      + state             = (known after apply)
+      + template_id       = "3ebca0c5-63f4-4055-b325-3cef0e68fa98"
+      + type              = "standard.medium"
+      + user_data         = <<-EOT
             #cloud-config
             package_upgrade: true
         EOT
-      + user_data_base64   = (known after apply)
-      + username           = (known after apply)
-      + zone               = "ch-gva-2"
+      + zone              = "ch-gva-2"
     }
 
 Plan: 1 to add, 0 to change, 0 to destroy.
 
 Do you want to perform these actions?
+  Terraform will perform the actions described above.
+  Only 'yes' will be accepted to approve.
+
+  Enter a value:
 ...
 ```
 

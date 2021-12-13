@@ -10,6 +10,8 @@ description: |-
 
 Provides an Exoscale [Compute instance][compute-doc] resource. This can be used to create, modify, and delete Compute instances.
 
+!> **WARNING:** This resource is deprecated and will be removed in the next major version.
+
 
 ## Example Usage
 
