@@ -4,15 +4,15 @@
 example.tf
 terraform.tfplan
 terraform.tfstate
-bin/
-build/
-dist/
-modules-dev/
+/bin/
+/build/
+/dist/
 /pkg/
-website/.vagrant
-website/.bundle
-website/build
-website/node_modules
+/website/.bundle
+/website/.vagrant
+/website/build
+/website/node_modules
+/website/vendor
 .vagrant/
 *.backup
 ./*.tfstate
@@ -25,8 +25,6 @@ website/node_modules
 *.iml
 *.test
 *.iml
-
-website/vendor
 
 # Test exclusions
 !command/test-fixtures/**/*.tfstate
