@@ -10,6 +10,8 @@ description: |-
 
 Provides information on an [Exoscale Compute instance][compute-doc].
 
+!> **WARNING:** This data source is deprecated and will be removed in the next major version.
+
 
 ## Example Usage
 
