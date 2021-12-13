@@ -150,6 +150,7 @@ func Provider() *schema.Provider {
 			"exoscale_affinity":            dataSourceAffinity(),
 			"exoscale_anti_affinity_group": dataSourceAntiAffinityGroup(),
 			"exoscale_compute":             dataSourceCompute(),
+			"exoscale_compute_instance":    dataSourceComputeInstance(),
 			"exoscale_compute_ipaddress":   dataSourceComputeIPAddress(),
 			"exoscale_compute_template":    dataSourceComputeTemplate(),
 			"exoscale_domain":              dataSourceDomain(),
