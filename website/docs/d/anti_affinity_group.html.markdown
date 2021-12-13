@@ -27,11 +27,13 @@ data "exoscale_compute_template" "ubuntu" {
   name = "Linux Ubuntu 20.04 LTS 64-bit"
 }
 
-resource "exoscale_compute" "my_server" {
-  zone               = local.zone
-  template_id        = data.exoscale_compute_template.ubuntu.id
-  disk_size          = 20
-  affinity_group_ids = [data.exoscale_anti_affinity_group.web.id]
+resource "exoscale_compute_instance" "my-server" {
+  zone                   = local.zone
+  name                   = "my-server"
+  type                   = "standard.medium"
+  template_id            = data.exoscale_compute_template.ubuntu.id
+  disk_size              = 20
+  anti_affinity_group_ids = [data.exoscale_anti_affinity_group.web.id]
 }
 ```
 
