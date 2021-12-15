@@ -8,7 +8,9 @@ description: |-
 
 # exoscale\_compute\_ipaddress
 
-Provides information on an Compute [Elastic IP address][eip-doc].
+Provides information on a Compute [Elastic IP address][eip-doc].
+
+!> **WARNING:** This data source is deprecated and will be removed in the next major version.
 
 
 ## Example Usage
