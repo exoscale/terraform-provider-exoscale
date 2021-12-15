@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.31.1 (December 15, 2021)
+
+BUG FIXES:
+
+- `exoscale_database`: fix bug causing `json: cannot unmarshal string into Go struct field .connection-info.slave of type map[string]interface {}` error
+
+
 ## 0.31.0 (December 15, 2021)
 
 FEATURES:
