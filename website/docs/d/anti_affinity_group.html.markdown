@@ -40,8 +40,8 @@ resource "exoscale_compute_instance" "my-server" {
 
 ## Arguments Reference
 
-* `name` - The name of the Anti-Affinity Group (conflicts with `id`)
-* `id` - The ID of the Anti-Affinity Group (conflicts with `name`)
+* `name` - The name of the Anti-Affinity Group (conflicts with `id`).
+* `id` - The ID of the Anti-Affinity Group (conflicts with `name`).
 
 
 ## Attributes Reference
