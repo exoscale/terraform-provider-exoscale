@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.31.0 (December 15, 2021)
+
+FEATURES:
+
+- **New Data Source:** `exoscale_anti_affinity_group`
+- **New Data Source:** `exoscale_compute_instance`
+- **New Data Source:** `exoscale_elastic_ip`
+- **New Data Source:** `exoscale_private_network`
+- **New Resource:** `exoscale_anti_affinity_group`
+- **New Resource:** `exoscale_compute_instance`
+- **New Resource:** `exoscale_elastic_ip`
+- **New Resource:** `exoscale_private_network`
+- **New Resource:** `exoscale_ssh_key`
+
+IMPROVEMENTS:
+
+- `exoscale_security_group`: add support for external sources
+- `sks_nodepool`: add support for K8s taints
+- `sks_cluster`: add support for OIDC configuration
+
+
 ## 0.30.1 (November 15, 2021)
 
 BUG FIXES:
