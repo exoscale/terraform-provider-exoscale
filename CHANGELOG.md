@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.31.2 (December 21, 2021)
+
+BUG FIXES:
+
+- `security_group`: fix bug caused by the new API now returning lowercase names
+- `security_group_rules`: fix bug caused by the new API not accepting `start_port = 0` anymore.
+
 ## 0.31.1 (December 15, 2021)
 
 BUG FIXES:
