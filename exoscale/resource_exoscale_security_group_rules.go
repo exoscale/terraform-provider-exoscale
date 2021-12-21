@@ -244,6 +244,7 @@ func resourceSecurityGroupRulesStateUpgradeV0(_ context.Context, rawState map[st
 
 					rules[idx] = rule
 					rawState[direction] = rules
+					patchRules = false
 				}
 			}
 		} else {
