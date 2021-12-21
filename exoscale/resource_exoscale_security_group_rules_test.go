@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"reflect"
 	"strconv"
 	"strings"
 	"testing"
@@ -441,5 +442,103 @@ func testAccCheckSecurityGroupRuleExists(
 				}(),
 			),
 		)
+	}
+}
+
+func TestAccCheckSecurityGroupRuleMigrationRuleSerialization(t *testing.T) {
+	rawState := testAccCheckSecurityGroupRuleMigrationStateDataV0Raw()
+	computedState := testAccCheckSecurityGroupRuleMigrationStateDataV0struct()
+
+	if !reflect.DeepEqual(rawState, computedState) {
+		t.Fatalf("rule state serialization: \nexpected: '%#v' \ngot:      '%#v'", rawState, computedState)
+	}
+}
+
+func TestAccCheckSecurityGroupRuleMigrationSucceed(t *testing.T) {
+	tests := []struct {
+		name     string
+		migrated map[string]interface{}
+		legacy   map[string]interface{}
+	}{
+		{
+			name:     "Migrate raw state",
+			migrated: testAccCheckSecurityGroupRuleMigrationStateDataV1(),
+			legacy:   testAccCheckSecurityGroupRuleMigrationStateDataV0Raw(),
+		},
+		{
+			name:     "Migrate struct-computed state",
+			migrated: testAccCheckSecurityGroupRuleMigrationStateDataV1(),
+			legacy:   testAccCheckSecurityGroupRuleMigrationStateDataV0struct(),
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			migratedState, err := resourceSecurityGroupRulesStateUpgradeV0(context.Background(), test.legacy, nil)
+			if err != nil {
+				t.Fatalf("error migrating state: %s", err)
+			}
+
+			if !reflect.DeepEqual(test.migrated, migratedState) {
+				t.Fatalf("migration error: expected: '%#v' \ngot: '%#v'", test.migrated, migratedState)
+			}
+		})
+	}
+}
+
+func testAccCheckSecurityGroupRuleMigrationStateDataV0Raw() map[string]interface{} {
+	return map[string]interface{}{
+		"ingress": []interface{}{
+			map[string]interface{}{
+				"cidr_list": []interface{}{
+					"0.0.0.0/0",
+				},
+				"description": "",
+				"ids": []interface{}{
+					"d7ffd6ff-9788-4834-a44d-3dc49149bfc6_tcp_0.0.0.0/0_0-65535",
+				},
+				"ports": []interface{}{
+					"0-65535",
+				},
+				"protocol": "TCP",
+			},
+		},
+	}
+}
+
+func testAccCheckSecurityGroupRuleMigrationStateDataV0struct() map[string]interface{} {
+	legacyRule := stateSecurityGroupRule{
+		CIDRList:    []string{"0.0.0.0/0"},
+		Description: "",
+		IDs:         []string{"d7ffd6ff-9788-4834-a44d-3dc49149bfc6_tcp_0.0.0.0/0_0-65535"},
+		Ports:       []string{"0-65535"},
+		Protocol:    "TCP",
+	}
+	legacyRuleInterface, _ := legacyRule.toInterface()
+
+	return map[string]interface{}{
+		"ingress": []interface{}{
+			legacyRuleInterface,
+		},
+	}
+}
+
+func testAccCheckSecurityGroupRuleMigrationStateDataV1() map[string]interface{} {
+	return map[string]interface{}{
+		"ingress": []interface{}{
+			map[string]interface{}{
+				"cidr_list": []interface{}{
+					"0.0.0.0/0",
+				},
+				"description": "",
+				"ids": []interface{}{
+					"d7ffd6ff-9788-4834-a44d-3dc49149bfc6_tcp_0.0.0.0/0_1-65535",
+				},
+				"ports": []interface{}{
+					"1-65535",
+				},
+				"protocol": "TCP",
+			},
+		},
 	}
 }
