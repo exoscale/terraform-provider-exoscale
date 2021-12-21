@@ -123,13 +123,7 @@ func resourceInstancePool() *schema.Resource {
 			Computed:      true,
 			Deprecated:    `This attribute has been replaced by "instance_type".`,
 			ConflictsWith: []string{resInstancePoolAttrInstanceType},
-			ValidateFunc: func(val interface{}, key string) (warns []string, errs []error) {
-				v := val.(string)
-				if strings.ContainsAny(v, "ABCDEFGHIJKLMNOPQRSTUVWXYZ") {
-					errs = append(errs, fmt.Errorf("%q must be lowercase, got: %q", key, v))
-				}
-				return
-			},
+			ValidateFunc:  validateLowercaseString,
 		},
 		resInstancePoolAttrSize: {
 			Type:         schema.TypeInt,

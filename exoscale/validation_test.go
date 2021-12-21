@@ -84,7 +84,11 @@ func Test_validatePortRange(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			args: args{i: "0", k: "ports"},
+			args:    args{i: "0", k: "ports"},
+			wantErr: true,
+		},
+		{
+			args: args{i: "1", k: "ports"},
 		},
 		{
 			args: args{i: "22", k: "ports"},
