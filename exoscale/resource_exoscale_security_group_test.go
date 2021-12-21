@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -159,4 +160,26 @@ func testAccCheckResourceSecurityGroupDestroy(securityGroup *egoscale.SecurityGr
 
 		return errors.New("Security Group still exists")
 	}
+}
+
+func TestAccCheckSecurityGroupMigrationSucceed(t *testing.T) {
+	legacyState := testAccCheckSecurityGroupMigrationStateDataV0()
+	expectedState := testAccCheckSecurityGroupMigrationStateDataV1()
+
+	migratedState, err := resourceSecurityGroupStateUpgradeV0(context.Background(), legacyState, nil)
+	if err != nil {
+		t.Fatalf("error migrating state: %s", err)
+	}
+
+	if !reflect.DeepEqual(expectedState, migratedState) {
+		t.Fatalf("migration error: expected: '%#v' \ngot: '%#v'", expectedState, migratedState)
+	}
+}
+
+func testAccCheckSecurityGroupMigrationStateDataV0() map[string]interface{} {
+	return map[string]interface{}{"name": "MiXeD-CASE-NOT-wanted"}
+}
+
+func testAccCheckSecurityGroupMigrationStateDataV1() map[string]interface{} {
+	return map[string]interface{}{"name": "mixed-case-not-wanted"}
 }

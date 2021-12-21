@@ -3,6 +3,7 @@ package exoscale
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"strings"
 
@@ -23,26 +24,47 @@ func resourceSecurityGroupIDString(d resourceIDStringer) string {
 	return resourceIDString(d, "exoscale_security_group")
 }
 
+func resourceSecurityGroupSchema() map[string]*schema.Schema {
+	return map[string]*schema.Schema{
+		resSecurityGroupAttrDescription: {
+			Type:     schema.TypeString,
+			Optional: true,
+			ForceNew: true,
+		},
+		resSecurityGroupAttrExternalSources: {
+			Type:     schema.TypeSet,
+			Optional: true,
+			Elem: &schema.Schema{
+				Type:         schema.TypeString,
+				ValidateFunc: validation.IsCIDRNetwork(0, 128),
+			},
+		},
+		resSecurityGroupAttrName: {
+			Type:     schema.TypeString,
+			Required: true,
+			ForceNew: true,
+			// Migration to OpenAPI-v2: name is normalized to lowercase even if it was defined
+			// with uppercase letters with provider < v0.31.
+			// Let's ignore case of the name, assuming that anyway, it will be converted to lowercase.
+			DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+				if strings.ToLower(old) == strings.ToLower(new) {
+					return true
+				}
+				return false
+			},
+		},
+	}
+}
+
 func resourceSecurityGroup() *schema.Resource {
 	return &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			resSecurityGroupAttrDescription: {
-				Type:     schema.TypeString,
-				Optional: true,
-				ForceNew: true,
-			},
-			resSecurityGroupAttrExternalSources: {
-				Type:     schema.TypeSet,
-				Optional: true,
-				Elem: &schema.Schema{
-					Type:         schema.TypeString,
-					ValidateFunc: validation.IsCIDRNetwork(0, 128),
-				},
-			},
-			resSecurityGroupAttrName: {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+		Schema:        resourceSecurityGroupSchema(),
+		SchemaVersion: 1,
+		StateUpgraders: []schema.StateUpgrader{
+			{
+				Type:    resourceSecurityGroupResourceV0().CoreConfigSchema().ImpliedType(),
+				Upgrade: resourceSecurityGroupStateUpgradeV0,
+				Version: 0,
 			},
 		},
 
@@ -61,6 +83,27 @@ func resourceSecurityGroup() *schema.Resource {
 			Delete: schema.DefaultTimeout(defaultTimeout),
 		},
 	}
+}
+
+func resourceSecurityGroupResourceV0() *schema.Resource {
+	return &schema.Resource{
+		Schema: resourceSecurityGroupSchema(),
+	}
+}
+
+func resourceSecurityGroupStateUpgradeV0(_ context.Context, rawState map[string]interface{}, _ interface{}) (map[string]interface{}, error) {
+	log.Printf("[DEBUG] beginning migration")
+
+	// OpenAPI-v2 backend returns lowercase names, let's fix the state content
+	if name, ok := rawState["name"].(string); ok {
+		rawState["name"] = strings.ToLower(name)
+		log.Printf("[DEBUG] enforce lowercase on name: %+v", rawState["name"])
+	} else {
+		return nil, fmt.Errorf("unable to get resource name during migration")
+	}
+
+	log.Printf("[DEBUG] done migration")
+	return rawState, nil
 }
 
 func resourceSecurityGroupCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
