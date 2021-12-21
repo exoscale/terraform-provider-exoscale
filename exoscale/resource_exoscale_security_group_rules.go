@@ -2,11 +2,13 @@ package exoscale
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
 	"math/rand"
 	"net"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -35,7 +37,7 @@ func resourceSecurityGroupRulesIDString(d resourceIDStringer) string {
 	return resourceIDString(d, "exoscale_security_group_rules")
 }
 
-func resourceSecurityGroupRules() *schema.Resource {
+func resourceSecurityGroupRulesSchema() map[string]*schema.Schema {
 	ruleSchema := &schema.Schema{
 		Type:     schema.TypeSet,
 		Optional: true,
@@ -95,24 +97,36 @@ func resourceSecurityGroupRules() *schema.Resource {
 		},
 	}
 
+	return map[string]*schema.Schema{
+		resSecurityGroupRulesAttrSecurityGroupID: {
+			Type:          schema.TypeString,
+			Optional:      true,
+			Computed:      true,
+			ForceNew:      true,
+			ConflictsWith: []string{resSecurityGroupRulesAttrSecurityGroupName},
+		},
+		resSecurityGroupRulesAttrSecurityGroupName: {
+			Type:          schema.TypeString,
+			Optional:      true,
+			Computed:      true,
+			ForceNew:      true,
+			ConflictsWith: []string{resSecurityGroupRulesAttrSecurityGroupID},
+		},
+		"ingress": ruleSchema,
+		"egress":  ruleSchema,
+	}
+}
+
+func resourceSecurityGroupRules() *schema.Resource {
 	return &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			resSecurityGroupRulesAttrSecurityGroupID: {
-				Type:          schema.TypeString,
-				Optional:      true,
-				Computed:      true,
-				ForceNew:      true,
-				ConflictsWith: []string{resSecurityGroupRulesAttrSecurityGroupName},
+		Schema:        resourceSecurityGroupRulesSchema(),
+		SchemaVersion: 1,
+		StateUpgraders: []schema.StateUpgrader{
+			{
+				Type:    resourceSecurityGroupRulesResourceV0().CoreConfigSchema().ImpliedType(),
+				Upgrade: resourceSecurityGroupRulesStateUpgradeV0,
+				Version: 0,
 			},
-			resSecurityGroupRulesAttrSecurityGroupName: {
-				Type:          schema.TypeString,
-				Optional:      true,
-				Computed:      true,
-				ForceNew:      true,
-				ConflictsWith: []string{resSecurityGroupRulesAttrSecurityGroupID},
-			},
-			"ingress": ruleSchema,
-			"egress":  ruleSchema,
 		},
 
 		CreateContext: resourceSecurityGroupRulesCreate,
@@ -127,6 +141,118 @@ func resourceSecurityGroupRules() *schema.Resource {
 			Delete: schema.DefaultTimeout(defaultTimeout),
 		},
 	}
+}
+
+func resourceSecurityGroupRulesResourceV0() *schema.Resource {
+	return &schema.Resource{
+		Schema: resourceSecurityGroupRulesSchema(),
+	}
+}
+
+// Helper structure and functions to ease the migration process
+type stateSecurityGroupRule struct {
+	CIDRList              []string `json:"cidr_list,omitempty"`
+	Description           string   `json:"description"`
+	ICMPCode              *uint8   `json:"icmp_code,omitempty"`
+	ICMPType              *uint8   `json:"icmp_type,omitempty"`
+	IDs                   []string `json:"ids,omitempty"`
+	Ports                 []string `json:"ports,omitempty"`
+	Protocol              string   `json:"protocol,omitempty"`
+	UserSecurityGroupList []string `json:"user_security_group_list,omitempty"`
+}
+
+func newStateSecurityGroupRuleFromInterface(rawStatePart interface{}) (*stateSecurityGroupRule, error) {
+	serializedRule, err := json.Marshal(rawStatePart)
+	if err != nil {
+		return nil, err
+	}
+
+	securityGroupRule := stateSecurityGroupRule{}
+	if err := json.Unmarshal(serializedRule, &securityGroupRule); err != nil {
+		log.Printf("[WARNING] %s", err)
+		return nil, err
+	}
+
+	return &securityGroupRule, nil
+}
+
+func (r stateSecurityGroupRule) toInterface() (map[string]interface{}, error) {
+	if len(r.UserSecurityGroupList) == 0 {
+		r.UserSecurityGroupList = nil
+	}
+
+	serializedRule, err := json.Marshal(r)
+	if err != nil {
+		return nil, err
+	}
+
+	var securityGroupRule map[string]interface{}
+	if err := json.Unmarshal(serializedRule, &securityGroupRule); err != nil {
+		return nil, err
+	}
+
+	return securityGroupRule, nil
+}
+
+func resourceSecurityGroupRulesStateUpgradeV0(_ context.Context, rawState map[string]interface{}, _ interface{}) (map[string]interface{}, error) {
+	log.Printf("[DEBUG] beginning migration")
+
+	// If we defined start_port to 0 with a previous version of the provider (< 0.31.x),
+	// the API backend will return start_port = 1.
+	// As a rule ID depends on its properties, in such a case, a rule ID doesn't match its definition anymore.
+	// Here we fix this by updating the rule ID from the current state.
+	var ruleIDRegex = regexp.MustCompile(`^([0-9a-z-]{36}_(?:tcp|udp)_.*)_0(-[0-9]+)?$`)
+	var rulePortsRegex = regexp.MustCompile(`^0-([0-9]+)$`)
+
+	for _, direction := range []string{"ingress", "egress"} {
+		if _, ok := rawState[direction]; !ok {
+			log.Printf("[DEBUG] flow direction not defined: '%s', skipping", direction)
+			continue
+		}
+
+		if rules, ok := rawState[direction].([]interface{}); ok {
+			patchRules := false
+			for idx, rule := range rules {
+				rule, err := newStateSecurityGroupRuleFromInterface(rule)
+				if err != nil {
+					return nil, err
+				}
+
+				// Fix rule IDs (start_port = 0 changed to 1)
+				for idx, ruleID := range rule.IDs {
+					rule.IDs[idx] = ruleIDRegex.ReplaceAllString(ruleID, "${1}_1${2}")
+					if ruleID != rule.IDs[idx] {
+						patchRules = true
+						log.Printf("[DEBUG] updated rule id from '%s' to '%s'\n", ruleID, rule.IDs[idx])
+					}
+				}
+
+				// Fix port range for the same reasons
+				for idx, ports := range rule.Ports {
+					rule.Ports[idx] = rulePortsRegex.ReplaceAllString(ports, "1-${1}")
+					if ports != rule.Ports[idx] {
+						patchRules = true
+						log.Printf("[DEBUG] updated rule ports from '%s' to '%s'\n", ports, rule.Ports[idx])
+					}
+				}
+
+				if patchRules {
+					rule, err := rule.toInterface()
+					if err != nil {
+						return nil, err
+					}
+
+					rules[idx] = rule
+					rawState[direction] = rules
+				}
+			}
+		} else {
+			return nil, fmt.Errorf("unable to deserialize schema during migration (direction = '%s'), state: %+v", direction, rawState)
+		}
+	}
+
+	log.Printf("[DEBUG] done migration")
+	return rawState, nil
 }
 
 func resourceSecurityGroupRulesCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
