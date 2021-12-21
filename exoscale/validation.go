@@ -29,6 +29,15 @@ func validateString(str string) schema.SchemaValidateDiagFunc {
 	})
 }
 
+// validateLowercaseString validates that the given fields contains only lowercase characters
+func validateLowercaseString(val interface{}, key string) (warns []string, errs []error) {
+	v := val.(string)
+	if strings.ContainsAny(v, "ABCDEFGHIJKLMNOPQRSTUVWXYZ") {
+		errs = append(errs, fmt.Errorf("%q must be lowercase, got: %q", key, v))
+	}
+	return
+}
+
 // validatePortRange validates that the given field contains a port range.
 func validatePortRange(i interface{}, k string) (s []string, es []error) {
 	value, ok := i.(string)
@@ -48,6 +57,11 @@ func validatePortRange(i interface{}, k string) (s []string, es []error) {
 		p, err := strconv.ParseUint(port, 10, 16)
 		if err != nil {
 			es = append(es, err)
+			return
+		}
+
+		if p == 0 {
+			es = append(es, fmt.Errorf("port expected to be between 1 and 65535, got %d", p))
 			return
 		}
 

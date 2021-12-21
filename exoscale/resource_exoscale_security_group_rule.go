@@ -58,7 +58,7 @@ func resourceSecurityGroupRule() *schema.Resource {
 				Type:         schema.TypeInt,
 				Optional:     true,
 				ForceNew:     true,
-				ValidateFunc: validation.IntBetween(0, 65535),
+				ValidateFunc: validation.IntBetween(1, 65535),
 				ConflictsWith: []string{
 					resSecurityGroupRuleAttrICMPCode,
 					resSecurityGroupRuleAttrICMPType,
@@ -125,7 +125,7 @@ func resourceSecurityGroupRule() *schema.Resource {
 				Type:         schema.TypeInt,
 				Optional:     true,
 				ForceNew:     true,
-				ValidateFunc: validation.IntBetween(0, 65535),
+				ValidateFunc: validation.IntBetween(1, 65535),
 				ConflictsWith: []string{
 					resSecurityGroupRuleAttrICMPCode,
 					resSecurityGroupRuleAttrICMPType,
