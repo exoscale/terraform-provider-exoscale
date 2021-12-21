@@ -47,10 +47,7 @@ func resourceSecurityGroupSchema() map[string]*schema.Schema {
 			// with uppercase letters with provider < v0.31.
 			// Let's ignore case of the name, assuming that anyway, it will be converted to lowercase.
 			DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-				if strings.ToLower(old) == strings.ToLower(new) {
-					return true
-				}
-				return false
+				return strings.EqualFold(old, new)
 			},
 		},
 	}
