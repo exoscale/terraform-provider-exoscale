@@ -93,8 +93,8 @@ The `pg` block supports:
 * `admin_username` - A custom administrator account username. Can only be set during creation.
 * `backup_schedule` - The automated backup schedule (format: HH:MM).
 * `ip_filter` - A list of CIDR blocks to allow incoming connections from.
-* `pg_bouncer_settings` - PgBouncer configuration settings in JSON format (`exo dbaas type show pg --settings=pgbouncer` for reference).
-* `pg_lookout_settings` - pkglookout configuration settings in JSON format (`exo dbaas type show pg --settings=pglookout` for reference).
+* `pgbouncer_settings` - PgBouncer configuration settings in JSON format (`exo dbaas type show pg --settings=pgbouncer` for reference).
+* `pglookout_settings` - pglookout configuration settings in JSON format (`exo dbaas type show pg --settings=pglookout` for reference).
 * `pg_settings` - PostgreSQL configuration settings in JSON format (`exo dbaas type show pg --settings=pg` for reference).
 * `version` - PostgreSQL major version (`exo dbaas type show pg` for reference). Can only be set during creation.
 
