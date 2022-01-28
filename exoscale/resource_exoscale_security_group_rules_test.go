@@ -59,6 +59,12 @@ resource "exoscale_security_group_rules" "rules" {
     user_security_group_list = [exoscale_security_group.test.name, data.exoscale_security_group.default.name]
   }
 
+  ingress {
+	protocol = "ESP"
+	cidr_list = ["192.168.0.0/24", "::/0"]
+	user_security_group_list = [data.exoscale_security_group.default.name]
+  }
+
   egress {
     protocol = "UDP"
     cidr_list = ["192.168.0.0/24", "::/0"]
@@ -101,6 +107,12 @@ resource "exoscale_security_group_rules" "rules" {
     cidr_list = ["10.0.0.0/24", "::/0"]
     ports = ["2222", "8000-8888"]
     user_security_group_list = [exoscale_security_group.test.name, data.exoscale_security_group.default.name]
+  }
+
+  ingress {
+	protocol = "ESP"
+	cidr_list = ["192.168.0.0/24", "::/0"]
+	user_security_group_list = [exoscale_security_group.test.name]
   }
 
   egress {
@@ -185,7 +197,7 @@ func TestAccResourceSecurityGroupRules(t *testing.T) {
 						require.NotNil(t, defaultSecurityGroup.ID)
 						return nil
 					},
-					testAccCheckSecurityGroupHasManyRules(16),
+					testAccCheckSecurityGroupHasManyRules(19),
 					testAccCheckSecurityGroupRuleExists(testSecurityGroup, &egoscale.SecurityGroupRule{
 						FlowDirection: nonEmptyStringPtr("ingress"),
 						Network:       mustParseCIDR(t, "0.0.0.0/0"),
@@ -255,6 +267,21 @@ func TestAccResourceSecurityGroupRules(t *testing.T) {
 						StartPort:       portValPtr(8000),
 						EndPort:         portValPtr(8888),
 						Protocol:        nonEmptyStringPtr("tcp"),
+					}),
+					testAccCheckSecurityGroupRuleExists(testSecurityGroup, &egoscale.SecurityGroupRule{
+						FlowDirection: nonEmptyStringPtr("ingress"),
+						Protocol:      nonEmptyStringPtr("esp"),
+						Network:       mustParseCIDR(t, "192.168.0.0/24"),
+					}),
+					testAccCheckSecurityGroupRuleExists(testSecurityGroup, &egoscale.SecurityGroupRule{
+						FlowDirection: nonEmptyStringPtr("ingress"),
+						Protocol:      nonEmptyStringPtr("esp"),
+						Network:       mustParseCIDR(t, "::/0"),
+					}),
+					testAccCheckSecurityGroupRuleExists(testSecurityGroup, &egoscale.SecurityGroupRule{
+						FlowDirection:   nonEmptyStringPtr("ingress"),
+						Protocol:        nonEmptyStringPtr("esp"),
+						SecurityGroupID: defaultSecurityGroup.ID,
 					}),
 					testAccCheckSecurityGroupRuleExists(testSecurityGroup, &egoscale.SecurityGroupRule{
 						FlowDirection: nonEmptyStringPtr("egress"),
@@ -331,6 +358,21 @@ func TestAccResourceSecurityGroupRules(t *testing.T) {
 						StartPort:       portValPtr(44),
 						EndPort:         portValPtr(44),
 						Protocol:        nonEmptyStringPtr("udp"),
+					}),
+					testAccCheckSecurityGroupRuleExists(testSecurityGroup, &egoscale.SecurityGroupRule{
+						FlowDirection: nonEmptyStringPtr("ingress"),
+						Protocol:      nonEmptyStringPtr("esp"),
+						Network:       mustParseCIDR(t, "192.168.0.0/24"),
+					}),
+					testAccCheckSecurityGroupRuleExists(testSecurityGroup, &egoscale.SecurityGroupRule{
+						FlowDirection: nonEmptyStringPtr("ingress"),
+						Protocol:      nonEmptyStringPtr("esp"),
+						Network:       mustParseCIDR(t, "::/0"),
+					}),
+					testAccCheckSecurityGroupRuleExists(testSecurityGroup, &egoscale.SecurityGroupRule{
+						FlowDirection:   nonEmptyStringPtr("ingress"),
+						Protocol:        nonEmptyStringPtr("esp"),
+						SecurityGroupID: testSecurityGroup.ID,
 					}),
 					testAccCheckSecurityGroupRuleExists(testSecurityGroup, &egoscale.SecurityGroupRule{
 						FlowDirection: nonEmptyStringPtr("egress"),
