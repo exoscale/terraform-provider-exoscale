@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"time"
 
 	egoscale "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
@@ -25,6 +26,7 @@ const (
 	resSKSClusterAttrCreatedAt          = "created_at"
 	resSKSClusterAttrDescription        = "description"
 	resSKSClusterAttrEndpoint           = "endpoint"
+	resSKSClusterAttrKubeconfig         = "kubeconfig"
 	resSKSClusterAttrExoscaleCCM        = "exoscale_ccm"
 	resSKSClusterAttrLabels             = "labels"
 	resSKSClusterAttrMetricsServer      = "metrics_server"
@@ -76,6 +78,10 @@ func resourceSKSCluster() *schema.Resource {
 			Optional: true,
 		},
 		resSKSClusterAttrEndpoint: {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		resSKSClusterAttrKubeconfig: {
 			Type:     schema.TypeString,
 			Computed: true,
 		},
@@ -333,9 +339,18 @@ func resourceSKSClusterRead(ctx context.Context, d *schema.ResourceData, meta in
 		return diag.FromErr(err)
 	}
 
+	sksKubeconfig, err := client.GetSKSClusterKubeconfig(
+		ctx,
+		zone,
+		sksCluster,
+		"kube-admin",
+		[]string{"system:masters"},
+		30*24*time.Hour,
+	)
+
 	log.Printf("[DEBUG] %s: read finished successfully", resourceSKSClusterIDString(d))
 
-	return diag.FromErr(resourceSKSClusterApply(ctx, d, sksCluster))
+	return diag.FromErr(resourceSKSClusterApply(ctx, d, sksCluster, sksKubeconfig))
 }
 
 func resourceSKSClusterUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -416,7 +431,7 @@ func resourceSKSClusterDelete(ctx context.Context, d *schema.ResourceData, meta 
 	return nil
 }
 
-func resourceSKSClusterApply(_ context.Context, d *schema.ResourceData, sksCluster *egoscale.SKSCluster) error {
+func resourceSKSClusterApply(_ context.Context, d *schema.ResourceData, sksCluster *egoscale.SKSCluster, sksKubeconfig string) error {
 	if sksCluster.AddOns != nil {
 		if err := d.Set(resSKSClusterAttrAddons, *sksCluster.AddOns); err != nil {
 			return err
@@ -448,6 +463,10 @@ func resourceSKSClusterApply(_ context.Context, d *schema.ResourceData, sksClust
 	}
 
 	if err := d.Set(resSKSClusterAttrEndpoint, *sksCluster.Endpoint); err != nil {
+		return err
+	}
+
+	if err := d.Set(resSKSClusterAttrKubeconfig, sksKubeconfig); err != nil {
 		return err
 	}
 
