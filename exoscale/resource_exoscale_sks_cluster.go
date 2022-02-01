@@ -82,8 +82,9 @@ func resourceSKSCluster() *schema.Resource {
 			Computed: true,
 		},
 		resSKSClusterAttrKubeconfig: {
-			Type:     schema.TypeString,
-			Computed: true,
+			Type:      schema.TypeString,
+			Computed:  true,
+			Sensitive: true,
 		},
 		resSKSClusterAttrExoscaleCCM: {
 			Type:     schema.TypeBool,
