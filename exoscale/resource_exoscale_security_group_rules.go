@@ -603,7 +603,7 @@ func readRules(
 				rule[resSecurityGroupRulesAttrProtocol] = strings.ReplaceAll(protocol, "V6", "v6")
 				rule[resSecurityGroupRulesAttrICMPCode] = int(*r.ICMPCode)
 				rule[resSecurityGroupRulesAttrICMPType] = int(*r.ICMPType)
-			} else {
+			} else if protocol == "TCP" || protocol == "UDP" {
 				var startPort, endPort uint16
 				if r.StartPort != nil {
 					startPort = *r.StartPort
@@ -668,14 +668,23 @@ func ruleToID(
 			name = *userSecurityGroup.Name
 		}
 
-		id = fmt.Sprintf(
-			"%s_%s_%s_%d-%d",
-			*securityGroupRule.ID,
-			*securityGroupRule.Protocol,
-			name,
-			*securityGroupRule.StartPort,
-			*securityGroupRule.EndPort,
-		)
+		if protocol == "tcp" || protocol == "udp" {
+			id = fmt.Sprintf(
+				"%s_%s_%s_%d-%d",
+				*securityGroupRule.ID,
+				*securityGroupRule.Protocol,
+				name,
+				*securityGroupRule.StartPort,
+				*securityGroupRule.EndPort,
+			)
+		} else {
+			id = fmt.Sprintf(
+				"%s_%s_%s",
+				*securityGroupRule.ID,
+				*securityGroupRule.Protocol,
+				name,
+			)
+		}
 	}
 
 	return id, nil
@@ -740,10 +749,7 @@ func securityGroupRulesToAdd(
 		securityGroupRule.ICMPCode = &icmpCode
 		securityGroupRule.ICMPType = &icmpType
 		baseRules = append(baseRules, securityGroupRule)
-	} else if protocol == "AH" || protocol == "ESP" || protocol == "GRE" || protocol == "IPIP" {
-		securityGroupRule.Protocol = &protocol
-		baseRules = append(baseRules, securityGroupRule)
-	} else {
+	} else if protocol == "tcp" || protocol == "udp" {
 		ports := preparePorts(rule[resSecurityGroupRulesAttrPorts].(*schema.Set))
 		for _, portRange := range ports {
 			portRange := portRange
@@ -752,6 +758,9 @@ func securityGroupRulesToAdd(
 			securityGroupRule.EndPort = &portRange[1]
 			baseRules = append(baseRules, securityGroupRule)
 		}
+	} else {
+		securityGroupRule.Protocol = &protocol
+		baseRules = append(baseRules, securityGroupRule)
 	}
 
 	expandedRules := make([]egoscale.SecurityGroupRule, 0)
