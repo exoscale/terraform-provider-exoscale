@@ -668,14 +668,7 @@ func ruleToID(
 			name = *userSecurityGroup.Name
 		}
 
-		if protocol == "ah" || protocol == "esp" || protocol == "gre" || protocol == "ipip" {
-			id = fmt.Sprintf(
-				"%s_%s_%s",
-				*securityGroupRule.ID,
-				*securityGroupRule.Protocol,
-				name,
-			)
-		} else {
+		if protocol == "tcp" || protocol == "udp" {
 			id = fmt.Sprintf(
 				"%s_%s_%s_%d-%d",
 				*securityGroupRule.ID,
@@ -684,8 +677,14 @@ func ruleToID(
 				*securityGroupRule.StartPort,
 				*securityGroupRule.EndPort,
 			)
+		} else {
+			id = fmt.Sprintf(
+				"%s_%s_%s",
+				*securityGroupRule.ID,
+				*securityGroupRule.Protocol,
+				name,
+			)
 		}
-
 	}
 
 	return id, nil
@@ -750,10 +749,7 @@ func securityGroupRulesToAdd(
 		securityGroupRule.ICMPCode = &icmpCode
 		securityGroupRule.ICMPType = &icmpType
 		baseRules = append(baseRules, securityGroupRule)
-	} else if protocol == "ah" || protocol == "esp" || protocol == "gre" || protocol == "ipip" {
-		securityGroupRule.Protocol = &protocol
-		baseRules = append(baseRules, securityGroupRule)
-	} else {
+	} else if protocol == "tcp" || protocol == "udp" {
 		ports := preparePorts(rule[resSecurityGroupRulesAttrPorts].(*schema.Set))
 		for _, portRange := range ports {
 			portRange := portRange
@@ -762,6 +758,9 @@ func securityGroupRulesToAdd(
 			securityGroupRule.EndPort = &portRange[1]
 			baseRules = append(baseRules, securityGroupRule)
 		}
+	} else {
+		securityGroupRule.Protocol = &protocol
+		baseRules = append(baseRules, securityGroupRule)
 	}
 
 	expandedRules := make([]egoscale.SecurityGroupRule, 0)
