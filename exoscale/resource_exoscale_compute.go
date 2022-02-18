@@ -1024,7 +1024,7 @@ func resourceComputeApply(d *schema.ResourceData, machine *egoscale.VirtualMachi
 	securityGroups := make([]string, len(machine.SecurityGroup))
 	securityGroupIDs := make([]string, len(machine.SecurityGroup))
 	for i, sg := range machine.SecurityGroup {
-		securityGroups[i] = sg.Name
+		securityGroups[i] = strings.ToLower(sg.Name)
 		securityGroupIDs[i] = sg.ID.String()
 	}
 	if err := d.Set("security_groups", securityGroups); err != nil {
