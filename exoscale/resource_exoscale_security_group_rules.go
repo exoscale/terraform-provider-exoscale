@@ -120,12 +120,17 @@ func resourceSecurityGroupRulesSchema() map[string]*schema.Schema {
 func resourceSecurityGroupRules() *schema.Resource {
 	return &schema.Resource{
 		Schema:        resourceSecurityGroupRulesSchema(),
-		SchemaVersion: 1,
+		SchemaVersion: 2,
 		StateUpgraders: []schema.StateUpgrader{
 			{
 				Type:    resourceSecurityGroupRulesResourceV0().CoreConfigSchema().ImpliedType(),
 				Upgrade: resourceSecurityGroupRulesStateUpgradeV0,
 				Version: 0,
+			},
+			{
+				Type:    resourceSecurityGroupRulesResourceV1().CoreConfigSchema().ImpliedType(),
+				Upgrade: resourceSecurityGroupRulesStateUpgradeV1,
+				Version: 1,
 			},
 		},
 
@@ -144,6 +149,12 @@ func resourceSecurityGroupRules() *schema.Resource {
 }
 
 func resourceSecurityGroupRulesResourceV0() *schema.Resource {
+	return &schema.Resource{
+		Schema: resourceSecurityGroupRulesSchema(),
+	}
+}
+
+func resourceSecurityGroupRulesResourceV1() *schema.Resource {
 	return &schema.Resource{
 		Schema: resourceSecurityGroupRulesSchema(),
 	}
@@ -195,7 +206,7 @@ func (r stateSecurityGroupRule) toInterface() (map[string]interface{}, error) {
 }
 
 func resourceSecurityGroupRulesStateUpgradeV0(_ context.Context, rawState map[string]interface{}, _ interface{}) (map[string]interface{}, error) {
-	log.Printf("[DEBUG] beginning migration")
+	log.Printf("[DEBUG] beginning migration (v1)")
 
 	// If we defined start_port to 0 with a previous version of the provider (< 0.31.x),
 	// the API backend will return start_port = 1.
@@ -256,6 +267,69 @@ func resourceSecurityGroupRulesStateUpgradeV0(_ context.Context, rawState map[st
 	return rawState, nil
 }
 
+func resourceSecurityGroupRulesStateUpgradeV1(_ context.Context, rawState map[string]interface{}, _ interface{}) (map[string]interface{}, error) {
+	log.Printf("[DEBUG] beginning migration (v2)")
+
+	// If we defined user security group with mixed-case name using a previous version of the provider (< 0.31.x),
+	// the Open-API backend will return lower cased names.
+	// As a rule ID depends on its properties, in such a case, a rule ID doesn't match its definition anymore.
+	// Here we fix this by updating updating the rule ID from the current state.
+	var ruleIDRegex = regexp.MustCompile(`^([0-9a-z-]{36}_(?:tcp|udp)_)(.*)(_[0-9]+-[0-9]+)?$`)
+	for _, direction := range []string{"ingress", "egress"} {
+		if _, ok := rawState[direction]; !ok {
+			log.Printf("[DEBUG] flow direction not defined: '%s', skipping", direction)
+			continue
+		}
+		if rules, ok := rawState[direction].([]interface{}); ok {
+			patchRules := false
+			for idx, rule := range rules {
+				rule, err := newStateSecurityGroupRuleFromInterface(rule)
+				if err != nil {
+					return nil, err
+				}
+
+				// Fix rule IDs (mixed-case security groups to lower case)
+				for idx, ruleID := range rule.IDs {
+					matches := ruleIDRegex.FindStringSubmatch(ruleID)
+					if len(matches) == 4 {
+						rule.IDs[idx] = matches[1] + strings.ToLower(matches[2]) + matches[3]
+						if ruleID != rule.IDs[idx] {
+							patchRules = true
+							log.Printf("[DEBUG] updated rule id from '%s' to '%s'\n", ruleID, rule.IDs[idx])
+						}
+					}
+				}
+
+				// Fix user_security_group for the same reasons
+				for idx, userSecurityGroup := range rule.UserSecurityGroupList {
+					rule.UserSecurityGroupList[idx] = strings.ToLower(userSecurityGroup)
+					if userSecurityGroup != rule.UserSecurityGroupList[idx] {
+						patchRules = true
+						log.Printf("[DEBUG] updated rule user_security_group from '%s' to '%s'\n", userSecurityGroup, rule.UserSecurityGroupList[idx])
+					}
+				}
+
+				if patchRules {
+					rule, err := rule.toInterface()
+					if err != nil {
+						return nil, err
+					}
+
+					rules[idx] = rule
+					rawState[direction] = rules
+					patchRules = false
+					log.Printf("[DEBUG] updated rule id from '%s'\n", rules[idx])
+				}
+			}
+		} else {
+			return nil, fmt.Errorf("unable to deserialize schema during migration (direction = '%s'), state: %+v", direction, rawState)
+		}
+	}
+
+	log.Printf("[DEBUG] done migration")
+	return rawState, nil
+}
+
 func resourceSecurityGroupRulesCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	log.Printf("[DEBUG] %s: beginning create", resourceSecurityGroupRulesIDString(d))
 
@@ -304,6 +378,13 @@ func resourceSecurityGroupRulesCreate(ctx context.Context, d *schema.ResourceDat
 			for _, r := range rules.List() {
 				rule := r.(map[string]interface{})
 				ids := rule["ids"].(*schema.Set)
+
+				userSecurityGroupList := schema.NewSet(schema.HashString, nil)
+				userSecurityGroupSet := rule[resSecurityGroupRulesAttrUserSecurityGroupList].(*schema.Set)
+				for _, x := range userSecurityGroupSet.List() {
+					userSecurityGroupList.Add(strings.ToLower(x.(string)))
+				}
+				rule[resSecurityGroupRulesAttrUserSecurityGroupList] = userSecurityGroupList
 
 				rulesToAdd, err := securityGroupRulesToAdd(ctx, zone, client.Client, rule)
 				if err != nil {
