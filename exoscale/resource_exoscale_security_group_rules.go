@@ -350,14 +350,23 @@ func resourceSecurityGroupRulesRead(ctx context.Context, d *schema.ResourceData,
 
 	client := GetComputeClient(meta)
 
+	securityGroupID, bySecurityGroupID := d.GetOk(resSecurityGroupRulesAttrSecurityGroupID)
+	securityGroupName, bySecurityGroupName := d.GetOk(resSecurityGroupRulesAttrSecurityGroupName)
+	if !bySecurityGroupID && !bySecurityGroupName {
+		return diag.Errorf(
+			"either %s or %s must be specified",
+			resSecurityGroupRulesAttrSecurityGroupName,
+			resSecurityGroupRulesAttrSecurityGroupID,
+		)
+	}
+
 	securityGroup, err := client.FindSecurityGroup(
 		ctx,
 		zone, func() string {
-			if v, ok := d.GetOk(resSecurityGroupRulesAttrSecurityGroupID); ok {
-				return v.(string)
-			} else {
-				return d.Get(resSecurityGroupRulesAttrSecurityGroupName).(string)
+			if bySecurityGroupID {
+				return securityGroupID.(string)
 			}
+			return securityGroupName.(string)
 		}(),
 	)
 	if err != nil {
