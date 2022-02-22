@@ -10,6 +10,7 @@ description: |-
 
 Provides a resource for assigning multiple rules to an existing Exoscale [Security Group][r-security_group].
 
+!> **WARNING:** This resource is deprecated and will be removed in the next major version. Follow [the migration guide](g-security-group-rules-migration) to use `exoscale_security_group_rule` instead.
 
 ## Example usage
 
@@ -72,4 +73,4 @@ In addition to the arguments listed above, the following attributes are exported
 [cidr]: https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing#CIDR_notation
 [icmp]: https://en.wikipedia.org/wiki/Internet_Control_Message_Protocol#Control_messages
 [r-security_group]: ../resources/security_group
-
+[g-security-group-rules-migration]: ../guides/migration-of-security-group-rules
