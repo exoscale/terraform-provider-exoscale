@@ -6,13 +6,14 @@ BUG FIXES:
 
 - `compute_instance`: fix bug caused by the new API returning lowercase names, when referencing security_groups by mixed-case names. (#149)
 - `security_group_rules`: fix bug caused by the new API returning lowercase names, when user_security_group_list contains mixed-case names. (#149)
-- `security_group_rules`: fix bug with protocols without. ports (#145)
-- `security_group`: fix resource import along with associated `security_group_rules`.
-- test: fix DBaaS plan (hobbyist-1 is no longer available)
+- `security_group_rules`: fix bug with protocols without ports. (#145)
+- `security_group`: fix resource import along with associated `security_group_rule` resources. (#149)
+- tests: fix DBaaS plan (hobbyist-1 is no longer available).
+- doc: fix some broken links.
 
 DEPRECATIONS:
 
-- `security_group_rules`: now deprecated in favor of `security_group_rule`
+- `security_group_rules`: now deprecated in favor of `security_group_rule` (added a migration guide in the documentation).
 
 ## 0.31.2 (December 21, 2021)
 
