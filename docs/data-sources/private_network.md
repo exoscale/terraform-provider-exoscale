@@ -1,7 +1,5 @@
 ---
-layout: "exoscale"
 page_title: "Exoscale: exoscale_private_network"
-sidebar_current: "docs-exoscale-private-network"
 description: |-
   Provides information about a Private Network.
 ---

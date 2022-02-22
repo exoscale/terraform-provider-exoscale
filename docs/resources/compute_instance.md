@@ -1,7 +1,5 @@
 ---
-layout: "exoscale"
 page_title: "Exoscale: exoscale_compute_instance"
-sidebar_current: "docs-exoscale-compute-instance"
 description: |-
   Provides an Exoscale Compute instance resource.
 ---

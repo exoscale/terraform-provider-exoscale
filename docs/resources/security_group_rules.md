@@ -1,7 +1,6 @@
 ---
-layout: "exoscale"
 page_title: "Exoscale: exoscale_security_group_rules"
-sidebar_current: "docs-exoscale-security-group-rules"
+subcategory: "Deprecated"
 description: |-
   Provides a resource for assigning multiple rules to an existing Exoscale Security Group.
 ---

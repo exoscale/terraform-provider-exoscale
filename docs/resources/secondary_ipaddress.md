@@ -1,7 +1,6 @@
 ---
-layout: "exoscale"
 page_title: "Exoscale: exoscale_secondary_ipaddress"
-sidebar_current: "docs-exoscale-secondary-ipaddress"
+subcategory: "Deprecated"
 description: |-
   Provides an Exoscale resource for assigning an existing Elastic IP to a Compute instance.
 ---

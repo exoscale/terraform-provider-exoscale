@@ -1,7 +1,6 @@
 ---
-layout: "exoscale"
 page_title: "Exoscale: exoscale_network"
-sidebar_current: "docs-exoscale-network"
+subcategory: "Deprecated"
 description: |-
   Provides an Exoscale Private Network.
 ---

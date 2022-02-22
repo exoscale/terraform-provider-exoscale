@@ -1,7 +1,5 @@
 ---
-layout: "exoscale"
 page_title: "Exoscale: exoscale_security_group"
-sidebar_current: "docs-exoscale-security-group"
 description: |-
   Provides an Exoscale Security Group.
 ---

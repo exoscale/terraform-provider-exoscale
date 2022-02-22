@@ -1,7 +1,5 @@
 ---
-layout: "exoscale"
 page_title: "Exoscale: exoscale_sks_cluster"
-sidebar_current: "docs-exoscale-sks_cluster"
 description: |-
   Provides an Exoscale SKS cluster resource.
 ---

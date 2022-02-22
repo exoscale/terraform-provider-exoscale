@@ -1,7 +1,6 @@
 ---
-layout: "exoscale"
 page_title: "Exoscale: exoscale_affinity"
-sidebar_current: "docs-exoscale-affinity"
+subcategory: "Deprecated"
 description: |-
   Provides an Exoscale Anti-Affinity Group resource.
 ---

@@ -1,7 +1,5 @@
 ---
-layout: "exoscale"
 page_title: "Exoscale: exoscale_compute_ipaddress"
-sidebar_current: "docs-exoscale-compute-ipaddress"
 description: |-
   Provides information about a Compute template.
 ---

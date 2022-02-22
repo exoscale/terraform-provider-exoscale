@@ -1,7 +1,5 @@
 ---
-layout: "exoscale"
 page_title: "Exoscale: exoscale_elastic_ip"
-sidebar_current: "docs-exoscale-elastic-ip"
 description: |-
   Provides information about an Elastic IP.
 ---

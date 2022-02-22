@@ -1,7 +1,5 @@
 ---
-layout: "exoscale"
 page_title: "Exoscale: exoscale_anti_affinity_group"
-sidebar_current: "docs-exoscale-anti-affinity-group"
 description: |-
   Provides information about an Anti-Affinity Group.
 ---

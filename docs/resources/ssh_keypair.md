@@ -1,7 +1,6 @@
 ---
-layout: "exoscale"
 page_title: "Exoscale: exoscale_ssh_keypair"
-sidebar_current: "docs-exoscale-ssh-keypair"
+subcategory: "Deprecated"
 description: |-
   Provides an Exoscale SSH Keypair.
 ---

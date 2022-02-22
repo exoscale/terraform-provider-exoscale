@@ -1,6 +1,7 @@
 ---
 page_title: security_group_rules migration Guide
-description: Migrating from security_group_rules to security_group
+description: |-
+  Migrating from security_group_rules to security_group
 ---
 
 # Migrating from security_group_rules to security_group

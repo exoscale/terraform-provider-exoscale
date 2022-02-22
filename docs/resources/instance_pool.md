@@ -1,7 +1,5 @@
 ---
-layout: "exoscale"
 page_title: "Exoscale: exoscale_instance_pool"
-sidebar_current: "docs-exoscale-instance-pool"
 description: |-
   Provides an Exoscale Instance Pool resource.
 ---

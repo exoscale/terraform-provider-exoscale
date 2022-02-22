@@ -1,7 +1,5 @@
 ---
-layout: "exoscale"
 page_title: "Exoscale: exoscale_compute_template"
-sidebar_current: "docs-exoscale-compute-template"
 description: |-
   Provides information about a Compute template.
 ---

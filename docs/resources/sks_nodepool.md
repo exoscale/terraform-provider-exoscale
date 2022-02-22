@@ -1,7 +1,5 @@
 ---
-layout: "exoscale"
 page_title: "Exoscale: exoscale_sks_nodepool"
-sidebar_current: "docs-exoscale-sks_nodepool"
 description: |-
   Provides an Exoscale SKS Nodepool resource.
 ---

@@ -1,7 +1,6 @@
 ---
-layout: "exoscale"
 page_title: "Exoscale: exoscale_compute"
-sidebar_current: "docs-exoscale-compute"
+subcategory: "Deprecated"
 description: |-
   Provides an Exoscale Compute instance resource.
 ---

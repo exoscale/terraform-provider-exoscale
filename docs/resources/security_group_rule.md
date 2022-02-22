@@ -1,7 +1,5 @@
 ---
-layout: "exoscale"
 page_title: "Exoscale: exoscale_security_group_rule"
-sidebar_current: "docs-exoscale-security-group-rule"
 description: |-
   Provides an Exoscale Security Group Rule.
 ---

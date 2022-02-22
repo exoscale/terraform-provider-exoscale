@@ -1,7 +1,6 @@
 ---
-layout: "exoscale"
 page_title: "Exoscale: exoscale_nic"
-sidebar_current: "docs-exoscale-nic"
+subcategory: "Deprecated"
 description: |-
   Provides an Exoscale Compute instance Private Network Interface (NIC).
 ---

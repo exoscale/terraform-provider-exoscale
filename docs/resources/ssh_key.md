@@ -1,7 +1,5 @@
 ---
-layout: "exoscale"
 page_title: "Exoscale: exoscale_ssh_key"
-sidebar_current: "docs-exoscale-ssh-key"
 description: |-
   Provides an Exoscale SSH Key.
 ---

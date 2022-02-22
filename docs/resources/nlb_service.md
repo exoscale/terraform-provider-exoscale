@@ -1,7 +1,5 @@
 ---
-layout: "exoscale"
 page_title: "Exoscale: exoscale_nlb_service"
-sidebar_current: "docs-exoscale-nlb-service"
 description: |-
   Provides an Exoscale Network Load Balancer service resource.
 ---

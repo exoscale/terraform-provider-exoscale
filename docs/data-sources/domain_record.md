@@ -1,7 +1,5 @@
 ---
-layout: "exoscale"
 page_title: "Exoscale: exoscale_domain_record"
-sidebar_current: "docs-exoscale-domain_record"
 description: |-
   Provides information about an Exoscale DNS domain record.
 ---

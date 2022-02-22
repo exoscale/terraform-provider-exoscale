@@ -1,7 +1,5 @@
 ---
-layout: "exoscale"
 page_title: "Exoscale: exoscale_database"
-sidebar_current: "docs-exoscale-database"
 description: |-
   Provides an Exoscale database service resource.
 ---

@@ -1,7 +1,6 @@
 ---
-layout: "exoscale"
 page_title: "Exoscale: exoscale_ipaddress"
-sidebar_current: "docs-exoscale-ipaddress"
+subcategory: "Deprecated"
 description: |-
   Provides an Exoscale Elastic IP address.
 ---
