@@ -83,5 +83,5 @@ $ terraform import exoscale_ipaddress.myip eb556678-ec59-4be6-8c54-0406ae0f6da6
 
 
 [eip-doc]: https://community.exoscale.com/documentation/compute/eip/
-[r-secondary_ipaddress]: secondary_ipaddress.html
+[r-secondary_ipaddress]: ../resources/secondary_ipaddress
 [zone]: https://www.exoscale.com/datacenters/

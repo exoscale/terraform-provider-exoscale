@@ -83,7 +83,7 @@ $ terraform import exoscale_sks_cluster.example eb556678-ec59-4be6-8c54-0406ae0f
 [cni]: https://www.cni.dev/
 [exo-ccm]: https://github.com/exoscale/exoscale-cloud-controller-manager
 [k8s-ms]: https://github.com/kubernetes-sigs/metrics-server
-[r-sks_nodepool]: sks_nodepool.html
+[r-sks_nodepool]: ../resources/sks_nodepool
 [sks-doc]: https://community.exoscale.com/documentation/sks/
 [zone]: https://www.exoscale.com/datacenters/
 

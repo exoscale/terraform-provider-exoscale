@@ -115,15 +115,15 @@ $ terraform import exoscale_compute_instance.my-instance eb556678-ec59-4be6-8c54
 
 [cloudinit]: http://cloudinit.readthedocs.io/en/latest/
 [compute-doc]: https://community.exoscale.com/documentation/compute/
-[d-anti_affinity_group]: ../d/anti_affinity_group.html
-[d-compute_template]: ../d/compute_template.html
-[d-elastic_ip]: ../d/elastic_ip.html
-[d-private_network]: ../d/private_network.html
-[d-security_group]: ../d/security_group.html
-[r-anti_affinity_group]: anti_affinity_group.html
-[r-elastic_ip]: ../r/elastic_ip.html
-[r-private_network]: ../r/private_network.html
-[r-security_group]: security_group.html
+[d-anti_affinity_group]: ../data-sources/anti_affinity_group
+[d-compute_template]: ../data-sources/compute_template
+[d-elastic_ip]: ../data-sources/elastic_ip
+[d-private_network]: ../data-sources/private_network
+[d-security_group]: ../data-sources/security_group
+[r-anti_affinity_group]: ../resources/anti_affinity_group
+[r-elastic_ip]: ../resources/elastic_ip
+[r-private_network]: ../resources/private_network
+[r-security_group]: ../resources/security_group
 [remote-exec]: https://www.terraform.io/docs/provisioners/remote-exec.html
 [sshkeypair-doc]: https://community.exoscale.com/documentation/compute/ssh-keypairs/
 [template]: https://www.exoscale.com/templates/

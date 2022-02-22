@@ -71,5 +71,5 @@ In addition to the arguments listed above, the following attributes are exported
 
 [cidr]: https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing#CIDR_notation
 [icmp]: https://en.wikipedia.org/wiki/Internet_Control_Message_Protocol#Control_messages
-[r-security_group]: security_group.html
+[r-security_group]: ../resources/security_group
 

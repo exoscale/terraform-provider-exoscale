@@ -50,5 +50,5 @@ $ terraform import exoscale_security_group.http eb556678-ec59-4be6-8c54-0406ae0f
 
 
 [cidr]: https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing#CIDR_notatio
-[r-security_group_rule]: security_group_rule.html
+[r-security_group_rule]: ../resources/security_group_rule
 [sg-doc]: https://community.exoscale.com/documentation/compute/security-groups/

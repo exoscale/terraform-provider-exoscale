@@ -63,5 +63,5 @@ $ terraform import exoscale_domain_record.www 12480484
 
 
 [dns-doc]: https://community.exoscale.com/documentation/dns/
-[r-domain]: domain.html
+[r-domain]: ../resources/domain
 [ttl]: https://en.wikipedia.org/wiki/Time_to_live

@@ -52,5 +52,4 @@ In addition to the arguments listed above, the following attributes are exported
 
 
 [aag-doc]: https://community.exoscale.com/documentation/compute/anti-affinity-groups/
-[r-compute]: ../r/compute.html
-
+[r-compute]: ../resources/compute

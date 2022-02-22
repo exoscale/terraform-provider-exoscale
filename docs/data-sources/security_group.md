@@ -52,6 +52,5 @@ In addition to the arguments listed above, the following attributes are exported
 
 
 [sg-doc]: https://community.exoscale.com/documentation/compute/security-groups/
-[r-compute]: ../r/compute.html
-[r-instance_pool]: ../r/instance_pool.html
-
+[r-compute]: ../resources/compute
+[r-instance_pool]: ../resources/instance_pool

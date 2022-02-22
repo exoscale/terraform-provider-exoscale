@@ -49,7 +49,7 @@ In addition to the arguments listed above, the following attributes are exported
 * `username` - Username to use to log into a Compute Instance based on this template
 
 
-[r-compute]: ../r/compute.html
+[r-compute]: ../resources/compute
 [templates]: https://www.exoscale.com/templates/
 [zone]: https://www.exoscale.com/datacenters/
 

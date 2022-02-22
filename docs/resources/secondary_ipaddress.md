@@ -52,5 +52,5 @@ In addition to the arguments listed above, the following attributes are exported
 This resource is automatically imported when importing an `exoscale_compute` resource.
 
 
-[r-compute]: compute.html
-[r-ipaddress]: ipaddress.html
+[r-compute]: ../resources/compute
+[r-ipaddress]: ../resources/ipaddress

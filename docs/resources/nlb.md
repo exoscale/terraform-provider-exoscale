@@ -61,6 +61,6 @@ $ terraform import exoscale_nlb.example eb556678-ec59-4be6-8c54-0406ae0f6da6@de-
 
 
 [nlb-doc]: https://community.exoscale.com/documentation/compute/network-load-balancer/
-[r-nlb_service]: nlb_service.html
+[r-nlb_service]: ../resources/nlb_service
 [zone]: https://www.exoscale.com/datacenters/
 

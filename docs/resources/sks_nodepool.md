@@ -112,7 +112,7 @@ $ terraform import exoscale_sks_nodepool.ci-builders eb556678-ec59-4be6-8c54-040
 
 
 [k8s-taints]: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
-[r-sks_cluster]: sks_cluster.html
+[r-sks_cluster]: ../resources/sks_cluster
 [sks-doc]: https://community.exoscale.com/documentation/sks/
 [type]: https://www.exoscale.com/pricing/#/compute/
 [zone]: https://www.exoscale.com/datacenters/

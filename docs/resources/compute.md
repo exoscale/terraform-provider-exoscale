@@ -136,11 +136,11 @@ $ terraform import exoscale_compute.vm1 eb556678-ec59-4be6-8c54-0406ae0f6da6
 
 [cloudinit]: http://cloudinit.readthedocs.io/en/latest/
 [compute-doc]: https://community.exoscale.com/documentation/compute/
-[d-compute_template]: ../d/compute_template.html
-[r-affinity]: affinity.html
-[r-nic]: nic.html
-[r-secondary_ipaddress]: secondary_ipaddress.html
-[r-security_group]: security_group.html
+[d-compute_template]: ../data-sources/compute_template
+[r-affinity]: ../resources/affinity
+[r-nic]: ../resources/nic
+[r-secondary_ipaddress]: ../resources/secondary_ipaddress
+[r-security_group]: ../resources/security_group
 [remote-exec]: https://www.terraform.io/docs/provisioners/remote-exec.html
 [size]: https://www.exoscale.com/pricing/#/compute/
 [sshkeypair-doc]: https://community.exoscale.com/documentation/compute/ssh-keypairs/

@@ -108,11 +108,11 @@ $ terraform import exoscale_instance_pool.example eb556678-ec59-4be6-8c54-0406ae
 
 
 [cloudinit]: http://cloudinit.readthedocs.io/en/latest/
-[d-compute_template]: ../d/compute_template.html
+[d-compute_template]: ../data-sources/compute_template
 [eip-doc]: https://community.exoscale.com/documentation/compute/eip/
 [privnet-doc]: https://community.exoscale.com/documentation/compute/private-networks/
-[r-affinity]: affinity.html
-[r-security_group]: security_group.html
+[r-affinity]: ../resources/affinity
+[r-security_group]: ../resources/security_group
 [sshkeypair]: https://community.exoscale.com/documentation/compute/ssh-keypairs/
 [template]: https://www.exoscale.com/templates/
 [type]: https://www.exoscale.com/pricing/#/compute/

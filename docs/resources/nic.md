@@ -51,5 +51,5 @@ This resource is automatically imported when importing an `exoscale_compute` res
 
 
 [privnet-doc]: https://community.exoscale.com/documentation/compute/private-networks/
-[r-compute]: compute.html
-[r-network]: network.html
+[r-compute]: ../resources/compute
+[r-network]: ../resources/network

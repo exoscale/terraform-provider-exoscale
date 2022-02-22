@@ -53,10 +53,10 @@ In addition to the arguments listed above, the following attributes are exported
 
 [cloudinit]: http://cloudinit.readthedocs.io/en/latest/
 [compute-doc]: https://community.exoscale.com/documentation/compute/
-[r-anti_affinity_group]: anti_affinity_group.html
-[r-elastic_ip]: ../r/elastic_ip.html
-[r-private_network]: ../r/private_network.html
-[r-security_group]: security_group.html
+[r-anti_affinity_group]: ../resources/anti_affinity_group
+[r-elastic_ip]: ../resources/elastic_ip
+[r-private_network]: ../resources/private_network
+[r-security_group]: ../resources/security_group
 [sshkeypair-doc]: https://community.exoscale.com/documentation/compute/ssh-keypairs/
 [template]: https://www.exoscale.com/templates/
 [type]: https://www.exoscale.com/pricing/#/compute/

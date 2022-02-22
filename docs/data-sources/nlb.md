@@ -43,6 +43,6 @@ In addition to the arguments listed above, the following attributes are exported
 
 
 [nlb-doc]: https://community.exoscale.com/documentation/compute/network-load-balancer/
-[r-instance_pool]: ../r/instance_pool.html
+[r-instance_pool]: ../resources/instance_pool
 [zone]: https://www.exoscale.com/datacenters/
 

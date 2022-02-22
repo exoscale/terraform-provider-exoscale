@@ -104,5 +104,5 @@ $ terraform import exoscale_nlb_service.example eb556678-ec59-4be6-8c54-0406ae0f
 ```
 
 
-[r-nlb]: nlb.html
+[r-nlb]: ../resources/nlb
 [zone]: https://www.exoscale.com/datacenters/

@@ -67,6 +67,6 @@ In addition to the arguments listed above, the following attributes are exported
 
 
 [exo-dns]: https://www.exoscale.com/dns/
-[r-domain]: ../r/domain.html
-[r-domain_record]: ../r/domain_record.html
+[r-domain]: ../resources/domain
+[r-domain_record]: ../resources/domain_record
 

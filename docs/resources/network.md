@@ -74,7 +74,7 @@ $ terraform import exoscale_network.net 04fb76a2-6d22-49be-8da7-f2a5a0b902e1
 ```
 
 
-[r-nic]: nic.html
+[r-nic]: ../resources/nic
 [privnet-doc]: https://community.exoscale.com/documentation/compute/private-networks/
 [zone]: https://www.exoscale.com/datacenters/
 

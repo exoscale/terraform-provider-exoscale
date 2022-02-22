@@ -59,7 +59,7 @@ In addition to the arguments listed above, the following attributes are exported
 * `netmask` - The netmask defining the IP network allowed for the static lease (for *managed* Private Networks)
 
 
-[r-instance_pool]: ../r/instance_pool.html
+[r-instance_pool]: ../resources/instance_pool
 [privnet-doc]: https://community.exoscale.com/documentation/compute/private-networks/
 [zone]: https://www.exoscale.com/datacenters/
 

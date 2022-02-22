@@ -47,4 +47,4 @@ $ terraform import exoscale_domain.example example.net
 
 
 [dns-doc]: https://community.exoscale.com/documentation/dns/
-[r-domain_record]: domain_record.html
+[r-domain_record]: ../resources/domain_record
