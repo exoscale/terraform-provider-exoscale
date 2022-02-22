@@ -267,8 +267,9 @@ func resourceSecurityGroupImport(
 		resource := resourceSecurityGroupRule()
 		rd := resource.Data(nil)
 		rd.SetType("exoscale_security_group_rule")
+		rd.SetId(*securityGroupRule.ID)
 
-		if err := rd.Set("type", strings.ToUpper(*securityGroupRule.FlowDirection)); err != nil {
+		if err := rd.Set(resSecurityGroupRuleAttrFlowDirection, strings.ToUpper(*securityGroupRule.FlowDirection)); err != nil {
 			return nil, err
 		}
 
