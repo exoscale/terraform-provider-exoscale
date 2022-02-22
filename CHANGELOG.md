@@ -10,6 +10,10 @@ BUG FIXES:
 - `security_group`: fix resource import along with associated `security_group_rules`.
 - test: fix DBaaS plan (hobbyist-1 is no longer available)
 
+DEPRECATIONS:
+
+- `security_group_rules`: now deprecated in favor of `security_group_rule`
+
 ## 0.31.2 (December 21, 2021)
 
 BUG FIXES:
