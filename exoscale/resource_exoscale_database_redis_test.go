@@ -14,7 +14,7 @@ import (
 
 var (
 	testAccResourceDatabaseRedisIPFilter = []string{"1.2.3.4/32"}
-	testAccResourceDatabasePlanRedis     = "hobbyist-1"
+	testAccResourceDatabasePlanRedis     = "hobbyist-2"
 
 	testAccResourceDatabaseConfigCreateRedis = fmt.Sprintf(`
 locals {
