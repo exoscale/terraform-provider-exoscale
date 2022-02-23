@@ -274,7 +274,8 @@ func resourceSecurityGroupRulesStateUpgradeV1(_ context.Context, rawState map[st
 	// the Open-API backend will return lower cased names.
 	// As a rule ID depends on its properties, in such a case, a rule ID doesn't match its definition anymore.
 	// Here we fix this by updating updating the rule ID from the current state.
-	var ruleIDRegex = regexp.MustCompile(`^([0-9a-z-]{36}_(?:tcp|udp)_)(.*)(_[0-9]+-[0-9]+)?$`)
+	var ruleIDRegex = regexp.MustCompile(`^([0-9a-z-]{36}_(?:[a-z]+6?)_)(.*)(_[0-9]+-[0-9]+)?$`)
+
 	for _, direction := range []string{"ingress", "egress"} {
 		if _, ok := rawState[direction]; !ok {
 			log.Printf("[DEBUG] flow direction not defined: '%s', skipping", direction)
