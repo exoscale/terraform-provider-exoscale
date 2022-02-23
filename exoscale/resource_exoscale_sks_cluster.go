@@ -456,6 +456,13 @@ func resourceSKSClusterUpdate(ctx context.Context, d *schema.ResourceData, meta 
 		}
 	}
 
+	if d.HasChange(resSKSClusterAttrVersion) {
+		v := d.Get(resSKSClusterAttrName).(string)
+		if err = client.UpgradeSKSCluster(ctx, zone, sksCluster, v); err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
 	tflog.Debug(ctx, "update finished successfully", map[string]interface{}{
 		"id": resourceSKSClusterIDString(d),
 	})

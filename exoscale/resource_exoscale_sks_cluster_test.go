@@ -32,6 +32,7 @@ var (
 	testAccResourceSKSClusterOIDCUsernamePrefix     = acctest.RandString(10)
 	testAccResourceSKSClusterDescription            = acctest.RandString(10)
 	testAccResourceSKSClusterDescriptionUpdated     = testAccResourceSKSClusterDescription + "-updated"
+	testAccResourceSKSClusterVersionUpdated         = "1.23.4"
 
 	testAccResourceSKSClusterConfigCreate = fmt.Sprintf(`
 locals {
@@ -102,6 +103,7 @@ resource "exoscale_sks_cluster" "test" {
   exoscale_ccm = true
   metrics_server = false
   auto_upgrade = false
+  version = "%s"
   labels = {
     test = "%s"
   }
@@ -127,6 +129,7 @@ resource "exoscale_sks_nodepool" "test" {
 		testZoneName,
 		testAccResourceSKSClusterNameUpdated,
 		testAccResourceSKSClusterDescriptionUpdated,
+		testAccResourceSKSClusterVersionUpdated,
 		testAccResourceSKSClusterLabelValueUpdated,
 	)
 )
@@ -251,7 +254,7 @@ func TestAccResourceSKSCluster(t *testing.T) {
 						resSKSClusterAttrName:               validateString(testAccResourceSKSClusterNameUpdated),
 						resSKSClusterAttrServiceLevel:       validateString(defaultSKSClusterServiceLevel),
 						resSKSClusterAttrState:              validation.ToDiagFunc(validation.NoZeroValues),
-						resSKSClusterAttrVersion:            validation.ToDiagFunc(validation.NoZeroValues),
+						resSKSClusterAttrVersion:            validateString(testAccResourceSKSClusterVersionUpdated),
 					})),
 				),
 			},
