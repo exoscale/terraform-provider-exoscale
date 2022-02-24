@@ -4,7 +4,7 @@ description: |-
   Provides an Exoscale Elastic IP address.
 ---
 
-# exoscale\_elastic_ip
+# exoscale\_elastic\_ip
 
 Provides an Exoscale [Elastic IP address][eip-doc] resource. This can be used to create, update and delete Elastic IPs.
 

@@ -4,7 +4,7 @@ description: |-
   Provides an Exoscale Anti-Affinity Group resource.
 ---
 
-# exoscale\_affinity
+# exoscale\_anti\_affinity\_group
 
 Provides an Exoscale [Anti-Affinity Group][aag-doc] resource. This can be used to create and delete Anti-Affinity Groups.
 
