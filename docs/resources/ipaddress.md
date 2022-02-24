@@ -11,7 +11,7 @@ Provides an Exoscale [Elastic IP address][eip-doc] resource. This can be used to
 
 See [`exoscale_secondary_ipaddress`][r-secondary_ipaddress] for usage with Compute instances.
 
-!> **WARNING:** This resource is deprecated and will be removed in the next major version.
+!> **WARNING:** This resource is deprecated and will be removed in the next major version. Please use [exoscale_elastic_ip][r-elastic-ip] instead.
 
 
 ### Usage example
@@ -83,4 +83,5 @@ $ terraform import exoscale_ipaddress.myip eb556678-ec59-4be6-8c54-0406ae0f6da6
 
 [eip-doc]: https://community.exoscale.com/documentation/compute/eip/
 [r-secondary_ipaddress]: ../resources/secondary_ipaddress
+[r-elastic-ip]: ../resources/elastic_ip
 [zone]: https://www.exoscale.com/datacenters/

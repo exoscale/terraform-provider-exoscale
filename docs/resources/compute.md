@@ -9,7 +9,7 @@ description: |-
 
 Provides an Exoscale [Compute instance][compute-doc] resource. This can be used to create, modify, and delete Compute instances.
 
-!> **WARNING:** This resource is deprecated and will be removed in the next major version.
+!> **WARNING:** This resource is deprecated and will be removed in the next major version. Please use [exoscale_compute_instance][r-compute-instance] instead.
 
 
 ## Example Usage
@@ -140,6 +140,7 @@ $ terraform import exoscale_compute.vm1 eb556678-ec59-4be6-8c54-0406ae0f6da6
 [r-nic]: ../resources/nic
 [r-secondary_ipaddress]: ../resources/secondary_ipaddress
 [r-security_group]: ../resources/security_group
+[r-compute-instance]: ../resources/compute_instance
 [remote-exec]: https://www.terraform.io/docs/provisioners/remote-exec.html
 [size]: https://www.exoscale.com/pricing/#/compute/
 [sshkeypair-doc]: https://community.exoscale.com/documentation/compute/ssh-keypairs/

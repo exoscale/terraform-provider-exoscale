@@ -11,7 +11,7 @@ Provides an Exoscale [Private Network][privnet-doc] resource. This can be used t
 
 See [`exoscale_nic`][r-nic] for usage with Compute instances.
 
-!> **WARNING:** This resource is deprecated and will be removed in the next major version.
+!> **WARNING:** This resource is deprecated and will be removed in the next major version. Please use [exoscale_private_network][r-private-network] instead.
 
 
 ## Usage
@@ -74,6 +74,7 @@ $ terraform import exoscale_network.net 04fb76a2-6d22-49be-8da7-f2a5a0b902e1
 
 
 [r-nic]: ../resources/nic
+[r-private-network]: ../resources/private_network
 [privnet-doc]: https://community.exoscale.com/documentation/compute/private-networks/
 [zone]: https://www.exoscale.com/datacenters/
 

@@ -9,7 +9,7 @@ description: |-
 
 Provides an Exoscale [SSH Keypair][ssh-keypairs-doc] resource. This can be used to create and delete SSH Keypairs.
 
-!> **WARNING:** This resource is deprecated and will be removed in the next major version.
+!> **WARNING:** This resource is deprecated and will be removed in the next major version. Please use [exoscale_ssh_key][r-ssh-key] instead.
 
 
 ## Example Usage
@@ -46,3 +46,4 @@ $ terraform import exoscale_ssh_keypair.mykey my-key
 
 
 [ssh-keypairs-doc]: https://community.exoscale.com/documentation/compute/ssh-keypairs/
+[r-ssh-key]: ../resources/ssh_key
