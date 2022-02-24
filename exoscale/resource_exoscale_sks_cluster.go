@@ -457,7 +457,7 @@ func resourceSKSClusterUpdate(ctx context.Context, d *schema.ResourceData, meta 
 	}
 
 	if d.HasChange(resSKSClusterAttrVersion) {
-		v := d.Get(resSKSClusterAttrName).(string)
+		v := d.Get(resSKSClusterAttrVersion).(string)
 		if err = client.UpgradeSKSCluster(ctx, zone, sksCluster, v); err != nil {
 			return diag.FromErr(err)
 		}
