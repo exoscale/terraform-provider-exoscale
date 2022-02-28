@@ -1,6 +1,6 @@
 # Changelog
 
-## Next release
+## 0.32.0 (February 28, 2022)
 
 BUG FIXES:
 
