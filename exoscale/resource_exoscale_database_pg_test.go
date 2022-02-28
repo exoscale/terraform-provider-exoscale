@@ -17,7 +17,7 @@ var (
 	testAccResourceDatabasePgBackupScheduleUpdated = "23:45"
 	testAccResourceDatabasePgIPFilter              = []string{"1.2.3.4/32"}
 	testAccResourceDatabasePgVersion               = "13"
-	testAccResourceDatabasePlanPg                  = "hobbyist-1"
+	testAccResourceDatabasePlanPg                  = "hobbyist-2"
 
 	testAccResourceDatabaseConfigCreatePg = fmt.Sprintf(`
 locals {

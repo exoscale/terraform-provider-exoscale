@@ -488,45 +488,78 @@ func testAccCheckSecurityGroupRuleExists(
 }
 
 func TestAccCheckSecurityGroupRuleMigrationRuleSerialization(t *testing.T) {
-	rawState := testAccCheckSecurityGroupRuleMigrationStateDataV0Raw()
-	computedState := testAccCheckSecurityGroupRuleMigrationStateDataV0struct()
+	tests := []struct {
+		name     string
+		raw      map[string]interface{}
+		computed map[string]interface{}
+	}{
+		{
+			name:     "Serialization for schema v0",
+			raw:      testAccCheckSecurityGroupRuleMigrationStateDataV0Raw(),
+			computed: testAccCheckSecurityGroupRuleMigrationStateDataV0struct(),
+		},
+		{
+			name:     "Serialization for schema v1",
+			raw:      testAccCheckSecurityGroupRuleMigrationStateDataV1Raw(),
+			computed: testAccCheckSecurityGroupRuleMigrationStateDataV1struct(),
+		},
+	}
 
-	if !reflect.DeepEqual(rawState, computedState) {
-		t.Fatalf("rule state serialization: \nexpected: '%#v' \ngot:      '%#v'", rawState, computedState)
+	for _, test := range tests {
+		if !reflect.DeepEqual(test.raw, test.computed) {
+			t.Fatalf("rule state serialization (%s): \nexpected: '%#v' \ngot:      '%#v'", test.name, test.raw, test.computed)
+		}
 	}
 }
 
 func TestAccCheckSecurityGroupRuleMigrationSucceed(t *testing.T) {
 	tests := []struct {
-		name     string
-		migrated map[string]interface{}
-		legacy   map[string]interface{}
+		name        string
+		migrated    map[string]interface{}
+		legacy      map[string]interface{}
+		migrateFunc func(_ context.Context, rawState map[string]interface{}, _ interface{}) (map[string]interface{}, error)
 	}{
 		{
-			name:     "Migrate raw state",
-			migrated: testAccCheckSecurityGroupRuleMigrationStateDataV1(),
-			legacy:   testAccCheckSecurityGroupRuleMigrationStateDataV0Raw(),
+			name:        "Migrate raw state from v0",
+			migrated:    testAccCheckSecurityGroupRuleMigrationStateDataV1(),
+			legacy:      testAccCheckSecurityGroupRuleMigrationStateDataV0Raw(),
+			migrateFunc: resourceSecurityGroupRulesStateUpgradeV0,
 		},
 		{
-			name:     "Migrate struct-computed state",
-			migrated: testAccCheckSecurityGroupRuleMigrationStateDataV1(),
-			legacy:   testAccCheckSecurityGroupRuleMigrationStateDataV0struct(),
+			name:        "Migrate struct-computed state from v0",
+			migrated:    testAccCheckSecurityGroupRuleMigrationStateDataV1(),
+			legacy:      testAccCheckSecurityGroupRuleMigrationStateDataV0struct(),
+			migrateFunc: resourceSecurityGroupRulesStateUpgradeV0,
+		},
+		{
+			name:        "Migrate raw state from v1",
+			migrated:    testAccCheckSecurityGroupRuleMigrationStateDataV2(),
+			legacy:      testAccCheckSecurityGroupRuleMigrationStateDataV1Raw(),
+			migrateFunc: resourceSecurityGroupRulesStateUpgradeV1,
+		},
+		{
+			name:        "Migrate struct-computed state from v1",
+			migrated:    testAccCheckSecurityGroupRuleMigrationStateDataV2(),
+			legacy:      testAccCheckSecurityGroupRuleMigrationStateDataV1struct(),
+			migrateFunc: resourceSecurityGroupRulesStateUpgradeV1,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			migratedState, err := resourceSecurityGroupRulesStateUpgradeV0(context.Background(), test.legacy, nil)
+			migratedState, err := test.migrateFunc(context.Background(), test.legacy, nil)
 			if err != nil {
 				t.Fatalf("error migrating state: %s", err)
 			}
 
 			if !reflect.DeepEqual(test.migrated, migratedState) {
-				t.Fatalf("migration error: expected: '%#v' \ngot: '%#v'", test.migrated, migratedState)
+				t.Fatalf("migration error (%s): expected: '%#v' \ngot: '%#v'", test.name, test.migrated, migratedState)
 			}
 		})
 	}
 }
+
+// For migration from v0
 
 func testAccCheckSecurityGroupRuleMigrationStateDataV0Raw() map[string]interface{} {
 	return map[string]interface{}{
@@ -575,6 +608,66 @@ func testAccCheckSecurityGroupRuleMigrationStateDataV1() map[string]interface{} 
 				"description": "",
 				"ids": []interface{}{
 					"d7ffd6ff-9788-4834-a44d-3dc49149bfc6_tcp_0.0.0.0/0_1-65535",
+				},
+				"ports": []interface{}{
+					"1-65535",
+				},
+				"protocol": "TCP",
+			},
+		},
+	}
+}
+
+// For migration from v1
+
+func testAccCheckSecurityGroupRuleMigrationStateDataV1Raw() map[string]interface{} {
+	return map[string]interface{}{
+		"ingress": []interface{}{
+			map[string]interface{}{
+				"user_security_group_list": []interface{}{
+					"Test",
+				},
+
+				"description": "",
+				"ids": []interface{}{
+					"d7ffd6ff-9788-4834-a44d-3dc49149bfc6_tcp_Test_1-65535",
+				},
+				"ports": []interface{}{
+					"1-65535",
+				},
+				"protocol": "TCP",
+			},
+		},
+	}
+}
+
+func testAccCheckSecurityGroupRuleMigrationStateDataV1struct() map[string]interface{} {
+	legacyRule := stateSecurityGroupRule{
+		UserSecurityGroupList: []string{"Test"},
+		Description:           "",
+		IDs:                   []string{"d7ffd6ff-9788-4834-a44d-3dc49149bfc6_tcp_Test_1-65535"},
+		Ports:                 []string{"1-65535"},
+		Protocol:              "TCP",
+	}
+	legacyRuleInterface, _ := legacyRule.toInterface()
+
+	return map[string]interface{}{
+		"ingress": []interface{}{
+			legacyRuleInterface,
+		},
+	}
+}
+
+func testAccCheckSecurityGroupRuleMigrationStateDataV2() map[string]interface{} {
+	return map[string]interface{}{
+		"ingress": []interface{}{
+			map[string]interface{}{
+				"user_security_group_list": []interface{}{
+					"test",
+				},
+				"description": "",
+				"ids": []interface{}{
+					"d7ffd6ff-9788-4834-a44d-3dc49149bfc6_tcp_test_1-65535",
 				},
 				"ports": []interface{}{
 					"1-65535",

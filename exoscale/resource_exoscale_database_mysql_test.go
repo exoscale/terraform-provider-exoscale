@@ -17,7 +17,7 @@ var (
 	testAccResourceDatabaseMysqlBackupScheduleUpdated = "23:45"
 	testAccResourceDatabaseMysqlIPFilter              = []string{"1.2.3.4/32"}
 	testAccResourceDatabaseMysqlVersion               = "8"
-	testAccResourceDatabasePlanMysql                  = "hobbyist-1"
+	testAccResourceDatabasePlanMysql                  = "hobbyist-2"
 
 	testAccResourceDatabaseConfigCreateMysql = fmt.Sprintf(`
 locals {
