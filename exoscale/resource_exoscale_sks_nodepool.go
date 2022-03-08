@@ -27,6 +27,7 @@ const (
 	resSKSNodepoolAttrInstancePrefix       = "instance_prefix"
 	resSKSNodepoolAttrInstanceType         = "instance_type"
 	resSKSNodepoolAttrLabels               = "labels"
+	resSKSNodepoolAttrLinbit               = "linbit"
 	resSKSNodepoolAttrName                 = "name"
 	resSKSNodepoolAttrPrivateNetworkIDs    = "private_network_ids"
 	resSKSNodepoolAttrSecurityGroupIDs     = "security_group_ids"
@@ -90,6 +91,11 @@ func resourceSKSNodepool() *schema.Resource {
 			Type:     schema.TypeMap,
 			Elem:     &schema.Schema{Type: schema.TypeString},
 			Optional: true,
+		},
+		resSKSNodepoolAttrLinbit: {
+			Type:     schema.TypeBool,
+			Optional: true,
+			Default:  false,
 		},
 		resSKSNodepoolAttrName: {
 			Type:     schema.TypeString,
@@ -237,6 +243,18 @@ func resourceSKSNodepoolCreate(ctx context.Context, d *schema.ResourceData, meta
 			labels[k] = v.(string)
 		}
 		sksNodepool.Labels = &labels
+	}
+
+	var addOns []string
+	if addonsSet, ok := d.Get("addons").(*schema.Set); ok && addonsSet.Len() > 0 {
+		addOns = make([]string, addonsSet.Len())
+		for i, a := range addonsSet.List() {
+			addOns[i] = a.(string)
+		}
+	}
+
+	if enableLinbit := d.Get("linbit").(bool); enableLinbit && !in(addOns, resSKSNodepoolAttrLinbit) {
+		addOns = append(addOns, resSKSNodepoolAttrLinbit)
 	}
 
 	if v, ok := d.GetOk(resSKSNodepoolAttrName); ok {
@@ -570,6 +588,10 @@ func resourceSKSNodepoolApply(
 	}
 
 	if err := d.Set(resSKSNodepoolAttrLabels, sksNodepool.Labels); err != nil {
+		return err
+	}
+
+	if err := d.Set(resSKSNodepoolAttrLinbit, in(*sksNodepool.AddOns, resSKSNodepoolAttrLinbit)); err != nil {
 		return err
 	}
 

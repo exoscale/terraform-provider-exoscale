@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.33.0 (March XX, 2022)
+
+FEATURES:
+
+- `exoscale_sks_nodepool`: allow to pass the `linbit` argument to change node partitioning setup. (#XXX)
+
 ## 0.32.0 (February 28, 2022)
 
 BUG FIXES:
