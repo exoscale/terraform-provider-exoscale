@@ -1,5 +1,7 @@
 package exoscale
 
+import "github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+
 // in returns true if v is found in list.
 func in(list []string, v string) bool {
 	for i := range list {
@@ -45,4 +47,13 @@ func nonEmptyStringPtr(s string) *string {
 	}
 
 	return nil
+}
+
+func schemaSetToStringArray(set *schema.Set) []string {
+	array := make([]string, set.Len())
+	for i, group := range set.List() {
+		array[i] = group.(string)
+	}
+
+	return array
 }
