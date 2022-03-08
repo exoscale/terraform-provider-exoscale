@@ -17,13 +17,13 @@ import (
 )
 
 const (
-	resSKSKubeconfigAttrClusterID       = "cluster_id"
-	resSKSKubeconfigAttrGroups          = "groups"
-	resSKSKubeconfigAttrKubeconfig      = "kubeconfig"
-	resSKSKubeconfigAttrReadyForRenewal = "ready_for_renewal"
-	resSKSKubeconfigAttrTTLSeconds      = "ttl_seconds"
-	resSKSKubeconfigAttrUser            = "user"
-	resSKSKubeconfigAttrZone            = "zone"
+	resSKSKubeconfigAttrClusterID           = "cluster_id"
+	resSKSKubeconfigAttrEarlyRenewalSeconds = "early_renewal_seconds"
+	resSKSKubeconfigAttrGroups              = "groups"
+	resSKSKubeconfigAttrKubeconfig          = "kubeconfig"
+	resSKSKubeconfigAttrTTLSeconds          = "ttl_seconds"
+	resSKSKubeconfigAttrUser                = "user"
+	resSKSKubeconfigAttrZone                = "zone"
 )
 
 func resourceSKSKubeconfigIDString(d resourceIDStringer) string {
@@ -37,6 +37,11 @@ func resourceSKSKubeconfig() *schema.Resource {
 			Required: true,
 			ForceNew: true,
 		},
+		resSKSKubeconfigAttrEarlyRenewalSeconds: {
+			Type:     schema.TypeInt,
+			Optional: true,
+			Default:  0,
+		},
 		resSKSKubeconfigAttrGroups: {
 			Type:     schema.TypeSet,
 			Optional: true,
@@ -48,10 +53,6 @@ func resourceSKSKubeconfig() *schema.Resource {
 			Type:      schema.TypeString,
 			Computed:  true,
 			Sensitive: true,
-		},
-		resSKSKubeconfigAttrReadyForRenewal: {
-			Type:     schema.TypeBool,
-			Computed: true,
 		},
 		resSKSKubeconfigAttrTTLSeconds: {
 			Type:     schema.TypeFloat,
@@ -76,6 +77,7 @@ func resourceSKSKubeconfig() *schema.Resource {
 
 		CreateContext: resourceSKSKubeconfigCreate,
 		ReadContext:   resourceSKSKubeconfigRead,
+		UpdateContext: resourceSKSKubeconfigUpdate,
 		DeleteContext: resourceSKSKubeconfigDelete,
 
 		CustomizeDiff: resourceSKSKubeconfigDiff,
@@ -122,10 +124,6 @@ func resourceSKSKubeconfigCreate(ctx context.Context, d *schema.ResourceData, me
 		return diag.Errorf("error decoding kubeconfig content: %s", err)
 	}
 
-	if err := d.Set(resSKSKubeconfigAttrReadyForRenewal, false); err != nil {
-		return diag.Errorf("error setting value on key '%s': %s", resSKSKubeconfigAttrReadyForRenewal, err)
-	}
-
 	if err := d.Set(resSKSKubeconfigAttrKubeconfig, string(kubeconfig)); err != nil {
 		return diag.Errorf("error setting value on key '%s': %s", resSKSKubeconfigAttrKubeconfig, err)
 	}
@@ -144,6 +142,10 @@ func resourceSKSKubeconfigCreate(ctx context.Context, d *schema.ResourceData, me
 
 func resourceSKSKubeconfigRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	return nil
+}
+
+func resourceSKSKubeconfigUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	return resourceSKSKubeconfigRead(ctx, d, meta)
 }
 
 func resourceSKSKubeconfigDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -169,20 +171,22 @@ func resourceSKSKubeconfigDiff(ctx context.Context, d *schema.ResourceDiff, meta
 
 	if !readyForRenewal {
 		now := time.Now()
+		earlyRenewalSeconds := d.Get(resSKSKubeconfigAttrEarlyRenewalSeconds).(int)
+		earlyRenewalPeriod := time.Duration(-earlyRenewalSeconds) * time.Second
+
 		for _, certificate := range append(clusterCerts, clientCerts...) {
-			if !certificate.NotAfter.After(now) {
+			if certificate.NotAfter.Add(earlyRenewalPeriod).Sub(now) <= 0 {
 				readyForRenewal = true
-				break
 			}
 		}
 	}
 
 	if readyForRenewal {
-		if err := d.SetNew(resSKSKubeconfigAttrReadyForRenewal, true); err != nil {
+		if err := d.SetNew(resSKSKubeconfigAttrKubeconfig, "expired"); err != nil {
 			return err
 		}
 
-		if err := d.ForceNew(resSKSKubeconfigAttrReadyForRenewal); err != nil {
+		if err := d.ForceNew(resSKSKubeconfigAttrKubeconfig); err != nil {
 			return err
 		}
 	}
