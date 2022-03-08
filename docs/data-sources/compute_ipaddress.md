@@ -1,5 +1,6 @@
 ---
 page_title: "Exoscale: exoscale_compute_ipaddress"
+subcategory: "Deprecated"
 description: |-
   Provides information about a Compute template.
 ---

@@ -1,5 +1,6 @@
 ---
 page_title: "Exoscale: exoscale_affinity"
+subcategory: "Deprecated"
 description: |-
   Provides information about an Anti-Affinity Group.
 ---
