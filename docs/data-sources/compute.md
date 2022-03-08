@@ -1,5 +1,6 @@
 ---
 page_title: "Exoscale: exoscale_compute"
+subcategory: "Deprecated"
 description: |-
   Provides information about a Compute.
 ---

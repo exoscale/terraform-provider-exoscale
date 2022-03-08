@@ -1,5 +1,6 @@
 ---
 page_title: "Exoscale: exoscale_network"
+subcategory: "Deprecated"
 description: |-
   Provides information about a Private Network.
 ---
