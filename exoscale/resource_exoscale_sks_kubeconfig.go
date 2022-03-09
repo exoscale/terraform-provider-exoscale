@@ -22,6 +22,7 @@ const (
 	resSKSKubeconfigAttrEarlyRenewalSeconds = "early_renewal_seconds"
 	resSKSKubeconfigAttrGroups              = "groups"
 	resSKSKubeconfigAttrKubeconfig          = "kubeconfig"
+	resSKSKubeconfigAttrReadyForRenewal     = "ready_for_renewal"
 	resSKSKubeconfigAttrTTLSeconds          = "ttl_seconds"
 	resSKSKubeconfigAttrUser                = "user"
 	resSKSKubeconfigAttrZone                = "zone"
@@ -54,6 +55,10 @@ func resourceSKSKubeconfig() *schema.Resource {
 			Type:      schema.TypeString,
 			Computed:  true,
 			Sensitive: true,
+		},
+		resSKSKubeconfigAttrReadyForRenewal: {
+			Type:     schema.TypeBool,
+			Computed: true,
 		},
 		resSKSKubeconfigAttrTTLSeconds: {
 			Type:     schema.TypeFloat,
@@ -125,6 +130,9 @@ func resourceSKSKubeconfigCreate(ctx context.Context, d *schema.ResourceData, me
 		return diag.Errorf("error decoding kubeconfig content: %s", err)
 	}
 
+	if err := d.Set(resSKSKubeconfigAttrReadyForRenewal, false); err != nil {
+		return diag.Errorf("error setting value on key '%s': %s", resSKSKubeconfigAttrReadyForRenewal, err)
+	}
 	if err := d.Set(resSKSKubeconfigAttrKubeconfig, string(kubeconfig)); err != nil {
 		return diag.Errorf("error setting value on key '%s': %s", resSKSKubeconfigAttrKubeconfig, err)
 	}
@@ -163,7 +171,7 @@ func resourceSKSKubeconfigDelete(ctx context.Context, d *schema.ResourceData, me
 func resourceSKSKubeconfigDiff(ctx context.Context, d *schema.ResourceDiff, meta interface{}) error {
 	kubeconfig := d.Get(resSKSKubeconfigAttrKubeconfig).(string)
 
-	clusterCerts, clientCerts, err := kubeconfigExtractCertificates(kubeconfig)
+	clusterCerts, clientCerts, err := KubeconfigExtractCertificates(kubeconfig)
 	if err != nil {
 		return err
 	}
@@ -182,11 +190,11 @@ func resourceSKSKubeconfigDiff(ctx context.Context, d *schema.ResourceDiff, meta
 	}
 
 	if readyForRenewal {
-		if err := d.SetNew(resSKSKubeconfigAttrKubeconfig, "expired"); err != nil {
+		if err := d.SetNew(resSKSKubeconfigAttrReadyForRenewal, true); err != nil {
 			return err
 		}
 
-		if err := d.ForceNew(resSKSKubeconfigAttrKubeconfig); err != nil {
+		if err := d.ForceNew(resSKSKubeconfigAttrReadyForRenewal); err != nil {
 			return err
 		}
 	}
@@ -194,7 +202,7 @@ func resourceSKSKubeconfigDiff(ctx context.Context, d *schema.ResourceDiff, meta
 	return nil
 }
 
-func kubeconfigExtractCertificates(kubeconfig string) ([]*x509.Certificate, []*x509.Certificate, error) {
+func KubeconfigExtractCertificates(kubeconfig string) ([]*x509.Certificate, []*x509.Certificate, error) {
 	if len(kubeconfig) == 0 {
 		return []*x509.Certificate{}, []*x509.Certificate{}, nil
 	}
@@ -257,7 +265,7 @@ func kubeconfigRawPEMDataToCertificate(b64PEMData string) (*x509.Certificate, er
 func kubeconfigToID(kubeconfig string) (*string, error) {
 	log.Printf("[DEBUG] kubeconfigToID: kubeconfig= %s", kubeconfig)
 
-	clusterCertificates, clientCertificates, err := kubeconfigExtractCertificates(kubeconfig)
+	clusterCertificates, clientCertificates, err := KubeconfigExtractCertificates(kubeconfig)
 	if err != nil {
 		return nil, fmt.Errorf("unable to extract certificates from kubeconfig: %w", err)
 	}
