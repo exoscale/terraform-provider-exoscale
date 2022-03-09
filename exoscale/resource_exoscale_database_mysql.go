@@ -10,6 +10,7 @@ import (
 	"github.com/exoscale/egoscale/v2/oapi"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 const (
@@ -44,9 +45,12 @@ var resDatabaseMysqlSchema = &schema.Schema{
 				Computed: true,
 			},
 			resDatabaseAttrMysqlIPFilter: {
-				Type:     schema.TypeSet,
-				Set:      schema.HashString,
-				Elem:     &schema.Schema{Type: schema.TypeString},
+				Type: schema.TypeSet,
+				Set:  schema.HashString,
+				Elem: &schema.Schema{
+					Type:         schema.TypeString,
+					ValidateFunc: validation.IsCIDRNetwork(0, 128),
+				},
 				Optional: true,
 				Computed: true,
 			},
