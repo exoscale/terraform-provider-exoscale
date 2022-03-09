@@ -10,10 +10,11 @@ import (
 	"strings"
 	"time"
 
+	"gopkg.in/yaml.v3"
+
 	exoapi "github.com/exoscale/egoscale/v2/api"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"gopkg.in/yaml.v3"
 )
 
 const (
@@ -163,12 +164,11 @@ func resourceSKSKubeconfigDiff(ctx context.Context, d *schema.ResourceDiff, meta
 	kubeconfig := d.Get(resSKSKubeconfigAttrKubeconfig).(string)
 
 	clusterCerts, clientCerts, err := kubeconfigExtractCertificates(kubeconfig)
-	if len(kubeconfig) != 0 && err != nil {
+	if err != nil {
 		return err
 	}
 
 	readyForRenewal := len(kubeconfig) == 0
-
 	if !readyForRenewal {
 		now := time.Now()
 		earlyRenewalSeconds := d.Get(resSKSKubeconfigAttrEarlyRenewalSeconds).(int)
@@ -196,7 +196,7 @@ func resourceSKSKubeconfigDiff(ctx context.Context, d *schema.ResourceDiff, meta
 
 func kubeconfigExtractCertificates(kubeconfig string) ([]*x509.Certificate, []*x509.Certificate, error) {
 	if len(kubeconfig) == 0 {
-		return nil, nil, fmt.Errorf("kubeconfig is empty")
+		return []*x509.Certificate{}, []*x509.Certificate{}, nil
 	}
 
 	var kubeconfigData struct {
@@ -217,33 +217,20 @@ func kubeconfigExtractCertificates(kubeconfig string) ([]*x509.Certificate, []*x
 	}
 
 	var clusterCertificates []*x509.Certificate
-	var clientCertificates []*x509.Certificate
-
 	for _, cluster := range kubeconfigData.Clusters {
-		pemData, err := base64.StdEncoding.DecodeString(cluster.Cluster.CertificateAuthorityData)
+		parsedCertificate, err := kubeconfigRawPEMDataToCertificate(cluster.Cluster.CertificateAuthorityData)
 		if err != nil {
-			return nil, nil, fmt.Errorf("error decoding kubeconfig content: %w", err)
-		}
-
-		certificate, _ := pem.Decode(pemData)
-		parsedCertificate, err := x509.ParseCertificate(certificate.Bytes)
-		if err != nil {
-			return nil, nil, err
+			return nil, nil, fmt.Errorf("unable to read cluster CA certificate: %w", err)
 		}
 
 		clusterCertificates = append(clusterCertificates, parsedCertificate)
 	}
 
+	var clientCertificates []*x509.Certificate
 	for _, user := range kubeconfigData.Users {
-		pemData, err := base64.StdEncoding.DecodeString(user.User.ClientCertificateData)
+		parsedCertificate, err := kubeconfigRawPEMDataToCertificate(user.User.ClientCertificateData)
 		if err != nil {
-			return nil, nil, fmt.Errorf("error decoding kubeconfig content: %w", err)
-		}
-
-		certificate, _ := pem.Decode(pemData)
-		parsedCertificate, err := x509.ParseCertificate(certificate.Bytes)
-		if err != nil {
-			return nil, nil, err
+			return nil, nil, fmt.Errorf("unable to read client certificate: %w", err)
 		}
 
 		clientCertificates = append(clientCertificates, parsedCertificate)
@@ -252,24 +239,34 @@ func kubeconfigExtractCertificates(kubeconfig string) ([]*x509.Certificate, []*x
 	return clusterCertificates, clientCertificates, nil
 }
 
+func kubeconfigRawPEMDataToCertificate(b64PEMData string) (*x509.Certificate, error) {
+	rawPEMData, err := base64.StdEncoding.DecodeString(b64PEMData)
+	if err != nil {
+		return nil, fmt.Errorf("error decoding base64 kubeconfig certificate: %w", err)
+	}
+
+	parsedPEMData, _ := pem.Decode(rawPEMData)
+	parsedCertificate, err := x509.ParseCertificate(parsedPEMData.Bytes)
+	if err != nil {
+		return nil, fmt.Errorf("unable to parse kubeconfig x509 certificate: %w", err)
+	}
+
+	return parsedCertificate, nil
+}
+
 func kubeconfigToID(kubeconfig string) (*string, error) {
 	log.Printf("[DEBUG] kubeconfigToID: kubeconfig= %s", kubeconfig)
 
 	clusterCertificates, clientCertificates, err := kubeconfigExtractCertificates(kubeconfig)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to extract certificates from kubeconfig: %w", err)
 	}
 
 	certificateIDs := []string{}
 	for _, cert := range append(clusterCertificates, clientCertificates...) {
-		log.Printf("[DEBUG] kubeconfigToID: adding SN: %s", cert.SerialNumber.String())
-
 		certificateIDs = append(certificateIDs, cert.SerialNumber.String())
 	}
 
 	kubeconfigID := strings.Join(certificateIDs, ":")
-
-	log.Printf("[DEBUG] kubeconfigToID: %s", kubeconfigID)
-
 	return &kubeconfigID, nil
 }
