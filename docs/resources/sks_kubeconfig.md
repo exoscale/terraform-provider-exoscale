@@ -49,8 +49,8 @@ output "kubeconfig" {
 * `cluster_id` - (Required) The ID of the target SKS cluster.
 * `ttl_seconds` - The number of seconds after initial issuing that the Kubeconfig will become invalid.
 * `early_renewal_seconds` - If set, the resource will consider the Kubeconfig to have expired the given number of seconds before its actual ca certificate or client certificate expiry time. This can be useful to deploy an updated Kubeconfig in advance of the expiration of its internal current certificate. Note however that the old certificate remains valid until its true expiration time since this resource does not (and cannot) support certificate revocation. Note also that this advance update can only be performed should the Terraform configuration be applied during the early renewal period.
-* `user` - User name in the generated Kubeconfig. The certificate present in the Kubeconfig will also have this name set for the CN field.
-* `groups` - Group names in the generated Kubeconfig. The certificate present in the Kubeconfig will have these roles set in the Organization field.
+* `user` - (Required) User name in the generated Kubeconfig. The certificate present in the Kubeconfig will also have this name set for the CN field.
+* `groups` - (Required) Group names in the generated Kubeconfig. The certificate present in the Kubeconfig will have these roles set in the Organization field.
 
 ## Attributes Reference
 

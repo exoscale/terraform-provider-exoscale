@@ -45,7 +45,7 @@ func resourceSKSKubeconfig() *schema.Resource {
 		},
 		resSKSKubeconfigAttrGroups: {
 			Type:     schema.TypeSet,
-			Optional: true,
+			Required: true,
 			ForceNew: true,
 			Set:      schema.HashString,
 			Elem:     &schema.Schema{Type: schema.TypeString},
