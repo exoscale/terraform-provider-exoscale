@@ -19,6 +19,7 @@ require (
 	golang.org/x/tools v0.0.0-20201028111035-eafbe7b904eb // indirect
 	google.golang.org/api v0.34.0 // indirect
 	gopkg.in/ini.v1 v1.48.0
+	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 )
 
 go 1.16

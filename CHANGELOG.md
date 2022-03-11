@@ -1,5 +1,15 @@
 # Changelog
 
+## Next release
+
+FEATURES:
+
+- **New Resource:** `exoscale_sks_kubeconfig`
+
+BUG FIXES:
+
+- `database`: fix cidr blocks filtering for `ip_filter` attributes.
+
 ## 0.32.0 (February 28, 2022)
 
 BUG FIXES:
