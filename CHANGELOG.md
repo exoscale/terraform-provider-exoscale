@@ -1,6 +1,6 @@
 # Changelog
 
-## Next release
+## 0.33.0 (March 11, 2022)
 
 FEATURES:
 
