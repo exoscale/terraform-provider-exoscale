@@ -106,6 +106,8 @@ func resourceSecurityGroupRule() *schema.Resource {
 				ForceNew:     true,
 				Default:      "TCP",
 				ValidateFunc: validation.StringInSlice(securityGroupRuleProtocols, true),
+				// Ignore case differences
+				DiffSuppressFunc: suppressCaseDiff,
 			},
 			resSecurityGroupRuleAttrSecurityGroupID: {
 				Type:          schema.TypeString,
