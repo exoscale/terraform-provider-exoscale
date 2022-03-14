@@ -232,20 +232,31 @@ func resourceSecurityGroupRuleCreate(ctx context.Context, d *schema.ResourceData
 		securityGroupRule.ICMPType = &icmpType
 	}
 
-	if v, ok := d.GetOk(resSecurityGroupRuleAttrNetwork); ok {
-		_, network, err := net.ParseCIDR(v.(string))
+	network, byNetwork := d.GetOk(resSecurityGroupRuleAttrNetwork)
+	userSecurityGroupID, byUserSecurityGroupID := d.GetOk(resSecurityGroupRuleAttrUserSecurityGroupID)
+	userSecurityGroupName, byUserSecurityGroupName := d.GetOk(resSecurityGroupRuleAttrUserSecurityGroupName)
+
+	if !byNetwork && !byUserSecurityGroupID && !byUserSecurityGroupName {
+		return diag.Errorf(
+			"either %s or %s or %s must be specified",
+			resSecurityGroupRuleAttrNetwork,
+			resSecurityGroupRuleAttrUserSecurityGroupID,
+			resSecurityGroupRuleAttrUserSecurityGroupName,
+		)
+	}
+
+	if byNetwork {
+		_, cidr, err := net.ParseCIDR(network.(string))
 		if err != nil {
 			return diag.FromErr(err)
 		}
-		securityGroupRule.Network = network
+		securityGroupRule.Network = cidr
 	} else {
-		userSecurityGroupID, byID := d.GetOk(resSecurityGroupRuleAttrUserSecurityGroupID)
-		userSecurityGroupName, _ := d.GetOk(resSecurityGroupRuleAttrUserSecurityGroupName)
 
 		userSecurityGroup, err := client.FindSecurityGroup(
 			ctx,
 			zone, func() string {
-				if byID {
+				if byUserSecurityGroupID {
 					return userSecurityGroupID.(string)
 				}
 				return userSecurityGroupName.(string)
