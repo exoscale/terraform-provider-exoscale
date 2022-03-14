@@ -119,6 +119,8 @@ func resourceComputeInstance() *schema.Resource {
 			Type:             schema.TypeString,
 			Required:         true,
 			ValidateDiagFunc: validateComputeInstanceType,
+			// Ignore case differences
+			DiffSuppressFunc: suppressCaseDiff,
 		},
 		resComputeInstanceAttrUserData: {
 			Type:     schema.TypeString,
