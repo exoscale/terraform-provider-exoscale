@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.33.1 (March 15, 2022)
+
+BUG FIXES:
+
+- `exoscale_compute_instance`: ignore case differences for `instance-type` (#161)
+- `exoscale_instance_pool`: ignore case differences for `instance-type` (#161)
+- `exoscale_sks_nodepool`: ignore case differences for `instance-type` (#161)
+- `exoscale_security_group_rule`: ignore case differences for `protocol` (#161)
+- `exoscale_security_group_rule`: validate `cidr` or `user_security_group` or `user_security_group_id` is supplied (#160)
+
 ## 0.33.0 (March 11, 2022)
 
 FEATURES:
@@ -595,7 +605,7 @@ This release features the managed privnet (DHCP) capabilities, only in the `ch-g
 
 - `exoscale_compute.user_data` is know read from the external resource
 - allow `ALL` protocol rule
-- documentation fixes, thanks to @mcorbin (#116) 
+- documentation fixes, thanks to @mcorbin (#116)
 - upgrade egoscale to 0.9.25
 
 
@@ -615,7 +625,7 @@ BUG FIXES:
 
 IMPROVEMENTS:
 
-- Allow `user_data` to be updated, #113 
+- Allow `user_data` to be updated, #113
 - Upgrade egoscale to 0.9.21
 
 
