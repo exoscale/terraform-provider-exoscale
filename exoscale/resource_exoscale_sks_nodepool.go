@@ -85,6 +85,8 @@ func resourceSKSNodepool() *schema.Resource {
 			Type:             schema.TypeString,
 			Required:         true,
 			ValidateDiagFunc: validateComputeInstanceType,
+			// Ignore case differences
+			DiffSuppressFunc: suppressCaseDiff,
 		},
 		resSKSNodepoolAttrLabels: {
 			Type:     schema.TypeMap,

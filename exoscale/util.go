@@ -1,6 +1,10 @@
 package exoscale
 
-import "github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+import (
+	"strings"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+)
 
 // in returns true if v is found in list.
 func in(list []string, v string) bool {
@@ -56,4 +60,10 @@ func schemaSetToStringArray(set *schema.Set) []string {
 	}
 
 	return array
+}
+
+// DiffSuppressFunc https://www.terraform.io/plugin/sdkv2/schemas/schema-behaviors#diffsuppressfunc
+// Do no show case differences between state and resource
+func suppressCaseDiff(k, old, new string, d *schema.ResourceData) bool {
+	return strings.EqualFold(old, new)
 }

@@ -86,6 +86,8 @@ func resourceInstancePool() *schema.Resource {
 			Computed:         true,
 			ConflictsWith:    []string{resInstancePoolAttrServiceOffering},
 			ValidateDiagFunc: validateComputeInstanceType,
+			// Ignore case differences
+			DiffSuppressFunc: suppressCaseDiff,
 		},
 		resInstancePoolAttrIPv6: {
 			Type:     schema.TypeBool,
