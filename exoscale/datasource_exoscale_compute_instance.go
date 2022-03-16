@@ -84,6 +84,10 @@ func dataSourceComputeInstance() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
+			dsComputeInstanceAttrManagerType: {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 			dsComputeInstanceAttrName: {
 				Type:          schema.TypeString,
 				Optional:      true,
