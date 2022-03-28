@@ -64,10 +64,13 @@ resource "exoscale_compute_instance" "test" {
   ipv6                    = true
   anti_affinity_group_ids = [exoscale_anti_affinity_group.test.id]
   security_group_ids      = [exoscale_security_group.test.id]
-  private_network_ids     = [exoscale_private_network.test.id]
   elastic_ip_ids          = [exoscale_elastic_ip.test.id]
   user_data               = "%s"
   ssh_key                 = exoscale_ssh_key.test.name
+
+  network_interface {
+	network_id = exoscale_private_network.test.id
+  }
 
   labels = {
     test = "%s"

@@ -81,11 +81,14 @@ resource "exoscale_compute_instance" "test" {
     data.exoscale_security_group.default.id,
     exoscale_security_group.test.id,
   ]
-  private_network_ids     = [exoscale_private_network.test.id]
   elastic_ip_ids          = [exoscale_elastic_ip.test.id]
   user_data               = "%s"
   ssh_key                 = exoscale_ssh_key.test.name
   state                   = "%s"
+
+  network_interface {
+	network_id = exoscale_private_network.test.id
+  }
 
   labels = {
     test = "%s"
@@ -155,7 +158,6 @@ resource "exoscale_compute_instance" "test" {
   ipv6                    = true
   anti_affinity_group_ids = [exoscale_anti_affinity_group.test.id]
   security_group_ids      = [data.exoscale_security_group.default.id]
-  private_network_ids     = []
   elastic_ip_ids          = []
   user_data               = "%s"
   ssh_key                 = exoscale_ssh_key.test.name
@@ -253,7 +255,7 @@ func TestAccResourceComputeInstance(t *testing.T) {
 						resComputeInstanceAttrIPv6Address:                 validation.ToDiagFunc(validation.IsIPv6Address),
 						resComputeInstanceAttrLabels + ".test":            validateString(testAccResourceComputeInstanceLabelValue),
 						resComputeInstanceAttrName:                        validateString(testAccResourceComputeInstanceName),
-						resComputeInstanceAttrPrivateNetworkIDs + ".#":    validateString("1"),
+						resComputeInstanceAttrNetworkInterface + ".#":     validateString("1"),
 						resComputeInstanceAttrPublicIPAddress:             validation.ToDiagFunc(validation.IsIPv4Address),
 						resComputeInstanceAttrSSHKey:                      validateString(testAccResourceComputeInstanceSSHKeyName),
 						resComputeInstanceAttrSecurityGroupIDs + ".#":     validateString("2"),
@@ -306,7 +308,7 @@ func TestAccResourceComputeInstance(t *testing.T) {
 						resComputeInstanceAttrUserData:                validateString(testAccResourceComputeInstanceUserDataUpdated),
 					})),
 					resource.TestCheckNoResourceAttr(r, resComputeInstanceAttrElasticIPIDs+".#"),
-					resource.TestCheckNoResourceAttr(r, resComputeInstanceAttrPrivateNetworkIDs+".#"),
+					resource.TestCheckNoResourceAttr(r, resComputeInstanceAttrNetworkInterface+".#"),
 				),
 			},
 			{
@@ -317,8 +319,9 @@ func TestAccResourceComputeInstance(t *testing.T) {
 						return fmt.Sprintf("%s@%s", *computeInstance.ID, testZoneName), nil
 					}
 				}(&computeInstance),
-				ImportState:       true,
-				ImportStateVerify: true,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{resComputeInstanceAttrPrivateNetworkIDs},
 				ImportStateCheck: func(s []*terraform.InstanceState) error {
 					return checkResourceAttributes(
 						testAttrs{
