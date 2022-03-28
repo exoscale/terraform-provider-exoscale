@@ -1,5 +1,15 @@
 # Changelog
 
+## Next release
+
+DEPRECATIONS:
+
+- `exoscale_compute_instance`: the `private_network_ids` argument has been deprecated and is now read-only. Use `network_interface` blocks instead
+
+BUG FIXES:
+
+- `exoscale_compute_instance` data source crash when the instance belongs to an instance pool or an SKS node pool (#162)
+
 ## 0.33.1 (March 15, 2022)
 
 BUG FIXES:
