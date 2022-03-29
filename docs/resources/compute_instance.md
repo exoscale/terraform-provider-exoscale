@@ -29,6 +29,15 @@ data "exoscale_security_group" "default" {
   name = "default"
 }
 
+resource "exoscale_private_network" "example" {
+  name = "privnet"
+  zone = local.zone
+
+  start_ip = "10.0.0.20"
+  end_ip   = "10.0.0.253"
+  netmask  = "255.255.255.0"
+}
+
 resource "exoscale_compute_instance" "example" {
   zone               = local.zone
   name               = "webserver"
@@ -44,6 +53,11 @@ resource "exoscale_compute_instance" "example" {
 #cloud-config
 manage_etc_hosts: localhost
 EOF
+
+  network_interface {
+    network_id = exoscale_private_network.example.id
+    ip_address = "10.0.0.20"
+  }
 }
 ```
 
@@ -65,7 +79,7 @@ EOF
 * `deploy_target_id` - A Deploy Target ID.
 * `labels` - A map of key/value labels.
 
-`network_interface` - Attach the compute instance to a private network:
+`network_interface` - Attach the compute instance to a private network (can be specified multiple times):
 
 * `network_id` - (Required) The [Private Network][r-private_network] ID to attach to the Compute instance.
 * `ip_address` - The IP address to request as static DHCP lease if the network interface is attached to a *managed* Private Network (see the [`exoscale_network`][r-private_network] resource).
