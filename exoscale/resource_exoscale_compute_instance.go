@@ -2,9 +2,11 @@ package exoscale
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
+	"net"
 	"strings"
 
 	egoscale "github.com/exoscale/egoscale/v2"
@@ -24,6 +26,7 @@ const (
 	resComputeInstanceAttrIPv6Address          = "ipv6_address"
 	resComputeInstanceAttrLabels               = "labels"
 	resComputeInstanceAttrName                 = "name"
+	resComputeInstanceAttrNetworkInterface     = "network_interface"
 	resComputeInstanceAttrPrivateNetworkIDs    = "private_network_ids"
 	resComputeInstanceAttrPublicIPAddress      = "public_ip_address"
 	resComputeInstanceAttrSSHKey               = "ssh_key"
@@ -86,10 +89,29 @@ func resourceComputeInstance() *schema.Resource {
 			Required: true,
 		},
 		resComputeInstanceAttrPrivateNetworkIDs: {
+			Type:       schema.TypeSet,
+			Computed:   true,
+			Set:        schema.HashString,
+			Elem:       &schema.Schema{Type: schema.TypeString},
+			Deprecated: "Use the network_interface block instead.",
+		},
+		resComputeInstanceAttrNetworkInterface: {
 			Type:     schema.TypeSet,
 			Optional: true,
-			Set:      schema.HashString,
-			Elem:     &schema.Schema{Type: schema.TypeString},
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"ip_address": {
+						Type:             schema.TypeString,
+						Optional:         true,
+						Description:      "IP address",
+						ValidateDiagFunc: validation.ToDiagFunc(validation.IsIPv4Address),
+					},
+					"network_id": {
+						Type:     schema.TypeString,
+						Required: true,
+					},
+				},
+			},
 		},
 		resComputeInstanceAttrPublicIPAddress: {
 			Type:     schema.TypeString,
@@ -152,6 +174,40 @@ func resourceComputeInstance() *schema.Resource {
 			Delete: schema.DefaultTimeout(defaultTimeout),
 		},
 	}
+}
+
+type instanceNetworkInterface struct {
+	NetworkID string  `json:"network_id"`
+	IPAddress *string `json:"ip_address"`
+}
+
+func newInstanceNetworkInterfaceFromInterface(rawStatePart interface{}) (*instanceNetworkInterface, error) {
+	serializedRule, err := json.Marshal(rawStatePart)
+	if err != nil {
+		return nil, err
+	}
+
+	networkInterface := instanceNetworkInterface{}
+	if err := json.Unmarshal(serializedRule, &networkInterface); err != nil {
+		log.Printf("[WARNING] %s", err)
+		return nil, err
+	}
+
+	return &networkInterface, nil
+}
+
+func (n instanceNetworkInterface) toInterface() (map[string]interface{}, error) {
+	serialized, err := json.Marshal(n)
+	if err != nil {
+		return nil, err
+	}
+
+	var networkInterface map[string]interface{}
+	if err := json.Unmarshal(serialized, &networkInterface); err != nil {
+		return nil, err
+	}
+
+	return networkInterface, nil
 }
 
 func resourceComputeInstanceCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -260,17 +316,26 @@ func resourceComputeInstanceCreate(ctx context.Context, d *schema.ResourceData, 
 		}
 	}
 
-	if set, ok := d.Get(resComputeInstanceAttrPrivateNetworkIDs).(*schema.Set); ok {
-		if set.Len() > 0 {
-			for _, id := range set.List() {
-				if err := client.AttachInstanceToPrivateNetwork(
-					ctx,
-					zone,
-					computeInstance,
-					&egoscale.PrivateNetwork{ID: nonEmptyStringPtr(id.(string))},
-				); err != nil {
-					return diag.Errorf("unable to attach Private Network %s: %s", id.(string), err)
-				}
+	if networkInterfaceSet, ok := d.Get(resComputeInstanceAttrNetworkInterface).(*schema.Set); ok {
+		for _, networkInterface := range networkInterfaceSet.List() {
+			networkInterface, err := newInstanceNetworkInterfaceFromInterface(networkInterface)
+			if err != nil {
+				return diag.FromErr(err)
+			}
+
+			opts := []egoscale.AttachInstanceToPrivateNetworkOpt{}
+			if networkInterface.IPAddress != nil && *networkInterface.IPAddress != "" {
+				opts = append(opts, egoscale.AttachInstanceToPrivateNetworkWithIPAddress(net.ParseIP(*networkInterface.IPAddress)))
+			}
+
+			if err := client.AttachInstanceToPrivateNetwork(
+				ctx,
+				zone,
+				computeInstance,
+				&egoscale.PrivateNetwork{ID: &networkInterface.NetworkID},
+				opts...,
+			); err != nil {
+				return diag.Errorf("unable to attach Private Network %s: %s", networkInterface.NetworkID, err)
 			}
 		}
 	}
@@ -394,31 +459,47 @@ func resourceComputeInstanceUpdate(ctx context.Context, d *schema.ResourceData, 
 		}
 	}
 
-	if d.HasChange(resComputeInstanceAttrPrivateNetworkIDs) {
-		o, n := d.GetChange(resComputeInstanceAttrPrivateNetworkIDs)
+	if d.HasChange(resComputeInstanceAttrNetworkInterface) {
+		o, n := d.GetChange(resComputeInstanceAttrNetworkInterface)
 		old := o.(*schema.Set)
 		cur := n.(*schema.Set)
 
-		if added := cur.Difference(old); added.Len() > 0 {
-			for _, id := range added.List() {
-				if err := client.AttachInstanceToPrivateNetwork(
+		if removed := old.Difference(cur); removed.Len() > 0 {
+			for _, networkInterface := range removed.List() {
+				networkInterface, err := newInstanceNetworkInterfaceFromInterface(networkInterface)
+				if err != nil {
+					return diag.FromErr(err)
+				}
+
+				if err := client.DetachInstanceFromPrivateNetwork(
 					ctx,
 					zone,
 					computeInstance,
-					&egoscale.PrivateNetwork{ID: nonEmptyStringPtr(id.(string))},
+					&egoscale.PrivateNetwork{ID: &networkInterface.NetworkID},
 				); err != nil {
 					return diag.FromErr(err)
 				}
 			}
 		}
 
-		if removed := old.Difference(cur); removed.Len() > 0 {
-			for _, id := range removed.List() {
-				if err := client.DetachInstanceFromPrivateNetwork(
+		if added := cur.Difference(old); added.Len() > 0 {
+			for _, networkInterface := range added.List() {
+				networkInterface, err := newInstanceNetworkInterfaceFromInterface(networkInterface)
+				if err != nil {
+					return diag.FromErr(err)
+				}
+
+				opts := []egoscale.AttachInstanceToPrivateNetworkOpt{}
+				if networkInterface.IPAddress != nil && *networkInterface.IPAddress != "" {
+					opts = append(opts, egoscale.AttachInstanceToPrivateNetworkWithIPAddress(net.ParseIP(*networkInterface.IPAddress)))
+				}
+
+				if err := client.AttachInstanceToPrivateNetwork(
 					ctx,
 					zone,
 					computeInstance,
-					&egoscale.PrivateNetwork{ID: nonEmptyStringPtr(id.(string))},
+					&egoscale.PrivateNetwork{ID: &networkInterface.NetworkID},
+					opts...,
 				); err != nil {
 					return diag.FromErr(err)
 				}
@@ -532,6 +613,8 @@ func resourceComputeInstanceApply(
 	d *schema.ResourceData,
 	computeInstance *egoscale.Instance,
 ) diag.Diagnostics {
+	zone := d.Get(resComputeInstanceAttrZone).(string)
+
 	if computeInstance.AntiAffinityGroupIDs != nil {
 		antiAffinityGroupIDs := make([]string, len(*computeInstance.AntiAffinityGroupIDs))
 		for i, id := range *computeInstance.AntiAffinityGroupIDs {
@@ -587,10 +670,35 @@ func resourceComputeInstanceApply(
 
 	if computeInstance.PrivateNetworkIDs != nil {
 		privateNetworkIDs := make([]string, len(*computeInstance.PrivateNetworkIDs))
+		networkInterfaces := make([]map[string]interface{}, len(*computeInstance.PrivateNetworkIDs))
+
 		for i, id := range *computeInstance.PrivateNetworkIDs {
+			privateNetwork, err := client.GetPrivateNetwork(ctx, zone, id)
+			if err != nil {
+				return diag.FromErr(err)
+			}
+
+			var instanceAddress *string
+			for _, lease := range privateNetwork.Leases {
+				if *lease.InstanceID == *computeInstance.ID {
+					address := lease.IPAddress.String()
+					instanceAddress = &address
+					break
+				}
+			}
+
+			networkInterface, err := instanceNetworkInterface{id, instanceAddress}.toInterface()
+			if err != nil {
+				return diag.FromErr(err)
+			}
+
+			networkInterfaces[i] = networkInterface
 			privateNetworkIDs[i] = id
 		}
 		if err := d.Set(resComputeInstanceAttrPrivateNetworkIDs, privateNetworkIDs); err != nil {
+			return diag.FromErr(err)
+		}
+		if err := d.Set(resComputeInstanceAttrNetworkInterface, networkInterfaces); err != nil {
 			return diag.FromErr(err)
 		}
 	}
