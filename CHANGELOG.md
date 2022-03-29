@@ -1,6 +1,6 @@
 # Changelog
 
-## Next release
+## 0.34.0 (March 29, 2022)
 
 DEPRECATIONS:
 
