@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 // in returns true if v is found in list.
@@ -145,4 +146,17 @@ func decodeUserData(data string) (string, error) {
 	}
 
 	return string(userData), nil
+}
+
+var zones = []string{
+	"ch-gva-2",
+	"ch-dk-2",
+	"at-vie-1",
+	"de-fra-1",
+	"bg-sof-1",
+	"de-muc-1",
+}
+
+func validateZone() schema.SchemaValidateFunc {
+	return validation.StringInSlice(zones, false)
 }

@@ -112,6 +112,7 @@ func resourceDatabase() *schema.Resource {
 				"mysql",
 				"pg",
 				"redis",
+				"opensearch",
 			}, false)),
 		},
 		resDatabaseAttrUpdatedAt: {
@@ -124,15 +125,17 @@ func resourceDatabase() *schema.Resource {
 			Sensitive: true,
 		},
 		resDatabaseAttrZone: {
-			Type:     schema.TypeString,
-			Required: true,
-			ForceNew: true,
+			Type:         schema.TypeString,
+			Required:     true,
+			ForceNew:     true,
+			ValidateFunc: validateZone(),
 		},
 
-		"kafka": resDatabaseKafkaSchema,
-		"mysql": resDatabaseMysqlSchema,
-		"pg":    resDatabasePgSchema,
-		"redis": resDatabaseRedisSchema,
+		"kafka":      resDatabaseKafkaSchema,
+		"mysql":      resDatabaseMysqlSchema,
+		"pg":         resDatabasePgSchema,
+		"redis":      resDatabaseRedisSchema,
+		"opensearch": resDatabaseOpensearchSchema,
 	}
 
 	return &schema.Resource{
@@ -177,6 +180,8 @@ func resourceDatabaseCreate(ctx context.Context, d *schema.ResourceData, meta in
 		diags = resourceDatabaseCreatePg(ctx, d, client.Client)
 	case "redis":
 		diags = resourceDatabaseCreateRedis(ctx, d, client.Client)
+	case "opensearch":
+		diags = resourceDatabaseCreateOpensearch(ctx, d, client.Client)
 	}
 
 	if diags.HasError() {
@@ -235,6 +240,8 @@ func resourceDatabaseRead(ctx context.Context, d *schema.ResourceData, meta inte
 		err = resourceDatabaseApplyPg(ctx, d, client.Client)
 	case "redis":
 		err = resourceDatabaseApplyRedis(ctx, d, client.Client)
+	case "opensearch":
+		err = resourceDatabaseApplyOpensearch(ctx, d, client.Client)
 	default:
 		return diag.Errorf("unsupported Database Service type %q", databaseServiceType)
 	}
@@ -273,6 +280,8 @@ func resourceDatabaseUpdate(ctx context.Context, d *schema.ResourceData, meta in
 		diags = resourceDatabaseUpdatePg(ctx, d, client.Client)
 	case "redis":
 		diags = resourceDatabaseUpdateRedis(ctx, d, client.Client)
+	case "opensearch":
+		diags = resourceDatabaseUpdateOpensearch(ctx, d, client.Client)
 	}
 
 	if diags.HasError() {

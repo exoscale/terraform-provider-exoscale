@@ -8,8 +8,10 @@ import (
 
 	"github.com/exoscale/egoscale"
 	exov2 "github.com/exoscale/egoscale/v2"
-	"github.com/hashicorp/go-cleanhttp"
+	"github.com/exoscale/terraform-provider-exoscale/version"
+	cleanhttp "github.com/hashicorp/go-cleanhttp"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/logging"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/meta"
 )
 
 const (
@@ -23,7 +25,11 @@ const (
 )
 
 // userAgent represents the User Agent to advertise in outgoing HTTP requests.
-var userAgent string
+var userAgent = fmt.Sprintf("Exoscale-Terraform-Provider/%s (%s) Terraform-SDK/%s %s",
+	version.Version,
+	version.Commit,
+	meta.SDKVersionString(),
+	egoscale.UserAgent)
 
 // BaseConfig represents the provider structure
 type BaseConfig struct {
