@@ -41,10 +41,6 @@ the DHCP service, configure the instances and assign static leases.
 
 Managing DNS resources: domains and its associated records (`A`, `AAAA`, `CNAME`, `TXT`, etc.).
 
-## [Rancher Kubernetes Engine](rke)
-
-Setting up a Kubernetes cluster using the Rancher 2.0 facilities.
-
 ## [Elastic IP](elastic-ip)
 
 Having one elastic IP address linked to two (or more) instances.
@@ -52,10 +48,6 @@ Having one elastic IP address linked to two (or more) instances.
 ## [S3](s3)
 
 Using the [Terraform AWS Provider](https://www.terraform.io/docs/providers/aws/) with the [Exoscale Object Storage](https://www.exoscale.com/object-storage/) to manage a bucket.
-
-## [Exokube](exokube)
-
-A sample single node Kubernetes cluster to act as a [Minikube][minikube] on Exoscale.
 
 ## [SOS Terraform Backend](sos-backend)
 

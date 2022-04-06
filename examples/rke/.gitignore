@@ -1,4 +1,0 @@
-terraform.tf*
-.terraform
-cluster.yml
-kube_config_cluster.yml
