@@ -53,6 +53,10 @@ Using the [Terraform AWS Provider](https://www.terraform.io/docs/providers/aws/)
 
 Using an Exoscale SOS bucket to persist `.tfstate` changes.
 
+## [SKS](sks)
+
+An example showing how to get an SKS Kubernetes cluster and how to get a related kubeconfig.
+
 ## External examples
 
 - Oliver Moser's: [Prometheus Service Discovery Demo](https://github.com/olmoser/infracoders-reloaded)
