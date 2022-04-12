@@ -1,7 +1,6 @@
 package exoscale
 
 import (
-	"encoding/base64"
 	"fmt"
 	"strconv"
 	"strings"
@@ -99,17 +98,7 @@ func validateComputeUserData(v interface{}, _ cty.Path) diag.Diagnostics {
 		return diag.Errorf("expected field %q type to be string", v)
 	}
 
-	// If the data is already base64 encoded, only check length.
-	_, err := base64.StdEncoding.DecodeString(value)
-	if err == nil {
-		if len(value) > computeMaxUserDataLength {
-			return diag.Errorf("user-data maximum allowed length is %d bytes", computeMaxUserDataLength)
-		}
-
-		return nil
-	}
-
-	_, err = encodeUserData(value)
+	_, _, err := encodeUserData(value)
 	if err != nil {
 		return diag.FromErr(err)
 	}

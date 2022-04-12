@@ -175,7 +175,7 @@ func TestAccResourceInstancePool(t *testing.T) {
 						templateID, err := attrFromState(s, "data.exoscale_compute_template.ubuntu", "id")
 						a.NoError(err, "unable to retrieve template ID from state")
 
-						expectedUserData, err := encodeUserData(testAccResourceInstancePoolUserData)
+						expectedUserData, _, err := encodeUserData(testAccResourceInstancePoolUserData)
 						if err != nil {
 							return err
 						}
@@ -225,7 +225,7 @@ func TestAccResourceInstancePool(t *testing.T) {
 						templateID, err := attrFromState(s, "data.exoscale_compute_template.debian", "id")
 						a.NoError(err, "unable to retrieve template ID from state")
 
-						expectedUserData, err := encodeUserData(testAccResourceInstancePoolUserDataUpdated)
+						expectedUserData, _, err := encodeUserData(testAccResourceInstancePoolUserDataUpdated)
 						if err != nil {
 							return err
 						}

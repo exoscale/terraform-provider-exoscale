@@ -286,7 +286,7 @@ func resourceComputeInstanceCreate(ctx context.Context, d *schema.ResourceData, 
 	computeInstance.InstanceTypeID = instanceType.ID
 
 	if v := d.Get(resComputeInstanceAttrUserData).(string); v != "" {
-		userData, err := encodeUserData(v)
+		userData, _, err := encodeUserData(v)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -414,7 +414,7 @@ func resourceComputeInstanceUpdate(ctx context.Context, d *schema.ResourceData, 
 	}
 
 	if d.HasChange(resComputeInstanceAttrUserData) {
-		v, err := encodeUserData(d.Get(resComputeInstanceAttrUserData).(string))
+		v, _, err := encodeUserData(d.Get(resComputeInstanceAttrUserData).(string))
 		if err != nil {
 			return diag.FromErr(err)
 		}
