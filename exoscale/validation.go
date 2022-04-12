@@ -1,6 +1,7 @@
 package exoscale
 
 import (
+	"encoding/base64"
 	"fmt"
 	"strconv"
 	"strings"
@@ -86,6 +87,31 @@ func validateComputeInstanceType(v interface{}, _ cty.Path) diag.Diagnostics {
 
 	if !strings.Contains(value, ".") {
 		return diag.Errorf(`invalid value %q, expected format "FAMILY.SIZE"`, value)
+	}
+
+	return nil
+}
+
+// validateComputeUserData validates that the given field contains a valid data.
+func validateComputeUserData(v interface{}, _ cty.Path) diag.Diagnostics {
+	value, ok := v.(string)
+	if !ok {
+		return diag.Errorf("expected field %q type to be string", v)
+	}
+
+	// If the data is already base64 encoded, only check length.
+	_, err := base64.StdEncoding.DecodeString(value)
+	if err == nil {
+		if len(value) > computeMaxUserDataLength {
+			return diag.Errorf("user-data maximum allowed length is %d bytes", computeMaxUserDataLength)
+		}
+
+		return nil
+	}
+
+	_, err = encodeUserData(value)
+	if err != nil {
+		return diag.FromErr(err)
 	}
 
 	return nil

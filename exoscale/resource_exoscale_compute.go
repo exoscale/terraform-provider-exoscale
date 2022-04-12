@@ -83,9 +83,10 @@ func resourceCompute() *schema.Resource {
 			Default:  "Medium",
 		},
 		"user_data": {
-			Type:        schema.TypeString,
-			Optional:    true,
-			Description: "cloud-init configuration",
+			Type:         schema.TypeString,
+			Optional:     true,
+			Description:  "cloud-init configuration",
+			ValidateDiagFunc: validateComputeUserData,
 		},
 		"user_data_base64": {
 			Type:        schema.TypeBool,

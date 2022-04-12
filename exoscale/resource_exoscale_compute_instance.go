@@ -145,8 +145,9 @@ func resourceComputeInstance() *schema.Resource {
 			DiffSuppressFunc: suppressCaseDiff,
 		},
 		resComputeInstanceAttrUserData: {
-			Type:     schema.TypeString,
-			Optional: true,
+			Type:             schema.TypeString,
+			ValidateDiagFunc: validateComputeUserData,
+			Optional:         true,
 		},
 		resComputeInstanceAttrZone: {
 			Type:     schema.TypeString,
