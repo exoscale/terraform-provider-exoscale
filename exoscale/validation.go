@@ -90,3 +90,18 @@ func validateComputeInstanceType(v interface{}, _ cty.Path) diag.Diagnostics {
 
 	return nil
 }
+
+// validateComputeUserData validates that the given field contains a valid data.
+func validateComputeUserData(v interface{}, _ cty.Path) diag.Diagnostics {
+	value, ok := v.(string)
+	if !ok {
+		return diag.Errorf("expected field %q type to be string", v)
+	}
+
+	_, _, err := encodeUserData(value)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	return nil
+}

@@ -317,7 +317,7 @@ func resourceInstancePoolCreate(ctx context.Context, d *schema.ResourceData, met
 	instancePool.IPv6Enabled = &enableIPv6
 
 	if v := d.Get(resInstancePoolAttrUserData).(string); v != "" {
-		userData, err := encodeUserData(v)
+		userData, _, err := encodeUserData(v)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -498,7 +498,7 @@ func resourceInstancePoolUpdate(ctx context.Context, d *schema.ResourceData, met
 	}
 
 	if d.HasChange(resInstancePoolAttrUserData) {
-		v, err := encodeUserData(d.Get(resInstancePoolAttrUserData).(string))
+		v, _, err := encodeUserData(d.Get(resInstancePoolAttrUserData).(string))
 		if err != nil {
 			return diag.FromErr(err)
 		}

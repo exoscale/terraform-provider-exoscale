@@ -1,13 +1,9 @@
 package exoscale
 
 import (
-	"bytes"
-	"compress/gzip"
 	"context"
-	"encoding/base64"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"regexp"
 	"strconv"
@@ -83,9 +79,10 @@ func resourceCompute() *schema.Resource {
 			Default:  "Medium",
 		},
 		"user_data": {
-			Type:        schema.TypeString,
-			Optional:    true,
-			Description: "cloud-init configuration",
+			Type:             schema.TypeString,
+			Optional:         true,
+			Description:      "cloud-init configuration",
+			ValidateDiagFunc: validateComputeUserData,
 		},
 		"user_data_base64": {
 			Type:        schema.TypeBool,
@@ -340,12 +337,12 @@ func resourceComputeCreate(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	userData, base64Encoded, err := prepareUserData(d, meta, "user_data")
+	userData, userDataBase64, err := prepareUserData(d, meta, "user_data")
 	if err != nil {
 		return err
 	}
 
-	if err := d.Set("user_data_base64", base64Encoded); err != nil {
+	if err := d.Set("user_data_base64", userDataBase64); err != nil {
 		return err
 	}
 	startVM := d.Get("state").(string) != "Stopped"
@@ -596,7 +593,7 @@ func resourceComputeUpdate(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	if d.HasChange("user_data") {
-		userData, base64Encoded, err := prepareUserData(d, meta, "user_data")
+		userData, userDataBase64, err := prepareUserData(d, meta, "user_data")
 		if err != nil {
 			return err
 		}
@@ -604,7 +601,7 @@ func resourceComputeUpdate(d *schema.ResourceData, meta interface{}) error {
 		req.UserData = userData
 		rebootRequired = true
 
-		if err := d.Set("user_data_base64", base64Encoded); err != nil {
+		if err := d.Set("user_data_base64", userDataBase64); err != nil {
 			return err
 		}
 	}
@@ -1103,71 +1100,12 @@ func getSecurityGroup(ctx context.Context, client *egoscale.Client, name string)
 func prepareUserData(d *schema.ResourceData, meta interface{}, key string) (string, bool, error) {
 	userData := d.Get(key).(string)
 
-	// template_cloudinit_config alows to gzip but not base64, prevent such case
-	if len(userData) > 2 && userData[0] == '\x1f' && userData[1] == '\x8b' {
-		return "", false, errors.New("user_data appears to be gzipped: it should be left raw, or also be base64 encoded")
-	}
-
-	// If the data is already base64 encoded, do nothing.
-	_, err := base64.StdEncoding.DecodeString(userData)
-	if err == nil {
-		return userData, true, nil
-	}
-
-	b64UserData, err := encodeUserData(userData)
+	userData, userDataBase64, err := encodeUserData(userData)
 	if err != nil {
 		return "", false, err
 	}
 
-	return b64UserData, false, nil
-}
-
-func encodeUserData(data string) (string, error) {
-	b := new(bytes.Buffer)
-	gz := gzip.NewWriter(b)
-
-	if _, err := gz.Write([]byte(data)); err != nil {
-		return "", err
-	}
-	if err := gz.Flush(); err != nil {
-		return "", err
-	}
-	if err := gz.Close(); err != nil {
-		return "", err
-	}
-
-	b64UserData := base64.StdEncoding.EncodeToString(b.Bytes())
-
-	if len(b64UserData) >= computeMaxUserDataLength {
-		return "", fmt.Errorf("user-data maximum allowed length is %d bytes", computeMaxUserDataLength)
-	}
-
-	return b64UserData, nil
-}
-
-func decodeUserData(data string) (string, error) {
-	b64Decoded, err := base64.StdEncoding.DecodeString(data)
-	if err != nil {
-		return "", err
-	}
-
-	gz, err := gzip.NewReader(bytes.NewReader(b64Decoded))
-	if err != nil {
-		if errors.Is(err, gzip.ErrHeader) {
-			// User data are not compressed, returning as-is.
-			return string(b64Decoded), nil
-		}
-
-		return "", err
-	}
-	defer gz.Close()
-
-	userData, err := ioutil.ReadAll(gz)
-	if err != nil {
-		return "", err
-	}
-
-	return string(userData), nil
+	return userData, userDataBase64, nil
 }
 
 func reverseDNSApply(ctx context.Context, d *schema.ResourceData, client *egoscale.Client) error {

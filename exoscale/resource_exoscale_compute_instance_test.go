@@ -221,7 +221,7 @@ func TestAccResourceComputeInstance(t *testing.T) {
 						defaultSecurityGroupID, err := attrFromState(s, "data.exoscale_security_group.default", "id")
 						a.NoError(err, "unable to retrieve default Security Group ID from state")
 
-						expectedUserData, err := encodeUserData(testAccResourceComputeInstanceUserData)
+						expectedUserData, _, err := encodeUserData(testAccResourceComputeInstanceUserData)
 						if err != nil {
 							return err
 						}
@@ -278,7 +278,7 @@ func TestAccResourceComputeInstance(t *testing.T) {
 						defaultSecurityGroupID, err := attrFromState(s, "data.exoscale_security_group.default", "id")
 						a.NoError(err, "unable to retrieve default Security Group ID from state")
 
-						expectedUserData, err := encodeUserData(testAccResourceComputeInstanceUserDataUpdated)
+						expectedUserData, _, err := encodeUserData(testAccResourceComputeInstanceUserDataUpdated)
 						if err != nil {
 							return err
 						}
