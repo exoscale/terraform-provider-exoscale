@@ -17,26 +17,31 @@ import (
 const (
 	defaultInstancePoolInstancePrefix = "pool"
 
-	resInstancePoolAttrAffinityGroupIDs = "affinity_group_ids"
-	resInstancePoolAttrDeployTargetID   = "deploy_target_id"
-	resInstancePoolAttrDescription      = "description"
-	resInstancePoolAttrDiskSize         = "disk_size"
-	resInstancePoolAttrElasticIPIDs     = "elastic_ip_ids"
-	resInstancePoolAttrInstancePrefix   = "instance_prefix"
-	resInstancePoolAttrInstanceType     = "instance_type"
-	resInstancePoolAttrIPv6             = "ipv6"
-	resInstancePoolAttrKeyPair          = "key_pair"
-	resInstancePoolAttrLabels           = "labels"
-	resInstancePoolAttrName             = "name"
-	resInstancePoolAttrNetworkIDs       = "network_ids"
-	resInstancePoolAttrSecurityGroupIDs = "security_group_ids"
-	resInstancePoolAttrServiceOffering  = "service_offering"
-	resInstancePoolAttrSize             = "size"
-	resInstancePoolAttrState            = "state"
-	resInstancePoolAttrTemplateID       = "template_id"
-	resInstancePoolAttrUserData         = "user_data"
-	resInstancePoolAttrVirtualMachines  = "virtual_machines"
-	resInstancePoolAttrZone             = "zone"
+	resInstancePoolAttrAffinityGroupIDs        = "affinity_group_ids"
+	resInstancePoolAttrDeployTargetID          = "deploy_target_id"
+	resInstancePoolAttrDescription             = "description"
+	resInstancePoolAttrDiskSize                = "disk_size"
+	resInstancePoolAttrElasticIPIDs            = "elastic_ip_ids"
+	resInstancePoolAttrInstancePrefix          = "instance_prefix"
+	resInstancePoolAttrInstanceType            = "instance_type"
+	resInstancePoolAttrIPv6                    = "ipv6"
+	resInstancePoolAttrKeyPair                 = "key_pair"
+	resInstancePoolAttrLabels                  = "labels"
+	resInstancePoolAttrName                    = "name"
+	resInstancePoolAttrNetworkIDs              = "network_ids"
+	resInstancePoolAttrSecurityGroupIDs        = "security_group_ids"
+	resInstancePoolAttrServiceOffering         = "service_offering"
+	resInstancePoolAttrSize                    = "size"
+	resInstancePoolAttrState                   = "state"
+	resInstancePoolAttrTemplateID              = "template_id"
+	resInstancePoolAttrUserData                = "user_data"
+	resInstancePoolAttrVirtualMachines         = "virtual_machines"
+	resInstancePoolAttrInstances               = "instances"
+	resInstancePoolAttrInstanceID              = "id"
+	resInstancePoolAttrInstanceIPv6Address     = "ipv6_address"
+	resInstancePoolAttrInstanceName            = "name"
+	resInstancePoolAttrInstancePublicIPAddress = "public_ip_address"
+	resInstancePoolAttrZone                    = "zone"
 )
 
 func resourceInstancePoolIDString(d resourceIDStringer) string {
@@ -151,6 +156,31 @@ func resourceInstancePool() *schema.Resource {
 			Computed: true,
 			Set:      schema.HashString,
 			Elem:     &schema.Schema{Type: schema.TypeString},
+		},
+		resInstancePoolAttrInstances: {
+			Type:     schema.TypeSet,
+			Optional: true,
+			Computed: true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					resInstancePoolAttrInstanceID: {
+						Type:     schema.TypeString,
+						Optional: true,
+					},
+					resInstancePoolAttrInstanceIPv6Address: {
+						Type:     schema.TypeString,
+						Computed: true,
+					},
+					resInstancePoolAttrInstanceName: {
+						Type:     schema.TypeString,
+						Optional: true,
+					},
+					resInstancePoolAttrInstancePublicIPAddress: {
+						Type:     schema.TypeString,
+						Computed: true,
+					},
+				},
+			},
 		},
 		resInstancePoolAttrZone: {
 			Type:     schema.TypeString,
@@ -551,6 +581,8 @@ func resourceInstancePoolDelete(ctx context.Context, d *schema.ResourceData, met
 }
 
 func resourceInstancePoolApply(ctx context.Context, client *egoscale.Client, d *schema.ResourceData, instancePool *egoscale.InstancePool) diag.Diagnostics {
+	zone := d.Get(resInstancePoolAttrZone).(string)
+
 	if instancePool.AntiAffinityGroupIDs != nil {
 		antiAffinityGroupIDs := make([]string, len(*instancePool.AntiAffinityGroupIDs))
 		for i, id := range *instancePool.AntiAffinityGroupIDs {
@@ -604,21 +636,13 @@ func resourceInstancePoolApply(ctx context.Context, client *egoscale.Client, d *
 	}
 
 	if instancePool.PrivateNetworkIDs != nil {
-		privateNetworkIDs := make([]string, len(*instancePool.PrivateNetworkIDs))
-		for i, id := range *instancePool.PrivateNetworkIDs {
-			privateNetworkIDs[i] = id
-		}
-		if err := d.Set(resInstancePoolAttrNetworkIDs, privateNetworkIDs); err != nil {
+		if err := d.Set(resInstancePoolAttrNetworkIDs, *instancePool.PrivateNetworkIDs); err != nil {
 			return diag.FromErr(err)
 		}
 	}
 
 	if instancePool.SecurityGroupIDs != nil {
-		securityGroupIDs := make([]string, len(*instancePool.SecurityGroupIDs))
-		for i, id := range *instancePool.SecurityGroupIDs {
-			securityGroupIDs[i] = id
-		}
-		if err := d.Set(resInstancePoolAttrSecurityGroupIDs, securityGroupIDs); err != nil {
+		if err := d.Set(resInstancePoolAttrSecurityGroupIDs, *instancePool.SecurityGroupIDs); err != nil {
 			return diag.FromErr(err)
 		}
 	}
@@ -666,13 +690,47 @@ func resourceInstancePoolApply(ctx context.Context, client *egoscale.Client, d *
 
 	if instancePool.InstanceIDs != nil {
 		instanceIDs := make([]string, len(*instancePool.InstanceIDs))
+		instanceDetails := make([]interface{}, len(*instancePool.InstanceIDs))
+
 		for i, id := range *instancePool.InstanceIDs {
 			instanceIDs[i] = id
+
+			// instance details
+			instance, err := client.GetInstance(ctx, zone, id)
+			if err != nil {
+				return diag.FromErr(err)
+			}
+
+			instanceType, err := client.GetInstanceType(
+				ctx,
+				d.Get(dsComputeInstanceAttrZone).(string),
+				*instance.InstanceTypeID,
+			)
+			if err != nil {
+				return diag.Errorf("unable to retrieve instance type: %s", err)
+			}
+
+			instanceDetails[i] = computeInstanceToResource(instance, instanceType)
 		}
+
 		if err := d.Set(resInstancePoolAttrVirtualMachines, instanceIDs); err != nil {
+			return diag.FromErr(err)
+		}
+
+		if err := d.Set(resInstancePoolAttrInstances, instanceDetails); err != nil {
 			return diag.FromErr(err)
 		}
 	}
 
 	return nil
+}
+
+func computeInstanceToResource(instance *egoscale.Instance, instanceType *egoscale.InstanceType) interface{} {
+	c := make(map[string]interface{})
+	c[resInstancePoolAttrInstanceID] = instance.ID
+	c[resInstancePoolAttrInstanceIPv6Address] = addressToStringPtr(instance.IPv6Address)
+	c[resInstancePoolAttrInstanceName] = instance.Name
+	c[resInstancePoolAttrInstancePublicIPAddress] = addressToStringPtr(instance.PublicIPAddress)
+
+	return []interface{}{c}
 }
