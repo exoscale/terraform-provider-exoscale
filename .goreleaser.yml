@@ -33,7 +33,7 @@ checksum:
 signs:
   - artifacts: checksum
     cmd: gpg
-    args: ['-u', 'ops@exoscale.ch', '--detach-sign', '${artifact}']
+    args: ["--default-key", "B2DB6B250321137D9DB7210281426F034A3D05F7", "--detach-sign", "${artifact}"]
 
 release:
   github:
