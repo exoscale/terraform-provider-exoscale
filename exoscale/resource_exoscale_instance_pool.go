@@ -156,6 +156,7 @@ func resourceInstancePool() *schema.Resource {
 			Computed: true,
 			Set:      schema.HashString,
 			Elem:     &schema.Schema{Type: schema.TypeString},
+			Deprecated: "Use the instances exported attribute instead.",
 		},
 		resInstancePoolAttrInstances: {
 			Type:     schema.TypeSet,
@@ -364,6 +365,10 @@ func resourceInstancePoolCreate(ctx context.Context, d *schema.ResourceData, met
 	}
 	d.SetId(*instancePool.ID)
 
+	if err := client.Client.WaitInstancePoolConverged(ctx, zone, *instancePool.ID); err != nil {
+		return diag.FromErr(err)
+	}
+
 	log.Printf("[DEBUG] %s: create finished successfully", resourceInstancePoolIDString(d))
 
 	return resourceInstancePoolRead(ctx, d, meta)
@@ -553,6 +558,10 @@ func resourceInstancePoolUpdate(ctx context.Context, d *schema.ResourceData, met
 		}
 	}
 
+	if err := client.Client.WaitInstancePoolConverged(ctx, zone, *instancePool.ID); err != nil {
+		return diag.FromErr(err)
+	}
+
 	log.Printf("[DEBUG] %s: update finished successfully", resourceInstancePoolIDString(d))
 
 	return resourceInstancePoolRead(ctx, d, meta)
@@ -732,5 +741,5 @@ func computeInstanceToResource(instance *egoscale.Instance, instanceType *egosca
 	c[resInstancePoolAttrInstanceName] = instance.Name
 	c[resInstancePoolAttrInstancePublicIPAddress] = addressToStringPtr(instance.PublicIPAddress)
 
-	return []interface{}{c}
+	return c
 }
