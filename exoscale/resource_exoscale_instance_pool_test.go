@@ -210,6 +210,7 @@ func TestAccResourceInstancePool(t *testing.T) {
 						resInstancePoolAttrTemplateID:              validation.ToDiagFunc(validation.IsUUID),
 						resInstancePoolAttrUserData:                validateString(testAccResourceInstancePoolUserData),
 						resInstancePoolAttrVirtualMachines + ".#":  validateString(fmt.Sprint(testAccResourceInstancePoolSize)),
+						resInstancePoolAttrInstances + ".#":        validateString(fmt.Sprint(testAccResourceInstancePoolSize)),
 						resInstancePoolAttrZone:                    validateString(testZoneName),
 					})),
 				),

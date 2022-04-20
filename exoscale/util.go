@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -48,6 +49,16 @@ func defaultBool(v *bool, def bool) bool {
 	}
 
 	return def
+}
+
+// addressToStringPtr returns a string representation of addr if not nil, otherwise nil.
+func addressToStringPtr(addr *net.IP) *string {
+	if addr != nil {
+		addrStr := addr.String()
+		return &addrStr
+	}
+
+	return nil
 }
 
 // nonEmptyStringPtr returns a non-nil pointer to s if the string is not empty, otherwise nil.

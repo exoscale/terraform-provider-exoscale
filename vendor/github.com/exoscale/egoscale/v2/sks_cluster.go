@@ -180,7 +180,11 @@ func (c *Client) CreateSKSCluster(
 		return nil, err
 	}
 
-	return c.GetSKSCluster(ctx, zone, *res.(*oapi.Reference).Id)
+	return c.GetSKSCluster(ctx, zone, *res.(*struct {
+		Command *string `json:"command,omitempty"`
+		Id      *string `json:"id,omitempty"` // revive:disable-line
+		Link    *string `json:"link,omitempty"`
+	}).Id)
 }
 
 // DeleteSKSCluster deletes an SKS cluster.
@@ -256,6 +260,55 @@ func (c *Client) GetSKSClusterAuthorityCert(
 	}
 
 	return oapi.OptionalString(resp.JSON200.Cacert), nil
+}
+
+// SKSClusterDeprecatedResource represents an resources deployed in a cluster
+// that will be removed in a future release of Kubernetes.
+type SKSClusterDeprecatedResource struct {
+	Group          *string
+	RemovedRelease *string
+	Resource       *string
+	SubResource    *string
+	Version        *string
+	RawProperties  map[string]string
+}
+
+func sksClusterDeprecatedResourcesFromAPI(c *oapi.SksClusterDeprecatedResource, zone string) *SKSClusterDeprecatedResource {
+	return &SKSClusterDeprecatedResource{
+		Group:          (*string)(mapValueOrNil(c.AdditionalProperties, "group")),
+		RemovedRelease: (*string)(mapValueOrNil(c.AdditionalProperties, "removed_release")),
+		Resource:       (*string)(mapValueOrNil(c.AdditionalProperties, "resource")),
+		SubResource:    (*string)(mapValueOrNil(c.AdditionalProperties, "subresource")),
+		Version:        (*string)(mapValueOrNil(c.AdditionalProperties, "version")),
+		RawProperties:  c.AdditionalProperties,
+	}
+}
+
+func (c *Client) ListSKSClusterDeprecatedResources(
+	ctx context.Context,
+	zone string,
+	cluster *SKSCluster,
+) ([]*SKSClusterDeprecatedResource, error) {
+	if err := validateOperationParams(cluster, "update"); err != nil {
+		return nil, err
+	}
+
+	resp, err := c.ListSksClusterDeprecatedResourcesWithResponse(
+		apiv2.WithZone(ctx, zone),
+		*cluster.ID,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	var list []*SKSClusterDeprecatedResource
+	if resp.JSON200 != nil && len(*resp.JSON200) > 0 {
+		for i := range *resp.JSON200 {
+			list = append(list, sksClusterDeprecatedResourcesFromAPI(&(*resp.JSON200)[i], zone))
+		}
+	}
+
+	return list, nil
 }
 
 // GetSKSClusterKubeconfig returns a base64-encoded kubeconfig content for the specified user name, optionally

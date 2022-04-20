@@ -93,7 +93,15 @@ resource "exoscale_instance_pool" "webapp" {
 In addition to the arguments listed above, the following attributes are exported:
 
 * `id` – The ID of the Instance Pool.
-* `virtual_machines` – The list of Instance Pool members (Compute instance IDs).
+* `virtual_machines` – (Deprecated) The list of Instance Pool members (Compute instance IDs).
+* `instances` - The list of Instance Pool members.
+
+The `instances` items contains:
+
+* `id` - The ID of the compute instance.
+* `ipv6_address` - The IPv6 address of the compute instance's main network interface.
+* `name` - The name of the compute instance.
+* `public_ip_address` - The IPv4 address of the compute instance's main network interface.
 
 
 ## Import
