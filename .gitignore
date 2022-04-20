@@ -6,13 +6,7 @@ terraform.tfplan
 terraform.tfstate
 /bin/
 /build/
-/dist/
 /pkg/
-/website/.bundle
-/website/.vagrant
-/website/build
-/website/node_modules
-/website/vendor
 .vagrant/
 *.backup
 ./*.tfstate
@@ -25,6 +19,9 @@ terraform.tfstate
 *.iml
 *.test
 *.iml
+dist
+release
+vendor
 
 # Test exclusions
 !command/test-fixtures/**/*.tfstate
