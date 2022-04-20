@@ -151,11 +151,11 @@ func resourceInstancePool() *schema.Resource {
 			Optional: true,
 		},
 		resInstancePoolAttrVirtualMachines: {
-			Type:     schema.TypeSet,
-			Optional: true,
-			Computed: true,
-			Set:      schema.HashString,
-			Elem:     &schema.Schema{Type: schema.TypeString},
+			Type:       schema.TypeSet,
+			Optional:   true,
+			Computed:   true,
+			Set:        schema.HashString,
+			Elem:       &schema.Schema{Type: schema.TypeString},
 			Deprecated: "Use the instances exported attribute instead.",
 		},
 		resInstancePoolAttrInstances: {
