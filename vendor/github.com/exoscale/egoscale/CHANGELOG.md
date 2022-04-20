@@ -1,6 +1,26 @@
 Changelog
 =========
 
+0.88.0
+------
+
+- feature: v2: WaitInstancePoolConverged allows to waits until an instance pool's VMs are provisioned
+
+0.87.0
+------
+
+- v2: refresh openapi generated code + fix missing type oapi.Reference
+
+0.86.0
+------
+
+- feature: v2: DBaaS: implement migration status command
+
+0.85.0
+------
+
+- feature: v2: add support for listing of SKS Cluster deprecated resources via `ListSKSClusterDeprecatedResources`
+
 0.84.3
 ------
 
@@ -554,7 +574,7 @@ Changelog
 0.25.0
 ------
 
-- feature: Add support for `listBucketsUsage` (#431) 
+- feature: Add support for `listBucketsUsage` (#431)
 - change: Switch CI to Github Actions (#430)
 
 0.24.0
