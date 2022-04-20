@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.35.0 (April 20, 2022)
+
+FEATURES:
+
+- `exoscale_instance_pool`: new `instances` exported attribute (exports not only instances IDs but also IP addresses and names)
+
+DEPRECATIONS:
+
+- `exoscale_instance_pool`: `virtual_machines` exported attribute is deprecated in favor of the `instances` exported attribute
+
+BUG FIXES:
+
+- `exoscale_compute`, `exoscale_compute_instance` and `exoscale_instance_pool`: `user_data` argument length is now checked at plan time rather than on apply (#167)
+- `exoscale_instance_pool`: wait the right ammount of instances are provisioned when creating or updating this resource (#168)
+
 ## 0.34.0 (March 29, 2022)
 
 DEPRECATIONS:
