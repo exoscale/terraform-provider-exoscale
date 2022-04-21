@@ -28,6 +28,7 @@ const (
 	resDatabaseAttrNodes                 = "nodes"
 	resDatabaseAttrPlan                  = "plan"
 	resDatabaseAttrState                 = "state"
+	resDatabaseAttrCA                    = "ca_certificate"
 	resDatabaseAttrTerminationProtection = "termination_protection"
 	resDatabaseAttrType                  = "type"
 	resDatabaseAttrURI                   = "uri"
@@ -95,6 +96,10 @@ func resourceDatabase() *schema.Resource {
 			Required: true,
 		},
 		resDatabaseAttrState: {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		resDatabaseAttrCA: {
 			Type:     schema.TypeString,
 			Computed: true,
 		},
@@ -223,9 +228,17 @@ func resourceDatabaseRead(ctx context.Context, d *schema.ResourceData, meta inte
 		}
 	}
 
+	CACertificate, err := client.GetDatabaseCACertificate(ctx, zone)
+	if err != nil {
+		return diag.Errorf("unable to get CA Certificate: %v", err)
+	}
+
+	if err := d.Set(resDatabaseAttrCA, CACertificate); err != nil {
+		return diag.FromErr(err)
+	}
+
 	databaseServiceType := d.Get(resDatabaseAttrType).(string)
 
-	var err error
 	switch databaseServiceType {
 	case "kafka":
 		err = resourceDatabaseApplyKafka(ctx, d, client.Client)
