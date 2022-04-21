@@ -53,9 +53,9 @@ resource "exoscale_sks_kubeconfig" "test_admin" {
 
 func TestAccResourceSKSKubeconfig(t *testing.T) {
 	var (
-		r             = "exoscale_sks_kubeconfig.test_admin"
-		sksCluster    egoscale.SKSCluster
-		sksKubeconfig string
+		r                    = "exoscale_sks_kubeconfig.test_admin"
+		sksCluster           egoscale.SKSCluster
+		sksClientCertificate []byte
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -66,14 +66,11 @@ func TestAccResourceSKSKubeconfig(t *testing.T) {
 				Config: testAccResourceSKSKubeconfigConfigCreate,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckResourceSKSClusterExists("exoscale_sks_cluster.test", &sksCluster),
-					testAccCheckResourceSKSKubeconfigExists(r, &sksKubeconfig),
+					testAccCheckResourceSKSKubeconfigExists(r, &sksClientCertificate),
 					func(s *terraform.State) error {
 						a := require.New(t)
 
-						_, certificates, _ := KubeconfigExtractCertificates(sksKubeconfig)
-
-						a.Len(certificates, 1)
-						clientCertificate := *(certificates[0])
+						clientCertificate, _ := rawPEMDataToCertificate(sksClientCertificate)
 
 						certificateTTL := int64(clientCertificate.NotAfter.Sub(clientCertificate.NotBefore).Seconds())
 
@@ -96,7 +93,7 @@ func TestAccResourceSKSKubeconfig(t *testing.T) {
 	})
 }
 
-func testAccCheckResourceSKSKubeconfigExists(r string, sksKubeconfig *string) resource.TestCheckFunc {
+func testAccCheckResourceSKSKubeconfigExists(r string, clientCertificate *[]byte) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[r]
 		if !ok {
@@ -107,12 +104,12 @@ func testAccCheckResourceSKSKubeconfigExists(r string, sksKubeconfig *string) re
 			return errors.New("resource ID not set")
 		}
 
-		kubeconfig, ok := rs.Primary.Attributes[resSKSKubeconfigAttrKubeconfig]
+		clientCert, ok := rs.Primary.Attributes[resSKSKubeconfigAttrClientCertificate]
 		if !ok {
 			return errors.New("attribute not found in the resource")
 		}
 
-		*sksKubeconfig = kubeconfig
+		*clientCertificate = []byte(clientCert)
 		return nil
 	}
 }

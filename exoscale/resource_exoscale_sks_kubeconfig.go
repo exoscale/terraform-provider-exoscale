@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"gopkg.in/yaml.v3"
+	"k8s.io/client-go/tools/clientcmd"
 
 	exoapi "github.com/exoscale/egoscale/v2/api"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -22,6 +22,9 @@ const (
 	resSKSKubeconfigAttrEarlyRenewalSeconds = "early_renewal_seconds"
 	resSKSKubeconfigAttrGroups              = "groups"
 	resSKSKubeconfigAttrKubeconfig          = "kubeconfig"
+	resSKSKubeconfigAttrCACertificate       = "ca_certificate"
+	resSKSKubeconfigAttrClientCertificate   = "client_certificate"
+	resSKSKubeconfigAttrClientKey           = "client_key"
 	resSKSKubeconfigAttrReadyForRenewal     = "ready_for_renewal"
 	resSKSKubeconfigAttrTTLSeconds          = "ttl_seconds"
 	resSKSKubeconfigAttrUser                = "user"
@@ -52,6 +55,21 @@ func resourceSKSKubeconfig() *schema.Resource {
 			Elem:     &schema.Schema{Type: schema.TypeString},
 		},
 		resSKSKubeconfigAttrKubeconfig: {
+			Type:      schema.TypeString,
+			Computed:  true,
+			Sensitive: true,
+		},
+		resSKSKubeconfigAttrCACertificate: {
+			Type:      schema.TypeString,
+			Computed:  true,
+			Sensitive: true,
+		},
+		resSKSKubeconfigAttrClientCertificate: {
+			Type:      schema.TypeString,
+			Computed:  true,
+			Sensitive: true,
+		},
+		resSKSKubeconfigAttrClientKey: {
 			Type:      schema.TypeString,
 			Computed:  true,
 			Sensitive: true,
@@ -107,7 +125,9 @@ func resourceSKSKubeconfigCreate(ctx context.Context, d *schema.ResourceData, me
 
 	client := GetComputeClient(meta)
 
-	cluster, err := client.GetSKSCluster(ctx, zone, d.Get(resSKSKubeconfigAttrClusterID).(string))
+	clusterId := d.Get(resSKSKubeconfigAttrClusterID).(string)
+
+	cluster, err := client.GetSKSCluster(ctx, zone, clusterId)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -137,9 +157,30 @@ func resourceSKSKubeconfigCreate(ctx context.Context, d *schema.ResourceData, me
 		return diag.Errorf("error setting value on key '%s': %s", resSKSKubeconfigAttrKubeconfig, err)
 	}
 
-	id, err := kubeconfigToID(string(kubeconfig))
+	kubeconfigData, err := clientcmd.Load(kubeconfig)
 	if err != nil {
-		return diag.Errorf("error generating kubeconfig ID: %s", err)
+		return diag.Errorf("error loading kubeconfig: %s", err)
+	}
+
+	clusterConfig := kubeconfigData.Clusters[clusterId]
+	certificateAuthorityData := clusterConfig.CertificateAuthorityData
+	userAuthInfo := kubeconfigData.AuthInfos[user]
+	clientCertificateData := userAuthInfo.ClientCertificateData
+	clientKeyData := userAuthInfo.ClientKeyData
+
+	if err := d.Set(resSKSKubeconfigAttrCACertificate, string(certificateAuthorityData)); err != nil {
+		return diag.Errorf("error setting value on key '%s': %s", resSKSKubeconfigAttrCACertificate, err)
+	}
+	if err := d.Set(resSKSKubeconfigAttrClientCertificate, string(clientCertificateData)); err != nil {
+		return diag.Errorf("error setting value on key '%s': %s", resSKSKubeconfigAttrCACertificate, err)
+	}
+	if err := d.Set(resSKSKubeconfigAttrClientKey, string(clientKeyData)); err != nil {
+		return diag.Errorf("error setting value on key '%s': %s", resSKSKubeconfigAttrCACertificate, err)
+	}
+
+	id, err := certificatesToId()
+	if err != nil {
+		return diag.Errorf("error generating ID: %s", err)
 	}
 
 	d.SetId(*id)
@@ -169,20 +210,27 @@ func resourceSKSKubeconfigDelete(ctx context.Context, d *schema.ResourceData, me
 }
 
 func resourceSKSKubeconfigDiff(ctx context.Context, d *schema.ResourceDiff, meta interface{}) error {
-	kubeconfig := d.Get(resSKSKubeconfigAttrKubeconfig).(string)
-
-	clusterCerts, clientCerts, err := KubeconfigExtractCertificates(kubeconfig)
+	caCertificate := d.Get(resSKSKubeconfigAttrCACertificate).([]byte)
+	parsedCACertificate, err := rawPEMDataToCertificate(caCertificate)
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to read cluster CA certificate: %w", err)
 	}
 
-	readyForRenewal := len(kubeconfig) == 0
+	clientCertificate := d.Get(resSKSKubeconfigAttrClientCertificate).([]byte)
+	parsedClientCertificate, err := rawPEMDataToCertificate(clientCertificate)
+	if err != nil {
+		return fmt.Errorf("unable to read client certificate: %w", err)
+	}
+
+	certificates := []*x509.Certificate{parsedCACertificate, parsedClientCertificate}
+
+	readyForRenewal := len(caCertificate) == 0 || len(clientCertificate) == 0
 	if !readyForRenewal {
 		now := time.Now()
 		earlyRenewalSeconds := d.Get(resSKSKubeconfigAttrEarlyRenewalSeconds).(int)
 		earlyRenewalPeriod := time.Duration(-earlyRenewalSeconds) * time.Second
 
-		for _, certificate := range append(clusterCerts, clientCerts...) {
+		for _, certificate := range certificates {
 			if certificate.NotAfter.Add(earlyRenewalPeriod).Sub(now) <= 0 {
 				readyForRenewal = true
 			}
@@ -202,79 +250,29 @@ func resourceSKSKubeconfigDiff(ctx context.Context, d *schema.ResourceDiff, meta
 	return nil
 }
 
-func KubeconfigExtractCertificates(kubeconfig string) ([]*x509.Certificate, []*x509.Certificate, error) {
-	if len(kubeconfig) == 0 {
-		return []*x509.Certificate{}, []*x509.Certificate{}, nil
-	}
-
-	var kubeconfigData struct {
-		Clusters []struct {
-			Cluster struct {
-				CertificateAuthorityData string `yaml:"certificate-authority-data"`
-			} `yaml:"cluster"`
-		} `yaml:"clusters"`
-		Users []struct {
-			User struct {
-				ClientCertificateData string `yaml:"client-certificate-data"`
-			} `yaml:"user"`
-		} `yaml:"users"`
-	}
-
-	if err := yaml.Unmarshal([]byte(kubeconfig), &kubeconfigData); err != nil {
-		return nil, nil, fmt.Errorf("error decoding kubeconfig certificates: %w", err)
-	}
-
-	var clusterCertificates []*x509.Certificate
-	for _, cluster := range kubeconfigData.Clusters {
-		parsedCertificate, err := kubeconfigRawPEMDataToCertificate(cluster.Cluster.CertificateAuthorityData)
-		if err != nil {
-			return nil, nil, fmt.Errorf("unable to read cluster CA certificate: %w", err)
-		}
-
-		clusterCertificates = append(clusterCertificates, parsedCertificate)
-	}
-
-	var clientCertificates []*x509.Certificate
-	for _, user := range kubeconfigData.Users {
-		parsedCertificate, err := kubeconfigRawPEMDataToCertificate(user.User.ClientCertificateData)
-		if err != nil {
-			return nil, nil, fmt.Errorf("unable to read client certificate: %w", err)
-		}
-
-		clientCertificates = append(clientCertificates, parsedCertificate)
-	}
-
-	return clusterCertificates, clientCertificates, nil
-}
-
-func kubeconfigRawPEMDataToCertificate(b64PEMData string) (*x509.Certificate, error) {
-	rawPEMData, err := base64.StdEncoding.DecodeString(b64PEMData)
-	if err != nil {
-		return nil, fmt.Errorf("error decoding base64 kubeconfig certificate: %w", err)
-	}
-
+func rawPEMDataToCertificate(rawPEMData []byte) (*x509.Certificate, error) {
 	parsedPEMData, _ := pem.Decode(rawPEMData)
 	parsedCertificate, err := x509.ParseCertificate(parsedPEMData.Bytes)
 	if err != nil {
-		return nil, fmt.Errorf("unable to parse kubeconfig x509 certificate: %w", err)
+		return nil, fmt.Errorf("unable to parse x509 certificate: %w", err)
 	}
 
 	return parsedCertificate, nil
 }
 
-func kubeconfigToID(kubeconfig string) (*string, error) {
-	log.Printf("[DEBUG] kubeconfigToID: kubeconfig= %s", kubeconfig)
+func certificatesToId(certificates ...[]byte) (*string, error) {
+	log.Printf("[DEBUG] certificatesToId: certificates = %s", certificates)
 
-	clusterCertificates, clientCertificates, err := KubeconfigExtractCertificates(kubeconfig)
-	if err != nil {
-		return nil, fmt.Errorf("unable to extract certificates from kubeconfig: %w", err)
+	var certificateIDs []string
+	for _, certificate := range certificates {
+		parsedCertificate, err := rawPEMDataToCertificate(certificate)
+		if err != nil {
+			return nil, fmt.Errorf("unable to read certificate: %s", err)
+		}
+
+		certificateIDs = append(certificateIDs, parsedCertificate.SerialNumber.String())
 	}
 
-	certificateIDs := []string{}
-	for _, cert := range append(clusterCertificates, clientCertificates...) {
-		certificateIDs = append(certificateIDs, cert.SerialNumber.String())
-	}
-
-	kubeconfigID := strings.Join(certificateIDs, ":")
-	return &kubeconfigID, nil
+	id := strings.Join(certificateIDs, ":")
+	return &id, nil
 }
