@@ -1,7 +1,6 @@
 module github.com/exoscale/terraform-provider-exoscale
 
 require (
-	github.com/Masterminds/semver/v3 v3.1.1
 	github.com/apparentlymart/go-cidr v1.1.0 // indirect
 	github.com/aws/aws-sdk-go v1.37.0 // indirect
 	github.com/exoscale/egoscale v0.88.0

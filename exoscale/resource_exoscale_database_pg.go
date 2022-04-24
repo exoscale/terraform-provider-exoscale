@@ -5,9 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
-
-	"github.com/Masterminds/semver/v3"
+	"strings"
 
 	egoscale "github.com/exoscale/egoscale/v2"
 	"github.com/exoscale/egoscale/v2/oapi"
@@ -424,11 +422,7 @@ func resourceDatabaseApplyPg(ctx context.Context, d *schema.ResourceData, client
 
 	if v := databaseService.Version; v != nil {
 		pg[resDatabaseAttrPgActualVersion] = *v
-	}
-
-	if v := databaseService.Version; v != nil {
-		version, _ := semver.NewVersion(*v)
-		pg[resDatabaseAttrPgVersion] = strconv.FormatUint(version.Major(), 10)
+		pg[resDatabaseAttrPgVersion] = strings.SplitN(*databaseService.Version, ".", 2)[0]
 	}
 
 	if v := databaseService.PgbouncerSettings; v != nil {
