@@ -422,7 +422,7 @@ func resourceDatabaseApplyPg(ctx context.Context, d *schema.ResourceData, client
 
 	if v := databaseService.Version; v != nil {
 		pg[resDatabaseAttrPgActualVersion] = *v
-		pg[resDatabaseAttrPgVersion] = strings.SplitN(*databaseService.Version, ".", 2)[0]
+		pg[resDatabaseAttrPgVersion] = strings.SplitN(*v, ".", 2)[0]
 	}
 
 	if v := databaseService.PgbouncerSettings; v != nil {
