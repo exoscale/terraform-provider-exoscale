@@ -133,7 +133,7 @@ func resourceSKSKubeconfigCreate(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	user := d.Get(resSKSKubeconfigAttrUser).(string)
-	groups := []string{}
+	var groups []string
 	if set, ok := d.Get(resSKSKubeconfigAttrGroups).(*schema.Set); ok {
 		groups = schemaSetToStringArray(set)
 	}
@@ -178,7 +178,7 @@ func resourceSKSKubeconfigCreate(ctx context.Context, d *schema.ResourceData, me
 		return diag.Errorf("error setting value on key '%s': %s", resSKSKubeconfigAttrCACertificate, err)
 	}
 
-	id, err := certificatesToId()
+	id, err := certificatesToId(certificateAuthorityData, clientCertificateData)
 	if err != nil {
 		return diag.Errorf("error generating ID: %s", err)
 	}
@@ -210,22 +210,24 @@ func resourceSKSKubeconfigDelete(ctx context.Context, d *schema.ResourceData, me
 }
 
 func resourceSKSKubeconfigDiff(ctx context.Context, d *schema.ResourceDiff, meta interface{}) error {
-	caCertificate := d.Get(resSKSKubeconfigAttrCACertificate).([]byte)
-	parsedCACertificate, err := rawPEMDataToCertificate(caCertificate)
-	if err != nil {
-		return fmt.Errorf("unable to read cluster CA certificate: %w", err)
-	}
-
-	clientCertificate := d.Get(resSKSKubeconfigAttrClientCertificate).([]byte)
-	parsedClientCertificate, err := rawPEMDataToCertificate(clientCertificate)
-	if err != nil {
-		return fmt.Errorf("unable to read client certificate: %w", err)
-	}
-
-	certificates := []*x509.Certificate{parsedCACertificate, parsedClientCertificate}
+	caCertificate := d.Get(resSKSKubeconfigAttrCACertificate).(string)
+	clientCertificate := d.Get(resSKSKubeconfigAttrClientCertificate).(string)
 
 	readyForRenewal := len(caCertificate) == 0 || len(clientCertificate) == 0
+
 	if !readyForRenewal {
+		parsedCACertificate, err := rawPEMDataToCertificate([]byte(caCertificate))
+		if err != nil {
+			return fmt.Errorf("unable to read cluster CA certificate: %w", err)
+		}
+
+		parsedClientCertificate, err := rawPEMDataToCertificate([]byte(clientCertificate))
+		if err != nil {
+			return fmt.Errorf("unable to read client certificate: %w", err)
+		}
+
+		certificates := []*x509.Certificate{parsedCACertificate, parsedClientCertificate}
+
 		now := time.Now()
 		earlyRenewalSeconds := d.Get(resSKSKubeconfigAttrEarlyRenewalSeconds).(int)
 		earlyRenewalPeriod := time.Duration(-earlyRenewalSeconds) * time.Second
