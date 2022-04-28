@@ -21,7 +21,6 @@ terraform.tfstate
 *.iml
 dist
 release
-vendor
 
 # Test exclusions
 !command/test-fixtures/**/*.tfstate
