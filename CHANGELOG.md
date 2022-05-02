@@ -1,5 +1,11 @@
 # Changelog
 
+## Next release
+
+FEATURES:
+
+- **New Data Source:** `exoscale_instance_pool`
+
 ## 0.35.0 (April 20, 2022)
 
 FEATURES:
