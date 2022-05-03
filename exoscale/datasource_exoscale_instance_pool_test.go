@@ -65,6 +65,7 @@ resource "exoscale_instance_pool" "test" {
   description = "%s"
   template_id = "%s"
   instance_type = "%s"
+  instance_prefix = "%s"
   size = %s
   disk_size = %s
   ipv6 = false
@@ -90,6 +91,7 @@ data "exoscale_instance_pool" "by-id" {
 					testAccDataSourceInstancePoolDescription,
 					testAccDataSourceInstancePoolTemplateID,
 					testAccDataSourceInstancePoolInstanceType,
+					testAccDataSourceInstancePoolInstancePrefix,
 					testAccDataSourceInstancePoolSize,
 					testAccDataSourceInstancePoolDiskSize,
 					testAccDataSourceInstancePoolUserData,
@@ -102,6 +104,7 @@ data "exoscale_instance_pool" "by-id" {
 						"description":          validateString(testAccDataSourceInstancePoolDescription),
 						"disk_size":            validateString(testAccDataSourceInstancePoolDiskSize),
 						"instance_type":        validateComputeInstanceType,
+						"instance_prefix":      validateString(testAccDataSourceInstancePoolInstancePrefix),
 						"key_pair":             validateString(testAccDataSourceInstancePoolKeyPair),
 						"labels.test":          validateString(testAccDataSourceInstancePoolLabelValue),
 						"id":                   validation.ToDiagFunc(validation.IsUUID),
