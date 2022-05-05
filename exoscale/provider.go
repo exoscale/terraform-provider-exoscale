@@ -10,15 +10,12 @@ import (
 	"strings"
 	"time"
 
-	"gopkg.in/ini.v1"
+	ini "gopkg.in/ini.v1"
 
 	"github.com/exoscale/egoscale"
 	exoapi "github.com/exoscale/egoscale/v2/api"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	tfmeta "github.com/hashicorp/terraform-plugin-sdk/v2/meta"
-
-	"github.com/exoscale/terraform-provider-exoscale/version"
 )
 
 const (
@@ -32,14 +29,6 @@ const (
 	//  global endpoint.
 	defaultZone = "ch-gva-2"
 )
-
-func init() {
-	userAgent = fmt.Sprintf("Exoscale-Terraform-Provider/%s (%s) Terraform-SDK/%s %s",
-		version.Version,
-		version.Commit,
-		tfmeta.SDKVersionString(),
-		egoscale.UserAgent)
-}
 
 // Provider returns an Exoscale Provider.
 func Provider() *schema.Provider {

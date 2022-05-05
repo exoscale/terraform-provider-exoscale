@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"testing"
+	"time"
 
 	egoscale "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
@@ -135,6 +136,23 @@ func TestAccResourceSKSCluster(t *testing.T) {
 		sksCluster egoscale.SKSCluster
 	)
 
+	client, err := egoscale.NewClient(
+		os.Getenv("EXOSCALE_API_KEY"),
+		os.Getenv("EXOSCALE_API_SECRET"),
+		egoscale.ClientOptCond(func() bool {
+			if v := os.Getenv("EXOSCALE_TRACE"); v != "" {
+				return true
+			}
+			return false
+		}, egoscale.ClientOptWithTrace()))
+	if err != nil {
+		t.Fatalf("unable to initialize Exoscale client: %s", err)
+	}
+	clientctx := exoapi.WithEndpoint(
+		context.Background(),
+		exoapi.NewReqEndpoint(os.Getenv("EXOSCALE_API_ENVIRONMENT"), testZoneName),
+	)
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviders,
@@ -150,24 +168,7 @@ func TestAccResourceSKSCluster(t *testing.T) {
 
 						// Retrieve the latest SKS version available to test the
 						// exoscale_sks_cluster.version attribute default value.
-						client, err := egoscale.NewClient(
-							os.Getenv("EXOSCALE_API_KEY"),
-							os.Getenv("EXOSCALE_API_SECRET"),
-							egoscale.ClientOptCond(func() bool {
-								if v := os.Getenv("EXOSCALE_TRACE"); v != "" {
-									return true
-								}
-								return false
-							}, egoscale.ClientOptWithTrace()))
-						if err != nil {
-							return fmt.Errorf("unable to initialize Exoscale client: %s", err)
-						}
-
-						versions, err := client.ListSKSClusterVersions(
-							exoapi.WithEndpoint(
-								context.Background(),
-								exoapi.NewReqEndpoint(os.Getenv("EXOSCALE_API_ENVIRONMENT"), testZoneName)),
-						)
+						versions, err := client.ListSKSClusterVersions(clientctx)
 						if err != nil || len(versions) == 0 {
 							if len(versions) == 0 {
 								err = errors.New("no version returned by the API")
@@ -216,7 +217,20 @@ func TestAccResourceSKSCluster(t *testing.T) {
 						a.Equal(testAccResourceSKSClusterLabelValueUpdated, (*sksCluster.Labels)["test"])
 						a.Equal(testAccResourceSKSClusterNameUpdated, *sksCluster.Name)
 
-						return nil
+						// Wait for the cluster to be in the Running state
+						for i := 0; i < 60; i++ {
+							c, err := client.GetSKSCluster(clientctx, testZoneName, *sksCluster.ID)
+							if err != nil {
+								return fmt.Errorf("failed to fetch sks cluster: %s", err)
+							}
+							if *c.State == "running" {
+								return nil
+							}
+							t.Logf("waiting for cluster to be Running, current state: %s", *c.State)
+							time.Sleep(10 * time.Second)
+						}
+
+						return fmt.Errorf("timeout waiting for the cluster to be Running: current state")
 					},
 					checkResourceState(r, checkResourceStateValidateAttributes(testAttrs{
 						resSKSClusterAttrAutoUpgrade:      validateString("false"),

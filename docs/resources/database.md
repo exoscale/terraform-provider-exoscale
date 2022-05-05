@@ -21,12 +21,12 @@ resource "exoscale_database" "pg_prod" {
   name = "pg-prod"
   type = "pg"
   plan = "startup-4"
-  
+
   maintenance_dow  = "sunday"
   maintenance_time = "23:00:00"
 
   termination_protection = true
-  
+
   pg {
     version = "13"
     backup_schedule = "04:00"
@@ -35,7 +35,7 @@ resource "exoscale_database" "pg_prod" {
       "1.2.3.4/32",
       "5.6.7.8/32",
     ]
-    
+
     pg_settings = jsonencode({
       timezone: "Europe/Zurich"
     })
@@ -60,7 +60,8 @@ output "database_uri" {
 * `kafka` - *kafka* database service type specific arguments. Structure is documented below.
 * `mysql` - *mysql* database service type specific arguments. Structure is documented below.
 * `pg` - *pg* database service type specific arguments. Structure is documented below.
-* `redis` - *redis* database service type specific arguments.Structure is documented below.
+* `redis` - *redis* database service type specific arguments. Structure is documented below.
+* `opensearch` - *opensearch* database service type specific arguments. Structure is documented below.
 
 The `kafka` block supports:
 
@@ -101,6 +102,27 @@ The `redis` block supports:
 * `ip_filter` - A list of CIDR blocks to allow incoming connections from.
 * `redis_settings` - Redis configuration settings in JSON format (`exo dbaas type show redis --settings=redis` for reference).
 
+The `opensearch` block supports:
+
+* `fork_from_service` -  Service name
+* `recovery_backup_name` -
+* `index_pattern` -  (can be used multiple times) Allows you to create glob style patterns and set a max number of indexes matching this pattern you want to keep. Creating indexes exceeding this value will cause the oldest one to get deleted. You could for example create a pattern looking like 'logs.?' and then create index logs.1, logs.2 etc, it will delete logs.1 once you create logs.6. Do note 'logs.?' does not apply to logs.10. Note: Setting max_index_count to 0 will do nothing and the pattern gets ignored.
+	* `max_index_count` -  Maximum number of indexes to keep (Minimum value is `0`)
+	* `pattern` -  fnmatch pattern
+	* `sorting_algorithm` - `alphabetical` or `creation_date`.
+* `index_template` - Template settings for all new indexes
+	* `mapping_nested_objects_limit` -  The maximum number of nested JSON objects that a single document can contain across all nested types. This limit helps to prevent out of memory errors when a document contains too many nested objects. (Default is 10000. Minimum value is `0`, maximum value is `100000`.)
+	* `number_of_replicas` -  The number of replicas each primary shard has. (Minimum value is `0`, maximum value is `29`)
+	* `number_of_shards` -  The number of primary shards that an index should have. (Minimum value is `1`, maximum value is `1024`.)
+* `ip_filter` -  Allow incoming connections from this list of CIDR address block, e.g. `["10.20.0.0/16"]`
+* `keep_index_refresh_interval` -  Aiven automation resets index.refresh_interval to default value for every index to be sure that indices are always visible to search. If it doesn't fit your case, you can disable this by setting up this flag to true.
+* `max_index_count` -  Maximum number of indexes to keep before deleting the oldest one (Minimum value is `0`)
+* `dashboards`
+	* `enabled` -                   {Type -  schema.TypeBool, Optional -  true, Default -  true},
+	* `max_old_space_size` -           {Type -  schema.TypeInt, Optional -  true, Default -  128},
+	* `request_timeout` -  {Type -  schema.TypeInt, Optional -  true, Default -  30000},
+`settings` -  OpenSearch-specific settings, in json. e.g.`jsonencode({thread_pool_search_size: 64})`. Use `exo x get-dbaas-settings-opensearch` to get a list of available settings.
+`version` -  OpenSearch major version.
 
 ## Attributes Reference
 

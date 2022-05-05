@@ -88,6 +88,17 @@ func testAccCheckResourceDatabaseExists(r string, d *interface{}) resource.TestC
 			*d = res.JSON200
 			return nil
 
+		case "opensearch":
+			res, err := client.GetDbaasServiceOpensearchWithResponse(ctx, oapi.DbaasServiceName(rs.Primary.ID))
+			if err != nil {
+				return err
+			}
+			if res.StatusCode() != http.StatusOK {
+				return fmt.Errorf("API request error: unexpected status %s", res.Status())
+			}
+			*d = res.JSON200
+			return nil
+
 		default:
 			return fmt.Errorf(
 				"unsupported database service type %q",
@@ -115,6 +126,8 @@ func testAccCheckResourceDatabaseDestroy(dbType, dbName string) resource.TestChe
 			_, err = client.GetDbaasServicePgWithResponse(ctx, oapi.DbaasServiceName(dbName))
 		case "redis":
 			_, err = client.GetDbaasServiceRedisWithResponse(ctx, oapi.DbaasServiceName(dbName))
+		case "opensearch":
+			_, err = client.GetDbaasServiceOpensearchWithResponse(ctx, oapi.DbaasServiceName(dbName))
 		default:
 			return fmt.Errorf("unsupported database service type %q", dbType)
 		}
