@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.36.0 (May 6, 2022)
+
+FEATURES:
+
+- add opensearch support for `exoscale_database`
+
 ## 0.35.0 (April 20, 2022)
 
 FEATURES:
