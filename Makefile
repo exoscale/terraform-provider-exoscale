@@ -1,6 +1,6 @@
 PACKAGE := github.com/exoscale/terraform-provider-exoscale
 PROJECT_URL = https://$(PACKAGE)
-GO_LD_FLAGS := -ldflags "-s -w -X $(PACKAGE)/version.Version=${VERSION} \
+GO_LD_FLAGS := "-s -w -X $(PACKAGE)/version.Version=${VERSION} \
 							-X $(PACKAGE)/version.Commit=${GIT_REVISION}"
 GO_BIN_OUTPUT_NAME = terraform-provider-exoscale_v$(VERSION)
 GO_BUILD_EXTRA_ARGS = -v -trimpath
