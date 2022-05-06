@@ -1,5 +1,11 @@
 # Changelog
 
+## Next release
+
+FEATURES:
+
+- **New Data Source:** `exoscale_compute_instances`
+
 ## 0.36.0 (May 6, 2022)
 
 FEATURES:
