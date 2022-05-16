@@ -6,6 +6,7 @@ import (
 	"log"
 	"strings"
 
+	exo "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -35,106 +36,115 @@ const (
 	dsComputeInstanceAttrZone                 = "zone"
 )
 
+// getDataSourceComputeInstanceSchema returns a schema for a single Compute instance data source.
+func getDataSourceComputeInstanceSchema() map[string]*schema.Schema {
+	return map[string]*schema.Schema{
+		dsComputeInstanceAttrAntiAffinityGroupIDs: {
+			Type:     schema.TypeSet,
+			Optional: true,
+			Set:      schema.HashString,
+			Elem:     &schema.Schema{Type: schema.TypeString},
+		},
+		dsComputeInstanceAttrCreatedAt: {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		dsComputeInstanceAttrDeployTargetID: {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		dsComputeInstanceAttrDiskSize: {
+			Type:     schema.TypeInt,
+			Computed: true,
+		},
+		dsComputeInstanceAttrElasticIPIDs: {
+			Type:     schema.TypeSet,
+			Computed: true,
+			Set:      schema.HashString,
+			Elem:     &schema.Schema{Type: schema.TypeString},
+		},
+		dsComputeInstanceAttrID: {
+			Type:     schema.TypeString,
+			Optional: true,
+		},
+		dsComputeInstanceAttrIPv6: {
+			Type:     schema.TypeBool,
+			Computed: true,
+		},
+		dsComputeInstanceAttrIPv6Address: {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		dsComputeInstanceAttrLabels: {
+			Type:     schema.TypeMap,
+			Elem:     &schema.Schema{Type: schema.TypeString},
+			Optional: true,
+		},
+		dsComputeInstanceAttrManagerID: {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		dsComputeInstanceAttrManagerType: {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		dsComputeInstanceAttrName: {
+			Type:     schema.TypeString,
+			Optional: true,
+		},
+		dsComputeInstanceAttrPrivateNetworkIDs: {
+			Type:     schema.TypeSet,
+			Computed: true,
+			Set:      schema.HashString,
+			Elem:     &schema.Schema{Type: schema.TypeString},
+		},
+		dsComputeInstanceAttrPublicIPAddress: {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		dsComputeInstanceAttrSSHKey: {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		dsComputeInstanceAttrSecurityGroupIDs: {
+			Type:     schema.TypeSet,
+			Computed: true,
+			Set:      schema.HashString,
+			Elem:     &schema.Schema{Type: schema.TypeString},
+		},
+		dsComputeInstanceAttrState: {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		dsComputeInstanceAttrTemplateID: {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		dsComputeInstanceAttrType: {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		dsComputeInstanceAttrUserData: {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		dsComputeInstanceAttrZone: {
+			Type:     schema.TypeString,
+			Required: true,
+		},
+	}
+}
+
 func dataSourceComputeInstance() *schema.Resource {
 	return &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			dsComputeInstanceAttrAntiAffinityGroupIDs: {
-				Type:     schema.TypeSet,
-				Optional: true,
-				Set:      schema.HashString,
-				Elem:     &schema.Schema{Type: schema.TypeString},
-			},
-			dsComputeInstanceAttrCreatedAt: {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
-			dsComputeInstanceAttrDeployTargetID: {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
-			dsComputeInstanceAttrDiskSize: {
-				Type:     schema.TypeInt,
-				Computed: true,
-			},
-			dsComputeInstanceAttrElasticIPIDs: {
-				Type:     schema.TypeSet,
-				Computed: true,
-				Set:      schema.HashString,
-				Elem:     &schema.Schema{Type: schema.TypeString},
-			},
-			dsComputeInstanceAttrID: {
-				Type:          schema.TypeString,
-				Optional:      true,
-				ConflictsWith: []string{dsComputeInstanceAttrName},
-			},
-			dsComputeInstanceAttrIPv6: {
-				Type:     schema.TypeBool,
-				Computed: true,
-			},
-			dsComputeInstanceAttrIPv6Address: {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
-			dsComputeInstanceAttrLabels: {
-				Type:     schema.TypeMap,
-				Elem:     &schema.Schema{Type: schema.TypeString},
-				Optional: true,
-			},
-			dsComputeInstanceAttrManagerID: {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
-			dsComputeInstanceAttrManagerType: {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
-			dsComputeInstanceAttrName: {
-				Type:          schema.TypeString,
-				Optional:      true,
-				ConflictsWith: []string{dsComputeInstanceAttrID},
-			},
-			dsComputeInstanceAttrPrivateNetworkIDs: {
-				Type:     schema.TypeSet,
-				Computed: true,
-				Set:      schema.HashString,
-				Elem:     &schema.Schema{Type: schema.TypeString},
-			},
-			dsComputeInstanceAttrPublicIPAddress: {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
-			dsComputeInstanceAttrSSHKey: {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
-			dsComputeInstanceAttrSecurityGroupIDs: {
-				Type:     schema.TypeSet,
-				Computed: true,
-				Set:      schema.HashString,
-				Elem:     &schema.Schema{Type: schema.TypeString},
-			},
-			dsComputeInstanceAttrState: {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
-			dsComputeInstanceAttrTemplateID: {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
-			dsComputeInstanceAttrType: {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
-			dsComputeInstanceAttrUserData: {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
-			dsComputeInstanceAttrZone: {
-				Type:     schema.TypeString,
-				Required: true,
-			},
-		},
+		Schema: func() map[string]*schema.Schema {
+			schema := getDataSourceComputeInstanceSchema()
 
+			// adding context-aware schema settings here so getDataSourceComputeInstanceSchema can be used elsewhere
+			schema[dsComputeInstanceAttrID].ConflictsWith = []string{dsComputeInstanceAttrName}
+			schema[dsComputeInstanceAttrName].ConflictsWith = []string{dsComputeInstanceAttrID}
+			return schema
+		}(),
 		ReadContext: dataSourceComputeInstanceRead,
 	}
 }
@@ -175,128 +185,29 @@ func dataSourceComputeInstanceRead(ctx context.Context, d *schema.ResourceData, 
 
 	d.SetId(*computeInstance.ID)
 
-	if computeInstance.AntiAffinityGroupIDs != nil {
-		antiAffinityGroupIDs := make([]string, len(*computeInstance.AntiAffinityGroupIDs))
-		for i, id := range *computeInstance.AntiAffinityGroupIDs {
-			antiAffinityGroupIDs[i] = id
-		}
-		if err := d.Set(dsComputeInstanceAttrAntiAffinityGroupIDs, antiAffinityGroupIDs); err != nil {
-			return diag.FromErr(err)
-		}
-	}
-
-	if err := d.Set(dsComputeInstanceAttrCreatedAt, computeInstance.CreatedAt.String()); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := d.Set(
-		dsComputeInstanceAttrDeployTargetID,
-		defaultString(computeInstance.DeployTargetID, ""),
-	); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := d.Set(dsComputeInstanceAttrDiskSize, *computeInstance.DiskSize); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if computeInstance.ElasticIPIDs != nil {
-		elasticIPIDs := make([]string, len(*computeInstance.ElasticIPIDs))
-		for i, id := range *computeInstance.ElasticIPIDs {
-			elasticIPIDs[i] = id
-		}
-		if err := d.Set(dsComputeInstanceAttrElasticIPIDs, elasticIPIDs); err != nil {
-			return diag.FromErr(err)
-		}
-	}
-
-	if err := d.Set(dsComputeInstanceAttrIPv6, defaultBool(computeInstance.IPv6Enabled, false)); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if computeInstance.IPv6Address != nil {
-		if err := d.Set(dsComputeInstanceAttrIPv6Address, computeInstance.IPv6Address.String()); err != nil {
-			return diag.FromErr(err)
-		}
-	}
-
-	if err := d.Set(dsComputeInstanceAttrLabels, computeInstance.Labels); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if computeInstance.Manager != nil {
-		if err := d.Set(dsComputeInstanceAttrManagerID, computeInstance.Manager.ID); err != nil {
-			return diag.FromErr(err)
-		}
-		if err := d.Set(dsComputeInstanceAttrManagerType, computeInstance.Manager.Type); err != nil {
-			return diag.FromErr(err)
-		}
-	}
-
-	if err := d.Set(dsComputeInstanceAttrName, *computeInstance.Name); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if computeInstance.PrivateNetworkIDs != nil {
-		privateNetworkIDs := make([]string, len(*computeInstance.PrivateNetworkIDs))
-		for i, id := range *computeInstance.PrivateNetworkIDs {
-			privateNetworkIDs[i] = id
-		}
-		if err := d.Set(dsComputeInstanceAttrPrivateNetworkIDs, privateNetworkIDs); err != nil {
-			return diag.FromErr(err)
-		}
-	}
-
-	if computeInstance.PublicIPAddress != nil {
-		if err := d.Set(dsComputeInstanceAttrPublicIPAddress, computeInstance.PublicIPAddress.String()); err != nil {
-			return diag.FromErr(err)
-		}
-	}
-
-	if err := d.Set(dsComputeInstanceAttrSSHKey, computeInstance.SSHKey); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if computeInstance.SecurityGroupIDs != nil {
-		securityGroupIDs := make([]string, len(*computeInstance.SecurityGroupIDs))
-		for i, id := range *computeInstance.SecurityGroupIDs {
-			securityGroupIDs[i] = id
-		}
-		if err := d.Set(dsComputeInstanceAttrSecurityGroupIDs, securityGroupIDs); err != nil {
-			return diag.FromErr(err)
-		}
-	}
-
-	if err := d.Set(dsComputeInstanceAttrState, computeInstance.State); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if err := d.Set(dsComputeInstanceAttrTemplateID, computeInstance.TemplateID); err != nil {
+	data, err := dataSourceComputeInstanceBuildData(computeInstance)
+	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	instanceType, err := client.GetInstanceType(
 		ctx,
-		d.Get(dsComputeInstanceAttrZone).(string),
+		zone,
 		*computeInstance.InstanceTypeID,
 	)
 	if err != nil {
 		return diag.Errorf("unable to retrieve instance type: %s", err)
 	}
-	if err := d.Set(dsComputeInstanceAttrType, fmt.Sprintf(
+
+	data[dsComputeInstanceAttrType] = fmt.Sprintf(
 		"%s.%s",
 		strings.ToLower(*instanceType.Family),
 		strings.ToLower(*instanceType.Size),
-	)); err != nil {
-		return diag.FromErr(err)
-	}
+	)
 
-	if computeInstance.UserData != nil {
-		userData, err := decodeUserData(*computeInstance.UserData)
+	for key, value := range data {
+		err := d.Set(key, value)
 		if err != nil {
-			return diag.Errorf("unable to decode user data: %s", err)
-		}
-		if err := d.Set(dsComputeInstanceAttrUserData, userData); err != nil {
 			return diag.FromErr(err)
 		}
 	}
@@ -304,4 +215,62 @@ func dataSourceComputeInstanceRead(ctx context.Context, d *schema.ResourceData, 
 	log.Printf("[DEBUG] %s: read finished successfully", resourceComputeInstanceIDString(d))
 
 	return nil
+}
+
+// dataSourceComputeInstanceBuildData builds terraform data object from egoscale API struct.
+func dataSourceComputeInstanceBuildData(instance *exo.Instance) (map[string]interface{}, error) {
+	data := map[string]interface{}{}
+
+	data[dsComputeInstanceAttrDeployTargetID] = instance.DeployTargetID
+	data[dsComputeInstanceAttrDiskSize] = instance.DiskSize
+	data[dsComputeInstanceAttrName] = instance.Name
+	data[dsComputeInstanceAttrSSHKey] = instance.SSHKey
+	data[dsComputeInstanceAttrState] = instance.State
+	data[dsComputeInstanceAttrTemplateID] = instance.TemplateID
+	data[dsComputeInstanceAttrZone] = instance.Zone
+
+	data[dsComputeInstanceAttrIPv6] = defaultBool(instance.IPv6Enabled, false)
+
+	if instance.ElasticIPIDs != nil {
+		data[dsComputeInstanceAttrElasticIPIDs] = *instance.ElasticIPIDs
+	}
+	if instance.AntiAffinityGroupIDs != nil {
+		data[dsComputeInstanceAttrAntiAffinityGroupIDs] = *instance.AntiAffinityGroupIDs
+	}
+	if instance.Labels != nil {
+		data[dsComputeInstanceAttrLabels] = *instance.Labels
+	}
+	if instance.PrivateNetworkIDs != nil {
+		data[dsComputeInstanceAttrPrivateNetworkIDs] = *instance.PrivateNetworkIDs
+	}
+	if instance.SecurityGroupIDs != nil {
+		data[dsComputeInstanceAttrSecurityGroupIDs] = *instance.SecurityGroupIDs
+	}
+
+	if instance.Manager != nil {
+		data[dsComputeInstanceAttrManagerID] = instance.Manager.ID
+		data[dsComputeInstanceAttrManagerType] = instance.Manager.Type
+	}
+
+	if instance.CreatedAt != nil {
+		data[dsComputeInstanceAttrCreatedAt] = instance.CreatedAt.String()
+	}
+
+	if instance.IPv6Address != nil {
+		data[dsComputeInstanceAttrIPv6Address] = instance.IPv6Address.String()
+	}
+
+	if instance.PublicIPAddress != nil {
+		data[dsComputeInstanceAttrPublicIPAddress] = instance.PublicIPAddress.String()
+	}
+
+	if instance.UserData != nil {
+		userData, err := decodeUserData(*instance.UserData)
+		if err != nil {
+			return nil, fmt.Errorf("unable to decode user data: %w", err)
+		}
+		data[dsComputeInstanceAttrUserData] = userData
+	}
+
+	return data, nil
 }
