@@ -1,10 +1,11 @@
 # Changelog
 
-## Next release
+## 0.37.0 (June 1, 2022)
 
 FEATURES:
 
 - **New Data Source:** `exoscale_compute_instance_list`
+- **New Data Source:** `exoscale_instance_pool`, `exoscale_instance_pool_list`
 
 ## 0.36.0 (May 6, 2022)
 
