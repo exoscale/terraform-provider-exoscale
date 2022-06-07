@@ -499,8 +499,8 @@ func resourceDatabaseApplyKafka(ctx context.Context, d *schema.ResourceData, cli
 	}
 
 	if v := databaseService.Version; v != nil {
-		// for kafka, the user specifies the major.minor e.g. 3.0
-		// and the api return major.minor.patch e.g. 3.0.0
+		// for kafka, the user specifies major.minor e.g. 3.0
+		// and the api returns major.minor.patch e.g. 3.0.0
 		version := strings.SplitN(*v, ".", 3)
 		kafka[resDatabaseAttrKafkaVersion] = version[0] + "." + version[1]
 	}
