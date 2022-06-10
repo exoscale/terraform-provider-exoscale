@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	egoscale "github.com/exoscale/egoscale/v2"
 	"github.com/exoscale/egoscale/v2/oapi"
@@ -362,7 +363,7 @@ func resourceDatabaseApplyMysql(ctx context.Context, d *schema.ResourceData, cli
 	}
 
 	if v := databaseService.Version; v != nil {
-		mysql[resDatabaseAttrMysqlVersion] = *v
+		mysql[resDatabaseAttrMysqlVersion] = strings.SplitN(*v, ".", 2)[0]
 	}
 
 	if len(mysql) > 0 {

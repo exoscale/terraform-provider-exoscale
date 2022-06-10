@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	egoscale "github.com/exoscale/egoscale/v2"
 	"github.com/exoscale/egoscale/v2/oapi"
@@ -414,7 +415,7 @@ func resourceDatabaseApplyPg(ctx context.Context, d *schema.ResourceData, client
 	}
 
 	if v := databaseService.Version; v != nil {
-		pg[resDatabaseAttrPgVersion] = *v
+		pg[resDatabaseAttrPgVersion] = strings.SplitN(*v, ".", 2)[0]
 	}
 
 	if v := databaseService.PgbouncerSettings; v != nil {

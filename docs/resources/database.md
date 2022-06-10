@@ -122,7 +122,7 @@ The `opensearch` block supports:
 	* `max_old_space_size` -           {Type -  schema.TypeInt, Optional -  true, Default -  128},
 	* `request_timeout` -  {Type -  schema.TypeInt, Optional -  true, Default -  30000},
 `settings` -  OpenSearch-specific settings, in json. e.g.`jsonencode({thread_pool_search_size: 64})`. Use `exo x get-dbaas-settings-opensearch` to get a list of available settings.
-`version` -  OpenSearch major version.
+* `version` -  OpenSearch major version.
 
 ## Attributes Reference
 
