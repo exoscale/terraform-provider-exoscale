@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.37.1 (June 14, 2022)
+
+BUG FIXES:
+- `database` fix infinite version attribute update (#181)
+
 ## 0.37.0 (June 1, 2022)
 
 FEATURES:
