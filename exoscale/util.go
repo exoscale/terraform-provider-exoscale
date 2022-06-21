@@ -81,6 +81,18 @@ func schemaSetToStringArray(set *schema.Set) []string {
 	return array
 }
 
+func unique(s []string) []string {
+	inResult := make(map[string]bool)
+	var result []string
+	for _, str := range s {
+		if _, ok := inResult[str]; !ok {
+			inResult[str] = true
+			result = append(result, str)
+		}
+	}
+	return result
+}
+
 // DiffSuppressFunc https://www.terraform.io/plugin/sdkv2/schemas/schema-behaviors#diffsuppressfunc
 // Do no show case differences between state and resource
 func suppressCaseDiff(k, old, new string, d *schema.ResourceData) bool {

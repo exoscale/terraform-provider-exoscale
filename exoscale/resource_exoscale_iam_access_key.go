@@ -11,12 +11,13 @@ import (
 )
 
 const (
-	resIAMAccessKeyAttrKey         = "key"
-	resIAMAccessKeyAttrName        = "name"
-	resIAMAccessKeyAttrOperations  = "operations"
-	resIAMAccessKeyAttrResources   = "resources"
-	resIAMAccessKeyAttrSecret      = "secret"
-	resIAMAccessKeyAttrTags        = "tags"
+	resIAMAccessKeyAttrKey            = "key"
+	resIAMAccessKeyAttrName           = "name"
+	resIAMAccessKeyAttrOperations     = "operations"
+	resIAMAccessKeyAttrResources      = "resources"
+	resIAMAccessKeyAttrSecret         = "secret"
+	resIAMAccessKeyAttrTags           = "tags"
+	resIAMAccessKeyAttrTagsOperations = "tags_operations"
 )
 
 func resourceIAMAccessKeyIDString(d resourceIDStringer) string {
@@ -44,6 +45,51 @@ func resourceIAMAccessKey() *schema.Resource {
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					o, n := d.GetChange(resIAMAccessKeyAttrOperations)
+					if o == nil || n == nil {
+						return false
+					}
+
+					oldOperations := schemaSetToStringArray(o.(*schema.Set))
+					newOperations := schemaSetToStringArray(n.(*schema.Set))
+					diff := map[string]bool{}
+
+					// diff = oldOperations - newOperations
+					for _, oldOperation := range oldOperations {
+						diff[oldOperation] = true
+					}
+
+					for _, newOperation := range newOperations {
+						if diff[newOperation] {
+							diff[newOperation] = false
+						} else {
+							return false
+						}
+					}
+
+					// ignore to-be-removed operations if the operation belongs to at least one tag
+					if tagsOperations, ok := d.Get(resIAMAccessKeyAttrTagsOperations).(*schema.Set); ok {
+						for _, tagOperation := range schemaSetToStringArray(tagsOperations) {
+							if diff[tagOperation] {
+								diff[tagOperation] = false
+							} else {
+								return false
+							}
+						}
+					}
+
+					// can't suppress diff if an operation is neither:
+					// - matching a user-defined operations
+					// - matching a set of operations matching at least a required tag
+					for _, element := range diff {
+						if element {
+							return false
+						}
+					}
+
+					return true
+				},
 			},
 			resIAMAccessKeyAttrResources: {
 				Type:     schema.TypeSet,
@@ -63,6 +109,14 @@ func resourceIAMAccessKey() *schema.Resource {
 				Type:     schema.TypeSet,
 				Optional: true,
 				ForceNew: true,
+				Set:      schema.HashString,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+			},
+			resIAMAccessKeyAttrTagsOperations: {
+				Type:     schema.TypeSet,
+				Computed: true,
 				Set:      schema.HashString,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
@@ -161,14 +215,19 @@ func resourceIAMAccessKeyRead(ctx context.Context, d *schema.ResourceData, meta 
 
 	client := GetComputeClient(meta)
 
-	iamAccessKey, err := client.GetIAMAccessKey(ctx, zone, d.Id())
+	accessKey, err := client.GetIAMAccessKey(ctx, zone, d.Id())
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	operations, err := client.ListIAMAccessKeyOperations(ctx, zone)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	log.Printf("[DEBUG] %s: read finished successfully", resourceIAMAccessKeyIDString(d))
 
-	return diag.FromErr(resourceIAMAccessKeyApply(ctx, d, iamAccessKey))
+	return diag.FromErr(resourceIAMAccessKeyApply(ctx, d, *accessKey, operations))
 }
 
 func resourceIAMAccessKeyDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -194,26 +253,45 @@ func resourceIAMAccessKeyDelete(ctx context.Context, d *schema.ResourceData, met
 func resourceIAMAccessKeyApply(
 	_ context.Context,
 	d *schema.ResourceData,
-	iamAccessKey *egoscale.IAMAccessKey,
+	accessKey egoscale.IAMAccessKey,
+	operations []*egoscale.IAMAccessKeyOperation,
 ) error {
-	if err := d.Set(resIAMAccessKeyAttrName, iamAccessKey.Name); err != nil {
+	if err := d.Set(resIAMAccessKeyAttrName, accessKey.Name); err != nil {
 		return err
 	}
 
-	if iamAccessKey.Operations != nil {
-		if err := d.Set(resIAMAccessKeyAttrOperations, *iamAccessKey.Operations); err != nil {
+	if accessKey.Operations != nil {
+		if err := d.Set(resIAMAccessKeyAttrOperations, accessKey.Operations); err != nil {
 			return err
 		}
 	}
 
-	if iamAccessKey.Resources != nil {
-		if err := d.Set(resIAMAccessKeyAttrResources, *iamAccessKey.Resources); err != nil {
+	if accessKey.Resources != nil {
+		if err := d.Set(resIAMAccessKeyAttrResources, accessKey.Resources); err != nil {
 			return err
 		}
 	}
 
-	if iamAccessKey.Tags != nil {
-		if err := d.Set(resIAMAccessKeyAttrTags, *iamAccessKey.Tags); err != nil {
+	tagsOperations := map[string][]string{}
+	for _, operation := range operations {
+		for _, tag := range operation.Tags {
+			tagsOperations[tag] = append(tagsOperations[tag], operation.Name)
+		}
+	}
+
+	if accessKey.Tags != nil {
+		operationsFromTags := []string{}
+		for _, requestedTag := range *accessKey.Tags {
+			operationsFromTags = append(operationsFromTags, tagsOperations[requestedTag]...)
+		}
+
+		operationsFromTags = unique(operationsFromTags)
+
+		if err := d.Set(resIAMAccessKeyAttrTags, accessKey.Tags); err != nil {
+			return err
+		}
+
+		if err := d.Set(resIAMAccessKeyAttrTagsOperations, operationsFromTags); err != nil {
 			return err
 		}
 	}
