@@ -11,7 +11,6 @@ import (
 )
 
 var (
-	testAccDataSourceComputeTemplateID       = testInstanceTemplateID
 	testAccDataSourceComputeTemplateName     = testInstanceTemplateName
 	testAccDataSourceComputeTemplateUsername = testInstanceTemplateUsername
 	testAccDataSourceComputeTemplateFilter   = testInstanceTemplateFilter
@@ -19,6 +18,8 @@ var (
 )
 
 func TestAccDataSourceComputeTemplate(t *testing.T) {
+	templateID := "4a850c9d-93f4-4b39-b4d7-2cbf3a1f1227"
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviders,
@@ -44,7 +45,7 @@ data "exoscale_compute_template" "test" {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDataSourceComputeTemplateAttributes(testAttrs{
-						"id":       validateString(testAccDataSourceComputeTemplateID),
+						"id":       validateString(templateID),
 						"name":     validateString(testAccDataSourceComputeTemplateName),
 						"username": validateString(testAccDataSourceComputeTemplateUsername),
 					}),
@@ -58,12 +59,12 @@ data "exoscale_compute_template" "test" {
   filter = "%s"
 }`,
 					testAccDataSourceTemplateZone,
-					testAccDataSourceComputeTemplateID,
+					templateID,
 					testAccDataSourceComputeTemplateFilter,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDataSourceComputeTemplateAttributes(testAttrs{
-						"id":       validateString(testAccDataSourceComputeTemplateID),
+						"id":       validateString(templateID),
 						"name":     validateString(testAccDataSourceComputeTemplateName),
 						"username": validateString(testAccDataSourceComputeTemplateUsername),
 					}),

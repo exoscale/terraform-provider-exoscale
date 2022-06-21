@@ -32,7 +32,7 @@ const (
 		    zoneid=85664334-0fd5-47bd-94a1-b4f40b1d2eb7 \
 		    name="Linux Ubuntu 20.04 LTS 64-bit"
 	*/
-	testInstanceTemplateID = "ac881037-b3d1-46f7-8385-ffb040088c7a"
+	testInstanceTemplateID = "4a850c9d-93f4-4b39-b4d7-2cbf3a1f1227"
 
 	testInstanceTypeIDTiny   = "b6cd1ff5-3a2f-4e9d-a4d1-8988c1191fe8"
 	testInstanceTypeIDSmall  = "21624abb-764e-4def-81d7-9fc54b5957fb"
