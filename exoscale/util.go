@@ -82,11 +82,11 @@ func schemaSetToStringArray(set *schema.Set) []string {
 }
 
 func unique(s []string) []string {
-	inResult := make(map[string]bool)
+	inResult := map[string]struct{}{}
 	var result []string
 	for _, str := range s {
 		if _, ok := inResult[str]; !ok {
-			inResult[str] = true
+			inResult[str] = struct{}{}
 			result = append(result, str)
 		}
 	}

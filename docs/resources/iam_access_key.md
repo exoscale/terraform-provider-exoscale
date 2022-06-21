@@ -32,7 +32,7 @@ resource "exoscale_iam_access_key" "example" {
 
 * `name` - (Required) The name of the Private Network.
 * `operations` - A list of API operations to restrict the access key to.
-* `resources` - A list of API resource to restrict the access key to (format: DOMAIN/TYPE:NAME). This format is the same is [in the CLI][exo-cli-resources]
+* `resources` - A list of API resource to restrict the access key to (format: DOMAIN/TYPE:NAME). This format is the same as [in the CLI][exo-cli-resources]
 * `tags` - A list of tags to restrict the access key to.
 
 ## Attributes Reference
