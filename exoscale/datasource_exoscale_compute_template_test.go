@@ -1,7 +1,6 @@
 package exoscale
 
 import (
-	"errors"
 	"fmt"
 	"regexp"
 	"testing"
@@ -18,8 +17,6 @@ var (
 )
 
 func TestAccDataSourceComputeTemplate(t *testing.T) {
-	templateID := "4a850c9d-93f4-4b39-b4d7-2cbf3a1f1227"
-
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviders,
@@ -34,37 +31,28 @@ data "exoscale_compute_template" "test" {
 			},
 			{
 				Config: fmt.Sprintf(`
-data "exoscale_compute_template" "test" {
+data "exoscale_compute_template" "by_name" {
   zone   = "%s"
   name   = "%s"
   filter = "%s"
-}`,
+}
+
+data "exoscale_compute_template" "by_id" {
+  zone   = data.exoscale_compute_template.by_name.zone
+  id     = data.exoscale_compute_template.by_name.id
+  filter = data.exoscale_compute_template.by_name.filter
+}
+`,
 					testAccDataSourceTemplateZone,
 					testAccDataSourceComputeTemplateName,
 					testAccDataSourceComputeTemplateFilter,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					testAccDataSourceComputeTemplateAttributes(testAttrs{
-						"id":       validateString(templateID),
+					testAccDataSourceComputeTemplateAttributes("by_name", testAttrs{
 						"name":     validateString(testAccDataSourceComputeTemplateName),
 						"username": validateString(testAccDataSourceComputeTemplateUsername),
 					}),
-				),
-			},
-			{
-				Config: fmt.Sprintf(`
-data "exoscale_compute_template" "test" {
-  zone   = "%s"
-  id     = "%s"
-  filter = "%s"
-}`,
-					testAccDataSourceTemplateZone,
-					templateID,
-					testAccDataSourceComputeTemplateFilter,
-				),
-				Check: resource.ComposeTestCheckFunc(
-					testAccDataSourceComputeTemplateAttributes(testAttrs{
-						"id":       validateString(templateID),
+					testAccDataSourceComputeTemplateAttributes("by_id", testAttrs{
 						"name":     validateString(testAccDataSourceComputeTemplateName),
 						"username": validateString(testAccDataSourceComputeTemplateUsername),
 					}),
@@ -74,16 +62,16 @@ data "exoscale_compute_template" "test" {
 	})
 }
 
-func testAccDataSourceComputeTemplateAttributes(expected testAttrs) resource.TestCheckFunc {
+func testAccDataSourceComputeTemplateAttributes(name string, expected testAttrs) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		for _, rs := range s.RootModule().Resources {
-			if rs.Type != "exoscale_compute_template" {
+		for resourceName, resourceState := range s.RootModule().Resources {
+			if resourceState.Type != "exoscale_compute_template" || resourceName != "data.exoscale_compute_template."+name {
 				continue
 			}
 
-			return checkResourceAttributes(expected, rs.Primary.Attributes)
+			return checkResourceAttributes(expected, resourceState.Primary.Attributes)
 		}
 
-		return errors.New("exoscale_compute_template data source not found in the state")
+		return fmt.Errorf("exoscale_compute_template data source '%s' not found in the state", name)
 	}
 }

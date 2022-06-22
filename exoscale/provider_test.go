@@ -24,16 +24,6 @@ const (
 	testInstanceTemplateUsername = "ubuntu"
 	testInstanceTemplateFilter   = "featured"
 
-	/*
-		Reference template used for tests: "Linux Ubuntu 20.04 LTS 64-bit" @ de-muc-1 (featured)
-
-		cs --region cloudstack listTemplates \
-		    templatefilter=featured \
-		    zoneid=85664334-0fd5-47bd-94a1-b4f40b1d2eb7 \
-		    name="Linux Ubuntu 20.04 LTS 64-bit"
-	*/
-	testInstanceTemplateID = "4a850c9d-93f4-4b39-b4d7-2cbf3a1f1227"
-
 	testInstanceTypeIDTiny   = "b6cd1ff5-3a2f-4e9d-a4d1-8988c1191fe8"
 	testInstanceTypeIDSmall  = "21624abb-764e-4def-81d7-9fc54b5957fb"
 	testInstanceTypeIDMedium = "b6e9d1e8-89fc-4db3-aaa4-9b4c5b1d0844"

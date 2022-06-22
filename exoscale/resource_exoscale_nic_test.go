@@ -14,11 +14,10 @@ import (
 )
 
 var (
-	testAccResourceNICZoneName          = testZoneName
 	testAccResourceNICSSHKeyName        = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceNICSNetworkName      = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceNICComputeName       = acctest.RandomWithPrefix(testPrefix)
-	testAccResourceNICComputeTemplateID = testInstanceTemplateID
+	testAccResourceNICTemplateName      = testInstanceTemplateName
 	testAccResourceNICCIPAddress        = "10.0.0.1"
 	testAccResourceNICCIPAddressUpdated = "10.0.0.3"
 
@@ -27,25 +26,30 @@ locals {
   zone = "%s"
 }
 
+data "exoscale_compute_template" "template" {
+  zone = local.zone
+  name = "%s"
+}
+
 resource "exoscale_ssh_keypair" "key" {
   name = "%s"
 }
 
 resource "exoscale_compute" "vm" {
-  zone = local.zone
+  zone         = local.zone
   display_name = "%s"
-  template_id = "%s"
-  size = "Micro"
-  disk_size = "10"
-  key_pair = exoscale_ssh_keypair.key.name
+  template_id  = data.exoscale_compute_template.template.id
+  size         = "Micro"
+  disk_size    = "10"
+  key_pair     = exoscale_ssh_keypair.key.name
 }
 
 resource "exoscale_network" "net" {
-  zone = local.zone
-  name = "%s"
+  zone     = local.zone
+  name     = "%s"
   start_ip = "10.0.0.1"
-  end_ip = "10.0.0.1"
-  netmask = "255.255.255.252"
+  end_ip   = "10.0.0.1"
+  netmask  = "255.255.255.252"
 }
 
 resource "exoscale_nic" "nic" {
@@ -54,34 +58,43 @@ resource "exoscale_nic" "nic" {
   ip_address = "%s"
 }
 `,
-		testAccResourceNICZoneName,
+		testZoneName,
+		testAccResourceNICTemplateName,
 		testAccResourceNICSSHKeyName,
 		testAccResourceNICComputeName,
-		testAccResourceNICComputeTemplateID,
 		testAccResourceNICSNetworkName,
 		testAccResourceNICCIPAddress,
 	)
 
 	testAccResourceNICConfigUpdate = fmt.Sprintf(`
+locals {
+  zone = "%s"
+}
+
+data "exoscale_compute_template" "template" {
+  zone = local.zone
+  name = "%s"
+}
+
 resource "exoscale_ssh_keypair" "key" {
   name = "%s"
 }
 
 resource "exoscale_compute" "vm" {
-  zone = "%s"
+  zone         = local.zone
   display_name = "%s"
-  template_id = "%s"
-  size = "Micro"
-  disk_size = "10"
-  key_pair = exoscale_ssh_keypair.key.name
+  template_id  = data.exoscale_compute_template.template.id
+  size         = "Micro"
+  disk_size    = "10"
+  key_pair     = exoscale_ssh_keypair.key.name
 }
 
 resource "exoscale_network" "net" {
-  zone = exoscale_compute.vm.zone
-  name = "%s"
+  zone     = local.zone
+  name     = "%s"
   start_ip = "10.0.0.1"
-  end_ip = "10.0.0.1"
-  netmask = "255.255.255.248"
+  end_ip   = "10.0.0.1"
+  netmask  = "255.255.255.248"
 }
 
 resource "exoscale_nic" "nic" {
@@ -90,10 +103,10 @@ resource "exoscale_nic" "nic" {
   ip_address = "%s"
 }
 `,
+		testZoneName,
+		testAccResourceNICTemplateName,
 		testAccResourceNICSSHKeyName,
-		testAccResourceNICZoneName,
 		testAccResourceNICComputeName,
-		testAccResourceNICComputeTemplateID,
 		testAccResourceNICSNetworkName,
 		testAccResourceNICCIPAddressUpdated,
 	)
