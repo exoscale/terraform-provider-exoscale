@@ -10,6 +10,7 @@ import (
 	"net"
 	"strings"
 
+	egoscale "github.com/exoscale/egoscale/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -80,6 +81,18 @@ func schemaSetToStringArray(set *schema.Set) []string {
 	return array
 }
 
+func unique(s []string) []string {
+	inResult := map[string]struct{}{}
+	var result []string
+	for _, str := range s {
+		if _, ok := inResult[str]; !ok {
+			inResult[str] = struct{}{}
+			result = append(result, str)
+		}
+	}
+	return result
+}
+
 // DiffSuppressFunc https://www.terraform.io/plugin/sdkv2/schemas/schema-behaviors#diffsuppressfunc
 // Do no show case differences between state and resource
 func suppressCaseDiff(k, old, new string, d *schema.ResourceData) bool {
@@ -146,6 +159,31 @@ func decodeUserData(data string) (string, error) {
 	}
 
 	return string(userData), nil
+}
+
+func parseIAMAccessKeyResource(v string) (*egoscale.IAMAccessKeyResource, error) {
+	var iamAccessKeyResource egoscale.IAMAccessKeyResource
+
+	parts := strings.SplitN(v, ":", 2)
+	if len(parts) != 2 {
+		return nil, fmt.Errorf("invalid format")
+	}
+	iamAccessKeyResource.ResourceName = parts[1]
+
+	parts = strings.SplitN(parts[0], "/", 2)
+	if len(parts) != 2 {
+		return nil, fmt.Errorf("invalid format")
+	}
+	iamAccessKeyResource.Domain = parts[0]
+	iamAccessKeyResource.ResourceType = parts[1]
+
+	if iamAccessKeyResource.Domain == "" ||
+		iamAccessKeyResource.ResourceType == "" ||
+		iamAccessKeyResource.ResourceName == "" {
+		return nil, fmt.Errorf("invalid format")
+	}
+
+	return &iamAccessKeyResource, nil
 }
 
 var zones = []string{
