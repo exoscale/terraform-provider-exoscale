@@ -104,6 +104,6 @@ func testAccCheckResourceIAMAccessKeyDestroy(iamAccessKey *egoscale.IAMAccessKey
 			return err
 		}
 
-		return errors.New("SSH Key still exists")
+		return errors.New("Access Key still exists")
 	}
 }
