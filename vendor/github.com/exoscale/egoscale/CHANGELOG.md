@@ -1,6 +1,11 @@
 Changelog
 =========
 
+0.88.1
+------
+
+- fix: v2: aligns request signing with public API by urlencoding path in the signature
+
 0.88.0
 ------
 
