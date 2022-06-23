@@ -1,6 +1,13 @@
 package exoscale
 
-import "testing"
+import (
+	"context"
+	"fmt"
+	"testing"
+
+	egoscale "github.com/exoscale/egoscale/v2"
+	exoapi "github.com/exoscale/egoscale/v2/api"
+)
 
 func Test_in(t *testing.T) {
 	type args struct {
@@ -186,4 +193,22 @@ func Test_defaultBool(t *testing.T) {
 			}
 		})
 	}
+}
+
+func GetTemplateIDByName(templateName string) (*string, error) {
+	client := GetComputeClient(testAccProvider.Meta())
+	ctx := exoapi.WithEndpoint(context.Background(), exoapi.NewReqEndpoint(testEnvironment, testZoneName))
+
+	templates, err := client.ListTemplates(ctx, testZoneName, egoscale.ListTemplatesWithVisibility("public"))
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving templates: %s", err)
+	}
+
+	for _, template := range templates {
+		if *template.Name == templateName {
+			return template.ID, nil
+		}
+	}
+
+	return nil, fmt.Errorf("unable to find template: %s", templateName)
 }

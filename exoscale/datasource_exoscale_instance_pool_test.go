@@ -23,7 +23,7 @@ var (
 	testAccDataSourceInstancePoolNetwork               = acctest.RandomWithPrefix(testPrefix)
 	testAccDataSourceInstancePoolName                  = acctest.RandomWithPrefix(testPrefix)
 	testAccDataSourceInstancePoolSize                  = "2"
-	testAccDataSourceInstancePoolTemplateID            = testInstanceTemplateID
+	testAccDataSourceInstancePoolTemplateName          = testInstanceTemplateName
 	testAccDataSourceInstancePoolUserData              = acctest.RandString(10)
 )
 
@@ -40,6 +40,11 @@ func TestAccDataSourceInstancePool(t *testing.T) {
 				Config: fmt.Sprintf(`
 locals {
   zone = "%s"
+}
+
+data "exoscale_compute_template" "template" {
+  zone = local.zone
+  name = "%s"
 }
 
 resource "exoscale_affinity" "test" {
@@ -60,20 +65,21 @@ resource "exoscale_ipaddress" "test" {
 }
 
 resource "exoscale_instance_pool" "test" {
-  zone = local.zone
-  name = "%s"
-  description = "%s"
-  template_id = "%s"
-  instance_type = "%s"
-  instance_prefix = "%s"
-  size = %s
-  disk_size = %s
-  ipv6 = false
-  key_pair = exoscale_ssh_keypair.test.name
+  zone               = local.zone
+  name               = "%s"
+  description        = "%s"
+  template_id        = data.exoscale_compute_template.template.id
+  instance_type      = "%s"
+  instance_prefix    = "%s"
+  size               = %s
+  disk_size          = %s
+  ipv6               = false
+  key_pair           = exoscale_ssh_keypair.test.name
   affinity_group_ids = [exoscale_affinity.test.id]
-  network_ids = [exoscale_network.test.id]
-  elastic_ip_ids = [exoscale_ipaddress.test.id]
-  user_data = "%s"
+  network_ids        = [exoscale_network.test.id]
+  elastic_ip_ids     = [exoscale_ipaddress.test.id]
+  user_data          = "%s"
+
   labels = {
     test = "%s"
   }
@@ -84,12 +90,12 @@ data "exoscale_instance_pool" "by-id" {
   id   = exoscale_instance_pool.test.id
 }`,
 					testZoneName,
+					testAccDataSourceInstancePoolTemplateName,
 					testAccDataSourceInstancePoolAttrAffinityGroupName,
 					testAccDataSourceInstancePoolNetwork,
 					testAccDataSourceInstancePoolKeyPair,
 					testAccDataSourceInstancePoolName,
 					testAccDataSourceInstancePoolDescription,
-					testAccDataSourceInstancePoolTemplateID,
 					testAccDataSourceInstancePoolInstanceType,
 					testAccDataSourceInstancePoolInstancePrefix,
 					testAccDataSourceInstancePoolSize,
@@ -113,7 +119,7 @@ data "exoscale_instance_pool" "by-id" {
 						"network_ids.0":        validation.ToDiagFunc(validation.IsUUID),
 						"size":                 validateString(testAccDataSourceInstancePoolSize),
 						"state":                validateString("running"),
-						"template_id":          validateString(testAccDataSourceInstancePoolTemplateID),
+						"template_id":          validation.ToDiagFunc(validation.IsUUID),
 						"user_data":            validateString(testAccDataSourceInstancePoolUserData),
 						"instances.#":          validateString("2"),
 						"instances.0.id":       validation.ToDiagFunc(validation.IsUUID),

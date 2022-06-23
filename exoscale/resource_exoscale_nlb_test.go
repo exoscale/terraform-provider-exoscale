@@ -16,10 +16,10 @@ import (
 )
 
 var (
-	testAccResourceNLBLabelValue             = acctest.RandomWithPrefix(testPrefix)
-	testAccResourceNLBLabelValueUpdated      = testAccResourceNLBLabelValue + "-updated"
-	testAccResourceNLBInstancePoolName       = acctest.RandomWithPrefix(testPrefix)
-	testAccResourceNLBInstancePoolTemplateID = testInstanceTemplateID
+	testAccResourceNLBInstancePoolName  = acctest.RandomWithPrefix(testPrefix)
+	testAccResourceNLBLabelValue        = acctest.RandomWithPrefix(testPrefix)
+	testAccResourceNLBLabelValueUpdated = testAccResourceNLBLabelValue + "-updated"
+	testAccResourceNLBTemplateName      = testInstanceTemplateName
 
 	testAccResourceNLBName               = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceNLBNameUpdated        = testAccResourceNLBName + "-updated"
@@ -31,13 +31,18 @@ locals {
   zone = "%s"
 }
 
-resource "exoscale_instance_pool" "test" {
+data "exoscale_compute_template" "template" {
   zone = local.zone
   name = "%s"
-  template_id = "%s"
+}
+
+resource "exoscale_instance_pool" "test" {
+  zone             = local.zone
+  name             = "%s"
+  template_id      = data.exoscale_compute_template.template.id
   service_offering = "medium"
-  size = 1
-  disk_size = 10
+  size             = 1
+  disk_size        = 10
 
   timeouts {
 	delete = "10m"
@@ -45,11 +50,12 @@ resource "exoscale_instance_pool" "test" {
 }
 
 resource "exoscale_nlb" "test" {
-  name = "%s"
+  name        = "%s"
   description = "%s"
-  zone = local.zone
+  zone        = local.zone
+
   labels = {
-    test = "%s"
+  	test = "%s"
   }
 
   timeouts {
@@ -58,32 +64,32 @@ resource "exoscale_nlb" "test" {
 }
 
 resource "exoscale_nlb_service" "test" {
-  zone = local.zone
-  name = "%s"
-  nlb_id = exoscale_nlb.test.id
+  zone             = local.zone
+  name             = "%s"
+  nlb_id           = exoscale_nlb.test.id
   instance_pool_id = exoscale_instance_pool.test.id
-  protocol = "tcp"
-  port = 80
-  target_port = 80
-  strategy = "round-robin"
+  protocol         = "tcp"
+  port             = 80
+  target_port      = 80
+  strategy         = "round-robin"
 
   healthcheck {
-    mode = "http"
-	port = 80
-	interval = 5
-	timeout = 3
-	retries = 1
-	uri = "/healthz"
+    mode     = "http"
+    port     = 80
+    interval = 5
+    timeout  = 3
+    retries  = 1
+    uri      = "/healthz"
   }
 
   timeouts {
-	delete = "10m"
+    delete = "10m"
   }
 }
 `,
 		testZoneName,
+		testAccResourceNLBTemplateName,
 		testAccResourceNLBInstancePoolName,
-		testAccResourceNLBInstancePoolTemplateID,
 		testAccResourceNLBName,
 		testAccResourceNLBDescription,
 		testAccResourceNLBLabelValue,
@@ -95,23 +101,29 @@ locals {
   zone = "%s"
 }
 
-resource "exoscale_instance_pool" "test" {
+data "exoscale_compute_template" "template" {
   zone = local.zone
   name = "%s"
-  template_id = "%s"
+}
+
+resource "exoscale_instance_pool" "test" {
+  zone             = local.zone
+  name             = "%s"
+  template_id      = data.exoscale_compute_template.template.id
   service_offering = "medium"
-  size = 1
-  disk_size = 10
+  size             = 1
+  disk_size        = 10
 
   timeouts {
-	delete = "10m"
+    delete = "10m"
   }
 }
 
 resource "exoscale_nlb" "test" {
-  name = "%s"
+  name        = "%s"
   description = "%s"
-  zone = local.zone
+  zone        = local.zone
+
   labels = {
     test = "%s"
   }
@@ -122,32 +134,32 @@ resource "exoscale_nlb" "test" {
 }
 
 resource "exoscale_nlb_service" "test" {
-  zone = local.zone
-  name = "%s"
-  nlb_id = exoscale_nlb.test.id
+  zone             = local.zone
+  name             = "%s"
+  nlb_id           = exoscale_nlb.test.id
   instance_pool_id = exoscale_instance_pool.test.id
-  protocol = "tcp"
-  port = 80
-  target_port = 80
-  strategy = "round-robin"
+  protocol         = "tcp"
+  port             = 80
+  target_port      = 80
+  strategy         = "round-robin"
 
   healthcheck {
-	mode = "http"
-	port = 80
-	interval = 5
-	timeout = 3
-	retries = 1
-	uri = "/healthz"
+    mode     = "http"
+    port     = 80
+    interval = 5
+    timeout  = 3
+    retries  = 1
+    uri      = "/healthz"
   }
 
   timeouts {
-	delete = "10m"
+    delete = "10m"
   }
 }
 `,
 		testZoneName,
+		testAccResourceNLBTemplateName,
 		testAccResourceNLBInstancePoolName,
-		testAccResourceNLBInstancePoolTemplateID,
 		testAccResourceNLBNameUpdated,
 		testAccResourceNLBDescriptionUpdated,
 		testAccResourceNLBLabelValueUpdated,

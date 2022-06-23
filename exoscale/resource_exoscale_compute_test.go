@@ -8,15 +8,14 @@ import (
 	"github.com/exoscale/egoscale"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 var (
 	testAccResourceComputeSSHKeyName         = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceComputeSecurityGroupName  = acctest.RandomWithPrefix(testPrefix)
-	testAccResourceComputeZoneName           = testZoneName
 	testAccResourceComputeTemplateName       = testInstanceTemplateName
-	testAccResourceComputeTemplateID         = testInstanceTemplateID
 	testAccResourceComputeDisplayName        = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceComputeDisplayNameUpdated = testAccResourceComputeDisplayName + "-updated"
 	testAccResourceComputeHostname           = acctest.RandomWithPrefix(testPrefix)
@@ -28,26 +27,30 @@ var (
 	testAccResourceComputeReverseDNSUpdated  = "test-updated.com."
 
 	testAccResourceComputeConfigCreateTemplateByName = fmt.Sprintf(`
+locals {
+  zone = "%s"
+}
+
 resource "exoscale_ssh_keypair" "key" {
   name = "%s"
 }
 
 resource "exoscale_compute" "vm" {
-  zone = "%s"
-  template = "%s"
+  zone         = local.zone
+  template     = "%s"
   display_name = "%s"
-  size = "%s"
-  disk_size = "%s"
-  key_pair = exoscale_ssh_keypair.key.name
-  reverse_dns = "%s"
+  size         = "%s"
+  disk_size    = "%s"
+  key_pair     = exoscale_ssh_keypair.key.name
+  reverse_dns  = "%s"
 
   tags = {
     test = "terraform"
   }
 }
 `,
+		testZoneName,
 		testAccResourceComputeSSHKeyName,
-		testAccResourceComputeZoneName,
 		testAccResourceComputeTemplateName,
 		testAccResourceComputeDisplayName,
 		testAccResourceComputeSize,
@@ -56,27 +59,36 @@ resource "exoscale_compute" "vm" {
 	)
 
 	testAccResourceComputeConfigCreateTemplateByID = fmt.Sprintf(`
+locals {
+  zone = "%s"
+}
+
+data "exoscale_compute_template" "template" {
+  zone = local.zone
+  name = "%s"
+}
+
 resource "exoscale_ssh_keypair" "key" {
   name = "%s"
 }
 
 resource "exoscale_compute" "vm" {
-  template_id = "%s"
-  zone = "%s"
+  template_id  = data.exoscale_compute_template.template.id
+  zone         = local.zone
   display_name = "%s"
-  size = "%s"
-  disk_size = "%s"
-  key_pair = exoscale_ssh_keypair.key.name
-  reverse_dns = "%s"
+  size         = "%s"
+  disk_size    = "%s"
+  key_pair     = exoscale_ssh_keypair.key.name
+  reverse_dns  = "%s"
 
   tags = {
     test = "terraform"
   }
 }
 `,
+		testZoneName,
+		testAccResourceComputeTemplateName,
 		testAccResourceComputeSSHKeyName,
-		testAccResourceComputeTemplateID,
-		testAccResourceComputeZoneName,
 		testAccResourceComputeDisplayName,
 		testAccResourceComputeSize,
 		testAccResourceComputeDiskSize,
@@ -84,6 +96,15 @@ resource "exoscale_compute" "vm" {
 	)
 
 	testAccResourceComputeConfigUpdate = fmt.Sprintf(`
+locals {
+  zone = "%s"
+}
+
+data "exoscale_compute_template" "template" {
+  zone = local.zone
+  name = "%s"
+}
+
 resource "exoscale_ssh_keypair" "key" {
   name = "%s"
 }
@@ -93,14 +114,14 @@ resource "exoscale_security_group" "sg" {
 }
 
 resource "exoscale_compute" "vm" {
-  template_id = "%s"
-  zone = "%s"
+  template_id  = data.exoscale_compute_template.template.id
+  zone         = local.zone
   display_name = "%s"
-  hostname = "%s"
-  size = "%s"
-  disk_size = "%s"
-  key_pair = exoscale_ssh_keypair.key.name
-  reverse_dns = "%s"
+  hostname     = "%s"
+  size         = "%s"
+  disk_size    = "%s"
+  key_pair     = exoscale_ssh_keypair.key.name
+  reverse_dns  = "%s"
 
   user_data = <<EOF
 #cloud-config
@@ -119,10 +140,10 @@ EOF
   depends_on = ["exoscale_security_group.sg"]
 }
 `,
+		testZoneName,
+		testAccResourceComputeTemplateName,
 		testAccResourceComputeSSHKeyName,
 		testAccResourceComputeSecurityGroupName,
-		testAccResourceComputeTemplateID,
-		testAccResourceComputeZoneName,
 		testAccResourceComputeDisplayNameUpdated,
 		testAccResourceComputeHostname,
 		testAccResourceComputeSizeUpdated,
@@ -148,7 +169,7 @@ func TestAccResourceCompute(t *testing.T) {
 					testAccCheckResourceCompute(vm),
 					testAccCheckResourceComputeAttributes(testAttrs{
 						"template":     validateString(testAccResourceComputeTemplateName),
-						"template_id":  validateString(testAccResourceComputeTemplateID),
+						"template_id":  validation.ToDiagFunc(validation.IsUUID),
 						"display_name": validateString(testAccResourceComputeDisplayName),
 						"hostname":     validateString(testAccResourceComputeDisplayName),
 						"name":         validateString(testAccResourceComputeDisplayName),
@@ -166,7 +187,7 @@ func TestAccResourceCompute(t *testing.T) {
 					testAccCheckResourceComputeExists("exoscale_compute.vm", vm),
 					testAccCheckResourceCompute(vm),
 					testAccCheckResourceComputeAttributes(testAttrs{
-						"template_id":  validateString(testAccResourceComputeTemplateID),
+						"template_id":  validation.ToDiagFunc(validation.IsUUID),
 						"display_name": validateString(testAccResourceComputeDisplayName),
 						"hostname":     validateString(testAccResourceComputeDisplayName),
 						"name":         validateString(testAccResourceComputeDisplayName),
@@ -184,7 +205,7 @@ func TestAccResourceCompute(t *testing.T) {
 					testAccCheckResourceComputeExists("exoscale_compute.vm", vm),
 					testAccCheckResourceCompute(vm),
 					testAccCheckResourceComputeAttributes(testAttrs{
-						"template_id":       validateString(testAccResourceComputeTemplateID),
+						"template_id":       validation.ToDiagFunc(validation.IsUUID),
 						"display_name":      validateString(testAccResourceComputeDisplayNameUpdated),
 						"hostname":          validateString(testAccResourceComputeHostname),
 						"name":              validateString(testAccResourceComputeHostname),
@@ -206,7 +227,7 @@ func TestAccResourceCompute(t *testing.T) {
 				ImportStateCheck: func(s []*terraform.InstanceState) error {
 					return checkResourceAttributes(
 						testAttrs{
-							"template_id":       validateString(testAccResourceComputeTemplateID),
+							"template_id":       validation.ToDiagFunc(validation.IsUUID),
 							"display_name":      validateString(testAccResourceComputeDisplayNameUpdated),
 							"hostname":          validateString(testAccResourceComputeHostname),
 							"name":              validateString(testAccResourceComputeHostname),

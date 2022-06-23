@@ -14,31 +14,39 @@ import (
 )
 
 var (
-	testAccResourceSecondaryIPAddressZoneName          = testZoneName
-	testAccResourceSecondaryIPAddressSSHKeyName        = acctest.RandomWithPrefix(testPrefix)
-	testAccResourceSecondaryIPAddressComputeName       = acctest.RandomWithPrefix(testPrefix)
-	testAccResourceSecondaryIPAddressComputeTemplateID = testInstanceTemplateID
+	testAccResourceSecondaryIPAddressComputeName  = acctest.RandomWithPrefix(testPrefix)
+	testAccResourceSecondaryIPAddressSSHKeyName   = acctest.RandomWithPrefix(testPrefix)
+	testAccResourceSecondaryIPAddressTemplateName = testInstanceTemplateName
 
 	testAccResourceSecondaryIPAddressConfig = fmt.Sprintf(`
+locals {
+  zone = "%s"
+}
+
 resource "exoscale_ssh_keypair" "key" {
   name = "%s"
 }
 
 resource "exoscale_ipaddress" "eip" {
-  zone = "%s"
+  zone = local.zone
 
   tags = {
     terraform = "acceptance"
   }
 }
 
+data "exoscale_compute_template" "template" {
+  zone = local.zone
+  name = "%s"
+}
+
 resource "exoscale_compute" "vm" {
-  zone = exoscale_ipaddress.eip.zone
+  zone         = local.zone
   display_name = "%s"
-  template_id = "%s"
-  size = "Micro"
-  disk_size = "10"
-  key_pair = exoscale_ssh_keypair.key.name
+  size         = "Micro"
+  disk_size    = "10"
+  key_pair     = exoscale_ssh_keypair.key.name
+  template_id  = data.exoscale_compute_template.template.id
 
   # prevents bad ordering during the deletion
   depends_on = ["exoscale_ipaddress.eip"]
@@ -53,10 +61,10 @@ resource "exoscale_secondary_ipaddress" "ip" {
   ip_address = exoscale_ipaddress.eip.ip_address
 }
 `,
+		testZoneName,
 		testAccResourceSecondaryIPAddressSSHKeyName,
-		testAccResourceSecondaryIPAddressZoneName,
+		testAccResourceSecondaryIPAddressTemplateName,
 		testAccResourceSecondaryIPAddressComputeName,
-		testAccResourceSecondaryIPAddressComputeTemplateID,
 	)
 )
 

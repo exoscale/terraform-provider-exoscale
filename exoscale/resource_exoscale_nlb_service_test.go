@@ -16,22 +16,22 @@ import (
 )
 
 var (
-	testAccResourceNLBServiceZoneName                   = testZoneName
-	testAccResourceNLBServiceInstancePoolName           = acctest.RandomWithPrefix(testPrefix)
-	testAccResourceNLBServiceInstancePoolTemplateID     = testInstanceTemplateID
-	testAccResourceNLBServiceNLBName                    = acctest.RandomWithPrefix(testPrefix)
-	testAccResourceNLBServiceName                       = acctest.RandomWithPrefix(testPrefix)
-	testAccResourceNLBServiceNameUpdated                = testAccResourceNLBServiceName + "-updated"
-	testAccResourceNLBServiceDescription                = acctest.RandomWithPrefix(testPrefix)
-	testAccResourceNLBServiceDescriptionUpdated         = testAccResourceNLBServiceDescription + "-updated"
-	testAccResourceNLBServicePort                       = "80"
-	testAccResourceNLBServicePortUpdated                = "443"
-	testAccResourceNLBServiceTargetPort                 = "8080"
-	testAccResourceNLBServiceTargetPortUpdated          = "8443"
-	testAccResourceNLBServiceProtocol                   = defaultNLBServiceProtocol
-	testAccResourceNLBServiceProtocolUpdated            = "udp"
-	testAccResourceNLBServiceStrategy                   = defaulNLBServiceStrategy
-	testAccResourceNLBServiceStrategyUpdated            = "source-hash"
+	testAccResourceNLBServiceDescription        = acctest.RandomWithPrefix(testPrefix)
+	testAccResourceNLBServiceDescriptionUpdated = testAccResourceNLBServiceDescription + "-updated"
+	testAccResourceNLBServiceInstancePoolName   = acctest.RandomWithPrefix(testPrefix)
+	testAccResourceNLBServiceName               = acctest.RandomWithPrefix(testPrefix)
+	testAccResourceNLBServiceNameUpdated        = testAccResourceNLBServiceName + "-updated"
+	testAccResourceNLBServiceNLBName            = acctest.RandomWithPrefix(testPrefix)
+	testAccResourceNLBServicePort               = "80"
+	testAccResourceNLBServicePortUpdated        = "443"
+	testAccResourceNLBServiceProtocol           = defaultNLBServiceProtocol
+	testAccResourceNLBServiceProtocolUpdated    = "udp"
+	testAccResourceNLBServiceStrategy           = defaulNLBServiceStrategy
+	testAccResourceNLBServiceStrategyUpdated    = "source-hash"
+	testAccResourceNLBServiceTargetPort         = "8080"
+	testAccResourceNLBServiceTargetPortUpdated  = "8443"
+	testAccResourceNLBServiceTemplateName       = testInstanceTemplateName
+
 	testAccResourceNLBServiceHealthcheckMode            = "tcp"
 	testAccResourceNLBServiceHealthcheckModeUpdated     = "https"
 	testAccResourceNLBServiceHealthcheckURI             = "/healthz"
@@ -50,13 +50,18 @@ locals {
   zone = "%s"
 }
 
-resource "exoscale_instance_pool" "test" {
+data "exoscale_compute_template" "template" {
   zone = local.zone
   name = "%s"
-  template_id = "%s"
+}
+
+resource "exoscale_instance_pool" "test" {
+  zone             = local.zone
+  name             = "%s"
+  template_id      = data.exoscale_compute_template.template.id
   service_offering = "small"
-  size = 1
-  disk_size = 10
+  size             = 1
+  disk_size        = 10
 
   timeouts {
     delete = "10m"
@@ -73,22 +78,22 @@ resource "exoscale_nlb" "test" {
 }
 
 resource "exoscale_nlb_service" "test" {
-  zone = local.zone
-  name = "%s"
-  description = "%s"
-  nlb_id = exoscale_nlb.test.id
+  zone             = local.zone
+  name             = "%s"
+  description      = "%s"
+  nlb_id           = exoscale_nlb.test.id
   instance_pool_id = exoscale_instance_pool.test.id
-  protocol = "%s"
-  port = %s
-  target_port = %s
-  strategy = "%s"
+  protocol         = "%s"
+  port             = %s
+  target_port      = %s
+  strategy         = "%s"
 
   healthcheck {
-    mode = "%s"
-	port = %s
-	interval = %s
-	timeout = %s
-	retries = %s
+    mode     = "%s"
+    port     = %s
+    interval = %s
+    timeout  = %s
+    retries  = %s
   }
 
   timeouts {
@@ -96,9 +101,9 @@ resource "exoscale_nlb_service" "test" {
   }
 }
 `,
-		testAccResourceNLBServiceZoneName,
+		testZoneName,
+		testAccResourceNLBServiceTemplateName,
 		testAccResourceNLBServiceInstancePoolName,
-		testAccResourceNLBServiceInstancePoolTemplateID,
 		testAccResourceNLBServiceNLBName,
 		testAccResourceNLBServiceName,
 		testAccResourceNLBServiceDescription,
@@ -118,13 +123,18 @@ locals {
   zone = "%s"
 }
 
-resource "exoscale_instance_pool" "test" {
+data "exoscale_compute_template" "template" {
   zone = local.zone
   name = "%s"
-  template_id = "%s"
+}
+
+resource "exoscale_instance_pool" "test" {
+  zone             = local.zone
+  name             = "%s"
+  template_id      = data.exoscale_compute_template.template.id
   service_offering = "small"
-  size = 2
-  disk_size = 10
+  size             = 2
+  disk_size        = 10
 
   timeouts {
     delete = "10m"
@@ -141,24 +151,24 @@ resource "exoscale_nlb" "test" {
 }
 
 resource "exoscale_nlb_service" "test" {
-  zone = local.zone
-  name = "%s"
-  description = "%s"
-  nlb_id = exoscale_nlb.test.id
+  zone             = local.zone
+  name             = "%s"
+  description      = "%s"
+  nlb_id           = exoscale_nlb.test.id
   instance_pool_id = exoscale_instance_pool.test.id
-  protocol = "%s"
-  port = %s
-  target_port = %s
-  strategy = "%s"
+  protocol         = "%s"
+  port             = %s
+  target_port      = %s
+  strategy         = "%s"
 
   healthcheck {
-    mode = "%s"
-    port = %s
-    uri = "%s"
-    tls_sni = "%s"
+    mode     = "%s"
+    port     = %s
+    uri      = "%s"
+    tls_sni  = "%s"
     interval = %s
-    timeout = %s
-    retries = %s
+    timeout  = %s
+    retries  = %s
   }
 
   timeouts {
@@ -166,9 +176,9 @@ resource "exoscale_nlb_service" "test" {
   }
 }
 	  `,
-		testAccResourceNLBServiceZoneName,
+		testZoneName,
+		testAccResourceNLBServiceTemplateName,
 		testAccResourceNLBServiceInstancePoolName,
-		testAccResourceNLBServiceInstancePoolTemplateID,
 		testAccResourceNLBServiceNLBName,
 		testAccResourceNLBServiceNameUpdated,
 		testAccResourceNLBServiceDescriptionUpdated,
@@ -348,10 +358,10 @@ func testAccCheckResourceNLBServiceExists(r string, nlbService *egoscale.Network
 		client := GetComputeClient(testAccProvider.Meta())
 		ctx := exoapi.WithEndpoint(
 			context.Background(),
-			exoapi.NewReqEndpoint(testEnvironment, testAccResourceNLBServiceZoneName),
+			exoapi.NewReqEndpoint(testEnvironment, testZoneName),
 		)
 
-		nlb, err := client.Client.GetNetworkLoadBalancer(ctx, testAccResourceNLBServiceZoneName, nlbID)
+		nlb, err := client.Client.GetNetworkLoadBalancer(ctx, testZoneName, nlbID)
 		if err != nil {
 			return err
 		}
@@ -389,7 +399,7 @@ func testAccCheckResourceNLBServiceDestroy(r string) resource.TestCheckFunc {
 			exoapi.NewReqEndpoint(testEnvironment, testZoneName),
 		)
 
-		nlb, err := client.GetNetworkLoadBalancer(ctx, testAccResourceNLBServiceZoneName, nlbID)
+		nlb, err := client.GetNetworkLoadBalancer(ctx, testZoneName, nlbID)
 		if err != nil {
 			if errors.Is(err, exoapi.ErrNotFound) {
 				return nil
