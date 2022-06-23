@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.38.0 (June 23, 2022)
+
+FEATURES:
+
+- **New Resource:** `exoscale_iam_access_key` (#182)
+
+BUG FIXES:
+
+- API signature bug fixed upgrading `egoscale` to v0.88.1 (#184)
+
+IMPROVEMENTS:
+
+- Acceptance tests not relying anymore on harcoded template IDs (#185)
+
 ## 0.37.1 (June 14, 2022)
 
 BUG FIXES:
