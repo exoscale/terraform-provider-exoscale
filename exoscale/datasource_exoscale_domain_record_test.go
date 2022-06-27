@@ -27,7 +27,7 @@ resource "exoscale_domain" "exo" {
 }
 
 resource "exoscale_domain_record" "mx" {
-  domain      = exoscale_domain.exo.id
+  domain      = exoscale_domain.exo.name
   name        = "%s"
   record_type = "%s"
   content     = "%s"
@@ -45,7 +45,7 @@ resource "exoscale_domain_record" "mx" {
 
 	testAccDataSourceDomainRecordConfigCreate2 = fmt.Sprintf(`
 resource "exoscale_domain_record" "mx2" {
-  domain      = exoscale_domain.exo.id
+  domain      = exoscale_domain.exo.name
   name        = "%s"
   record_type = "%s"
   content     = "%s"
@@ -73,10 +73,10 @@ func TestAccDataSourceDomainRecord(t *testing.T) {
 %s
 
 data "exoscale_domain_record" "test_record" {
-  domain = exoscale_domain.exo.id
+  domain = exoscale_domain.exo.name
   filter {}
 }`, testAccDataSourceDomainRecordConfigCreate1, testAccDataSourceDomainRecordConfigCreate2),
-				ExpectError: regexp.MustCompile("either name or id must be specified"),
+				ExpectError: regexp.MustCompile("filter not valid"),
 			},
 			{
 				Config: fmt.Sprintf(`
@@ -85,7 +85,7 @@ data "exoscale_domain_record" "test_record" {
 %s
 
 data "exoscale_domain_record" "test_record" {
-  domain = exoscale_domain.exo.id
+  domain = exoscale_domain.exo.name
   filter {
     name   = exoscale_domain_record.mx.name
   }
@@ -100,6 +100,29 @@ data "exoscale_domain_record" "test_record" {
 					),
 				),
 			},
+			// Commented out until domain record resource is ported to public API
+			//			{
+			//				Config: fmt.Sprintf(`
+			//	%s
+			//
+			//	%s
+			//
+			//			data "exoscale_domain_record" "test_record" {
+			//			  domain = exoscale_domain.exo.name
+			//			  filter {
+			//			    id = exoscale_domain_record.mx.id
+			//			  }
+			//			}`, testAccDataSourceDomainRecordConfigCreate1, testAccDataSourceDomainRecordConfigCreate2),
+			//				Check: resource.ComposeTestCheckFunc(
+			//					testAccDataSourceDomainRecordAttributes(
+			//						"data.exoscale_domain_record.test_record",
+			//						testAttrs{
+			//							"records.0.name":   validateString(testAccDataSourceDomainRecordName1),
+			//							"records.0.domain": validateString(testAccDataSourceDomainRecordDomainName),
+			//						},
+			//					),
+			//				),
+			//			},
 			{
 				Config: fmt.Sprintf(`
 %s
@@ -107,29 +130,7 @@ data "exoscale_domain_record" "test_record" {
 %s
 
 			data "exoscale_domain_record" "test_record" {
-			  domain = exoscale_domain.exo.id
-			  filter {
-			    id = exoscale_domain_record.mx.id
-			  }
-			}`, testAccDataSourceDomainRecordConfigCreate1, testAccDataSourceDomainRecordConfigCreate2),
-				Check: resource.ComposeTestCheckFunc(
-					testAccDataSourceDomainRecordAttributes(
-						"data.exoscale_domain_record.test_record",
-						testAttrs{
-							"records.0.name":   validateString(testAccDataSourceDomainRecordName1),
-							"records.0.domain": validateString(testAccDataSourceDomainRecordDomainName),
-						},
-					),
-				),
-			},
-			{
-				Config: fmt.Sprintf(`
-%s
-
-%s
-
-			data "exoscale_domain_record" "test_record" {
-			  domain = exoscale_domain.exo.id
+			  domain = exoscale_domain.exo.name
 			  filter {
 			    record_type = "MX"
 			  }
@@ -151,7 +152,7 @@ data "exoscale_domain_record" "test_record" {
 %s
 
 			data "exoscale_domain_record" "test_record" {
-			  domain = exoscale_domain.exo.id
+			  domain = exoscale_domain.exo.name
 			  filter {
 			    content_regex = "mta.*"
 			  }

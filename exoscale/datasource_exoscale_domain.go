@@ -2,8 +2,11 @@ package exoscale
 
 import (
 	"context"
-	"strconv"
+	"log"
 
+	exo "github.com/exoscale/egoscale/v2"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -16,24 +19,46 @@ func dataSourceDomain() *schema.Resource {
 				Required:    true,
 			},
 		},
-		Read: dataSourceDomainRead,
+		ReadContext: dataSourceDomainRead,
 	}
 }
 
-func dataSourceDomainRead(d *schema.ResourceData, meta interface{}) error {
-	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutCreate))
+func dataSourceDomainRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	log.Printf("[DEBUG] %s: beginning read", resourceIDString(d, "exoscale_domain"))
+
+	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
 	defer cancel()
 
-	client := GetDNSClient(meta)
+	client := GetComputeClient(meta)
 
 	domainName := d.Get("name")
+	var domain *exo.DNSDomain
 
-	domain, err := client.GetDomain(ctx, domainName.(string))
+	domains, err := client.ListDNSDomains(ctx, defaultZone)
 	if err != nil {
-		return err
+		return diag.Errorf("error retrieving domain list: %s", err)
 	}
 
-	d.SetId(strconv.FormatInt(domain.ID, 10))
+	for _, item := range domains {
+		if *item.UnicodeName == domainName {
+			t := item
+			domain = &t
+			break
+		}
+	}
 
-	return d.Set("name", domain.Name)
+	if domain == nil {
+		return diag.Errorf("domain %q not found", domainName)
+	}
+
+	d.SetId(*domain.ID)
+
+	err = d.Set("name", domain.UnicodeName)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	log.Printf("[DEBUG] %s: read finished successfully", resourceIDString(d, "exoscale_domain"))
+
+	return nil
 }

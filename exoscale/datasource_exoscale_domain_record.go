@@ -2,19 +2,22 @@ package exoscale
 
 import (
 	"context"
-	"errors"
+	"crypto/md5"
 	"fmt"
+	"log"
 	"regexp"
-	"time"
+	"strings"
 
-	"github.com/exoscale/egoscale"
+	exo "github.com/exoscale/egoscale/v2"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 func dataSourceDomainRecord() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceDomainRecordRead,
+		ReadContext: dataSourceDomainRecordRead,
 
 		Schema: map[string]*schema.Schema{
 			"domain": {
@@ -29,7 +32,7 @@ func dataSourceDomainRecord() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"id": {
-							Type:          schema.TypeInt,
+							Type:          schema.TypeString,
 							Optional:      true,
 							ConflictsWith: []string{"filter.0.name", "filter.0.record_type", "filter.0.content_regex"},
 						},
@@ -58,7 +61,7 @@ func dataSourceDomainRecord() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"id": {
-							Type:        schema.TypeInt,
+							Type:        schema.TypeString,
 							Description: "ID of the Record",
 							Optional:    true,
 						},
@@ -82,9 +85,14 @@ func dataSourceDomainRecord() *schema.Resource {
 							Description: "Type of the Record",
 							Optional:    true,
 						},
+						"ttl": {
+							Type:        schema.TypeInt,
+							Description: "TTL of the Record",
+							Optional:    true,
+						},
 						"prio": {
 							Type:        schema.TypeInt,
-							Description: "Prio of the Record",
+							Description: "Priority of the Record",
 							Optional:    true,
 						},
 					},
@@ -94,88 +102,115 @@ func dataSourceDomainRecord() *schema.Resource {
 	}
 }
 
-func dataSourceDomainRecordRead(d *schema.ResourceData, meta interface{}) error {
-	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutCreate))
+func dataSourceDomainRecordRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	log.Printf("[DEBUG] %s: beginning read", resourceIDString(d, "exoscale_domain"))
+
+	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
 	defer cancel()
 
-	client := GetDNSClient(meta)
+	client := GetComputeClient(meta)
 
-	dm := d.Get("domain").(string)
-	domain, err := client.GetDomain(ctx, dm)
+	domainName := d.Get("domain").(string)
+	var domain *exo.DNSDomain
+
+	domains, err := client.ListDNSDomains(ctx, defaultZone)
 	if err != nil {
-		return err
+		return diag.Errorf("error retrieving domain list: %s", err)
 	}
 
-	cfg := d.Get("filter").([]interface{})
-	if cfg[0] == nil {
-		return errors.New("either name or id must be specified")
+	for _, item := range domains {
+		if *item.UnicodeName == domainName {
+			t := item
+			domain = &t
+			break
+		}
 	}
-	m := cfg[0].(map[string]interface{})
 
-	var records []egoscale.DNSRecord
+	if domain == nil {
+		return diag.Errorf("domain %q not found", domainName)
+	}
+
+	flist := d.Get("filter").([]interface{})
+	if len(flist) != 1 || flist[0] == nil {
+		return diag.Errorf("filter not valid")
+	}
+
+	filter := flist[0].(map[string]interface{})
+	id := filter["id"].(string)
+	name := filter["name"].(string)
+	rtype := filter["record_type"].(string)
+	cregex := filter["content_regex"].(string)
+
+	var records []exo.DNSDomainRecord
+	var ids []string
+
 	switch {
-	case m["id"].(int) != 0:
-		record, err := client.GetRecord(ctx, domain.Name, int64(m["id"].(int)))
+	case id != "":
+		record, err := client.GetDNSDomainRecord(ctx, defaultZone, *domain.ID, id)
 		if err != nil {
-			return err
+			return diag.Errorf("error retrieving domain record: %s", err)
 		}
-		records = []egoscale.DNSRecord{*record}
-	case m["name"].(string) != "" || m["record_type"].(string) != "":
-		records, err = client.GetRecordsWithFilters(ctx, domain.Name, m["name"].(string), m["record_type"].(string))
+		records = append(records, *record)
+		ids = append(ids, *record.ID)
+	case name != "" || rtype != "":
+		r, err := client.ListDNSDomainRecords(ctx, defaultZone, *domain.ID)
 		if err != nil {
-			return err
+			return diag.Errorf("error retrieving domain record list: %s", err)
 		}
-	case m["content_regex"].(string) != "":
-		records, err = client.GetRecords(ctx, domain.Name)
-		if err != nil {
-			return err
+		for _, record := range r {
+			if name != "" && *record.Name != name {
+				continue
+			}
+			if rtype != "" && *record.Type != rtype {
+				continue
+			}
+			t := record
+			records = append(records, t)
+			ids = append(ids, *record.ID)
 		}
-		records, err = dataSourceDomainRecordFilter(records, m["content_regex"].(string))
+	case cregex != "":
+		regexp, err := regexp.Compile(cregex)
 		if err != nil {
-			return err
+			return diag.Errorf("error parsing regex: %s", err)
+		}
+		r, err := client.ListDNSDomainRecords(ctx, defaultZone, *domain.ID)
+		if err != nil {
+			return diag.Errorf("error retrieving domain record list: %s", err)
+		}
+		for _, record := range r {
+			if !regexp.MatchString(*record.Content) {
+				continue
+			}
+			t := record
+			records = append(records, t)
+			ids = append(ids, *record.ID)
 		}
 	}
-
-	d.SetId(time.Now().UTC().String())
 
 	if len(records) == 0 {
-		return errors.New("no records found")
+		return diag.Errorf("no records found")
 	}
+
+	// derive ID from result
+	d.SetId(fmt.Sprintf("%x", md5.Sum([]byte(strings.Join(ids, "")))))
 
 	recordsDetails := make([]map[string]interface{}, len(records))
 	for i, r := range records {
 		recordsDetails[i] = map[string]interface{}{
 			"id":          r.ID,
-			"domain":      d.Get("domain").(string),
+			"domain":      domainName,
 			"name":        r.Name,
 			"content":     r.Content,
-			"record_type": r.RecordType,
-			"prio":        r.Prio,
+			"record_type": r.Type,
+			"ttl":         r.TTL,
+			"prio":        r.Priority,
 		}
 	}
 
 	err = d.Set("records", recordsDetails)
 	if err != nil {
-		return fmt.Errorf("Error setting records: %s", err)
+		return diag.Errorf("Error setting records: %s", err)
 	}
 
 	return nil
-}
-
-func dataSourceDomainRecordFilter(records []egoscale.DNSRecord, content string) ([]egoscale.DNSRecord, error) {
-	regexp, err := regexp.Compile(content)
-	if err != nil {
-		return nil, err
-	}
-
-	res := make([]egoscale.DNSRecord, 0)
-	for _, r := range records {
-		if !regexp.Match([]byte(r.Content)) {
-			continue
-		}
-
-		res = append(res, r)
-	}
-
-	return res, nil
 }
