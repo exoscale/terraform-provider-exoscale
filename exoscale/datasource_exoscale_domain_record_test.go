@@ -8,6 +8,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
@@ -27,7 +28,7 @@ resource "exoscale_domain" "exo" {
 }
 
 resource "exoscale_domain_record" "mx" {
-  domain      = exoscale_domain.exo.name
+  domain      = exoscale_domain.exo.id
   name        = "%s"
   record_type = "%s"
   content     = "%s"
@@ -45,7 +46,7 @@ resource "exoscale_domain_record" "mx" {
 
 	testAccDataSourceDomainRecordConfigCreate2 = fmt.Sprintf(`
 resource "exoscale_domain_record" "mx2" {
-  domain      = exoscale_domain.exo.name
+  domain      = exoscale_domain.exo.id
   name        = "%s"
   record_type = "%s"
   content     = "%s"
@@ -95,52 +96,29 @@ data "exoscale_domain_record" "test_record" {
 						"data.exoscale_domain_record.test_record",
 						testAttrs{
 							"records.0.name":   validateString(testAccDataSourceDomainRecordName1),
-							"records.0.domain": validateString(testAccDataSourceDomainRecordDomainName),
+							"records.0.domain": validation.ToDiagFunc(validation.IsUUID),
 						},
 					),
 				),
 			},
-			// Commented out until domain record resource is ported to public API
-			//			{
-			//				Config: fmt.Sprintf(`
-			//	%s
-			//
-			//	%s
-			//
-			//			data "exoscale_domain_record" "test_record" {
-			//			  domain = exoscale_domain.exo.name
-			//			  filter {
-			//			    id = exoscale_domain_record.mx.id
-			//			  }
-			//			}`, testAccDataSourceDomainRecordConfigCreate1, testAccDataSourceDomainRecordConfigCreate2),
-			//				Check: resource.ComposeTestCheckFunc(
-			//					testAccDataSourceDomainRecordAttributes(
-			//						"data.exoscale_domain_record.test_record",
-			//						testAttrs{
-			//							"records.0.name":   validateString(testAccDataSourceDomainRecordName1),
-			//							"records.0.domain": validateString(testAccDataSourceDomainRecordDomainName),
-			//						},
-			//					),
-			//				),
-			//			},
 			{
 				Config: fmt.Sprintf(`
 %s
-
+			
 %s
-
-			data "exoscale_domain_record" "test_record" {
-			  domain = exoscale_domain.exo.name
-			  filter {
-			    record_type = "MX"
-			  }
-			}`, testAccDataSourceDomainRecordConfigCreate1, testAccDataSourceDomainRecordConfigCreate2),
+			
+data "exoscale_domain_record" "test_record" {
+  domain = exoscale_domain.exo.name
+  filter {
+    id = exoscale_domain_record.mx.id
+  }
+}`, testAccDataSourceDomainRecordConfigCreate1, testAccDataSourceDomainRecordConfigCreate2),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDataSourceDomainRecordAttributes(
 						"data.exoscale_domain_record.test_record",
 						testAttrs{
-							"records.0.domain": validateString(testAccDataSourceDomainRecordDomainName),
-							"records.1.domain": validateString(testAccDataSourceDomainRecordDomainName),
+							"records.0.name":   validateString(testAccDataSourceDomainRecordName1),
+							"records.0.domain": validation.ToDiagFunc(validation.IsUUID),
 						},
 					),
 				),
@@ -151,18 +129,40 @@ data "exoscale_domain_record" "test_record" {
 
 %s
 
-			data "exoscale_domain_record" "test_record" {
-			  domain = exoscale_domain.exo.name
-			  filter {
-			    content_regex = "mta.*"
-			  }
-			}`, testAccDataSourceDomainRecordConfigCreate1, testAccDataSourceDomainRecordConfigCreate2),
+data "exoscale_domain_record" "test_record" {
+  domain = exoscale_domain.exo.name
+  filter {
+    record_type = "MX"
+  }
+}`, testAccDataSourceDomainRecordConfigCreate1, testAccDataSourceDomainRecordConfigCreate2),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDataSourceDomainRecordAttributes(
 						"data.exoscale_domain_record.test_record",
 						testAttrs{
-							"records.0.domain": validateString(testAccDataSourceDomainRecordDomainName),
-							"records.1.domain": validateString(testAccDataSourceDomainRecordDomainName),
+							"records.0.domain": validation.ToDiagFunc(validation.IsUUID),
+							"records.1.domain": validation.ToDiagFunc(validation.IsUUID),
+						},
+					),
+				),
+			},
+			{
+				Config: fmt.Sprintf(`
+%s
+
+%s
+
+data "exoscale_domain_record" "test_record" {
+  domain = exoscale_domain.exo.name
+  filter {
+    content_regex = "mta.*"
+  }
+}`, testAccDataSourceDomainRecordConfigCreate1, testAccDataSourceDomainRecordConfigCreate2),
+				Check: resource.ComposeTestCheckFunc(
+					testAccDataSourceDomainRecordAttributes(
+						"data.exoscale_domain_record.test_record",
+						testAttrs{
+							"records.0.domain": validation.ToDiagFunc(validation.IsUUID),
+							"records.1.domain": validation.ToDiagFunc(validation.IsUUID),
 						},
 					),
 				),

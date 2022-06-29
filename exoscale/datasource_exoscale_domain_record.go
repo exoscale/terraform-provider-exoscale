@@ -198,7 +198,7 @@ func dataSourceDomainRecordRead(ctx context.Context, d *schema.ResourceData, met
 	for i, r := range records {
 		recordsDetails[i] = map[string]interface{}{
 			"id":          r.ID,
-			"domain":      domainName,
+			"domain":      *domain.ID,
 			"name":        r.Name,
 			"content":     r.Content,
 			"record_type": r.Type,
