@@ -171,7 +171,15 @@ Do you want to perform these actions?
 Additional documentation can be found in the [examples][tf-exo-gh-examples]
 directory of the source code.
 
+## Simple Object Storage (SOS)
+
+The Exoscale provider does not manage [SOS][exo-sos] resources. As SOS is
+S3-compatible, [Terraform AWS provider][tf-provider-aws] can be used instead to
+[manage your SOS resources][exo-sos-terraform].
 
 [exo-iam]: https://community.exoscale.com/documentation/iam/quick-start/
 [tf-doc-provider]: https://www.terraform.io/docs/configuration/providers.html
 [tf-exo-gh-examples]: https://github.com/exoscale/terraform-provider-exoscale/tree/master/examples
+[tf-provider-aws]: https://registry.terraform.io/providers/hashicorp/aws/latest/docs
+[exo-sos]: https://community.exoscale.com/documentation/storage
+[exo-sos-terraform]: https://community.exoscale.com/documentation/storage/terraform/
