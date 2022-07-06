@@ -173,7 +173,7 @@ directory of the source code.
 
 ## Simple Object Storage (SOS)
 
-The Exoscale provider does not manage [SOS][exo-sos] resources. As SOS is
+-> The Exoscale provider does not manage [SOS][exo-sos] resources. As SOS is
 S3-compatible, [Terraform AWS provider][tf-provider-aws] can be used instead to
 [manage your SOS resources][exo-sos-terraform].
 
