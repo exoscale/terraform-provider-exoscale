@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strconv"
 	"testing"
 
-	"github.com/exoscale/egoscale"
+	exo "github.com/exoscale/egoscale/v2"
+	exoapi "github.com/exoscale/egoscale/v2/api"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -71,8 +72,8 @@ resource "exoscale_domain_record" "mx" {
 )
 
 func TestAccResourceDomainRecord(t *testing.T) {
-	domain := new(egoscale.DNSDomain)
-	record := new(egoscale.DNSRecord)
+	domain := exo.DNSDomain{}
+	record := exo.DNSDomainRecord{}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
@@ -82,9 +83,9 @@ func TestAccResourceDomainRecord(t *testing.T) {
 			{
 				Config: testAccResourceDomainRecordConfigCreate,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckResourceDomainExists("exoscale_domain.exo", domain),
-					testAccCheckResourceDomainRecordExists("exoscale_domain_record.mx", domain, record),
-					testAccCheckResourceDomainRecord(record),
+					testAccCheckResourceDomainExists("exoscale_domain.exo", &domain),
+					testAccCheckResourceDomainRecordExists("exoscale_domain_record.mx", &domain, &record),
+					testAccCheckResourceDomainRecord(&record),
 					testAccCheckResourceDomainRecordAttributes(testAttrs{
 						"name":        validateString(testAccResourceDomainRecordName),
 						"record_type": validateString(testAccResourceDomainRecordType),
@@ -92,14 +93,15 @@ func TestAccResourceDomainRecord(t *testing.T) {
 						"prio":        validateString(fmt.Sprint(testAccResourceDomainRecordPrio)),
 						"ttl":         validateString(fmt.Sprint(testAccResourceDomainRecordTTL)),
 					}),
+					testAccCheckResourceDomainRecordStateUpgradeV1("exoscale_domain.exo", "exoscale_domain_record.mx"),
 				),
 			},
 			{
 				Config: testAccResourceDomainRecordConfigUpdate,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckResourceDomainExists("exoscale_domain.exo", domain),
-					testAccCheckResourceDomainRecordExists("exoscale_domain_record.mx", domain, record),
-					testAccCheckResourceDomainRecord(record),
+					testAccCheckResourceDomainExists("exoscale_domain.exo", &domain),
+					testAccCheckResourceDomainRecordExists("exoscale_domain_record.mx", &domain, &record),
+					testAccCheckResourceDomainRecord(&record),
 					testAccCheckResourceDomainRecordAttributes(testAttrs{
 						"name":        validateString(testAccResourceDomainRecordNameUpdated),
 						"record_type": validateString(testAccResourceDomainRecordType),
@@ -129,7 +131,7 @@ func TestAccResourceDomainRecord(t *testing.T) {
 	})
 }
 
-func testAccCheckResourceDomainRecordExists(n string, domain *egoscale.DNSDomain, record *egoscale.DNSRecord) resource.TestCheckFunc {
+func testAccCheckResourceDomainRecordExists(n string, domain *exo.DNSDomain, record *exo.DNSDomainRecord) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -140,10 +142,8 @@ func testAccCheckResourceDomainRecordExists(n string, domain *egoscale.DNSDomain
 			return errors.New("resource ID not set")
 		}
 
-		id, _ := strconv.ParseInt(rs.Primary.ID, 10, 64)
-
-		client := GetDNSClient(testAccProvider.Meta())
-		r, err := client.GetRecord(context.TODO(), domain.Name, id)
+		client := GetComputeClient(testAccProvider.Meta())
+		r, err := client.GetDNSDomainRecord(context.TODO(), defaultZone, *domain.ID, rs.Primary.ID)
 		if err != nil {
 			return err
 		}
@@ -154,9 +154,9 @@ func testAccCheckResourceDomainRecordExists(n string, domain *egoscale.DNSDomain
 	}
 }
 
-func testAccCheckResourceDomainRecord(record *egoscale.DNSRecord) resource.TestCheckFunc {
+func testAccCheckResourceDomainRecord(record *exo.DNSDomainRecord) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		if record.TTL == 0 {
+		if *record.TTL == 0 {
 			return errors.New("TTL is zero")
 		}
 
@@ -179,17 +179,16 @@ func testAccCheckResourceDomainRecordAttributes(expected testAttrs) resource.Tes
 }
 
 func testAccCheckResourceDomainRecordDestroy(s *terraform.State) error {
-	client := GetDNSClient(testAccProvider.Meta())
+	client := GetComputeClient(testAccProvider.Meta())
 
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "exoscale_domain_record" {
 			continue
 		}
 
-		id, _ := strconv.ParseInt(rs.Primary.ID, 10, 64)
-		d, err := client.GetRecord(context.TODO(), rs.Primary.Attributes["domain"], id)
+		d, err := client.GetDNSDomainRecord(context.TODO(), defaultZone, rs.Primary.Attributes["id"], rs.Primary.ID)
 		if err != nil {
-			if _, ok := err.(*egoscale.DNSErrorResponse); ok {
+			if errors.Is(err, exoapi.ErrNotFound) {
 				return nil
 			}
 			return err
@@ -200,4 +199,41 @@ func testAccCheckResourceDomainRecordDestroy(s *terraform.State) error {
 		return errors.New("Domain Record still exists")
 	}
 	return nil
+}
+
+func testAccCheckResourceDomainRecordStateUpgradeV1(nd, nr string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rsd, ok := s.RootModule().Resources[nd]
+		if !ok {
+			return errors.New("resource not found in the state")
+		}
+		rsr, ok := s.RootModule().Resources[nr]
+		if !ok {
+			return errors.New("resource not found in the state")
+		}
+
+		upgraded, err := resourceDomainRecordStateUpgradeV0(
+			context.TODO(),
+			map[string]interface{}{
+				"id":          "123456",
+				"domain":      testAccResourceDomainRecordDomainName,
+				"record_type": testAccResourceDomainRecordType,
+				"name":        testAccResourceDomainRecordName,
+				"content":     testAccResourceDomainRecordContent,
+			},
+			testAccProvider.Meta(),
+		)
+		if err != nil {
+			return fmt.Errorf("error migrating state: %s", err)
+		}
+
+		if upgraded["domain"].(string) != rsd.Primary.ID {
+			return fmt.Errorf("state migrate: expected domain:%q, got:%q", upgraded["domain"].(string), rsd.Primary.ID)
+		}
+		if upgraded["id"].(string) != rsr.Primary.ID {
+			return fmt.Errorf("state migrate: expected id:%q, got:%q", upgraded["id"].(string), rsr.Primary.ID)
+		}
+
+		return nil
+	}
 }

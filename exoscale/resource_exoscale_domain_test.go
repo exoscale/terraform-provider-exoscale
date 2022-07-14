@@ -4,13 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"regexp"
 	"testing"
 
-	"github.com/exoscale/egoscale"
+	exo "github.com/exoscale/egoscale/v2"
+	exoapi "github.com/exoscale/egoscale/v2/api"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
@@ -27,7 +27,7 @@ resource "exoscale_domain" "exo" {
 )
 
 func TestAccResourceDomain(t *testing.T) {
-	domain := new(egoscale.DNSDomain)
+	domain := exo.DNSDomain{}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
@@ -37,15 +37,11 @@ func TestAccResourceDomain(t *testing.T) {
 			{
 				Config: testAccDNSDomainCreate,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckResourceDomainExists("exoscale_domain.exo", domain),
-					testAccCheckResourceDomain(domain),
+					testAccCheckResourceDomainExists("exoscale_domain.exo", &domain),
 					testAccCheckResourceDomainAttributes(testAttrs{
-						"name":       validateString(testAccResourceDomainName),
-						"state":      validateString("hosted"),
-						"auto_renew": validateString("false"),
-						"expires_on": validation.ToDiagFunc(validation.StringIsEmpty),
-						"token":      validation.ToDiagFunc(validation.StringMatch(regexp.MustCompile("^[0-9a-f]+$"), "")),
+						"name": validateString(testAccResourceDomainName),
 					}),
+					testAccCheckResourceDomainStateUpgradeV1("exoscale_domain.exo"),
 				),
 			},
 			{
@@ -55,11 +51,7 @@ func TestAccResourceDomain(t *testing.T) {
 				ImportStateCheck: func(s []*terraform.InstanceState) error {
 					return checkResourceAttributes(
 						testAttrs{
-							"name":       validateString(testAccResourceDomainName),
-							"state":      validateString("hosted"),
-							"auto_renew": validateString("false"),
-							"expires_on": validation.ToDiagFunc(validation.StringIsEmpty),
-							"token":      validation.ToDiagFunc(validation.StringMatch(regexp.MustCompile("^[0-9a-f]+$"), "")),
+							"name": validateString(testAccResourceDomainName),
 						},
 						s[0].Attributes)
 				},
@@ -68,7 +60,7 @@ func TestAccResourceDomain(t *testing.T) {
 	})
 }
 
-func testAccCheckResourceDomainExists(n string, domain *egoscale.DNSDomain) resource.TestCheckFunc {
+func testAccCheckResourceDomainExists(n string, domain *exo.DNSDomain) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -79,23 +71,13 @@ func testAccCheckResourceDomainExists(n string, domain *egoscale.DNSDomain) reso
 			return errors.New("resource ID not set")
 		}
 
-		client := GetDNSClient(testAccProvider.Meta())
-		d, err := client.GetDomain(context.TODO(), rs.Primary.ID)
+		client := GetComputeClient(testAccProvider.Meta())
+		d, err := client.GetDNSDomain(context.TODO(), defaultZone, rs.Primary.ID)
 		if err != nil {
 			return err
 		}
 
 		*domain = *d
-
-		return nil
-	}
-}
-
-func testAccCheckResourceDomain(domain *egoscale.DNSDomain) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		if len(domain.Token) != 32 {
-			return fmt.Errorf("expected token length %d, got %d", 32, len(domain.Token))
-		}
 
 		return nil
 	}
@@ -116,16 +98,16 @@ func testAccCheckResourceDomainAttributes(expected testAttrs) resource.TestCheck
 }
 
 func testAccCheckResourceDomainDestroy(s *terraform.State) error {
-	client := GetDNSClient(testAccProvider.Meta())
+	client := GetComputeClient(testAccProvider.Meta())
 
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "exoscale_domain" {
 			continue
 		}
 
-		d, err := client.GetDomain(context.TODO(), rs.Primary.Attributes["name"])
+		d, err := client.GetDNSDomain(context.TODO(), defaultZone, rs.Primary.Attributes["id"])
 		if err != nil {
-			if _, ok := err.(*egoscale.DNSErrorResponse); ok {
+			if errors.Is(err, exoapi.ErrNotFound) {
 				return nil
 			}
 			return err
@@ -136,4 +118,35 @@ func testAccCheckResourceDomainDestroy(s *terraform.State) error {
 		return errors.New("Domain still exists")
 	}
 	return nil
+}
+
+func testAccCheckResourceDomainStateUpgradeV1(n string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[n]
+		if !ok {
+			return errors.New("resource not found in the state")
+		}
+
+		if rs.Primary.ID == "" {
+			return errors.New("resource ID not set")
+		}
+
+		upgraded, err := resourceDomainStateUpgradeV0(
+			context.TODO(),
+			map[string]interface{}{
+				"id":   testAccResourceDomainName,
+				"name": testAccResourceDomainName,
+			},
+			testAccProvider.Meta(),
+		)
+		if err != nil {
+			return fmt.Errorf("error migrating state: %s", err)
+		}
+
+		if upgraded["id"].(string) != rs.Primary.ID {
+			return fmt.Errorf("\n\nexpected:\n\n%#v\n\ngot:\n\n%#v\n\n", upgraded["id"].(string), rs.Primary.ID)
+		}
+
+		return nil
+	}
 }
