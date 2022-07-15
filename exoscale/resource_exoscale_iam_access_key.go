@@ -2,6 +2,7 @@ package exoscale
 
 import (
 	"context"
+	"fmt"
 	"log"
 
 	egoscale "github.com/exoscale/egoscale/v2"
@@ -267,7 +268,12 @@ func resourceIAMAccessKeyApply(
 	}
 
 	if accessKey.Resources != nil {
-		if err := d.Set(resIAMAccessKeyAttrResources, accessKey.Resources); err != nil {
+		resources := []string{}
+		for _, r := range *accessKey.Resources {
+			resources = append(resources, fmt.Sprintf("%s/%s:%s", r.Domain, r.ResourceType, r.ResourceName))
+		}
+
+		if err := d.Set(resIAMAccessKeyAttrResources, resources); err != nil {
 			return err
 		}
 	}
