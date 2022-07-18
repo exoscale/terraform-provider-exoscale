@@ -19,7 +19,6 @@ locals {
 resource "exoscale_sks_cluster" "prod" {
   zone    = local.zone
   name    = "prod"
-  version = "1.20.2"
   
   labels = {
     env = "prod"
@@ -38,7 +37,7 @@ output "sks_endpoint" {
 * `name` - (Required) The name of the SKS cluster.
 * `description` - The description of the SKS cluster.
 * `service_level` - The service level of the SKS cluster control plane (default: `"pro"`). Can only be set during creation.
-* `version` - The Kubernetes version of the SKS cluster control plane (default: latest version available from the API). Can only be set during creation.
+* `version` - The Kubernetes version of the SKS cluster control plane (default: latest version available from the API; `exo compute sks versions` for reference). Can only be set during creation.
 * `cni` - The Kubernetes [CNI][cni] plugin to be deployed in the SKS cluster control plane (default: `"calico"`). Can only be set during creation.
 * `exoscale_ccm` - Deploy the Exoscale [Cloud Controller Manager][exo-ccm] in the SKS cluster control plane (default: `true`). Can only be set during creation.
 * `metrics_server` - Deploy the [Kubernetes Metrics Server][k8s-ms] in the SKS cluster control plane (default: `true`). Can only be set during creation.

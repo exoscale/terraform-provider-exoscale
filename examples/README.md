@@ -1,64 +1,83 @@
 # Examples
 
-## [Cloud Init](cloud-init)
+## [Domain Name Service (DNS)](./dns)
 
-Being used internally at Exoscale, Cloud-Init is the tool provided to you for
-setting up basic features on your instances at first boot. This demo creates
-a set of three Docker Swarm masters and the security groups between them.
+This example demonstrates how to manage
+[Domain Name Service (DNS)](https://community.exoscale.com/documentation/dns/)
+and point Resource Records (RR) to compute instances, using `exoscale_domain` and
+`exoscale_domain_record` resources.
 
-## [SSH Keys](ssh-keys)
+## [Elastic IP](./elastic-ip)
 
-Create a dynamic SSH keys and use it to connect to the Compute resource.
+This example demonstrates how to setup and associate an
+[Elastic IP (EIP)](https://community.exoscale.com/documentation/compute/eip/)
+to your compute instances, using the `exoscale_elastic_ip` resource.
 
-## [Import Compute](import-compute)
+## [Import existing resources](./import-resources)
 
-If creating resources is common task, importing existing becomes very
-convenient when one wants to start managing its infrastructure on Exoscale
-using TerraForm. This demo shows how to import a compute instance and its
-security groups.
+This example demonstrates how to start using Terraform along an already deployed infrastructure and
+import existing resources - e.g. compute instance and its security groups - to match a newly-written
+Terraform configuration.
 
-## [IPv6](ipv6)
+## [Instance Pool](./instance-pool)
 
-A machine experimenting with the IPv6 support.
+This example demonstrates how to setup an
+[Instance Pool](https://community.exoscale.com/documentation/compute/instance-pools/),
+using the `exoscale_instance_pool` resource.
 
-## [Multipart Cloud-Init config](multipart-cloud-init)
+## [IPv6](./ipv6)
 
-Terraform offers a simple way to provide multiple documents through
-the User Data. This demo sends a shell script along a Cloud-Init Yaml
-configuration file built from a template.
+This example demonstrates how to activate
+[IPv6](https://community.exoscale.com/documentation/compute/ipv6/)
+on your compute instances, thanks to the `ipv6 = true` parameter.
 
-## [(Multi-)Private Network](multi-private-network)
+## [Multipart Cloud-Init](./multipart-cloud-init)
 
-An example showing how the [Private networks](https://www.exoscale.com/syslog/introducing-multiple-private-networks/)
-API support can be used to create a private network between compute instances.
+This example demonstrates how to use [cloud-init](http://cloudinit.readthedocs.io/)
+to configure your compute instances, using
+[HashiCorp cloud-init](https://registry.terraform.io/providers/hashicorp/cloudinit/) provider.
 
-## [Managed Private Network](managed-private-network)
+## [Managed Private Network](./managed-private-network)
 
-Vanilla private networks are unconfigured by default; the following shows how to enable
-the DHCP service, configure the instances and assign static leases.
+This example demonstrates how to setup and associate a
+[(Managed) Private Network](https://community.exoscale.com/documentation/compute/private-networks/)
+to your compute instances, using the `exoscale_private_network` resource.
+It also shows how to tweak the configuration to turn it into a _unmanaged_ private network.
 
-## [DNS](dns)
+## [Network Load Balancer (NLB)](./nlb)
 
-Managing DNS resources: domains and its associated records (`A`, `AAAA`, `CNAME`, `TXT`, etc.).
+This example demonstrates how to setup and associate a
+[Network Load Balancer (NLB)](https://community.exoscale.com/documentation/compute/network-load-balancer/)
+to your [Instance Pools](https://community.exoscale.com/documentation/compute/instance-pools/),
+using the `exoscale_nlb` and `exoscale_nlb_service` resources.
 
-## [Elastic IP](elastic-ip)
+## [Scalable Kubernetes Service (SKS)](./sks)
 
-Having one elastic IP address linked to two (or more) instances.
+This example demonstrates how to instantiate a
+[Scalable Kubernetes Service (SKS)](https://community.exoscale.com/documentation/sks/) cluster,
+using the `exoscale_sks` and `exoscale_sks_nodepool` resource.
 
-## [S3](s3)
+## [Simple Object Storage (SOS)](./sos)
 
-Using the [Terraform AWS Provider](https://www.terraform.io/docs/providers/aws/) with the [Exoscale Object Storage](https://www.exoscale.com/object-storage/) to manage a bucket.
+This example demonstrates how to manage
+[Simple Object Storage (SOS)](https://community.exoscale.com/documentation/storage/)
+buckets and objects, using the stock
+[S3/AWS](https://registry.terraform.io/providers/hashicorp/aws/) provider.
 
-## [SOS Terraform Backend](sos-backend)
+## [Secure Shell (SSH) Keys](./ssh-keys)
 
-Using an Exoscale SOS bucket to persist `.tfstate` changes.
+This example demonstrates how to setup
+[Secure Shell (SSH) keys](https://community.exoscale.com/documentation/compute/ssh-keypairs/)
+to access your computes instances, using the `exoscale_ssh_key` resource.
 
-## [SKS](sks)
+## [SOS as Terraform Backend](./sos-backend)
 
-An example showing how to get an SKS Kubernetes cluster and how to get a related kubeconfig.
+This example demonstrates how to configure Terraform to use a
+[Simple Object Storage (SOS)](https://community.exoscale.com/documentation/storage/) bucket
+as [Terraform S3 backend](https://www.terraform.io/docs/backends/types/s3.html)
+to persist its state (`terraform.tfstate` object).
 
-## External examples
+
+# External examples
 
 - Oliver Moser's: [Prometheus Service Discovery Demo](https://github.com/olmoser/infracoders-reloaded)
-
-[minikube]: https://github.com/kubernetes/minikube

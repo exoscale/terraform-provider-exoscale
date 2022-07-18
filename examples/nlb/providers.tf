@@ -3,6 +3,9 @@ terraform {
     exoscale = {
       source = "exoscale/exoscale"
     }
+    cloudinit = {
+      source = "hashicorp/cloudinit"
+    }
   }
 }
 

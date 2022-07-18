@@ -6,6 +6,8 @@ description: |-
 
 # Migrating from security_group_rules to security_group
 
+**This migration guide applies to Exoscale Terraform Provider version 0.31.3 or above.**
+
 This page helps you migrate from an `exoscale_security_group_rules` resource (which is deprecated) to a set of `exoscale_security_group_rule`.
 
 ~> **Note:** Before migrating `exoscale_security_group_rules` resources you need to ensure you use the latest version of Terraform and the provider, and have a clean configuration.
@@ -16,19 +18,6 @@ Before proceeding, please:
 - Ensure your configuration can be successfully applied: [`terraform plan`](https://www.terraform.io/docs/commands/plan.html) must NOT output errors, changes, or moves of resources
 - Have the [Exoscale cli](https://github.com/exoscale/cli/) to retrieve IDs of security groups (optional, as you can also retrieve this information from the [`Exoscale portal`](https://portal.exoscale.com/login)).
 - Perform a backup of your state! We are going to manipulate it, and errors can always happen. Remote states can be retrieved with [`terraform state pull` and restored with `terraform state push`](https://www.terraform.io/cli/state/recover). If you keep your state as a single local file, a regular file copy can do the job.
-
-Update your provider version to latest `0.31.x` version:
-
-```hcl
-terraform {
-    required_providers {
-        exoscale = {
-            source = "exoscale/exoscale"
-            version = "~> 0.31.3"
-        }
-    }
-}
-```
 
 ## Example configuration
 

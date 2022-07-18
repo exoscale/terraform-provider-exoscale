@@ -41,7 +41,6 @@ resource "exoscale_security_group_rule" "sks" {
 resource "exoscale_sks_cluster" "prod" {
   zone    = local.zone
   name    = "prod"
-  version = "1.20.3"
 }
 
 resource "exoscale_sks_nodepool" "ci-builders" {
@@ -107,4 +106,3 @@ $ terraform import exoscale_sks_nodepool.ci-builders eb556678-ec59-4be6-8c54-040
 [sks-doc]: https://community.exoscale.com/documentation/sks/
 [type]: https://www.exoscale.com/pricing/#/compute/
 [zone]: https://www.exoscale.com/datacenters/
-

@@ -1,0 +1,12 @@
+# Terraform
+.terraform
+terraform.d
+terraform.tfvars
+terraform.tfstate*
+
+# Exoscale
+cloudstack.ini
+
+# Examples
+id_ssh
+kubeconfig

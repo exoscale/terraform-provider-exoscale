@@ -1,83 +1,112 @@
-variable "key" {}
-variable "secret" {}
-variable "key_pair" {}
+# Providers
+# -> providers.tf
 
-variable "zone" {
-  default = "ch-gva-2"
+# Customizable parameters
+locals {
+  my_zone     = "ch-gva-2"
+  my_template = "Linux Ubuntu 22.04 LTS 64-bit"
 }
 
-variable "static_machines" {
-  default = 2
+# Existing resources (<-> data sources)
+data "exoscale_compute_template" "my_template" {
+  zone = local.my_zone
+  name = local.my_template
 }
 
-variable "dynamic_machines" {
-  default = 2
+data "exoscale_security_group" "default" {
+  name = "default"
 }
 
-data "exoscale_compute_template" "ubuntu" {
-  zone = var.zone
-  name = "Linux Ubuntu 18.04 LTS 64-bit"
-}
+# Managed private network
+resource "exoscale_private_network" "my_private_network" {
+  zone = local.my_zone
+  name = "my-private-network"
 
-resource "exoscale_network" "intra" {
-  name = "demo-intra"
-  display_text = "demo intra privnet"
-  zone = var.zone
-
+  netmask  = "255.255.255.0"
   start_ip = "10.0.0.50"
-  end_ip = "10.0.0.250"
-  netmask = "255.255.255.0"
+  end_ip   = "10.0.0.250"
 }
 
-resource "exoscale_compute" "static" {
-  count = var.static_machines
+# SSH
+# -> ssh.tf
 
-  display_name = "demo-static-${count.index}"
+# Sample instances
+resource "exoscale_compute_instance" "my_instance_static" {
+  zone = local.my_zone
+  name = "my-instance-static"
 
-  template_id = data.exoscale_compute_template.ubuntu.id
-  size = "Small"
-  disk_size = "10"
-  security_groups = ["default"]
-  key_pair = var.key_pair
-  zone = var.zone
+  template_id = data.exoscale_compute_template.my_template.id
+  type        = "standard.small"
+  disk_size   = 10
 
+  ssh_key   = exoscale_ssh_key.my_ssh_key.name
   user_data = file("cloud-config.yaml")
+
+  security_group_ids = [data.exoscale_security_group.default.id]
+
+  network_interface {
+    network_id = exoscale_private_network.my_private_network.id
+    ip_address = "10.0.0.1"
+  }
+
+  provisioner "remote-exec" {
+    connection {
+      host        = self.public_ip_address
+      user        = data.exoscale_compute_template.my_template.username
+      private_key = tls_private_key.my_ssh_key.private_key_openssh
+    }
+
+    inline = [
+      "sleep 10", # give cloud-init and DHCP time
+      "ip -4 address show dev eth1",
+    ]
+  }
 }
 
-resource "exoscale_nic" "eth_static" {
-  count = length(exoscale_compute.static)
+resource "exoscale_compute_instance" "my_instance_dynamic" {
+  zone = local.my_zone
+  name = "my-instance-dynamic"
 
-  compute_id = exoscale_compute.static.*.id[count.index]
-  network_id = exoscale_network.intra.id
+  template_id = data.exoscale_compute_template.my_template.id
+  type        = "standard.small"
+  disk_size   = 10
 
-  # static IP address
-  ip_address = format("10.0.0.%d", count.index + 1)
-}
-
-resource "exoscale_compute" "dynamic" {
-  count = var.dynamic_machines
-
-  display_name = "demo-dynamic-${count.index}"
-
-  template_id = data.exoscale_compute_template.ubuntu.id
-  size = "Small"
-  disk_size = "10"
-  security_groups = ["default"]
-  key_pair = var.key_pair
-  zone = var.zone
-
+  ssh_key   = exoscale_ssh_key.my_ssh_key.name
   user_data = file("cloud-config.yaml")
+
+  security_group_ids = [data.exoscale_security_group.default.id]
+
+  network_interface {
+    network_id = exoscale_private_network.my_private_network.id
+  }
+
+  provisioner "remote-exec" {
+    connection {
+      host        = self.public_ip_address
+      user        = data.exoscale_compute_template.my_template.username
+      private_key = tls_private_key.my_ssh_key.private_key_openssh
+    }
+
+    inline = [
+      "sleep 10", # give cloud-init and DHCP time
+      "ip -4 address show dev eth1",
+    ]
+  }
 }
 
-resource "exoscale_nic" "eth_dynamic" {
-  count = length(exoscale_compute.dynamic)
-
-  compute_id = exoscale_compute.dynamic.*.id[count.index]
-  network_id = exoscale_network.intra.id
+# Outputs
+output "ssh_connection_static" {
+  value = format(
+    "ssh -i id_ssh %s@%s",
+    data.exoscale_compute_template.my_template.username,
+    exoscale_compute_instance.my_instance_static.public_ip_address,
+  )
 }
 
-provider "exoscale" {
-  version = "~> 0.15"
-  key = var.key
-  secret = var.secret
+output "ssh_connection_dynamic" {
+  value = format(
+    "ssh -i id_ssh %s@%s",
+    data.exoscale_compute_template.my_template.username,
+    exoscale_compute_instance.my_instance_dynamic.public_ip_address,
+  )
 }

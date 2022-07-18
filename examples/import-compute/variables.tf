@@ -1,2 +1,0 @@
-variable "key" {}
-variable "secret" {}

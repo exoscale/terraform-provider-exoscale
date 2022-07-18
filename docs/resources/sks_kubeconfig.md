@@ -19,7 +19,6 @@ locals {
 resource "exoscale_sks_cluster" "prod" {
   zone    = local.zone
   name    = "prod"
-  version = "1.20.2"
 
   labels = {
     env = "prod"

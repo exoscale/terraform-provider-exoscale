@@ -1,53 +1,106 @@
-variable "zone" {
-  default = "de-fra-1"
+# Providers
+# -> providers.tf
+
+# Customizable parameters
+locals {
+  my_zone     = "ch-gva-2"
+  my_template = "Linux Ubuntu 22.04 LTS 64-bit"
 }
 
-variable "template" {
-  default = "Linux Ubuntu 18.04 LTS 64-bit"
+# Existing resources (<-> data sources)
+data "exoscale_compute_template" "my_template" {
+  zone = local.my_zone
+  name = local.my_template
 }
 
-data "exoscale_compute_template" "website" {
-  zone = var.zone
-  name = var.template
+data "exoscale_security_group" "default" {
+  name = "default"
 }
 
-resource "exoscale_instance_pool" "website" {
-  name = "instancepool-website"
-  description = "test"
-  template_id = data.exoscale_compute_template.website.id
-  instance_type = "standard.medium"
-  size = 3
-  zone = var.zone
+# SSH
+# -> ssh.tf
+
+# Sample security group
+resource "exoscale_security_group" "my_http_security_group" {
+  name = "my-http-security-group"
 }
 
-resource "exoscale_nlb" "website" {
-  name = "website"
-  description = "This is the Network Load Balancer for my website"
-  zone = var.zone
+resource "exoscale_security_group_rule" "http" {
+  security_group_id = exoscale_security_group.my_http_security_group.id
+  description       = "HTTP"
+  type              = "INGRESS"
+  protocol          = "TCP"
+  start_port        = 80
+  end_port          = 80
+  cidr              = "0.0.0.0/0"
 }
 
-resource "exoscale_nlb_service" "website" {
-  zone = exoscale_nlb.website.zone
-  name = "website"
-  description = "This is the Network Load Balancer Service for my website"
-  nlb_id = exoscale_nlb.website.id
-  instance_pool_id = exoscale_instance_pool.website.id
-	protocol = "tcp"
-	port = 9595
-	target_port = 9595
-	strategy = "round-robin"
+# Sample instance pool
+# (hosting the target service)
+resource "exoscale_instance_pool" "my_instance_pool" {
+  zone = local.my_zone
+  name = "my-instance-pool"
+
+  template_id   = data.exoscale_compute_template.my_template.id
+  instance_type = "standard.small"
+  disk_size     = 10
+  size          = 3
+
+  key_pair  = exoscale_ssh_key.my_ssh_key.name
+  user_data = file("cloud-config.yaml")
+
+  security_group_ids = [
+    data.exoscale_security_group.default.id,
+    exoscale_security_group.my_ssh_security_group.id,
+    exoscale_security_group.my_http_security_group.id,
+  ]
+}
+
+# Sample network load-balancer (NLB)
+resource "exoscale_nlb" "my_nlb" {
+  zone = local.my_zone
+  name = "my-nlb"
+}
+
+resource "exoscale_nlb_service" "my_nlb_service" {
+  zone = local.my_zone
+  name = "my-nlb-service"
+
+  nlb_id      = exoscale_nlb.my_nlb.id
+  protocol    = "tcp"
+  port        = 80
+  target_port = 80
+  strategy    = "round-robin"
 
   healthcheck {
-    mode = "tcp"
-    port = 9595
+    mode     = "http"
+    port     = 80
     interval = 5
-    timeout = 5
-    retries = 1
-    uri = ""
+    timeout  = 3
+    retries  = 2
+    uri      = "/"
   }
+
+  instance_pool_id = exoscale_instance_pool.my_instance_pool.id
 }
 
-provider "exoscale" {
-  key = var.key
-  secret = var.secret
+# Outputs
+output "ssh_connection" {
+  value = join("\n", formatlist(
+    "ssh -i id_ssh %s@%s  # %s",
+    data.exoscale_compute_template.my_template.username,
+    exoscale_instance_pool.my_instance_pool.instances.*.public_ip_address,
+    exoscale_instance_pool.my_instance_pool.instances.*.name,
+  ))
+}
+
+output "my_nlb_ip_address" {
+  value = exoscale_nlb.my_nlb.ip_address
+}
+
+output "my_nlb_service" {
+  value = format(
+    "http://%s:80",
+    exoscale_nlb.my_nlb.ip_address,
+  )
 }

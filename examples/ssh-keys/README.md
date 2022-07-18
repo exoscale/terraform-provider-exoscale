@@ -1,20 +1,25 @@
-# SSH Keys
+# Secure Shell (SSH) Keys
 
-Take a look at [main.tf](main.tf) for the real deal and configure
-`cloudstack.ini` with your credentials.
+This example demonstrates how to setup
+[Secure Shell (SSH) keys](https://community.exoscale.com/documentation/compute/ssh-keypairs/)
+to access your compute instances, using the `exoscale_ssh_key` resource.
+
+Please refer to the [main.tf](./main.tf) Terraform configuration file.
 
 ```console
-$ terraform apply
-...
-exoscale_compute.vm (remote-exec): Connecting to remote host via SSH...
-exoscale_compute.vm (remote-exec):   Host: 185.150.8.15
-exoscale_compute.vm (remote-exec):   User: ubuntu
-exoscale_compute.vm (remote-exec):   Password: false
-exoscale_compute.vm (remote-exec):   Private key: true
-exoscale_compute.vm (remote-exec):   SSH Agent: false
-exoscale_compute.vm (remote-exec): Connected!
-exoscale_compute.vm (remote-exec): Linux myvm 4.13.0-36-generic #40-Ubuntu SMP Fri Feb 16 20:07:48 UTC 2018 x86_64 x86_64 x86_64 GNU/Linux
-```
+$ terraform init
+$ terraform apply \
+  -var exoscale_api_key=$EXOSCALE_API_KEY \
+  -var exoscale_api_secret=$EXOSCALE_API_SECRET
 
-The recipe creates an SSH key, puts it into a machine and uses
-the private key to connect into it and run a mere `uname -a`.
+...
+
+my_instance (remote-exec): Connected!
+my_instance (remote-exec): Linux my-instance 5.15.0-41-generic #44-Ubuntu SMP Wed Jun 22 14:20:53 UTC 2022 x86_64 x86_64 x86_64 GNU/Linux
+
+...
+
+Outputs:
+
+ssh_connection = "ssh -i id_ssh ubuntu@194.182.160.162"
+```
