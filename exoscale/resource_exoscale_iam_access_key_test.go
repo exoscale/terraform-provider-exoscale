@@ -23,6 +23,7 @@ resource "exoscale_iam_access_key" "test" {
   name       = "%s"
 
   operations = ["list-instances"]
+  resources  = ["sos/bucket:eat-terraform-provider-test"]
   tags       = ["sos"]
 }
 `,
