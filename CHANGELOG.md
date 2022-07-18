@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.38.1 (TO BE RELEASED)
+
+BUG FIXES:
+
+- `exoscale_iam_access_key` fix failures when resources are specified (#194) 
+
 ## 0.38.0 (June 23, 2022)
 
 FEATURES:
