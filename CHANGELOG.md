@@ -1,10 +1,20 @@
 # Changelog
 
-## 0.38.1 (TO BE RELEASED)
+## 0.39.0 (July 19, 2022)
+
+IMPROVEMENTS:
+
+- docs: exoscale_ssh_keypair -> exoscale_ssh_key migration guide (#197)
+- docs: added note about SOS usage (#191)
+
+CHANGES:
+
+- dns resources now use API v2 (#186)
 
 BUG FIXES:
 
 - `exoscale_iam_access_key` fix failures when resources are specified (#194) 
+- `resource_database_kafka` update kafka version used in tests (#193)
 
 ## 0.38.0 (June 23, 2022)
 
