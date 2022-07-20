@@ -188,8 +188,6 @@ func testAccCheckResourceDomainRecordAttributes(n string, expected testAttrs) re
 		}
 
 		return checkResourceAttributes(expected, rs.Primary.Attributes)
-
-		return errors.New("resource not found in the state")
 	}
 }
 
