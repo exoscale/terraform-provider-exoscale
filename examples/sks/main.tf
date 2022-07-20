@@ -11,17 +11,67 @@ data "exoscale_security_group" "default" {
   name = "default"
 }
 
-# Sample anti-affinity group
-resource "exoscale_anti_affinity_group" "my_anti_affinity_group" {
-  name = "my-anti-affinity-group"
-}
-
 # Sample SKS cluster
 resource "exoscale_sks_cluster" "my_sks_cluster" {
   zone = local.my_zone
   name = "my-sks-cluster"
 }
 
+# (ad-hoc anti-affinity group)
+resource "exoscale_anti_affinity_group" "my_sks_anti_affinity_group" {
+  name = "my-sks-anti-affinity-group"
+}
+
+# (ad-hoc security group)
+resource "exoscale_security_group" "my_sks_security_group" {
+  name = "my-sks-security-group"
+}
+
+resource "exoscale_security_group_rule" "kubelet" {
+  security_group_id = exoscale_security_group.my_sks_security_group.id
+  description       = "Kubelet"
+  type              = "INGRESS"
+  protocol          = "TCP"
+  start_port        = 10250
+  end_port          = 10250
+  # (beetwen worker nodes only)
+  user_security_group_id = exoscale_security_group.my_sks_security_group.id
+}
+
+resource "exoscale_security_group_rule" "calico_vxlan" {
+  security_group_id = exoscale_security_group.my_sks_security_group.id
+  description       = "VXLAN (Calico)"
+  type              = "INGRESS"
+  protocol          = "UDP"
+  start_port        = 4789
+  end_port          = 4789
+  # (beetwen worker nodes only)
+  user_security_group_id = exoscale_security_group.my_sks_security_group.id
+}
+
+resource "exoscale_security_group_rule" "nodeport_tcp" {
+  security_group_id = exoscale_security_group.my_sks_security_group.id
+  description       = "Nodeport TCP services"
+  type              = "INGRESS"
+  protocol          = "TCP"
+  start_port        = 30000
+  end_port          = 32767
+  # (public)
+  cidr = "0.0.0.0/0"
+}
+
+resource "exoscale_security_group_rule" "nodeport_udp" {
+  security_group_id = exoscale_security_group.my_sks_security_group.id
+  description       = "Nodeport UDP services"
+  type              = "INGRESS"
+  protocol          = "UDP"
+  start_port        = 30000
+  end_port          = 32767
+  # (public)
+  cidr = "0.0.0.0/0"
+}
+
+# (worker nodes)
 resource "exoscale_sks_nodepool" "my_sks_nodepool" {
   zone       = local.my_zone
   cluster_id = exoscale_sks_cluster.my_sks_cluster.id
@@ -31,10 +81,11 @@ resource "exoscale_sks_nodepool" "my_sks_nodepool" {
   size          = 3
 
   anti_affinity_group_ids = [
-    exoscale_anti_affinity_group.my_anti_affinity_group.id,
+    exoscale_anti_affinity_group.my_sks_anti_affinity_group.id,
   ]
   security_group_ids = [
     data.exoscale_security_group.default.id,
+    resource.exoscale_security_group.my_sks_security_group.id,
   ]
 }
 
