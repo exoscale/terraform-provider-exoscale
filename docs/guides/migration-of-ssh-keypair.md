@@ -6,7 +6,7 @@ description: |-
 
 # Migrating from ssh_keypair to ssh_key
 
-**This migration guide applies to Exoscale Terraform Provider version 0.31.0 or above.**
+-> This migration guide applies to Exoscale Terraform Provider **version 0.31.0 or above**.
 
 This page helps you migrate from an `exoscale_ssh_keypair` resource (deprecated) to the new
 `exoscale_ssh_key`.

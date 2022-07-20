@@ -6,11 +6,11 @@ description: |-
 
 # Migrating from security_group_rules to security_group
 
-**This migration guide applies to Exoscale Terraform Provider version 0.31.3 or above.**
+-> This migration guide applies to Exoscale Terraform Provider **version 0.31.3 or above**.
 
 This page helps you migrate from an `exoscale_security_group_rules` resource (which is deprecated) to a set of `exoscale_security_group_rule`.
 
-~> **Note:** Before migrating `exoscale_security_group_rules` resources you need to ensure you use the latest version of Terraform and the provider, and have a clean configuration.
+~> **Note:** Before migrating `exoscale_security_group_rules` resources you need to ensure you use the latest version of Terraform and have a clean configuration.
 
 Before proceeding, please:
 - Upgrade Terraform to at least v1.1.x: allows us to easily refactor definitions thanks to `moved {}` blocks.
