@@ -160,16 +160,20 @@ func resourceDomainRecordCreate(ctx context.Context, d *schema.ResourceData, met
 	name := d.Get("name").(string)
 	content := d.Get("content").(string)
 	rtype := d.Get("record_type").(string)
-	t := d.Get("ttl").(int)
-	ttl := int64(t)
-	p := d.Get("prio").(int)
-	prio := int64(p)
+	var ttl *int64
+	if t := int64(d.Get("ttl").(int)); t > 0 {
+		ttl = &t
+	}
+	var prio *int64
+	if t := int64(d.Get("prio").(int)); t > 0 {
+		prio = &t
+	}
 	record, err := client.CreateDNSDomainRecord(ctx, defaultZone, d.Get("domain").(string), &exo.DNSDomainRecord{
 		Name:     &name,
 		Content:  &content,
 		Type:     &rtype,
-		TTL:      &ttl,
-		Priority: &prio,
+		TTL:      ttl,
+		Priority: prio,
 	})
 	if err != nil {
 		return diag.Errorf("error creating domain record: %q", err)
@@ -306,18 +310,22 @@ func resourceDomainRecordUpdate(ctx context.Context, d *schema.ResourceData, met
 	name := d.Get("name").(string)
 	content := d.Get("content").(string)
 	rtype := d.Get("record_type").(string)
-	t := d.Get("ttl").(int)
-	ttl := int64(t)
-	p := d.Get("prio").(int)
-	prio := int64(p)
+	var ttl *int64
+	if t := int64(d.Get("ttl").(int)); t > 0 {
+		ttl = &t
+	}
+	var prio *int64
+	if t := int64(d.Get("prio").(int)); t > 0 {
+		prio = &t
+	}
 	id := d.Id()
 	err := client.UpdateDNSDomainRecord(ctx, defaultZone, d.Get("domain").(string), &exo.DNSDomainRecord{
 		ID:       &id,
 		Name:     &name,
 		Content:  &content,
 		Type:     &rtype,
-		TTL:      &ttl,
-		Priority: &prio,
+		TTL:      ttl,
+		Priority: prio,
 	})
 	if err != nil {
 		return diag.Errorf("error updating domain record: %s", err)
