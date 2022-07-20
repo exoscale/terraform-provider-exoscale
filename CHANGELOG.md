@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.39.1 (July 20, 2022)
+
+BUG FIXES:
+
+- `resource_domain_record` fix default value for ttl/prio
+
 ## 0.39.0 (July 19, 2022)
 
 IMPROVEMENTS:
