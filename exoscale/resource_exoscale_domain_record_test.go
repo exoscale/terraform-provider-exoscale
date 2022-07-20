@@ -39,6 +39,13 @@ resource "exoscale_domain_record" "mx" {
   prio        = %d
   ttl         = %d
 }
+
+resource "exoscale_domain_record" "a" {
+  domain      = exoscale_domain.exo.id
+  name        = ""
+  record_type = "A"
+  content     = "1.2.3.4"
+}
 `,
 		testAccResourceDomainRecordDomainName,
 		testAccResourceDomainRecordName,
@@ -61,6 +68,13 @@ resource "exoscale_domain_record" "mx" {
   prio        = %d
   ttl         = %d
 }
+
+resource "exoscale_domain_record" "a" {
+  domain      = exoscale_domain.exo.id
+  name        = ""
+  record_type = "A"
+  content     = "1.2.3.4"
+}
 `,
 		testAccResourceDomainRecordDomainName,
 		testAccResourceDomainRecordNameUpdated,
@@ -72,6 +86,7 @@ resource "exoscale_domain_record" "mx" {
 )
 
 func TestAccResourceDomainRecord(t *testing.T) {
+	dr := exo.DNSDomainRecord{}
 	domain := exo.DNSDomain{}
 	record := exo.DNSDomainRecord{}
 
@@ -84,9 +99,10 @@ func TestAccResourceDomainRecord(t *testing.T) {
 				Config: testAccResourceDomainRecordConfigCreate,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckResourceDomainExists("exoscale_domain.exo", &domain),
+					testAccCheckResourceDomainRecordExists("exoscale_domain_record.a", &domain, &dr),
 					testAccCheckResourceDomainRecordExists("exoscale_domain_record.mx", &domain, &record),
 					testAccCheckResourceDomainRecord(&record),
-					testAccCheckResourceDomainRecordAttributes(testAttrs{
+					testAccCheckResourceDomainRecordAttributes("exoscale_domain_record.mx", testAttrs{
 						"name":        validateString(testAccResourceDomainRecordName),
 						"record_type": validateString(testAccResourceDomainRecordType),
 						"content":     validateString(testAccResourceDomainRecordContent),
@@ -102,7 +118,7 @@ func TestAccResourceDomainRecord(t *testing.T) {
 					testAccCheckResourceDomainExists("exoscale_domain.exo", &domain),
 					testAccCheckResourceDomainRecordExists("exoscale_domain_record.mx", &domain, &record),
 					testAccCheckResourceDomainRecord(&record),
-					testAccCheckResourceDomainRecordAttributes(testAttrs{
+					testAccCheckResourceDomainRecordAttributes("exoscale_domain_record.mx", testAttrs{
 						"name":        validateString(testAccResourceDomainRecordNameUpdated),
 						"record_type": validateString(testAccResourceDomainRecordType),
 						"content":     validateString(testAccResourceDomainRecordContentUpdated),
@@ -164,15 +180,14 @@ func testAccCheckResourceDomainRecord(record *exo.DNSDomainRecord) resource.Test
 	}
 }
 
-func testAccCheckResourceDomainRecordAttributes(expected testAttrs) resource.TestCheckFunc {
+func testAccCheckResourceDomainRecordAttributes(n string, expected testAttrs) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		for _, rs := range s.RootModule().Resources {
-			if rs.Type != "exoscale_domain_record" {
-				continue
-			}
-
-			return checkResourceAttributes(expected, rs.Primary.Attributes)
+		rs, ok := s.RootModule().Resources[n]
+		if !ok {
+			return errors.New("resource not found in the state")
 		}
+
+		return checkResourceAttributes(expected, rs.Primary.Attributes)
 
 		return errors.New("resource not found in the state")
 	}
