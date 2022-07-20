@@ -29,7 +29,7 @@ using the `exoscale_instance_pool` resource.
 
 This example demonstrates how to activate
 [IPv6](https://community.exoscale.com/documentation/compute/ipv6/)
-on your compute instances, thanks to the `ipv6 = true` parameter.
+on your compute instances, thanks to the `ipv6 = true` argument.
 
 ## [Multipart Cloud-Init](./multipart-cloud-init)
 
