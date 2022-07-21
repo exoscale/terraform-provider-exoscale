@@ -50,12 +50,12 @@ resource "exoscale_sks_cluster" "test" {
 
   oidc {
     client_id  = "%s"
-	groups_claim = "%s"
-	groups_prefix = "%s"
+    groups_claim = "%s"
+    groups_prefix = "%s"
     issuer_url = "%s"
-	required_claim = { test = "%s" }
-	username_claim = "%s"
-	username_prefix = "%s"
+    required_claim = { test = "%s" }
+    username_claim = "%s"
+    username_prefix = "%s"
   }
 
   timeouts {
