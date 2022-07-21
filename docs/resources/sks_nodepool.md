@@ -1,108 +1,76 @@
 ---
 page_title: "Exoscale: exoscale_sks_nodepool"
 description: |-
-  Provides an Exoscale SKS Nodepool resource.
+  Manage Exoscale Scalable Kubernetes Service (SKS) Node Pools.
 ---
 
 # exoscale\_sks\_nodepool
 
-Provides an Exoscale [SKS][sks-doc] Nodepool resource. This can be used to create, modify, and delete SKS Nodepools.
+Manage Exoscale [Scalable Kubernetes Service (SKS)](https://community.exoscale.com/documentation/sks/) Node Pools.
 
 
-## Example Usage
+## Usage
 
 ```hcl
-locals {
-  zone = "de-fra-1"
+resource "exoscale_sks_cluster" "my_sks_cluster" {
+  zone = "ch-gva-2"
+  name = "my-sks-cluster"
 }
 
-resource "exoscale_security_group" "sks" {
-  name = "sks"
-}
+resource "exoscale_sks_nodepool" "my_sks_nodepool" {
+  cluster_id         = exoscale_sks_cluster.my_sks_cluster.id
+  zone               = exoscale_sks_cluster.my_sks_cluster.zone
+  name               = "my-sks-nodepool"
 
-resource "exoscale_security_group_rule" "sks" {
-  for_each = {
-	kubelet_logs_ipv4      = { protocol = "TCP", port = 10250, cidr = "0.0.0.0/0"}
-	kubelet_logs_ipv6      = { protocol = "TCP", port = 10250, cidr = "::/0"}
-	kubelet_nodeports_ipv4 = { protocol = "TCP", port = "30000-32767", cidr = "0.0.0.0/0" }
-	kubelet_nodeports_ipv6 = { protocol = "TCP", port = "30000-32767", cidr = "::/0" }
-	calico_vxlan_sg        = { protocol = "UDP", port = 4789, sg = exoscale_security_group.sks.id }
-  }
-
-  security_group_id      = exoscale_security_group.sks.id
-  protocol               = each.value.protocol
-  type                   = "INGRESS"
-  start_port             = try(split("-", each.value.port)[0], each.value.port, null)
-  end_port               = try(split("-", each.value.port)[1], each.value.port, null)
-  user_security_group_id = try(each.value.sg, null)
-  cidr                   = try(each.value.cidr, null)
-}
-
-resource "exoscale_sks_cluster" "prod" {
-  zone    = local.zone
-  name    = "prod"
-}
-
-resource "exoscale_sks_nodepool" "ci-builders" {
-  zone               = local.zone
-  cluster_id         = exoscale_sks_cluster.prod.id
-  name               = "ci-builders"
   instance_type      = "standard.medium"
   size               = 3
-  security_group_ids = [exoscale_security_group.sks.id]
-  
-  labels = {
-    role = "ci-builders"
-  }
-
-  taints = {
-    ci = "ci:NoSchedule"
-  }
 }
 ```
+
+Please refer to the [examples](../../examples/) directory for complete configuration examples.
 
 
 ## Arguments Reference
 
-* `zone` - (Required) The name of the [zone][zone] to deploy the SKS Nodepool into.
-* `cluster_id` - (Required) The ID of the parent SKS cluster.
-* `size` - (Required) The number of Compute instances the SKS Nodepool manages.
-* `name` - (Required) The name of the SKS Nodepool.
-* `instance_type` (Required) - The [type][type] of Compute instances managed by the SKS Nodepool (format: `FAMILY.SIZE`, e.g. `standard.medium`, `memory.huge`).
-* `instance_prefix` - The string to add as prefix to managed Compute instances name (default `pool`).
-* `disk_size` - The disk size of the Compute instances managed by the SKS Nodepool (default: `50`).
-* `anti_affinity_group_ids` - The list of Anti-Affinity Groups (IDs) the Compute instances managed by the SKS Nodepool are member of.
-* `security_group_ids` - The list of Security Groups (IDs) the Compute instances managed by the SKS Nodepool are member of.
-* `private_network_ids` - The list of Private Networks (IDs) to be attached to the Compute instances managed by the SKS Nodepool.
-* `description` - The description of the SKS Nodepool.
-* `deploy_target_id` - A Deploy Target ID to deploy managed Compute instances to.
+[zone]: https://www.exoscale.com/datacenters/
+[cli]: https://github.com/exoscale/cli/
+[taints]: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+
+* `cluster_id` - (Required) The parent [SKS cluster](./sks_cluster) ID.
+* `zone` - (Required) The name of the [zone][zone] of the parent SKS cluster.
+* `name` - (Required) The name of the SKS node pool.
+* `instance_type` (Required) - The managed compute instances type (`<family>.<size>`, e.g. `standard.medium`; use the [Exoscale CLI][cli] - `exo compute instance-type list` - for the list of available types).
+
+* `description` - A free-form text describing the SKS node pool.
+* `deploy_target_id` - A deploy target ID to deploy managed compute instances to.
+* `instance_prefix` - The string used to prefix the managed compute instances name (default `pool`).
+* `disk_size` - The disk size of the compute instances managed by the SKS node pool (GiB; default: `50`).
 * `labels` - A map of key/value labels.
-* `taints` - A map of key/value [Kubernetes taints][k8s-taints] (value format: `VALUE:EFFECT`).
+* `taints` - A map of key/value Kubernetes [taints][taints] (`<value>:<effect>`).
+
+* `anti_affinity_group_ids` - A list of [anti-affinity group](./anti_affinity_group) IDs to be attached to the compute instances managed by the SKS node pool.
+* `private_network_ids` - A list of [private network](./private_network) IDs to be attached to the compute instances managed by the SKS node pool.
+* `security_group_ids` - A list of [security group](./security_groups) IDs to be attached to the compute instances managed by the SKS node pool.
 
 
 ## Attributes Reference
 
 In addition to the arguments listed above, the following attributes are exported:
 
-* `id` - The ID of the SKS Nodepool.
-* `state` - The current state of the SKS Nodepool.
-* `created_at` - The creation date of the SKS Nodepool.
-* `instance_pool_id` - The ID of the Instance Pool managed by the SKS Nodepool.
-* `template_id` - The ID of the Compute instance template used by the SKS Nodepool members.
-* `version` - The Kubernetes version of the SKS Nodepool members.
+* `id` - The ID of the SKS node pool.
+* `created_at` - The creation date of the SKS node pool.
+* `instance_pool_id` - The ID of the instance pool managed by the SKS node pool.
+* `state` - The current state of the SKS node pool.
+* `template_id` - The ID of the compute instance template used by the SKS node pool members.
+* `version` - The Kubernetes version of the SKS node pool members.
 
 
 ## Import
 
-An existing SKS Nodepool can be imported as a resource by `<CLUSTER-ID>/<NODEPOOL-ID>@<ZONE>`:
+An existing SKS node pool may be imported by `<cluster-ID>/<nodepool-ID>@<zone>`:
 
 ```console
-$ terraform import exoscale_sks_nodepool.ci-builders eb556678-ec59-4be6-8c54-0406ae0f6da6/8c08b92a-e673-47c7-866e-dc009f620a82@de-fra-1
+$ terraform import \
+  exoscale_sks_nodepool.my_sks_nodepool \
+  f81d4fae-7dec-11d0-a765-00a0c91e6bf6/9ecc6b8b-73d4-4211-8ced-f7f29bb79524@ch-gva-2
 ```
-
-
-[k8s-taints]: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
-[r-sks_cluster]: ../resources/sks_cluster
-[sks-doc]: https://community.exoscale.com/documentation/sks/
-[type]: https://www.exoscale.com/pricing/#/compute/
-[zone]: https://www.exoscale.com/datacenters/

@@ -2,48 +2,26 @@
 page_title: "Exoscale: exoscale_ssh_keypair"
 subcategory: "Deprecated"
 description: |-
-  Provides an Exoscale SSH Keypair.
+  Manage Exoscale SSH Keypairs.
 ---
 
 # exoscale\_ssh\_keypair
 
-Provides an Exoscale [SSH Keypair][ssh-keypairs-doc] resource. This can be used to create and delete SSH Keypairs.
+!> **WARNING:** This resource is **DEPRECATED** and will be removed in the next major version. Please use [exoscale_ssh_key](./ssh_key) instead (or refer to the ad-hoc [migration guide](../guides/migration-of-ssh-keypair)).
 
-!> **WARNING:** This resource is deprecated and will be removed in the next major version. Please use [exoscale_ssh_key][r-ssh-key] instead.
-
-
-## Example Usage
-
-```hcl
-resource "exoscale_ssh_keypair" "admin" {
-  name       = "admin"
-  public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDGRY..."
-}
-```
+!> **WARNING:** This resource stores sensitive information in your Terraform state. Please be sure to correctly understand implications and how to mitigate potential risks before using it.
 
 
 ## Arguments Reference
 
-* `name` - (Required) The name of the SSH Keypair.
-* `public_key` - A SSH public key that will be copied into the instances at **first** boot. If not provided, a SSH keypair is generated and the is saved locally (see the `private_key` attribute).
+* `name` - (Required) The name of the SSH keypair.
+
+* `public_key` - A SSH public key that will be authorized in compute instances. If not provided, an SSH keypair is generated and saved locally (see the `private_key` attribute).
 
 
 ## Attributes Reference
 
 In addition to the arguments listed above, the following attributes are exported:
 
-* `fingerprint` - The unique identifier of the SSH Keypair.
+* `fingerprint` - The unique identifier of the SSH keypair.
 * `private_key` - The SSH private key generated if no public key was provided.
-
-
-## Import
-
-An existing SSH Keypair can be imported as a resource by name:
-
-```console
-$ terraform import exoscale_ssh_keypair.mykey my-key
-```
-
-
-[ssh-keypairs-doc]: https://community.exoscale.com/documentation/compute/ssh-keypairs/
-[r-ssh-key]: ../resources/ssh_key

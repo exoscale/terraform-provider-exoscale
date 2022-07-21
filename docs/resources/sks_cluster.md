@@ -1,88 +1,83 @@
 ---
 page_title: "Exoscale: exoscale_sks_cluster"
 description: |-
-  Provides an Exoscale SKS cluster resource.
+  Manage Exoscale Scalable Kubernetes Service (SKS) Clusters.
 ---
 
 # exoscale\_sks\_cluster
 
-Provides an Exoscale [SKS][sks-doc] cluster resource. This can be used to create, modify, and delete SKS clusters.
+Manage Exoscale [Scalable Kubernetes Service (SKS)](https://community.exoscale.com/documentation/sks/) Clusters.
 
 
-## Example Usage
+## Usage
 
 ```hcl
-locals {
-  zone = "de-fra-1"
+resource "exoscale_sks_cluster" "my_sks_cluster" {
+  zone = "ch-gva-2"
+  name = "my-sks-cluster"
 }
 
-resource "exoscale_sks_cluster" "prod" {
-  zone    = local.zone
-  name    = "prod"
-  
-  labels = {
-    env = "prod"
-  }
-}
-
-output "sks_endpoint" {
-  value = exoscale_sks_cluster.prod.endpoint
+output "my_sks_cluster_endpoint" {
+  value = exoscale_sks_cluster.my_sks_cluster.endpoint
 }
 ```
+
+Next step is to attach [exoscale_sks_nodepool](./sks_nodepool)(s) to the SKS cluster.
+
+Please refer to the [examples](../../examples/) directory for complete configuration examples.
 
 
 ## Arguments Reference
 
-* `zone` - (Required) The name of the [zone][zone] to deploy the SKS cluster into.
+[zone]: https://www.exoscale.com/datacenters/
+[ccm]: https://github.com/exoscale/exoscale-cloud-controller-manager/
+[cni]: https://www.cni.dev/
+[ms]: https://github.com/kubernetes-sigs/metrics-server/
+
+* `zone` - (Required) The name of the [zone][zone] to create the SKS cluster into.
 * `name` - (Required) The name of the SKS cluster.
-* `description` - The description of the SKS cluster.
-* `service_level` - The service level of the SKS cluster control plane (default: `"pro"`). Can only be set during creation.
-* `version` - The Kubernetes version of the SKS cluster control plane (default: latest version available from the API; `exo compute sks versions` for reference). Can only be set during creation.
-* `cni` - The Kubernetes [CNI][cni] plugin to be deployed in the SKS cluster control plane (default: `"calico"`). Can only be set during creation.
-* `exoscale_ccm` - Deploy the Exoscale [Cloud Controller Manager][exo-ccm] in the SKS cluster control plane (default: `true`). Can only be set during creation.
-* `metrics_server` - Deploy the [Kubernetes Metrics Server][k8s-ms] in the SKS cluster control plane (default: `true`). Can only be set during creation.
-* `auto_upgrade` - Enable automatic upgrading of the SKS cluster control plane Kubernetes version (default: `false`).
-* `oidc` - An OpenID Connect configuration to provide to the Kubernetes API server. Can only be set during creation. Structure is documented below.
+
+* `description` - A free-form text describing the SKS cluster.
+* `auto_upgrade` - Enable automatic upgrading of the SKS cluster control plane Kubernetes version (boolean; default: `false`).
+* `exoscale_ccm` - Deploy the Exoscale [Cloud Controller Manager][ccm] in the SKS cluster control plane (boolean; default: `true`; may only be set at creation time).
+* `metrics_server` - Deploy the [Kubernetes Metrics Server][ms] in the SKS cluster control plane (boolean; default: `true`; may only be set at creation time).
+* `service_level` - The service level of the SKS cluster control plane (`pro` or `starter`; default: `pro`; may only be set at creation time).
+* `version` - The Kubernetes version of the SKS cluster control plane (default: latest version available from the API; see `exo compute sks versions` for reference; may only be set at creation time).
 * `labels` - A map of key/value labels.
- 
-The `oidc` block supports:
+
+* `oidc` - (Block) An OpenID Connect configuration to provide to the Kubernetes API server (may only be set at creation time). Structure is documented below.
+
+### `oidc` block
 
 * `client_id` - (Required) The OpenID client ID.
 * `issuer_url` - (Required) The OpenID provider URL.
+
 * `groups_claim` - An OpenID JWT claim to use as the user's group.
 * `groups_prefix` - An OpenID prefix prepended to group claims.
 * `required_claim` - A map of key/value pairs that describes a required claim in the OpenID Token.
 * `username_claim` - An OpenID JWT claim to use as the user name.
 * `username_prefix` - An OpenID prefix prepended to username claims.
 
+
 ## Attributes Reference
 
 In addition to the arguments listed above, the following attributes are exported:
 
 * `id` - The ID of the SKS cluster.
-* `aggregation_ca` - The CA certificate for TLS communications between the control plane and the aggregation layer (e.g. metrics-server).
-* `control_plane_ca` - The CA certificate for TLS communications between control-plane components.
 * `created_at` - The creation date of the SKS cluster.
 * `endpoint` - The Kubernetes public API endpoint of the SKS cluster.
-* `kubelet_ca` - The CA certificate for TLS communications between kubelets and the control plane.
-* `nodepools` - The list of [SKS Nodepools][r-sks_nodepool] (IDs) attached to the SKS cluster.
+* `nodepools` - The list of SKS node pools (IDs) attached to the SKS cluster.
 * `state` - The current state of the SKS cluster.
+
 
 ## Import
 
-An existing SKS cluster can be imported as a resource by specifying `ID@ZONE`:
+An existing SKS cluster may be imported by `<ID>@<zone>`:
 
 ```console
-$ terraform import exoscale_sks_cluster.example eb556678-ec59-4be6-8c54-0406ae0f6da6@de-fra-1
+$ terraform import \
+  exoscale_sks_cluster.my_sks_cluster \
+  f81d4fae-7dec-11d0-a765-00a0c91e6bf6@ch-gva-2
 ```
 
-~> **NOTE:** Importing a SKS cluster resource doesn't import related [`exoscale_sks_nodepool`][r-sks_nodepool] resources.
-
-
-[cni]: https://www.cni.dev/
-[exo-ccm]: https://github.com/exoscale/exoscale-cloud-controller-manager
-[k8s-ms]: https://github.com/kubernetes-sigs/metrics-server
-[r-sks_nodepool]: ../resources/sks_nodepool
-[sks-doc]: https://community.exoscale.com/documentation/sks/
-[zone]: https://www.exoscale.com/datacenters/
-
+~> **NOTE:** Importing an SKS cluster resource doesn't import related `exoscale_sks_nodepool` resources.

@@ -1,102 +1,73 @@
 ---
 page_title: "Exoscale: exoscale_instance_pool"
 description: |-
-  Provides an Exoscale Instance Pool resource.
+  Manage Exoscale Instance Pools.
 ---
 
 # exoscale\_instance\_pool
 
-Provides an Exoscale Instance Pool resource. This can be used to create, modify, and delete Instance Pools.
+Manage Exoscale [Instance Pools](https://community.exoscale.com/documentation/compute/instance-pools/).
 
 
-## Example Usage
+## Usage
 
 ```hcl
-variable "zone" {
-  default = "de-fra-1"
+data "exoscale_compute_template" "my_template" {
+  zone = "ch-gva-2"
+  name = "Linux Ubuntu 22.04 LTS 64-bit"
 }
 
-resource "exoscale_ssh_key" "webapp" {
-  name = "my-web-app"
-}
+resource "exoscale_instance_pool" "my_instance_pool" {
+  zone = "ch-gva-2"
+  name = "my-instance-pool"
 
-resource "exoscale_security_group" "webapp" {
-  name = "webapp"
-  description = "my-web-app"
-}
-
-resource "exoscale_private_network" "webapp" {
-  zone = var.zone
-  name = "my-web-app"
-}
-
-resource "exoscale_elastic_ip" "webapp" {
-  zone = var.zone
-}
-
-data "exoscale_compute_template" "webapp" {
-  zone = var.zone
-  name = "my-web-app"
-  filter = "mine"
-}
-
-resource "exoscale_instance_pool" "webapp" {
-  zone = var.zone
-  name = "my-web-app"
-  size = 3
-  template_id = data.exoscale_compute_template.webapp.id
+  template_id   = data.exoscale_compute_template.my_template.id
   instance_type = "standard.medium"
-  disk_size = 50
-  key_pair = exoscale_ssh_key.webapp.name
-  instance_prefix = "my-web-app"
-  security_group_ids = [exoscale_security_group.webapp.id]
-  elastic_ip_ids = [exoscale_ipaddress.webapp.id]
-  network_ids = [exoscale_private_network.webapp.id]
-  user_data = "#cloud-config\npackage_upgrade: true\n"
-
-  labels = {
-    app = "webapp"
-    env = "prod"
-  }
-
-  timeouts {
-    delete = "10m"
-  }
+  disk_size     = 10
+  size          = 3
 }
 ```
 
 
 ## Argument Reference
 
-* `zone` - (Required) The name of the [zone][zone] to deploy the Instance Pool into.
-* `name` - (Required) The name of the Instance Pool.
-* `template_id` - (Required) The ID of the instance [template][template] to use when creating Compute instances. Usage of the [`compute_template`][d-compute_template] data source is recommended.
-* `size` - (Required) The number of Compute instance members the Instance Pool manages.
-* `instance_type` - (Required) The managed Compute instances [type][type] (format: `FAMILY.SIZE`, e.g. `standard.medium`, `memory.huge`).
-* `service_offering` - **Deprecated** The managed Compute instances size. Replaced by `instance_type`.
-* `disk_size` - The managed Compute instances disk size.
-* `description` - The description of the Instance Pool.
-* `user_data` - A [cloud-init][cloudinit] configuration to apply when creating Compute instances. Whenever possible don't base64-encode neither gzip it yourself, as this will be automatically taken care of on your behalf by the provider.
-* `key_pair` - The name of the [SSH key pair][sshkeypair] to install when creating Compute instances.
-* `ipv6` - Enable IPv6 on managed Compute instances (default: `false`).
-* `instance_prefix` - The string to add as prefix to managed Compute instances name (default: `pool`).
-* `affinity_group_ids` - A list of [Anti-Affinity Group][r-affinity] IDs (at creation time only).
-* `security_group_ids` - A list of [Security Group][r-security_group] IDs (at creation time only).
-* `network_ids` - A list of [Private Network][privnet-doc] IDs.
-* `elastic_ip_ids` - A list of [Elastic IP][eip-doc] IDs.
-* `deploy_target_id` - A Deploy Target ID.
+[zone]: https://www.exoscale.com/datacenters/
+[cli]: https://github.com/exoscale/cli/
+[cloud-init]: http://cloudinit.readthedocs.io/
+
+* `zone` - (Required) The name of the [zone][zone] to create the instance pool into.
+* `name` - (Required) The name of the instance pool.
+* `instance_type` - (Required) The managed compute instances type (`<family>.<size>`, e.g. `standard.medium`; use the [Exoscale CLI][cli] - `exo compute instance-type list` - for the list of available types).
+* `size` - (Required) The number of compute instance members the instance pool manages.
+* `template_id` - (Required) The ID of the compute instance [template](../data-sources/compute_template) to use when creating compute instances.
+
+* `description` - A free-form text describing the instance pool.
+* `deploy_target_id` - A deploy target ID.
+* `disk_size` - The managed compute instances disk size (GiB).
+* `instance_prefix` - The string used to prefix managed compute instances name (default: `pool`).
+* `ipv6` - Enable IPv6 on managed compute instances (boolean; default: `false`).
+* `key_pair` - The name of the [SSH key](./ssh_key) to authorize in compute instances.
 * `labels` - A map of key/value labels.
+* `user_data` - A [cloud-init][cloud-init] configuration to apply when creating compute instances. No need to base64-encode or gzip it as the provider will take care of it.
+
+* `affinity_group_ids` - A list of [anti-affinity group](./anti_affinity_group) IDs (may only be set at creation time).
+* `elastic_ip_ids` - A list of [elastic IP](./elastic_ip) IDs.
+* `network_ids` - A list of [private network](./private_network) IDs.
+* `security_group_ids` - A list of [security group](./security_groups) IDs.
+
+* `service_offering` - (Deprecated) The managed compute instances type. Please use the `instance_type` argument instead.
 
 
 ## Attributes Reference
 
 In addition to the arguments listed above, the following attributes are exported:
 
-* `id` – The ID of the Instance Pool.
-* `virtual_machines` – (Deprecated) The list of Instance Pool members (Compute instance IDs).
-* `instances` - The list of Instance Pool members.
+* `id` – The ID of the instance pool.
+* `instances` - The list of instance pool members.
 
-The `instances` items contains:
+* `virtual_machines` – (Deprecated) The list of instance pool members (compute instance IDs). Please use the `instances.*.id` attribute instead.
+
+### `instances` items
 
 * `id` - The ID of the compute instance.
 * `ipv6_address` - The IPv6 address of the compute instance's main network interface.
@@ -106,20 +77,10 @@ The `instances` items contains:
 
 ## Import
 
-An existing Instance Pool can be imported as a resource by `<ID>@<ZONE>`:
+An existing instance pool may be imported by `<ID>@<zone>`:
 
 ```console
-$ terraform import exoscale_instance_pool.example eb556678-ec59-4be6-8c54-0406ae0f6da6@de-fra-1
+$ terraform import \
+  exoscale_instance_pool.my_instance_pool \
+  f81d4fae-7dec-11d0-a765-00a0c91e6bf6@ch-gva-2
 ```
-
-
-[cloudinit]: http://cloudinit.readthedocs.io/en/latest/
-[d-compute_template]: ../data-sources/compute_template
-[eip-doc]: https://community.exoscale.com/documentation/compute/eip/
-[privnet-doc]: https://community.exoscale.com/documentation/compute/private-networks/
-[r-affinity]: ../resources/affinity
-[r-security_group]: ../resources/security_group
-[sshkeypair]: https://community.exoscale.com/documentation/compute/ssh-keypairs/
-[template]: https://www.exoscale.com/templates/
-[type]: https://www.exoscale.com/pricing/#/compute/
-[zone]: https://www.exoscale.com/datacenters/

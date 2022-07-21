@@ -1,48 +1,50 @@
 ---
 page_title: "Exoscale: exoscale_domain"
 description: |-
-  Provides an Exoscale DNS Domain resource.
+  Manage Exoscale DNS Domains.
 ---
 
 # exoscale\_domain
 
-Provides an Exoscale [DNS][dns-doc] Domain resource. This can be used to create and delete DNS Domains.
+Manage Exoscale [DNS](https://community.exoscale.com/documentation/dns/) Domains.
 
 
-## Usage example
+## Usage
 
 ```hcl
-resource "exoscale_domain" "example" {
-  name = "example.net"
+resource "exoscale_domain" "my_domain" {
+  name = "my.domain"
 }
 ```
+
+Next step is to attach [domain records](./domain_record) to the domain.
+
+Please refer to the [examples](../../examples/) directory for complete configuration examples.
 
 
 ## Arguments Reference
 
-* `name` - (Required) The name of the DNS Domain.
+* `name` - (Required) The name of the DNS domain.
 
 
 ## Attributes Reference
 
 In addition to the arguments listed above, the following attributes are exported:
 
-* `token` - A security token that can be used as an alternative way to manage DNS Domains via the Exoscale API.
-* `state` - The state of the DNS Domain.
-* `auto_renew` - Boolean indicating that the DNS Domain has automatic renewal enabled.
-* `expires_on` - The date of expiration of the DNS Domain, if known.
+* `auto_renew` - Boolean indicating that the DNS domain has automatic renewal enabled.
+* `expires_on` - The date of expiration of the DNS domain, if known.
+* `state` - The state of the DNS domain.
+* `token` - A security token that can be used as an alternative way to manage DNS domains via the Exoscale API.
 
 
 ## Import
 
-An existing DNS Domain can be imported as a resource by name:
+An existing DNS domain may be imported by `<name>`:
 
 ```console
-$ terraform import exoscale_domain.example example.net
+$ terraform import \
+  exoscale_domain.my_domain \
+  my.domain
 ```
 
-~> **NOTE:** importing a `exoscale_domain` resource will also import all related [`exoscale_domain_records`][r-domain_record] resources (except `NS` and `SOA`).
-
-
-[dns-doc]: https://community.exoscale.com/documentation/dns/
-[r-domain_record]: ../resources/domain_record
+~> **NOTE:** importing an `exoscale_domain` resource will also import all related `exoscale_domain_record` resources (except `NS` and `SOA`).

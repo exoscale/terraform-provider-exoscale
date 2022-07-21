@@ -19,13 +19,13 @@ Should you need to generate a key _pair_ (public and private key), we invite you
 `exoscale_ssh_key`. Example given:
 
 ```hcl
-resource "tls_private_key" "ssh_key" {
+resource "tls_private_key" "my_ssh_key" {
   algorithm = "ED25519"
 }
 
-resource "exoscale_ssh_key" "sample" {
-  name       = "sample"
-  public_key = tls_private_key.ssh_key.public_key_openssh
+resource "exoscale_ssh_key" "my_ssh_key" {
+  name       = "my-ssh-key"
+  public_key = tls_private_key.my_ssh_key.public_key_openssh
 }
 ```
 

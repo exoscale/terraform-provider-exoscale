@@ -1,38 +1,36 @@
 ---
 page_title: "Exoscale: exoscale_nlb"
 description: |-
-  Provides an Exoscale Network Load Balancer resource.
+  Manage Exoscale Network Load Balancers (NLB).
 ---
 
 # exoscale\_nlb
 
-Provides an Exoscale [Network Load Balancer][nlb-doc] (NLB) resource. This can be used to create, modify, and delete NLBs.
+Manage Exoscale [Network Load Balancers (NLB)](https://community.exoscale.com/documentation/compute/network-load-balancer/).
 
 
-## Example Usage
+## Usage
 
 ```hcl
-variable "zone" {
-  default = "de-fra-1"
-}
-
-resource "exoscale_nlb" "website" {
-  zone = var.zone
-  name = "website"
-  description = "This is the Network Load Balancer for my website"
-
-  labels = {
-    env = "prod"
-  }
+resource "exoscale_nlb" "my_nlb" {
+  zone = "ch-gva-2"
+  name = "my-nlb"
 }
 ```
+
+Next step is to attach [NLB services](./nlb_service) to the network load balancer.
+
+Please refer to the [examples](../../examples/) directory for complete configuration examples.
 
 
 ## Arguments Reference
 
-* `zone` - (Required) The name of the [zone][zone] to deploy the NLB into.
+[zone]: https://www.exoscale.com/datacenters/
+
+* `zone` - (Required) The name of the [zone][zone] to create the NLB into.
 * `name` - (Required) The name of the NLB.
-* `description` - The description of the NLB.
+
+* `description` - A free-form text describing the NLB.
 * `labels` - A map of key/value labels.
 
 
@@ -41,24 +39,20 @@ resource "exoscale_nlb" "website" {
 In addition to the arguments listed above, the following attributes are exported:
 
 * `id` - The ID of the NLB.
-* `ip_address` - The public IP address of the NLB.
-* `state` - The current state of the NLB.
 * `created_at` - The creation date of the NLB.
+* `ip_address` - The public IPv4 address of the NLB.
 * `services` - The list of the NLB service names.
+* `state` - The current state of the NLB.
 
 
 ## Import
 
-An existing NLB can be imported as a resource by `<ID>@<ZONE>`:
+An existing NLB may be imported by `<ID>@<zone>`:
 
 ```console
-$ terraform import exoscale_nlb.example eb556678-ec59-4be6-8c54-0406ae0f6da6@de-fra-1
+$ terraform import \
+  exoscale_nlb.my_nlb \
+  f81d4fae-7dec-11d0-a765-00a0c91e6bf6@ch-gva-2
 ```
 
-~> **NOTE:** Importing a NLB resource doesn't import related [`exoscale_nlb_service`][r-nlb_service] resources.
-
-
-[nlb-doc]: https://community.exoscale.com/documentation/compute/network-load-balancer/
-[r-nlb_service]: ../resources/nlb_service
-[zone]: https://www.exoscale.com/datacenters/
-
+~> **NOTE:** Importing an NLB resource does _not_ import related `exoscale_nlb_service` resources.
