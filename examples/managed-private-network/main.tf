@@ -36,7 +36,7 @@ resource "exoscale_compute_instance" "my_instance_static" {
   name = "my-instance-static"
 
   template_id = data.exoscale_compute_template.my_template.id
-  type        = "standard.small"
+  type        = "standard.medium"
   disk_size   = 10
 
   ssh_key   = exoscale_ssh_key.my_ssh_key.name
@@ -68,7 +68,7 @@ resource "exoscale_compute_instance" "my_instance_dynamic" {
   name = "my-instance-dynamic"
 
   template_id = data.exoscale_compute_template.my_template.id
-  type        = "standard.small"
+  type        = "standard.medium"
   disk_size   = 10
 
   ssh_key   = exoscale_ssh_key.my_ssh_key.name

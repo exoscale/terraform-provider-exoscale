@@ -77,7 +77,7 @@ resource "exoscale_sks_nodepool" "my_sks_nodepool" {
   cluster_id = exoscale_sks_cluster.my_sks_cluster.id
   name       = "my-sks-nodepool"
 
-  instance_type = "standard.small"
+  instance_type = "standard.medium"
   size          = 3
 
   anti_affinity_group_ids = [

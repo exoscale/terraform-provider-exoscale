@@ -42,7 +42,7 @@ resource "exoscale_instance_pool" "my_instance_pool" {
   name = "my-instance-pool"
 
   template_id   = data.exoscale_compute_template.my_template.id
-  instance_type = "standard.small"
+  instance_type = "standard.medium"
   disk_size     = 10
   size          = 3
 

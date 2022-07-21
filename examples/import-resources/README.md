@@ -30,7 +30,7 @@ Likewise, using the [Exoscale CLI](https://github.com/exoscale/cli/) instead:
 $ exo compute instance create \
   --zone 'ch-gva-2' \
   --template 'Linux Ubuntu 22.04 LTS 64-bit' \
-  --instance-type 'standard.small' \
+  --instance-type 'standard.medium' \
   --disk-size 10 \
   'my-instance'
 ```
@@ -40,11 +40,11 @@ Which also comes handy to identify existing resources **IDs**
 
 ``` console
 $ exo compute instance list | grep -Fw my-instance
-┼──────────────────────────────────────┼─────────────┼──────────┼────────────────┼───────────────┼─────────┼
-│                  ID                  │    NAME     │   ZONE   │      TYPE      │  IP ADDRESS   │  STATE  │
-┼──────────────────────────────────────┼─────────────┼──────────┼────────────────┼───────────────┼─────────┼
-│ 66afd436-5243-4bdb-8929-963d81bf7325 │ my-instance │ ch-gva-2 │ standard.small │ 185.19.28.210 │ running │
-┼──────────────────────────────────────┼─────────────┼──────────┼────────────────┼───────────────┼─────────┼
+┼──────────────────────────────────────┼─────────────┼──────────┼─────────────────┼───────────────┼─────────┼
+│                  ID                  │    NAME     │   ZONE   │      TYPE       │  IP ADDRESS   │  STATE  │
+┼──────────────────────────────────────┼─────────────┼──────────┼─────────────────┼───────────────┼─────────┼
+│ 66afd436-5243-4bdb-8929-963d81bf7325 │ my-instance │ ch-gva-2 │ standard.medium │ 185.19.28.210 │ running │
+┼──────────────────────────────────────┼─────────────┼──────────┼─────────────────┼───────────────┼─────────┼
 
 $ exo compute security-group list | grep -Fw default
 ┼──────────────────────────────────────┼─────────┼

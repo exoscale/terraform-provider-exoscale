@@ -23,7 +23,7 @@ resource "exoscale_compute_instance" "my_instance" {
   name = "my-instance"
 
   template_id = data.exoscale_compute_template.my_template.id
-  type        = "standard.small"
+  type        = "standard.medium"
   disk_size   = 10
   ipv6        = true
 

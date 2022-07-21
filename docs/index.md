@@ -95,7 +95,7 @@ resource "exoscale_compute_instance" "my_instance" {
   name        = "my-instance"
 
   template_id = data.exoscale_compute_template.my_template.id
-  type        = "standard.small"
+  type        = "standard.medium"
   disk_size   = 10
 
   ssh_key     = local.my_ssh_key
@@ -136,7 +136,7 @@ Terraform will perform the following actions:
       + ssh_key           = "my-ssh-key"
       + state             = (known after apply)
       + template_id       = "3ebca0c5-63f4-4055-b325-3cef0e68fa98"
-      + type              = "standard.small"
+      + type              = "standard.medium"
       + user_data         = <<-EOT
             #cloud-config
             package_upgrade: true
