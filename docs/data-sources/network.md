@@ -7,7 +7,7 @@ description: |-
 
 # exoscale\_network
 
-!> **WARNING:** This data source is **DEPRECATED** and will be removed in the next major version. Please use [exoscale_private_network](./private_network) instead.
+!> **WARNING:** This data source is **DEPRECATED** and will be removed in the next major version. Please use [exoscale_private_network](./private_network.md) instead.
 
 
 ## Arguments Reference

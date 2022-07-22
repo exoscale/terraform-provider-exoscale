@@ -51,7 +51,7 @@ directory for complete configuration examples.
 
 * `anti_affinity_group_ids` - A list of [exoscale_anti_affinity_group](./anti_affinity_group.md) (IDs) to be attached to the managed instances.
 * `private_network_ids` - A list of [exoscale_private_network](./private_network.md) (IDs) to be attached to the managed instances.
-* `security_group_ids` - A list of [exoscale_security_group](./security_groups.md) (IDs) to be attached to the managed instances.
+* `security_group_ids` - A list of [exoscale_security_group](./security_group.md) (IDs) to be attached to the managed instances.
 
 
 ## Attributes Reference

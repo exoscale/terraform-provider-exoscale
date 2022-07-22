@@ -7,7 +7,7 @@ description: |-
 
 # exoscale\_compute\_ipaddress
 
-!> **WARNING:** This data source is **DEPRECATED** and will be removed in the next major version. Please use [exoscale_elastic_ip](./elastic_ip) instead.
+!> **WARNING:** This data source is **DEPRECATED** and will be removed in the next major version. Please use [exoscale_elastic_ip](./elastic_ip.md) instead.
 
 
 ## Arguments Reference

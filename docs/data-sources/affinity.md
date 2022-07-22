@@ -7,7 +7,7 @@ description: |-
 
 # exoscale\_affinity
 
-!> **WARNING:** This data source is DEPRECATED and will be removed in the next major version. Please use [exoscale_anti_affinity_group](./anti_affinity_group) instead.
+!> **WARNING:** This data source is DEPRECATED and will be removed in the next major version. Please use [exoscale_anti_affinity_group](./anti_affinity_group.md) instead.
 
 
 ## Arguments Reference
