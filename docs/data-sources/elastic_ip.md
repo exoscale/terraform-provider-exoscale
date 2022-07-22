@@ -1,68 +1,59 @@
 ---
 page_title: "Exoscale: exoscale_elastic_ip"
 description: |-
-  Provides information about an Elastic IP.
+  Fetch Exoscale Elastic IPs (EIP) data.
 ---
 
 # exoscale\_elastic\_ip
 
-Provides information on an [Elastic IP][eip-doc].
+Fetch Exoscale [Elastic IPs (EIO)](https://community.exoscale.com/documentation/compute/eip/) data.
+
+Corresponding resource: [exoscale_elastic_ip](../resources/elastic_ip.md).
 
 
-## Example Usage
+## Usage
 
 ```hcl
-locals {
-  zone = "ch-gva-2"
-}
-
-data "exoscale_elastic_ip" "vip" {
-  zone       = local.zone
+data "exoscale_elastic_ip" "my_elastic_ip" {
+  zone       = "ch-gva-2"
   ip_address = "1.2.3.4"
 }
 
-data "exoscale_compute_template" "ubuntu" {
-  zone = local.zone
-  name = "Linux Ubuntu 20.04 LTS 64-bit"
-}
-
-resource "exoscale_compute_instance" "example" {
-  zone           = local.zone
-  name           = "my-instance"
-  type           = "standard.medium"
-  template_id    = data.exoscale_compute_template.ubuntu.id
-  elastic_ip_ids = [data.exoscale_elastic_ip.vip.id]
+output "my_elastic_ip_id" {
+  value = data.exoscale_elastic_ip.my_elastic_ip.id
 }
 ```
+
+Please refer to the [examples](https://github.com/exoscale/terraform-provider-exoscale/tree/master/examples/)
+directory for complete configuration examples.
 
 
 ## Arguments Reference
 
-* `zone` - (Required) The [zone][zone] of the Elastic IP.
-* `id` - The ID of the Elastic IP (conflicts with `ip_address`).
-* `ip_address` - The IP address of the Elastic IP (conflicts with `id`).
+[zone]: https://www.exoscale.com/datacenters/
+
+* `zone` - (Required) The Exocale [Zone][zone] name.
+
+* `id` - The Elastic IP (EIP) ID to match (conflicts with `ip_address`).
+* `ip_address` - The EIP IPv4 address to match (conflicts with `id`).
 
 
 ## Attributes Reference
 
 In addition to the arguments listed above, the following attributes are exported:
 
-* `description` - The description of the Elastic IP.
-* `healthcheck` - A health checking configuration for managed Elastic IPs. Structure is documented below.
+* `description` - The Elastic IP (EIP) description.
 
-The `healthcheck` block contains:
+* `healthcheck` - (Block) The *managed* EIP healthcheck configuration. Structure is documented below.
 
-* `mode` - (Required) The health checking mode.
-* `port` - (Required) The health checking port.
-* `uri` - The health checking URI.
-* `interval` - The health checking interval in seconds.
+### `healthcheck` block
+
+* `mode` - The healthcheck mode.
+* `port` - The healthcheck target port.
+* `uri` - The healthcheck URI.
+* `interval` - The healthcheck interval in seconds.
 * `timeout` - The time in seconds before considering a healthcheck probing failed.
-* `strikes_ok` - The number of successful attempts before considering a managed Elastic IP target healthy.
-* `strikes_fail` - The number of failed attempts before considering a managed Elastic IP target unhealthy.
-* `tls_sni` - The health checking server name to present with SNI in `https` mode.
-* `tls_skip_verify` - Disable TLS certificate verification for health checking in `https` mode.
-
-
-[eip-doc]: https://community.exoscale.com/documentation/compute/eip/
-[zone]: https://www.exoscale.com/datacenters/
-
+* `strikes_ok` - The number of successful healthcheck attempts before considering the target healthy.
+* `strikes_fail` - The number of failed healthcheck attempts before considering the target unhealthy.
+* `tls_sni` - The healthcheck server name to present with SNI in `https` mode.
+* `tls_skip_verify` - Disable TLS certificate verification for healthcheck in `https` mode.

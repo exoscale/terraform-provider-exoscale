@@ -8,6 +8,8 @@ description: |-
 
 Manage Exoscale [Compute Instances](https://community.exoscale.com/documentation/compute/).
 
+Corresponding data sources: [exoscale_compute_instance](../data-sources/compute_instance.md), [exoscale_compute_instance_list](../data-sources/compute_instance_list.md).
+
 
 ## Usage
 

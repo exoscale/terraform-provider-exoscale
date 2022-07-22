@@ -1,32 +1,41 @@
 ---
 page_title: "Exoscale: exoscale_compute_instance_list"
 description: |-
-  Shows a list of Compute instances.
+  Fetch a list of Exoscale Compute Instances.
 ---
 
 # exoscale\_compute\_instance_list
 
-Lists available [Exoscale Compute instances][compute-doc].
+List Exoscale [Compute Instances](https://community.exoscale.com/documentation/compute/).
+
+Corresponding resource: [exoscale_compute_instance](../resources/compute_instance.md).
 
 
-## Example Usage
+## Usage
 
 ```hcl
-data "exoscale_compute_instance_list" "example" {
+data "exoscale_compute_instance_list" "my_compute_instance_list" {
   zone = "ch-gva-2"
+}
+
+output "my_compute_instance_ids" {
+  value = join("\n", formatlist(
+    "%s", exoscale_compute_instance_list.my_compute_instance_list.instances.*.id
+  ))
 }
 ```
 
+Please refer to the [examples](https://github.com/exoscale/terraform-provider-exoscale/tree/master/examples/)
+directory for complete configuration examples.
+
+
 ## Arguments Reference
 
-* `zone` - (Required) The [zone][zone] of the Compute instance.
+[zone]: https://www.exoscale.com/datacenters/
+
+* `zone` - (Required) The Exoscale [Zone][zone] name.
+
 
 ## Atributes Reference
 
-* `instances` - The list of instances.
-
-For `instances` items schema see [exoscale_compute_instance][d-compute_instance] data source.
-
-[compute-doc]: https://community.exoscale.com/documentation/compute/
-[d-compute_instance]: ./exoscale_compute_instance
-[zone]: https://www.exoscale.com/datacenters/
+* `instances` - The list of [exoscale_compute_instance](./compute_instance.md).

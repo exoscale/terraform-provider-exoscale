@@ -1,45 +1,36 @@
 ---
 page_title: "Exoscale: exoscale_security_group"
 description: |-
-  Provides information about a Security Group.
+  Fetch Exoscale Security Groups data.
 ---
 
 # exoscale\_security\_group
 
-Provides information on a [Security Group][sg-doc] for use in other resources such as a [`exoscale_instance_pool`][r-instance_pool] resource.
+Fetch Exoscale [Security Groups](https://community.exoscale.com/documentation/compute/security-groups/) data.
+
+Corresponding resource: [exoscale_security_group](../resources/security_group.md).
 
 
-## Example Usage
+## Usage
 
 ```hcl
-locals {
-  zone = "ch-gva-2"
+data "exoscale_security_group" "my_security_group" {
+  name = "my-security-group"
 }
 
-data "exoscale_security_group" "web" {
-  name = "web"
-}
-
-data "exoscale_compute_template" "ubuntu" {
-  zone = local.zone
-  name = "Linux Ubuntu 20.04 LTS 64-bit"
-}
-
-resource "exoscale_instance_pool" "webservers" {
-  zone               = local.zone
-  name               = "webservers"
-  template_id        = data.exoscale_compute_template.ubuntu.id
-  size               = 5
-  service_offering   = "medium"
-  security_group_ids = [data.exoscale_security_group.web.id]
+output "my_security_group_id" {
+  value = data.exoscale_security_group.my_security_group.id
 }
 ```
+
+Please refer to the [examples](https://github.com/exoscale/terraform-provider-exoscale/tree/master/examples/)
+directory for complete configuration examples.
 
 
 ## Arguments Reference
 
-* `name` - The name of the Security Group (conflicts with `id`)
-* `id` - The ID of the Security Group (conflicts with `name`)
+* `id` - The security group ID to match (conflicts with `name`)
+* `name` - The name to match (conflicts with `id`)
 
 
 ## Attributes Reference
@@ -47,8 +38,3 @@ resource "exoscale_instance_pool" "webservers" {
 In addition to the arguments listed above, the following attributes are exported:
 
 * n/a
-
-
-[sg-doc]: https://community.exoscale.com/documentation/compute/security-groups/
-[r-compute]: ../resources/compute
-[r-instance_pool]: ../resources/instance_pool

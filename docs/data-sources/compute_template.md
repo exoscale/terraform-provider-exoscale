@@ -1,53 +1,47 @@
 ---
 page_title: "Exoscale: exoscale_compute_template"
 description: |-
-  Provides information about a Compute template.
+  Fetch Exoscale Compute Instance Templates data.
 ---
 
 # exoscale\_compute\_template
 
-Provides information on a Compute [template][templates] for use in other resources such as a [`exoscale_compute`][r-compute] resource.
+Fetch Exoscale [Compute Instance Templates](https://community.exoscale.com/documentation/compute/custom-templates/) data.
 
 
-## Example Usage
+## Usage
 
 ```hcl
-locals {
+data "exoscale_compute_template" "my_template" {
   zone = "ch-gva-2"
+  name = "Linux Ubuntu 22.04 LTS 64-bit"
 }
 
-data "exoscale_compute_template" "ubuntu" {
-  zone = local.zone
-  name = "Linux Ubuntu 20.04 LTS 64-bit"
-}
-
-resource "exoscale_compute_instance" "my-server" {
-  zone         = local.zone
-  name         = "my-server"
-  type         = "standard.medium"
-  template_id  = data.exoscale_compute_template.ubuntu.id
-  disk_size    = 20
+output "my_template_id" {
+  value = data.exoscale_compute_template.my_template.id
 }
 ```
+
+Please refer to the [examples](https://github.com/exoscale/terraform-provider-exoscale/tree/master/examples/)
+directory for complete configuration examples.
 
 
 ## Arguments Reference
 
-* `zone` - (Required) The name of the [zone][zone] where to look for the Compute template.
-* `name` - The name of the Compute template (conflicts with `id`).
-* `id` - The ID of the Compute template (conflicts with `name`).
-* `filter` - A Compute template search filter, must be either `featured` (official Exoscale templates), `community` (community-contributed templates) or `mine` (custom templates private to my organization). Default is `featured`.
+[zone]: https://www.exoscale.com/datacenters/
 
+* `zone` - (Required) The Exoscale [Zone][zone] name.
+
+* `id` - The compute instance template ID to match (conflicts with `name`).
+* `name` - The template name to match (conflicts with `id`).
+* `filter` - A template category filter (default: `featured`); among:
+  - `featured` - official Exoscale templates
+  - `community` - community-contributed templates
+  - `mine` - custom templates private to my organization
 
 
 ## Attributes Reference
 
 In addition to the arguments listed above, the following attributes are exported:
 
-* `username` - Username to use to log into a Compute Instance based on this template
-
-
-[r-compute]: ../resources/compute
-[templates]: https://www.exoscale.com/templates/
-[zone]: https://www.exoscale.com/datacenters/
-
+* `username` - Username to use to log into a compute instance based on this template

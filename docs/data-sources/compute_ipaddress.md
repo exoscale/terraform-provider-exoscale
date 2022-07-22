@@ -2,37 +2,22 @@
 page_title: "Exoscale: exoscale_compute_ipaddress"
 subcategory: "Deprecated"
 description: |-
-  Provides information about a Compute template.
+  Fetch Exoscale Elastic IPs (EIP) data.
 ---
 
 # exoscale\_compute\_ipaddress
 
-Provides information on a Compute [Elastic IP address][eip-doc].
-
-!> **WARNING:** This data source is deprecated and will be removed in the next major version.
-
-
-## Example Usage
-
-```hcl
-locals {
-  zone = "ch-gva-2"
-}
-
-data "exoscale_compute_ipaddress" "eip" {
-  zone = local.zone
-  ip_address = "159.162.3.4"
-}
-```
+!> **WARNING:** This data source is **DEPRECATED** and will be removed in the next major version. Please use [exoscale_elastic_ip](./elastic_ip) instead.
 
 
 ## Arguments Reference
 
-* `zone` - (Required) The name of the [zone][zone] where to look for the IP Address.
-* `ip_address` - The IP Address of the EIP.
-* `id` - The ID of the IP Address.
-* `description` - The Description to find the IP Address.
-* `tags` - The tags to find the IP Address.
+* `zone` - (Required) The name of the zone of the EIP.
+
+* `id` - The EIP ID to match.
+* `description` - The EIP description to match.
+* `ip_address` - The EIP IPv4 address to match.
+* `tags` - The EIP tags to match.
 
 
 ## Attributes Reference
@@ -40,7 +25,3 @@ data "exoscale_compute_ipaddress" "eip" {
 In addition to the arguments listed above, the following attributes are exported:
 
 * n/a
-
-
-[eip-doc]: https://community.exoscale.com/documentation/compute/eip/
-[zone]: https://www.exoscale.com/datacenters/

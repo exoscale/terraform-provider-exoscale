@@ -8,6 +8,8 @@ description: |-
 
 Manage Exoscale [Security Groups](https://community.exoscale.com/documentation/compute/security-groups/).
 
+Corresponding data source: [exoscale_security_group](../data-sources/security_group.md).
+
 
 ## Usage
 

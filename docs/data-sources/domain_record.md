@@ -1,70 +1,76 @@
 ---
 page_title: "Exoscale: exoscale_domain_record"
 description: |-
-  Provides information about an Exoscale DNS domain record.
+  Fetch Exoscale DNS Domain Records data.
 ---
 
 # exoscale\_domain\_record
 
-Provides information on [domain records][r-domain_record] hosted on [Exoscale DNS][exo-dns].
+Fetch Exoscale [DNS](https://community.exoscale.com/documentation/dns/) Domain Records data.
+
+Corresponding resource: [exoscale_domain_record](../resources/domain_record.md).
 
 
-## Example Usage
-
-The example below matches all domain records that match with name `mailserver` and Record type `MX`.
+## Usage
 
 ```hcl
-data "exoscale_domain" "mycompany" {
-  name = my-company.com
+data "exoscale_domain" "my_domain" {
+  name = "my.domain"
 }
 
-data "exoscale_domain_record" "mycompany_mailservers" {
-  domain = data.exoscale_domain.mycompany.name
+data "exoscale_domain_record" "my_exoscale_domain_A_records" {
+  domain = data.exoscale_domain.my_domain.name
   filter {
-    name   = "mailserver"
-    recorde_type  = "MX"
+    name        = "my-host"
+    record_type = "A"
   }
 }
 
-data "exoscale_domain_record" "mycompany_nameservers" {
-  domain = data.exoscale_domain.mycompany.name
+data "exoscale_domain_record" "my_exoscale_domain_NS_records" {
+  domain = data.exoscale_domain.my_domain.name
   filter {
-    content_regex  = "ns.*"
+    content_regex = "ns.*"
   }
 }
 
-output "first_domain_record_name" {
-  value = data.exoscale_domain_record.mycompany_mailservers.records.0.name
+output "my_exoscale_domain_A_records" {
+  value = join("\n", formatlist(
+    "%s", data.exoscale_domain_record.my_exoscale_domain_A_records.records.*.name
+  ))
 }
 
-output "first_domain_record_content" {
-  value = data.exoscale_domain_record.mycompany_nameservers.records.0.content
+output "my_exoscale_domain_NS_records" {
+  value = join("\n", formatlist(
+    "%s", data.exoscale_domain_record.my_exoscale_domain_NS_records.records.*.content
+  ))
 }
 ```
+
+Please refer to the [examples](https://github.com/exoscale/terraform-provider-exoscale/tree/master/examples/)
+directory for complete configuration examples.
 
 
 ## Arguments Reference
 
-* `domain` - (Required) The name of the [domain][r-domain] where to look for domain records.
-* `filter`- (Required) Filter to apply when looking up domain records.
+* `domain` - (Required) The [exoscale_domain](./domain.md) name to match.
+* `filter`- (Required, Block) Filter to apply when looking up domain records. Structure is documented below.
 
-**filter**
+### `filter` block
 
-* `name` - The name matching the domain record name to lookup.
-* `id` - The ID matching the domain record ID to lookup.
-* `record_type` - The record type matching the domain record type to lookup.
-* `content_regex` - A regular expression matching the domain record content to lookup.
+* `name` - The domain record name to match.
+* `id` - The record ID to match.
+* `record_type` - The record type to match.
+* `content_regex` - A regular expression to match the record content.
 
 
 ## Attributes Reference
 
+* `records` - The list of matching records. Structure is documented below.
+
+### `records` items
+
 In addition to the arguments listed above, the following attributes are exported:
 
-* `content` - The content of the domain record.
-* `prio` - The priority of the domain record.
-
-
-[exo-dns]: https://www.exoscale.com/dns/
-[r-domain]: ../resources/domain
-[r-domain_record]: ../resources/domain_record
-
+* `content` - The domain record content.
+* `prio` - The record priority.
+* `ttl` - The record TTL.

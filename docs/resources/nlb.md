@@ -8,6 +8,8 @@ description: |-
 
 Manage Exoscale [Network Load Balancers (NLB)](https://community.exoscale.com/documentation/compute/network-load-balancer/).
 
+Corresponding data source: [exoscale_nlb](../data-sources/nlb.md).
+
 
 ## Usage
 

@@ -1,73 +1,72 @@
 ---
 page_title: "Exoscale: exoscale_instance_pool"
 description: |-
-  Provides information about a Instance Pool.
+  Fetch Exoscale Instance Pools data.
 ---
 
 # exoscale\_instance\_pool
 
-Provides information on an [Exoscale Instance Pool][pool-doc].
+Fetch Exoscale [Instance Pools](https://community.exoscale.com/documentation/compute/instance-pools/) data.
+
+Corresponding resource: [exoscale_instance_pool](../resources/instance_pool.md).
 
 
-## Example Usage
+## Usage
 
 ```hcl
-data "exoscale_instance_pool" "example" {
+data "exoscale_instance_pool" "my_instance_pool" {
   zone = "ch-gva-2"
   name = "my-instance-pool"
 }
 
-output "instance_pool_state" {
-  value = data.exoscale_instance_pool.example.state
+output "my_instance_pool_id" {
+  value = data.exoscale_instance_pool.my_instance_pool.id
 }
 ```
 
+Please refer to the [examples](https://github.com/exoscale/terraform-provider-exoscale/tree/master/examples/)
+directory for complete configuration examples.
+
+
 ## Arguments Reference
 
-* `zone` - (Required) The [zone][zone] of the Compute instance pool.
+[zone]: https://www.exoscale.com/datacenters/
 
-One of the following arguments is required:
+* `zone` - (Required) The Exoscale [Zone][zone] name.
 
-* `id` - The ID of the Compute instance pool.
-* `name` - The name of the Compute instance pool.
+* `id` - The instance pool ID to match (conflicts with `name`).
+* `name` - The pool name to match (conflicts with `id`).
 
 
 ## Attributes Reference
 
+[cloud-init]: http://cloudinit.readthedocs.io/en/latest/
+
 In addition to the arguments listed above, the following attributes are exported:
 
-* `affinity_group_ids` - A list of [Anti-Affinity Group][r-affinity] IDs.
-* `deploy_target_id` - A Deploy Target ID.
-* `description` - The description of the Instance Pool.
-* `disk_size` - The managed Compute instances disk size.
-* `elastic_ip_ids` - A list of [Elastic IP][eip-doc] IDs.
-* `instance_prefix` - The string to add as prefix to managed Compute instances name.
-* `instance_type` - The managed Compute instances [type][type].
-* `ipv6` - Whether IPv6 is enabled on managed Compute instances.
-* `key_pair` - The name of the [SSH key pair][sshkeypair].
+* `description` - The instance pool description.
+* `deploy_target_id` - The deploy target ID.
+* `disk_size` - The managed instances disk size.
+* `instance_prefix` - The string used to prefix the managed instances name.
+* `instance_type` - The managed instances type.
+* `ipv6` - Whether IPv6 is enabled on managed instances.
+* `key_pair` - The [exoscale_ssh_key](../resources/ssh_key.md) (name) authorized on the managed instances.
 * `labels` - A map of key/value labels.
-* `network_ids` - A list of [Private Network][privnet-doc] IDs.
-* `security_group_ids` - A list of [Security Group][r-security_group] IDs.
-* `size` - The number of Compute instance members the Instance Pool manages.
-* `state` - Instance Pool state.
-* `template_id` - The ID of the instance [template][template].
-* `user_data` - A [cloud-init][cloudinit] configuration.
-* `instances` - The list of Instance Pool members.
+* `size` - The number managed instances.
+* `state` - The pool state.
+* `template_id` - The managed instances [exoscale_compute_template](./compute_template.md) ID.
+* `user_data` - [cloud-init][cloud-init] configuration.
 
-The `instances` items contains:
+* `affinity_group_ids` - The list of attached [exoscale_anti_affinity_group](../resources/anti_affinity_group.md) (IDs).
+* `elastic_ip_ids` - The list of attached [exoscale_elastic_ip](../resources/elastic_ip.md) (IDs).
+* `network_ids` - The list of attached [exoscale_private_network](../resources/private_network.md) (IDs).
+* `security_group_ids` - The list of attached [exoscale_security_group](../resources/security_group.md) (IDs).
 
-* `id` - The ID of the compute instance.
-* `ipv6_address` - The IPv6 address of the compute instance's main network interface.
-* `name` - The name of the compute instance.
-* `public_ip_address` - The IPv4 address of the compute instance's main network interface.
+* `instances` - The list of managed instances. Structure is documented below.
 
-[pool-doc]: https://community.exoscale.com/documentation/compute/instance-pools/
-[zone]: https://www.exoscale.com/datacenters/
-[r-affinity]: ../resources/affinity
-[eip-doc]: https://community.exoscale.com/documentation/compute/eip/
-[type]: https://www.exoscale.com/pricing/#/compute/
-[sshkeypair]: https://community.exoscale.com/documentation/compute/ssh-keypairs/
-[privnet-doc]: https://community.exoscale.com/documentation/compute/private-networks/
-[r-security_group]: ../resources/security_group
-[template]: https://www.exoscale.com/templates/
-[cloudinit]: http://cloudinit.readthedocs.io/en/latest/
+### `instances` items
+
+* `id` - The compute instance ID.
+* `name` - The instance name.
+* `ipv6_address` - The instance (main network interface) IPv6 address.
+* `public_ip_address` - The instance (main network interface) IPv4 address.

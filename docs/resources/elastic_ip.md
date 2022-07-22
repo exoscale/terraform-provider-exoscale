@@ -8,6 +8,8 @@ description: |-
 
 Manage Exoscale [Elastic IPs (EIP)](https://community.exoscale.com/documentation/compute/eip/).
 
+Corresponding data source: [exoscale_elastic_ip](../data-sources/elastic_ip.md).
+
 
 ### Usage
 
@@ -55,11 +57,11 @@ directory for complete configuration examples.
 ### `healthcheck` block
 
 * `mode` - (Required) The healthcheck mode (`tcp`, `http` or `https`; may only be set at creation time).
-* `port` - (Required) The healthcheck port (must be between `1` and `65535`).
+* `port` - (Required) The healthcheck target port (must be between `1` and `65535`).
 
 * `interval` - The healthcheck interval (seconds; must be between `5` and `300`; default: `10`).
-* `strikes_fail` - The number of failed healthcheck attempts before considering a managed EIP target unhealthy (must be between `1` and `20`; default: `2`).
-* `strikes_ok` - The number of successful healthcheck attempts before considering a managed EIP target healthy (must be between `1` and `20`; default: `3`).
+* `strikes_fail` - The number of failed healthcheck attempts before considering the target unhealthy (must be between `1` and `20`; default: `2`).
+* `strikes_ok` - The number of successful healthcheck attempts before considering the target healthy (must be between `1` and `20`; default: `3`).
 * `timeout` - The time before considering a healthcheck probing failed (seconds; must be between `2` and `60`; default: `3`).
 * `tls_skip_verify` - Disable TLS certificate verification for healthcheck in `https` mode (boolean; default: `false`).
 * `tls_sni` - The healthcheck server name to present with SNI in `https` mode.

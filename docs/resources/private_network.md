@@ -8,6 +8,8 @@ description: |-
 
 Manage Exoscale [Private Networks](https://community.exoscale.com/documentation/compute/private-networks/).
 
+Corresponding data source: [exoscale_private_network](../data-sources/private_network.md).
+
 
 ## Usage
 

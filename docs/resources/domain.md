@@ -8,6 +8,8 @@ description: |-
 
 Manage Exoscale [DNS](https://community.exoscale.com/documentation/dns/) Domains.
 
+Corresponding data source: [exoscale_domain](../data-sources/domain.md).
+
 
 ## Usage
 

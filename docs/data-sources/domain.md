@@ -1,33 +1,39 @@
 ---
 page_title: "Exoscale: exoscale_domain"
 description: |-
-  Provides information about a Domain.
+  Fetch Exoscale DNS Domains data.
 ---
 
 # exoscale\_domain
 
-Provides information on a domain name hosted on [Exoscale DNS][exo-dns].
+Fetch Exoscale [DNS](https://community.exoscale.com/documentation/dns/) Domains data.
+
+Corresponding resource: [exoscale_domain](../resources/domain.md).
 
 
-## Example Usage
+## Usage
 
 ```hcl
-data "exoscale_domain" "my-company-com" {
-  name = "my-company.com"
+data "exoscale_domain" "my_domain" {
+  name = "my.domain"
+}
+
+output "my_domain_id" {
+  value = data.exoscale_domain.my_domain.id
 }
 ```
+
+Please refer to the [examples](https://github.com/exoscale/terraform-provider-exoscale/tree/master/examples/)
+directory for complete configuration examples.
 
 
 ## Arguments Reference
 
-* `name` - (Required) The name of the domain.
+* `name` - (Required) The DNS domain name to match.
 
 
 ## Attributes Reference
 
 In addition to the arguments listed above, the following attributes are exported:
 
-* `id` - The ID of the domain
-
-
-[exo-dns]: https://www.exoscale.com/dns/
+* `id` - The DNS domain ID

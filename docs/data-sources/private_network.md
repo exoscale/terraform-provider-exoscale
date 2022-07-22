@@ -1,61 +1,50 @@
 ---
 page_title: "Exoscale: exoscale_private_network"
 description: |-
-  Provides information about a Private Network.
+  Fetch Exoscale Private Networks data.
 ---
 
 # exoscale\_private\_network
 
-Provides information on a [Private Network][privnet-doc] for use in other resources such as a [`exoscale_instance_pool`][r-instance_pool] resource.
+Fetch Exoscale [Private Networks](https://community.exoscale.com/documentation/compute/private-networks/) data.
+
+Corresponding resource: [exoscale_private_network](../resources/private_network.md).
 
 
-## Example Usage
+## Usage
 
 ```hcl
-locals {
+data "exoscale_private_network" "my_private_network" {
   zone = "ch-gva-2"
+  name = "my-private-network"
 }
 
-data "exoscale_private_network" "db" {
-  zone = local.zone
-  name = "db"
-}
-
-data "exoscale_compute_template" "ubuntu" {
-  zone = local.zone
-  name = "Linux Ubuntu 20.04 LTS 64-bit"
-}
-
-resource "exoscale_instance_pool" "webservers" {
-  zone               = local.zone
-  name               = "webservers"
-  template_id        = data.exoscale_compute_template.ubuntu.id
-  size               = 5
-  service_offering   = "standard.medium"
-  network_ids        = [data.exoscale_private_network.db.id]
+output "my_private_network_id" {
+  value = data.exoscale_private_network.my_private_network.id
 }
 ```
+
+Please refer to the [examples](https://github.com/exoscale/terraform-provider-exoscale/tree/master/examples/)
+directory for complete configuration examples.
 
 
 ## Arguments Reference
 
-* `zone` - (Required) The [zone][zone] of the Private Network.
-* `name` - The name of the Private Network (conflicts with `id`).
-* `id` - The ID of the Private Network (conflicts with `name`).
+[zone]: https://www.exoscale.com/datacenters/
 
+* `zone` - (Required) The Exoscale [Zone][zone] name.
+
+* `id` - The private network ID to match (conflicts with `name`).
+* `name` - The network name to match (conflicts with `id`).
 
 
 ## Attributes Reference
 
 In addition to the arguments listed above, the following attributes are exported:
 
-* `description` - The description of the Private Network.
-* `start_ip` - The first address of IP range used by the DHCP service to automatically assign (for *managed* Private Networks).
-* `end_ip` - The last address of the IP range used by the DHCP service (for *managed* Private Networks).
-* `netmask` - The netmask defining the IP network allowed for the static lease (for *managed* Private Networks).
+* `description` - The private network description.
 
+### For *Managed* Private Networks
 
-[r-instance_pool]: ../resources/instance_pool
-[privnet-doc]: https://community.exoscale.com/documentation/compute/private-networks/
-[zone]: https://www.exoscale.com/datacenters/
-
+* `netmask` - The network mask defining the IPv4 network allowed for static leases.
+* `start_ip`/`end_ip` - The first/last IPv4 addresses used by the DHCP service for dynamic leases.
