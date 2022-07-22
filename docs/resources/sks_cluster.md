@@ -61,11 +61,13 @@ The `oidc` block supports:
 In addition to the arguments listed above, the following attributes are exported:
 
 * `id` - The ID of the SKS cluster.
-* `endpoint` - The Kubernetes public API endpoint of the SKS cluster.
-* `state` - The current state of the SKS cluster.
+* `aggregation_ca` - The CA certificate for TLS communications between the control plane and the aggregation layer (e.g. metrics-server).
+* `control_plane_ca` - The CA certificate for TLS communications between control-plane components.
 * `created_at` - The creation date of the SKS cluster.
+* `endpoint` - The Kubernetes public API endpoint of the SKS cluster.
+* `kubelet_ca` - The CA certificate for TLS communications between kubelets and the control plane.
 * `nodepools` - The list of [SKS Nodepools][r-sks_nodepool] (IDs) attached to the SKS cluster.
-
+* `state` - The current state of the SKS cluster.
 
 ## Import
 

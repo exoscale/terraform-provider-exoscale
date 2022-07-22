@@ -2,6 +2,7 @@ package exoscale
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"log"
@@ -20,12 +21,15 @@ const (
 	sksClusterAddonMS          = "metrics-server"
 
 	resSKSClusterAttrAddons             = "addons"
+	resSKSClusterAttrAggregationLayerCA = "aggregation_ca"
 	resSKSClusterAttrAutoUpgrade        = "auto_upgrade"
 	resSKSClusterAttrCNI                = "cni"
+	resSKSClusterAttrControlPlaneCA     = "control_plane_ca"
 	resSKSClusterAttrCreatedAt          = "created_at"
 	resSKSClusterAttrDescription        = "description"
 	resSKSClusterAttrEndpoint           = "endpoint"
 	resSKSClusterAttrExoscaleCCM        = "exoscale_ccm"
+	resSKSClusterAttrKubeletCA          = "kubelet_ca"
 	resSKSClusterAttrLabels             = "labels"
 	resSKSClusterAttrMetricsServer      = "metrics_server"
 	resSKSClusterAttrName               = "name"
@@ -58,6 +62,11 @@ func resourceSKSCluster() *schema.Resource {
 			Deprecated: "This attribute has been replaced by `exoscale_ccm`/`metrics_server` " +
 				"attributes, it will be removed in a future release.",
 		},
+
+		resSKSClusterAttrAggregationLayerCA: {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
 		resSKSClusterAttrAutoUpgrade: {
 			Type:     schema.TypeBool,
 			Optional: true,
@@ -66,6 +75,10 @@ func resourceSKSCluster() *schema.Resource {
 			Type:     schema.TypeString,
 			Optional: true,
 			Default:  defaultSKSClusterCNI,
+		},
+		resSKSClusterAttrControlPlaneCA: {
+			Type:     schema.TypeString,
+			Computed: true,
 		},
 		resSKSClusterAttrCreatedAt: {
 			Type:     schema.TypeString,
@@ -83,6 +96,10 @@ func resourceSKSCluster() *schema.Resource {
 			Type:     schema.TypeBool,
 			Optional: true,
 			Default:  true,
+		},
+		resSKSClusterAttrKubeletCA: {
+			Type:     schema.TypeString,
+			Computed: true,
 		},
 		resSKSClusterAttrMetricsServer: {
 			Type:     schema.TypeBool,
@@ -335,7 +352,12 @@ func resourceSKSClusterRead(ctx context.Context, d *schema.ResourceData, meta in
 
 	log.Printf("[DEBUG] %s: read finished successfully", resourceSKSClusterIDString(d))
 
-	return diag.FromErr(resourceSKSClusterApply(ctx, d, sksCluster))
+	certificates, err := readClusterCertificates(client.Client, ctx, zone, sksCluster)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	return diag.FromErr(resourceSKSClusterApply(ctx, d, sksCluster, certificates))
 }
 
 func resourceSKSClusterUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -416,7 +438,7 @@ func resourceSKSClusterDelete(ctx context.Context, d *schema.ResourceData, meta 
 	return nil
 }
 
-func resourceSKSClusterApply(_ context.Context, d *schema.ResourceData, sksCluster *egoscale.SKSCluster) error {
+func resourceSKSClusterApply(_ context.Context, d *schema.ResourceData, sksCluster *egoscale.SKSCluster, certificates *SKSClusterCertificates) error {
 	if sksCluster.AddOns != nil {
 		if err := d.Set(resSKSClusterAttrAddons, *sksCluster.AddOns); err != nil {
 			return err
@@ -431,11 +453,19 @@ func resourceSKSClusterApply(_ context.Context, d *schema.ResourceData, sksClust
 		}
 	}
 
+	if err := d.Set(resSKSClusterAttrAggregationLayerCA, certificates.AggregationCA); err != nil {
+		return err
+	}
+
 	if err := d.Set(resSKSClusterAttrAutoUpgrade, defaultBool(sksCluster.AutoUpgrade, false)); err != nil {
 		return err
 	}
 
 	if err := d.Set(resSKSClusterAttrCNI, defaultString(sksCluster.CNI, "")); err != nil {
+		return err
+	}
+
+	if err := d.Set(resSKSClusterAttrControlPlaneCA, certificates.ControlPlaneCA); err != nil {
 		return err
 	}
 
@@ -448,6 +478,10 @@ func resourceSKSClusterApply(_ context.Context, d *schema.ResourceData, sksClust
 	}
 
 	if err := d.Set(resSKSClusterAttrEndpoint, *sksCluster.Endpoint); err != nil {
+		return err
+	}
+
+	if err := d.Set(resSKSClusterAttrKubeletCA, certificates.KubeletCA); err != nil {
 		return err
 	}
 
@@ -483,4 +517,51 @@ func resourceSKSClusterApply(_ context.Context, d *schema.ResourceData, sksClust
 }
 
 // resSKSClusterAttrOIDC returns a sks_cluster resource attribute key formatted for an "oidc {}" block.
-func resSKSClusterAttrOIDC(a string) string { return fmt.Sprintf("oidc.0.%s", a) }
+func resSKSClusterAttrOIDC(a string) string {
+	return fmt.Sprintf("oidc.0.%s", a)
+}
+
+type SKSClusterCertificates struct {
+	AggregationCA  string
+	ControlPlaneCA string
+	KubeletCA      string
+}
+
+// readClusterCertificates returns an SKS Cluster related CA certificates
+func readClusterCertificates(client *egoscale.Client, ctx context.Context, zone string, cluster *egoscale.SKSCluster) (*SKSClusterCertificates, error) {
+	encodedAggregationCertificate, err := client.GetSKSClusterAuthorityCert(ctx, zone, cluster, "aggregation")
+	if err != nil {
+		return nil, err
+	}
+
+	encodedControlPlaneCertificate, err := client.GetSKSClusterAuthorityCert(ctx, zone, cluster, "control-plane")
+	if err != nil {
+		return nil, err
+	}
+
+	encodedKubeletCertificate, err := client.GetSKSClusterAuthorityCert(ctx, zone, cluster, "kubelet")
+	if err != nil {
+		return nil, err
+	}
+
+	aggregationCertificate, err := base64.StdEncoding.DecodeString(encodedAggregationCertificate)
+	if err != nil {
+		return nil, err
+	}
+
+	controlPlaneCertificate, err := base64.StdEncoding.DecodeString(encodedControlPlaneCertificate)
+	if err != nil {
+		return nil, err
+	}
+
+	kubeletCertificate, err := base64.StdEncoding.DecodeString(encodedKubeletCertificate)
+	if err != nil {
+		return nil, err
+	}
+
+	return &SKSClusterCertificates{
+		AggregationCA:  string(aggregationCertificate),
+		ControlPlaneCA: string(controlPlaneCertificate),
+		KubeletCA:      string(kubeletCertificate),
+	}, nil
+}

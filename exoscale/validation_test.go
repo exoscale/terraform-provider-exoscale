@@ -1,6 +1,8 @@
 package exoscale
 
 import (
+	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/go-cty/cty"
@@ -153,3 +155,5 @@ func Test_validateComputeInstanceType(t *testing.T) {
 		})
 	}
 }
+
+var testPemCertificateFormatRegex = regexp.MustCompile(fmt.Sprintf(`^-----BEGIN CERTIFICATE-----\n(.|\s)+\n-----END CERTIFICATE-----\n$`))
