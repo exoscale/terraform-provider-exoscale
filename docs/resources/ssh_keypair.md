@@ -7,7 +7,7 @@ description: |-
 
 # exoscale\_ssh\_keypair
 
-!> **WARNING:** This resource is **DEPRECATED** and will be removed in the next major version. Please use [exoscale_ssh_key](./ssh_key) instead (or refer to the ad-hoc [migration guide](../guides/migration-of-ssh-keypair)).
+!> **WARNING:** This resource is **DEPRECATED** and will be removed in the next major version. Please use [exoscale_ssh_key](./ssh_key.md) instead (or refer to the ad-hoc [migration guide](../guides/migration-of-ssh-keypair.md)).
 
 !> **WARNING:** This resource stores sensitive information in your Terraform state. Please be sure to correctly understand implications and how to mitigate potential risks before using it.
 

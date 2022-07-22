@@ -22,9 +22,10 @@ output "my_sks_cluster_endpoint" {
 }
 ```
 
-Next step is to attach [exoscale_sks_nodepool](./sks_nodepool)(s) to the SKS cluster.
+Next step is to attach [exoscale_sks_nodepool](./sks_nodepool.md)(s) to the SKS cluster.
 
-Please refer to the [examples](../../examples/) directory for complete configuration examples.
+Please refer to the [examples](https://github.com/exoscale/terraform-provider-exoscale/tree/master/examples/)
+directory for complete configuration examples.
 
 
 ## Arguments Reference

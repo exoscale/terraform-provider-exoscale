@@ -31,7 +31,7 @@ resource "exoscale_ssh_key" "my_ssh_key" {
 }
 ```
 
-Please refer to the [examples](../../examples/) directory for complete configuration examples.
+Please refer to the [examples](https://github.com/exoscale/terraform-provider-exoscale/tree/master/examples/) directory for complete configuration examples.
 
 
 ## Arguments Reference

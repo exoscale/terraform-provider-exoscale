@@ -31,18 +31,19 @@ resource "exoscale_domain_record" "my_host_alias" {
 }
 ```
 
-Please refer to the [examples](../../examples/) directory for complete configuration examples.
+Please refer to the [examples](https://github.com/exoscale/terraform-provider-exoscale/tree/master/examples/)
+directory for complete configuration examples.
 
 
 ## Arguments Reference
 
-* `domain` - (Required) The parent [domain](./domain) to create the record into.
+* `domain` - (Required) The parent [domain](./domain.md) to create the record into.
 * `name` - (Required) The name of the domain record; leave blank (`""`) to create a root record (similar to using `@` in a DNS zone file).
 * `content` - (Required) The value of the domain record.
 * `record_type` - (Required) The type of the domain record (`A`, `AAAA`, `ALIAS`, `CAA`, `CNAME`, `HINFO`, `MX`, `NAPTR`, `NS`, `POOL`, `SPF`, `SRV`, `SSHFP`, `TXT`, `URL`).
 
-* `prio` - The priority of the DNS domain record (integer; default: `0`; for types that support it).
-* `ttl` - The TTL (Time-to-Live) of the domain record (seconds; default: `3600`).
+* `prio` - The priority of the DNS domain record (for types that support it; minimum `0`).
+* `ttl` - The TTL (Time-to-Live) of the domain record (seconds; minimum `0`).
 
 
 ## Attributes Reference

@@ -45,7 +45,8 @@ output "my_database_uri" {
 }
 ```
 
-Please refer to the [examples](../../examples/) directory for complete configuration examples.
+Please refer to the [examples](https://github.com/exoscale/terraform-provider-exoscale/tree/master/examples/)
+directory for complete configuration examples.
 
 
 ## Arguments Reference

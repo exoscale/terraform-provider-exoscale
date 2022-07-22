@@ -32,7 +32,7 @@ resource "exoscale_security_group_rule" "my_security_group_rule" {
 [cidr]: https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing#CIDR_notation
 [icmp]: https://en.wikipedia.org/wiki/Internet_Control_Message_Protocol#Control_messages
 
-* `security_group_id` - (Required) The parent [security group](./security_group) ID.
+* `security_group_id` - (Required) The parent [security group](./security_group.md) ID.
 * `type` - (Required) The traffic direction to match (`INGRESS` or `EGRESS`).
 * `protocol` - (Required) The network protocol to match (`TCP`, `UDP`, `ICMP`, `ICMPv6`, `AH`, `ESP`, `GRE`, `IPIP` or `ALL`)
 
@@ -42,8 +42,8 @@ resource "exoscale_security_group_rule" "my_security_group_rule" {
 * `icmp_type`/`icmp_code` - An ICMP/ICMPv6 [type/code][icmp] to match.
 * `user_security_group_id` - An (`INGRESS`) source / (`EGRESS`) destination security group ID to match (conflicts with `cidr`/`user_security_group)`).
 
-* `security_group` - (Deprecated) The parent security group name. Please use the `security_group_id` argument along the [exoscale_security_group](../data-sources/security_group) data source instead.
-* `user_security_group` - (Deprecated) An (`INGRESS`) source / (`EGRESS`) destination security group name to match (conflicts with `cidr`/`user_security_group_id`). Please use the `user_security_group_id` argument along the [exoscale_security_group](../data-sources/security_group) data source instead.
+* `security_group` - (Deprecated) The parent security group name. Please use the `security_group_id` argument along the [exoscale_security_group](../data-sources/security_group.md) data source instead.
+* `user_security_group` - (Deprecated) An (`INGRESS`) source / (`EGRESS`) destination security group name to match (conflicts with `cidr`/`user_security_group_id`). Please use the `user_security_group_id` argument along the [exoscale_security_group](../data-sources/security_group.md) data source instead.
 
 
 ## Attributes Reference

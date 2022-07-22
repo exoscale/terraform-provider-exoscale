@@ -28,14 +28,15 @@ resource "exoscale_sks_kubeconfig" "my_sks_kubeconfig" {
 }
 ```
 
-Please refer to the [examples](../../examples/) directory for complete configuration examples.
+Please refer to the [examples](https://github.com/exoscale/terraform-provider-exoscale/tree/master/examples/)
+directory for complete configuration examples.
 
 
 ## Arguments Reference
 
 [zone]: https://www.exoscale.com/datacenters/
 
-* `cluster_id` - (Required) The parent [SKS cluster](./sks_cluster) ID.
+* `cluster_id` - (Required) The parent [SKS cluster](./sks_cluster.md) ID.
 * `zone` - (Required) The name of the [zone][zone] of the parent SKS cluster.
 * `groups` - (Required) Group names in the generated Kubeconfig. The certificate present in the Kubeconfig will have these roles set in the Organization field.
 * `user` - (Required) User name in the generated Kubeconfig. The certificate present in the Kubeconfig will also have this name set for the CN field.

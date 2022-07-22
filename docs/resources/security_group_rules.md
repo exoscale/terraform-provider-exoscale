@@ -7,7 +7,7 @@ description: |-
 
 # exoscale\_security\_group\_rules
 
-!> **WARNING:** This resource is **DEPRECATED** and will be removed in the next major version. Please use the [exoscale_security_group_rule](./security_group_rule) instead (or refer to the ad-hoc [migration guide](../guides/migration-of-security-group-rules)).
+!> **WARNING:** This resource is **DEPRECATED** and will be removed in the next major version. Please use the [exoscale_security_group_rule](./security_group_rule.md) instead (or refer to the ad-hoc [migration guide](../guides/migration-of-security-group-rules.md)).
 
 
 ## Arguments Reference

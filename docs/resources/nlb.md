@@ -18,9 +18,10 @@ resource "exoscale_nlb" "my_nlb" {
 }
 ```
 
-Next step is to attach [NLB services](./nlb_service) to the network load balancer.
+Next step is to attach [NLB services](./nlb_service.md) to the network load balancer.
 
-Please refer to the [examples](../../examples/) directory for complete configuration examples.
+Please refer to the [examples](https://github.com/exoscale/terraform-provider-exoscale/tree/master/examples/)
+directory for complete configuration examples.
 
 
 ## Arguments Reference

@@ -17,9 +17,10 @@ resource "exoscale_security_group" "my_security_group" {
 }
 ```
 
-Next step is to attach [security group rules](./security_group_rule) to the security group.
+Next step is to attach [security group rules](./security_group_rule.md) to the security group.
 
-Please refer to the [examples](../../examples/) directory for complete configuration examples.
+Please refer to the [examples](https://github.com/exoscale/terraform-provider-exoscale/tree/master/examples/)
+directory for complete configuration examples.
 
 
 ## Arguments Reference

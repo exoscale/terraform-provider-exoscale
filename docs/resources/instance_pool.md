@@ -28,6 +28,9 @@ resource "exoscale_instance_pool" "my_instance_pool" {
 }
 ```
 
+Please refer to the [examples](https://github.com/exoscale/terraform-provider-exoscale/tree/master/examples/)
+directory for complete configuration examples.
+
 
 ## Argument Reference
 
@@ -39,21 +42,21 @@ resource "exoscale_instance_pool" "my_instance_pool" {
 * `name` - (Required) The name of the instance pool.
 * `instance_type` - (Required) The managed compute instances type (`<family>.<size>`, e.g. `standard.medium`; use the [Exoscale CLI][cli] - `exo compute instance-type list` - for the list of available types).
 * `size` - (Required) The number of compute instance members the instance pool manages.
-* `template_id` - (Required) The ID of the compute instance [template](../data-sources/compute_template) to use when creating compute instances.
+* `template_id` - (Required) The ID of the compute instance [template](../data-sources/compute_template.md) to use when creating compute instances.
 
 * `description` - A free-form text describing the instance pool.
 * `deploy_target_id` - A deploy target ID.
 * `disk_size` - The managed compute instances disk size (GiB).
 * `instance_prefix` - The string used to prefix managed compute instances name (default: `pool`).
 * `ipv6` - Enable IPv6 on managed compute instances (boolean; default: `false`).
-* `key_pair` - The name of the [SSH key](./ssh_key) to authorize in compute instances.
+* `key_pair` - The name of the [SSH key](./ssh_key.md) to authorize in compute instances.
 * `labels` - A map of key/value labels.
 * `user_data` - A [cloud-init][cloud-init] configuration to apply when creating compute instances. No need to base64-encode or gzip it as the provider will take care of it.
 
-* `affinity_group_ids` - A list of [anti-affinity group](./anti_affinity_group) IDs (may only be set at creation time).
-* `elastic_ip_ids` - A list of [elastic IP](./elastic_ip) IDs.
-* `network_ids` - A list of [private network](./private_network) IDs.
-* `security_group_ids` - A list of [security group](./security_groups) IDs.
+* `affinity_group_ids` - A list of [anti-affinity group](./anti_affinity_group.md) IDs (may only be set at creation time).
+* `elastic_ip_ids` - A list of [elastic IP](./elastic_ip.md) IDs.
+* `network_ids` - A list of [private network](./private_network.md) IDs.
+* `security_group_ids` - A list of [security group](./security_groups.md) IDs.
 
 * `service_offering` - (Deprecated) The managed compute instances type. Please use the `instance_type` argument instead.
 

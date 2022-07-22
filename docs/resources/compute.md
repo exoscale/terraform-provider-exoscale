@@ -7,7 +7,7 @@ description: |-
 
 # exoscale\_compute
 
-!> **WARNING:** This resource is **DEPRECATED** and will be removed in the next major version. Please use [exoscale_compute_instance](./compute_instance) instead.
+!> **WARNING:** This resource is **DEPRECATED** and will be removed in the next major version. Please use [exoscale_compute_instance](./compute_instance.md) instead.
 
 
 ## Arguments Reference

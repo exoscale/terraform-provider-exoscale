@@ -27,7 +27,8 @@ resource "exoscale_compute_instance" "my_instance" {
 }
 ```
 
-Please refer to the [examples](../../examples/) directory for complete configuration examples.
+Please refer to the [examples](https://github.com/exoscale/terraform-provider-exoscale/tree/master/examples/)
+directory for complete configuration examples.
 
 
 ## Arguments Reference
@@ -39,25 +40,25 @@ Please refer to the [examples](../../examples/) directory for complete configura
 * `zone` - (Required) The name of the [zone][zone] to create the compute instance into.
 * `name` - (Required) The name of the compute instance.
 * `disk_size` - (Required) The compute instance disk size (GiB; at least `10`). **WARNING**: updating this attribute stops/restarts the compute instance.
-* `template_id` - (Required) The ID of the compute instance [template](../data-sources/compute_template) to use when creating the compute instance.
+* `template_id` - (Required) The ID of the compute instance [template](../data-sources/compute_template.md) to use when creating the compute instance.
 * `type` - (Required) The compute instance type (`<family>.<size>`, e.g. `standard.medium`; use the [Exoscale CLI][cli] - `exo compute instance-type list` - for the list of available types). **WARNING**: updating this attribute stops/restarts the compute instance.
 
 * `deploy_target_id` - A deploy target ID.
 * `ipv6` - Enable IPv6 on the compute instance (boolean; default: `false`).
 * `labels` - A map of key/value labels.
-* `ssh_key` - The name of the [SSH key](./ssh_key) to authorize in the compute instance (may only be set at creation time).
+* `ssh_key` - The name of the [SSH key](./ssh_key.md) to authorize in the compute instance (may only be set at creation time).
 * `state` - The state of the compute instance (`running` or `stopped`; default: `running`).
 * `user_data` - A [cloud-init][cloud-init] configuration. No need to base64-encode or gzip it as the provider will take care of it.
 
-* `anti_affinity_group_ids` - A list of [anti-affinity group](./anti_affinity_group) IDs to assign the compute instance (may only be set at creation time).
-* `elastic_ip_ids` - A list of [elastic IP](./elastic_ip) IDs to attach to the compute instance.
-* `security_group_ids` - A list of [security group](./security_group) IDs to attach to the compute instance.
+* `anti_affinity_group_ids` - A list of [anti-affinity group](./anti_affinity_group.md) IDs to assign the compute instance (may only be set at creation time).
+* `elastic_ip_ids` - A list of [elastic IP](./elastic_ip.md) IDs to attach to the compute instance.
+* `security_group_ids` - A list of [security group](./security_group.md) IDs to attach to the compute instance.
 
 * `network_interface` - (Block) Private network interfaces (may be specified multiple times). Structure is documented below.
 
 ### `network_interface` block
 
-* `network_id` - (Required) The [private network](./private_network) ID to attach to the compute instance.
+* `network_id` - (Required) The [private network](./private_network.md) ID to attach to the compute instance.
 
 * `ip_address` - The IPv4 address to request as static DHCP lease if the network interface is attached to a *managed* private network.
 

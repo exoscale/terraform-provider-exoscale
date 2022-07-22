@@ -27,7 +27,8 @@ resource "exoscale_sks_nodepool" "my_sks_nodepool" {
 }
 ```
 
-Please refer to the [examples](../../examples/) directory for complete configuration examples.
+Please refer to the [examples](https://github.com/exoscale/terraform-provider-exoscale/tree/master/examples/)
+directory for complete configuration examples.
 
 
 ## Arguments Reference
@@ -36,7 +37,7 @@ Please refer to the [examples](../../examples/) directory for complete configura
 [cli]: https://github.com/exoscale/cli/
 [taints]: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
 
-* `cluster_id` - (Required) The parent [SKS cluster](./sks_cluster) ID.
+* `cluster_id` - (Required) The parent [SKS cluster](./sks_cluster.md) ID.
 * `zone` - (Required) The name of the [zone][zone] of the parent SKS cluster.
 * `name` - (Required) The name of the SKS node pool.
 * `instance_type` (Required) - The managed compute instances type (`<family>.<size>`, e.g. `standard.medium`; use the [Exoscale CLI][cli] - `exo compute instance-type list` - for the list of available types).
@@ -48,9 +49,9 @@ Please refer to the [examples](../../examples/) directory for complete configura
 * `labels` - A map of key/value labels.
 * `taints` - A map of key/value Kubernetes [taints][taints] (`<value>:<effect>`).
 
-* `anti_affinity_group_ids` - A list of [anti-affinity group](./anti_affinity_group) IDs to be attached to the compute instances managed by the SKS node pool.
-* `private_network_ids` - A list of [private network](./private_network) IDs to be attached to the compute instances managed by the SKS node pool.
-* `security_group_ids` - A list of [security group](./security_groups) IDs to be attached to the compute instances managed by the SKS node pool.
+* `anti_affinity_group_ids` - A list of [anti-affinity group](./anti_affinity_group.md) IDs to be attached to the compute instances managed by the SKS node pool.
+* `private_network_ids` - A list of [private network](./private_network.md) IDs to be attached to the compute instances managed by the SKS node pool.
+* `security_group_ids` - A list of [security group](./security_groups.md) IDs to be attached to the compute instances managed by the SKS node pool.
 
 
 ## Attributes Reference

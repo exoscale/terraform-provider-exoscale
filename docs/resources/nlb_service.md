@@ -40,17 +40,18 @@ resource "exoscale_nlb_service" "my_nlb_service" {
 }
 ```
 
-Please refer to the [examples](../../examples/) directory for complete configuration examples.
+Please refer to the [examples](https://github.com/exoscale/terraform-provider-exoscale/tree/master/examples/)
+directory for complete configuration examples.
 
 
 ## Arguments Reference
 
 [zone]: https://www.exoscale.com/datacenters/
 
-* `nlb_id` - (Required) The parent [NLB](./nlb) ID.
+* `nlb_id` - (Required) The parent [NLB](./nlb.md) ID.
 * `zone` - (Required) The name of the [zone][zone] used by the NLB.
 * `name` - (Required) The name of the NLB service.
-* `instance_pool_id` - (Required) The ID of the [instance pool](./instance_pool) to forward traffic to.
+* `instance_pool_id` - (Required) The ID of the [instance pool](./instance_pool.md) to forward traffic to.
 * `port` - (Required) The port of the NLB service.
 * `target_port` - (Required) The port to forward traffic to (on target instance pool members).
 
