@@ -32,7 +32,7 @@ resource "exoscale_security_group_rule" "my_security_group_rule" {
 [cidr]: https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing#CIDR_notation
 [icmp]: https://en.wikipedia.org/wiki/Internet_Control_Message_Protocol#Control_messages
 
-* `security_group_id` - (Required) The parent [security group](./security_group.md) ID.
+* `security_group_id` - (Required) The parent [exoscale_security_group](./security_group.md) ID.
 * `type` - (Required) The traffic direction to match (`INGRESS` or `EGRESS`).
 * `protocol` - (Required) The network protocol to match (`TCP`, `UDP`, `ICMP`, `ICMPv6`, `AH`, `ESP`, `GRE`, `IPIP` or `ALL`)
 
@@ -50,7 +50,7 @@ resource "exoscale_security_group_rule" "my_security_group_rule" {
 
 In addition to the arguments listed above, the following attributes are exported:
 
-* `id` - The ID of the security group rule.
+* `id` - The security group rule ID.
 
 
 ## Import

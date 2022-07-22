@@ -7,18 +7,18 @@ description: |-
 
 # exoscale\_secondary\_ipaddress
 
-!> **WARNING:** This resource is **DEPRECATED** and will be removed in the next major version. Please use [exoscale_compute_instance][./compute_instance] `elastic_ip_ids` list instead.
+!> **WARNING:** This resource is **DEPRECATED** and will be removed in the next major version. Please use [exoscale_compute_instance](./compute_instance.md) `elastic_ip_ids` list instead.
 
 
 ## Arguments Reference
 
-* `compute_id` - (Required) The ID of the compute instance.
-* `ip_address` - (Required) The EIP address to assign.
+* `compute_id` - (Required) The compute instance ID.
+* `ip_address` - (Required) The Elastic IP address.
 
 
 ## Attributes Reference
 
 In addition to the arguments listed above, the following attributes are exported:
 
-* `network_id` - The ID of the network the compute instance NIC is attached to.
-* `nic_id` - The ID of the NIC.
+* `network_id` - The network (ID) the compute instance NIC is attached to.
+* `nic_id` - The network interface (NIC) ID.

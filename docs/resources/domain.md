@@ -17,7 +17,7 @@ resource "exoscale_domain" "my_domain" {
 }
 ```
 
-Next step is to attach [domain records](./domain_record.md) to the DNS domain.
+Next step is to attach [exoscale_domain_record](./domain_record.md)(s) to the domain.
 
 Please refer to the [examples](https://github.com/exoscale/terraform-provider-exoscale/tree/master/examples/)
 directory for complete configuration examples.
@@ -25,16 +25,16 @@ directory for complete configuration examples.
 
 ## Arguments Reference
 
-* `name` - (Required) The name of the DNS domain.
+* `name` - (Required) The DNS domain name.
 
 
 ## Attributes Reference
 
 In addition to the arguments listed above, the following attributes are exported:
 
-* `auto_renew` - Boolean indicating that the DNS domain has automatic renewal enabled.
-* `expires_on` - The date of expiration of the DNS domain, if known.
-* `state` - The state of the DNS domain.
+* `auto_renew` - Whether the DNS domain has automatic renewal enabled (boolean).
+* `expires_on` - The domain expiration date, if known.
+* `state` - The domain state.
 * `token` - A security token that can be used as an alternative way to manage DNS domains via the Exoscale API.
 
 

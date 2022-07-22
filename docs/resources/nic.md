@@ -7,7 +7,7 @@ description: |-
 
 # exoscale\_nic
 
-!> **WARNING:** This resource is **DEPRECATED** and will be removed in the next major version. Please use [exoscale_compute_instance][./compute_instance] `network_interface` block instead.
+!> **WARNING:** This resource is **DEPRECATED** and will be removed in the next major version. Please use [exoscale_compute_instance](./compute_instance.md) `network_interface` block instead.
 
 
 ## Arguments Reference
@@ -22,5 +22,5 @@ description: |-
 
 In addition to the arguments listed above, the following attributes are exported:
 
-* `id` - The ID of the compute instance NIC.
-* `mac_address` - The physical address (MAC) of the compute instance NIC.
+* `id` - The network interface (NIC) ID.
+* `mac_address` - The NIC MAC address.

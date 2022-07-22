@@ -24,16 +24,16 @@ directory for complete configuration examples.
 
 ## Arguments Reference
 
-* `name` - (Required) The name of the anti-affinity group.
+* `name` - (Required) The anti-affinity group name.
 
-* `description` - A free-form text describing the anti-affinity group.
+* `description` - A free-form text describing the group.
 
 
 ## Attributes Reference
 
 In addition to the arguments listed above, the following attributes are exported:
 
-* `id` - The ID of the anti-affinity group.
+* `id` - The anti-affinity group ID.
 
 
 ## Import

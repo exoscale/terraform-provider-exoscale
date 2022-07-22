@@ -14,14 +14,14 @@ description: |-
 
 ## Arguments Reference
 
-* `name` - (Required) The name of the SSH keypair.
+* `name` - (Required) The SSH keypair name.
 
-* `public_key` - A SSH public key that will be authorized in compute instances. If not provided, an SSH keypair is generated and saved locally (see the `private_key` attribute).
+* `public_key` - A SSH *public* key that will be authorized in compute instances. If not provided, an SSH keypair (including the *private* key) is generated and saved locally (see the `private_key` attribute).
 
 
 ## Attributes Reference
 
 In addition to the arguments listed above, the following attributes are exported:
 
-* `fingerprint` - The unique identifier of the SSH keypair.
-* `private_key` - The SSH private key generated if no public key was provided.
+* `fingerprint` - The SSH keypair unique identifier.
+* `private_key` - The SSH *private* key generated if no public key was provided.

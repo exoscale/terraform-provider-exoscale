@@ -12,15 +12,15 @@ description: |-
 
 ## Arguments Reference
 
-* `name` - (Required) The name of the anti-affinity group.
+* `name` - (Required) The anti-affinity group name.
 
-* `description` - A free-form text describing the anti-affinity group.
-* `type` - The type of the anti-affinity group (`host anti-affinity` is the only supported value).
+* `description` - A free-form text describing the group.
+* `type` - The type of the group (`host anti-affinity` is the only supported value).
 
 
 ## Attributes Reference
 
 In addition to the arguments listed above, the following attributes are exported:
 
-* `id` - The ID of the anti-affinity group.
-* `virtual_machine_ids` - The IDs of the compute instance members of the anti-affinity group.
+* `id` - The anti-affinity group ID.
+* `virtual_machine_ids` - The compute instances (IDs) members of the group.

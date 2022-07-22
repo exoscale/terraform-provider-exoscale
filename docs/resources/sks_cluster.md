@@ -22,7 +22,7 @@ output "my_sks_cluster_endpoint" {
 }
 ```
 
-Next step is to attach [exoscale_sks_nodepool](./sks_nodepool.md)(s) to the SKS cluster.
+Next step is to attach [exoscale_sks_nodepool](./sks_nodepool.md)(s) to the cluster.
 
 Please refer to the [examples](https://github.com/exoscale/terraform-provider-exoscale/tree/master/examples/)
 directory for complete configuration examples.
@@ -35,15 +35,15 @@ directory for complete configuration examples.
 [cni]: https://www.cni.dev/
 [ms]: https://github.com/kubernetes-sigs/metrics-server/
 
-* `zone` - (Required) The name of the [zone][zone] to create the SKS cluster into.
-* `name` - (Required) The name of the SKS cluster.
+* `zone` - (Required) The Exoscale [Zone][zone] name.
+* `name` - (Required) The SKS cluster name.
 
-* `description` - A free-form text describing the SKS cluster.
-* `auto_upgrade` - Enable automatic upgrading of the SKS cluster control plane Kubernetes version (boolean; default: `false`).
-* `exoscale_ccm` - Deploy the Exoscale [Cloud Controller Manager][ccm] in the SKS cluster control plane (boolean; default: `true`; may only be set at creation time).
-* `metrics_server` - Deploy the [Kubernetes Metrics Server][ms] in the SKS cluster control plane (boolean; default: `true`; may only be set at creation time).
-* `service_level` - The service level of the SKS cluster control plane (`pro` or `starter`; default: `pro`; may only be set at creation time).
-* `version` - The Kubernetes version of the SKS cluster control plane (default: latest version available from the API; see `exo compute sks versions` for reference; may only be set at creation time).
+* `description` - A free-form text describing the cluster.
+* `auto_upgrade` - Enable automatic upgrading of the control plane version (boolean; default: `false`).
+* `exoscale_ccm` - Deploy the Exoscale [Cloud Controller Manager][ccm] in the control plane (boolean; default: `true`; may only be set at creation time).
+* `metrics_server` - Deploy the [Kubernetes Metrics Server][ms] in the control plane (boolean; default: `true`; may only be set at creation time).
+* `service_level` - The service level of the control plane (`pro` or `starter`; default: `pro`; may only be set at creation time).
+* `version` - The version of the control plane (default: latest version available from the API; see `exo compute sks versions` for reference; may only be set at creation time).
 * `labels` - A map of key/value labels.
 
 * `oidc` - (Block) An OpenID Connect configuration to provide to the Kubernetes API server (may only be set at creation time). Structure is documented below.
@@ -64,11 +64,14 @@ directory for complete configuration examples.
 
 In addition to the arguments listed above, the following attributes are exported:
 
-* `id` - The ID of the SKS cluster.
-* `created_at` - The creation date of the SKS cluster.
-* `endpoint` - The Kubernetes public API endpoint of the SKS cluster.
-* `nodepools` - The list of SKS node pools (IDs) attached to the SKS cluster.
-* `state` - The current state of the SKS cluster.
+* `id` - The SKS cluster ID.
+* `aggregation_ca` - The CA certificate (in PEM format) for TLS communications between the control plane and the aggregation layer (e.g. `metrics-server`).
+* `control_plane_ca` - The CA certificate (in PEM format) for TLS communications between control plane components.
+* `created_at` - The cluster creation date.
+* `endpoint` - The cluster API endpoint.
+* `kubelet_ca` - The CA certificate (in PEM format) for TLS communications between kubelets and the control plane.
+* `nodepools` - The list of [exoscale_sks_nodepool](./sks_nodepool.md) (IDs) attached to the cluster.
+* `state` - The cluster state.
 
 
 ## Import
@@ -81,4 +84,4 @@ $ terraform import \
   f81d4fae-7dec-11d0-a765-00a0c91e6bf6@ch-gva-2
 ```
 
-~> **NOTE:** Importing an SKS cluster resource doesn't import related `exoscale_sks_nodepool` resources.
+~> **NOTE:** Importing an `exoscale_sks_cluster` resource does _not_ import related `exoscale_sks_nodepool` resources.

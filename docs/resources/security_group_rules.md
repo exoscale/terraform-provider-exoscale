@@ -12,8 +12,8 @@ description: |-
 
 ## Arguments Reference
 
-* `security_group` - (Required) The security group name the rules apply to (conflicts with `security_group_id`).
-* `security_group_id` - (Required) The security group ID the rules apply to (conficts with `security_group)`.
+* `security_group` - (Required) The security group (name) the rules apply to (conflicts with `security_group_id`).
+* `security_group_id` - (Required) The security group (ID) the rules apply to (conficts with `security_group)`.
 
 * `ingress`/`egress` - (Block) A security group rule definition (can be specified multiple times).
 
@@ -21,7 +21,7 @@ description: |-
 
 * `protocol` - (Required) The network protocol to match (`TCP`, `UDP`, `ICMP`, `ICMPv6`, `AH`, `ESP`, `GRE`, `IPIP` or `ALL`).
 
-* `description` - A free-form text describing the security group rules.
+* `description` - A free-form text describing the block.
 * `icmp_type`/`icmp_code` - An ICMP/ICMPv6 type/code to match.
 
 * `cidr_list` - A list of (`INGRESS`) source / (`EGRESS`) destination IP subnet (in CIDR notation) to match.

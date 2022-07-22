@@ -33,26 +33,32 @@ resource "exoscale_private_network" "my_managed_private_network" {
 }
 ```
 
-Please refer to the [examples](https://github.com/exoscale/terraform-provider-exoscale/tree/master/examples/) directory for complete configuration examples.
+Please refer to the [examples](https://github.com/exoscale/terraform-provider-exoscale/tree/master/examples/)
+directory for complete configuration examples.
 
 
 ## Arguments Reference
 
 [zone]: https://www.exoscale.com/datacenters/
 
-* `zone` - (Required) The name of the [zone][zone] to create the private network into.
-* `name` - (Required) The name of the private network.
+* `zone` - (Required) The Exoscale [Zone][zone] name.
+* `name` - (Required) The private network name.
 
-* `description` - A free-form text describing the private network.
-* `netmask` - The network mask defining the IPv4 network allowed for static leases (required for *managed* private networks).
-* `start_ip`/`end_ip` - The first/last IPv4 addresses used by the DHCP service for dynamic leases (required for *managed* private networks).
+* `description` - A free-form text describing the network.
+
+### For *Managed* Private Networks
+
+In addition to the arguments listed above:
+
+* `netmask` - (Required) The network mask defining the IPv4 network allowed for static leases.
+* `start_ip`/`end_ip` - (Required) The first/last IPv4 addresses used by the DHCP service for dynamic leases.
 
 
 ## Attributes Reference
 
 In addition to the arguments listed above, the following attributes are exported:
 
-* `id` - The ID of the private network.
+* `id` - The private network ID.
 
 
 ## Import

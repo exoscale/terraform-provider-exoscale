@@ -54,7 +54,7 @@ directory for complete configuration examples.
 [zone]: https://www.exoscale.com/datacenters/
 [cli]: https://github.com/exoscale/cli/
 
-* `zone` - (Required) The name of the [zone][zone] to create the database service into.
+* `zone` - (Required) The Exoscale [Zone][zone] name.
 * `name` - (Required) The name of the database service.
 * `type` - (Required) The type of the database service (`kafka`, `mysql`, `opensearch`, `pg`, `redis`).
 * `plan` - (Required) The plan of the database service (use the [Exoscale CLI][cli] - `exo dbaas type show <TYPE>` - for reference).

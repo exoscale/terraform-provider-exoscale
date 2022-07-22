@@ -36,8 +36,8 @@ directory for complete configuration examples.
 
 [zone]: https://www.exoscale.com/datacenters/
 
-* `cluster_id` - (Required) The parent [SKS cluster](./sks_cluster.md) ID.
-* `zone` - (Required) The name of the [zone][zone] of the parent SKS cluster.
+* `cluster_id` - (Required) The parent [exoscale_sks_cluster](./sks_cluster.md) ID.
+* `zone` - (Required) The Exoscale [Zone][zone] name.
 * `groups` - (Required) Group names in the generated Kubeconfig. The certificate present in the Kubeconfig will have these roles set in the Organization field.
 * `user` - (Required) User name in the generated Kubeconfig. The certificate present in the Kubeconfig will also have this name set for the CN field.
 
@@ -48,7 +48,7 @@ directory for complete configuration examples.
 
 In addition to the arguments listed above, the following attributes are exported:
 
-* `kubeconfig` - The generated Kubeconfig for use to interact with the SKS cluster.
+* `kubeconfig` - The generated Kubeconfig (YAML content).
 
 
 ## Automatic Renewal

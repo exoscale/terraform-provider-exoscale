@@ -17,7 +17,7 @@ resource "exoscale_security_group" "my_security_group" {
 }
 ```
 
-Next step is to attach [security group rules](./security_group_rule.md) to the security group.
+Next step is to attach [exoscale_security_group_rule](./security_group_rule.md)(s) to the group.
 
 Please refer to the [examples](https://github.com/exoscale/terraform-provider-exoscale/tree/master/examples/)
 directory for complete configuration examples.
@@ -27,18 +27,18 @@ directory for complete configuration examples.
 
 [cidr]: https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing#CIDR_notatio
 
-* `name` - (Required) The name of the security group.
+* `name` - (Required) The security group name.
 
-* `description` - A free-form text describing the security group.
+* `description` - A free-form text describing the group.
 
-* `external_sources` - A list of external network sources in [CIDR][cidr] notation.
+* `external_sources` - A list of external network sources, in [CIDR][cidr] notation.
 
 
 ## Attributes Reference
 
 In addition to the arguments listed above, the following attributes are exported:
 
-* `id` - The ID of the security group.
+* `id` - The security group ID.
 
 
 ## Import

@@ -48,12 +48,12 @@ directory for complete configuration examples.
 
 [zone]: https://www.exoscale.com/datacenters/
 
-* `nlb_id` - (Required) The parent [NLB](./nlb.md) ID.
-* `zone` - (Required) The name of the [zone][zone] used by the NLB.
-* `name` - (Required) The name of the NLB service.
-* `instance_pool_id` - (Required) The ID of the [instance pool](./instance_pool.md) to forward traffic to.
-* `port` - (Required) The port of the NLB service.
-* `target_port` - (Required) The port to forward traffic to (on target instance pool members).
+* `nlb_id` - (Required) The parent [exoscale_nlb](./nlb.md) ID.
+* `zone` - (Required) The Exoscale [Zone][zone] name.
+* `name` - (Required) The NLB service name.
+* `instance_pool_id` - (Required) The [exoscale_instance_pool](./instance_pool.md) (ID) to forward traffic to.
+* `port` - (Required) The NLB service (TCP/UPP) port.
+* `target_port` - (Required) The (TCP/UDP) port to forward traffic to (on target instance pool members).
 
 * `description` - A free-form text describing the NLB service.
 * `protocol` - The protocol (`tcp`|`udp`; default: `tcp`).
@@ -68,16 +68,16 @@ directory for complete configuration examples.
 * `interval` - The healthcheck interval in seconds (default: `10`).
 * `mode` - The healthcheck mode (`tcp`|`http`|`https`; default: `tcp`).
 * `retries` - The healthcheck retries (default: `1`).
-* `timeout` - The healthcheck timeout in seconds (default: `5`).
-* `tls_sni` - The healthcheck TLS SNI server name, only if `mode` is `https`.
-* `uri` - The healthcheck URI, must be set only if `mode` is `http(s)`.
+* `timeout` - The healthcheck timeout (seconds; default: `5`).
+* `tls_sni` - The healthcheck TLS SNI server name (only if `mode` is `https`).
+* `uri` - The healthcheck URI (must be set only if `mode` is `http(s)`).
 
 
 ## Attributes Reference
 
 In addition to the arguments listed above, the following attributes are exported:
 
-* `id` - The ID of the NLB service.
+* `id` - The NLB service ID.
 
 
 ## Import

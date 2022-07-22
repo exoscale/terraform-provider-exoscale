@@ -46,36 +46,36 @@ directory for complete configuration examples.
 
 [zone]: https://www.exoscale.com/datacenters/
 
-* `zone` - (Required) The name of the [zone][zone] to create the EIP into.
+* `zone` - (Required) The Exoscale [Zone][zone] name.
 
-* `description` - A free-form text describing the EIP.
+* `description` - A free-form text describing the Elastic IP (EIP).
 
-* `healthcheck` - (Block) A health checking configuration for managed EIPs. Structure is documented below.
+* `healthcheck` - (Block) Healthcheck configuration for *managed* EIPs. Structure is documented below.
 
 ### `healthcheck` block
 
-* `mode` - (Required) The health checking mode (`tcp`, `http` or `https`; may only be set at creation time).
-* `port` - (Required) The health checking port (must be between `1` and `65535`).
+* `mode` - (Required) The healthcheck mode (`tcp`, `http` or `https`; may only be set at creation time).
+* `port` - (Required) The healthcheck port (must be between `1` and `65535`).
 
-* `interval` - The health checking interval (seconds; must be between `5` and `300`; default: `10`).
-* `strikes_fail` - The number of failed attempts before considering a managed EIP target unhealthy (must be between `1` and `20`; default: `2`).
-* `strikes_ok` - The number of successful attempts before considering a managed EIP target healthy (must be between `1` and `20`; default: `3`).
+* `interval` - The healthcheck interval (seconds; must be between `5` and `300`; default: `10`).
+* `strikes_fail` - The number of failed healthcheck attempts before considering a managed EIP target unhealthy (must be between `1` and `20`; default: `2`).
+* `strikes_ok` - The number of successful healthcheck attempts before considering a managed EIP target healthy (must be between `1` and `20`; default: `3`).
 * `timeout` - The time before considering a healthcheck probing failed (seconds; must be between `2` and `60`; default: `3`).
-* `tls_skip_verify` - Disable TLS certificate verification for health checking in `https` mode (boolean; default: `false`).
-* `tls_sni` - The health checking server name to present with SNI in `https` mode.
-* `uri` - The health checking URI (required in `http(s)` modes).
+* `tls_skip_verify` - Disable TLS certificate verification for healthcheck in `https` mode (boolean; default: `false`).
+* `tls_sni` - The healthcheck server name to present with SNI in `https` mode.
+* `uri` - The healthcheck target URI (required in `http(s)` modes).
 
 
 ## Attributes Reference
 
 In addition to the arguments listed above, the following attributes are exported:
 
-* `ip_address` - The EIP IPv4 address.
+* `ip_address` - The Elastic IP (EIP) IPv4 address.
 
 
 ## Import
 
-An existing EIP may be imported by `<ID>@<zone>`:
+An existing Elastic IP (EIP) may be imported by `<ID>@<zone>`:
 
 ```console
 $ terraform import \

@@ -35,13 +35,13 @@ directory for complete configuration examples.
 [cli]: https://github.com/exoscale/cli/
 [iam-resource]: https://community.exoscale.com/documentation/iam/quick-start/#restricting-api-access-keys-to-resources
 
-* `name` - (Required) The name of the access key.
+* `name` - (Required) The IAM access key name.
 
-* `operations` - A list of API operations to restrict the access key to.
-* `resources` - A list of API [resources][iam-resource] to restrict the access key to (`<domain>/<type>:<name>`).
-* `tags` - A list of tags to restrict the access key to.
+* `operations` - A list of API operations to restrict the key to.
+* `resources` - A list of API [resources][iam-resource] to restrict the key to (`<domain>/<type>:<name>`).
+* `tags` - A list of tags to restrict the key to.
 
-~> **NOTE:** You can retrieve the list of available operations and tags using the [Exoscale CLI][cli]: `exo iam access-key list-operations`.
+-> **NOTE:** You can retrieve the list of available operations and tags using the [Exoscale CLI][cli]: `exo iam access-key list-operations`.
 
 
 ## Attributes Reference
@@ -49,4 +49,4 @@ directory for complete configuration examples.
 In addition to the arguments listed above, the following attributes are exported:
 
 * `key` - The IAM access key (identifier).
-* `secret` - (Sensitive) The IAM access key secret.
+* `secret` - (Sensitive) The key secret.

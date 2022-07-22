@@ -18,7 +18,7 @@ resource "exoscale_ssh_key" "my_ssh_key" {
 }
 ```
 
-Should you want to _create_ an SSH keypair (including private key) with Terraform, please use the
+Should you want to _create_ an SSH keypair (including *private* key) with Terraform, please use the
 [tls_private_key](https://registry.terraform.io/providers/hashicorp/tls/latest/docs/resources/private_key)
 resource:
 
@@ -31,20 +31,21 @@ resource "exoscale_ssh_key" "my_ssh_key" {
 }
 ```
 
-Please refer to the [examples](https://github.com/exoscale/terraform-provider-exoscale/tree/master/examples/) directory for complete configuration examples.
+Please refer to the [examples](https://github.com/exoscale/terraform-provider-exoscale/tree/master/examples/)
+directory for complete configuration examples.
 
 
 ## Arguments Reference
 
-* `name` - (Required) The name of the SSH key.
-* `public_key` - (Required) A SSH public key that will be authorized in compute instances.
+* `name` - (Required) The SSH key name.
+* `public_key` - (Required) The SSH *public* key that will be authorized in compute instances.
 
 
 ## Attributes Reference
 
 In addition to the arguments listed above, the following attributes are exported:
 
-* `fingerprint` - The unique identifier of the SSH key.
+* `fingerprint` - The SSH key unique identifier.
 
 
 ## Import

@@ -1,7 +1,7 @@
 ---
 page_title: "Exoscale: exoscale_domain_record"
 description: |-
-  manage Exoscale DNS Domain Records.
+  Manage Exoscale DNS Domain Records.
 ---
 
 # exoscale\_domain\_record
@@ -37,20 +37,20 @@ directory for complete configuration examples.
 
 ## Arguments Reference
 
-* `domain` - (Required) The parent [domain](./domain.md) to create the record into.
-* `name` - (Required) The name of the domain record; leave blank (`""`) to create a root record (similar to using `@` in a DNS zone file).
-* `content` - (Required) The value of the domain record.
-* `record_type` - (Required) The type of the domain record (`A`, `AAAA`, `ALIAS`, `CAA`, `CNAME`, `HINFO`, `MX`, `NAPTR`, `NS`, `POOL`, `SPF`, `SRV`, `SSHFP`, `TXT`, `URL`).
+* `domain` - (Required) The parent [exoscale_domain](./domain.md) to attach the record to.
+* `name` - (Required) The record name, Leave blank (`""`) to create a root record (similar to using `@` in a DNS zone file).
+* `content` - (Required) The record value.
+* `record_type` - (Required) The record type (`A`, `AAAA`, `ALIAS`, `CAA`, `CNAME`, `HINFO`, `MX`, `NAPTR`, `NS`, `POOL`, `SPF`, `SRV`, `SSHFP`, `TXT`, `URL`).
 
-* `prio` - The priority of the DNS domain record (for types that support it; minimum `0`).
-* `ttl` - The TTL (Time-to-Live) of the domain record (seconds; minimum `0`).
+* `prio` - The record priority (for types that support it; minimum `0`).
+* `ttl` - The record TTL (seconds; minimum `0`).
 
 
 ## Attributes Reference
 
 In addition to the arguments listed above, the following attributes are exported:
 
-* `hostname` - The DNS domain record's *Fully Qualified Domain Name* (FQDN). Useful for aliasing `A`/`AAAA` records with `CNAME`.
+* `hostname` - The record *Fully Qualified Domain Name* (FQDN). Useful for aliasing `A`/`AAAA` records with `CNAME`.
 
 
 ## Import

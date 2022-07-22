@@ -37,33 +37,33 @@ directory for complete configuration examples.
 [cli]: https://github.com/exoscale/cli/
 [taints]: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
 
-* `cluster_id` - (Required) The parent [SKS cluster](./sks_cluster.md) ID.
-* `zone` - (Required) The name of the [zone][zone] of the parent SKS cluster.
-* `name` - (Required) The name of the SKS node pool.
+* `cluster_id` - (Required) The parent [exoscale_sks_cluster](./sks_cluster.md) ID.
+* `zone` - (Required) The Exoscale [Zone][zone] name.
+* `name` - (Required) The SKS node pool name.
 * `instance_type` (Required) - The managed compute instances type (`<family>.<size>`, e.g. `standard.medium`; use the [Exoscale CLI][cli] - `exo compute instance-type list` - for the list of available types).
 
-* `description` - A free-form text describing the SKS node pool.
-* `deploy_target_id` - A deploy target ID to deploy managed compute instances to.
-* `instance_prefix` - The string used to prefix the managed compute instances name (default `pool`).
-* `disk_size` - The disk size of the compute instances managed by the SKS node pool (GiB; default: `50`).
+* `description` - A free-form text describing the pool.
+* `deploy_target_id` - A deploy target ID.
+* `instance_prefix` - The string used to prefix the managed instances name (default `pool`).
+* `disk_size` - The managed instances disk size (GiB; default: `50`).
 * `labels` - A map of key/value labels.
 * `taints` - A map of key/value Kubernetes [taints][taints] (`<value>:<effect>`).
 
-* `anti_affinity_group_ids` - A list of [anti-affinity group](./anti_affinity_group.md) IDs to be attached to the compute instances managed by the SKS node pool.
-* `private_network_ids` - A list of [private network](./private_network.md) IDs to be attached to the compute instances managed by the SKS node pool.
-* `security_group_ids` - A list of [security group](./security_groups.md) IDs to be attached to the compute instances managed by the SKS node pool.
+* `anti_affinity_group_ids` - A list of [exoscale_anti_affinity_group](./anti_affinity_group.md) (IDs) to be attached to the managed instances.
+* `private_network_ids` - A list of [exoscale_private_network](./private_network.md) (IDs) to be attached to the managed instances.
+* `security_group_ids` - A list of [exoscale_security_group](./security_groups.md) (IDs) to be attached to the managed instances.
 
 
 ## Attributes Reference
 
 In addition to the arguments listed above, the following attributes are exported:
 
-* `id` - The ID of the SKS node pool.
-* `created_at` - The creation date of the SKS node pool.
-* `instance_pool_id` - The ID of the instance pool managed by the SKS node pool.
-* `state` - The current state of the SKS node pool.
-* `template_id` - The ID of the compute instance template used by the SKS node pool members.
-* `version` - The Kubernetes version of the SKS node pool members.
+* `id` - The SKS node pool ID.
+* `created_at` - The pool creation date.
+* `instance_pool_id` - The underlying [exoscale_instance_pool](./instance_pool.md) ID.
+* `state` - The current pool state.
+* `template_id` - The managed instances template ID.
+* `version` - The managed instances version.
 
 
 ## Import
