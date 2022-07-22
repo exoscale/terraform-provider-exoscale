@@ -12,23 +12,23 @@ description: |-
 ## Arguments Reference
 
 * `id` - The compute instance ID to match.
-* `hostname` - The compute instance hostname to match.
-* `tags` - The compute instance tags to match (map of key/value).
+* `hostname` - The instance hostname to match.
+* `tags` - The instance tags to match (map of key/value).
 
 
 ## Attributes Reference
 
 In addition to the arguments listed above, the following attributes are exported:
 
-* `zone` - Name of the zone.
-* `cpu` - Number of cpu the compute instance is running with.
-* `created` - Creation date of the compute instance.
-* `disk_size` - Size of the compute instance disk.
-* `ip_address` - Public IPv4 address of the compute instance.
-* `ip6_address` - Public IPv6 address of the compute instance (if IPv6 is enabled).
-* `memory` - Memory allocated for the compute instance.
-* `size` - Current size of the compute instance.
-* `state` - State of the compute instance.
-* `template` - Name of the template.
+* `zone` - Exoscale Zone name.
+* `cpu` - The compute instance number of CPUs.
+* `created` - The instance creation date.
+* `disk_size` - The instance disk size (GiB).
+* `ip_address` - The instance (main network interface) IPv4 address.
+* `ip6_address` - The instance (main network interface) IPv6 address (if enabled).
+* `memory` - The instance allocated memory.
+* `size` - The instance size.
+* `state` - The current instance state.
+* `template` - The instance template.
 
-* `private_network_ip_addresses` - List of compute private IP addresses (in *managed* private networks only).
+* `private_network_ip_addresses` - List of compute private IPv4 addresses (in *managed* private networks only).

@@ -41,7 +41,7 @@ In addition to the arguments listed above, the following attributes are exported
 
 * `id` - The instance ID.
 * `ip_address` - The instance (main network interface) IPv4 address.
-* `ip6_address` - The instance (main network interface) IPv6 address.
+* `ip6_address` - The instance (main network interface) IPv6 address (if enabled).
 * `password` - The instance initial password and/or encrypted password.
 * `username` - The user to use to connect to the instance. If you've referenced a *custom template* in the resource, use the `exoscale_compute_template` data source `username` attribute instead.
 

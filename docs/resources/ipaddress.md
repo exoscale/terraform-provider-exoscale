@@ -14,7 +14,7 @@ description: |-
 
 * `zone` - (Required) The Exoscale Zone name
 
-* `description` - A free-form text describing the Elatic IP (EIP).
+* `description` - A free-form text describing the Elastic IP (EIP).
 * `healthcheck_interval` - The healthcheck probing interval (seconds; must be between `5` and `300`).
 * `healthcheck_mode` - The healthcheck probing mode (must be `tcp`, `http` or `https`).
 * `healthcheck_port` - The healthcheck service port to probe (must be between `1` and `65535`).

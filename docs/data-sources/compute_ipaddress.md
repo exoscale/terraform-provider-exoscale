@@ -12,9 +12,9 @@ description: |-
 
 ## Arguments Reference
 
-* `zone` - (Required) The name of the zone of the EIP.
+* `zone` - (Required) The Exoscale Zone name.
 
-* `id` - The EIP ID to match.
+* `id` - The Elastic IP (EIP) ID to match.
 * `description` - The EIP description to match.
 * `ip_address` - The EIP IPv4 address to match.
 * `tags` - The EIP tags to match.

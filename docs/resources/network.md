@@ -18,7 +18,7 @@ description: |-
 * `display_text` - A free-form text describing the network.
 * `netmask` - The network mask defining the IP network allowed for static leases (see `exoscale_nic` resource). Required for *managed* private networks.
 * `start_ip`/`end_ip` - The first/last IP addresses used by the DHCP service for dynamic leases. Required for *managed* private networks.
-* `tags` - A dictionary of tags (key/value). To remove all tags, set `tags = {}`.
+* `tags` - A map of tags (key/value). To remove all tags, set `tags = {}`.
 
 
 ## Attributes Reference

@@ -71,7 +71,7 @@ In addition to the arguments listed above, the following attributes are exported
 
 * `id` - The compute instance ID.
 * `created_at` - The instance creation date.
-* `ipv6_address` - The instance (main network interface) IPv6 address.
+* `ipv6_address` - The instance (main network interface) IPv6 address (if enabled).
 * `public_ip_address` - The instance (main network interface) IPv4 address.
 
 * `private_network_ids` - (Deprecated) A list of private networks (IDs) attached to the instance. Please use the `network_interface.*.network_id` argument instead.

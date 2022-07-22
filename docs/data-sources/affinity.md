@@ -12,8 +12,8 @@ description: |-
 
 ## Arguments Reference
 
-* `id` - The ID of the anti-affinity group to match (conflicts with `name`)
-* `name` - The name of the anti-affinity group to match (conflicts with `id`)
+* `id` - The anti-affinity group ID to match (conflicts with `name`)
+* `name` - The group name to match (conflicts with `id`)
 
 
 ## Attributes Reference

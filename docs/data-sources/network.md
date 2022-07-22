@@ -12,16 +12,19 @@ description: |-
 
 ## Arguments Reference
 
-* `zone` - (Required) The zone of the private network
+* `zone` - (Required) The Exoscale Zone name.
 
-* `id` - The ID of the private network to match (conflicts with `name`)
-* `name` - The name of the private network to match (conflicts with `id`)
+* `id` - The private network ID to match (conflicts with `name`).
+* `name` - The network name to match (conflicts with `id`).
 
 
 ## Attributes Reference
 
 In addition to the arguments listed above, the following attributes are exported:
 
-* `description` - The description of the private network
-* `netmask` - The network mask defining the IPv4 network allowed for static leases (for *managed* private networks)
-* `start_ip`/`end_ip` - The first/last IPv4 addresses used by the DHCP service for dynamic leases (for *managed* private networks)
+* `description` - The private network description.
+
+### For *Managed* Private Networks
+
+* `netmask` - The network mask defining the IPv4 network allowed for static leases.
+* `start_ip`/`end_ip` - The first/last IPv4 addresses used by the DHCP service for dynamic leases.

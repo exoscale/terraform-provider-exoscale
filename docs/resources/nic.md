@@ -15,7 +15,7 @@ description: |-
 * `compute_id` - (Required) The compute instance ID.
 * `network_id` - (Required) The private network ID.
 
-* `ip_address` - The IP address to request as static DHCP lease if the NIC is attached to a *managed* private network.
+* `ip_address` - The IPv4 address to request as static DHCP lease if the NIC is attached to a *managed* private network.
 
 
 ## Attributes Reference

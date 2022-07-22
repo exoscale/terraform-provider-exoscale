@@ -13,7 +13,7 @@ description: |-
 ## Arguments Reference
 
 * `compute_id` - (Required) The compute instance ID.
-* `ip_address` - (Required) The Elastic IP address.
+* `ip_address` - (Required) The Elastic IP (EIP) address.
 
 
 ## Attributes Reference
