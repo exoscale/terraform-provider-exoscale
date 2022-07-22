@@ -44,9 +44,9 @@ directory for complete configuration examples.
 
 In addition to the arguments listed above, the following attributes are exported:
 
-* `created_at` - The creation date of the Compute instance.
-* `deploy_target_id` - A Deploy Target ID.
-* `disk_size` - The Compute instance disk size in GiB.
+* `created_at` - The compute instance creation date.
+* `deploy_target_id` - A deploy target ID.
+* `disk_size` - The instance disk size (GiB).
 * `ipv6_address` - The instance (main network interface) IPv6 address.
 * `ipv6` - Whether IPv6 is enabled on the instance.
 * `labels` - A map of key/value labels.
