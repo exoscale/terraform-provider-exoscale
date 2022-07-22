@@ -1,7 +1,7 @@
 ---
 page_title: "Exoscale: exoscale_instance_pool_list"
 description: |-
-  Fetch a list of Exoscale Instance Pools.
+  List of Exoscale Instance Pools.
 ---
 
 # exoscale\_instance\_pool\_list

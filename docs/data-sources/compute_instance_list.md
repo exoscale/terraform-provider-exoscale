@@ -1,7 +1,7 @@
 ---
 page_title: "Exoscale: exoscale_compute_instance_list"
 description: |-
-  Fetch a list of Exoscale Compute Instances.
+  List Exoscale Compute Instances.
 ---
 
 # exoscale\_compute\_instance_list
