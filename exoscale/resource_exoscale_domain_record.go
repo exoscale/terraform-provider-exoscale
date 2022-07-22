@@ -5,10 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"sync"
 
 	exo "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -19,6 +21,35 @@ var supportedRecordTypes = []string{
 	"HINFO", "MX", "NAPTR", "NS", "POOL",
 	"SPF", "SRV", "SSHFP", "TXT", "URL",
 }
+
+type resourceDomainRecordCache struct {
+	records map[string][]exo.DNSDomainRecord
+}
+
+func (c *resourceDomainRecordCache) Records(domainID string) []exo.DNSDomainRecord {
+	records, ok := c.records[domainID]
+	if !ok {
+		return nil
+	}
+
+	return records
+}
+
+func (c *resourceDomainRecordCache) AddRecords(domainID string, records []exo.DNSDomainRecord) {
+	_, ok := c.records[domainID]
+	if !ok {
+		c.records[domainID] = []exo.DNSDomainRecord{}
+	}
+
+	c.records[domainID] = records
+
+	return
+}
+
+var resourceDomainRecordUpgradeCache = &resourceDomainRecordCache{
+	records: map[string][]exo.DNSDomainRecord{},
+}
+var resourceDomainRecordUpgradeCacheMX = sync.Mutex{}
 
 func resourceDomainRecordIDString(d resourceIDStringer) string {
 	return resourceIDString(d, "exoscale_domain_record")
@@ -120,6 +151,7 @@ func resourceDomainRecordStateUpgradeV0(
 	client := GetComputeClient(meta)
 
 	domainName := rawState["domain"].(string)
+
 	domains, err := client.ListDNSDomains(ctx, defaultZone)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving domain list: %s", err)
@@ -132,9 +164,22 @@ func resourceDomainRecordStateUpgradeV0(
 		}
 	}
 
-	records, err := client.ListDNSDomainRecords(ctx, defaultZone, rawState["domain"].(string))
-	if err != nil {
-		return nil, fmt.Errorf("error retrieving domain records: %q", err)
+	// Locking early as all state upgraders run in parallel.
+	resourceDomainRecordUpgradeCacheMX.Lock()
+	defer resourceDomainRecordUpgradeCacheMX.Unlock()
+
+	tflog.Debug(ctx, "state_upgrader: reading records from cache")
+	records := resourceDomainRecordUpgradeCache.Records(rawState["domain"].(string))
+	if records == nil {
+		tflog.Debug(ctx, "state-upgrader: records not found in cache")
+		records, err = client.ListDNSDomainRecords(ctx, defaultZone, rawState["domain"].(string))
+		if err != nil {
+			return nil, fmt.Errorf("error retrieving domain records: %q", err)
+		}
+		tflog.Debug(ctx, "statee-upgrader: adding records to cache")
+		resourceDomainRecordUpgradeCache.AddRecords(rawState["domain"].(string), records)
+	} else {
+		tflog.Debug(ctx, "state-upgrader: records found in cache")
 	}
 
 	for _, record := range records {
