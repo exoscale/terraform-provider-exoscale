@@ -75,7 +75,7 @@ EOF
 * `ipv6` - Enable IPv6 on the Compute instance (default: `false`).
 * `ssh_key` - The name of the [SSH key pair][sshkeypair] to install to the Compute instance's user account during creation.
 * `user_data` - A [cloud-init][cloudinit] configuration.
-* `state` - The state of the Compute instance (supported values: `started`, `stopped`).
+* `state` - The state of the Compute instance (supported values: `started`, `running`, `stopped`).
 * `deploy_target_id` - A Deploy Target ID.
 * `labels` - A map of key/value labels.
 
