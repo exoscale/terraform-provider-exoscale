@@ -45,7 +45,7 @@ directory for complete configuration examples.
 * `record_type` - (Required) The record type (`A`, `AAAA`, `ALIAS`, `CAA`, `CNAME`, `HINFO`, `MX`, `NAPTR`, `NS`, `POOL`, `SPF`, `SRV`, `SSHFP`, `TXT`, `URL`).
 
 * `prio` - The record priority (for types that support it; minimum `0`).
-* `ttl` - The record TTL (seconds; minimum `0`).
+* `ttl` - The record TTL (seconds; minimum `0`; default: `3600`).
 
 
 ## Attributes Reference
