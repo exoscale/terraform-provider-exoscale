@@ -6,7 +6,7 @@ on your compute instances, thanks to the `ipv6 = true` argument.
 
 Please refer to the [main.tf](./main.tf) Terraform configuration file.
 
-One should node the IPv6-specific security groups rules set up for the SSH access
+One should note the IPv6-specific security groups rules set up for the SSH access
 (see the [ssh.tf](./ssh.tf) file).
 
 ```console
