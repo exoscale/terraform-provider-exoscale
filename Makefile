@@ -16,7 +16,9 @@ test: GO_TEST_EXTRA_ARGS=${EXTRA_ARGS}
 test-verbose: GO_TEST_EXTRA_ARGS+=$(EXTRA_ARGS)
 test-acc: GO_TEST_EXTRA_ARGS=-v $(EXTRA_ARGS)
 test-acc: ## Runs acceptance tests (requires valid Exoscale API credentials)
-	TF_ACC=1 $(GO) test			\
+	EXOSCALE_API_ENVIRONMENT=ppapi \
+	EXOSCALE_API_ENDPOINT=https://ppapi.exoscale.com/v1 \
+	TF_ACC=1 $(GO) test			  \
 		-race                   \
 		-timeout=60m            \
 		-tags=testacc           \
