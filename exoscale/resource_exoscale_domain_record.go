@@ -153,6 +153,7 @@ func resourceDomainRecordCreate(ctx context.Context, d *schema.ResourceData, met
 	log.Printf("[DEBUG] %s: beginning create", resourceDomainRecordIDString(d))
 
 	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), defaultZone))
 	defer cancel()
 
 	client := GetComputeClient(meta)
@@ -188,6 +189,7 @@ func resourceDomainRecordCreate(ctx context.Context, d *schema.ResourceData, met
 
 func resourceDomainRecordExists(d *schema.ResourceData, meta interface{}) (bool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), defaultZone))
 	defer cancel()
 
 	client := GetComputeClient(meta)
@@ -236,6 +238,7 @@ func resourceDomainRecordRead(ctx context.Context, d *schema.ResourceData, meta 
 	log.Printf("[DEBUG] %s: beginning read", resourceDomainRecordIDString(d))
 
 	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), defaultZone))
 	defer cancel()
 
 	client := GetComputeClient(meta)
@@ -303,6 +306,7 @@ func resourceDomainRecordUpdate(ctx context.Context, d *schema.ResourceData, met
 	log.Printf("[DEBUG] %s: beginning update", resourceDomainRecordIDString(d))
 
 	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), defaultZone))
 	defer cancel()
 
 	client := GetComputeClient(meta)
@@ -357,6 +361,7 @@ func resourceDomainRecordDelete(ctx context.Context, d *schema.ResourceData, met
 	log.Printf("[DEBUG] %s: beginning delete", resourceDomainRecordIDString(d))
 
 	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), defaultZone))
 	defer cancel()
 
 	client := GetComputeClient(meta)
