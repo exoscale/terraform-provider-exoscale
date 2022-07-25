@@ -25,23 +25,10 @@ use the Exoscale Terraform provider.
 ### Example
 
 ```hcl
-provider "exoscale" {
-  version = "~> 0.18.2"
-  key     = "EXOxxxxxxxxxxxxxxxxxxxxxxxx"
-  secret  = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-
-  timeout = 120
-}
-```
-
-Starting from Terraform 0.13.x:
-
-```hcl
 terraform {
   required_providers {
     exoscale = {
       source  = "exoscale/exoscale"
-      version = "0.18.2"
     }
   }
 }
@@ -77,43 +64,42 @@ resource "exoscale_instance_pool" "web" {
 Here is a simple HCL configuration provisioning an Exoscale Compute instance:
 
 ```hcl
-variable "exoscale_api_key" { type = string }
-variable "exoscale_api_secret" { type = string }
-
 terraform {
   required_providers {
     exoscale = {
       source  = "exoscale/exoscale"
-      version = "0.18.2"
     }
   }
 }
 
+variable "exoscale_api_key" { type = string }
+variable "exoscale_api_secret" { type = string }
 provider "exoscale" {
   key    = var.exoscale_api_key
   secret = var.exoscale_api_secret
 }
 
 locals {
-  zone = "ch-gva-2"
+  my_zone     = "ch-gva-2"
+  my_template = "Linux Ubuntu 22.04 LTS 64-bit"
+  my_ssh_key  = "my-ssh-key"
 }
 
-data "exoscale_compute_template" "ubuntu" {
-  zone = local.zone
-  name = "Linux Ubuntu 20.04 LTS 64-bit"
+data "exoscale_compute_template" "my_template" {
+  zone = local.my_zone
+  name = local.my_tempate
 }
 
-resource "exoscale_compute_instance" "my-server" {
-  zone        = local.zone
-  name        = "my-server"
+resource "exoscale_compute_instance" "my_instance" {
+  zone        = local.my_zone
+  name        = "my-instance"
+
+  template_id = data.exoscale_compute_template.my_template.id
   type        = "standard.medium"
-  template_id = data.exoscale_compute_template.ubuntu.id
-  disk_size   = 50
-  ssh_key     = "alice"
-  user_data   = <<EOF
-#cloud-config
-package_upgrade: true
-EOF
+  disk_size   = 10
+
+  ssh_key     = local.my_ssh_key
+  user_data   = "#cloud-config\npackage_upgrade: true\n"
 }
 ```
 
@@ -123,15 +109,15 @@ $ terraform init
 Initializing the backend...
 
 Initializing provider plugins...
-- Finding exoscale/exoscale versions matching "0.31.0"...
-- Installing exoscale/exoscale v0.31.0...
-- Installed exoscale/exoscale v0.31.0 (signed by a HashiCorp partner, key ID XXXXXXXXXXXXXXXX)
+- Finding latest version of exoscale/exoscale...
+- Installing exoscale/exoscale v0.38.0...
+- Installed exoscale/exoscale v0.38.0 (signed by a HashiCorp partner, key ID 81426F034A3D05F7)
 
 ...
 
 $ terraform apply \
-    -var exoscale_api_key=$EXOSCALE_API_KEY \
-    -var exoscale_api_secret=$EXOSCALE_API_SECRET
+  -var exoscale_api_key=$EXOSCALE_API_KEY \
+  -var exoscale_api_secret=$EXOSCALE_API_SECRET
 
 Terraform used the selected providers to generate the following execution plan. Resource actions are indicated with the following symbols:
   + create
@@ -145,9 +131,9 @@ Terraform will perform the following actions:
       + id                = (known after apply)
       + ipv6              = false
       + ipv6_address      = (known after apply)
-      + name              = "my-server"
+      + name              = "my-instance"
       + public_ip_address = (known after apply)
-      + ssh_key           = "alice"
+      + ssh_key           = "my-ssh-key"
       + state             = (known after apply)
       + template_id       = "3ebca0c5-63f4-4055-b325-3cef0e68fa98"
       + type              = "standard.medium"

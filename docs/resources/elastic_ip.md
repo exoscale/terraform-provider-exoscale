@@ -1,33 +1,36 @@
 ---
 page_title: "Exoscale: exoscale_elastic_ip"
 description: |-
-  Provides an Exoscale Elastic IP address.
+  Manage Exoscale Elastic IPs (EIP).
 ---
 
 # exoscale\_elastic\_ip
 
-Provides an Exoscale [Elastic IP address][eip-doc] resource. This can be used to create, update and delete Elastic IPs.
+Manage Exoscale [Elastic IPs (EIP)](https://community.exoscale.com/documentation/compute/eip/).
+
+Corresponding data source: [exoscale_elastic_ip](../data-sources/elastic_ip.md).
 
 
-### Usage example
+### Usage
+
+*Unmanaged* EIP:
 
 ```hcl
-resource "exoscale_elastic_ip" "example" {
-  zone = "ch-dk-2"
+resource "exoscale_elastic_ip" "my_elastic_ip" {
+  zone = "ch-gva-2"
 }
 ```
 
-Managed EIP:
+*Managed* EIP:
 
 ```hcl
-resource "exoscale_elastic_ip" "example-managed" {
-  zone        = "ch-dk-2"
-  description = "My elastic IP for load balancer"
-  
+resource "exoscale_elastic_ip" "my_managed_elastic_ip" {
+  zone = "ch-gva-2"
+
   healthcheck {
     mode         = "https"
     port         = 443
-    uri         = "/health"
+    uri          = "/health"
     interval     = 5
     timeout      = 3
     strikes_ok   = 2
@@ -37,41 +40,47 @@ resource "exoscale_elastic_ip" "example-managed" {
 }
 ```
 
+Please refer to the [examples](https://github.com/exoscale/terraform-provider-exoscale/tree/master/examples/)
+directory for complete configuration examples.
+
 
 ## Arguments Reference
 
-* `zone` - (Required) The name of the [zone][zone] to create the Elastic IP into.
-* `description` - The description of the Elastic IP.
-* `healthcheck` - A health checking configuration for managed Elastic IPs. Structure is documented below.
+[zone]: https://www.exoscale.com/datacenters/
 
-The `healthcheck` block supports:
+* `zone` - (Required) The Exoscale [Zone][zone] name.
 
-* `mode` - (Required) The health checking mode (`supported values: `tcp`, `http`, `https`).
-* `port` - (Required) The health checking port (must be between `1` and `65535`).
-* `uri` - The health checking URI (required in `http(s)` modes).
-* `interval` - The health checking interval in seconds (must be between `5` and `300`; default: `10`).
-* `timeout` - The time in seconds before considering a healthcheck probing failed (must be between `2` and `60`; default: `3`).
-* `strikes_ok` - The number of successful attempts before considering a managed Elastic IP target healthy (must be between `1` and `20`).
-* `strikes_fail` - The number of failed attempts before considering a managed Elastic IP target unhealthy (must be between `1` and `20`).
-* `tls_sni` - The health checking server name to present with SNI in `https` mode.
-* `tls_skip_verify` - Disable TLS certificate verification for health checking in `https` mode.
+* `description` - A free-form text describing the Elastic IP (EIP).
+
+* `healthcheck` - (Block) Healthcheck configuration for *managed* EIPs. Structure is documented below.
+
+### `healthcheck` block
+
+* `mode` - (Required) The healthcheck mode (`tcp`, `http` or `https`; may only be set at creation time).
+* `port` - (Required) The healthcheck target port (must be between `1` and `65535`).
+
+* `interval` - The healthcheck interval (seconds; must be between `5` and `300`; default: `10`).
+* `strikes_fail` - The number of failed healthcheck attempts before considering the target unhealthy (must be between `1` and `20`; default: `2`).
+* `strikes_ok` - The number of successful healthcheck attempts before considering the target healthy (must be between `1` and `20`; default: `3`).
+* `timeout` - The time before considering a healthcheck probing failed (seconds; must be between `2` and `60`; default: `3`).
+* `tls_skip_verify` - Disable TLS certificate verification for healthcheck in `https` mode (boolean; default: `false`).
+* `tls_sni` - The healthcheck server name to present with SNI in `https` mode.
+* `uri` - The healthcheck target URI (required in `http(s)` modes).
 
 
 ## Attributes Reference
 
 In addition to the arguments listed above, the following attributes are exported:
 
-* `ip_address` - The Elastic IP address.
+* `ip_address` - The Elastic IP (EIP) IPv4 address.
 
 
 ## Import
 
-An existing Elastic IP can be imported as a resource by specifying `ID@ZONE`:
+An existing Elastic IP (EIP) may be imported by `<ID>@<zone>`:
 
 ```console
-$ terraform import exoscale_elastic_ip.web eb556678-ec59-4be6-8c54-0406ae0f6da6@ch-dk-2
+$ terraform import \
+  exoscale_elastic_ip.my_elastic_ip \
+  f81d4fae-7dec-11d0-a765-00a0c91e6bf6@ch-gva-2
 ```
-
-
-[eip-doc]: https://community.exoscale.com/documentation/compute/eip/
-[zone]: https://www.exoscale.com/datacenters/

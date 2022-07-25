@@ -2,46 +2,33 @@
 page_title: "Exoscale: exoscale_compute"
 subcategory: "Deprecated"
 description: |-
-  Provides information about a Compute.
+  Fetch Exoscale Compute Instances data.
 ---
 
 # exoscale\_compute
 
-Provides information on an [Exoscale Compute instance][compute-doc].
-
-!> **WARNING:** This data source is deprecated and will be removed in the next major version.
-
-
-## Example Usage
-
-```hcl
-data "exoscale_compute" "my_server" {
-  hostname = "my server"
-}
-```
+!> **WARNING:** This data source is **DEPRECATED** and will be removed in the next major version. Please use [exoscale_compute_instance](./compute_instance.md) instead.
 
 ## Arguments Reference
 
-* `id` - The ID of the Compute instance.
-* `hostname` - The hostname of the Compute instance.
-* `tags` - The tags to find the Compute instance (key: value).
+* `id` - The compute instance ID to match.
+* `hostname` - The instance hostname to match.
+* `tags` - The instance tags to match (map of key/value).
 
 
 ## Attributes Reference
 
 In addition to the arguments listed above, the following attributes are exported:
 
-* `created` - Creation date of the Compute instance.
-* `zone` - Name of the zone.
-* `template` - Name of the template.
-* `size` - Current size of the Compute instance.
-* `disk_size` - Size of the Compute instance disk.
-* `cpu` - Number of cpu the Compute instance is running with.
-* `memory` - Memory allocated for the Compute instance.
-* `state` - State of the Compute instance.
-* `ip_address` - Public IPv4 address of the Compute instance.
-* `ip6_address` - Public IPv6 address of the Compute instance (if IPv6 is enabled).
-* `private_network_ip_addresses` - List of Compute private IP addresses (in managed Private Networks only).
+* `zone` - Exoscale Zone name.
+* `cpu` - The compute instance number of CPUs.
+* `created` - The instance creation date.
+* `disk_size` - The instance disk size (GiB).
+* `ip_address` - The instance (main network interface) IPv4 address.
+* `ip6_address` - The instance (main network interface) IPv6 address (if enabled).
+* `memory` - The instance allocated memory.
+* `size` - The instance size.
+* `state` - The current instance state.
+* `template` - The instance template.
 
-
-[compute-doc]: https://www.exoscale.com/compute/
+* `private_network_ip_addresses` - List of compute private IPv4 addresses (in *managed* private networks only).

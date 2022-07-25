@@ -1,45 +1,64 @@
-# Managed private network
+# Managed Private Network
 
-A Managed Private Network is defined by a Private Network where lives a managed
-DHCP server. A bare private network implies that each machine has to be
-statically configured when it comes to network interface (NIC) on that network.
+This example demonstrates how to setup and associate a
+[(Managed) Private Network](https://community.exoscale.com/documentation/compute/private-networks/)
+to your compute instances, using the `exoscale_private_network` resource.
 
-Now, it's as quick as having a dhcp client running on the eth1, eth2, ...
-interfaces.
+Please refer to the [main.tf](./main.tf) Terraform configuration file.
 
-## Spawning the machines
+One should note:
 
-The current example create a managed networks with four instances:
+* the network setup:
+  - network mask `255.255.255.0` <-> `/24` (256 IP addresses, out of which 253 are usable: `1` to `253`)
+  - dynamic IP range from `10.0.0.50` to `10.0.0.250`
 
-- demo-static-0 with a static DHCP lease set to 10.0.0.1
-- demo-static-1 with a static DHCP lease set to 10.0.0.2
-- demo-dynamic-0 and demo-dynamic-1 with dynamic leases
+* the _static_ DHCP lease - IP address `10.0.0.1` attributed to the `my_instance_static` instance
 
-The managed privnet sets a dynamic IP range from 10.0.0.50 to 10.0.0.250.  The
-255.255.255.0 netmask defines the network 10.0.0.0/24. The static leases may be
-set (almost, see below) anywhere in the network.
+* the _dynamic_ IP address which is granted by DHCP to the `my_instance_dynamic` instance
 
+* the `eth1` (private network) interface being configured thanks to `cloud-init`
+  ([cloud-config.yaml](./cloud-config.yaml))
+
+
+```console
+$ terraform init
+$ terraform apply \
+  -var exoscale_api_key=$EXOSCALE_API_KEY \
+  -var exoscale_api_secret=$EXOSCALE_API_SECRET
+
+...
+
+exoscale_compute_instance.my_instance_static (remote-exec): 3: eth1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP group default qlen 1000
+exoscale_compute_instance.my_instance_static (remote-exec):     inet 10.0.0.1/24 metric 100 brd 10.0.0.255 scope global dynamic eth1
+
+...
+
+exoscale_compute_instance.my_instance_dynamic (remote-exec): 3: eth1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP group default qlen 1000
+exoscale_compute_instance.my_instance_dynamic (remote-exec):     inet 10.0.0.138/24 metric 100 brd 10.0.0.255 scope global dynamic eth1
+
+...
+
+Outputs:
+
+ssh_connection_dynamic = "ssh -i id_ssh ubuntu@185.19.30.33"
+ssh_connection_static = "ssh -i id_ssh ubuntu@185.19.30.210"
 ```
-$ terraform apply
-```
 
-Be patient and wait for the instances to be ready.
-
-## Inspecting the private network network
+## Inspecting the private network
 
 Connect to any of them and use `nmap` to inspect what is in the private
 network.
 
 ```
-ubuntu@demo-dynamic-0 $ sudo apt install nmap
-ubuntu@demo-dynamic-0 $ nmap -sP "10.0.0.*"
+ubuntu@my-instance-dynamic $ sudo apt install nmap
+ubuntu@my-instance-dynamic $ nmap -sP "10.0.0.*"
 
 Starting Nmap 7.60 ( https://nmap.org ) at 2018-09-24 13:27 UTC
 Nmap scan report for 10.0.0.1
 Host is up (0.0017s latency).
 Nmap scan report for 10.0.0.2
 Host is up (0.0017s latency).
-Nmap scan report for demo-dynamic-0 (10.0.0.101)
+Nmap scan report for my-instance-dynamic (10.0.0.101)
 Host is up (0.000055s latency).
 Nmap scan report for 10.0.0.231
 Host is up (0.0012s latency).
@@ -58,8 +77,10 @@ _gateway (159.100.241.1) at fe:6e:f0:00:00:71 [ether] on eth0
 ? (10.0.0.231) at 0a:f6:92:00:2c:ca [ether] on eth1
 ```
 
----
+## Unmanaged private network
 
-See also [the blog post announcing the feature][managed privnet].
+Should you want to _not_ use DHCP and attribute IP addresses _manually_ to the private network interface:
 
-[managed privnet]: https://www.exoscale.com/syslog/introducing-managed-private-networks/
+* remove the `netmask`, `start_ip` and `end_ip` from the `exoscale_private_network` resource
+
+* replace `dhcp4: true` by `addresses: ["<actual-IP-address>"]` in the `cloud-init.yaml` configuration

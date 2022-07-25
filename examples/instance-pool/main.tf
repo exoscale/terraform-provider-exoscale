@@ -1,34 +1,49 @@
-variable "zone" {
-  default = "ch-gva-2"
+# Providers
+# -> providers.tf
+
+# Customizable parameters
+locals {
+  my_zone     = "ch-gva-2"
+  my_template = "Linux Ubuntu 22.04 LTS 64-bit"
 }
 
-variable "template" {
-  default = "Linux Ubuntu 18.04 LTS 64-bit"
+# Existing resources (<-> data sources)
+data "exoscale_compute_template" "my_template" {
+  zone = local.my_zone
+  name = local.my_template
 }
 
-data "exoscale_compute_template" "instancepool" {
-  zone = var.zone
-  name = var.template
+data "exoscale_security_group" "default" {
+  name = "default"
 }
 
-resource "exoscale_instance_pool" "instancepool-test" {
-  name = "terraforminstancepool"
-  description = "test"
-  template_id = data.exoscale_compute_template.instancepool.id
+# SSH
+# -> ssh.tf
+
+# Sample instance pool
+resource "exoscale_instance_pool" "my_instance_pool" {
+  zone = local.my_zone
+  name = "my-instance-pool"
+
+  template_id   = data.exoscale_compute_template.my_template.id
   instance_type = "standard.medium"
-  size = 5
-  disk_size = 50
-  user_data = "#cloud-config\npackage_upgrade: true\n"
-  key_pair = "test"
-  zone = var.zone
+  disk_size     = 10
+  size          = 3
 
-  # security_group_ids = ["xxxx", "xxx"]
-  # network_ids = ["xxxx", "xxx"]
+  key_pair = exoscale_ssh_key.my_ssh_key.name
+
+  security_group_ids = [
+    data.exoscale_security_group.default.id,
+    exoscale_security_group.my_ssh_security_group.id,
+  ]
 }
 
-provider "exoscale" {
-  version = "~> 0.15"
-  key = var.key
-  secret = var.secret
-  compute_endpoint = "https://api.exoscale.com/compute"
+# Outputs
+output "ssh_connection" {
+  value = join("\n", formatlist(
+    "ssh -i id_ssh %s@%s  # %s",
+    data.exoscale_compute_template.my_template.username,
+    exoscale_instance_pool.my_instance_pool.instances.*.public_ip_address,
+    exoscale_instance_pool.my_instance_pool.instances.*.name,
+  ))
 }

@@ -1,46 +1,48 @@
 ---
 page_title: "Exoscale: exoscale_nlb"
 description: |-
-  Provides information about a Network Load Balancer.
+  Fetch Exoscale Network Load Balancers (NLB) data.
 ---
 
 # exoscale\_nlb
 
-Provides information on a [Network Load Balancer][nlb-doc] (NLB) instance for use in other resources such as a [`exoscale_nlb_service`][r-nlb_service] resource.
+Fetch Exoscale [Network Load Balancers (NLB)](https://community.exoscale.com/documentation/compute/network-load-balancer/) data.
+
+Corresponding resource: [exoscale_nlb](../resources/nlb.md).
 
 
-## Example Usage
+## Usage
 
 ```hcl
-data "exoscale_nlb" "prod" {
+data "exoscale_nlb" "my_nlb" {
   zone = "ch-gva-2"
-  name = "prod"
+  name = "my-nlb"
 }
 
-output "nlb_prod_ip_address" {
-  value = data.exoscale_nlb.prod.ip_address
+output "my_nlb_id" {
+  value = data.exoscale_nlb.my_nlb.id
 }
 ```
+
+Please refer to the [examples](https://github.com/exoscale/terraform-provider-exoscale/tree/master/examples/)
+directory for complete configuration examples.
 
 
 ## Arguments Reference
 
-* `zone` - (Required) The [zone][zone] of the NLB.
-* `id` - The ID of the NLB (conflicts with `name`).
-* `name` - The name of NLB (conflicts with `id`).
+[zone]: https://www.exoscale.com/datacenters/
+
+* `zone` - (Required) The Exoscale [Zone][zone] name.
+
+* `id` - The Network Load Balancers (NLB) ID to match (conflicts with `name`).
+* `name` - The NLB name to match (conflicts with `id`).
 
 
 ## Attributes Reference
 
 In addition to the arguments listed above, the following attributes are exported:
 
-* `description` - The description of the NLB.
-* `state` - The current state of the NLB.
-* `created_at` - The creation date of the NLB.
-* `ip_address` - The public IP address of the NLB.
-
-
-[nlb-doc]: https://community.exoscale.com/documentation/compute/network-load-balancer/
-[r-instance_pool]: ../resources/instance_pool
-[zone]: https://www.exoscale.com/datacenters/
-
+* `description` - The Network Load Balancers (NLB) description.
+* `created_at` - The NLB creation date.
+* `ip_address` - The NLB public IPv4 address.
+* `state` - The current NLB state.

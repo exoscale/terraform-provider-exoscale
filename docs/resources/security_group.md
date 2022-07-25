@@ -1,52 +1,56 @@
 ---
 page_title: "Exoscale: exoscale_security_group"
 description: |-
-  Provides an Exoscale Security Group.
+  Manage Exoscale Security Groups.
 ---
 
 # exoscale\_security\_group
 
-Provides an Exoscale [Security Group][sg-doc] resource. This can be used to create and delete Security Groups.
+Manage Exoscale [Security Groups](https://community.exoscale.com/documentation/compute/security-groups/).
+
+Corresponding data source: [exoscale_security_group](../data-sources/security_group.md).
 
 
-## Example usage
+## Usage
 
 ```hcl
-resource "exoscale_security_group" "web" {
-  name             = "web"
-  description      = "Webservers"
-  external_sources = ["1.2.3.4/32", "5.6.7.8/32"]
+resource "exoscale_security_group" "my_security_group" {
+  name = "my-security-group"
 }
 ```
+
+Next step is to attach [exoscale_security_group_rule](./security_group_rule.md)(s) to the group.
+
+Please refer to the [examples](https://github.com/exoscale/terraform-provider-exoscale/tree/master/examples/)
+directory for complete configuration examples.
 
 
 ## Arguments Reference
 
-In addition to the arguments listed above, the following attributes are exported:
+[cidr]: https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing#CIDR_notatio
 
-* `name` - (Required) The name of the Security Group.
-* `description` - A free-form text describing the Security Group purpose.
-* `external_sources` - A list of external network sources in [CIDR][cidr] notation.
+* `name` - (Required) The security group name.
+
+* `description` - A free-form text describing the group.
+
+* `external_sources` - A list of external network sources, in [CIDR][cidr] notation.
 
 
 ## Attributes Reference
 
 In addition to the arguments listed above, the following attributes are exported:
 
-* `id` - The ID of the Security Group.
+* `id` - The security group ID.
 
 
 ## Import
 
-An existing Security Group can be imported as a resource by its ID:
+An existing security group may be imported by `<ID>`:
 
 ```console
-$ terraform import exoscale_security_group.http eb556678-ec59-4be6-8c54-0406ae0f6da6
+$ terraform import \
+  exoscale_security_group.my_security_group \
+  f81d4fae-7dec-11d0-a765-00a0c91e6bf6
 ```
 
-~> **NOTE:** Importing a `exoscale_security_group` resource also imports related [`exoscale_security_group_rule`][r-security_group_rule] resources.
-
-
-[cidr]: https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing#CIDR_notatio
-[r-security_group_rule]: ../resources/security_group_rule
-[sg-doc]: https://community.exoscale.com/documentation/compute/security-groups/
+~> **NOTE:** Importing a `exoscale_security_group` resource also imports related `exoscale_security_group_rule` resources.

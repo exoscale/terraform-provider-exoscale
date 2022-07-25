@@ -6,6 +6,8 @@ description: |-
 
 # Migrating from ssh_keypair to ssh_key
 
+-> This migration guide applies to Exoscale Terraform Provider **version 0.31.0 or above**.
+
 This page helps you migrate from an `exoscale_ssh_keypair` resource (deprecated) to the new
 `exoscale_ssh_key`.
 
@@ -14,16 +16,16 @@ and only allows the registration of an existing (public) key in your Exoscale ac
 
 Should you need to generate a key _pair_ (public and private key), we invite you to use the generic
 [tls_private_key][tls_private_key] and the resource's `public_key_openssh` output along Exoscale
-`exoscale_ssh_key`. Example given, using Exoscale Terraform Provider **version 0.31.0 or above**:
+`exoscale_ssh_key`. Example given:
 
 ```hcl
-resource "tls_private_key" "ssh_key" {
+resource "tls_private_key" "my_ssh_key" {
   algorithm = "ED25519"
 }
 
-resource "exoscale_ssh_key" "sample" {
-  name       = "sample"
-  public_key = tls_private_key.ssh_key.public_key_openssh
+resource "exoscale_ssh_key" "my_ssh_key" {
+  name       = "my-ssh-key"
+  public_key = tls_private_key.my_ssh_key.public_key_openssh
 }
 ```
 

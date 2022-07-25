@@ -1,51 +1,28 @@
 ---
 page_title: "Exoscale: exoscale_nlb_service"
 description: |-
-  Provides an Exoscale Network Load Balancer service resource.
+  Manage Exoscale Network Load Balancer (NLB) Services.
 ---
 
 # exoscale\_nlb\_service
 
-Provides an Exoscale Network Load Balancer ([NLB][r-nlb]) service resource. This can be used to create, modify, and delete NLB services.
+Manage Exoscale [Network Load Balancer (NLB)](https://community.exoscale.com/documentation/compute/network-load-balancer/) Services.
 
 
-## Example Usage
+## Usage
 
 ```hcl
-variable "zone" {
-  default = "de-fra-1"
+resource "exoscale_nlb" "my_nlb" {
+  zone = "ch-gva-2"
+  name = "my-nlb"
 }
 
-variable "template" {
-  default = "Linux Ubuntu 20.04 LTS 64-bit"
-}
+resource "exoscale_nlb_service" "my_nlb_service" {
+  nlb_id = exoscale_nlb.my_nlb.id
+  zone   = exoscale_nlb.my_nlb.zone
+  name   = "my-nlb-service"
 
-data "exoscale_compute_template" "website" {
-  zone = var.zone
-  name = var.template
-}
-
-resource "exoscale_instance_pool" "website" {
-  name             = "instancepool-website"
-  description      = "Instance Pool Website nodes"
-  template_id      = data.exoscale_compute_template.website.id
-  service_offering = "medium"
-  size             = 3
-  zone             = var.zone
-}
-
-resource "exoscale_nlb" "website" {
-  name        = "website"
-  description = "This is the Network Load Balancer for my website"
-  zone        = var.zone
-}
-
-resource "exoscale_nlb_service" "website" {
-  zone             = exoscale_nlb.website.zone
-  name             = "website-https"
-  description      = "Website over HTTPS"
-  nlb_id           = exoscale_nlb.website.id
-  instance_pool_id = exoscale_instance_pool.website.id
+  instance_pool_id = exoscale_instance_pool.my_instance_pool.id
 	protocol       = "tcp"
 	port           = 443
 	target_port    = 8443
@@ -63,44 +40,52 @@ resource "exoscale_nlb_service" "website" {
 }
 ```
 
+Please refer to the [examples](https://github.com/exoscale/terraform-provider-exoscale/tree/master/examples/)
+directory for complete configuration examples.
+
+
 ## Arguments Reference
 
-* `nlb_id` - (Required) The ID of the NLB to attach the service.
-* `zone` - (Required) The name of the [zone][zone] used by the NLB.
-* `instance_pool_id` - (Required) The ID of the Instance Pool to forward network traffic to.
-* `name` - (Required) The name of the NLB service.
-* `port` - (Required) The port of the NLB service.
-* `target_port` - (Required) The port to forward network traffic to on target instances.
-* `protocol` - The protocol (tcp/udp).
-* `strategy` - The strategy (round-robin/source-hash).
-* `description` - The description of the NLB service.
+[zone]: https://www.exoscale.com/datacenters/
 
-**healthcheck**
+* `nlb_id` - (Required) The parent [exoscale_nlb](./nlb.md) ID.
+* `zone` - (Required) The Exoscale [Zone][zone] name.
+* `name` - (Required) The NLB service name.
+* `instance_pool_id` - (Required) The [exoscale_instance_pool](./instance_pool.md) (ID) to forward traffic to.
+* `port` - (Required) The NLB service (TCP/UPP) port.
+* `target_port` - (Required) The (TCP/UDP) port to forward traffic to (on target instance pool members).
+
+* `description` - A free-form text describing the NLB service.
+* `protocol` - The protocol (`tcp`|`udp`; default: `tcp`).
+* `strategy` - The strategy (`round-robin`|`source-hash`; default: `round-robin`).
+
+* `healthcheck` - (Block) The service health checking configuration (may only bet set at creation time). Structure is documented below.
+
+### `healthcheck` block
 
 * `port` - (Required) The healthcheck port.
-* `mode` - The healthcheck mode (`tcp`|`http`|`https`).
-* `uri` - The healthcheck URI, must be set only if `mode` is `http(s)`.
-* `tls_sni` - The healthcheck TLS SNI server name, only if `mode` is `https`.
-* `interval` - The healthcheck interval in seconds.
-* `timeout` - The healthcheck timeout in seconds.
-* `retries` - The healthcheck retries.
+
+* `interval` - The healthcheck interval in seconds (default: `10`).
+* `mode` - The healthcheck mode (`tcp`|`http`|`https`; default: `tcp`).
+* `retries` - The healthcheck retries (default: `1`).
+* `timeout` - The healthcheck timeout (seconds; default: `5`).
+* `tls_sni` - The healthcheck TLS SNI server name (only if `mode` is `https`).
+* `uri` - The healthcheck URI (must be set only if `mode` is `http(s)`).
 
 
 ## Attributes Reference
 
 In addition to the arguments listed above, the following attributes are exported:
 
-* `id` - The ID of the NLB service.
+* `id` - The NLB service ID.
 
 
 ## Import
 
-An existing NLB service can be imported as a resource by `<NLB-ID>/<SERVICE-ID>@<ZONE>`:
+An existing NLB service may be imported by `<nlb-ID>/<service-ID>@<zone>`:
 
 ```console
-$ terraform import exoscale_nlb_service.example eb556678-ec59-4be6-8c54-0406ae0f6da6/9ecc6b8b-73d4-4211-8ced-f7f29bb79524@de-fra-1
+$ terraform import \
+  exoscale_nlb_service.my_nlb_service \
+  f81d4fae-7dec-11d0-a765-00a0c91e6bf6/9ecc6b8b-73d4-4211-8ced-f7f29bb79524@ch-gva-2
 ```
-
-
-[r-nlb]: ../resources/nlb
-[zone]: https://www.exoscale.com/datacenters/

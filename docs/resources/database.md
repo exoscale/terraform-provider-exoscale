@@ -1,24 +1,21 @@
 ---
 page_title: "Exoscale: exoscale_database"
 description: |-
-  Provides an Exoscale database service resource.
+  Manage Exoscale Database Services (DBaaS).
 ---
 
 # exoscale\_database
 
-Provides an Exoscale [DBaaS][dbaas-doc] service resource. This can be used to create, modify, and delete database services.
+Manage Exoscale [Database Services (DBaaS)](https://community.exoscale.com/documentation/dbaas/).
 
 
-## Example Usage
+## Usage
 
 ```hcl
-locals {
-  zone = "ch-dk-2"
-}
+resource "exoscale_database" "my_database" {
+  zone = "ch-gva-2"
+  name = "my-database"
 
-resource "exoscale_database" "pg_prod" {
-  zone = local.zone
-  name = "pg-prod"
   type = "pg"
   plan = "startup-4"
 
@@ -29,6 +26,7 @@ resource "exoscale_database" "pg_prod" {
 
   pg {
     version = "13"
+
     backup_schedule = "04:00"
 
     ip_filter = [
@@ -42,28 +40,36 @@ resource "exoscale_database" "pg_prod" {
   }
 }
 
-output "database_uri" {
-  value = exoscale_database.pg_prod.uri
+output "my_database_uri" {
+  value = exoscale_database.my_database.uri
 }
 ```
+
+Please refer to the [examples](https://github.com/exoscale/terraform-provider-exoscale/tree/master/examples/)
+directory for complete configuration examples.
 
 
 ## Arguments Reference
 
-* `zone` - (Required) The name of the [zone][zone] to deploy the database service into.
-* `name` - (Required) The name of the database service.
-* `type` - (Required) The type of the database service (accepted values: `kafka`, `mysql`, `pg`, `redis`).
-* `plan` - (Required) The plan of the database service (`exo dbaas type show <TYPE>` for reference).
-* `maintenance_dow` - The day of week to perform the automated database service maintenance (accepted values: `never`, `monday`, `tuesday`, `wednesday`, `thursday`, `friday`, `saturday`, `sunday`).
-* `maintenance_time` - The time of day to perform the automated database service maintenance (format: `HH:MM:SS`)
-* `termination_protection` - The database service protection boolean flag against termination/power-off.
-* `kafka` - *kafka* database service type specific arguments. Structure is documented below.
-* `mysql` - *mysql* database service type specific arguments. Structure is documented below.
-* `pg` - *pg* database service type specific arguments. Structure is documented below.
-* `redis` - *redis* database service type specific arguments. Structure is documented below.
-* `opensearch` - *opensearch* database service type specific arguments. Structure is documented below.
+[zone]: https://www.exoscale.com/datacenters/
+[cli]: https://github.com/exoscale/cli/
 
-The `kafka` block supports:
+* `zone` - (Required) The Exoscale [Zone][zone] name.
+* `name` - (Required) The name of the database service.
+* `type` - (Required) The type of the database service (`kafka`, `mysql`, `opensearch`, `pg`, `redis`).
+* `plan` - (Required) The plan of the database service (use the [Exoscale CLI][cli] - `exo dbaas type show <TYPE>` - for reference).
+
+* `maintenance_dow` - The day of week to perform the automated database service maintenance (`never`, `monday`, `tuesday`, `wednesday`, `thursday`, `friday`, `saturday`, `sunday`).
+* `maintenance_time` - The time of day to perform the automated database service maintenance (`HH:MM:SS`)
+* `termination_protection` - The database service protection boolean flag against termination/power-off.
+
+* `kafka` - (Block) *kafka* database service type specific arguments. Structure is documented below.
+* `mysql` - (Block) *mysql* database service type specific arguments. Structure is documented below.
+* `opensearch` - (Block) *opensearch* database service type specific arguments. Structure is documented below.
+* `pg` - (Block) *pg* database service type specific arguments. Structure is documented below.
+* `redis` - (Block) *redis* database service type specific arguments. Structure is documented below.
+
+### `kafka` block
 
 * `enable_cert_auth` - Enable certificate-based authentication method.
 * `enable_kafka_connect` - Enable Kafka Connect.
@@ -75,34 +81,18 @@ The `kafka` block supports:
 * `kafka_rest_settings` - Kafka REST configuration settings in JSON format (`exo dbaas type show kafka --settings=kafka-rest` for reference).
 * `kafka_settings` - Kafka configuration settings in JSON format (`exo dbaas type show kafka --settings=kafka` for reference).
 * `schema_registry_settings` - Schema Registry configuration settings in JSON format (`exo dbaas type show kafka --settings=schema-registry` for reference)
-* `version` - Kafka major version (`exo dbaas type show kafka` for reference). Can only be set during creation.
+* `version` - Kafka major version (`exo dbaas type show kafka` for reference; may only be set at creation time).
 
-The `mysql` block supports:
+### `mysql` block
 
-* `admin_password` - A custom administrator account password. Can only be set during creation.
-* `admin_username` - A custom administrator account username. Can only be set during creation.
-* `backup_schedule` - The automated backup schedule (format: HH:MM).
+* `admin_password` - A custom administrator account password (may only be set at creation time).
+* `admin_username` - A custom administrator account username (may only be set at creation time).
+* `backup_schedule` - The automated backup schedule (`HH:MM`).
 * `ip_filter` - A list of CIDR blocks to allow incoming connections from.
 * `mysql_settings` - MySQL configuration settings in JSON format (`exo dbaas type show mysql --settings=mysql` for reference).
-* `version` - MySQL major version (`exo dbaas type show mysql` for reference). Can only be set during creation.
+* `version` - MySQL major version (`exo dbaas type show mysql` for reference; may only be set at creation time).
 
-The `pg` block supports:
-
-* `admin_password` - A custom administrator account password. Can only be set during creation.
-* `admin_username` - A custom administrator account username. Can only be set during creation.
-* `backup_schedule` - The automated backup schedule (format: HH:MM).
-* `ip_filter` - A list of CIDR blocks to allow incoming connections from.
-* `pgbouncer_settings` - PgBouncer configuration settings in JSON format (`exo dbaas type show pg --settings=pgbouncer` for reference).
-* `pglookout_settings` - pglookout configuration settings in JSON format (`exo dbaas type show pg --settings=pglookout` for reference).
-* `pg_settings` - PostgreSQL configuration settings in JSON format (`exo dbaas type show pg --settings=pg` for reference).
-* `version` - PostgreSQL major version (`exo dbaas type show pg` for reference). Can only be set during creation.
-
-The `redis` block supports:
-
-* `ip_filter` - A list of CIDR blocks to allow incoming connections from.
-* `redis_settings` - Redis configuration settings in JSON format (`exo dbaas type show redis --settings=redis` for reference).
-
-The `opensearch` block supports:
+### `opensearch` block
 
 * `fork_from_service` -  Service name
 * `recovery_backup_name` -
@@ -124,6 +114,23 @@ The `opensearch` block supports:
 `settings` -  OpenSearch-specific settings, in json. e.g.`jsonencode({thread_pool_search_size: 64})`. Use `exo x get-dbaas-settings-opensearch` to get a list of available settings.
 * `version` -  OpenSearch major version.
 
+### `pg` block
+
+* `admin_password` - A custom administrator account password (may only be set at creation time).
+* `admin_username` - A custom administrator account username (may only be set at creation time).
+* `backup_schedule` - The automated backup schedule (`HH:MM`).
+* `ip_filter` - A list of CIDR blocks to allow incoming connections from.
+* `pgbouncer_settings` - PgBouncer configuration settings in JSON format (`exo dbaas type show pg --settings=pgbouncer` for reference).
+* `pglookout_settings` - pglookout configuration settings in JSON format (`exo dbaas type show pg --settings=pglookout` for reference).
+* `pg_settings` - PostgreSQL configuration settings in JSON format (`exo dbaas type show pg --settings=pg` for reference).
+* `version` - PostgreSQL major version (`exo dbaas type show pg` for reference; may only be set at creation time).
+
+### `redis` block
+
+* `ip_filter` - A list of CIDR blocks to allow incoming connections from.
+* `redis_settings` - Redis configuration settings in JSON format (`exo dbaas type show redis --settings=redis` for reference).
+
+
 ## Attributes Reference
 
 In addition to the arguments listed above, the following attributes are exported:
@@ -134,20 +141,16 @@ In addition to the arguments listed above, the following attributes are exported
 * `node_memory` - The amount of memory of the database service.
 * `nodes` - The number of nodes of the database service.
 * `state` - The current state of the database service.
-* `state` - The current state of the database service.
 * `updated_at` - The date of the latest database service update.
 * `uri` - The database service connection URI.
 
 
 ## Import
 
-An existing database service can be imported as a resource by specifying `NAME@ZONE`:
+An existing database service may be imported by `<name>@<zone>`:
 
 ```console
-$ terraform import exoscale_database.example my-database@de-fra-1
+$ terraform import \
+  exoscale_database.my_database \
+  my-database@ch-gva-2
 ```
-
-
-[dbaas-doc]: https://community.exoscale.com/documentation/dbaas/
-[zone]: https://www.exoscale.com/datacenters/
-

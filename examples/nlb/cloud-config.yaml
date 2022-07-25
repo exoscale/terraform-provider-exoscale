@@ -1,0 +1,10 @@
+#cloud-config
+
+package_update: true
+packages:
+  - lighttpd
+
+write_files:
+  - path: /var/www/html/index.html
+    content: |
+      <H1>Hello World!</H1>

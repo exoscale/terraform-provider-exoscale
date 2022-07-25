@@ -2,63 +2,29 @@
 page_title: "Exoscale: exoscale_network"
 subcategory: "Deprecated"
 description: |-
-  Provides information about a Private Network.
+  Fetch Exoscale Private Networks data.
 ---
 
 # exoscale\_network
 
-Provides information on a [Private Network][privnet-doc] for use in other resources such as a [`exoscale_instance_pool`][r-instance_pool] resource.
-
-!> **WARNING:** This data source is deprecated and will be removed in the next major version.
-
-
-## Example Usage
-
-```hcl
-locals {
-  zone = "ch-gva-2"
-}
-
-data "exoscale_network" "db" {
-  zone = local.zone
-  name = "db"
-}
-
-data "exoscale_compute_template" "ubuntu" {
-  zone = local.zone
-  name = "Linux Ubuntu 20.04 LTS 64-bit"
-}
-
-resource "exoscale_instance_pool" "webservers" {
-  zone               = local.zone
-  name               = "webservers"
-  template_id        = data.exoscale_compute_template.ubuntu.id
-  size               = 5
-  service_offering   = "medium"
-  network_ids        = [data.exoscale_network.db.id]
-}
-```
+!> **WARNING:** This data source is **DEPRECATED** and will be removed in the next major version. Please use [exoscale_private_network](./private_network.md) instead.
 
 
 ## Arguments Reference
 
-* `zone` - (Required) The [zone][zone] of the Private Network
-* `name` - The name of the Private Network (conflicts with `id`)
-* `id` - The ID of the Private Network (conflicts with `name`)
+* `zone` - (Required) The Exoscale Zone name.
 
+* `id` - The private network ID to match (conflicts with `name`).
+* `name` - The network name to match (conflicts with `id`).
 
 
 ## Attributes Reference
 
 In addition to the arguments listed above, the following attributes are exported:
 
-* `description` - The description of the Private Network
-* `start_ip` - The first address of IP range used by the DHCP service to automatically assign (for *managed* Private Networks)
-* `end_ip` - The last address of the IP range used by the DHCP service (for *managed* Private Networks)
-* `netmask` - The netmask defining the IP network allowed for the static lease (for *managed* Private Networks)
+* `description` - The private network description.
 
+### For *Managed* Private Networks
 
-[r-instance_pool]: ../resources/instance_pool
-[privnet-doc]: https://community.exoscale.com/documentation/compute/private-networks/
-[zone]: https://www.exoscale.com/datacenters/
-
+* `netmask` - The network mask defining the IPv4 network allowed for static leases.
+* `start_ip`/`end_ip` - The first/last IPv4 addresses used by the DHCP service for dynamic leases.

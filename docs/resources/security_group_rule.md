@@ -1,23 +1,23 @@
 ---
 page_title: "Exoscale: exoscale_security_group_rule"
 description: |-
-  Provides an Exoscale Security Group Rule.
+  Manage Exoscale Security Group Rules.
 ---
 
 # exoscale\_security\_group\_rule
 
-Provides an Exoscale [Security Group][r-security_group] rule resource. This can be used to create and delete Security Group rules.
+Manage Exoscale [Security Group](https://community.exoscale.com/documentation/compute/security-groups/) Rules.
 
 
-## Example usage
+## Usage
 
 ```hcl
-resource "exoscale_security_group" "webservers" {
-  # ...
+resource "exoscale_security_group" "my_security_group" {
+  name = "my-security-group"
 }
 
-resource "exoscale_security_group_rule" "http" {
-  security_group_id = exoscale_security_group.webservers.id
+resource "exoscale_security_group_rule" "my_security_group_rule" {
+  security_group_id = exoscale_security_group.my_security_group.id
   type              = "INGRESS"
   protocol          = "TCP"
   cidr              = "0.0.0.0/0" # "::/0" for IPv6
@@ -29,36 +29,38 @@ resource "exoscale_security_group_rule" "http" {
 
 ## Arguments Reference
 
-* `security_group` - (Required) The Security Group name the rule applies to.
-* `security_group_id` - (Required) The Security Group ID the rule applies to.
+[cidr]: https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing#CIDR_notation
+[icmp]: https://en.wikipedia.org/wiki/Internet_Control_Message_Protocol#Control_messages
+
+* `security_group_id` - (Required) The parent [exoscale_security_group](./security_group.md) ID.
 * `type` - (Required) The traffic direction to match (`INGRESS` or `EGRESS`).
-* `protocol` - (Required) The network protocol to match. Supported values are: `TCP`, `UDP`, `ICMP`, `ICMPv6`, `AH`, `ESP`, `GRE`, `IPIP` and `ALL`.
-* `description` - A free-form text describing the Security Group rule purpose.
+* `protocol` - (Required) The network protocol to match (`TCP`, `UDP`, `ICMP`, `ICMPv6`, `AH`, `ESP`, `GRE`, `IPIP` or `ALL`)
+
+* `description` - A free-form text describing the security group rule.
+* `cidr` - An (`INGRESS`) source / (`EGRESS`) destination IP subnet (in [CIDR notation][cidr]) to match (conflicts with `user_security_group`/`user_security_group_id`).
 * `start_port`/`end_port` - A `TCP`/`UDP` port range to match.
 * `icmp_type`/`icmp_code` - An ICMP/ICMPv6 [type/code][icmp] to match.
-* `cidr` - A source (for ingress)/destination (for egress) IP subnet (in [CIDR notation][cidr]) to match (conflicts with `user_security_group`/`security_group_id`).
-* `user_security_group_id` - A source (for ingress)/destination (for egress) Security Group ID to match (conflicts with `cidr`/`security_group)`).
-* `user_security_group` - A source (for ingress)/destination (for egress) Security Group name to match (conflicts with `cidr`/`security_group_id`).
+* `user_security_group_id` - An (`INGRESS`) source / (`EGRESS`) destination security group ID to match (conflicts with `cidr`/`user_security_group)`).
+
+* `security_group` - (Deprecated) The parent security group name. Please use the `security_group_id` argument along the [exoscale_security_group](../data-sources/security_group.md) data source instead.
+* `user_security_group` - (Deprecated) An (`INGRESS`) source / (`EGRESS`) destination security group name to match (conflicts with `cidr`/`user_security_group_id`). Please use the `user_security_group_id` argument along the [exoscale_security_group](../data-sources/security_group.md) data source instead.
 
 
 ## Attributes Reference
 
 In addition to the arguments listed above, the following attributes are exported:
 
-* `id` - The ID of the Security Group rule.
+* `id` - The security group rule ID.
 
 
 ## Import
 
-An existing Security Group rule can be imported as a resource by `<SECURITY-GROUP-ID>/<SECURITY-GROUP-RULE-ID>`:
+An existing security group rule may be imported by `<security-group-ID>/<security-group-rule-ID>`:
 
 ```console
-$ terraform import exoscale_security_group_rule.http eb556678-ec59-4be6-8c54-0406ae0f6da6/846831cb-a0fc-454b-9abd-cb526559fcf9
+$ terraform import \
+  exoscale_security_group_rule.my_security_group_rule \
+  f81d4fae-7dec-11d0-a765-00a0c91e6bf6/9ecc6b8b-73d4-4211-8ced-f7f29bb79524
 ```
 
 ~> **NOTE:** This resource is automatically imported when importing an `exoscale_security_group` resource.
-
-
-[cidr]: https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing#CIDR_notation
-[icmp]: https://en.wikipedia.org/wiki/Internet_Control_Message_Protocol#Control_messages
-[r-security_group]: ../resources/security_group

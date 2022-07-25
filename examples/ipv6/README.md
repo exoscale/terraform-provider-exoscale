@@ -1,46 +1,36 @@
 # IPv6
 
-This example show how to activate the IPv6 address feature `ip6 = true` as well as setting the Security Group Ingress rules to enable SSH ports.
+This example demonstrates how to activate
+[IPv6](https://community.exoscale.com/documentation/compute/ipv6/)
+on your compute instances, thanks to the `ipv6 = true` argument.
 
-Initializing Terraform will ask for the Exoscale provider and some credentials.
+Please refer to the [main.tf](./main.tf) Terraform configuration file.
 
-```
+One should note the IPv6-specific security groups rules set up for the SSH access
+(see the [ssh.tf](./ssh.tf) file).
+
+```console
 $ terraform init
-```
+$ terraform apply \
+  -var exoscale_api_key=$EXOSCALE_API_KEY \
+  -var exoscale_api_secret=$EXOSCALE_API_SECRET
 
-Then create the machine.
+...
 
-```
-$ terraform apply
+my_instance (remote-exec): Connected!
+my_instance (remote-exec): 2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP group default qlen 1000
+my_instance (remote-exec):     link/ether 06:0d:e0:00:03:0e brd ff:ff:ff:ff:ff:ff
+my_instance (remote-exec):     inet 185.19.30.210/22 metric 100 brd 185.19.31.255 scope global eth0
+my_instance (remote-exec):     inet6 2a04:c43:e00:63a3:40d:e0ff:fe00:30e/64 scope global dynamic mngtmpaddr noprefixroute
+my_instance (remote-exec):     inet6 fe80::40d:e0ff:fe00:30e/64 scope link
 
 ...
 
 Outputs:
 
-ip6_address = 2a04:c46:c00:a07:45e:42ff:fe00:13
-ip_address = 89.145.160.14
-username = centos
-
-$ ssh -6 centos@2a04:c46:c00:a07:45e:42ff:fe00:13
-[centos@test-ipv6 ~] $
-
-$ ssh -4 centos@89.145.160.14
-[centos@test-ipv6 ~] $ ip addr
-
-1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN qlen 1
-    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
-    inet 127.0.0.1/8 scope host lo
-       valid_lft forever preferred_lft forever
-    inet6 ::1/128 scope host
-       valid_lft forever preferred_lft forever
-2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP qlen 1000
-    link/ether 06:5e:42:00:00:13 brd ff:ff:ff:ff:ff:ff
-    inet 89.145.160.14/22 brd 89.145.163.255 scope global eth0
-       valid_lft forever preferred_lft forever
-    inet6 2a04:c46:c00:a07:45e:42ff:fe00:13/64 scope global mngtmpaddr dynamic
-       valid_lft 86388sec preferred_lft 14388sec
-    inet6 fe80::45e:42ff:fe00:13/64 scope link
-       valid_lft forever preferred_lft forever
+my_instance_ipv4 = "185.19.30.210"
+my_instance_ipv6 = "2a04:c43:e00:63a3:40d:e0ff:fe00:30e"
+ssh_connection = "ssh -i id_ssh ubuntu@185.19.30.210"
 ```
 
-It's even possible to activate IPv6 on existing machines without having to stop or reboot them.
+It's also possible to activate IPv6 on existing instances _without_ having to stop or reboot them.
