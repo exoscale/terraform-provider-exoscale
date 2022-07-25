@@ -176,7 +176,7 @@ func resourceDomainRecordStateUpgradeV0(
 		if err != nil {
 			return nil, fmt.Errorf("error retrieving domain records: %q", err)
 		}
-		tflog.Debug(ctx, "statee-upgrader: adding records to cache")
+		tflog.Debug(ctx, "state-upgrader: adding records to cache")
 		resourceDomainRecordUpgradeCache.AddRecords(rawState["domain"].(string), records)
 	} else {
 		tflog.Debug(ctx, "state-upgrader: records found in cache")
