@@ -159,7 +159,11 @@ func testAccCheckResourceDomainRecordExists(n string, domain *exo.DNSDomain, rec
 		}
 
 		client := GetComputeClient(testAccProvider.Meta())
-		r, err := client.GetDNSDomainRecord(context.TODO(), defaultZone, *domain.ID, rs.Primary.ID)
+		ctx := exoapi.WithEndpoint(
+			context.Background(),
+			exoapi.NewReqEndpoint(testEnvironment, testZoneName),
+		)
+		r, err := client.GetDNSDomainRecord(ctx, defaultZone, *domain.ID, rs.Primary.ID)
 		if err != nil {
 			return err
 		}
@@ -193,13 +197,17 @@ func testAccCheckResourceDomainRecordAttributes(n string, expected testAttrs) re
 
 func testAccCheckResourceDomainRecordDestroy(s *terraform.State) error {
 	client := GetComputeClient(testAccProvider.Meta())
+	ctx := exoapi.WithEndpoint(
+		context.Background(),
+		exoapi.NewReqEndpoint(testEnvironment, testZoneName),
+	)
 
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "exoscale_domain_record" {
 			continue
 		}
 
-		d, err := client.GetDNSDomainRecord(context.TODO(), defaultZone, rs.Primary.Attributes["id"], rs.Primary.ID)
+		d, err := client.GetDNSDomainRecord(ctx, defaultZone, rs.Primary.Attributes["id"], rs.Primary.ID)
 		if err != nil {
 			if errors.Is(err, exoapi.ErrNotFound) {
 				return nil
