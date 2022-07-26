@@ -24,9 +24,9 @@ const (
 	testInstanceTemplateUsername = "ubuntu"
 	testInstanceTemplateFilter   = "featured"
 
-	testInstanceTypeIDTiny   = "b6cd1ff5-3a2f-4e9d-a4d1-8988c1191fe8"
-	testInstanceTypeIDSmall  = "21624abb-764e-4def-81d7-9fc54b5957fb"
-	testInstanceTypeIDMedium = "b6e9d1e8-89fc-4db3-aaa4-9b4c5b1d0844"
+	testInstanceTypeIDTiny   = "84925525-7825-418b-845b-1aed179bbc40"
+	testInstanceTypeIDSmall  = "f5c533d9-d8db-45b4-89c8-04eed02662ba"
+	testInstanceTypeIDMedium = "5e5fb3c6-e076-429d-9b6c-b71f7b27760b"
 )
 
 // testAttrs represents a map of expected resource attributes during acceptance tests.
