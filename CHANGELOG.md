@@ -6,6 +6,10 @@ FEATURES:
 
 - `sks_cluster`: new `aggregation_ca`, `control_plane_ca`, and `kubelet_ca` exported attributes (#201).
 
+IMPROVEMENTS:
+
+- docs: global overhaul and removal of deprecated examples.
+
 ## 0.39.1 (July 20, 2022)
 
 BUG FIXES:
