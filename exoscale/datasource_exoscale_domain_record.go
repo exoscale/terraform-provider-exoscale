@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	exo "github.com/exoscale/egoscale/v2"
+	exoapi "github.com/exoscale/egoscale/v2/api"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -106,6 +107,7 @@ func dataSourceDomainRecordRead(ctx context.Context, d *schema.ResourceData, met
 	log.Printf("[DEBUG] %s: beginning read", resourceIDString(d, "exoscale_domain"))
 
 	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), defaultZone))
 	defer cancel()
 
 	client := GetComputeClient(meta)

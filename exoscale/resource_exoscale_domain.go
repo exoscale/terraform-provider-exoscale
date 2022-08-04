@@ -110,6 +110,7 @@ func resourceDomainCreate(ctx context.Context, d *schema.ResourceData, meta inte
 	log.Printf("[DEBUG] %s: beginning create", resourceDomainIDString(d))
 
 	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), defaultZone))
 	defer cancel()
 
 	client := GetComputeClient(meta)
@@ -117,7 +118,7 @@ func resourceDomainCreate(ctx context.Context, d *schema.ResourceData, meta inte
 	domainName := d.Get("name").(string)
 	domain, err := client.CreateDNSDomain(ctx, defaultZone, &exo.DNSDomain{UnicodeName: &domainName})
 	if err != nil {
-		return diag.Errorf("unable to retrieve instance type: %s", err)
+		return diag.Errorf("unable to create domain: %s", err)
 	}
 
 	d.SetId(*domain.ID)
@@ -134,6 +135,7 @@ func resourceDomainCreate(ctx context.Context, d *schema.ResourceData, meta inte
 
 func resourceDomainExists(d *schema.ResourceData, meta interface{}) (bool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), defaultZone))
 	defer cancel()
 
 	client := GetComputeClient(meta)
@@ -153,6 +155,7 @@ func resourceDomainRead(ctx context.Context, d *schema.ResourceData, meta interf
 	log.Printf("[DEBUG] %s: beginning read", resourceDomainIDString(d))
 
 	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), defaultZone))
 	defer cancel()
 
 	client := GetComputeClient(meta)
@@ -176,6 +179,7 @@ func resourceDomainDelete(ctx context.Context, d *schema.ResourceData, meta inte
 	log.Printf("[DEBUG] %s: beginning delete", resourceDomainIDString(d))
 
 	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), defaultZone))
 	defer cancel()
 
 	client := GetComputeClient(meta)
@@ -197,6 +201,7 @@ func resourceDomainDelete(ctx context.Context, d *schema.ResourceData, meta inte
 
 func resourceDomainImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), defaultZone))
 	defer cancel()
 
 	client := GetComputeClient(meta)
