@@ -13,7 +13,7 @@ Corresponding data source: [exoscale_elastic_ip](../data-sources/elastic_ip.md).
 
 ### Usage
 
-*Unmanaged* EIP:
+*Unmanaged* EIPv4:
 
 ```hcl
 resource "exoscale_elastic_ip" "my_elastic_ip" {
@@ -21,11 +21,12 @@ resource "exoscale_elastic_ip" "my_elastic_ip" {
 }
 ```
 
-*Managed* EIP:
+*Managed* EIPv6:
 
 ```hcl
 resource "exoscale_elastic_ip" "my_managed_elastic_ip" {
   zone = "ch-gva-2"
+  address_family = "inet6"
 
   healthcheck {
     mode         = "https"
@@ -50,6 +51,8 @@ directory for complete configuration examples.
 
 * `zone` - (Required) The Exoscale [Zone][zone] name.
 
+* `address_family` - The Elastic IP (EIP) address family (`inet4` or `inet6`; default: `inet4`).
+
 * `description` - A free-form text describing the Elastic IP (EIP).
 
 * `healthcheck` - (Block) Healthcheck configuration for *managed* EIPs. Structure is documented below.
@@ -72,7 +75,10 @@ directory for complete configuration examples.
 
 In addition to the arguments listed above, the following attributes are exported:
 
-* `ip_address` - The Elastic IP (EIP) IPv4 address.
+* `cidr` - The Elastic IP (EIP) CIDR.
+
+* `ip_address` - The Elastic IP (EIP) IPv4 or IPv6 address.
+
 
 
 ## Import

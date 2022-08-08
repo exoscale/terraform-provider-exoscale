@@ -35,12 +35,16 @@ directory for complete configuration examples.
 * `zone` - (Required) The Exocale [Zone][zone] name.
 
 * `id` - The Elastic IP (EIP) ID to match (conflicts with `ip_address`).
-* `ip_address` - The EIP IPv4 address to match (conflicts with `id`).
+* `ip_address` - The EIP IPv4 or IPv6 address to match (conflicts with `id`).
 
 
 ## Attributes Reference
 
 In addition to the arguments listed above, the following attributes are exported:
+
+* `address_family` - The Elastic IP (EIP) address family (`inet4` or `inet6`).
+
+* `cidr` - The Elastic IP (EIP) CIDR.
 
 * `description` - The Elastic IP (EIP) description.
 
