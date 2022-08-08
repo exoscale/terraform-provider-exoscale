@@ -16,6 +16,8 @@ import (
 )
 
 const (
+	resElasticIPAttrAddressFamily            = "address_family"
+	resElasticIPAttrCIDR                     = "cidr"
 	resElasticIPAttrDescription              = "description"
 	resElasticIPAttrHealthcheckInterval      = "interval"
 	resElasticIPAttrHealthcheckMode          = "mode"
@@ -37,8 +39,19 @@ func resourceElasticIPIDString(d resourceIDStringer) string {
 func resourceElasticIP() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
+			resElasticIPAttrAddressFamily: {
+				Type:     schema.TypeString,
+				Computed: true,
+				Optional: true,
+				ForceNew: true,
+			},
+			resElasticIPAttrCIDR: {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 			resElasticIPAttrDescription: {
 				Type:     schema.TypeString,
+				Computed: true,
 				Optional: true,
 				ForceNew: true,
 			},
@@ -145,7 +158,14 @@ func resourceElasticIPCreate(ctx context.Context, d *schema.ResourceData, meta i
 
 	elasticIP := new(egoscale.ElasticIP)
 
-	if v, ok := d.GetOk(resNLBAttrDescription); ok {
+	if v, ok := d.GetOk(resElasticIPAttrAddressFamily); ok {
+		s := v.(string)
+		if s != "" {
+			elasticIP.AddressFamily = &s
+		}
+	}
+
+	if v, ok := d.GetOk(resElasticIPAttrDescription); ok {
 		s := v.(string)
 		elasticIP.Description = &s
 	}
@@ -259,6 +279,15 @@ func resourceElasticIPUpdate(ctx context.Context, d *schema.ResourceData, meta i
 
 	var updated bool
 
+	if d.HasChange(resElasticIPAttrAddressFamily) {
+		v := d.Get(resElasticIPAttrAddressFamily).(string)
+		if v != "" {
+			elasticIP.AddressFamily = &v
+		}
+		// note that nil value is also considered change
+		updated = true
+	}
+
 	if d.HasChange(resElasticIPAttrDescription) {
 		v := d.Get(resElasticIPAttrDescription).(string)
 		elasticIP.Description = &v
@@ -304,6 +333,12 @@ func resourceElasticIPDelete(ctx context.Context, d *schema.ResourceData, meta i
 }
 
 func resourceElasticIPApply(_ context.Context, d *schema.ResourceData, elasticIP *egoscale.ElasticIP) error {
+	if err := d.Set(resElasticIPAttrAddressFamily, defaultString(elasticIP.AddressFamily, "")); err != nil {
+		return err
+	}
+	if err := d.Set(resElasticIPAttrCIDR, defaultString(elasticIP.CIDR, "")); err != nil {
+		return err
+	}
 	if err := d.Set(resElasticIPAttrDescription, defaultString(elasticIP.Description, "")); err != nil {
 		return err
 	}

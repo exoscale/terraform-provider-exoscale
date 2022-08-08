@@ -133,7 +133,7 @@ func testAccCheckResourceDatabaseDestroy(dbType, dbName string) resource.TestChe
 		}
 
 		if err != nil {
-			if errors.As(err, &exoapi.ErrNotFound) {
+			if errors.Is(err, exoapi.ErrNotFound) {
 				return nil
 			}
 			return err
