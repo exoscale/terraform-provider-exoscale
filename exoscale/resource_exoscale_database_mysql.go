@@ -229,6 +229,7 @@ func resourceDatabaseUpdateMysql(
 				BackupHour:   &bh,
 				BackupMinute: &bm,
 			}
+			updated = true
 		}
 
 		if d.HasChange(resDatabaseAttrMysql(resDatabaseAttrMysqlIPFilter)) {
