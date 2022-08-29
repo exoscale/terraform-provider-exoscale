@@ -257,6 +257,7 @@ func resourceDatabaseUpdatePg(
 				BackupHour:   &bh,
 				BackupMinute: &bm,
 			}
+			updated = true
 		}
 
 		if d.HasChange(resDatabaseAttrPg(resDatabaseAttrPgIPFilter)) {
