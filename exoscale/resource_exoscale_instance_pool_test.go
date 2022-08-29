@@ -1,3 +1,6 @@
+// NOTE: remove build tag once 53111 is fixed
+//go:build ignore
+
 package exoscale
 
 import (
