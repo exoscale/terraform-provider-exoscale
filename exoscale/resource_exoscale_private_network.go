@@ -3,11 +3,11 @@ package exoscale
 import (
 	"context"
 	"errors"
-	"log"
 	"net"
 
 	egoscale "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -78,7 +78,9 @@ func resourcePrivateNetwork() *schema.Resource {
 }
 
 func resourcePrivateNetworkCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("[DEBUG] %s: beginning create", resourcePrivateNetworkIDString(d))
+	tflog.Debug(ctx, "beginning create", map[string]interface{}{
+		"id": resourcePrivateNetworkIDString(d),
+	})
 
 	zone := d.Get(resPrivateNetworkAttrZone).(string)
 
@@ -118,13 +120,17 @@ func resourcePrivateNetworkCreate(ctx context.Context, d *schema.ResourceData, m
 
 	d.SetId(*privateNetwork.ID)
 
-	log.Printf("[DEBUG] %s: create finished successfully", resourcePrivateNetworkIDString(d))
+	tflog.Debug(ctx, "create finished successfully", map[string]interface{}{
+		"id": resourcePrivateNetworkIDString(d),
+	})
 
 	return resourcePrivateNetworkRead(ctx, d, meta)
 }
 
 func resourcePrivateNetworkRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("[DEBUG] %s: beginning read", resourcePrivateNetworkIDString(d))
+	tflog.Debug(ctx, "beginning read", map[string]interface{}{
+		"id": resourcePrivateNetworkIDString(d),
+	})
 
 	zone := d.Get(resPrivateNetworkAttrZone).(string)
 
@@ -144,13 +150,17 @@ func resourcePrivateNetworkRead(ctx context.Context, d *schema.ResourceData, met
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] %s: read finished successfully", resourcePrivateNetworkIDString(d))
+	tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
+		"id": resourcePrivateNetworkIDString(d),
+	})
 
 	return diag.FromErr(resourcePrivateNetworkApply(ctx, d, privateNetwork))
 }
 
 func resourcePrivateNetworkUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("[DEBUG] %s: beginning update", resourcePrivateNetworkIDString(d))
+	tflog.Debug(ctx, "beginning update", map[string]interface{}{
+		"id": resourcePrivateNetworkIDString(d),
+	})
 
 	zone := d.Get(resPrivateNetworkAttrZone).(string)
 
@@ -203,13 +213,17 @@ func resourcePrivateNetworkUpdate(ctx context.Context, d *schema.ResourceData, m
 		}
 	}
 
-	log.Printf("[DEBUG] %s: update finished successfully", resourcePrivateNetworkIDString(d))
+	tflog.Debug(ctx, "update finished successfully", map[string]interface{}{
+		"id": resourcePrivateNetworkIDString(d),
+	})
 
 	return resourcePrivateNetworkRead(ctx, d, meta)
 }
 
 func resourcePrivateNetworkDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("[DEBUG] %s: beginning delete", resourcePrivateNetworkIDString(d))
+	tflog.Debug(ctx, "beginning delete", map[string]interface{}{
+		"id": resourcePrivateNetworkIDString(d),
+	})
 
 	zone := d.Get(resPrivateNetworkAttrZone).(string)
 
@@ -224,7 +238,9 @@ func resourcePrivateNetworkDelete(ctx context.Context, d *schema.ResourceData, m
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] %s: delete finished successfully", resourcePrivateNetworkIDString(d))
+	tflog.Debug(ctx, "delete finished successfully", map[string]interface{}{
+		"id": resourcePrivateNetworkIDString(d),
+	})
 
 	return nil
 }

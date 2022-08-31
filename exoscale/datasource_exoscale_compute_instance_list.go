@@ -4,11 +4,11 @@ import (
 	"context"
 	"crypto/md5"
 	"fmt"
-	"log"
 	"sort"
 	"strings"
 
 	exoapi "github.com/exoscale/egoscale/v2/api"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -34,7 +34,9 @@ func dataSourceComputeInstanceList() *schema.Resource {
 }
 
 func dataSourceComputeInstanceListRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("[DEBUG] %s: beginning read", resourceIDString(d, "exoscale_compute_instance_list"))
+	tflog.Debug(ctx, "beginning read", map[string]interface{}{
+		"id": resourceIDString(d, "exoscale_compute_instance_list"),
+	})
 
 	zone := d.Get(dsComputeInstanceAttrZone).(string)
 
@@ -113,7 +115,9 @@ func dataSourceComputeInstanceListRead(ctx context.Context, d *schema.ResourceDa
 
 	d.SetId(fmt.Sprintf("%x", md5.Sum([]byte(strings.Join(ids, "")))))
 
-	log.Printf("[DEBUG] %s: read finished successfully", resourceIDString(d, "exoscale_compute_instance_list"))
+	tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
+		"id": resourceIDString(d, "exoscale_compute_instance_list"),
+	})
 
 	return nil
 }

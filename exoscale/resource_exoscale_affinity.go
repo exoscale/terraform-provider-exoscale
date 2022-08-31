@@ -2,9 +2,9 @@ package exoscale
 
 import (
 	"context"
-	"log"
 
 	"github.com/exoscale/egoscale"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -59,7 +59,9 @@ func resourceAffinity() *schema.Resource {
 }
 
 func resourceAffinityCreate(d *schema.ResourceData, meta interface{}) error {
-	log.Printf("[DEBUG] %s: beginning create", resourceAffinityIDString(d))
+	tflog.Debug(context.Background(), "beginning create", map[string]interface{}{
+		"id": resourceAffinityIDString(d),
+	})
 
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutCreate))
 	defer cancel()
@@ -80,7 +82,9 @@ func resourceAffinityCreate(d *schema.ResourceData, meta interface{}) error {
 	ag := resp.(*egoscale.AffinityGroup)
 	d.SetId(ag.ID.String())
 
-	log.Printf("[DEBUG] %s: create finished successfully", resourceAffinityIDString(d))
+	tflog.Debug(context.Background(), "create finished successfully", map[string]interface{}{
+		"id": resourceAffinityIDString(d),
+	})
 
 	return resourceAffinityRead(d, meta)
 }
@@ -107,7 +111,9 @@ func resourceAffinityExists(d *schema.ResourceData, meta interface{}) (bool, err
 }
 
 func resourceAffinityRead(d *schema.ResourceData, meta interface{}) error {
-	log.Printf("[DEBUG] %s: beginning read", resourceAffinityIDString(d))
+	tflog.Debug(context.Background(), "beginning read", map[string]interface{}{
+		"id": resourceAffinityIDString(d),
+	})
 
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
 	defer cancel()
@@ -126,13 +132,17 @@ func resourceAffinityRead(d *schema.ResourceData, meta interface{}) error {
 		return handleNotFound(d, err)
 	}
 
-	log.Printf("[DEBUG] %s: read finished successfully", resourceAffinityIDString(d))
+	tflog.Debug(context.Background(), "read finished successfully", map[string]interface{}{
+		"id": resourceAffinityIDString(d),
+	})
 
 	return resourceAffinityApply(d, resp.(*egoscale.AffinityGroup))
 }
 
 func resourceAffinityDelete(d *schema.ResourceData, meta interface{}) error {
-	log.Printf("[DEBUG] %s: beginning delete", resourceAffinityIDString(d))
+	tflog.Debug(context.Background(), "beginning delete", map[string]interface{}{
+		"id": resourceAffinityIDString(d),
+	})
 
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutDelete))
 	defer cancel()
@@ -150,7 +160,9 @@ func resourceAffinityDelete(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	log.Printf("[DEBUG] %s: delete finished successfully", resourceAffinityIDString(d))
+	tflog.Debug(context.Background(), "delete finished successfully", map[string]interface{}{
+		"id": resourceAffinityIDString(d),
+	})
 
 	return nil
 }

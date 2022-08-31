@@ -4,12 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
 	egoscale "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -174,7 +174,9 @@ func resourceNLBService() *schema.Resource {
 }
 
 func resourceNLBServiceCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("[DEBUG] %s: beginning create", resourceNLBServiceIDString(d))
+	tflog.Debug(ctx, "beginning create", map[string]interface{}{
+		"id": resourceNLBServiceIDString(d),
+	})
 
 	zone := d.Get(resNLBServiceAttrZone).(string)
 
@@ -253,13 +255,17 @@ func resourceNLBServiceCreate(ctx context.Context, d *schema.ResourceData, meta 
 
 	d.SetId(*nlbService.ID)
 
-	log.Printf("[DEBUG] %s: create finished successfully", resourceNLBServiceIDString(d))
+	tflog.Debug(ctx, "create finished successfully", map[string]interface{}{
+		"id": resourceNLBServiceIDString(d),
+	})
 
 	return resourceNLBServiceRead(ctx, d, meta)
 }
 
 func resourceNLBServiceRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("[DEBUG] %s: beginning read", resourceNLBServiceIDString(d))
+	tflog.Debug(ctx, "beginning read", map[string]interface{}{
+		"id": resourceNLBServiceIDString(d),
+	})
 
 	zone := d.Get(resNLBServiceAttrZone).(string)
 
@@ -292,13 +298,17 @@ func resourceNLBServiceRead(ctx context.Context, d *schema.ResourceData, meta in
 		return nil
 	}
 
-	log.Printf("[DEBUG] %s: read finished successfully", resourceNLBServiceIDString(d))
+	tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
+		"id": resourceNLBServiceIDString(d),
+	})
 
 	return diag.FromErr(resourceNLBServiceApply(ctx, d, nlbService))
 }
 
 func resourceNLBServiceUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("[DEBUG] %s: beginning update", resourceNLBServiceIDString(d))
+	tflog.Debug(ctx, "beginning update", map[string]interface{}{
+		"id": resourceNLBServiceIDString(d),
+	})
 
 	zone := d.Get(resNLBServiceAttrZone).(string)
 
@@ -406,13 +416,17 @@ func resourceNLBServiceUpdate(ctx context.Context, d *schema.ResourceData, meta 
 		}
 	}
 
-	log.Printf("[DEBUG] %s: update finished successfully", resourceNLBServiceIDString(d))
+	tflog.Debug(ctx, "update finished successfully", map[string]interface{}{
+		"id": resourceNLBServiceIDString(d),
+	})
 
 	return resourceNLBServiceRead(ctx, d, meta)
 }
 
 func resourceNLBServiceDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("[DEBUG] %s: beginning delete", resourceNLBServiceIDString(d))
+	tflog.Debug(ctx, "beginning delete", map[string]interface{}{
+		"id": resourceNLBServiceIDString(d),
+	})
 
 	zone := d.Get(resNLBServiceAttrZone).(string)
 
@@ -433,7 +447,9 @@ func resourceNLBServiceDelete(ctx context.Context, d *schema.ResourceData, meta 
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] %s: delete finished successfully", resourceNLBServiceIDString(d))
+	tflog.Debug(ctx, "delete finished successfully", map[string]interface{}{
+		"id": resourceNLBServiceIDString(d),
+	})
 
 	return nil
 }

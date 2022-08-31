@@ -5,12 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"net"
 	"strings"
 
 	egoscale "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -190,7 +190,7 @@ func newInstanceNetworkInterfaceFromInterface(rawStatePart interface{}) (*instan
 
 	networkInterface := instanceNetworkInterface{}
 	if err := json.Unmarshal(serializedRule, &networkInterface); err != nil {
-		log.Printf("[WARNING] %s", err)
+		tflog.Warn(context.Background(), err.Error())
 		return nil, err
 	}
 
@@ -212,7 +212,9 @@ func (n instanceNetworkInterface) toInterface() (map[string]interface{}, error) 
 }
 
 func resourceComputeInstanceCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("[DEBUG] %s: beginning create", resourceComputeInstanceIDString(d))
+	tflog.Debug(ctx, "beginning create", map[string]interface{}{
+		"id": resourceComputeInstanceIDString(d),
+	})
 
 	zone := d.Get(resComputeInstanceAttrZone).(string)
 
@@ -349,13 +351,17 @@ func resourceComputeInstanceCreate(ctx context.Context, d *schema.ResourceData, 
 
 	d.SetId(*computeInstance.ID)
 
-	log.Printf("[DEBUG] %s: create finished successfully", resourceComputeInstanceIDString(d))
+	tflog.Debug(ctx, "create finished successfully", map[string]interface{}{
+		"id": resourceComputeInstanceIDString(d),
+	})
 
 	return resourceComputeInstanceRead(ctx, d, meta)
 }
 
 func resourceComputeInstanceRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("[DEBUG] %s: beginning read", resourceComputeInstanceIDString(d))
+	tflog.Debug(ctx, "beginning read", map[string]interface{}{
+		"id": resourceComputeInstanceIDString(d),
+	})
 
 	zone := d.Get(resComputeInstanceAttrZone).(string)
 
@@ -375,13 +381,17 @@ func resourceComputeInstanceRead(ctx context.Context, d *schema.ResourceData, me
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] %s: read finished successfully", resourceComputeInstanceIDString(d))
+	tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
+		"id": resourceComputeInstanceIDString(d),
+	})
 
 	return resourceComputeInstanceApply(ctx, GetComputeClient(meta).Client, d, computeInstance)
 }
 
 func resourceComputeInstanceUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("[DEBUG] %s: beginning update", resourceComputeInstanceIDString(d))
+	tflog.Debug(ctx, "beginning update", map[string]interface{}{
+		"id": resourceComputeInstanceIDString(d),
+	})
 
 	zone := d.Get(resComputeInstanceAttrZone).(string)
 
@@ -582,13 +592,17 @@ func resourceComputeInstanceUpdate(ctx context.Context, d *schema.ResourceData, 
 		}
 	}
 
-	log.Printf("[DEBUG] %s: update finished successfully", resourceComputeInstanceIDString(d))
+	tflog.Debug(ctx, "update finished successfully", map[string]interface{}{
+		"id": resourceComputeInstanceIDString(d),
+	})
 
 	return resourceComputeInstanceRead(ctx, d, meta)
 }
 
 func resourceComputeInstanceDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("[DEBUG] %s: beginning delete", resourceComputeInstanceIDString(d))
+	tflog.Debug(ctx, "beginning delete", map[string]interface{}{
+		"id": resourceComputeInstanceIDString(d),
+	})
 
 	zone := d.Get(resComputeInstanceAttrZone).(string)
 
@@ -603,7 +617,9 @@ func resourceComputeInstanceDelete(ctx context.Context, d *schema.ResourceData, 
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] %s: delete finished successfully", resourceComputeInstanceIDString(d))
+	tflog.Debug(ctx, "delete finished successfully", map[string]interface{}{
+		"id": resourceComputeInstanceIDString(d),
+	})
 
 	return nil
 }

@@ -3,10 +3,10 @@ package exoscale
 import (
 	"context"
 	"errors"
-	"log"
 
 	egoscale "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -52,7 +52,9 @@ func resourceAntiAffinityGroup() *schema.Resource {
 }
 
 func resourceAntiAffinityGroupCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("[DEBUG] %s: beginning create", resourceAntiAffinityGroupIDString(d))
+	tflog.Debug(ctx, "beginning create", map[string]interface{}{
+		"id": resourceAntiAffinityGroupIDString(d),
+	})
 
 	zone := defaultZone
 
@@ -72,13 +74,17 @@ func resourceAntiAffinityGroupCreate(ctx context.Context, d *schema.ResourceData
 
 	d.SetId(*antiAffinityGroup.ID)
 
-	log.Printf("[DEBUG] %s: create finished successfully", resourceAntiAffinityGroupIDString(d))
+	tflog.Debug(ctx, "create finished successfully", map[string]interface{}{
+		"id": resourceAntiAffinityGroupIDString(d),
+	})
 
 	return resourceAntiAffinityGroupRead(ctx, d, meta)
 }
 
 func resourceAntiAffinityGroupRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("[DEBUG] %s: beginning read", resourceAntiAffinityGroupIDString(d))
+	tflog.Debug(ctx, "beginning read", map[string]interface{}{
+		"id": resourceAntiAffinityGroupIDString(d),
+	})
 
 	zone := defaultZone
 
@@ -98,13 +104,17 @@ func resourceAntiAffinityGroupRead(ctx context.Context, d *schema.ResourceData, 
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] %s: read finished successfully", resourceAntiAffinityGroupIDString(d))
+	tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
+		"id": resourceAntiAffinityGroupIDString(d),
+	})
 
 	return diag.FromErr(resourceAntiAffinityGroupApply(ctx, d, antiAffinityGroup))
 }
 
 func resourceAntiAffinityGroupDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("[DEBUG] %s: beginning delete", resourceAntiAffinityGroupIDString(d))
+	tflog.Debug(ctx, "beginning delete", map[string]interface{}{
+		"id": resourceAntiAffinityGroupIDString(d),
+	})
 
 	zone := defaultZone
 
@@ -119,7 +129,9 @@ func resourceAntiAffinityGroupDelete(ctx context.Context, d *schema.ResourceData
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] %s: delete finished successfully", resourceAntiAffinityGroupIDString(d))
+	tflog.Debug(ctx, "delete finished successfully", map[string]interface{}{
+		"id": resourceAntiAffinityGroupIDString(d),
+	})
 
 	return nil
 }

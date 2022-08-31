@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"math/rand"
 	"net"
 	"regexp"
@@ -14,6 +13,7 @@ import (
 
 	egoscale "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -180,7 +180,7 @@ func newStateSecurityGroupRuleFromInterface(rawStatePart interface{}) (*stateSec
 
 	securityGroupRule := stateSecurityGroupRule{}
 	if err := json.Unmarshal(serializedRule, &securityGroupRule); err != nil {
-		log.Printf("[WARNING] %s", err)
+		tflog.Warn(context.Background(), err.Error())
 		return nil, err
 	}
 
@@ -205,8 +205,8 @@ func (r stateSecurityGroupRule) toInterface() (map[string]interface{}, error) {
 	return securityGroupRule, nil
 }
 
-func resourceSecurityGroupRulesStateUpgradeV0(_ context.Context, rawState map[string]interface{}, _ interface{}) (map[string]interface{}, error) {
-	log.Printf("[DEBUG] beginning migration (v1)")
+func resourceSecurityGroupRulesStateUpgradeV0(ctx context.Context, rawState map[string]interface{}, _ interface{}) (map[string]interface{}, error) {
+	tflog.Debug(ctx, "beginning migration (v1)")
 
 	// If we defined start_port to 0 with a previous version of the provider (< 0.31.x),
 	// the API backend will return start_port = 1.
@@ -217,7 +217,7 @@ func resourceSecurityGroupRulesStateUpgradeV0(_ context.Context, rawState map[st
 
 	for _, direction := range []string{"ingress", "egress"} {
 		if _, ok := rawState[direction]; !ok {
-			log.Printf("[DEBUG] flow direction not defined: '%s', skipping", direction)
+			tflog.Debug(ctx, fmt.Sprintf("flow direction not defined: '%s', skipping", direction))
 			continue
 		}
 
@@ -234,7 +234,7 @@ func resourceSecurityGroupRulesStateUpgradeV0(_ context.Context, rawState map[st
 					rule.IDs[idx] = ruleIDRegex.ReplaceAllString(ruleID, "${1}_1${2}")
 					if ruleID != rule.IDs[idx] {
 						patchRules = true
-						log.Printf("[DEBUG] updated rule id from '%s' to '%s'\n", ruleID, rule.IDs[idx])
+						tflog.Debug(ctx, fmt.Sprintf("updated rule id from '%s' to '%s'\n", ruleID, rule.IDs[idx]))
 					}
 				}
 
@@ -243,7 +243,7 @@ func resourceSecurityGroupRulesStateUpgradeV0(_ context.Context, rawState map[st
 					rule.Ports[idx] = rulePortsRegex.ReplaceAllString(ports, "1-${1}")
 					if ports != rule.Ports[idx] {
 						patchRules = true
-						log.Printf("[DEBUG] updated rule ports from '%s' to '%s'\n", ports, rule.Ports[idx])
+						tflog.Debug(ctx, fmt.Sprintf("updated rule ports from '%s' to '%s'\n", ports, rule.Ports[idx]))
 					}
 				}
 
@@ -263,12 +263,12 @@ func resourceSecurityGroupRulesStateUpgradeV0(_ context.Context, rawState map[st
 		}
 	}
 
-	log.Printf("[DEBUG] done migration")
+	tflog.Debug(ctx, "done migration")
 	return rawState, nil
 }
 
-func resourceSecurityGroupRulesStateUpgradeV1(_ context.Context, rawState map[string]interface{}, _ interface{}) (map[string]interface{}, error) {
-	log.Printf("[DEBUG] beginning migration (v2)")
+func resourceSecurityGroupRulesStateUpgradeV1(ctx context.Context, rawState map[string]interface{}, _ interface{}) (map[string]interface{}, error) {
+	tflog.Debug(ctx, "beginning migration (v2)")
 
 	// If we defined user security group with mixed-case name using a previous version of the provider (< 0.31.x),
 	// the Open-API backend will return lower cased names.
@@ -278,7 +278,7 @@ func resourceSecurityGroupRulesStateUpgradeV1(_ context.Context, rawState map[st
 
 	for _, direction := range []string{"ingress", "egress"} {
 		if _, ok := rawState[direction]; !ok {
-			log.Printf("[DEBUG] flow direction not defined: '%s', skipping", direction)
+			tflog.Debug(ctx, fmt.Sprintf("flow direction not defined: '%s', skipping", direction))
 			continue
 		}
 		if rules, ok := rawState[direction].([]interface{}); ok {
@@ -296,7 +296,7 @@ func resourceSecurityGroupRulesStateUpgradeV1(_ context.Context, rawState map[st
 						rule.IDs[idx] = matches[1] + strings.ToLower(matches[2]) + matches[3]
 						if ruleID != rule.IDs[idx] {
 							patchRules = true
-							log.Printf("[DEBUG] updated rule id from '%s' to '%s'\n", ruleID, rule.IDs[idx])
+							tflog.Debug(ctx, fmt.Sprintf("updated rule id from '%s' to '%s'\n", ruleID, rule.IDs[idx]))
 						}
 					}
 				}
@@ -306,7 +306,7 @@ func resourceSecurityGroupRulesStateUpgradeV1(_ context.Context, rawState map[st
 					rule.UserSecurityGroupList[idx] = strings.ToLower(userSecurityGroup)
 					if userSecurityGroup != rule.UserSecurityGroupList[idx] {
 						patchRules = true
-						log.Printf("[DEBUG] updated rule user_security_group from '%s' to '%s'\n", userSecurityGroup, rule.UserSecurityGroupList[idx])
+						tflog.Debug(ctx, fmt.Sprintf("updated rule user_security_group from '%s' to '%s'\n", userSecurityGroup, rule.UserSecurityGroupList[idx]))
 					}
 				}
 
@@ -319,7 +319,7 @@ func resourceSecurityGroupRulesStateUpgradeV1(_ context.Context, rawState map[st
 					rules[idx] = rule
 					rawState[direction] = rules
 					patchRules = false
-					log.Printf("[DEBUG] updated rule id from '%s'\n", rules[idx])
+					tflog.Debug(ctx, fmt.Sprintf("updated rule id from '%s'\n", rules[idx]))
 				}
 			}
 		} else {
@@ -327,12 +327,14 @@ func resourceSecurityGroupRulesStateUpgradeV1(_ context.Context, rawState map[st
 		}
 	}
 
-	log.Printf("[DEBUG] done migration")
+	tflog.Debug(ctx, "done migration")
 	return rawState, nil
 }
 
 func resourceSecurityGroupRulesCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("[DEBUG] %s: beginning create", resourceSecurityGroupRulesIDString(d))
+	tflog.Debug(ctx, "beginning create", map[string]interface{}{
+		"id": resourceSecurityGroupRulesIDString(d),
+	})
 
 	zone := defaultZone
 
@@ -416,13 +418,17 @@ func resourceSecurityGroupRulesCreate(ctx context.Context, d *schema.ResourceDat
 
 	d.SetId(fmt.Sprintf("%d", rand.Uint64()))
 
-	log.Printf("[DEBUG] %s: create finished successfully", resourceSecurityGroupRulesIDString(d))
+	tflog.Debug(ctx, "create finished successfully", map[string]interface{}{
+		"id": resourceSecurityGroupRulesIDString(d),
+	})
 
 	return resourceSecurityGroupRulesRead(ctx, d, meta)
 }
 
 func resourceSecurityGroupRulesRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("[DEBUG] %s: beginning read", resourceSecurityGroupRulesIDString(d))
+	tflog.Debug(ctx, "beginning read", map[string]interface{}{
+		"id": resourceSecurityGroupRulesIDString(d),
+	})
 
 	zone := defaultZone
 
@@ -503,13 +509,17 @@ func resourceSecurityGroupRulesRead(ctx context.Context, d *schema.ResourceData,
 		}
 	}
 
-	log.Printf("[DEBUG] %s: read finished successfully", resourceSecurityGroupRulesIDString(d))
+	tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
+		"id": resourceSecurityGroupRulesIDString(d),
+	})
 
 	return nil
 }
 
 func resourceSecurityGroupRulesUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("[DEBUG] %s: beginning update", resourceSecurityGroupRulesIDString(d))
+	tflog.Debug(ctx, "beginning update", map[string]interface{}{
+		"id": resourceSecurityGroupRulesIDString(d),
+	})
 
 	zone := defaultZone
 
@@ -578,13 +588,17 @@ func resourceSecurityGroupRulesUpdate(ctx context.Context, d *schema.ResourceDat
 		}
 	}
 
-	log.Printf("[DEBUG] %s: update finished successfully", resourceSecurityGroupRulesIDString(d))
+	tflog.Debug(ctx, "update finished successfully", map[string]interface{}{
+		"id": resourceSecurityGroupRulesIDString(d),
+	})
 
 	return resourceSecurityGroupRulesRead(ctx, d, meta)
 }
 
 func resourceSecurityGroupRulesDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("[DEBUG] %s: beginning delete", resourceSecurityGroupRulesIDString(d))
+	tflog.Debug(ctx, "beginning delete", map[string]interface{}{
+		"id": resourceSecurityGroupRulesIDString(d),
+	})
 
 	zone := defaultZone
 
@@ -628,7 +642,9 @@ func resourceSecurityGroupRulesDelete(ctx context.Context, d *schema.ResourceDat
 		}
 	}
 
-	log.Printf("[DEBUG] %s: delete finished successfully", resourceSecurityGroupRulesIDString(d))
+	tflog.Debug(ctx, "delete finished successfully", map[string]interface{}{
+		"id": resourceSecurityGroupRulesIDString(d),
+	})
 
 	return nil
 }

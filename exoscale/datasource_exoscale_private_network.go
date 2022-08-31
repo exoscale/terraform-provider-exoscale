@@ -2,9 +2,9 @@ package exoscale
 
 import (
 	"context"
-	"log"
 
 	exoapi "github.com/exoscale/egoscale/v2/api"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -59,7 +59,9 @@ func dataSourcePrivateNetwork() *schema.Resource {
 }
 
 func dataSourcePrivateNetworkRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("[DEBUG] %s: beginning read", resourcePrivateNetworkIDString(d))
+	tflog.Debug(ctx, "beginning read", map[string]interface{}{
+		"id": resourcePrivateNetworkIDString(d),
+	})
 
 	zone := d.Get(dsPrivateNetworkAttrZone).(string)
 
@@ -120,7 +122,9 @@ func dataSourcePrivateNetworkRead(ctx context.Context, d *schema.ResourceData, m
 		}
 	}
 
-	log.Printf("[DEBUG] %s: read finished successfully", resourcePrivateNetworkIDString(d))
+	tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
+		"id": resourcePrivateNetworkIDString(d),
+	})
 
 	return nil
 }

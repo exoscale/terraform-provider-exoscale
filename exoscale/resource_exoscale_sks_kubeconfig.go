@@ -6,13 +6,13 @@ import (
 	"encoding/base64"
 	"encoding/pem"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
 	yaml "gopkg.in/yaml.v3"
 
 	exoapi "github.com/exoscale/egoscale/v2/api"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -98,7 +98,9 @@ func resourceSKSKubeconfig() *schema.Resource {
 }
 
 func resourceSKSKubeconfigCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("[DEBUG] %s: beginning create", resourceSKSKubeconfigIDString(d))
+	tflog.Debug(ctx, "beginning create", map[string]interface{}{
+		"id": resourceSKSKubeconfigIDString(d),
+	})
 
 	zone := d.Get(resSKSKubeconfigAttrZone).(string)
 	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutCreate))
@@ -144,7 +146,9 @@ func resourceSKSKubeconfigCreate(ctx context.Context, d *schema.ResourceData, me
 
 	d.SetId(*id)
 
-	log.Printf("[DEBUG] %s: create finished successfully", resourceSKSKubeconfigIDString(d))
+	tflog.Debug(ctx, "create finished successfully", map[string]interface{}{
+		"id": resourceSKSKubeconfigIDString(d),
+	})
 
 	return resourceSKSKubeconfigRead(ctx, d, meta)
 }
@@ -158,13 +162,17 @@ func resourceSKSKubeconfigUpdate(ctx context.Context, d *schema.ResourceData, me
 }
 
 func resourceSKSKubeconfigDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("[DEBUG] %s: beginning delete", resourceSKSKubeconfigIDString(d))
+	tflog.Debug(ctx, "beginning delete", map[string]interface{}{
+		"id": resourceSKSKubeconfigIDString(d),
+	})
 
 	// no revocation: we rely on client certificate expiration
 	// So let's just remove the kubeconfig from the state.
 	d.SetId("")
 
-	log.Printf("[DEBUG] %s: delete finished successfully", resourceSKSKubeconfigIDString(d))
+	tflog.Debug(ctx, "delete finished successfully", map[string]interface{}{
+		"id": resourceSKSKubeconfigIDString(d),
+	})
 	return nil
 }
 
@@ -263,7 +271,9 @@ func kubeconfigRawPEMDataToCertificate(b64PEMData string) (*x509.Certificate, er
 }
 
 func kubeconfigToID(kubeconfig string) (*string, error) {
-	log.Printf("[DEBUG] kubeconfigToID: kubeconfig= %s", kubeconfig)
+	tflog.Debug(context.Background(), "kubeconfigToID", map[string]interface{}{
+		"kubeconfig": kubeconfig,
+	})
 
 	clusterCertificates, clientCertificates, err := KubeconfigExtractCertificates(kubeconfig)
 	if err != nil {

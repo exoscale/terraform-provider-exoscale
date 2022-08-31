@@ -4,12 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/exoscale/egoscale"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -217,7 +217,9 @@ func resourceCompute() *schema.Resource {
 }
 
 func resourceComputeCreate(d *schema.ResourceData, meta interface{}) error {
-	log.Printf("[DEBUG] %s: beginning create", resourceComputeIDString(d))
+	tflog.Debug(context.Background(), "beginning create", map[string]interface{}{
+		"id": resourceComputeIDString(d),
+	})
 
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutCreate))
 	defer cancel()
@@ -287,8 +289,10 @@ func resourceComputeCreate(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	if username == "" {
-		log.Printf("[INFO] %s: username not found in the template details, falling back to `root`",
-			resourceComputeIDString(d))
+		tflog.Info(context.Background(), "username not found in the template details, falling back to `root`", map[string]interface{}{
+			"id": resourceComputeIDString(d),
+		})
+
 		username = "root"
 	}
 
@@ -397,7 +401,10 @@ func resourceComputeCreate(d *schema.ResourceData, meta interface{}) error {
 		if err := client.BooleanRequestWithContext(ctx, cmd); err != nil {
 			// Attempting to destroy the freshly created machine
 			if e := client.DeleteWithContext(ctx, machine); e != nil {
-				log.Printf("[WARNING] Failure to create the tags, but the machine was deployed. %v", e)
+				tflog.Warn(context.Background(), "failure to create the tags, but the machine was deployed", map[string]interface{}{
+					"id":        resourceComputeIDString(d),
+					"api-error": e,
+				})
 			}
 
 			return err
@@ -417,7 +424,9 @@ func resourceComputeCreate(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	log.Printf("[DEBUG] %s: create finished successfully", resourceComputeIDString(d))
+	tflog.Debug(ctx, "create finished successfully", map[string]interface{}{
+		"id": resourceComputeIDString(d),
+	})
 
 	return resourceComputeRead(d, meta)
 }
@@ -446,7 +455,9 @@ func resourceComputeExists(d *schema.ResourceData, meta interface{}) (bool, erro
 }
 
 func resourceComputeRead(d *schema.ResourceData, meta interface{}) error {
-	log.Printf("[DEBUG] %s: beginning read", resourceComputeIDString(d))
+	tflog.Debug(context.Background(), "beginning read", map[string]interface{}{
+		"id": resourceComputeIDString(d),
+	})
 
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
 	defer cancel()
@@ -543,13 +554,17 @@ func resourceComputeRead(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	log.Printf("[DEBUG] %s: read finished successfully", resourceComputeIDString(d))
+	tflog.Debug(context.Background(), "read finished successfully", map[string]interface{}{
+		"id": resourceComputeIDString(d),
+	})
 
 	return resourceComputeApply(d, machine)
 }
 
 func resourceComputeUpdate(d *schema.ResourceData, meta interface{}) error {
-	log.Printf("[DEBUG] %s: beginning update", resourceComputeIDString(d))
+	tflog.Debug(context.Background(), "beginning update", map[string]interface{}{
+		"id": resourceComputeIDString(d),
+	})
 
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutUpdate))
 	defer cancel()
@@ -825,13 +840,17 @@ func resourceComputeUpdate(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	log.Printf("[DEBUG] %s: update finished successfully", resourceComputeIDString(d))
+	tflog.Debug(context.Background(), "update finished successfully", map[string]interface{}{
+		"id": resourceComputeIDString(d),
+	})
 
 	return resourceComputeRead(d, meta)
 }
 
 func resourceComputeDelete(d *schema.ResourceData, meta interface{}) error {
-	log.Printf("[DEBUG] %s: beginning delete", resourceComputeIDString(d))
+	tflog.Debug(context.Background(), "beginning delete", map[string]interface{}{
+		"id": resourceComputeIDString(d),
+	})
 
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutDelete))
 	defer cancel()
@@ -849,13 +868,17 @@ func resourceComputeDelete(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	log.Printf("[DEBUG] %s: delete finished successfully", resourceComputeIDString(d))
+	tflog.Debug(context.Background(), "delete finished successfully", map[string]interface{}{
+		"id": resourceComputeIDString(d),
+	})
 
 	return nil
 }
 
 func resourceComputeImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-	log.Printf("[DEBUG] %s: beginning import", resourceComputeIDString(d))
+	tflog.Debug(ctx, "beginning import", map[string]interface{}{
+		"id": resourceComputeIDString(d),
+	})
 
 	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
 	defer cancel()
@@ -897,9 +920,10 @@ func resourceComputeImport(ctx context.Context, d *schema.ResourceData, meta int
 	resources = append(resources, d)
 
 	for _, secondaryIP := range secondaryIPs {
-		log.Printf("[DEBUG] %s: importing exoscale_secondary_ipaddress resource (ID = %s)",
-			resourceComputeIDString(d),
-			secondaryIP.ID.String())
+		tflog.Debug(ctx, "importing exoscale_secondary_ipaddress resource", map[string]interface{}{
+			"id":           resourceComputeIDString(d),
+			"secondary-ip": secondaryIP.ID.String(),
+		})
 
 		resource := resourceSecondaryIPAddress()
 		d := resource.Data(nil)
@@ -917,9 +941,10 @@ func resourceComputeImport(ctx context.Context, d *schema.ResourceData, meta int
 	}
 
 	for _, nic := range nics {
-		log.Printf("[DEBUG] %s: importing exoscale_nic resource (ID = %s)",
-			resourceComputeIDString(d),
-			nic.ID.String())
+		tflog.Debug(ctx, "importing exoscale_nic resource", map[string]interface{}{
+			"id":  resourceComputeIDString(d),
+			"nic": nic.ID.String(),
+		})
 
 		resource := resourceNIC()
 		d := resource.Data(nil)
@@ -931,7 +956,9 @@ func resourceComputeImport(ctx context.Context, d *schema.ResourceData, meta int
 		resources = append(resources, d)
 	}
 
-	log.Printf("[DEBUG] %s: import finished successfully", resourceComputeIDString(d))
+	tflog.Debug(ctx, "import finished successfully", map[string]interface{}{
+		"id": resourceComputeIDString(d),
+	})
 
 	return resources, nil
 }

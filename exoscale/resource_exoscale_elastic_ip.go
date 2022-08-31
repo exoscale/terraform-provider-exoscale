@@ -4,12 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"regexp"
 	"time"
 
 	egoscale "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -131,7 +131,9 @@ func resourceElasticIP() *schema.Resource {
 }
 
 func resourceElasticIPCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("[DEBUG] %s: beginning create", resourceElasticIPIDString(d))
+	tflog.Debug(ctx, "beginning create", map[string]interface{}{
+		"id": resourceElasticIPIDString(d),
+	})
 
 	zone := d.Get(resElasticIPAttrZone).(string)
 
@@ -200,13 +202,17 @@ func resourceElasticIPCreate(ctx context.Context, d *schema.ResourceData, meta i
 
 	d.SetId(*elasticIP.ID)
 
-	log.Printf("[DEBUG] %s: create finished successfully", resourceElasticIPIDString(d))
+	tflog.Debug(ctx, "create finished successfully", map[string]interface{}{
+		"id": resourceElasticIPIDString(d),
+	})
 
 	return resourceElasticIPRead(ctx, d, meta)
 }
 
 func resourceElasticIPRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("[DEBUG] %s: beginning read", resourceElasticIPIDString(d))
+	tflog.Debug(ctx, "beginning read", map[string]interface{}{
+		"id": resourceElasticIPIDString(d),
+	})
 
 	zone := d.Get(resElasticIPAttrZone).(string)
 
@@ -226,13 +232,17 @@ func resourceElasticIPRead(ctx context.Context, d *schema.ResourceData, meta int
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] %s: read finished successfully", resourceElasticIPIDString(d))
+	tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
+		"id": resourceElasticIPIDString(d),
+	})
 
 	return diag.FromErr(resourceElasticIPApply(ctx, d, elasticIP))
 }
 
 func resourceElasticIPUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("[DEBUG] %s: beginning update", resourceElasticIPIDString(d))
+	tflog.Debug(ctx, "beginning update", map[string]interface{}{
+		"id": resourceElasticIPIDString(d),
+	})
 
 	zone := d.Get(resElasticIPAttrZone).(string)
 
@@ -261,13 +271,17 @@ func resourceElasticIPUpdate(ctx context.Context, d *schema.ResourceData, meta i
 		}
 	}
 
-	log.Printf("[DEBUG] %s: update finished successfully", resourceElasticIPIDString(d))
+	tflog.Debug(ctx, "update finished successfully", map[string]interface{}{
+		"id": resourceElasticIPIDString(d),
+	})
 
 	return resourceElasticIPRead(ctx, d, meta)
 }
 
 func resourceElasticIPDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("[DEBUG] %s: beginning delete", resourceElasticIPIDString(d))
+	tflog.Debug(ctx, "beginning delete", map[string]interface{}{
+		"id": resourceElasticIPIDString(d),
+	})
 
 	zone := d.Get(resElasticIPAttrZone).(string)
 
@@ -282,7 +296,9 @@ func resourceElasticIPDelete(ctx context.Context, d *schema.ResourceData, meta i
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] %s: delete finished successfully", resourceElasticIPIDString(d))
+	tflog.Debug(ctx, "delete finished successfully", map[string]interface{}{
+		"id": resourceDomainIDString(d),
+	})
 
 	return nil
 }

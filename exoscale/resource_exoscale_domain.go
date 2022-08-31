@@ -4,11 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 
 	exo "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -107,7 +107,9 @@ func resourceDomainStateUpgradeV0(
 }
 
 func resourceDomainCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("[DEBUG] %s: beginning create", resourceDomainIDString(d))
+	tflog.Debug(ctx, "beginning create", map[string]interface{}{
+		"id": resourceDomainIDString(d),
+	})
 
 	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), defaultZone))
@@ -123,7 +125,9 @@ func resourceDomainCreate(ctx context.Context, d *schema.ResourceData, meta inte
 
 	d.SetId(*domain.ID)
 
-	log.Printf("[DEBUG] %s: create finished successfully", resourceDomainIDString(d))
+	tflog.Debug(ctx, "create finished successfully", map[string]interface{}{
+		"id": resourceDomainIDString(d),
+	})
 
 	err = resourceDomainApply(d, domain)
 	if err != nil {
@@ -152,7 +156,9 @@ func resourceDomainExists(d *schema.ResourceData, meta interface{}) (bool, error
 }
 
 func resourceDomainRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("[DEBUG] %s: beginning read", resourceDomainIDString(d))
+	tflog.Debug(ctx, "beginning read", map[string]interface{}{
+		"id": resourceDomainIDString(d),
+	})
 
 	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), defaultZone))
@@ -165,7 +171,9 @@ func resourceDomainRead(ctx context.Context, d *schema.ResourceData, meta interf
 		return diag.Errorf("error retrieving domain: %s", err)
 	}
 
-	log.Printf("[DEBUG] %s: read finished successfully", resourceDomainIDString(d))
+	tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
+		"id": resourceDomainIDString(d),
+	})
 
 	err = resourceDomainApply(d, domain)
 	if err != nil {
@@ -176,7 +184,9 @@ func resourceDomainRead(ctx context.Context, d *schema.ResourceData, meta interf
 }
 
 func resourceDomainDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("[DEBUG] %s: beginning delete", resourceDomainIDString(d))
+	tflog.Debug(ctx, "beginning delete", map[string]interface{}{
+		"id": resourceDomainIDString(d),
+	})
 
 	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), defaultZone))
@@ -194,7 +204,9 @@ func resourceDomainDelete(ctx context.Context, d *schema.ResourceData, meta inte
 		return diag.Errorf("error deleting domain: %s", err)
 	}
 
-	log.Printf("[DEBUG] %s: delete finished successfully", resourceDomainIDString(d))
+	tflog.Debug(ctx, "delete finished successfully", map[string]interface{}{
+		"id": resourceDomainIDString(d),
+	})
 
 	return nil
 }
