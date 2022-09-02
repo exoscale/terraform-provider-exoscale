@@ -1,6 +1,17 @@
 # Changelog
 
-## 0.40.0 (not yet released)
+## 0.40.1 (September 2, 2022)
+
+BUG FIXES:
+
+- resource_database_mysql/pg: fix backup schedule update bug (#212).
+- domain/domain_record: use environment config (#208).
+
+CHANGES:
+
+- Instance pool acc test disabled temporarily (#213).
+
+## 0.40.0 (July 27, 2022)
 
 FEATURES:
 
