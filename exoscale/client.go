@@ -3,13 +3,14 @@ package exoscale
 import (
 	"fmt"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/exoscale/egoscale"
 	exov2 "github.com/exoscale/egoscale/v2"
 	"github.com/exoscale/terraform-provider-exoscale/version"
+
 	cleanhttp "github.com/hashicorp/go-cleanhttp"
+	retryablehttp "github.com/hashicorp/go-retryablehttp"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/logging"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/meta"
 )
@@ -75,19 +76,13 @@ func getClient(endpoint string, meta interface{}) *egoscale.Client {
 		exov2.ClientOptWithAPIEndpoint(endpoint),
 		exov2.ClientOptWithTimeout(config.timeout),
 		exov2.ClientOptWithHTTPClient(func() *http.Client {
-			hc := cleanhttp.DefaultPooledClient()
-			hc.Transport = &defaultTransport{next: hc.Transport}
+			rc := retryablehttp.NewClient().StandardClient()
 			if logging.IsDebugOrHigher() {
-				hc.Transport = logging.NewTransport("exoscale", hc.Transport)
+				rc.Transport = logging.NewTransport("exoscale", rc.Transport)
 			}
-			return hc
+			return rc
 		}()),
-		exov2.ClientOptCond(func() bool {
-			if v := os.Getenv("EXOSCALE_TRACE"); v != "" {
-				return true
-			}
-			return false
-		}, exov2.ClientOptWithTrace()))
+	)
 	if err != nil {
 		panic(fmt.Sprintf("unable to initialize Exoscale API V2 client: %v", err))
 	}

@@ -13,6 +13,7 @@ import (
 	ini "gopkg.in/ini.v1"
 
 	"github.com/exoscale/egoscale"
+	exo "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -188,6 +189,9 @@ func Provider() *schema.Provider {
 
 func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
 	var diags diag.Diagnostics
+
+	// we only need to set UserAgent once, so lets do it right away.
+	exo.UserAgent = userAgent
 
 	key, keyOK := d.GetOk("key")
 	secret, secretOK := d.GetOk("secret")
