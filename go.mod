@@ -1,11 +1,11 @@
 module github.com/exoscale/terraform-provider-exoscale
 
 require (
-	github.com/exoscale/egoscale v0.89.0
+	github.com/exoscale/egoscale v0.90.1
 	github.com/hashicorp/go-cleanhttp v0.5.2
 	github.com/hashicorp/go-cty v1.4.1-0.20200414143053-d3edf31b6320
+	github.com/hashicorp/go-retryablehttp v0.7.1
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.10.0
-	github.com/ssgreg/repeat v1.5.1
 	github.com/stretchr/testify v1.7.0
 	github.com/xeipuuv/gojsonschema v1.2.0
 	gopkg.in/ini.v1 v1.48.0
