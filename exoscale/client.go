@@ -2,6 +2,7 @@ package exoscale
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
@@ -76,11 +77,13 @@ func getClient(endpoint string, meta interface{}) *egoscale.Client {
 		exov2.ClientOptWithAPIEndpoint(endpoint),
 		exov2.ClientOptWithTimeout(config.timeout),
 		exov2.ClientOptWithHTTPClient(func() *http.Client {
-			rc := retryablehttp.NewClient().StandardClient()
+			rc := retryablehttp.NewClient()
+			rc.Logger = LeveledTFLogger{Verbose: logging.IsDebugOrHigher()}
+			hc := rc.StandardClient()
 			if logging.IsDebugOrHigher() {
-				rc.Transport = logging.NewTransport("exoscale", rc.Transport)
+				hc.Transport = logging.NewTransport("exoscale", hc.Transport)
 			}
-			return rc
+			return hc
 		}()),
 	)
 	if err != nil {
@@ -131,4 +134,24 @@ func (t *defaultTransport) RoundTrip(req *http.Request) (*http.Response, error) 
 	}
 
 	return resp, nil
+}
+
+// LeveledTFLogger is a thin wrapper around stdlib.log that satisfies retryablehttp.LeveledLogger interface.
+type LeveledTFLogger struct {
+	Verbose bool
+}
+
+func (l LeveledTFLogger) Error(msg string, keysAndValues ...interface{}) {
+	log.Println("[ERROR]", msg, keysAndValues)
+}
+func (l LeveledTFLogger) Info(msg string, keysAndValues ...interface{}) {
+	log.Println("[INFO]", msg, keysAndValues)
+}
+func (l LeveledTFLogger) Debug(msg string, keysAndValues ...interface{}) {
+	if l.Verbose {
+		log.Println("[DEBUG]", msg, keysAndValues)
+	}
+}
+func (l LeveledTFLogger) Warn(msg string, keysAndValues ...interface{}) {
+	log.Println("[WARN]", msg, keysAndValues)
 }
