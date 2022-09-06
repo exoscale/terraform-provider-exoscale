@@ -135,6 +135,7 @@ directory for complete configuration examples.
 
 In addition to the arguments listed above, the following attributes are exported:
 
+* `ca_certificate` - CA Certificate required to reach a DBaaS service through a TLS-protected connection.
 * `created_at` - The creation date of the database service.
 * `disk_size` - The disk size of the database service.
 * `node_cpus` - The number of CPUs of the database service.
