@@ -2,14 +2,16 @@ package exoscale
 
 import (
 	"fmt"
+	"log"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/exoscale/egoscale"
 	exov2 "github.com/exoscale/egoscale/v2"
 	"github.com/exoscale/terraform-provider-exoscale/version"
+
 	cleanhttp "github.com/hashicorp/go-cleanhttp"
+	retryablehttp "github.com/hashicorp/go-retryablehttp"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/logging"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/meta"
 )
@@ -75,19 +77,15 @@ func getClient(endpoint string, meta interface{}) *egoscale.Client {
 		exov2.ClientOptWithAPIEndpoint(endpoint),
 		exov2.ClientOptWithTimeout(config.timeout),
 		exov2.ClientOptWithHTTPClient(func() *http.Client {
-			hc := cleanhttp.DefaultPooledClient()
-			hc.Transport = &defaultTransport{next: hc.Transport}
+			rc := retryablehttp.NewClient()
+			rc.Logger = LeveledTFLogger{Verbose: logging.IsDebugOrHigher()}
+			hc := rc.StandardClient()
 			if logging.IsDebugOrHigher() {
 				hc.Transport = logging.NewTransport("exoscale", hc.Transport)
 			}
 			return hc
 		}()),
-		exov2.ClientOptCond(func() bool {
-			if v := os.Getenv("EXOSCALE_TRACE"); v != "" {
-				return true
-			}
-			return false
-		}, exov2.ClientOptWithTrace()))
+	)
 	if err != nil {
 		panic(fmt.Sprintf("unable to initialize Exoscale API V2 client: %v", err))
 	}
@@ -136,4 +134,24 @@ func (t *defaultTransport) RoundTrip(req *http.Request) (*http.Response, error) 
 	}
 
 	return resp, nil
+}
+
+// LeveledTFLogger is a thin wrapper around stdlib.log that satisfies retryablehttp.LeveledLogger interface.
+type LeveledTFLogger struct {
+	Verbose bool
+}
+
+func (l LeveledTFLogger) Error(msg string, keysAndValues ...interface{}) {
+	log.Println("[ERROR]", msg, keysAndValues)
+}
+func (l LeveledTFLogger) Info(msg string, keysAndValues ...interface{}) {
+	log.Println("[INFO]", msg, keysAndValues)
+}
+func (l LeveledTFLogger) Debug(msg string, keysAndValues ...interface{}) {
+	if l.Verbose {
+		log.Println("[DEBUG]", msg, keysAndValues)
+	}
+}
+func (l LeveledTFLogger) Warn(msg string, keysAndValues ...interface{}) {
+	log.Println("[WARN]", msg, keysAndValues)
 }
