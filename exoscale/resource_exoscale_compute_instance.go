@@ -57,6 +57,7 @@ func resourceComputeInstance() *schema.Resource {
 		resComputeInstanceAttrDeployTargetID: {
 			Type:     schema.TypeString,
 			Optional: true,
+			ForceNew: true,
 		},
 		resComputeInstanceAttrDiskSize: {
 			Type:         schema.TypeInt,
