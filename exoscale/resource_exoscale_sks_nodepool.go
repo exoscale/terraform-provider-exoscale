@@ -171,7 +171,7 @@ func resourceSKSNodepool() *schema.Resource {
 			Create: schema.DefaultTimeout(defaultTimeout),
 			Read:   schema.DefaultTimeout(defaultTimeout),
 			Update: schema.DefaultTimeout(defaultTimeout),
-			Delete: schema.DefaultTimeout(defaultTimeout),
+			Delete: schema.DefaultTimeout(2 * defaultTimeout),
 		},
 	}
 }
