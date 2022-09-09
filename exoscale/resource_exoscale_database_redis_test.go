@@ -148,6 +148,7 @@ func TestAccResourceDatabase_Redis(t *testing.T) {
 						resDatabaseAttrNodeMemory:      validation.ToDiagFunc(validation.NoZeroValues),
 						resDatabaseAttrNodes:           validation.ToDiagFunc(validation.NoZeroValues),
 						resDatabaseAttrState:           validation.ToDiagFunc(validation.NoZeroValues),
+						resDatabaseAttrCA:              validation.ToDiagFunc(validation.NoZeroValues),
 						resDatabaseAttrUpdatedAt:       validation.ToDiagFunc(validation.NoZeroValues),
 						resDatabaseAttrURI:             validation.ToDiagFunc(validation.NoZeroValues),
 						resDatabaseAttrRedis(resDatabaseAttrRedisIPFilter) + ".0": validation.ToDiagFunc(
@@ -223,6 +224,7 @@ func TestAccResourceDatabase_Redis(t *testing.T) {
 							resDatabaseAttrNodes:           validation.ToDiagFunc(validation.NoZeroValues),
 							resDatabaseAttrPlan:            validateString(testAccResourceDatabasePlanRedis),
 							resDatabaseAttrState:           validation.ToDiagFunc(validation.NoZeroValues),
+							resDatabaseAttrCA:              validation.ToDiagFunc(validation.NoZeroValues),
 							resDatabaseAttrType:            validateString("redis"),
 							resDatabaseAttrURI:             validation.ToDiagFunc(validation.NoZeroValues),
 							resDatabaseAttrUpdatedAt:       validation.ToDiagFunc(validation.NoZeroValues),
