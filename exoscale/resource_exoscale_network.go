@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"net"
 
 	"github.com/exoscale/egoscale"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -79,7 +79,9 @@ func resourceNetwork() *schema.Resource {
 }
 
 func resourceNetworkCreate(d *schema.ResourceData, meta interface{}) error {
-	log.Printf("[DEBUG] %s: beginning create", resourceNetworkIDString(d))
+	tflog.Debug(context.Background(), "beginning create", map[string]interface{}{
+		"id": resourceNetworkIDString(d),
+	})
 
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutCreate))
 	defer cancel()
@@ -136,20 +138,26 @@ func resourceNetworkCreate(d *schema.ResourceData, meta interface{}) error {
 			})
 
 			if e != nil {
-				log.Printf("[WARNING] Failure to create the tags, but the network was created. %v", e)
+				tflog.Warn(ctx, "failure to create the tags, but the network was created", map[string]interface{}{
+					"api_error": e.Error(),
+				})
 			}
 
 			return err
 		}
 	}
 
-	log.Printf("[DEBUG] %s: create finished successfully", resourceNetworkIDString(d))
+	tflog.Debug(ctx, "create finished successfully", map[string]interface{}{
+		"id": resourceNetworkIDString(d),
+	})
 
 	return resourceNetworkRead(d, meta)
 }
 
 func resourceNetworkRead(d *schema.ResourceData, meta interface{}) error {
-	log.Printf("[DEBUG] %s: beginning read", resourceNetworkIDString(d))
+	tflog.Debug(context.Background(), "beginning read", map[string]interface{}{
+		"id": resourceNetworkIDString(d),
+	})
 
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
 	defer cancel()
@@ -164,7 +172,9 @@ func resourceNetworkRead(d *schema.ResourceData, meta interface{}) error {
 
 	network := networks.Network[0]
 
-	log.Printf("[DEBUG] %s: read finished successfully", resourceNetworkIDString(d))
+	tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
+		"id": resourceNetworkIDString(d),
+	})
 
 	return resourceNetworkApply(d, &network)
 }
@@ -220,7 +230,9 @@ func resourceNetworkExists(d *schema.ResourceData, meta interface{}) (bool, erro
 }
 
 func resourceNetworkUpdate(d *schema.ResourceData, meta interface{}) error {
-	log.Printf("[DEBUG] %s: beginning update", resourceNetworkIDString(d))
+	tflog.Debug(context.Background(), "beginning update", map[string]interface{}{
+		"id": resourceNetworkIDString(d),
+	})
 
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutUpdate))
 	defer cancel()
@@ -266,13 +278,17 @@ func resourceNetworkUpdate(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	log.Printf("[DEBUG] %s: update finished successfully", resourceNetworkIDString(d))
+	tflog.Debug(ctx, "update finished successfully", map[string]interface{}{
+		"id": resourceNetworkIDString(d),
+	})
 
 	return resourceNetworkRead(d, meta)
 }
 
 func resourceNetworkDelete(d *schema.ResourceData, meta interface{}) error {
-	log.Printf("[DEBUG] %s: beginning delete", resourceNetworkIDString(d))
+	tflog.Debug(context.Background(), "beginning delete", map[string]interface{}{
+		"id": resourceNetworkIDString(d),
+	})
 
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutDelete))
 	defer cancel()
@@ -290,7 +306,9 @@ func resourceNetworkDelete(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	log.Printf("[DEBUG] %s: delete finished successfully", resourceNetworkIDString(d))
+	tflog.Debug(ctx, "delete finished successfully", map[string]interface{}{
+		"id": resourceNetworkIDString(d),
+	})
 
 	return nil
 }

@@ -2,9 +2,9 @@ package exoscale
 
 import (
 	"context"
-	"log"
 
 	"github.com/exoscale/egoscale"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -56,7 +56,9 @@ func resourceSSHKeypair() *schema.Resource {
 func resourceSSHKeypairCreate(d *schema.ResourceData, meta interface{}) error {
 	var keypair *egoscale.SSHKeyPair
 
-	log.Printf("[DEBUG] %s: beginning create", resourceSSHKeypairIDString(d))
+	tflog.Debug(context.Background(), "beginning create", map[string]interface{}{
+		"id": resourceSSHKeypairIDString(d),
+	})
 
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutCreate))
 	defer cancel()
@@ -90,7 +92,9 @@ func resourceSSHKeypairCreate(d *schema.ResourceData, meta interface{}) error {
 
 	d.SetId(keypair.Name)
 
-	log.Printf("[DEBUG] %s: create finished successfully", resourceSSHKeypairIDString(d))
+	tflog.Debug(ctx, "create finished successfully", map[string]interface{}{
+		"id": resourceSSHKeypairIDString(d),
+	})
 
 	return resourceSSHKeypairRead(d, meta)
 }
@@ -115,7 +119,9 @@ func resourceSSHKeypairExists(d *schema.ResourceData, meta interface{}) (bool, e
 }
 
 func resourceSSHKeypairRead(d *schema.ResourceData, meta interface{}) error {
-	log.Printf("[DEBUG] %s: beginning read", resourceSSHKeypairIDString(d))
+	tflog.Debug(context.Background(), "beginning read", map[string]interface{}{
+		"id": resourceSSHKeypairIDString(d),
+	})
 
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
 	defer cancel()
@@ -129,13 +135,17 @@ func resourceSSHKeypairRead(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	log.Printf("[DEBUG] %s: read finished successfully", resourceSSHKeypairIDString(d))
+	tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
+		"id": resourceSSHKeypairIDString(d),
+	})
 
 	return resourceSSHKeypairApply(d, resp.(*egoscale.SSHKeyPair))
 }
 
 func resourceSSHKeypairDelete(d *schema.ResourceData, meta interface{}) error {
-	log.Printf("[DEBUG] %s: beginning delete", resourceSSHKeypairIDString(d))
+	tflog.Debug(context.Background(), "beginning delete", map[string]interface{}{
+		"id": resourceSSHKeypairIDString(d),
+	})
 
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutDelete))
 	defer cancel()
@@ -148,7 +158,9 @@ func resourceSSHKeypairDelete(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	log.Printf("[DEBUG] %s: delete finished successfully", resourceSSHKeypairIDString(d))
+	tflog.Debug(ctx, "delete finished successfully", map[string]interface{}{
+		"id": resourceSSHKeypairIDString(d),
+	})
 
 	return nil
 }

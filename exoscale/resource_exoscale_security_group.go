@@ -4,11 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"strings"
 
 	egoscale "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -88,23 +88,25 @@ func resourceSecurityGroupResourceV0() *schema.Resource {
 	}
 }
 
-func resourceSecurityGroupStateUpgradeV0(_ context.Context, rawState map[string]interface{}, _ interface{}) (map[string]interface{}, error) {
-	log.Printf("[DEBUG] beginning migration")
+func resourceSecurityGroupStateUpgradeV0(ctx context.Context, rawState map[string]interface{}, _ interface{}) (map[string]interface{}, error) {
+	tflog.Debug(ctx, "beginning migration")
 
 	// OpenAPI-v2 backend returns lowercase names, let's fix the state content
 	if name, ok := rawState["name"].(string); ok {
 		rawState["name"] = strings.ToLower(name)
-		log.Printf("[DEBUG] enforce lowercase on name: %+v", rawState["name"])
+		tflog.Debug(ctx, fmt.Sprintf("enforce lowercase on name: %+v", rawState["name"]))
 	} else {
 		return nil, fmt.Errorf("unable to get resource name during migration")
 	}
 
-	log.Printf("[DEBUG] done migration")
+	tflog.Debug(ctx, "done migration")
 	return rawState, nil
 }
 
 func resourceSecurityGroupCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("[DEBUG] %s: beginning create", resourceSecurityGroupIDString(d))
+	tflog.Debug(ctx, "beginning create", map[string]interface{}{
+		"id": resourceSecurityGroupIDString(d),
+	})
 
 	zone := defaultZone
 
@@ -132,13 +134,17 @@ func resourceSecurityGroupCreate(ctx context.Context, d *schema.ResourceData, me
 
 	d.SetId(*securityGroup.ID)
 
-	log.Printf("[DEBUG] %s: create finished successfully", resourceSecurityGroupIDString(d))
+	tflog.Debug(ctx, "create finished successfully", map[string]interface{}{
+		"id": resourceSecurityGroupIDString(d),
+	})
 
 	return resourceSecurityGroupRead(ctx, d, meta)
 }
 
 func resourceSecurityGroupRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("[DEBUG] %s: beginning read", resourceSecurityGroupIDString(d))
+	tflog.Debug(ctx, "beginning read", map[string]interface{}{
+		"id": resourceSecurityGroupIDString(d),
+	})
 
 	zone := defaultZone
 
@@ -158,13 +164,17 @@ func resourceSecurityGroupRead(ctx context.Context, d *schema.ResourceData, meta
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] %s: read finished successfully", resourceSecurityGroupIDString(d))
+	tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
+		"id": resourceSecurityGroupIDString(d),
+	})
 
 	return diag.FromErr(resourceSecurityGroupApply(ctx, d, securityGroup))
 }
 
 func resourceSecurityGroupUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("[DEBUG] %s: beginning update", resourceSecurityGroupIDString(d))
+	tflog.Debug(ctx, "beginning update", map[string]interface{}{
+		"id": resourceSecurityGroupIDString(d),
+	})
 
 	zone := defaultZone
 
@@ -211,13 +221,17 @@ func resourceSecurityGroupUpdate(ctx context.Context, d *schema.ResourceData, me
 		}
 	}
 
-	log.Printf("[DEBUG] %s: update finished successfully", resourceSecurityGroupIDString(d))
+	tflog.Debug(ctx, "update finished successfully", map[string]interface{}{
+		"id": resourceSecurityGroupIDString(d),
+	})
 
 	return resourceSecurityGroupRead(ctx, d, meta)
 }
 
 func resourceSecurityGroupDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("[DEBUG] %s: beginning delete", resourceSecurityGroupIDString(d))
+	tflog.Debug(ctx, "beginning delete", map[string]interface{}{
+		"id": resourceSecurityGroupIDString(d),
+	})
 
 	zone := defaultZone
 
@@ -233,7 +247,9 @@ func resourceSecurityGroupDelete(ctx context.Context, d *schema.ResourceData, me
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] %s: delete finished successfully", resourceSecurityGroupIDString(d))
+	tflog.Debug(ctx, "delete finished successfully", map[string]interface{}{
+		"id": resourceSecurityGroupIDString(d),
+	})
 
 	return nil
 }

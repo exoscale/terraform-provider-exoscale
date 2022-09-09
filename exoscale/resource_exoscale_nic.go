@@ -3,10 +3,10 @@ package exoscale
 import (
 	"context"
 	"fmt"
-	"log"
 	"net"
 
 	"github.com/exoscale/egoscale"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -65,7 +65,9 @@ func resourceNIC() *schema.Resource {
 }
 
 func resourceNICCreate(d *schema.ResourceData, meta interface{}) error {
-	log.Printf("[DEBUG] %s: beginning create", resourceNICIDString(d))
+	tflog.Debug(context.Background(), "beginning create", map[string]interface{}{
+		"id": resourceNICIDString(d),
+	})
 
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutCreate))
 	defer cancel()
@@ -104,13 +106,17 @@ func resourceNICCreate(d *schema.ResourceData, meta interface{}) error {
 
 	d.SetId(nic.ID.String())
 
-	log.Printf("[DEBUG] %s: create finished successfully", resourceNICIDString(d))
+	tflog.Debug(ctx, "create finished successfully", map[string]interface{}{
+		"id": resourceNICIDString(d),
+	})
 
 	return resourceNICRead(d, meta)
 }
 
 func resourceNICRead(d *schema.ResourceData, meta interface{}) error {
-	log.Printf("[DEBUG] %s: beginning read", resourceNICIDString(d))
+	tflog.Debug(context.Background(), "beginning read", map[string]interface{}{
+		"id": resourceNICIDString(d),
+	})
 
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
 	defer cancel()
@@ -131,7 +137,9 @@ func resourceNICRead(d *schema.ResourceData, meta interface{}) error {
 
 	n := resp.(*egoscale.Nic)
 
-	log.Printf("[DEBUG] %s: read finished successfully", resourceNICIDString(d))
+	tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
+		"id": resourceNICIDString(d),
+	})
 
 	return resourceNICApply(d, *n)
 }
@@ -159,7 +167,9 @@ func resourceNICExists(d *schema.ResourceData, meta interface{}) (bool, error) {
 }
 
 func resourceNICUpdate(d *schema.ResourceData, meta interface{}) error {
-	log.Printf("[DEBUG] %s: beginning update", resourceNICIDString(d))
+	tflog.Debug(context.Background(), "beginning update", map[string]interface{}{
+		"id": resourceNICIDString(d),
+	})
 
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutUpdate))
 	defer cancel()
@@ -190,13 +200,17 @@ func resourceNICUpdate(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	log.Printf("[DEBUG] %s: update finished successfully", resourceNICIDString(d))
+	tflog.Debug(ctx, "update finished successfully", map[string]interface{}{
+		"id": resourceNICIDString(d),
+	})
 
 	return resourceNICRead(d, meta)
 }
 
 func resourceNICDelete(d *schema.ResourceData, meta interface{}) error {
-	log.Printf("[DEBUG] %s: beginning delete", resourceNICIDString(d))
+	tflog.Debug(context.Background(), "beginning delete", map[string]interface{}{
+		"id": resourceNICIDString(d),
+	})
 
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutDelete))
 	defer cancel()
@@ -232,7 +246,9 @@ func resourceNICDelete(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("failed to remove NIC %s from instance %s", d.Id(), vm.ID)
 	}
 
-	log.Printf("[DEBUG] %s: delete finished successfully", resourceNICIDString(d))
+	tflog.Debug(ctx, "delete finished successfully", map[string]interface{}{
+		"id": resourceNICIDString(d),
+	})
 
 	return nil
 }

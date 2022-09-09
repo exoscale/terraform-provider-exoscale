@@ -3,10 +3,10 @@ package exoscale
 import (
 	"context"
 	"errors"
-	"log"
 
 	egoscale "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -58,7 +58,9 @@ func resourceSSHKey() *schema.Resource {
 }
 
 func resourceSSHKeyCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("[DEBUG] %s: beginning create", resourceSSHKeyIDString(d))
+	tflog.Debug(ctx, "beginning create", map[string]interface{}{
+		"id": resourceSSHKeyIDString(d),
+	})
 
 	zone := defaultZone
 
@@ -85,13 +87,17 @@ func resourceSSHKeyCreate(ctx context.Context, d *schema.ResourceData, meta inte
 
 	d.SetId(*sshKey.Name)
 
-	log.Printf("[DEBUG] %s: create finished successfully", resourceSSHKeyIDString(d))
+	tflog.Debug(ctx, "create finished successfully", map[string]interface{}{
+		"id": resourceSSHKeyIDString(d),
+	})
 
 	return resourceSSHKeyRead(ctx, d, meta)
 }
 
 func resourceSSHKeyRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("[DEBUG] %s: beginning read", resourceSSHKeyIDString(d))
+	tflog.Debug(ctx, "beginning read", map[string]interface{}{
+		"id": resourceSSHKeyIDString(d),
+	})
 
 	zone := defaultZone
 
@@ -111,13 +117,17 @@ func resourceSSHKeyRead(ctx context.Context, d *schema.ResourceData, meta interf
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] %s: read finished successfully", resourceSSHKeyIDString(d))
+	tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
+		"id": resourceSSHKeyIDString(d),
+	})
 
 	return diag.FromErr(resourceSSHKeyApply(ctx, d, securityGroup))
 }
 
 func resourceSSHKeyDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("[DEBUG] %s: beginning delete", resourceSSHKeyIDString(d))
+	tflog.Debug(ctx, "beginning delete", map[string]interface{}{
+		"id": resourceSSHKeyIDString(d),
+	})
 
 	zone := defaultZone
 
@@ -131,7 +141,9 @@ func resourceSSHKeyDelete(ctx context.Context, d *schema.ResourceData, meta inte
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] %s: delete finished successfully", resourceSSHKeyIDString(d))
+	tflog.Debug(ctx, "delete finished successfully", map[string]interface{}{
+		"id": resourceSSHKeyIDString(d),
+	})
 
 	return nil
 }

@@ -2,9 +2,9 @@ package exoscale
 
 import (
 	"context"
-	"log"
 
 	exoapi "github.com/exoscale/egoscale/v2/api"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -97,7 +97,9 @@ func dataSourceElasticIP() *schema.Resource {
 }
 
 func dataSourceElasticIPRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("[DEBUG] %s: beginning read", resourceElasticIPIDString(d))
+	tflog.Debug(ctx, "beginning read", map[string]interface{}{
+		"id": resourceElasticIPIDString(d),
+	})
 
 	zone := d.Get(dsElasticIPAttrZone).(string)
 
@@ -160,7 +162,9 @@ func dataSourceElasticIPRead(ctx context.Context, d *schema.ResourceData, meta i
 		}
 	}
 
-	log.Printf("[DEBUG] %s: read finished successfully", resourceElasticIPIDString(d))
+	tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
+		"id": resourceElasticIPIDString(d),
+	})
 
 	return nil
 }

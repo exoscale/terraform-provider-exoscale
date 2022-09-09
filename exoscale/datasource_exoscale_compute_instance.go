@@ -3,11 +3,11 @@ package exoscale
 import (
 	"context"
 	"fmt"
-	"log"
 	"strings"
 
 	exo "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -150,7 +150,9 @@ func dataSourceComputeInstance() *schema.Resource {
 }
 
 func dataSourceComputeInstanceRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("[DEBUG] %s: beginning read", resourceComputeInstanceIDString(d))
+	tflog.Debug(ctx, "beginning read", map[string]interface{}{
+		"id": resourceComputeInstanceIDString(d),
+	})
 
 	zone := d.Get(dsComputeInstanceAttrZone).(string)
 
@@ -212,7 +214,9 @@ func dataSourceComputeInstanceRead(ctx context.Context, d *schema.ResourceData, 
 		}
 	}
 
-	log.Printf("[DEBUG] %s: read finished successfully", resourceComputeInstanceIDString(d))
+	tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
+		"id": resourceComputeInstanceIDString(d),
+	})
 
 	return nil
 }

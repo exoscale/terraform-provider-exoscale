@@ -4,12 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"net"
 	"strings"
 
 	egoscale "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -183,7 +183,9 @@ func resourceSecurityGroupRule() *schema.Resource {
 }
 
 func resourceSecurityGroupRuleCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("[DEBUG] %s: beginning create", resourceSecurityGroupRuleIDString(d))
+	tflog.Debug(ctx, "beginning create", map[string]interface{}{
+		"id": resourceSecurityGroupRuleIDString(d),
+	})
 
 	zone := defaultZone
 
@@ -282,13 +284,17 @@ func resourceSecurityGroupRuleCreate(ctx context.Context, d *schema.ResourceData
 
 	d.SetId(*securityGroupRule.ID)
 
-	log.Printf("[DEBUG] %s: create finished successfully", resourceSecurityGroupRuleIDString(d))
+	tflog.Debug(ctx, "create finished successfully", map[string]interface{}{
+		"id": resourceSecurityGroupRuleIDString(d),
+	})
 
 	return resourceSecurityGroupRuleRead(ctx, d, meta)
 }
 
 func resourceSecurityGroupRuleRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("[DEBUG] %s: beginning read", resourceSecurityGroupRuleIDString(d))
+	tflog.Debug(ctx, "beginning read", map[string]interface{}{
+		"id": resourceSecurityGroupRuleIDString(d),
+	})
 
 	zone := defaultZone
 
@@ -330,13 +336,17 @@ func resourceSecurityGroupRuleRead(ctx context.Context, d *schema.ResourceData, 
 		return nil
 	}
 
-	log.Printf("[DEBUG] %s: read finished successfully", resourceSecurityGroupRuleIDString(d))
+	tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
+		"id": resourceSecurityGroupRuleIDString(d),
+	})
 
 	return diag.FromErr(resourceSecurityGroupRuleApply(ctx, d, meta, securityGroup, securityGroupRule))
 }
 
 func resourceSecurityGroupRuleDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("[DEBUG] %s: beginning delete", resourceSecurityGroupRuleIDString(d))
+	tflog.Debug(ctx, "beginning delete", map[string]interface{}{
+		"id": resourceSecurityGroupRuleIDString(d),
+	})
 
 	zone := defaultZone
 
@@ -370,7 +380,9 @@ func resourceSecurityGroupRuleDelete(ctx context.Context, d *schema.ResourceData
 		return diag.FromErr(err)
 	}
 
-	log.Printf("[DEBUG] %s: delete finished successfully", resourceSecurityGroupRuleIDString(d))
+	tflog.Debug(ctx, "delete finished successfully", map[string]interface{}{
+		"id": resourceSecurityGroupRuleIDString(d),
+	})
 
 	return nil
 }

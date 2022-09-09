@@ -4,11 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"net"
 	"strings"
 
 	"github.com/exoscale/egoscale"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -60,7 +60,9 @@ func resourceSecondaryIPAddress() *schema.Resource {
 }
 
 func resourceSecondaryIPAddressCreate(d *schema.ResourceData, meta interface{}) error {
-	log.Printf("[DEBUG] %s: beginning create", resourceSecondaryIPAddressIDString(d))
+	tflog.Debug(context.Background(), "beginning create", map[string]interface{}{
+		"id": resourceSecondaryIPAddressIDString(d),
+	})
 
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutCreate))
 	defer cancel()
@@ -111,7 +113,9 @@ func resourceSecondaryIPAddressCreate(d *schema.ResourceData, meta interface{}) 
 			return err
 		}
 
-		log.Printf("[DEBUG] %s: create finished successfully", resourceSecondaryIPAddressIDString(d))
+		tflog.Debug(ctx, "create finished successfully", map[string]interface{}{
+			"id": resourceSecondaryIPAddressIDString(d),
+		})
 
 		return resourceSecondaryIPAddressRead(d, meta)
 	}
@@ -130,7 +134,9 @@ func resourceSecondaryIPAddressExists(d *schema.ResourceData, meta interface{}) 
 }
 
 func resourceSecondaryIPAddressRead(d *schema.ResourceData, meta interface{}) error {
-	log.Printf("[DEBUG] %s: beginning read", resourceSecondaryIPAddressIDString(d))
+	tflog.Debug(context.Background(), "beginning read", map[string]interface{}{
+		"id": resourceSecondaryIPAddressIDString(d),
+	})
 
 	ip, err := getSecondaryIP(d, meta)
 	if err != nil {
@@ -146,7 +152,9 @@ func resourceSecondaryIPAddressRead(d *schema.ResourceData, meta interface{}) er
 		d.SetId("")
 	}
 
-	log.Printf("[DEBUG] %s: read finished successfully", resourceSecondaryIPAddressIDString(d))
+	tflog.Debug(context.Background(), "read finished successfully", map[string]interface{}{
+		"id": resourceSecondaryIPAddressIDString(d),
+	})
 
 	return nil
 }
@@ -279,7 +287,9 @@ func getSecondaryIP(d *schema.ResourceData, meta interface{}) (*egoscale.NicSeco
 }
 
 func resourceSecondaryIPAddressDelete(d *schema.ResourceData, meta interface{}) error {
-	log.Printf("[DEBUG] %s: beginning delete", resourceSecondaryIPAddressIDString(d))
+	tflog.Debug(context.Background(), "beginning delete", map[string]interface{}{
+		"id": resourceSecondaryIPAddressIDString(d),
+	})
 
 	ip, err := getSecondaryIP(d, meta)
 	if err != nil {
@@ -300,7 +310,9 @@ func resourceSecondaryIPAddressDelete(d *schema.ResourceData, meta interface{}) 
 		return err
 	}
 
-	log.Printf("[DEBUG] %s: read finished successfully", resourceSecondaryIPAddressIDString(d))
+	tflog.Debug(context.Background(), "read finished successfully", map[string]interface{}{
+		"id": resourceSecondaryIPAddressIDString(d),
+	})
 
 	return nil
 }

@@ -4,11 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 
 	exo "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -150,7 +150,9 @@ func resourceDomainRecordStateUpgradeV0(
 }
 
 func resourceDomainRecordCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("[DEBUG] %s: beginning create", resourceDomainRecordIDString(d))
+	tflog.Debug(ctx, "beginning create", map[string]interface{}{
+		"id": resourceDomainRecordIDString(d),
+	})
 
 	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), defaultZone))
@@ -182,7 +184,9 @@ func resourceDomainRecordCreate(ctx context.Context, d *schema.ResourceData, met
 
 	d.SetId(*record.ID)
 
-	log.Printf("[DEBUG] %s: create finished successfully", resourceDomainRecordIDString(d))
+	tflog.Debug(ctx, "create finished successfully", map[string]interface{}{
+		"id": resourceDomainIDString(d),
+	})
 
 	return resourceDomainRecordRead(ctx, d, meta)
 }
@@ -210,7 +214,9 @@ func resourceDomainRecordExists(d *schema.ResourceData, meta interface{}) (bool,
 
 	// If we reach this stage it means that we're in "import" mode, so we don't have the domain information yet.
 	// We have to scroll each existing domain's records and try to find one matching the resource ID.
-	log.Printf("[DEBUG] %s: import mode detected, trying to locate the record domain", resourceDomainRecordIDString(d))
+	tflog.Debug(ctx, "import mode detected, trying to locate the record domain", map[string]interface{}{
+		"id": resourceDomainIDString(d),
+	})
 
 	domains, err := client.ListDNSDomains(ctx, defaultZone)
 	if err != nil {
@@ -225,7 +231,10 @@ func resourceDomainRecordExists(d *schema.ResourceData, meta interface{}) (bool,
 
 		for _, record := range records {
 			if *record.ID == d.Id() {
-				log.Printf("[DEBUG] %s: found record domain: %s", resourceDomainRecordIDString(d), *domain.UnicodeName)
+				tflog.Debug(ctx, "found record domain", map[string]interface{}{
+					"id":          resourceDomainIDString(d),
+					"domain_name": *domain.UnicodeName,
+				})
 				return true, nil
 			}
 		}
@@ -235,7 +244,9 @@ func resourceDomainRecordExists(d *schema.ResourceData, meta interface{}) (bool,
 }
 
 func resourceDomainRecordRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("[DEBUG] %s: beginning read", resourceDomainRecordIDString(d))
+	tflog.Debug(ctx, "beginning read", map[string]interface{}{
+		"id": resourceDomainIDString(d),
+	})
 
 	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), defaultZone))
@@ -256,7 +267,9 @@ func resourceDomainRecordRead(ctx context.Context, d *schema.ResourceData, meta 
 			return diag.Errorf("error retrieving domain record: %s", err)
 		}
 
-		log.Printf("[DEBUG] %s: read finished successfully", resourceDomainRecordIDString(d))
+		tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
+			"id": resourceDomainIDString(d),
+		})
 
 		err = resourceDomainRecordApply(d, *domain.UnicodeName, record)
 		if err != nil {
@@ -268,7 +281,9 @@ func resourceDomainRecordRead(ctx context.Context, d *schema.ResourceData, meta 
 
 	// If we reach this stage it means that we're in "import" mode, so we don't have the domain information yet.
 	// We have to scroll each existing domain's records and try to find one matching the resource ID.
-	log.Printf("[DEBUG] %s: import mode detected, trying to locate the record domain", resourceDomainRecordIDString(d))
+	tflog.Debug(ctx, "import mode detected, trying to locate the record domain", map[string]interface{}{
+		"id": resourceDomainIDString(d),
+	})
 
 	domains, err := client.ListDNSDomains(ctx, defaultZone)
 	if err != nil {
@@ -287,7 +302,9 @@ func resourceDomainRecordRead(ctx context.Context, d *schema.ResourceData, meta 
 					return diag.Errorf("%s", err)
 				}
 
-				log.Printf("[DEBUG] %s: read finished successfully", resourceDomainRecordIDString(d))
+				tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
+					"id": resourceDomainIDString(d),
+				})
 
 				err = resourceDomainRecordApply(d, *domain.UnicodeName, &record)
 				if err != nil {
@@ -303,7 +320,9 @@ func resourceDomainRecordRead(ctx context.Context, d *schema.ResourceData, meta 
 }
 
 func resourceDomainRecordUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("[DEBUG] %s: beginning update", resourceDomainRecordIDString(d))
+	tflog.Debug(ctx, "beginning update", map[string]interface{}{
+		"id": resourceDomainIDString(d),
+	})
 
 	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), defaultZone))
@@ -335,7 +354,9 @@ func resourceDomainRecordUpdate(ctx context.Context, d *schema.ResourceData, met
 		return diag.Errorf("error updating domain record: %s", err)
 	}
 
-	log.Printf("[DEBUG] %s: update finished successfully", resourceDomainRecordIDString(d))
+	tflog.Debug(ctx, "update finished successfully", map[string]interface{}{
+		"id": resourceDomainIDString(d),
+	})
 
 	domainID := d.Get("domain").(string)
 
@@ -358,7 +379,9 @@ func resourceDomainRecordUpdate(ctx context.Context, d *schema.ResourceData, met
 }
 
 func resourceDomainRecordDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("[DEBUG] %s: beginning delete", resourceDomainRecordIDString(d))
+	tflog.Debug(ctx, "beginning delete", map[string]interface{}{
+		"id": resourceDomainIDString(d),
+	})
 
 	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), defaultZone))
@@ -376,7 +399,9 @@ func resourceDomainRecordDelete(ctx context.Context, d *schema.ResourceData, met
 		return diag.Errorf("error deleting domain record: %s", err)
 	}
 
-	log.Printf("[DEBUG] %s: delete finished successfully", resourceDomainRecordIDString(d))
+	tflog.Debug(ctx, "delete finished successfully", map[string]interface{}{
+		"id": resourceDomainIDString(d),
+	})
 
 	return nil
 }
