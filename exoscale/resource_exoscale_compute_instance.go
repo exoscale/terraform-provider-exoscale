@@ -586,7 +586,7 @@ func resourceComputeInstanceUpdate(ctx context.Context, d *schema.ResourceData, 
 			}
 		}
 
-		if d.Get(resComputeInstanceAttrState) == "started" {
+		if d.Get(resComputeInstanceAttrState) == "running" {
 			if err := client.StartInstance(ctx, zone, computeInstance); err != nil {
 				return diag.Errorf("unable to start instance: %s", err)
 			}

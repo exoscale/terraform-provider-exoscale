@@ -26,7 +26,7 @@ var (
 	testAccResourceComputeInstancePrivateNetworkName          = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceComputeInstanceSSHKeyName                  = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceComputeInstanceSecurityGroupName           = acctest.RandomWithPrefix(testPrefix)
-	testAccResourceComputeInstanceState                       = "stopped"
+	testAccResourceComputeInstanceState                       = "running"
 	testAccResourceComputeInstanceType                        = "standard.tiny"
 	testAccResourceComputeInstanceTypeUpdated                 = "standard.small"
 	testAccResourceComputeInstanceUserData                    = acctest.RandString(10)
@@ -84,7 +84,6 @@ resource "exoscale_compute_instance" "test" {
   elastic_ip_ids          = [exoscale_elastic_ip.test.id]
   user_data               = "%s"
   ssh_key                 = exoscale_ssh_key.test.name
-  state                   = "%s"
 
   network_interface {
 	network_id = exoscale_private_network.test.id
@@ -108,7 +107,6 @@ resource "exoscale_compute_instance" "test" {
 		testAccResourceComputeInstanceType,
 		testAccResourceComputeInstanceDiskSize,
 		testAccResourceComputeInstanceUserData,
-		testAccResourceComputeInstanceState,
 		testAccResourceComputeInstanceLabelValue,
 	)
 
@@ -161,7 +159,6 @@ resource "exoscale_compute_instance" "test" {
   elastic_ip_ids          = []
   user_data               = "%s"
   ssh_key                 = exoscale_ssh_key.test.name
-  state                   = "%s"
 
   labels = {
     test = "%s"
@@ -181,7 +178,6 @@ resource "exoscale_compute_instance" "test" {
 		testAccResourceComputeInstanceTypeUpdated,
 		testAccResourceComputeInstanceDiskSizeUpdated,
 		testAccResourceComputeInstanceUserDataUpdated,
-		testAccResourceComputeInstanceState,
 		testAccResourceComputeInstanceLabelValueUpdated,
 	)
 )
@@ -259,7 +255,7 @@ func TestAccResourceComputeInstance(t *testing.T) {
 						resComputeInstanceAttrPublicIPAddress:             validation.ToDiagFunc(validation.IsIPv4Address),
 						resComputeInstanceAttrSSHKey:                      validateString(testAccResourceComputeInstanceSSHKeyName),
 						resComputeInstanceAttrSecurityGroupIDs + ".#":     validateString("2"),
-						resComputeInstanceAttrState:                       validateString("stopped"),
+						resComputeInstanceAttrState:                       validateString("running"),
 						resComputeInstanceAttrTemplateID:                  validation.ToDiagFunc(validation.IsUUID),
 						resComputeInstanceAttrType:                        validateString(testAccResourceComputeInstanceType),
 						resComputeInstanceAttrUserData:                    validateString(testAccResourceComputeInstanceUserData),
@@ -303,7 +299,7 @@ func TestAccResourceComputeInstance(t *testing.T) {
 						resComputeInstanceAttrLabels + ".test":        validateString(testAccResourceComputeInstanceLabelValueUpdated),
 						resComputeInstanceAttrName:                    validateString(testAccResourceComputeInstanceNameUpdated),
 						resComputeInstanceAttrSecurityGroupIDs + ".#": validateString("1"),
-						resComputeInstanceAttrState:                   validateString("stopped"),
+						resComputeInstanceAttrState:                   validateString("running"),
 						resComputeInstanceAttrType:                    validateString(testAccResourceComputeInstanceTypeUpdated),
 						resComputeInstanceAttrUserData:                validateString(testAccResourceComputeInstanceUserDataUpdated),
 					})),
@@ -329,7 +325,7 @@ func TestAccResourceComputeInstance(t *testing.T) {
 							resComputeInstanceAttrLabels + ".test":        validateString(testAccResourceComputeInstanceLabelValueUpdated),
 							resComputeInstanceAttrName:                    validateString(testAccResourceComputeInstanceNameUpdated),
 							resComputeInstanceAttrSecurityGroupIDs + ".#": validateString("1"),
-							resComputeInstanceAttrState:                   validateString("stopped"),
+							resComputeInstanceAttrState:                   validateString("running"),
 							resComputeInstanceAttrType:                    validateString(testAccResourceComputeInstanceTypeUpdated),
 							resComputeInstanceAttrUserData:                validateString(testAccResourceComputeInstanceUserDataUpdated),
 						},
