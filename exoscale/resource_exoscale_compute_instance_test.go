@@ -19,6 +19,7 @@ var (
 	testAccResourceComputeInstanceAntiAffinityGroupName       = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceComputeInstanceDiskSize              int64 = 10
 	testAccResourceComputeInstanceDiskSizeUpdated             = testAccResourceComputeInstanceDiskSize * 2
+	testAccResourceComputeInstanceDiskSizeUpdated2            = testAccResourceComputeInstanceDiskSize * 3
 	testAccResourceComputeInstanceLabelValue                  = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceComputeInstanceLabelValueUpdated           = testAccResourceComputeInstanceLabelValue + "-updated"
 	testAccResourceComputeInstanceName                        = acctest.RandomWithPrefix(testPrefix)
@@ -26,13 +27,14 @@ var (
 	testAccResourceComputeInstancePrivateNetworkName          = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceComputeInstanceSSHKeyName                  = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceComputeInstanceSecurityGroupName           = acctest.RandomWithPrefix(testPrefix)
-	testAccResourceComputeInstanceState                       = "running"
+	testAccResourceComputeInstanceStateStopped                = "stopped"
+	testAccResourceComputeInstanceStateRunning                = "running"
 	testAccResourceComputeInstanceType                        = "standard.tiny"
 	testAccResourceComputeInstanceTypeUpdated                 = "standard.small"
 	testAccResourceComputeInstanceUserData                    = acctest.RandString(10)
 	testAccResourceComputeInstanceUserDataUpdated             = testAccResourceComputeInstanceUserData + "-updated"
 
-	testAccResourceComputeInstanceConfigCreate = fmt.Sprintf(`
+	testAccResourceComputeInstanceConfigCreateStopped = fmt.Sprintf(`
 locals {
   zone = "%s"
 }
@@ -84,6 +86,7 @@ resource "exoscale_compute_instance" "test" {
   elastic_ip_ids          = [exoscale_elastic_ip.test.id]
   user_data               = "%s"
   ssh_key                 = exoscale_ssh_key.test.name
+	state                   = "%s"
 
   network_interface {
 	network_id = exoscale_private_network.test.id
@@ -107,10 +110,11 @@ resource "exoscale_compute_instance" "test" {
 		testAccResourceComputeInstanceType,
 		testAccResourceComputeInstanceDiskSize,
 		testAccResourceComputeInstanceUserData,
+		testAccResourceComputeInstanceStateStopped,
 		testAccResourceComputeInstanceLabelValue,
 	)
 
-	testAccResourceComputeInstanceConfigUpdate = fmt.Sprintf(`
+	testAccResourceComputeInstanceConfigUpdateStopped = fmt.Sprintf(`
 locals {
   zone = "%s"
 }
@@ -159,6 +163,7 @@ resource "exoscale_compute_instance" "test" {
   elastic_ip_ids          = []
   user_data               = "%s"
   ssh_key                 = exoscale_ssh_key.test.name
+	state                   = "%s"
 
   labels = {
     test = "%s"
@@ -178,6 +183,153 @@ resource "exoscale_compute_instance" "test" {
 		testAccResourceComputeInstanceTypeUpdated,
 		testAccResourceComputeInstanceDiskSizeUpdated,
 		testAccResourceComputeInstanceUserDataUpdated,
+		testAccResourceComputeInstanceStateStopped,
+		testAccResourceComputeInstanceLabelValueUpdated,
+	)
+
+	testAccResourceComputeInstanceConfigStart = fmt.Sprintf(`
+locals {
+  zone = "%s"
+}
+
+data "exoscale_compute_template" "ubuntu" {
+  zone = local.zone
+  name = "Linux Ubuntu 20.04 LTS 64-bit"
+}
+
+data "exoscale_security_group" "default" {
+  name = "default"
+}
+
+resource "exoscale_security_group" "test" {
+  name = "%s"
+}
+
+resource "exoscale_anti_affinity_group" "test" {
+  name = "%s"
+}
+
+resource "exoscale_private_network" "test" {
+  zone = local.zone
+  name = "%s"
+}
+
+resource "exoscale_elastic_ip" "test" {
+  zone = local.zone
+}
+
+resource "exoscale_ssh_key" "test" {
+  name       = "%s"
+  public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB8bfA67mQWv4eGND/XVtPx1JW6RAqafub1lV1EcpB+b test"
+}
+
+
+resource "exoscale_compute_instance" "test" {
+  zone                    = local.zone
+  name                    = "%s"
+  type                    = "%s"
+  disk_size               = %d
+  template_id             = data.exoscale_compute_template.ubuntu.id
+  ipv6                    = true
+  anti_affinity_group_ids = [exoscale_anti_affinity_group.test.id]
+  security_group_ids      = [data.exoscale_security_group.default.id]
+  elastic_ip_ids          = []
+  user_data               = "%s"
+  ssh_key                 = exoscale_ssh_key.test.name
+	state                   = "%s"
+
+  labels = {
+    test = "%s"
+  }
+
+  timeouts {
+    delete = "10m"
+  }
+}
+`,
+		testZoneName,
+		testAccResourceComputeInstanceSecurityGroupName,
+		testAccResourceComputeInstanceAntiAffinityGroupName,
+		testAccResourceComputeInstancePrivateNetworkName,
+		testAccResourceComputeInstanceSSHKeyName,
+		testAccResourceComputeInstanceNameUpdated,
+		testAccResourceComputeInstanceTypeUpdated,
+		testAccResourceComputeInstanceDiskSizeUpdated,
+		testAccResourceComputeInstanceUserDataUpdated,
+		testAccResourceComputeInstanceStateRunning,
+		testAccResourceComputeInstanceLabelValueUpdated,
+	)
+
+	testAccResourceComputeInstanceConfigUpdateStarted = fmt.Sprintf(`
+locals {
+  zone = "%s"
+}
+
+data "exoscale_compute_template" "ubuntu" {
+  zone = local.zone
+  name = "Linux Ubuntu 20.04 LTS 64-bit"
+}
+
+data "exoscale_security_group" "default" {
+  name = "default"
+}
+
+resource "exoscale_security_group" "test" {
+  name = "%s"
+}
+
+resource "exoscale_anti_affinity_group" "test" {
+  name = "%s"
+}
+
+resource "exoscale_private_network" "test" {
+  zone = local.zone
+  name = "%s"
+}
+
+resource "exoscale_elastic_ip" "test" {
+  zone = local.zone
+}
+
+resource "exoscale_ssh_key" "test" {
+  name       = "%s"
+  public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB8bfA67mQWv4eGND/XVtPx1JW6RAqafub1lV1EcpB+b test"
+}
+
+
+resource "exoscale_compute_instance" "test" {
+  zone                    = local.zone
+  name                    = "%s"
+  type                    = "%s"
+  disk_size               = %d
+  template_id             = data.exoscale_compute_template.ubuntu.id
+  ipv6                    = true
+  anti_affinity_group_ids = [exoscale_anti_affinity_group.test.id]
+  security_group_ids      = [data.exoscale_security_group.default.id]
+  elastic_ip_ids          = []
+  user_data               = "%s"
+  ssh_key                 = exoscale_ssh_key.test.name
+	state                   = "%s"
+
+  labels = {
+    test = "%s"
+  }
+
+  timeouts {
+    delete = "10m"
+  }
+}
+`,
+		testZoneName,
+		testAccResourceComputeInstanceSecurityGroupName,
+		testAccResourceComputeInstanceAntiAffinityGroupName,
+		testAccResourceComputeInstancePrivateNetworkName,
+		testAccResourceComputeInstanceSSHKeyName,
+		testAccResourceComputeInstanceNameUpdated,
+		testAccResourceComputeInstanceTypeUpdated,
+		testAccResourceComputeInstanceDiskSizeUpdated2,
+		testAccResourceComputeInstanceUserDataUpdated,
+		testAccResourceComputeInstanceStateRunning,
 		testAccResourceComputeInstanceLabelValueUpdated,
 	)
 )
@@ -199,8 +351,8 @@ func TestAccResourceComputeInstance(t *testing.T) {
 		CheckDestroy:      testAccCheckResourceComputeInstanceDestroy(&computeInstance),
 		Steps: []resource.TestStep{
 			{
-				// Create
-				Config: testAccResourceComputeInstanceConfigCreate,
+				// Create stopped instance
+				Config: testAccResourceComputeInstanceConfigCreateStopped,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckResourceSecurityGroupExists("exoscale_security_group.test", &testSecurityGroup),
 					testAccCheckResourceAntiAffinityGroupExists("exoscale_anti_affinity_group.test", &testAntiAffinityGroup),
@@ -236,7 +388,7 @@ func TestAccResourceComputeInstance(t *testing.T) {
 						a.Equal(*testSSHKey.Name, *computeInstance.SSHKey)
 						a.NotNil(computeInstance.SecurityGroupIDs)
 						a.ElementsMatch([]string{defaultSecurityGroupID, *testSecurityGroup.ID}, *computeInstance.SecurityGroupIDs)
-						a.Equal(testAccResourceComputeInstanceState, *computeInstance.State)
+						a.Equal(testAccResourceComputeInstanceStateStopped, *computeInstance.State)
 						a.Equal(templateID, *computeInstance.TemplateID)
 						a.Equal(expectedUserData, *computeInstance.UserData)
 
@@ -255,7 +407,7 @@ func TestAccResourceComputeInstance(t *testing.T) {
 						resComputeInstanceAttrPublicIPAddress:             validation.ToDiagFunc(validation.IsIPv4Address),
 						resComputeInstanceAttrSSHKey:                      validateString(testAccResourceComputeInstanceSSHKeyName),
 						resComputeInstanceAttrSecurityGroupIDs + ".#":     validateString("2"),
-						resComputeInstanceAttrState:                       validateString("running"),
+						resComputeInstanceAttrState:                       validateString("stopped"),
 						resComputeInstanceAttrTemplateID:                  validation.ToDiagFunc(validation.IsUUID),
 						resComputeInstanceAttrType:                        validateString(testAccResourceComputeInstanceType),
 						resComputeInstanceAttrUserData:                    validateString(testAccResourceComputeInstanceUserData),
@@ -264,8 +416,8 @@ func TestAccResourceComputeInstance(t *testing.T) {
 				),
 			},
 			{
-				// Update
-				Config: testAccResourceComputeInstanceConfigUpdate,
+				// Update stopped instance
+				Config: testAccResourceComputeInstanceConfigUpdateStopped,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckResourceComputeInstanceExists(r, &computeInstance),
 					func(s *terraform.State) error {
@@ -289,13 +441,101 @@ func TestAccResourceComputeInstance(t *testing.T) {
 						a.Nil(computeInstance.PrivateNetworkIDs)
 						a.NotNil(computeInstance.SecurityGroupIDs)
 						a.ElementsMatch([]string{defaultSecurityGroupID}, *computeInstance.SecurityGroupIDs)
-						a.Equal(testAccResourceComputeInstanceState, *computeInstance.State)
+						a.Equal(testAccResourceComputeInstanceStateStopped, *computeInstance.State)
 						a.Equal(expectedUserData, *computeInstance.UserData)
 
 						return nil
 					},
 					checkResourceState(r, checkResourceStateValidateAttributes(testAttrs{
 						resComputeInstanceAttrDiskSize:                validateString(fmt.Sprint(testAccResourceComputeInstanceDiskSizeUpdated)),
+						resComputeInstanceAttrLabels + ".test":        validateString(testAccResourceComputeInstanceLabelValueUpdated),
+						resComputeInstanceAttrName:                    validateString(testAccResourceComputeInstanceNameUpdated),
+						resComputeInstanceAttrSecurityGroupIDs + ".#": validateString("1"),
+						resComputeInstanceAttrState:                   validateString("stopped"),
+						resComputeInstanceAttrType:                    validateString(testAccResourceComputeInstanceTypeUpdated),
+						resComputeInstanceAttrUserData:                validateString(testAccResourceComputeInstanceUserDataUpdated),
+					})),
+					resource.TestCheckNoResourceAttr(r, resComputeInstanceAttrElasticIPIDs+".#"),
+					resource.TestCheckNoResourceAttr(r, resComputeInstanceAttrNetworkInterface+".#"),
+				),
+			},
+			{
+				// Start instance
+				Config: testAccResourceComputeInstanceConfigStart,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckResourceComputeInstanceExists(r, &computeInstance),
+					func(s *terraform.State) error {
+						a := require.New(t)
+
+						defaultSecurityGroupID, err := attrFromState(s, "data.exoscale_security_group.default", "id")
+						a.NoError(err, "unable to retrieve default Security Group ID from state")
+
+						expectedUserData, _, err := encodeUserData(testAccResourceComputeInstanceUserDataUpdated)
+						if err != nil {
+							return err
+						}
+
+						a.NotNil(computeInstance.AntiAffinityGroupIDs)
+						a.ElementsMatch([]string{*testAntiAffinityGroup.ID}, *computeInstance.AntiAffinityGroupIDs)
+						a.Equal(testAccResourceComputeInstanceDiskSizeUpdated, *computeInstance.DiskSize)
+						a.Nil(computeInstance.ElasticIPIDs)
+						a.Equal(testInstanceTypeIDSmall, *computeInstance.InstanceTypeID)
+						a.Equal(testAccResourceComputeInstanceLabelValueUpdated, (*computeInstance.Labels)["test"])
+						a.Equal(testAccResourceComputeInstanceNameUpdated, *computeInstance.Name)
+						a.Nil(computeInstance.PrivateNetworkIDs)
+						a.NotNil(computeInstance.SecurityGroupIDs)
+						a.ElementsMatch([]string{defaultSecurityGroupID}, *computeInstance.SecurityGroupIDs)
+						a.Equal(testAccResourceComputeInstanceStateRunning, *computeInstance.State)
+						a.Equal(expectedUserData, *computeInstance.UserData)
+
+						return nil
+					},
+					checkResourceState(r, checkResourceStateValidateAttributes(testAttrs{
+						resComputeInstanceAttrDiskSize:                validateString(fmt.Sprint(testAccResourceComputeInstanceDiskSizeUpdated)),
+						resComputeInstanceAttrLabels + ".test":        validateString(testAccResourceComputeInstanceLabelValueUpdated),
+						resComputeInstanceAttrName:                    validateString(testAccResourceComputeInstanceNameUpdated),
+						resComputeInstanceAttrSecurityGroupIDs + ".#": validateString("1"),
+						resComputeInstanceAttrState:                   validateString("running"),
+						resComputeInstanceAttrType:                    validateString(testAccResourceComputeInstanceTypeUpdated),
+						resComputeInstanceAttrUserData:                validateString(testAccResourceComputeInstanceUserDataUpdated),
+					})),
+					resource.TestCheckNoResourceAttr(r, resComputeInstanceAttrElasticIPIDs+".#"),
+					resource.TestCheckNoResourceAttr(r, resComputeInstanceAttrNetworkInterface+".#"),
+				),
+			},
+			{
+				// Update running instance
+				Config: testAccResourceComputeInstanceConfigUpdateStarted,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckResourceComputeInstanceExists(r, &computeInstance),
+					func(s *terraform.State) error {
+						a := require.New(t)
+
+						defaultSecurityGroupID, err := attrFromState(s, "data.exoscale_security_group.default", "id")
+						a.NoError(err, "unable to retrieve default Security Group ID from state")
+
+						expectedUserData, _, err := encodeUserData(testAccResourceComputeInstanceUserDataUpdated)
+						if err != nil {
+							return err
+						}
+
+						a.NotNil(computeInstance.AntiAffinityGroupIDs)
+						a.ElementsMatch([]string{*testAntiAffinityGroup.ID}, *computeInstance.AntiAffinityGroupIDs)
+						a.Equal(testAccResourceComputeInstanceDiskSizeUpdated2, *computeInstance.DiskSize)
+						a.Nil(computeInstance.ElasticIPIDs)
+						a.Equal(testInstanceTypeIDSmall, *computeInstance.InstanceTypeID)
+						a.Equal(testAccResourceComputeInstanceLabelValueUpdated, (*computeInstance.Labels)["test"])
+						a.Equal(testAccResourceComputeInstanceNameUpdated, *computeInstance.Name)
+						a.Nil(computeInstance.PrivateNetworkIDs)
+						a.NotNil(computeInstance.SecurityGroupIDs)
+						a.ElementsMatch([]string{defaultSecurityGroupID}, *computeInstance.SecurityGroupIDs)
+						a.Equal(testAccResourceComputeInstanceStateRunning, *computeInstance.State)
+						a.Equal(expectedUserData, *computeInstance.UserData)
+
+						return nil
+					},
+					checkResourceState(r, checkResourceStateValidateAttributes(testAttrs{
+						resComputeInstanceAttrDiskSize:                validateString(fmt.Sprint(testAccResourceComputeInstanceDiskSizeUpdated2)),
 						resComputeInstanceAttrLabels + ".test":        validateString(testAccResourceComputeInstanceLabelValueUpdated),
 						resComputeInstanceAttrName:                    validateString(testAccResourceComputeInstanceNameUpdated),
 						resComputeInstanceAttrSecurityGroupIDs + ".#": validateString("1"),
@@ -321,7 +561,7 @@ func TestAccResourceComputeInstance(t *testing.T) {
 				ImportStateCheck: func(s []*terraform.InstanceState) error {
 					return checkResourceAttributes(
 						testAttrs{
-							resComputeInstanceAttrDiskSize:                validateString(fmt.Sprint(testAccResourceComputeInstanceDiskSizeUpdated)),
+							resComputeInstanceAttrDiskSize:                validateString(fmt.Sprint(testAccResourceComputeInstanceDiskSizeUpdated2)),
 							resComputeInstanceAttrLabels + ".test":        validateString(testAccResourceComputeInstanceLabelValueUpdated),
 							resComputeInstanceAttrName:                    validateString(testAccResourceComputeInstanceNameUpdated),
 							resComputeInstanceAttrSecurityGroupIDs + ".#": validateString("1"),
