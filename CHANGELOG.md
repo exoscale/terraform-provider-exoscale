@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.40.2 (September 14, 2022)
+
+BUG FIXES:
+
+- `resource_compute_instance`: fix instance restart after change (#220)
+
+IMPROVEMENTS:
+
+- Use HTTP client with retry logic (#216)
+- Use recommended tflog library for logging (#214) 
+
+CHANGES:
+
+- `resource_compute_instance`: force replacement when `deploy_target_id` is updated
+
 ## 0.40.1 (September 2, 2022)
 
 BUG FIXES:
