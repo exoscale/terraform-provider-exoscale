@@ -42,12 +42,10 @@ directory for complete configuration examples.
 
 In addition to the arguments listed above, the following attributes are exported:
 
-* `address_family` - The Elastic IP (EIP) address family (`inet4` or `inet6`).
-
-* `cidr` - The Elastic IP (EIP) CIDR.
-
 * `description` - The Elastic IP (EIP) description.
 
+* `address_family` - The Elastic IP (EIP) address family (`inet4` or `inet6`).
+* `cidr` - The Elastic IP (EIP) CIDR.
 * `healthcheck` - (Block) The *managed* EIP healthcheck configuration. Structure is documented below.
 
 ### `healthcheck` block

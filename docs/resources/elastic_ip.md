@@ -50,11 +50,9 @@ directory for complete configuration examples.
 [zone]: https://www.exoscale.com/datacenters/
 
 * `zone` - (Required) The Exoscale [Zone][zone] name.
-
-* `address_family` - The Elastic IP (EIP) address family (`inet4` or `inet6`; default: `inet4`).
-
 * `description` - A free-form text describing the Elastic IP (EIP).
 
+* `address_family` - The Elastic IP (EIP) address family (`inet4` or `inet6`; default: `inet4`).
 * `healthcheck` - (Block) Healthcheck configuration for *managed* EIPs. Structure is documented below.
 
 ### `healthcheck` block
@@ -76,7 +74,6 @@ directory for complete configuration examples.
 In addition to the arguments listed above, the following attributes are exported:
 
 * `cidr` - The Elastic IP (EIP) CIDR.
-
 * `ip_address` - The Elastic IP (EIP) IPv4 or IPv6 address.
 
 
