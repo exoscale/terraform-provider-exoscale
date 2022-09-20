@@ -11,8 +11,11 @@ In order to maintain the documentation uniform, we ask that you follow the follo
 Arguments and attributes
 --
 
-* All resources or data-sources **names** must be _highlighted_;
+* All resources, data-sources, attributes and arguments **names** must be _highlighted_;
   example given: `exoscale_compute_instance`
+
+* All resources, data-sources, attributes and arguments (example/default) **values** must be
+  _highlighted_; example given: `standard.medium`
 
 * When applicable, **resource and ad-hoc data-source** must be _hyperlinked one to another_;
   example given (for the `exoscale_compute_instance` resource):
