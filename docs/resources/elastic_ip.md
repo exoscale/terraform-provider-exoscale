@@ -50,6 +50,7 @@ directory for complete configuration examples.
 [zone]: https://www.exoscale.com/datacenters/
 
 * `zone` - (Required) The Exoscale [Zone][zone] name.
+
 * `description` - A free-form text describing the Elastic IP (EIP).
 
 * `address_family` - The Elastic IP (EIP) address family (`inet4` or `inet6`; default: `inet4`).
