@@ -6,7 +6,7 @@ Your contributions to the Exoscale Terraform Provider documentation are all welc
 In fact, thoroughly documenting new features or behaviors is mandatory for all PRs
 introducing them.
 
-In order to maintain the documentation uniform, we ask to follow the following conventions.
+In order to maintain the documentation uniform, we ask that you follow the following conventions.
 
 Arguments and attributes
 --
