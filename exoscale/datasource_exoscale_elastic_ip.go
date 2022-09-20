@@ -10,6 +10,8 @@ import (
 )
 
 const (
+	dsElasticIPAttrAddressFamily            = "address_family"
+	dsElasticIPAttrCIDR                     = "cidr"
 	dsElasticIPAttrDescription              = "description"
 	dsElasticIPAttrHealthcheckInterval      = "interval"
 	dsElasticIPAttrHealthcheckMode          = "mode"
@@ -28,6 +30,14 @@ const (
 func dataSourceElasticIP() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
+			dsElasticIPAttrAddressFamily: {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+			dsElasticIPAttrCIDR: {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 			dsElasticIPAttrDescription: {
 				Type:     schema.TypeString,
 				Computed: true,
@@ -134,6 +144,12 @@ func dataSourceElasticIPRead(ctx context.Context, d *schema.ResourceData, meta i
 
 	d.SetId(*elasticIP.ID)
 
+	if err := d.Set(dsElasticIPAttrAddressFamily, defaultString(elasticIP.AddressFamily, "")); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set(dsElasticIPAttrCIDR, defaultString(elasticIP.CIDR, "")); err != nil {
+		return diag.FromErr(err)
+	}
 	if err := d.Set(dsElasticIPAttrDescription, defaultString(elasticIP.Description, "")); err != nil {
 		return diag.FromErr(err)
 	}

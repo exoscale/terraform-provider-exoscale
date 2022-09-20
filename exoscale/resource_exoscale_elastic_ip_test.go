@@ -16,6 +16,8 @@ import (
 )
 
 var (
+	testAccResourceElasticIPAddressFamily4                       = "inet4"
+	testAccResourceElasticIPAddressFamily6                       = "inet6"
 	testAccResourceElasticIPDescription                          = acctest.RandString(10)
 	testAccResourceElasticIPDescriptionUpdated                   = testAccResourceElasticIPDescription + "-updated"
 	testAccResourceElasticIPHealthcheckInterval           int64  = 5
@@ -34,8 +36,8 @@ var (
 	testAccResourceElasticIPHealthcheckURI                       = "/health"
 	testAccResourceElasticIPHealthcheckURIUpdated                = testAccResourceElasticIPHealthcheckURI + "-updated"
 
-	testAccResourceElasticIPConfigCreate = fmt.Sprintf(`
-resource "exoscale_elastic_ip" "test" {
+	testAccResourceElasticIP4ConfigCreate = fmt.Sprintf(`
+resource "exoscale_elastic_ip" "test4" {
   zone        = "%s"
   description = "%s"
 
@@ -61,8 +63,8 @@ resource "exoscale_elastic_ip" "test" {
 		testAccResourceElasticIPHealthcheckStrikesFail,
 	)
 
-	testAccResourceElasticIPConfigUpdate = fmt.Sprintf(`
-resource "exoscale_elastic_ip" "test" {
+	testAccResourceElasticIP4ConfigUpdate = fmt.Sprintf(`
+resource "exoscale_elastic_ip" "test4" {
   zone        = "%s"
   description = "%s"
 
@@ -90,11 +92,73 @@ resource "exoscale_elastic_ip" "test" {
 		testAccResourceElasticIPHealthcheckStrikesFailUpdated,
 		testAccResourceElasticIPHealthcheckTLSSNI,
 	)
+
+	testAccResourceElasticIP6ConfigCreate = fmt.Sprintf(`
+resource "exoscale_elastic_ip" "test6" {
+  zone        = "%s"
+  description = "%s"
+	address_family = "%s"
+
+  healthcheck {
+    mode         = "%s"
+    port         = %d
+    uri          = "%s"
+    interval     = %d
+    timeout      = %d
+    strikes_ok   = %d
+    strikes_fail = %d
+  }
+}
+`,
+		testZoneName,
+		testAccResourceElasticIPDescription,
+		testAccResourceElasticIPAddressFamily6,
+		testAccResourceElasticIPHealthcheckMode,
+		testAccResourceElasticIPHealthcheckPort,
+		testAccResourceElasticIPHealthcheckURI,
+		testAccResourceElasticIPHealthcheckInterval,
+		testAccResourceElasticIPHealthcheckTimeout,
+		testAccResourceElasticIPHealthcheckStrikesOK,
+		testAccResourceElasticIPHealthcheckStrikesFail,
+	)
+
+	testAccResourceElasticIP6ConfigUpdate = fmt.Sprintf(`
+resource "exoscale_elastic_ip" "test6" {
+  zone        = "%s"
+  description = "%s"
+	address_family = "%s"
+
+  healthcheck {
+    mode            = "%s"
+    port            = %d
+    uri             = "%s"
+    interval        = %d
+    timeout         = %d
+    strikes_ok      = %d
+    strikes_fail    = %d
+    tls_sni         = "%s"
+    tls_skip_verify = true
+  }
+}
+`,
+		testZoneName,
+		testAccResourceElasticIPDescriptionUpdated,
+		testAccResourceElasticIPAddressFamily6,
+		testAccResourceElasticIPHealthcheckModeUpdated,
+		testAccResourceElasticIPHealthcheckPortUpdated,
+		testAccResourceElasticIPHealthcheckURIUpdated,
+		testAccResourceElasticIPHealthcheckIntervalUpdated,
+		testAccResourceElasticIPHealthcheckTimeoutUpdated,
+		testAccResourceElasticIPHealthcheckStrikesOKUpdated,
+		testAccResourceElasticIPHealthcheckStrikesFailUpdated,
+		testAccResourceElasticIPHealthcheckTLSSNI,
+	)
 )
 
 func TestAccResourceElasticIP(t *testing.T) {
 	var (
-		r         = "exoscale_elastic_ip.test"
+		r4        = "exoscale_elastic_ip.test4"
+		r6        = "exoscale_elastic_ip.test6"
 		elasticIP egoscale.ElasticIP
 	)
 
@@ -105,12 +169,13 @@ func TestAccResourceElasticIP(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create
-				Config: testAccResourceElasticIPConfigCreate,
+				Config: testAccResourceElasticIP4ConfigCreate,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckResourceElasticIPExists(r, &elasticIP),
+					testAccCheckResourceElasticIPExists(r4, &elasticIP),
 					func(s *terraform.State) error {
 						a := assert.New(t)
 
+						a.Equal(testAccResourceElasticIPAddressFamily4, *elasticIP.AddressFamily)
 						a.Equal(testAccResourceElasticIPDescription, *elasticIP.Description)
 						a.NotNil(elasticIP.Healthcheck)
 						a.Equal(testAccResourceElasticIPHealthcheckInterval, int64(elasticIP.Healthcheck.Interval.Seconds()))
@@ -123,9 +188,11 @@ func TestAccResourceElasticIP(t *testing.T) {
 
 						return nil
 					},
-					checkResourceState(r, checkResourceStateValidateAttributes(testAttrs{
-						resElasticIPAttrDescription:                                         validateString(testAccResourceElasticIPDescription),
-						resElasticIPAttrIPAddress:                                           validation.ToDiagFunc(validation.IsIPAddress),
+					checkResourceState(r4, checkResourceStateValidateAttributes(testAttrs{
+						resElasticIPAttrDescription:   validateString(testAccResourceElasticIPDescription),
+						resElasticIPAttrAddressFamily: validateString(testAccResourceElasticIPAddressFamily4),
+						resElasticIPAttrCIDR:          validation.ToDiagFunc(validation.IsCIDR),
+						resElasticIPAttrIPAddress:     validation.ToDiagFunc(validation.IsIPAddress),
 						resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckInterval):    validateString(fmt.Sprint(testAccResourceElasticIPHealthcheckInterval)),
 						resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckMode):        validateString(testAccResourceElasticIPHealthcheckMode),
 						resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckPort):        validateString(fmt.Sprint(testAccResourceElasticIPHealthcheckPort)),
@@ -138,9 +205,9 @@ func TestAccResourceElasticIP(t *testing.T) {
 			},
 			{
 				// Update
-				Config: testAccResourceElasticIPConfigUpdate,
+				Config: testAccResourceElasticIP4ConfigUpdate,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckResourceElasticIPExists(r, &elasticIP),
+					testAccCheckResourceElasticIPExists(r4, &elasticIP),
 					func(s *terraform.State) error {
 						a := assert.New(t)
 
@@ -158,9 +225,11 @@ func TestAccResourceElasticIP(t *testing.T) {
 
 						return nil
 					},
-					checkResourceState(r, checkResourceStateValidateAttributes(testAttrs{
-						resElasticIPAttrDescription:                                           validateString(testAccResourceElasticIPDescriptionUpdated),
-						resElasticIPAttrIPAddress:                                             validation.ToDiagFunc(validation.IsIPAddress),
+					checkResourceState(r4, checkResourceStateValidateAttributes(testAttrs{
+						resElasticIPAttrDescription:   validateString(testAccResourceElasticIPDescriptionUpdated),
+						resElasticIPAttrAddressFamily: validateString(testAccResourceElasticIPAddressFamily4),
+						resElasticIPAttrCIDR:          validation.ToDiagFunc(validation.IsCIDR),
+						resElasticIPAttrIPAddress:     validation.ToDiagFunc(validation.IsIPAddress),
 						resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckInterval):      validateString(fmt.Sprint(testAccResourceElasticIPHealthcheckIntervalUpdated)),
 						resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckMode):          validateString(testAccResourceElasticIPHealthcheckModeUpdated),
 						resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckPort):          validateString(fmt.Sprint(testAccResourceElasticIPHealthcheckPortUpdated)),
@@ -175,7 +244,7 @@ func TestAccResourceElasticIP(t *testing.T) {
 			},
 			{
 				// Import
-				ResourceName:      r,
+				ResourceName:      r4,
 				ImportState:       true,
 				ImportStateVerify: true,
 				ImportStateIdFunc: func(elasticIP *egoscale.ElasticIP) resource.ImportStateIdFunc {
@@ -186,8 +255,123 @@ func TestAccResourceElasticIP(t *testing.T) {
 				ImportStateCheck: func(s []*terraform.InstanceState) error {
 					return checkResourceAttributes(
 						testAttrs{
-							resElasticIPAttrDescription:                                           validateString(testAccResourceElasticIPDescriptionUpdated),
-							resElasticIPAttrIPAddress:                                             validation.ToDiagFunc(validation.IsIPAddress),
+							resElasticIPAttrDescription:   validateString(testAccResourceElasticIPDescriptionUpdated),
+							resElasticIPAttrAddressFamily: validateString(testAccResourceElasticIPAddressFamily4),
+							resElasticIPAttrCIDR:          validation.ToDiagFunc(validation.IsCIDR),
+							resElasticIPAttrIPAddress:     validation.ToDiagFunc(validation.IsIPAddress),
+							resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckInterval):      validateString(fmt.Sprint(testAccResourceElasticIPHealthcheckIntervalUpdated)),
+							resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckMode):          validateString(testAccResourceElasticIPHealthcheckModeUpdated),
+							resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckPort):          validateString(fmt.Sprint(testAccResourceElasticIPHealthcheckPortUpdated)),
+							resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckStrikesFail):   validateString(fmt.Sprint(testAccResourceElasticIPHealthcheckStrikesFailUpdated)),
+							resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckStrikesOK):     validateString(fmt.Sprint(testAccResourceElasticIPHealthcheckStrikesOKUpdated)),
+							resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckTLSSNI):        validateString(testAccResourceElasticIPHealthcheckTLSSNI),
+							resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckTLSSkipVerify): validateString("true"),
+							resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckTimeout):       validateString(fmt.Sprint(testAccResourceElasticIPHealthcheckTimeoutUpdated)),
+							resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckURI):           validateString(testAccResourceElasticIPHealthcheckURIUpdated),
+						},
+						s[0].Attributes)
+				},
+			},
+		},
+	})
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviders,
+		CheckDestroy:      testAccCheckResourceElasticIPDestroy(&elasticIP),
+		Steps: []resource.TestStep{
+			{
+				// Create
+				Config: testAccResourceElasticIP6ConfigCreate,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckResourceElasticIPExists(r6, &elasticIP),
+					func(s *terraform.State) error {
+						a := assert.New(t)
+
+						a.Equal(testAccResourceElasticIPAddressFamily6, *elasticIP.AddressFamily)
+						a.Equal(testAccResourceElasticIPDescription, *elasticIP.Description)
+						a.NotNil(elasticIP.Healthcheck)
+						a.Equal(testAccResourceElasticIPHealthcheckInterval, int64(elasticIP.Healthcheck.Interval.Seconds()))
+						a.Equal(testAccResourceElasticIPHealthcheckMode, *elasticIP.Healthcheck.Mode)
+						a.Equal(testAccResourceElasticIPHealthcheckPort, *elasticIP.Healthcheck.Port)
+						a.Equal(testAccResourceElasticIPHealthcheckStrikesFail, *elasticIP.Healthcheck.StrikesFail)
+						a.Equal(testAccResourceElasticIPHealthcheckStrikesOK, *elasticIP.Healthcheck.StrikesOK)
+						a.Equal(testAccResourceElasticIPHealthcheckTimeout, int64(elasticIP.Healthcheck.Timeout.Seconds()))
+						a.Equal(testAccResourceElasticIPHealthcheckURI, *elasticIP.Healthcheck.URI)
+
+						return nil
+					},
+					checkResourceState(r6, checkResourceStateValidateAttributes(testAttrs{
+						resElasticIPAttrDescription:   validateString(testAccResourceElasticIPDescription),
+						resElasticIPAttrAddressFamily: validateString(testAccResourceElasticIPAddressFamily6),
+						resElasticIPAttrCIDR:          validation.ToDiagFunc(validation.IsCIDR),
+						resElasticIPAttrIPAddress:     validation.ToDiagFunc(validation.IsIPAddress),
+						resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckInterval):    validateString(fmt.Sprint(testAccResourceElasticIPHealthcheckInterval)),
+						resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckMode):        validateString(testAccResourceElasticIPHealthcheckMode),
+						resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckPort):        validateString(fmt.Sprint(testAccResourceElasticIPHealthcheckPort)),
+						resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckStrikesFail): validateString(fmt.Sprint(testAccResourceElasticIPHealthcheckStrikesFail)),
+						resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckStrikesOK):   validateString(fmt.Sprint(testAccResourceElasticIPHealthcheckStrikesOK)),
+						resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckTimeout):     validateString(fmt.Sprint(testAccResourceElasticIPHealthcheckTimeout)),
+						resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckURI):         validateString(testAccResourceElasticIPHealthcheckURI),
+					})),
+				),
+			},
+			{
+				// Update
+				Config: testAccResourceElasticIP6ConfigUpdate,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckResourceElasticIPExists(r6, &elasticIP),
+					func(s *terraform.State) error {
+						a := assert.New(t)
+
+						a.Equal(testAccResourceElasticIPDescriptionUpdated, *elasticIP.Description)
+						a.NotNil(elasticIP.Healthcheck)
+						a.Equal(testAccResourceElasticIPHealthcheckIntervalUpdated, int64(elasticIP.Healthcheck.Interval.Seconds()))
+						a.Equal(testAccResourceElasticIPHealthcheckModeUpdated, *elasticIP.Healthcheck.Mode)
+						a.Equal(testAccResourceElasticIPHealthcheckPortUpdated, *elasticIP.Healthcheck.Port)
+						a.Equal(testAccResourceElasticIPHealthcheckStrikesFailUpdated, *elasticIP.Healthcheck.StrikesFail)
+						a.Equal(testAccResourceElasticIPHealthcheckStrikesOKUpdated, *elasticIP.Healthcheck.StrikesOK)
+						a.Equal(testAccResourceElasticIPHealthcheckTLSSNI, *elasticIP.Healthcheck.TLSSNI)
+						a.True(*elasticIP.Healthcheck.TLSSkipVerify)
+						a.Equal(testAccResourceElasticIPHealthcheckTimeoutUpdated, int64(elasticIP.Healthcheck.Timeout.Seconds()))
+						a.Equal(testAccResourceElasticIPHealthcheckURIUpdated, *elasticIP.Healthcheck.URI)
+
+						return nil
+					},
+					checkResourceState(r6, checkResourceStateValidateAttributes(testAttrs{
+						resElasticIPAttrDescription:   validateString(testAccResourceElasticIPDescriptionUpdated),
+						resElasticIPAttrAddressFamily: validateString(testAccResourceElasticIPAddressFamily6),
+						resElasticIPAttrCIDR:          validation.ToDiagFunc(validation.IsCIDR),
+						resElasticIPAttrIPAddress:     validation.ToDiagFunc(validation.IsIPAddress),
+						resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckInterval):      validateString(fmt.Sprint(testAccResourceElasticIPHealthcheckIntervalUpdated)),
+						resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckMode):          validateString(testAccResourceElasticIPHealthcheckModeUpdated),
+						resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckPort):          validateString(fmt.Sprint(testAccResourceElasticIPHealthcheckPortUpdated)),
+						resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckStrikesFail):   validateString(fmt.Sprint(testAccResourceElasticIPHealthcheckStrikesFailUpdated)),
+						resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckStrikesOK):     validateString(fmt.Sprint(testAccResourceElasticIPHealthcheckStrikesOKUpdated)),
+						resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckTLSSNI):        validateString(testAccResourceElasticIPHealthcheckTLSSNI),
+						resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckTLSSkipVerify): validateString("true"),
+						resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckTimeout):       validateString(fmt.Sprint(testAccResourceElasticIPHealthcheckTimeoutUpdated)),
+						resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckURI):           validateString(testAccResourceElasticIPHealthcheckURIUpdated),
+					})),
+				),
+			},
+			{
+				// Import
+				ResourceName:      r6,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateIdFunc: func(elasticIP *egoscale.ElasticIP) resource.ImportStateIdFunc {
+					return func(*terraform.State) (string, error) {
+						return fmt.Sprintf("%s@%s", *elasticIP.ID, testZoneName), nil
+					}
+				}(&elasticIP),
+				ImportStateCheck: func(s []*terraform.InstanceState) error {
+					return checkResourceAttributes(
+						testAttrs{
+							resElasticIPAttrDescription:   validateString(testAccResourceElasticIPDescriptionUpdated),
+							resElasticIPAttrAddressFamily: validateString(testAccResourceElasticIPAddressFamily6),
+							resElasticIPAttrCIDR:          validation.ToDiagFunc(validation.IsCIDR),
+							resElasticIPAttrIPAddress:     validation.ToDiagFunc(validation.IsIPAddress),
 							resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckInterval):      validateString(fmt.Sprint(testAccResourceElasticIPHealthcheckIntervalUpdated)),
 							resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckMode):          validateString(testAccResourceElasticIPHealthcheckModeUpdated),
 							resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckPort):          validateString(fmt.Sprint(testAccResourceElasticIPHealthcheckPortUpdated)),
