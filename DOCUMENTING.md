@@ -3,7 +3,7 @@ Contributing to the Exoscale Terraform Provider documentation
 
 Your contributions to the Exoscale Terraform Provider documentation are all welcome.
 
-In fact, thoroughly documenting new features or behaviours is mandatory for all PRs
+In fact, thoroughly documenting new features or behaviors is mandatory for all PRs
 introducing them.
 
 In order to maintain the documentation uniform, we ask to follow the following conventions.
@@ -67,3 +67,8 @@ use of arguments and resources _independently from other resources/data-sources_
 purpose - must be stored in the `examples` directory (where they may be hyperlinked from each
 individual resource/data-source `docs` pages); example given: _Please refer to the `examples`
 directory for complete configuration examples._
+
+Locale and encoding
+--
+
+Please use `en_US.UTF-8` locale/encoding, in particular in respect with spell-checking.
