@@ -119,7 +119,7 @@ data "exoscale_instance_pool" "by-id" {
 						"network_ids.0":        validation.ToDiagFunc(validation.IsUUID),
 						"size":                 validateString(testAccDataSourceInstancePoolSize),
 						// NOTE: state is unreliable atm, improvement suggested in 54808
-						//"state":                validateString("running"),
+						// "state":                validateString("running"),
 						"template_id":    validation.ToDiagFunc(validation.IsUUID),
 						"user_data":      validateString(testAccDataSourceInstancePoolUserData),
 						"instances.#":    validateString("2"),
