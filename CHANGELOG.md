@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.41.0 (September 20, 2022)
+
+FEATURES:
+
+- `elastic_ip`: Added support for EIPv6 (#211)
+
 ## 0.40.2 (September 14, 2022)
 
 BUG FIXES:
