@@ -1,6 +1,11 @@
 Changelog
 =========
 
+0.90.2
+------
+
+- fix: v2: silence retryable HTTP client debug logs
+
 0.90.1
 ------
 

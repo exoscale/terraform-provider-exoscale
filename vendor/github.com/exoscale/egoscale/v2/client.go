@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
+	"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -31,7 +33,12 @@ var UserAgent = fmt.Sprintf("egoscale/%s (%s; %s/%s)",
 
 // defaultHTTPClient is HTTP client with retry logic.
 // Default retry configuration can be found in go-retryablehttp repo.
-var defaultHTTPClient = retryablehttp.NewClient().StandardClient()
+var defaultHTTPClient = func() *http.Client {
+	rc := retryablehttp.NewClient()
+	// silence client by default
+	rc.Logger = log.New(io.Discard, "", 0)
+	return rc.StandardClient()
+}()
 
 // ClientOpt represents a function setting Exoscale API client option.
 type ClientOpt func(*Client) error
