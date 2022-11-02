@@ -20,7 +20,7 @@ data "exoscale_compute_instance_list" "my_compute_instance_list" {
 
 output "my_compute_instance_ids" {
   value = join("\n", formatlist(
-    "%s", exoscale_compute_instance_list.my_compute_instance_list.instances.*.id
+    "%s", data.exoscale_compute_instance_list.my_compute_instance_list.instances.*.id
   ))
 }
 ```
