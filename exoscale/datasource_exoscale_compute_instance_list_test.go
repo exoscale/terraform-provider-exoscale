@@ -7,6 +7,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
@@ -76,6 +77,7 @@ data "exoscale_compute_instance_list" "test" {
 				Check: resource.ComposeTestCheckFunc(
 					testAccDataSourceComputeInstanceListAttributes("data.exoscale_compute_instance_list.test", testAttrs{
 						"instances.#":         validateString("1"),
+						"instances.0.id":      validation.ToDiagFunc(validation.NoZeroValues),
 						"instances.0.name":    validateString(testAccDataSourceComputeInstanceListName),
 						"instances.0.type":    validateString(testAccDataSourceComputeInstanceListType),
 						"instances.0.ssh_key": validateString(testAccDataSourceComputeInstanceListSSHKeyName),

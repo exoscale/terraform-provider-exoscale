@@ -7,6 +7,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
@@ -76,7 +77,9 @@ data "exoscale_instance_pool_list" "test" {
 				Check: resource.ComposeTestCheckFunc(
 					testAccDataSourceInstancePoolListAttributes("data.exoscale_instance_pool_list.test", testAttrs{
 						"pools.#":             validateString("2"),
+						"pools.0.id":          validation.ToDiagFunc(validation.NoZeroValues),
 						"pools.0.instances.#": validateString("1"),
+						"pools.1.id":          validation.ToDiagFunc(validation.NoZeroValues),
 						"pools.1.instances.#": validateString("1"),
 					}),
 				),
