@@ -239,7 +239,15 @@ func TestAccResourceCompute(t *testing.T) {
 							"user_data":         validateString("#cloud-config\npackage_upgrade: true\n"),
 							"reverse_dns":       validateString(testAccResourceComputeReverseDNSUpdated),
 						},
-						s[0].Attributes)
+						func(s []*terraform.InstanceState) map[string]string {
+							for _, state := range s {
+								if state.ID == vm.ID.String() {
+									return state.Attributes
+								}
+							}
+							return nil
+						}(s),
+					)
 				},
 			},
 		},
