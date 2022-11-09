@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"strings"
 	"testing"
 
 	"github.com/exoscale/egoscale"
@@ -101,7 +102,15 @@ func TestAccResourceSecondaryIPAddress(t *testing.T) {
 							"nic_id":     validation.ToDiagFunc(validation.IsUUID),
 							"network_id": validation.ToDiagFunc(validation.IsUUID),
 						},
-						s[0].Attributes)
+						func(s []*terraform.InstanceState) map[string]string {
+							for _, state := range s {
+								if strings.HasSuffix(state.ID, secondaryip.IPAddress.String()) {
+									return state.Attributes
+								}
+							}
+							return nil
+						}(s),
+					)
 				},
 			},
 		},
