@@ -87,7 +87,7 @@ func TestAccResourceDatabase_Opensearch(t *testing.T) {
 						a.Equal("1", *databaseService.Version)
 						a.True(*databaseService.KeepIndexRefreshInterval)
 						// NOTE: Uncomment when upstream bug is fixed
-						//a.Equal(int64(0), *databaseService.MaxIndexCount)
+						// a.Equal(int64(0), *databaseService.MaxIndexCount)
 						a.Equal(int64(2), *(*databaseService.IndexPatterns)[0].MaxIndexCount)
 						a.Equal(2, len(*databaseService.IndexPatterns))
 						a.Equal("log.?", *(*databaseService.IndexPatterns)[0].Pattern)
@@ -151,7 +151,7 @@ func TestAccResourceDatabase_Opensearch(t *testing.T) {
 						a.Equal("1", *databaseService.Version)
 						a.True(*databaseService.KeepIndexRefreshInterval)
 						// NOTE: Uncomment when upstream bug is fixed
-						//a.Equal(int64(4), *databaseService.MaxIndexCount)
+						// a.Equal(int64(4), *databaseService.MaxIndexCount)
 						a.Equal(2, len(*databaseService.IndexPatterns))
 						a.Equal(int64(6), *(*databaseService.IndexPatterns)[0].MaxIndexCount)
 						a.Equal("log.?", *(*databaseService.IndexPatterns)[0].Pattern)
