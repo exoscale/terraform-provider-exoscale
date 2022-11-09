@@ -332,7 +332,15 @@ func TestAccResourceNLBService(t *testing.T) {
 							resNLBServiceAttrStrategy:   validateString(testAccResourceNLBServiceStrategyUpdated),
 							resNLBServiceAttrTargetPort: validateString(testAccResourceNLBServiceTargetPortUpdated),
 						},
-						s[0].Attributes)
+						func(s []*terraform.InstanceState) map[string]string {
+							for _, state := range s {
+								if state.ID == *nlbService.ID {
+									return state.Attributes
+								}
+							}
+							return nil
+						}(s),
+					)
 				},
 			},
 		},
