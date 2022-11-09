@@ -258,7 +258,15 @@ func TestAccResourceNLB(t *testing.T) {
 							resNLBAttrState:            validation.ToDiagFunc(validation.NoZeroValues),
 							resNLBAttrZone:             validateString(testZoneName),
 						},
-						s[0].Attributes)
+						func(s []*terraform.InstanceState) map[string]string {
+							for _, state := range s {
+								if state.ID == *nlb.ID {
+									return state.Attributes
+								}
+							}
+							return nil
+						}(s),
+					)
 				},
 			},
 		},
