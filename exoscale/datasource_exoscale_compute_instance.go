@@ -227,6 +227,7 @@ func dataSourceComputeInstanceBuildData(instance *exo.Instance) (map[string]inte
 
 	data[dsComputeInstanceAttrDeployTargetID] = instance.DeployTargetID
 	data[dsComputeInstanceAttrDiskSize] = instance.DiskSize
+	data[dsComputeInstanceAttrID] = instance.ID
 	data[dsComputeInstanceAttrName] = instance.Name
 	data[dsComputeInstanceAttrSSHKey] = instance.SSHKey
 	data[dsComputeInstanceAttrState] = instance.State
