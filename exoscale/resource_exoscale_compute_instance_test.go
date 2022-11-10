@@ -569,7 +569,15 @@ func TestAccResourceComputeInstance(t *testing.T) {
 							resComputeInstanceAttrType:                    validateString(testAccResourceComputeInstanceTypeUpdated),
 							resComputeInstanceAttrUserData:                validateString(testAccResourceComputeInstanceUserDataUpdated),
 						},
-						s[0].Attributes)
+						func(s []*terraform.InstanceState) map[string]string {
+							for _, state := range s {
+								if state.ID == *computeInstance.ID {
+									return state.Attributes
+								}
+							}
+							return nil
+						}(s),
+					)
 				},
 			},
 		},
