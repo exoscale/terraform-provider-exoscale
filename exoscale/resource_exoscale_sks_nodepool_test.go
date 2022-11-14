@@ -1,7 +1,3 @@
-// NOTE: remove build tag once 54183 is fixed
-//go:build ignore
-// +build ignore
-
 package exoscale
 
 import (
@@ -292,7 +288,15 @@ func TestAccResourceSKSNodepool(t *testing.T) {
 							resSKSNodepoolAttrTemplateID: validation.ToDiagFunc(validation.IsUUID),
 							resSKSNodepoolAttrVersion:    validation.ToDiagFunc(validation.NoZeroValues),
 						},
-						s[0].Attributes)
+						func(s []*terraform.InstanceState) map[string]string {
+							for _, state := range s {
+								if state.ID == *sksNodepool.ID {
+									return state.Attributes
+								}
+							}
+							return nil
+						}(s),
+					)
 				},
 			},
 		},

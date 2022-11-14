@@ -24,10 +24,9 @@ const (
 	testInstanceTemplateUsername = "ubuntu"
 	testInstanceTemplateFilter   = "featured"
 
-	testInstanceTypeIDTiny  = "b6cd1ff5-3a2f-4e9d-a4d1-8988c1191fe8"
-	testInstanceTypeIDSmall = "21624abb-764e-4def-81d7-9fc54b5957fb"
-	// Enable when 54183 is fixed (TestAccResourceSKSNodepool)
-	// testInstanceTypeIDMedium = "b6e9d1e8-89fc-4db3-aaa4-9b4c5b1d0844"
+	testInstanceTypeIDTiny   = "b6cd1ff5-3a2f-4e9d-a4d1-8988c1191fe8"
+	testInstanceTypeIDSmall  = "21624abb-764e-4def-81d7-9fc54b5957fb"
+	testInstanceTypeIDMedium = "b6e9d1e8-89fc-4db3-aaa4-9b4c5b1d0844"
 )
 
 // testAttrs represents a map of expected resource attributes during acceptance tests.
