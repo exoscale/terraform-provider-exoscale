@@ -309,6 +309,23 @@ func resourceDatabaseUpdatePg(
 	}
 
 	if updated {
+		// Aiven would overwrite the backup schedule with random value if we don't specify it explicitly.
+		if databaseService.BackupSchedule == nil {
+			bh, bm, err := parseDatabaseServiceBackupSchedule(
+				d.Get(resDatabaseAttrPg(resDatabaseAttrPgBackupSchedule)).(string),
+			)
+			if err != nil {
+				return diag.FromErr(err)
+			}
+			databaseService.BackupSchedule = &struct {
+				BackupHour   *int64 `json:"backup-hour,omitempty"`
+				BackupMinute *int64 `json:"backup-minute,omitempty"`
+			}{
+				BackupHour:   &bh,
+				BackupMinute: &bm,
+			}
+		}
+
 		res, err := client.UpdateDbaasServicePgWithResponse(ctx,
 			oapi.DbaasServiceName(d.Get(resDatabaseAttrName).(string)),
 			databaseService)
