@@ -1,7 +1,3 @@
-// NOTE: remove build tag once 53111 is fixed
-//go:build ignore
-// +build ignore
-
 package exoscale
 
 import (
@@ -299,7 +295,15 @@ func TestAccResourceInstancePool(t *testing.T) {
 							resInstancePoolAttrState:                   validation.ToDiagFunc(validation.NoZeroValues),
 							resInstancePoolAttrUserData:                validateString(testAccResourceInstancePoolUserDataUpdated),
 						},
-						s[0].Attributes)
+						func(s []*terraform.InstanceState) map[string]string {
+							for _, state := range s {
+								if state.ID == *instancePool.ID {
+									return state.Attributes
+								}
+							}
+							return nil
+						}(s),
+					)
 				},
 			},
 		},
