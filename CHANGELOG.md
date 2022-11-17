@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.41.1 (November 17, 2022)
+
+BUG FIXES:
+
+- `datasource_compute_instance_list`: add missing ID (#226)
+- `resource_database`: always set `backup-schedule` on update to mitigate Aiven bug (#229)
+- Fixed acceptance tests
+
+IMPROVEMENTS:
+- Documentation update
+
 ## 0.41.0 (September 20, 2022)
 
 FEATURES:
