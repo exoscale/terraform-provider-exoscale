@@ -35,6 +35,7 @@ var (
 	testAccResourceElasticIPHealthcheckTimeoutUpdated            = testAccResourceElasticIPHealthcheckTimeout + 1
 	testAccResourceElasticIPHealthcheckURI                       = "/health"
 	testAccResourceElasticIPHealthcheckURIUpdated                = testAccResourceElasticIPHealthcheckURI + "-updated"
+	testAccResourceElasticIPTagValue                             = acctest.RandomWithPrefix(testPrefix)
 
 	testAccResourceElasticIP4ConfigCreate = fmt.Sprintf(`
 resource "exoscale_elastic_ip" "test4" {
@@ -50,6 +51,10 @@ resource "exoscale_elastic_ip" "test4" {
     strikes_ok   = %d
     strikes_fail = %d
   }
+
+  labels = {
+    test = "%s"
+  }
 }
 `,
 		testZoneName,
@@ -61,6 +66,7 @@ resource "exoscale_elastic_ip" "test4" {
 		testAccResourceElasticIPHealthcheckTimeout,
 		testAccResourceElasticIPHealthcheckStrikesOK,
 		testAccResourceElasticIPHealthcheckStrikesFail,
+		testAccResourceElasticIPTagValue,
 	)
 
 	testAccResourceElasticIP4ConfigUpdate = fmt.Sprintf(`
@@ -79,6 +85,10 @@ resource "exoscale_elastic_ip" "test4" {
     tls_sni         = "%s"
     tls_skip_verify = true
   }
+
+  labels = {
+    test = "%s"
+  }
 }
 `,
 		testZoneName,
@@ -91,6 +101,7 @@ resource "exoscale_elastic_ip" "test4" {
 		testAccResourceElasticIPHealthcheckStrikesOKUpdated,
 		testAccResourceElasticIPHealthcheckStrikesFailUpdated,
 		testAccResourceElasticIPHealthcheckTLSSNI,
+		testAccResourceElasticIPTagValue,
 	)
 
 	testAccResourceElasticIP6ConfigCreate = fmt.Sprintf(`
@@ -108,6 +119,10 @@ resource "exoscale_elastic_ip" "test6" {
     strikes_ok   = %d
     strikes_fail = %d
   }
+
+  labels = {
+    test = "%s"
+  }
 }
 `,
 		testZoneName,
@@ -120,6 +135,7 @@ resource "exoscale_elastic_ip" "test6" {
 		testAccResourceElasticIPHealthcheckTimeout,
 		testAccResourceElasticIPHealthcheckStrikesOK,
 		testAccResourceElasticIPHealthcheckStrikesFail,
+		testAccResourceElasticIPTagValue,
 	)
 
 	testAccResourceElasticIP6ConfigUpdate = fmt.Sprintf(`
@@ -139,6 +155,10 @@ resource "exoscale_elastic_ip" "test6" {
     tls_sni         = "%s"
     tls_skip_verify = true
   }
+
+  labels = {
+    test = "%s"
+  }
 }
 `,
 		testZoneName,
@@ -152,6 +172,7 @@ resource "exoscale_elastic_ip" "test6" {
 		testAccResourceElasticIPHealthcheckStrikesOKUpdated,
 		testAccResourceElasticIPHealthcheckStrikesFailUpdated,
 		testAccResourceElasticIPHealthcheckTLSSNI,
+		testAccResourceElasticIPTagValue,
 	)
 )
 
