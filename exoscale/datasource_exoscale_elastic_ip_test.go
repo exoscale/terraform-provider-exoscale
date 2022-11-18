@@ -24,7 +24,7 @@ var (
 	testAccDataSourceElasticIPHealthcheckTLSSNI             = "example.net"
 	testAccDataSourceElasticIPHealthcheckTimeout     int64  = 3
 	testAccDataSourceElasticIPHealthcheckURI                = "/health"
-	testAccDataSourceElasticIPTagValue                      = acctest.RandomWithPrefix(testPrefix)
+	testAccDataSourceElasticIPLabelValue                    = acctest.RandomWithPrefix(testPrefix)
 
 	testAccDataSourceElasticIPConfig4 = fmt.Sprintf(`
 locals {
@@ -62,7 +62,7 @@ resource "exoscale_elastic_ip" "test4" {
 		testAccDataSourceElasticIPHealthcheckStrikesOK,
 		testAccDataSourceElasticIPHealthcheckStrikesFail,
 		testAccDataSourceElasticIPHealthcheckTLSSNI,
-		testAccDataSourceElasticIPTagValue,
+		testAccDataSourceElasticIPLabelValue,
 	)
 
 	testAccDataSourceElasticIPConfig6 = fmt.Sprintf(`
@@ -103,7 +103,7 @@ resource "exoscale_elastic_ip" "test6" {
 		testAccDataSourceElasticIPHealthcheckStrikesOK,
 		testAccDataSourceElasticIPHealthcheckStrikesFail,
 		testAccDataSourceElasticIPHealthcheckTLSSNI,
-		testAccDataSourceElasticIPTagValue,
+		testAccDataSourceElasticIPLabelValue,
 	)
 )
 
