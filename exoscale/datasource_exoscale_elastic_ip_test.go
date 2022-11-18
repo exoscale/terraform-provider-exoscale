@@ -24,6 +24,7 @@ var (
 	testAccDataSourceElasticIPHealthcheckTLSSNI             = "example.net"
 	testAccDataSourceElasticIPHealthcheckTimeout     int64  = 3
 	testAccDataSourceElasticIPHealthcheckURI                = "/health"
+	testAccDataSourceElasticIPTagValue                      = acctest.RandomWithPrefix(testPrefix)
 
 	testAccDataSourceElasticIPConfig4 = fmt.Sprintf(`
 locals {
@@ -45,6 +46,10 @@ resource "exoscale_elastic_ip" "test4" {
     tls_sni         = "%s"
     tls_skip_verify = true
   }
+
+  labels = {
+    test = "%s"
+  }
 }
 `,
 		testZoneName,
@@ -57,6 +62,7 @@ resource "exoscale_elastic_ip" "test4" {
 		testAccDataSourceElasticIPHealthcheckStrikesOK,
 		testAccDataSourceElasticIPHealthcheckStrikesFail,
 		testAccDataSourceElasticIPHealthcheckTLSSNI,
+		testAccDataSourceElasticIPTagValue,
 	)
 
 	testAccDataSourceElasticIPConfig6 = fmt.Sprintf(`
@@ -80,6 +86,10 @@ resource "exoscale_elastic_ip" "test6" {
     tls_sni         = "%s"
     tls_skip_verify = true
   }
+
+  labels = {
+    test = "%s"
+  }
 }
 `,
 		testZoneName,
@@ -93,6 +103,7 @@ resource "exoscale_elastic_ip" "test6" {
 		testAccDataSourceElasticIPHealthcheckStrikesOK,
 		testAccDataSourceElasticIPHealthcheckStrikesFail,
 		testAccDataSourceElasticIPHealthcheckTLSSNI,
+		testAccDataSourceElasticIPTagValue,
 	)
 )
 
