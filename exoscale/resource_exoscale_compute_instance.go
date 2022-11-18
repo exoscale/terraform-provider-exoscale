@@ -49,6 +49,7 @@ func resourceComputeInstance() *schema.Resource {
 			Optional: true,
 			Set:      schema.HashString,
 			Elem:     &schema.Schema{Type: schema.TypeString},
+			ForceNew: true,
 		},
 		resComputeInstanceAttrCreatedAt: {
 			Type:     schema.TypeString,
