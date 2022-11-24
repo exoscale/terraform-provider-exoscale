@@ -29,6 +29,7 @@ const (
 	resElasticIPAttrHealthcheckTimeout       = "timeout"
 	resElasticIPAttrHealthcheckURI           = "uri"
 	resElasticIPAttrIPAddress                = "ip_address"
+	resElasticIPAttrLabels                   = "labels"
 	resElasticIPAttrZone                     = "zone"
 )
 
@@ -117,6 +118,11 @@ func resourceElasticIP() *schema.Resource {
 			resElasticIPAttrIPAddress: {
 				Type:     schema.TypeString,
 				Computed: true,
+			},
+			resElasticIPAttrLabels: {
+				Type:     schema.TypeMap,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+				Optional: true,
 			},
 			resElasticIPAttrZone: {
 				Type:     schema.TypeString,
@@ -213,6 +219,14 @@ func resourceElasticIPCreate(ctx context.Context, d *schema.ResourceData, meta i
 		}
 
 		elasticIP.Healthcheck = &elasticIPHealthcheck
+
+		if l, ok := d.GetOk(resElasticIPAttrLabels); ok {
+			labels := make(map[string]string)
+			for k, v := range l.(map[string]interface{}) {
+				labels[k] = v.(string)
+			}
+			elasticIP.Labels = &labels
+		}
 	}
 
 	elasticIP, err := client.CreateElasticIP(ctx, zone, elasticIP)
@@ -278,6 +292,15 @@ func resourceElasticIPUpdate(ctx context.Context, d *schema.ResourceData, meta i
 	}
 
 	var updated bool
+
+	if d.HasChange(resElasticIPAttrLabels) {
+		labels := make(map[string]string)
+		for k, v := range d.Get(resElasticIPAttrLabels).(map[string]interface{}) {
+			labels[k] = v.(string)
+		}
+		elasticIP.Labels = &labels
+		updated = true
+	}
 
 	if d.HasChange(resElasticIPAttrAddressFamily) {
 		v := d.Get(resElasticIPAttrAddressFamily).(string)
@@ -365,6 +388,10 @@ func resourceElasticIPApply(_ context.Context, d *schema.ResourceData, elasticIP
 		if err := d.Set(resElasticIPAttrIPAddress, elasticIP.IPAddress.String()); err != nil {
 			return err
 		}
+	}
+
+	if err := d.Set(resElasticIPAttrLabels, elasticIP.Labels); err != nil {
+		return err
 	}
 
 	return nil

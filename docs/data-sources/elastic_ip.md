@@ -46,6 +46,7 @@ In addition to the arguments listed above, the following attributes are exported
 
 * `address_family` - The Elastic IP (EIP) address family (`inet4` or `inet6`).
 * `cidr` - The Elastic IP (EIP) CIDR.
+* `labels` - A map of key/value labels.
 * `healthcheck` - (Block) The *managed* EIP healthcheck configuration. Structure is documented below.
 
 ### `healthcheck` block

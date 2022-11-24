@@ -24,6 +24,7 @@ const (
 	dsElasticIPAttrHealthcheckURI           = "uri"
 	dsElasticIPAttrID                       = "id"
 	dsElasticIPAttrIPAddress                = "ip_address"
+	dsElasticIPAttrLabels                   = "labels"
 	dsElasticIPAttrZone                     = "zone"
 )
 
@@ -95,6 +96,11 @@ func dataSourceElasticIP() *schema.Resource {
 				Type:          schema.TypeString,
 				Optional:      true,
 				ConflictsWith: []string{dsElasticIPAttrID},
+			},
+			dsElasticIPAttrLabels: {
+				Type:     schema.TypeMap,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+				Computed: true,
 			},
 			dsElasticIPAttrZone: {
 				Type:     schema.TypeString,

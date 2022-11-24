@@ -54,6 +54,7 @@ directory for complete configuration examples.
 * `description` - A free-form text describing the Elastic IP (EIP).
 
 * `address_family` - The Elastic IP (EIP) address family (`inet4` or `inet6`; default: `inet4`).
+* `labels` - A map of key/value labels.
 * `healthcheck` - (Block) Healthcheck configuration for *managed* EIPs. Structure is documented below.
 
 ### `healthcheck` block
