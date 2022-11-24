@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.42.0 (November 24, 2022)
+
+FEATURES:
+
+- `elastic_ip`: Added support for labels (#227)
+
 ## 0.41.1 (November 17, 2022)
 
 BUG FIXES:
