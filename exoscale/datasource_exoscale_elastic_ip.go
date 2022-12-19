@@ -2,6 +2,7 @@ package exoscale
 
 import (
 	"context"
+	"errors"
 
 	exoapi "github.com/exoscale/egoscale/v2/api"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -24,6 +25,7 @@ const (
 	dsElasticIPAttrHealthcheckURI           = "uri"
 	dsElasticIPAttrID                       = "id"
 	dsElasticIPAttrIPAddress                = "ip_address"
+	dsElasticIPAttrReverseDNS               = "reverse_dns"
 	dsElasticIPAttrLabels                   = "labels"
 	dsElasticIPAttrZone                     = "zone"
 )
@@ -96,6 +98,10 @@ func dataSourceElasticIP() *schema.Resource {
 				Type:          schema.TypeString,
 				Optional:      true,
 				ConflictsWith: []string{dsElasticIPAttrID},
+			},
+			dsElasticIPAttrReverseDNS: {
+				Type:     schema.TypeString,
+				Computed: true,
 			},
 			dsElasticIPAttrLabels: {
 				Type:     schema.TypeMap,
@@ -182,6 +188,14 @@ func dataSourceElasticIPRead(ctx context.Context, d *schema.ResourceData, meta i
 		if err := d.Set(dsElasticIPAttrIPAddress, elasticIP.IPAddress.String()); err != nil {
 			return diag.FromErr(err)
 		}
+	}
+
+	rdns, err := client.GetElasticIPReverseDNS(ctx, zone, *elasticIP.ID)
+	if err != nil && !errors.Is(err, exoapi.ErrNotFound) {
+		return diag.Errorf("unable to retrieve instance reverse-dns: %s", err)
+	}
+	if err := d.Set(dsElasticIPAttrReverseDNS, rdns); err != nil {
+		return diag.FromErr(err)
 	}
 
 	tflog.Debug(ctx, "read finished successfully", map[string]interface{}{

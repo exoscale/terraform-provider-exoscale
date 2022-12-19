@@ -29,6 +29,7 @@ const (
 	resComputeInstanceAttrNetworkInterface     = "network_interface"
 	resComputeInstanceAttrPrivateNetworkIDs    = "private_network_ids"
 	resComputeInstanceAttrPublicIPAddress      = "public_ip_address"
+	resComputeInstanceAttrReverseDNS           = "reverse_dns"
 	resComputeInstanceAttrSSHKey               = "ssh_key"
 	resComputeInstanceAttrSecurityGroupIDs     = "security_group_ids"
 	resComputeInstanceAttrState                = "state"
@@ -118,6 +119,10 @@ func resourceComputeInstance() *schema.Resource {
 		resComputeInstanceAttrPublicIPAddress: {
 			Type:     schema.TypeString,
 			Computed: true,
+		},
+		resComputeInstanceAttrReverseDNS: {
+			Type:     schema.TypeString,
+			Optional: true,
 		},
 		resComputeInstanceAttrSSHKey: {
 			Type:     schema.TypeString,
@@ -345,6 +350,19 @@ func resourceComputeInstanceCreate(ctx context.Context, d *schema.ResourceData, 
 		}
 	}
 
+	if v, ok := d.GetOk(resComputeInstanceAttrReverseDNS); ok {
+		rdns := v.(string)
+		err := client.UpdateInstanceReverseDNS(
+			ctx,
+			zone,
+			*computeInstance.ID,
+			rdns,
+		)
+		if err != nil {
+			return diag.Errorf("unable to create Reverse DNS record: %s", err)
+		}
+	}
+
 	if v := d.Get(resComputeInstanceAttrState).(string); v == "stopped" {
 		if err := client.StopInstance(ctx, zone, computeInstance); err != nil {
 			return diag.Errorf("unable to stop instance: %s", err)
@@ -436,6 +454,27 @@ func resourceComputeInstanceUpdate(ctx context.Context, d *schema.ResourceData, 
 
 	if updated {
 		if err = client.UpdateInstance(ctx, zone, computeInstance); err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
+	if d.HasChange(resComputeInstanceAttrReverseDNS) {
+		rdns := d.Get(resComputeInstanceAttrReverseDNS).(string)
+		if rdns == "" {
+			err = client.DeleteInstanceReverseDNS(
+				ctx,
+				zone,
+				*computeInstance.ID,
+			)
+		} else {
+			err = client.UpdateInstanceReverseDNS(
+				ctx,
+				zone,
+				*computeInstance.ID,
+				rdns,
+			)
+		}
+		if err != nil {
 			return diag.FromErr(err)
 		}
 	}
@@ -747,6 +786,18 @@ func resourceComputeInstanceApply(
 	}
 
 	if err := d.Set(resComputeInstanceAttrTemplateID, computeInstance.TemplateID); err != nil {
+		return diag.FromErr(err)
+	}
+
+	rdns, err := client.GetInstanceReverseDNS(
+		ctx,
+		d.Get(resComputeInstanceAttrZone).(string),
+		*computeInstance.ID,
+	)
+	if err != nil && !errors.Is(err, exoapi.ErrNotFound) {
+		return diag.Errorf("unable to retrieve instance reverse-dns: %s", err)
+	}
+	if err := d.Set(resComputeInstanceAttrReverseDNS, strings.TrimSuffix(rdns, ".")); err != nil {
 		return diag.FromErr(err)
 	}
 
