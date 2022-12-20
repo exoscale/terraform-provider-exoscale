@@ -26,6 +26,8 @@ var (
 	testAccDataSourceElasticIPHealthcheckURI                = "/health"
 	testAccDataSourceElasticIPLabelValue                    = acctest.RandomWithPrefix(testPrefix)
 	testAccDataSourceElasticIPReverseDNS                    = "tf-provider-rdns-test.exoscale.com"
+	testAccDataSourceElasticIPLookupLabelKey                = acctest.RandomWithPrefix(testPrefix)
+	testAccDataSourceElasticIPLookupLabelValue              = acctest.RandomWithPrefix(testPrefix)
 
 	testAccDataSourceElasticIPConfig4 = fmt.Sprintf(`
 locals {
@@ -35,8 +37,8 @@ locals {
 resource "exoscale_elastic_ip" "test4" {
   zone        = local.zone
   description = "%s"
-	
-	reverse_dns     = "%s"
+
+  reverse_dns = "%s"
 
   healthcheck {
     mode            = "%s"
@@ -75,9 +77,9 @@ locals {
 }
 
 resource "exoscale_elastic_ip" "test6" {
-  zone        = local.zone
-  description = "%s"
-	address_family = "%s"
+  zone           = local.zone
+  description    = "%s"
+  address_family = "%s"
 
 	reverse_dns     = "%s"
 
@@ -95,6 +97,7 @@ resource "exoscale_elastic_ip" "test6" {
 
   labels = {
     test = "%s"
+	%s   = "%s"
   }
 }
 `,
@@ -111,6 +114,8 @@ resource "exoscale_elastic_ip" "test6" {
 		testAccDataSourceElasticIPHealthcheckStrikesFail,
 		testAccDataSourceElasticIPHealthcheckTLSSNI,
 		testAccDataSourceElasticIPLabelValue,
+		testAccDataSourceElasticIPLookupLabelKey,
+		testAccDataSourceElasticIPLookupLabelValue,
 	)
 )
 
@@ -121,7 +126,7 @@ func TestAccDataSourceElasticIP(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config:      ` data "exoscale_elastic_ip" "test" { zone = "lolnope" }`,
-				ExpectError: regexp.MustCompile("either ip_address or id must be specified"),
+				ExpectError: regexp.MustCompile("one of ip_address, id or labels must be specified"),
 			},
 			{
 				Config: fmt.Sprintf(`
@@ -196,6 +201,36 @@ data "exoscale_elastic_ip" "by-ip6-address" {
 						dsElasticIPAttrDescription:   validateString(testAccDataSourceElasticIPDescription),
 						dsElasticIPAttrID:            validation.ToDiagFunc(validation.IsUUID),
 						dsElasticIPAttrReverseDNS:    validateString(testAccDataSourceElasticIPReverseDNS),
+						resElasticIPAttrIPAddress:    validation.ToDiagFunc(validation.IsIPv6Address),
+						resElasticIPAttrHealthcheck(dsElasticIPAttrHealthcheckInterval):    validateString(fmt.Sprint(testAccDataSourceElasticIPHealthcheckInterval)),
+						resElasticIPAttrHealthcheck(dsElasticIPAttrHealthcheckMode):        validateString(testAccDataSourceElasticIPHealthcheckMode),
+						resElasticIPAttrHealthcheck(dsElasticIPAttrHealthcheckPort):        validateString(fmt.Sprint(testAccDataSourceElasticIPHealthcheckPort)),
+						resElasticIPAttrHealthcheck(dsElasticIPAttrHealthcheckStrikesFail): validateString(fmt.Sprint(testAccDataSourceElasticIPHealthcheckStrikesFail)),
+						resElasticIPAttrHealthcheck(dsElasticIPAttrHealthcheckStrikesOK):   validateString(fmt.Sprint(testAccDataSourceElasticIPHealthcheckStrikesOK)),
+						resElasticIPAttrHealthcheck(dsElasticIPAttrHealthcheckTimeout):     validateString(fmt.Sprint(testAccDataSourceElasticIPHealthcheckTimeout)),
+						resElasticIPAttrHealthcheck(dsElasticIPAttrHealthcheckURI):         validateString(testAccDataSourceElasticIPHealthcheckURI),
+					}),
+				),
+			},
+			{
+				Config: fmt.Sprintf(`
+%s
+
+# Warning: This datasource requires 'exoscale_elastic_ip.test6'
+data "exoscale_elastic_ip" "by-labels" {
+  zone   = local.zone
+  labels = { %s = "%s" }
+}`,
+					testAccDataSourceElasticIPConfig6,
+					testAccDataSourceElasticIPLookupLabelKey,
+					testAccDataSourceElasticIPLookupLabelValue,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					testAccDataSourceElasticIPAttributes("data.exoscale_elastic_ip.by-labels", testAttrs{
+						dsElasticIPAttrAddressFamily: validateString(testAccDataSourceElasticIPAddressFamily6),
+						dsElasticIPAttrCIDR:          validation.ToDiagFunc(validation.IsCIDR),
+						dsElasticIPAttrDescription:   validateString(testAccDataSourceElasticIPDescription),
+						dsElasticIPAttrID:            validation.ToDiagFunc(validation.IsUUID),
 						resElasticIPAttrIPAddress:    validation.ToDiagFunc(validation.IsIPv6Address),
 						resElasticIPAttrHealthcheck(dsElasticIPAttrHealthcheckInterval):    validateString(fmt.Sprint(testAccDataSourceElasticIPHealthcheckInterval)),
 						resElasticIPAttrHealthcheck(dsElasticIPAttrHealthcheckMode):        validateString(testAccDataSourceElasticIPHealthcheckMode),
