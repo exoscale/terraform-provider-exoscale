@@ -34,9 +34,9 @@ directory for complete configuration examples.
 
 * `zone` - (Required) The Exocale [Zone][zone] name.
 
-* `id` - The Elastic IP (EIP) ID to match (conflicts with `ip_address`).
-* `ip_address` - The EIP IPv4 or IPv6 address to match (conflicts with `id`).
-
+* `id` - The Elastic IP (EIP) ID to match (conflicts with `ip_address` and `labels`).
+* `ip_address` - The EIP IPv4 or IPv6 address to match (conflicts with `id` and `labels`).
+* `labels` - The EIP labels to match (conflicts with `ip_address` and `id`).
 
 ## Attributes Reference
 
@@ -47,8 +47,8 @@ In addition to the arguments listed above, the following attributes are exported
 * `address_family` - The Elastic IP (EIP) address family (`inet4` or `inet6`).
 * `cidr` - The Elastic IP (EIP) CIDR.
 * `labels` - A map of key/value labels.
-* `reverse_dns` - Domain name for reverse DNS record.
 * `healthcheck` - (Block) The *managed* EIP healthcheck configuration. Structure is documented below.
+* `reverse_dns` - Domain name for reverse DNS record.
 
 ### `healthcheck` block
 
