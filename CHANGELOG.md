@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.44.0 (NOT YET RELEASED)
+
+BUG FIX:
+
+- `datasource_elastic_ip`: Labels are now correctly returned (#233)
+
+FEATURES:
+
+- `datasource_elastic_ip`: Added support for filtering by labels (#233)
+
 ## 0.43.0 (January 6, 2023)
 
 FEATURES:
@@ -12,7 +22,6 @@ BUG FIXES:
 
 IMPROVEMENTS:
 - Extends the acceptance tests timeout from 60 minutes to 90 minutes
-
 
 ## 0.42.0 (November 24, 2022)
 
