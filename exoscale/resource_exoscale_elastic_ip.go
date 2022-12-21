@@ -384,6 +384,9 @@ func resourceElasticIPDelete(ctx context.Context, d *schema.ResourceData, meta i
 	client := GetComputeClient(meta)
 
 	elasticIPID := d.Id()
+	if err := client.DeleteElasticIPReverseDNS(ctx, zone, elasticIPID); err != nil && !errors.Is(err, exoapi.ErrNotFound) {
+		return diag.FromErr(err)
+	}
 	if err := client.DeleteElasticIP(ctx, zone, &egoscale.ElasticIP{ID: &elasticIPID}); err != nil {
 		return diag.FromErr(err)
 	}

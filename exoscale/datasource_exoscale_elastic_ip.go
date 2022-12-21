@@ -3,6 +3,7 @@ package exoscale
 import (
 	"context"
 	"errors"
+	"strings"
 
 	exoapi "github.com/exoscale/egoscale/v2/api"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -194,7 +195,7 @@ func dataSourceElasticIPRead(ctx context.Context, d *schema.ResourceData, meta i
 	if err != nil && !errors.Is(err, exoapi.ErrNotFound) {
 		return diag.Errorf("unable to retrieve instance reverse-dns: %s", err)
 	}
-	if err := d.Set(dsElasticIPAttrReverseDNS, rdns); err != nil {
+	if err := d.Set(dsElasticIPAttrReverseDNS, strings.TrimSuffix(rdns, ".")); err != nil {
 		return diag.FromErr(err)
 	}
 

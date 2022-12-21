@@ -652,7 +652,9 @@ func resourceComputeInstanceDelete(ctx context.Context, d *schema.ResourceData, 
 	defer cancel()
 
 	client := GetComputeClient(meta)
-
+	if err := client.DeleteInstanceReverseDNS(ctx, zone, d.Id()); err != nil && !errors.Is(err, exoapi.ErrNotFound) {
+		return diag.FromErr(err)
+	}
 	err := client.DeleteInstance(ctx, zone, &egoscale.Instance{ID: nonEmptyStringPtr(d.Id())})
 	if err != nil {
 		return diag.FromErr(err)

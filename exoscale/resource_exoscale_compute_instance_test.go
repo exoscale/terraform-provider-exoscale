@@ -31,6 +31,8 @@ var (
 	testAccResourceComputeInstanceStateRunning                = "running"
 	testAccResourceComputeInstanceType                        = "standard.tiny"
 	testAccResourceComputeInstanceTypeUpdated                 = "standard.small"
+	testAccResourceComputeInstranceReverseDNS                 = "tf-provider-test.exoscale.com"
+	testAccResourceComputeInstranceReverseDNSUpdated          = "tf-provider-updated-test.exoscale.com"
 	testAccResourceComputeInstanceUserData                    = acctest.RandString(10)
 	testAccResourceComputeInstanceUserDataUpdated             = testAccResourceComputeInstanceUserData + "-updated"
 
@@ -87,6 +89,7 @@ resource "exoscale_compute_instance" "test" {
   user_data               = "%s"
   ssh_key                 = exoscale_ssh_key.test.name
 	state                   = "%s"
+	reverse_dns             = "%s"
 
   network_interface {
 	network_id = exoscale_private_network.test.id
@@ -111,6 +114,7 @@ resource "exoscale_compute_instance" "test" {
 		testAccResourceComputeInstanceDiskSize,
 		testAccResourceComputeInstanceUserData,
 		testAccResourceComputeInstanceStateStopped,
+		testAccResourceComputeInstranceReverseDNS,
 		testAccResourceComputeInstanceLabelValue,
 	)
 
@@ -164,6 +168,7 @@ resource "exoscale_compute_instance" "test" {
   user_data               = "%s"
   ssh_key                 = exoscale_ssh_key.test.name
 	state                   = "%s"
+  reverse_dns             = "%s"
 
   labels = {
     test = "%s"
@@ -184,6 +189,7 @@ resource "exoscale_compute_instance" "test" {
 		testAccResourceComputeInstanceDiskSizeUpdated,
 		testAccResourceComputeInstanceUserDataUpdated,
 		testAccResourceComputeInstanceStateStopped,
+		testAccResourceComputeInstranceReverseDNSUpdated,
 		testAccResourceComputeInstanceLabelValueUpdated,
 	)
 
@@ -237,6 +243,7 @@ resource "exoscale_compute_instance" "test" {
   user_data               = "%s"
   ssh_key                 = exoscale_ssh_key.test.name
 	state                   = "%s"
+  reverse_dns             = ""
 
   labels = {
     test = "%s"
@@ -408,6 +415,7 @@ func TestAccResourceComputeInstance(t *testing.T) {
 						resComputeInstanceAttrSSHKey:                      validateString(testAccResourceComputeInstanceSSHKeyName),
 						resComputeInstanceAttrSecurityGroupIDs + ".#":     validateString("2"),
 						resComputeInstanceAttrState:                       validateString("stopped"),
+						resComputeInstanceAttrReverseDNS:                  validateString(testAccResourceComputeInstranceReverseDNS),
 						resComputeInstanceAttrTemplateID:                  validation.ToDiagFunc(validation.IsUUID),
 						resComputeInstanceAttrType:                        validateString(testAccResourceComputeInstanceType),
 						resComputeInstanceAttrUserData:                    validateString(testAccResourceComputeInstanceUserData),
@@ -452,6 +460,7 @@ func TestAccResourceComputeInstance(t *testing.T) {
 						resComputeInstanceAttrName:                    validateString(testAccResourceComputeInstanceNameUpdated),
 						resComputeInstanceAttrSecurityGroupIDs + ".#": validateString("1"),
 						resComputeInstanceAttrState:                   validateString("stopped"),
+						resComputeInstanceAttrReverseDNS:              validateString(testAccResourceComputeInstranceReverseDNSUpdated),
 						resComputeInstanceAttrType:                    validateString(testAccResourceComputeInstanceTypeUpdated),
 						resComputeInstanceAttrUserData:                validateString(testAccResourceComputeInstanceUserDataUpdated),
 					})),
@@ -496,6 +505,7 @@ func TestAccResourceComputeInstance(t *testing.T) {
 						resComputeInstanceAttrName:                    validateString(testAccResourceComputeInstanceNameUpdated),
 						resComputeInstanceAttrSecurityGroupIDs + ".#": validateString("1"),
 						resComputeInstanceAttrState:                   validateString("running"),
+						resComputeInstanceAttrReverseDNS:              validation.ToDiagFunc(validation.StringIsEmpty),
 						resComputeInstanceAttrType:                    validateString(testAccResourceComputeInstanceTypeUpdated),
 						resComputeInstanceAttrUserData:                validateString(testAccResourceComputeInstanceUserDataUpdated),
 					})),
@@ -540,6 +550,7 @@ func TestAccResourceComputeInstance(t *testing.T) {
 						resComputeInstanceAttrName:                    validateString(testAccResourceComputeInstanceNameUpdated),
 						resComputeInstanceAttrSecurityGroupIDs + ".#": validateString("1"),
 						resComputeInstanceAttrState:                   validateString("running"),
+						resElasticIPAttrReverseDNS:                    validation.ToDiagFunc(validation.StringIsEmpty),
 						resComputeInstanceAttrType:                    validateString(testAccResourceComputeInstanceTypeUpdated),
 						resComputeInstanceAttrUserData:                validateString(testAccResourceComputeInstanceUserDataUpdated),
 					})),

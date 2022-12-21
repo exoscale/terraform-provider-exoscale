@@ -19,6 +19,7 @@ var (
 	testAccDataSourceComputeInstanceName                        = acctest.RandomWithPrefix(testPrefix)
 	testAccDataSourceComputeInstancePrivateNetworkName          = acctest.RandomWithPrefix(testPrefix)
 	testAccDataSourceComputeInstanceSSHKeyName                  = acctest.RandomWithPrefix(testPrefix)
+	testAccDataSourceComputeInstanceReverseDNS                  = "tf-provider-rdns-test.exoscale.com"
 	testAccDataSourceComputeInstanceSecurityGroupName           = acctest.RandomWithPrefix(testPrefix)
 	testAccDataSourceComputeInstanceType                        = "standard.tiny"
 	testAccDataSourceComputeInstanceUserData                    = acctest.RandString(10)
@@ -67,9 +68,10 @@ resource "exoscale_compute_instance" "test" {
   elastic_ip_ids          = [exoscale_elastic_ip.test.id]
   user_data               = "%s"
   ssh_key                 = exoscale_ssh_key.test.name
+	reverse_dns             = "%s"
 
   network_interface {
-	network_id = exoscale_private_network.test.id
+    network_id = exoscale_private_network.test.id
   }
 
   labels = {
@@ -90,6 +92,7 @@ resource "exoscale_compute_instance" "test" {
 		testAccDataSourceComputeInstanceType,
 		testAccDataSourceComputeInstanceDiskSize,
 		testAccDataSourceComputeInstanceUserData,
+		testAccDataSourceComputeInstanceReverseDNS,
 		testAccDataSourceComputeInstanceLabelValue,
 	)
 )
@@ -134,8 +137,9 @@ data "exoscale_compute_instance" "by-name" {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDataSourceComputeInstanceAttributes("data.exoscale_compute_instance.by-name", testAttrs{
-						dsComputeInstanceAttrID:   validation.ToDiagFunc(validation.IsUUID),
-						dsComputeInstanceAttrName: validateString(testAccDataSourceComputeInstanceName),
+						dsComputeInstanceAttrID:         validation.ToDiagFunc(validation.IsUUID),
+						dsComputeInstanceAttrName:       validateString(testAccDataSourceComputeInstanceName),
+						dsComputeInstanceAttrReverseDNS: validateString(testAccDataSourceComputeInstanceReverseDNS),
 					}),
 				),
 			},

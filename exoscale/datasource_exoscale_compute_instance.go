@@ -217,7 +217,7 @@ func dataSourceComputeInstanceRead(ctx context.Context, d *schema.ResourceData, 
 	if err != nil && !errors.Is(err, exoapi.ErrNotFound) {
 		return diag.Errorf("unable to retrieve instance reverse-dns: %s", err)
 	}
-	data[dsComputeInstanceAttrReverseDNS] = rdns
+	data[dsComputeInstanceAttrReverseDNS] = strings.TrimSuffix(rdns, ".")
 
 	for key, value := range data {
 		err := d.Set(key, value)

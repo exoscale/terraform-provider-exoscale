@@ -25,6 +25,7 @@ var (
 	testAccDataSourceElasticIPHealthcheckTimeout     int64  = 3
 	testAccDataSourceElasticIPHealthcheckURI                = "/health"
 	testAccDataSourceElasticIPLabelValue                    = acctest.RandomWithPrefix(testPrefix)
+	testAccDataSourceElasticIPReverseDNS                    = "tf-provider-rdns-test.exoscale.com"
 
 	testAccDataSourceElasticIPConfig4 = fmt.Sprintf(`
 locals {
@@ -34,6 +35,8 @@ locals {
 resource "exoscale_elastic_ip" "test4" {
   zone        = local.zone
   description = "%s"
+	
+	reverse_dns     = "%s"
 
   healthcheck {
     mode            = "%s"
@@ -54,6 +57,7 @@ resource "exoscale_elastic_ip" "test4" {
 `,
 		testZoneName,
 		testAccDataSourceElasticIPDescription,
+		testAccDataSourceElasticIPReverseDNS,
 		testAccDataSourceElasticIPHealthcheckMode,
 		testAccDataSourceElasticIPHealthcheckPort,
 		testAccDataSourceElasticIPHealthcheckURI,
@@ -75,6 +79,8 @@ resource "exoscale_elastic_ip" "test6" {
   description = "%s"
 	address_family = "%s"
 
+	reverse_dns     = "%s"
+
   healthcheck {
     mode            = "%s"
     port            = %d
@@ -95,6 +101,7 @@ resource "exoscale_elastic_ip" "test6" {
 		testZoneName,
 		testAccDataSourceElasticIPDescription,
 		testAccDataSourceElasticIPAddressFamily6,
+		testAccDataSourceElasticIPReverseDNS,
 		testAccDataSourceElasticIPHealthcheckMode,
 		testAccDataSourceElasticIPHealthcheckPort,
 		testAccDataSourceElasticIPHealthcheckURI,
@@ -132,6 +139,7 @@ data "exoscale_elastic_ip" "by-ip4-address" {
 						dsElasticIPAttrCIDR:          validation.ToDiagFunc(validation.IsCIDR),
 						dsElasticIPAttrDescription:   validateString(testAccDataSourceElasticIPDescription),
 						dsElasticIPAttrID:            validation.ToDiagFunc(validation.IsUUID),
+						dsElasticIPAttrReverseDNS:    validateString(testAccDataSourceElasticIPReverseDNS),
 						resElasticIPAttrIPAddress:    validation.ToDiagFunc(validation.IsIPv4Address),
 						resElasticIPAttrHealthcheck(dsElasticIPAttrHealthcheckInterval):    validateString(fmt.Sprint(testAccDataSourceElasticIPHealthcheckInterval)),
 						resElasticIPAttrHealthcheck(dsElasticIPAttrHealthcheckMode):        validateString(testAccDataSourceElasticIPHealthcheckMode),
@@ -159,6 +167,7 @@ data "exoscale_elastic_ip" "by-id" {
 						dsElasticIPAttrCIDR:          validation.ToDiagFunc(validation.IsCIDR),
 						dsElasticIPAttrDescription:   validateString(testAccDataSourceElasticIPDescription),
 						dsElasticIPAttrID:            validation.ToDiagFunc(validation.IsUUID),
+						dsElasticIPAttrReverseDNS:    validateString(testAccDataSourceElasticIPReverseDNS),
 						resElasticIPAttrIPAddress:    validation.ToDiagFunc(validation.IsIPv4Address),
 						resElasticIPAttrHealthcheck(dsElasticIPAttrHealthcheckInterval):    validateString(fmt.Sprint(testAccDataSourceElasticIPHealthcheckInterval)),
 						resElasticIPAttrHealthcheck(dsElasticIPAttrHealthcheckMode):        validateString(testAccDataSourceElasticIPHealthcheckMode),
@@ -186,6 +195,7 @@ data "exoscale_elastic_ip" "by-ip6-address" {
 						dsElasticIPAttrCIDR:          validation.ToDiagFunc(validation.IsCIDR),
 						dsElasticIPAttrDescription:   validateString(testAccDataSourceElasticIPDescription),
 						dsElasticIPAttrID:            validation.ToDiagFunc(validation.IsUUID),
+						dsElasticIPAttrReverseDNS:    validateString(testAccDataSourceElasticIPReverseDNS),
 						resElasticIPAttrIPAddress:    validation.ToDiagFunc(validation.IsIPv6Address),
 						resElasticIPAttrHealthcheck(dsElasticIPAttrHealthcheckInterval):    validateString(fmt.Sprint(testAccDataSourceElasticIPHealthcheckInterval)),
 						resElasticIPAttrHealthcheck(dsElasticIPAttrHealthcheckMode):        validateString(testAccDataSourceElasticIPHealthcheckMode),
