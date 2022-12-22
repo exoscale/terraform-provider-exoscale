@@ -2,6 +2,7 @@ package v2
 
 import (
 	"context"
+	"sort"
 	"time"
 
 	apiv2 "github.com/exoscale/egoscale/v2/api"
@@ -27,6 +28,22 @@ type Template struct {
 	Version         *string
 	Visibility      *string
 	Zone            *string
+}
+
+// Implement sort.Interface for []*Template by CreatedAt or by Nane
+type Templates []*Template
+
+func (s Templates) Len() int      { return len(s) }
+func (s Templates) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
+
+type ByName struct{ Templates }
+
+func (s ByName) Less(i, j int) bool { return *s.Templates[i].Name < *s.Templates[j].Name }
+
+type ByCreatedAt struct{ Templates }
+
+func (s ByCreatedAt) Less(i, j int) bool {
+	return s.Templates[i].CreatedAt.Before(*s.Templates[j].CreatedAt)
 }
 
 // ListTemplatesOpt represents an ListTemplates operation option.
@@ -132,6 +149,23 @@ func (c *Client) GetTemplate(ctx context.Context, zone, id string) (*Template, e
 	}
 
 	return templateFromAPI(resp.JSON200, zone), nil
+}
+
+// GetTemplateByName returns the newest Template corresponding to the specified Name.
+func (c *Client) GetTemplateByName(ctx context.Context, zone string, templateName string, visibility string) (*Template, error) {
+	templates, err := c.ListTemplates(ctx, zone, ListTemplatesWithVisibility(visibility))
+	if err != nil {
+		return nil, err
+	}
+	// Newest first (multiple private templates can have the same name)
+	sort.Sort(sort.Reverse(ByCreatedAt{templates}))
+	for _, template := range templates {
+		if *template.Name == templateName {
+			return template, nil
+		}
+	}
+
+	return nil, err
 }
 
 // ListTemplates returns the list of existing Templates.

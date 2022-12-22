@@ -1,6 +1,22 @@
 Changelog
 =========
 
+0.94.0
+------
+
+- feature: v2: add `Client.GetTemplateByName()` method
+- feature: v2: implement sort.Interface for []*Template by CreatedAt or by Nane
+
+0.93.0
+------
+
+- feature: v2: implement publicIpAssignment for Instances
+
+0.92.0
+------
+
+- feature: v2: implement reverse DNS management
+
 0.91.0
 ------
 

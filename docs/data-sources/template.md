@@ -1,27 +1,24 @@
 ---
-page_title: "Exoscale: exoscale_compute_template"
-subcategory: "Deprecated"
+page_title: "Exoscale: exoscale_template"
 description: |-
   Fetch Exoscale Compute Instance Templates data.
 ---
 
-# exoscale\_compute\_template
+# exoscale\_template
 
 Fetch Exoscale [Compute Instance Templates](https://community.exoscale.com/documentation/compute/custom-templates/) data.
-
-!> **WARNING:** This data source is **DEPRECATED** and will be removed in the next major version. Please use [exoscale_template](./template.md) instead.
 
 
 ## Usage
 
 ```hcl
-data "exoscale_compute_template" "my_template" {
+data "exoscale_template" "my_template" {
   zone = "ch-gva-2"
   name = "Linux Ubuntu 22.04 LTS 64-bit"
 }
 
 output "my_template_id" {
-  value = data.exoscale_compute_template.my_template.id
+  value = data.exoscale_template.my_template.id
 }
 ```
 
@@ -36,15 +33,14 @@ directory for complete configuration examples.
 * `zone` - (Required) The Exoscale [Zone][zone] name.
 
 * `id` - The compute instance template ID to match (conflicts with `name`).
-* `name` - The template name to match (conflicts with `id`).
-* `filter` - A template category filter (default: `featured`); among:
-  - `featured` - official Exoscale templates
-  - `community` - community-contributed templates
-  - `mine` - custom templates private to my organization
+* `name` - The template name to match (conflicts with `id`) (when multiple templates have the same name, the newest one will be returned).
+* `visibility` - A template category filter (default: `public`); among:
+  - `public` - official Exoscale templates
+  - `private` - custom templates private to my organization
 
 
 ## Attributes Reference
 
 In addition to the arguments listed above, the following attributes are exported:
 
-* `username` - Username to use to log into a compute instance based on this template
+* `default_user` - Username to use to log into a compute instance based on this template

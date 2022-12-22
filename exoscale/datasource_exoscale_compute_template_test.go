@@ -13,7 +13,7 @@ var (
 	testAccDataSourceComputeTemplateName     = testInstanceTemplateName
 	testAccDataSourceComputeTemplateUsername = testInstanceTemplateUsername
 	testAccDataSourceComputeTemplateFilter   = testInstanceTemplateFilter
-	testAccDataSourceTemplateZone            = testZoneName
+	testAccDataSourceComputeTemplateZone     = testZoneName
 )
 
 func TestAccDataSourceComputeTemplate(t *testing.T) {
@@ -26,7 +26,7 @@ func TestAccDataSourceComputeTemplate(t *testing.T) {
 data "exoscale_compute_template" "test" {
   zone = "%s"
 }`,
-					testAccDataSourceTemplateZone),
+					testAccDataSourceComputeTemplateZone),
 				ExpectError: regexp.MustCompile("either name or id must be specified"),
 			},
 			{
@@ -43,7 +43,7 @@ data "exoscale_compute_template" "by_id" {
   filter = data.exoscale_compute_template.by_name.filter
 }
 `,
-					testAccDataSourceTemplateZone,
+					testAccDataSourceComputeTemplateZone,
 					testAccDataSourceComputeTemplateName,
 					testAccDataSourceComputeTemplateFilter,
 				),
