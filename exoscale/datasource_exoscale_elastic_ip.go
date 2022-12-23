@@ -3,8 +3,8 @@ package exoscale
 import (
 	"context"
 	"errors"
-	"strings"
 	"fmt"
+	"strings"
 
 	egoscale "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"

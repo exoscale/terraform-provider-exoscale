@@ -6,7 +6,7 @@ description: |-
 
 # exoscale\_elastic\_ip
 
-Fetch Exoscale [Elastic IPs (EIO)](https://community.exoscale.com/documentation/compute/eip/) data.
+Fetch Exoscale [Elastic IPs (EIP)](https://community.exoscale.com/documentation/compute/eip/) data.
 
 Corresponding resource: [exoscale_elastic_ip](../resources/elastic_ip.md).
 
