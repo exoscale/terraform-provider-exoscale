@@ -27,6 +27,7 @@ resource "exoscale_elastic_ip" "my_elastic_ip" {
 resource "exoscale_elastic_ip" "my_managed_elastic_ip" {
   zone = "ch-gva-2"
   address_family = "inet6"
+  reverse_dns = "example.net"
 
   healthcheck {
     mode         = "https"
@@ -55,6 +56,7 @@ directory for complete configuration examples.
 
 * `address_family` - The Elastic IP (EIP) address family (`inet4` or `inet6`; default: `inet4`).
 * `labels` - A map of key/value labels.
+* `reverse_dns` - Domain name for reverse DNS record.
 * `healthcheck` - (Block) Healthcheck configuration for *managed* EIPs. Structure is documented below.
 
 ### `healthcheck` block
