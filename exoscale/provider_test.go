@@ -17,12 +17,13 @@ import (
 
 // Common test environment information
 const (
-	testPrefix                   = "test-terraform-exoscale"
-	testDescription              = "Created by the terraform-exoscale provider"
-	testZoneName                 = "ch-dk-2"
-	testInstanceTemplateName     = "Linux Ubuntu 20.04 LTS 64-bit"
-	testInstanceTemplateUsername = "ubuntu"
-	testInstanceTemplateFilter   = "featured"
+	testPrefix                     = "test-terraform-exoscale"
+	testDescription                = "Created by the terraform-exoscale provider"
+	testZoneName                   = "ch-dk-2"
+	testInstanceTemplateName       = "Linux Ubuntu 20.04 LTS 64-bit"
+	testInstanceTemplateUsername   = "ubuntu"
+	testInstanceTemplateFilter     = "featured"
+	testInstanceTemplateVisibility = "public"
 
 	testInstanceTypeIDTiny   = "b6cd1ff5-3a2f-4e9d-a4d1-8988c1191fe8"
 	testInstanceTypeIDSmall  = "21624abb-764e-4def-81d7-9fc54b5957fb"

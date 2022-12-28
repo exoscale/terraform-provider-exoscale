@@ -153,6 +153,7 @@ func Provider() *schema.Provider {
 			"exoscale_nlb":                   dataSourceNLB(),
 			"exoscale_private_network":       dataSourcePrivateNetwork(),
 			"exoscale_security_group":        dataSourceSecurityGroup(),
+			"exoscale_template":              dataSourceTemplate(),
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
