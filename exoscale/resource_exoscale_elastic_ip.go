@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"strings"
 	"time"
 
 	egoscale "github.com/exoscale/egoscale/v2"
@@ -29,6 +30,7 @@ const (
 	resElasticIPAttrHealthcheckTimeout       = "timeout"
 	resElasticIPAttrHealthcheckURI           = "uri"
 	resElasticIPAttrIPAddress                = "ip_address"
+	resElasticIPAttrReverseDNS               = "reverse_dns"
 	resElasticIPAttrLabels                   = "labels"
 	resElasticIPAttrZone                     = "zone"
 )
@@ -118,6 +120,10 @@ func resourceElasticIP() *schema.Resource {
 			resElasticIPAttrIPAddress: {
 				Type:     schema.TypeString,
 				Computed: true,
+			},
+			resElasticIPAttrReverseDNS: {
+				Type:     schema.TypeString,
+				Optional: true,
 			},
 			resElasticIPAttrLabels: {
 				Type:     schema.TypeMap,
@@ -236,6 +242,19 @@ func resourceElasticIPCreate(ctx context.Context, d *schema.ResourceData, meta i
 
 	d.SetId(*elasticIP.ID)
 
+	if v, ok := d.GetOk(resElasticIPAttrReverseDNS); ok {
+		rdns := v.(string)
+		err := client.UpdateElasticIPReverseDNS(
+			ctx,
+			zone,
+			*elasticIP.ID,
+			rdns,
+		)
+		if err != nil {
+			return diag.Errorf("unable to create Reverse DNS record: %s", err)
+		}
+	}
+
 	tflog.Debug(ctx, "create finished successfully", map[string]interface{}{
 		"id": resourceElasticIPIDString(d),
 	})
@@ -270,7 +289,7 @@ func resourceElasticIPRead(ctx context.Context, d *schema.ResourceData, meta int
 		"id": resourceElasticIPIDString(d),
 	})
 
-	return diag.FromErr(resourceElasticIPApply(ctx, d, elasticIP))
+	return resourceElasticIPApply(ctx, client.Client, d, elasticIP)
 }
 
 func resourceElasticIPUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -323,6 +342,27 @@ func resourceElasticIPUpdate(ctx context.Context, d *schema.ResourceData, meta i
 		}
 	}
 
+	if d.HasChange(resElasticIPAttrReverseDNS) {
+		rdns := d.Get(resElasticIPAttrReverseDNS).(string)
+		if rdns == "" {
+			err = client.DeleteElasticIPReverseDNS(
+				ctx,
+				zone,
+				*elasticIP.ID,
+			)
+		} else {
+			err = client.UpdateElasticIPReverseDNS(
+				ctx,
+				zone,
+				*elasticIP.ID,
+				rdns,
+			)
+		}
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
 	tflog.Debug(ctx, "update finished successfully", map[string]interface{}{
 		"id": resourceElasticIPIDString(d),
 	})
@@ -344,6 +384,9 @@ func resourceElasticIPDelete(ctx context.Context, d *schema.ResourceData, meta i
 	client := GetComputeClient(meta)
 
 	elasticIPID := d.Id()
+	if err := client.DeleteElasticIPReverseDNS(ctx, zone, elasticIPID); err != nil && !errors.Is(err, exoapi.ErrNotFound) {
+		return diag.FromErr(err)
+	}
 	if err := client.DeleteElasticIP(ctx, zone, &egoscale.ElasticIP{ID: &elasticIPID}); err != nil {
 		return diag.FromErr(err)
 	}
@@ -355,15 +398,20 @@ func resourceElasticIPDelete(ctx context.Context, d *schema.ResourceData, meta i
 	return nil
 }
 
-func resourceElasticIPApply(_ context.Context, d *schema.ResourceData, elasticIP *egoscale.ElasticIP) error {
+func resourceElasticIPApply(
+	ctx context.Context,
+	client *egoscale.Client,
+	d *schema.ResourceData,
+	elasticIP *egoscale.ElasticIP,
+) diag.Diagnostics {
 	if err := d.Set(resElasticIPAttrAddressFamily, defaultString(elasticIP.AddressFamily, "")); err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 	if err := d.Set(resElasticIPAttrCIDR, defaultString(elasticIP.CIDR, "")); err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 	if err := d.Set(resElasticIPAttrDescription, defaultString(elasticIP.Description, "")); err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	if elasticIP.Healthcheck != nil {
@@ -380,18 +428,30 @@ func resourceElasticIPApply(_ context.Context, d *schema.ResourceData, elasticIP
 		}
 
 		if err := d.Set("healthcheck", []interface{}{elasticIPHealthcheck}); err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 	}
 
 	if elasticIP.IPAddress != nil {
 		if err := d.Set(resElasticIPAttrIPAddress, elasticIP.IPAddress.String()); err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 	}
 
+	rdns, err := client.GetElasticIPReverseDNS(
+		ctx,
+		d.Get(resElasticIPAttrZone).(string),
+		*elasticIP.ID,
+	)
+	if err != nil && !errors.Is(err, exoapi.ErrNotFound) {
+		return diag.Errorf("unable to retrieve elasticIP reverse-dns: %s", err)
+	}
+	if err := d.Set(resElasticIPAttrReverseDNS, strings.TrimSuffix(rdns, ".")); err != nil {
+		return diag.FromErr(err)
+	}
+
 	if err := d.Set(resElasticIPAttrLabels, elasticIP.Labels); err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	return nil

@@ -53,6 +53,7 @@ In addition to the arguments listed above, the following attributes are exported
 * `manager_id` - The instance manager ID, if any.
 * `manager_type` - The instance manager type (instance pool, SKS node pool, etc.), if any.
 * `public_ip_address` - The instance (main network interface) IPv4 address.
+* `reverse_dns` - Domain name for reverse DNS record.
 * `ssh_key` - The [exoscale_ssh_key](../resources/ssh_key.md) (name) authorized on the instance.
 * `state` - The instance state.
 * `template_id` - The instance [exoscale_compute_template](./compute_template.md) ID.

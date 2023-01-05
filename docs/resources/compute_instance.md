@@ -54,6 +54,7 @@ directory for complete configuration examples.
 
 * `anti_affinity_group_ids` - A list of [exoscale_anti_affinity_group](./anti_affinity_group.md) (IDs) to attach to the instance (may only be set at creation time).
 * `elastic_ip_ids` - A list of [exoscale_elastic_ip](./elastic_ip.md) (IDs) to attach to the instance.
+* `reverse_dns` - Domain name for reverse DNS record.
 * `security_group_ids` - A list of [exoscale_security_group](./security_group.md) (IDs) to attach to the instance.
 
 * `network_interface` - (Block) Private network interfaces (may be specified multiple times). Structure is documented below.

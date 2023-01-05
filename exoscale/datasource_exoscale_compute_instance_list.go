@@ -3,6 +3,7 @@ package exoscale
 import (
 	"context"
 	"crypto/md5"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -79,6 +80,12 @@ func dataSourceComputeInstanceListRead(ctx context.Context, d *schema.ResourceDa
 		if err != nil {
 			return diag.FromErr(err)
 		}
+
+		rdns, err := client.GetInstanceReverseDNS(ctx, zone, *instance.ID)
+		if err != nil && !errors.Is(err, exoapi.ErrNotFound) {
+			return diag.Errorf("unable to retrieve instance reverse-dns: %s", err)
+		}
+		instanceData[dsComputeInstanceAttrReverseDNS] = rdns
 
 		if instance.InstanceTypeID != nil {
 			tid := *instance.InstanceTypeID

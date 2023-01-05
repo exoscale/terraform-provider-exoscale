@@ -2,6 +2,7 @@ package exoscale
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -27,6 +28,7 @@ const (
 	dsComputeInstanceAttrName                 = "name"
 	dsComputeInstanceAttrPrivateNetworkIDs    = "private_network_ids"
 	dsComputeInstanceAttrPublicIPAddress      = "public_ip_address"
+	dsComputeInstanceAttrReverseDNS           = "reverse_dns"
 	dsComputeInstanceAttrSSHKey               = "ssh_key"
 	dsComputeInstanceAttrSecurityGroupIDs     = "security_group_ids"
 	dsComputeInstanceAttrState                = "state"
@@ -99,6 +101,10 @@ func getDataSourceComputeInstanceSchema() map[string]*schema.Schema {
 			Elem:     &schema.Schema{Type: schema.TypeString},
 		},
 		dsComputeInstanceAttrPublicIPAddress: {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		dsComputeInstanceAttrReverseDNS: {
 			Type:     schema.TypeString,
 			Computed: true,
 		},
@@ -206,6 +212,12 @@ func dataSourceComputeInstanceRead(ctx context.Context, d *schema.ResourceData, 
 		strings.ToLower(*instanceType.Family),
 		strings.ToLower(*instanceType.Size),
 	)
+
+	rdns, err := client.GetInstanceReverseDNS(ctx, zone, *computeInstance.ID)
+	if err != nil && !errors.Is(err, exoapi.ErrNotFound) {
+		return diag.Errorf("unable to retrieve instance reverse-dns: %s", err)
+	}
+	data[dsComputeInstanceAttrReverseDNS] = strings.TrimSuffix(rdns, ".")
 
 	for key, value := range data {
 		err := d.Set(key, value)

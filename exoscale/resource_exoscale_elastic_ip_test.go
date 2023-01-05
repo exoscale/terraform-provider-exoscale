@@ -35,6 +35,7 @@ var (
 	testAccResourceElasticIPHealthcheckTimeoutUpdated            = testAccResourceElasticIPHealthcheckTimeout + 1
 	testAccResourceElasticIPHealthcheckURI                       = "/health"
 	testAccResourceElasticIPHealthcheckURIUpdated                = testAccResourceElasticIPHealthcheckURI + "-updated"
+	testAccResourceElasticIPReverseDNS                           = "tf-provider-test.exoscale.com"
 	testAccResourceElasticIPLabelValue                           = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceElasticIPLabelValueUpdated                    = testAccResourceElasticIPLabelValue + "-updated"
 
@@ -87,6 +88,8 @@ resource "exoscale_elastic_ip" "test4" {
     tls_skip_verify = true
   }
 
+	reverse_dns = "%s"
+
   labels = {
     test = "%s"
   }
@@ -102,6 +105,7 @@ resource "exoscale_elastic_ip" "test4" {
 		testAccResourceElasticIPHealthcheckStrikesOKUpdated,
 		testAccResourceElasticIPHealthcheckStrikesFailUpdated,
 		testAccResourceElasticIPHealthcheckTLSSNI,
+		testAccResourceElasticIPReverseDNS,
 		testAccResourceElasticIPLabelValueUpdated,
 	)
 
@@ -121,6 +125,8 @@ resource "exoscale_elastic_ip" "test6" {
     strikes_fail = %d
   }
 
+	reverse_dns = "%s"
+
   labels = {
     test = "%s"
   }
@@ -136,6 +142,7 @@ resource "exoscale_elastic_ip" "test6" {
 		testAccResourceElasticIPHealthcheckTimeout,
 		testAccResourceElasticIPHealthcheckStrikesOK,
 		testAccResourceElasticIPHealthcheckStrikesFail,
+		testAccResourceElasticIPReverseDNS,
 		testAccResourceElasticIPLabelValue,
 	)
 
@@ -156,6 +163,8 @@ resource "exoscale_elastic_ip" "test6" {
     tls_sni         = "%s"
     tls_skip_verify = true
   }
+
+	reverse_dns = ""
 
   labels = {
     test = "%s"
@@ -179,34 +188,35 @@ resource "exoscale_elastic_ip" "test6" {
 
 func TestAccResourceElasticIP(t *testing.T) {
 	var (
-		r4        = "exoscale_elastic_ip.test4"
-		r6        = "exoscale_elastic_ip.test6"
-		elasticIP egoscale.ElasticIP
+		r4         = "exoscale_elastic_ip.test4"
+		r6         = "exoscale_elastic_ip.test6"
+		elasticIP4 egoscale.ElasticIP
+		elasticIP6 egoscale.ElasticIP
 	)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviders,
-		CheckDestroy:      testAccCheckResourceElasticIPDestroy(&elasticIP),
+		CheckDestroy:      testAccCheckResourceElasticIPDestroy(&elasticIP4),
 		Steps: []resource.TestStep{
 			{
 				// Create
 				Config: testAccResourceElasticIP4ConfigCreate,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckResourceElasticIPExists(r4, &elasticIP),
+					testAccCheckResourceElasticIPExists(r4, &elasticIP4),
 					func(s *terraform.State) error {
 						a := assert.New(t)
 
-						a.Equal(testAccResourceElasticIPAddressFamily4, *elasticIP.AddressFamily)
-						a.Equal(testAccResourceElasticIPDescription, *elasticIP.Description)
-						a.NotNil(elasticIP.Healthcheck)
-						a.Equal(testAccResourceElasticIPHealthcheckInterval, int64(elasticIP.Healthcheck.Interval.Seconds()))
-						a.Equal(testAccResourceElasticIPHealthcheckMode, *elasticIP.Healthcheck.Mode)
-						a.Equal(testAccResourceElasticIPHealthcheckPort, *elasticIP.Healthcheck.Port)
-						a.Equal(testAccResourceElasticIPHealthcheckStrikesFail, *elasticIP.Healthcheck.StrikesFail)
-						a.Equal(testAccResourceElasticIPHealthcheckStrikesOK, *elasticIP.Healthcheck.StrikesOK)
-						a.Equal(testAccResourceElasticIPHealthcheckTimeout, int64(elasticIP.Healthcheck.Timeout.Seconds()))
-						a.Equal(testAccResourceElasticIPHealthcheckURI, *elasticIP.Healthcheck.URI)
+						a.Equal(testAccResourceElasticIPAddressFamily4, *elasticIP4.AddressFamily)
+						a.Equal(testAccResourceElasticIPDescription, *elasticIP4.Description)
+						a.NotNil(elasticIP4.Healthcheck)
+						a.Equal(testAccResourceElasticIPHealthcheckInterval, int64(elasticIP4.Healthcheck.Interval.Seconds()))
+						a.Equal(testAccResourceElasticIPHealthcheckMode, *elasticIP4.Healthcheck.Mode)
+						a.Equal(testAccResourceElasticIPHealthcheckPort, *elasticIP4.Healthcheck.Port)
+						a.Equal(testAccResourceElasticIPHealthcheckStrikesFail, *elasticIP4.Healthcheck.StrikesFail)
+						a.Equal(testAccResourceElasticIPHealthcheckStrikesOK, *elasticIP4.Healthcheck.StrikesOK)
+						a.Equal(testAccResourceElasticIPHealthcheckTimeout, int64(elasticIP4.Healthcheck.Timeout.Seconds()))
+						a.Equal(testAccResourceElasticIPHealthcheckURI, *elasticIP4.Healthcheck.URI)
 
 						return nil
 					},
@@ -230,21 +240,21 @@ func TestAccResourceElasticIP(t *testing.T) {
 				// Update
 				Config: testAccResourceElasticIP4ConfigUpdate,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckResourceElasticIPExists(r4, &elasticIP),
+					testAccCheckResourceElasticIPExists(r4, &elasticIP4),
 					func(s *terraform.State) error {
 						a := assert.New(t)
 
-						a.Equal(testAccResourceElasticIPDescriptionUpdated, *elasticIP.Description)
-						a.NotNil(elasticIP.Healthcheck)
-						a.Equal(testAccResourceElasticIPHealthcheckIntervalUpdated, int64(elasticIP.Healthcheck.Interval.Seconds()))
-						a.Equal(testAccResourceElasticIPHealthcheckModeUpdated, *elasticIP.Healthcheck.Mode)
-						a.Equal(testAccResourceElasticIPHealthcheckPortUpdated, *elasticIP.Healthcheck.Port)
-						a.Equal(testAccResourceElasticIPHealthcheckStrikesFailUpdated, *elasticIP.Healthcheck.StrikesFail)
-						a.Equal(testAccResourceElasticIPHealthcheckStrikesOKUpdated, *elasticIP.Healthcheck.StrikesOK)
-						a.Equal(testAccResourceElasticIPHealthcheckTLSSNI, *elasticIP.Healthcheck.TLSSNI)
-						a.True(*elasticIP.Healthcheck.TLSSkipVerify)
-						a.Equal(testAccResourceElasticIPHealthcheckTimeoutUpdated, int64(elasticIP.Healthcheck.Timeout.Seconds()))
-						a.Equal(testAccResourceElasticIPHealthcheckURIUpdated, *elasticIP.Healthcheck.URI)
+						a.Equal(testAccResourceElasticIPDescriptionUpdated, *elasticIP4.Description)
+						a.NotNil(elasticIP4.Healthcheck)
+						a.Equal(testAccResourceElasticIPHealthcheckIntervalUpdated, int64(elasticIP4.Healthcheck.Interval.Seconds()))
+						a.Equal(testAccResourceElasticIPHealthcheckModeUpdated, *elasticIP4.Healthcheck.Mode)
+						a.Equal(testAccResourceElasticIPHealthcheckPortUpdated, *elasticIP4.Healthcheck.Port)
+						a.Equal(testAccResourceElasticIPHealthcheckStrikesFailUpdated, *elasticIP4.Healthcheck.StrikesFail)
+						a.Equal(testAccResourceElasticIPHealthcheckStrikesOKUpdated, *elasticIP4.Healthcheck.StrikesOK)
+						a.Equal(testAccResourceElasticIPHealthcheckTLSSNI, *elasticIP4.Healthcheck.TLSSNI)
+						a.True(*elasticIP4.Healthcheck.TLSSkipVerify)
+						a.Equal(testAccResourceElasticIPHealthcheckTimeoutUpdated, int64(elasticIP4.Healthcheck.Timeout.Seconds()))
+						a.Equal(testAccResourceElasticIPHealthcheckURIUpdated, *elasticIP4.Healthcheck.URI)
 
 						return nil
 					},
@@ -253,6 +263,7 @@ func TestAccResourceElasticIP(t *testing.T) {
 						resElasticIPAttrAddressFamily:                                         validateString(testAccResourceElasticIPAddressFamily4),
 						resElasticIPAttrCIDR:                                                  validation.ToDiagFunc(validation.IsCIDR),
 						resElasticIPAttrIPAddress:                                             validation.ToDiagFunc(validation.IsIPAddress),
+						resElasticIPAttrReverseDNS:                                            validateString(testAccResourceElasticIPReverseDNS),
 						resElasticIPAttrLabels + ".test":                                      validateString(testAccResourceElasticIPLabelValueUpdated),
 						resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckInterval):      validateString(fmt.Sprint(testAccResourceElasticIPHealthcheckIntervalUpdated)),
 						resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckMode):          validateString(testAccResourceElasticIPHealthcheckModeUpdated),
@@ -273,9 +284,9 @@ func TestAccResourceElasticIP(t *testing.T) {
 				ImportStateVerify: true,
 				ImportStateIdFunc: func(elasticIP *egoscale.ElasticIP) resource.ImportStateIdFunc {
 					return func(*terraform.State) (string, error) {
-						return fmt.Sprintf("%s@%s", *elasticIP.ID, testZoneName), nil
+						return fmt.Sprintf("%s@%s", *elasticIP4.ID, testZoneName), nil
 					}
-				}(&elasticIP),
+				}(&elasticIP4),
 				ImportStateCheck: func(s []*terraform.InstanceState) error {
 					return checkResourceAttributes(
 						testAttrs{
@@ -283,6 +294,7 @@ func TestAccResourceElasticIP(t *testing.T) {
 							resElasticIPAttrAddressFamily:                                         validateString(testAccResourceElasticIPAddressFamily4),
 							resElasticIPAttrCIDR:                                                  validation.ToDiagFunc(validation.IsCIDR),
 							resElasticIPAttrIPAddress:                                             validation.ToDiagFunc(validation.IsIPAddress),
+							resElasticIPAttrReverseDNS:                                            validateString(testAccResourceElasticIPReverseDNS),
 							resElasticIPAttrLabels + ".test":                                      validateString(testAccResourceElasticIPLabelValueUpdated),
 							resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckInterval):      validateString(fmt.Sprint(testAccResourceElasticIPHealthcheckIntervalUpdated)),
 							resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckMode):          validateString(testAccResourceElasticIPHealthcheckModeUpdated),
@@ -303,26 +315,26 @@ func TestAccResourceElasticIP(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviders,
-		CheckDestroy:      testAccCheckResourceElasticIPDestroy(&elasticIP),
+		CheckDestroy:      testAccCheckResourceElasticIPDestroy(&elasticIP6),
 		Steps: []resource.TestStep{
 			{
 				// Create
 				Config: testAccResourceElasticIP6ConfigCreate,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckResourceElasticIPExists(r6, &elasticIP),
+					testAccCheckResourceElasticIPExists(r6, &elasticIP6),
 					func(s *terraform.State) error {
 						a := assert.New(t)
 
-						a.Equal(testAccResourceElasticIPAddressFamily6, *elasticIP.AddressFamily)
-						a.Equal(testAccResourceElasticIPDescription, *elasticIP.Description)
-						a.NotNil(elasticIP.Healthcheck)
-						a.Equal(testAccResourceElasticIPHealthcheckInterval, int64(elasticIP.Healthcheck.Interval.Seconds()))
-						a.Equal(testAccResourceElasticIPHealthcheckMode, *elasticIP.Healthcheck.Mode)
-						a.Equal(testAccResourceElasticIPHealthcheckPort, *elasticIP.Healthcheck.Port)
-						a.Equal(testAccResourceElasticIPHealthcheckStrikesFail, *elasticIP.Healthcheck.StrikesFail)
-						a.Equal(testAccResourceElasticIPHealthcheckStrikesOK, *elasticIP.Healthcheck.StrikesOK)
-						a.Equal(testAccResourceElasticIPHealthcheckTimeout, int64(elasticIP.Healthcheck.Timeout.Seconds()))
-						a.Equal(testAccResourceElasticIPHealthcheckURI, *elasticIP.Healthcheck.URI)
+						a.Equal(testAccResourceElasticIPAddressFamily6, *elasticIP6.AddressFamily)
+						a.Equal(testAccResourceElasticIPDescription, *elasticIP6.Description)
+						a.NotNil(elasticIP6.Healthcheck)
+						a.Equal(testAccResourceElasticIPHealthcheckInterval, int64(elasticIP6.Healthcheck.Interval.Seconds()))
+						a.Equal(testAccResourceElasticIPHealthcheckMode, *elasticIP6.Healthcheck.Mode)
+						a.Equal(testAccResourceElasticIPHealthcheckPort, *elasticIP6.Healthcheck.Port)
+						a.Equal(testAccResourceElasticIPHealthcheckStrikesFail, *elasticIP6.Healthcheck.StrikesFail)
+						a.Equal(testAccResourceElasticIPHealthcheckStrikesOK, *elasticIP6.Healthcheck.StrikesOK)
+						a.Equal(testAccResourceElasticIPHealthcheckTimeout, int64(elasticIP6.Healthcheck.Timeout.Seconds()))
+						a.Equal(testAccResourceElasticIPHealthcheckURI, *elasticIP6.Healthcheck.URI)
 
 						return nil
 					},
@@ -331,6 +343,7 @@ func TestAccResourceElasticIP(t *testing.T) {
 						resElasticIPAttrAddressFamily:                                       validateString(testAccResourceElasticIPAddressFamily6),
 						resElasticIPAttrCIDR:                                                validation.ToDiagFunc(validation.IsCIDR),
 						resElasticIPAttrIPAddress:                                           validation.ToDiagFunc(validation.IsIPAddress),
+						resElasticIPAttrReverseDNS:                                          validateString(testAccResourceElasticIPReverseDNS),
 						resElasticIPAttrLabels + ".test":                                    validateString(testAccResourceElasticIPLabelValue),
 						resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckInterval):    validateString(fmt.Sprint(testAccResourceElasticIPHealthcheckInterval)),
 						resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckMode):        validateString(testAccResourceElasticIPHealthcheckMode),
@@ -346,30 +359,31 @@ func TestAccResourceElasticIP(t *testing.T) {
 				// Update
 				Config: testAccResourceElasticIP6ConfigUpdate,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckResourceElasticIPExists(r6, &elasticIP),
+					testAccCheckResourceElasticIPExists(r6, &elasticIP6),
 					func(s *terraform.State) error {
 						a := assert.New(t)
 
-						a.Equal(testAccResourceElasticIPDescriptionUpdated, *elasticIP.Description)
-						a.NotNil(elasticIP.Healthcheck)
-						a.Equal(testAccResourceElasticIPHealthcheckIntervalUpdated, int64(elasticIP.Healthcheck.Interval.Seconds()))
-						a.Equal(testAccResourceElasticIPHealthcheckModeUpdated, *elasticIP.Healthcheck.Mode)
-						a.Equal(testAccResourceElasticIPHealthcheckPortUpdated, *elasticIP.Healthcheck.Port)
-						a.Equal(testAccResourceElasticIPHealthcheckStrikesFailUpdated, *elasticIP.Healthcheck.StrikesFail)
-						a.Equal(testAccResourceElasticIPHealthcheckStrikesOKUpdated, *elasticIP.Healthcheck.StrikesOK)
-						a.Equal(testAccResourceElasticIPHealthcheckTLSSNI, *elasticIP.Healthcheck.TLSSNI)
-						a.True(*elasticIP.Healthcheck.TLSSkipVerify)
-						a.Equal(testAccResourceElasticIPHealthcheckTimeoutUpdated, int64(elasticIP.Healthcheck.Timeout.Seconds()))
-						a.Equal(testAccResourceElasticIPHealthcheckURIUpdated, *elasticIP.Healthcheck.URI)
+						a.Equal(testAccResourceElasticIPDescriptionUpdated, *elasticIP6.Description)
+						a.NotNil(elasticIP6.Healthcheck)
+						a.Equal(testAccResourceElasticIPHealthcheckIntervalUpdated, int64(elasticIP6.Healthcheck.Interval.Seconds()))
+						a.Equal(testAccResourceElasticIPHealthcheckModeUpdated, *elasticIP6.Healthcheck.Mode)
+						a.Equal(testAccResourceElasticIPHealthcheckPortUpdated, *elasticIP6.Healthcheck.Port)
+						a.Equal(testAccResourceElasticIPHealthcheckStrikesFailUpdated, *elasticIP6.Healthcheck.StrikesFail)
+						a.Equal(testAccResourceElasticIPHealthcheckStrikesOKUpdated, *elasticIP6.Healthcheck.StrikesOK)
+						a.Equal(testAccResourceElasticIPHealthcheckTLSSNI, *elasticIP6.Healthcheck.TLSSNI)
+						a.True(*elasticIP6.Healthcheck.TLSSkipVerify)
+						a.Equal(testAccResourceElasticIPHealthcheckTimeoutUpdated, int64(elasticIP6.Healthcheck.Timeout.Seconds()))
+						a.Equal(testAccResourceElasticIPHealthcheckURIUpdated, *elasticIP6.Healthcheck.URI)
 
 						return nil
 					},
 					checkResourceState(r6, checkResourceStateValidateAttributes(testAttrs{
-						resElasticIPAttrDescription:                                           validateString(testAccResourceElasticIPDescriptionUpdated),
-						resElasticIPAttrAddressFamily:                                         validateString(testAccResourceElasticIPAddressFamily6),
-						resElasticIPAttrCIDR:                                                  validation.ToDiagFunc(validation.IsCIDR),
-						resElasticIPAttrIPAddress:                                             validation.ToDiagFunc(validation.IsIPAddress),
-						resElasticIPAttrLabels + ".test":                                      validateString(testAccResourceElasticIPLabelValueUpdated),
+						resElasticIPAttrDescription:   validateString(testAccResourceElasticIPDescriptionUpdated),
+						resElasticIPAttrAddressFamily: validateString(testAccResourceElasticIPAddressFamily6),
+						//resElasticIPAttrReverseDNS:                                            validation.ToDiagFunc(validation.StringIsEmpty),
+						resElasticIPAttrCIDR:             validation.ToDiagFunc(validation.IsCIDR),
+						resElasticIPAttrIPAddress:        validation.ToDiagFunc(validation.IsIPAddress),
+						resElasticIPAttrLabels + ".test": validateString(testAccResourceElasticIPLabelValueUpdated),
 						resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckInterval):      validateString(fmt.Sprint(testAccResourceElasticIPHealthcheckIntervalUpdated)),
 						resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckMode):          validateString(testAccResourceElasticIPHealthcheckModeUpdated),
 						resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckPort):          validateString(fmt.Sprint(testAccResourceElasticIPHealthcheckPortUpdated)),
@@ -389,9 +403,9 @@ func TestAccResourceElasticIP(t *testing.T) {
 				ImportStateVerify: true,
 				ImportStateIdFunc: func(elasticIP *egoscale.ElasticIP) resource.ImportStateIdFunc {
 					return func(*terraform.State) (string, error) {
-						return fmt.Sprintf("%s@%s", *elasticIP.ID, testZoneName), nil
+						return fmt.Sprintf("%s@%s", *elasticIP6.ID, testZoneName), nil
 					}
-				}(&elasticIP),
+				}(&elasticIP6),
 				ImportStateCheck: func(s []*terraform.InstanceState) error {
 					return checkResourceAttributes(
 						testAttrs{
@@ -399,6 +413,7 @@ func TestAccResourceElasticIP(t *testing.T) {
 							resElasticIPAttrAddressFamily:                                         validateString(testAccResourceElasticIPAddressFamily6),
 							resElasticIPAttrCIDR:                                                  validation.ToDiagFunc(validation.IsCIDR),
 							resElasticIPAttrIPAddress:                                             validation.ToDiagFunc(validation.IsIPAddress),
+							resElasticIPAttrReverseDNS:                                            validation.ToDiagFunc(validation.StringIsEmpty),
 							resElasticIPAttrLabels + ".test":                                      validateString(testAccResourceElasticIPLabelValueUpdated),
 							resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckInterval):      validateString(fmt.Sprint(testAccResourceElasticIPHealthcheckIntervalUpdated)),
 							resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckMode):          validateString(testAccResourceElasticIPHealthcheckModeUpdated),
