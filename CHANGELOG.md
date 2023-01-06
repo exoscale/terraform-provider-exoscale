@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.43.0 (January 6, 2023)
+
+FEATURES:
+
+- **Reverse DNS**: Support in `exoscale_compute_instance` and `exoscale_elastic_ip` resources (#234)
+- **New datasource** `exoscale_template` (replaces compute_template) (#235)
+
+BUG FIXES:
+- `compute_instance`: fix anti_affinity_group_ids (ForceNew) (#231)
+
+IMPROVEMENTS:
+- Extends the acceptance tests timeout from 60 minutes to 90 minutes
+
+
 ## 0.42.0 (November 24, 2022)
 
 FEATURES:
@@ -32,7 +46,7 @@ BUG FIXES:
 IMPROVEMENTS:
 
 - Use HTTP client with retry logic (#216)
-- Use recommended tflog library for logging (#214) 
+- Use recommended tflog library for logging (#214)
 
 CHANGES:
 
@@ -78,7 +92,7 @@ CHANGES:
 
 BUG FIXES:
 
-- `exoscale_iam_access_key` fix failures when resources are specified (#194) 
+- `exoscale_iam_access_key` fix failures when resources are specified (#194)
 - `resource_database_kafka` update kafka version used in tests (#193)
 
 ## 0.38.0 (June 23, 2022)
