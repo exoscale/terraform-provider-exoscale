@@ -188,10 +188,11 @@ resource "exoscale_elastic_ip" "test6" {
 
 func TestAccResourceElasticIP(t *testing.T) {
 	var (
-		r4         = "exoscale_elastic_ip.test4"
-		r6         = "exoscale_elastic_ip.test6"
-		elasticIP4 egoscale.ElasticIP
-		elasticIP6 egoscale.ElasticIP
+		r4          = "exoscale_elastic_ip.test4"
+		r6          = "exoscale_elastic_ip.test6"
+		elasticIP4  egoscale.ElasticIP
+		elasticIP6  egoscale.ElasticIP
+		ElasticIPID string // After the update of healtcheck, ID must be the same
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -217,6 +218,7 @@ func TestAccResourceElasticIP(t *testing.T) {
 						a.Equal(testAccResourceElasticIPHealthcheckStrikesOK, *elasticIP4.Healthcheck.StrikesOK)
 						a.Equal(testAccResourceElasticIPHealthcheckTimeout, int64(elasticIP4.Healthcheck.Timeout.Seconds()))
 						a.Equal(testAccResourceElasticIPHealthcheckURI, *elasticIP4.Healthcheck.URI)
+						ElasticIPID = *elasticIP4.ID
 
 						return nil
 					},
@@ -245,6 +247,7 @@ func TestAccResourceElasticIP(t *testing.T) {
 						a := assert.New(t)
 
 						a.Equal(testAccResourceElasticIPDescriptionUpdated, *elasticIP4.Description)
+						a.Equal(ElasticIPID, *elasticIP4.ID)
 						a.NotNil(elasticIP4.Healthcheck)
 						a.Equal(testAccResourceElasticIPHealthcheckIntervalUpdated, int64(elasticIP4.Healthcheck.Interval.Seconds()))
 						a.Equal(testAccResourceElasticIPHealthcheckModeUpdated, *elasticIP4.Healthcheck.Mode)
