@@ -230,31 +230,7 @@ func resourceDomainImport(ctx context.Context, d *schema.ResourceData, meta inte
 	resources := make([]*schema.ResourceData, 0, 1)
 	resources = append(resources, d)
 
-	records, err := client.ListDNSDomainRecords(ctx, defaultZone, d.Id())
-	if err != nil {
-		return nil, err
-	}
-
-	for _, record := range records {
-		// Ignore the default NS and SOA entries
-		if *record.Type == "NS" || *record.Type == "SOA" {
-			continue
-		}
-		resource := resourceDomainRecord()
-		data := resource.Data(nil)
-		data.SetType("exoscale_domain_record")
-		if err := data.Set("domain", d.Id()); err != nil {
-			return nil, err
-		}
-
-		if err := resourceDomainRecordApply(data, *domain.UnicodeName, &record); err != nil {
-			continue
-		}
-
-		resources = append(resources, data)
-	}
-
-	return resources, nil
+	return []*schema.ResourceData{d}, nil
 }
 
 func resourceDomainApply(d *schema.ResourceData, domain *exo.DNSDomain) error {
