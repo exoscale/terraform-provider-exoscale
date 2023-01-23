@@ -227,9 +227,6 @@ func resourceDomainImport(ctx context.Context, d *schema.ResourceData, meta inte
 		return nil, err
 	}
 
-	resources := make([]*schema.ResourceData, 0, 1)
-	resources = append(resources, d)
-
 	return []*schema.ResourceData{d}, nil
 }
 
