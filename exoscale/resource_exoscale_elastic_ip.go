@@ -56,7 +56,6 @@ func resourceElasticIP() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 				Optional: true,
-				ForceNew: true,
 			},
 			"healthcheck": {
 				Type:     schema.TypeList,
@@ -321,18 +320,63 @@ func resourceElasticIPUpdate(ctx context.Context, d *schema.ResourceData, meta i
 		updated = true
 	}
 
-	if d.HasChange(resElasticIPAttrAddressFamily) {
-		v := d.Get(resElasticIPAttrAddressFamily).(string)
-		if v != "" {
-			elasticIP.AddressFamily = &v
-		}
-		// note that nil value is also considered change
-		updated = true
-	}
-
 	if d.HasChange(resElasticIPAttrDescription) {
 		v := d.Get(resElasticIPAttrDescription).(string)
 		elasticIP.Description = &v
+		updated = true
+	}
+
+	if d.HasChange(resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckMode)) {
+		v := d.Get(resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckMode)).(string)
+		elasticIP.Healthcheck.Mode = &v
+		updated = true
+	}
+
+	if d.HasChange(resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckPort)) {
+		v := uint16(d.Get(resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckPort)).(int))
+		elasticIP.Healthcheck.Port = &v
+		updated = true
+	}
+
+	if d.HasChange(resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckInterval)) {
+		v := time.Duration(d.Get(resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckInterval)).(int)) * time.Second
+		elasticIP.Healthcheck.Interval = &v
+		updated = true
+	}
+
+	if d.HasChange(resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckStrikesFail)) {
+		v := int64(d.Get(resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckStrikesFail)).(int))
+		elasticIP.Healthcheck.StrikesFail = &v
+		updated = true
+	}
+
+	if d.HasChange(resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckStrikesOK)) {
+		v := int64(d.Get(resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckStrikesOK)).(int))
+		elasticIP.Healthcheck.StrikesOK = &v
+		updated = true
+	}
+
+	if d.HasChange(resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckTimeout)) {
+		v := time.Duration(d.Get(resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckTimeout)).(int)) * time.Second
+		elasticIP.Healthcheck.Timeout = &v
+		updated = true
+	}
+
+	if d.HasChange(resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckTLSSNI)) {
+		v := d.Get(resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckTLSSNI)).(string)
+		elasticIP.Healthcheck.TLSSNI = &v
+		updated = true
+	}
+
+	if d.HasChange(resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckTLSSkipVerify)) {
+		v := d.Get(resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckTLSSkipVerify)).(bool)
+		elasticIP.Healthcheck.TLSSkipVerify = &v
+		updated = true
+	}
+
+	if d.HasChange(resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckURI)) {
+		v := d.Get(resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckURI)).(string)
+		elasticIP.Healthcheck.URI = &v
 		updated = true
 	}
 

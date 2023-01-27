@@ -57,7 +57,7 @@ directory for complete configuration examples.
 * `address_family` - The Elastic IP (EIP) address family (`inet4` or `inet6`; default: `inet4`).
 * `labels` - A map of key/value labels.
 * `reverse_dns` - Domain name for reverse DNS record.
-* `healthcheck` - (Block) Healthcheck configuration for *managed* EIPs. Structure is documented below.
+* `healthcheck` - (Block) Healthcheck configuration for *managed* EIPs. It can not be added to an existing *Unmanaged* EIP. Structure is documented below:
 
 ### `healthcheck` block
 
