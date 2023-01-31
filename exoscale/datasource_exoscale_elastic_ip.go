@@ -3,8 +3,10 @@ package exoscale
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 
+	egoscale "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -93,21 +95,22 @@ func dataSourceElasticIP() *schema.Resource {
 			dsElasticIPAttrID: {
 				Type:          schema.TypeString,
 				Optional:      true,
-				ConflictsWith: []string{dsElasticIPAttrIPAddress},
+				ConflictsWith: []string{dsElasticIPAttrIPAddress, dsElasticIPAttrLabels},
 			},
 			dsElasticIPAttrIPAddress: {
 				Type:          schema.TypeString,
 				Optional:      true,
-				ConflictsWith: []string{dsElasticIPAttrID},
+				ConflictsWith: []string{dsElasticIPAttrID, dsElasticIPAttrLabels},
 			},
 			dsElasticIPAttrReverseDNS: {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
 			dsElasticIPAttrLabels: {
-				Type:     schema.TypeMap,
-				Elem:     &schema.Schema{Type: schema.TypeString},
-				Computed: true,
+				Type:          schema.TypeMap,
+				Elem:          &schema.Schema{Type: schema.TypeString},
+				Optional:      true,
+				ConflictsWith: []string{dsElasticIPAttrID, dsElasticIPAttrIPAddress},
 			},
 			dsElasticIPAttrZone: {
 				Type:     schema.TypeString,
@@ -132,27 +135,71 @@ func dataSourceElasticIPRead(ctx context.Context, d *schema.ResourceData, meta i
 
 	client := GetComputeClient(meta)
 
-	elasticIPID, byElasticIPID := d.GetOk(dsElasticIPAttrID)
-	elasticIPAddress, byElasticIPAddress := d.GetOk(dsElasticIPAttrIPAddress)
-	if !byElasticIPID && !byElasticIPAddress {
+	elasticIPID, searchByElasticIPID := d.GetOk(dsElasticIPAttrID)
+	elasticIPAddress, searchByElasticIPAddress := d.GetOk(dsElasticIPAttrIPAddress)
+	elasticIPLabels, searchByElasticIPLabels := d.GetOk(dsElasticIPAttrLabels)
+	if !searchByElasticIPID && !searchByElasticIPAddress && !searchByElasticIPLabels {
 		return diag.Errorf(
-			"either %s or %s must be specified",
+			"one of %s, %s or %s must be specified",
 			dsElasticIPAttrIPAddress,
 			dsElasticIPAttrID,
+			dsElasticIPAttrLabels,
 		)
 	}
 
-	elasticIP, err := client.FindElasticIP(
-		ctx,
-		zone, func() string {
-			if byElasticIPID {
-				return elasticIPID.(string)
+	// search by address by default
+	filterElasticIP := func(eip *egoscale.ElasticIP) bool {
+		if eip.IPAddress.String() == elasticIPAddress {
+			return true
+		}
+		return false
+	}
+
+	if searchByElasticIPID {
+		filterElasticIP = func(eip *egoscale.ElasticIP) bool {
+			if *eip.ID == elasticIPID {
+				return true
 			}
-			return elasticIPAddress.(string)
-		}(),
-	)
+			return false
+		}
+	}
+
+	if searchByElasticIPLabels {
+		searchLabels := make(map[string]string)
+		for k, v := range elasticIPLabels.(map[string]interface{}) {
+			searchLabels[k] = v.(string)
+		}
+
+		filterElasticIP = func(eip *egoscale.ElasticIP) bool {
+			if eip.Labels == nil {
+				return false
+			}
+
+			for searchKey, searchValue := range searchLabels {
+				if foundValue, ok := (*eip.Labels)[searchKey]; ok && foundValue == searchValue {
+					continue
+				}
+			}
+
+			return true
+		}
+	}
+
+	elasticIPs, err := client.ListElasticIPs(ctx, zone)
 	if err != nil {
 		return diag.FromErr(err)
+	}
+
+	var elasticIP *egoscale.ElasticIP
+	for _, eip := range elasticIPs {
+		if filterElasticIP(eip) {
+			elasticIP = eip
+			break
+		}
+	}
+
+	if elasticIP == nil {
+		return diag.FromErr(fmt.Errorf("Unable to find matching ElasticIP"))
 	}
 
 	d.SetId(*elasticIP.ID)
@@ -196,6 +243,10 @@ func dataSourceElasticIPRead(ctx context.Context, d *schema.ResourceData, meta i
 		return diag.Errorf("unable to retrieve instance reverse-dns: %s", err)
 	}
 	if err := d.Set(dsElasticIPAttrReverseDNS, strings.TrimSuffix(rdns, ".")); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set(dsElasticIPAttrLabels, elasticIP.Labels); err != nil {
 		return diag.FromErr(err)
 	}
 
