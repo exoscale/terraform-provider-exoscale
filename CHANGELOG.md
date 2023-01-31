@@ -9,6 +9,7 @@ BUG FIX:
 FEATURES:
 
 - `datasource_elastic_ip`: Added support for filtering by labels (#233)
+- Resource `exoscale_elastic_ip`: healthcheck config could be updated (#237)
 
 ## 0.43.0 (January 6, 2023)
 
