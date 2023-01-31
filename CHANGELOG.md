@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.44.0 (NOT YET RELEASED)
+## 0.44.0 (January 31, 2023)
 
 BUG FIX:
 
