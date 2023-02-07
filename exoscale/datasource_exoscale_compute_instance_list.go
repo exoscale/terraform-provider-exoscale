@@ -16,25 +16,49 @@ import (
 
 const (
 	filterStringPropName = "filter_string"
+	filterLabelsPropName = "filter_labels"
 	attributePropName    = "attribute"
+	keyPropName          = "key"
 	valuePropName        = "value"
 )
 
-type ComputeInstanceListFilter struct {
+type stringFilter struct {
 	Attribute string
 	Value     string
 }
 
-func buildFilters(set *schema.Set) []ComputeInstanceListFilter {
-	var filters []ComputeInstanceListFilter
+type labelFilter struct {
+	Key   string
+	Value string
+}
+
+func buildStringFilters(set *schema.Set) []stringFilter {
+	var filters []stringFilter
 
 	for _, v := range set.List() {
 		m := v.(map[string]interface{})
 
 		filters = append(filters,
-			ComputeInstanceListFilter{
+			stringFilter{
 				Attribute: m[attributePropName].(string),
 				Value:     m[valuePropName].(string),
+			},
+		)
+	}
+
+	return filters
+}
+
+func buildLabelFilters(set *schema.Set) []labelFilter {
+	var filters []labelFilter
+
+	for _, v := range set.List() {
+		m := v.(map[string]interface{})
+
+		filters = append(filters,
+			labelFilter{
+				Key:   m[keyPropName].(string),
+				Value: m[valuePropName].(string),
 			},
 		)
 	}
@@ -57,6 +81,7 @@ func dataSourceComputeInstanceList() *schema.Resource {
 				},
 			},
 			filterStringPropName: filterStringSchema(),
+			filterLabelsPropName: filterLabelsSchema(),
 		},
 
 		ReadContext: dataSourceComputeInstanceListRead,
@@ -88,11 +113,16 @@ func dataSourceComputeInstanceListRead(ctx context.Context, d *schema.ResourceDa
 	ids := make([]string, 0, len(instances))
 	instanceTypes := map[string]string{}
 
-	var filters []ComputeInstanceListFilter
-	filter, filtersSpecified := d.GetOk(filterStringPropName)
-	if filtersSpecified {
-		filterSet := filter.(*schema.Set)
-		filters = buildFilters(filterSet)
+	var strFilters []stringFilter
+	strFilterProp, stringFiltersSpecified := d.GetOk(filterStringPropName)
+	if stringFiltersSpecified {
+		strFilters = buildStringFilters(strFilterProp.(*schema.Set))
+	}
+
+	var labelsFilters []labelFilter
+	labelsFilterProp, labelFiltersSpecified := d.GetOk(filterLabelsPropName)
+	if labelFiltersSpecified {
+		labelsFilters = buildLabelFilters(labelsFilterProp.(*schema.Set))
 	}
 
 	for _, item := range instances {
@@ -144,9 +174,10 @@ func dataSourceComputeInstanceListRead(ctx context.Context, d *schema.ResourceDa
 			instanceData[dsComputeInstanceAttrType] = instanceTypes[tid]
 		}
 
-		if filtersSpecified {
-			matched := false
-			for _, filter := range filters {
+		matched := false
+
+		if stringFiltersSpecified {
+			for _, filter := range strFilters {
 				instanceAttr, ok := instanceData[filter.Attribute]
 				if !ok {
 					continue
@@ -163,10 +194,35 @@ func dataSourceComputeInstanceListRead(ctx context.Context, d *schema.ResourceDa
 					}
 				}
 			}
+		}
 
-			if !matched {
+		if !matched && labelFiltersSpecified {
+			labelsAttr, ok := instanceData["labels"]
+			if !ok {
 				continue
 			}
+
+			labels, isMap := labelsAttr.(map[string]string)
+			if !isMap {
+				tflog.Info(ctx, fmt.Sprintf("attribute of compute instance has unexpected type %T for labels", labelsAttr))
+
+				continue
+			}
+
+			for _, filter := range labelsFilters {
+				value, ok := labels[filter.Key]
+				if !ok {
+					continue
+				}
+
+				if value == filter.Value {
+					matched = true
+				}
+			}
+		}
+
+		if !matched {
+			continue
 		}
 
 		data = append(data, instanceData)
@@ -190,6 +246,10 @@ func dataSourceComputeInstanceListRead(ctx context.Context, d *schema.ResourceDa
 	return nil
 }
 
+func pp(ctx context.Context, msg string) {
+	tflog.Info(ctx, msg)
+}
+
 func filterStringSchema() *schema.Schema {
 	return &schema.Schema{
 		Type:     schema.TypeSet,
@@ -203,7 +263,25 @@ func filterStringSchema() *schema.Schema {
 				valuePropName: {
 					Type:     schema.TypeString,
 					Required: true,
-					Elem:     &schema.Schema{Type: schema.TypeString},
+				},
+			},
+		},
+	}
+}
+
+func filterLabelsSchema() *schema.Schema {
+	return &schema.Schema{
+		Type:     schema.TypeSet,
+		Optional: true,
+		Elem: &schema.Resource{
+			Schema: map[string]*schema.Schema{
+				keyPropName: {
+					Type:     schema.TypeString,
+					Required: true,
+				},
+				valuePropName: {
+					Type:     schema.TypeString,
+					Required: true,
 				},
 			},
 		},

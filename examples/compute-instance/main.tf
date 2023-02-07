@@ -51,18 +51,23 @@ resource "exoscale_compute_instance" "my_small_instance" {
     data.exoscale_security_group.default.id,
     exoscale_security_group.my_ssh_security_group.id,
   ]
+
+  labels = {
+    testkey = "testvalue"
+  }
 }
 
 data "exoscale_compute_instance_list" "small_instances" {
   zone = "ch-gva-2"
-  filter_string {
-    attribute = "name"
-    value     = "my-small-instance"
-  }
 
   filter_string {
     attribute = "type"
     value     = "standard.medium"
+  }
+
+  filter_labels {
+    key   = "testkey"
+    value = "testvalue"
   }
 }
 
