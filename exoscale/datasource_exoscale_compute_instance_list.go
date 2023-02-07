@@ -15,12 +15,14 @@ import (
 )
 
 const (
-	filterFieldName = "filter"
+	filterStringPropName = "filter_string"
+	attributePropName    = "attribute"
+	valuePropName        = "value"
 )
 
 type ComputeInstanceListFilter struct {
-	Name  string
-	Value string
+	Attribute string
+	Value     string
 }
 
 func buildFilters(set *schema.Set) []ComputeInstanceListFilter {
@@ -31,8 +33,8 @@ func buildFilters(set *schema.Set) []ComputeInstanceListFilter {
 
 		filters = append(filters,
 			ComputeInstanceListFilter{
-				Name:  m["name"].(string),
-				Value: m["value"].(string),
+				Attribute: m[attributePropName].(string),
+				Value:     m[valuePropName].(string),
 			},
 		)
 	}
@@ -54,7 +56,7 @@ func dataSourceComputeInstanceList() *schema.Resource {
 					Schema: getDataSourceComputeInstanceSchema(),
 				},
 			},
-			filterFieldName: DataSourceFiltersSchema(),
+			filterStringPropName: filterStringSchema(),
 		},
 
 		ReadContext: dataSourceComputeInstanceListRead,
@@ -87,7 +89,7 @@ func dataSourceComputeInstanceListRead(ctx context.Context, d *schema.ResourceDa
 	instanceTypes := map[string]string{}
 
 	var filters []ComputeInstanceListFilter
-	filter, filtersSpecified := d.GetOk(filterFieldName)
+	filter, filtersSpecified := d.GetOk(filterStringPropName)
 	if filtersSpecified {
 		filterSet := filter.(*schema.Set)
 		filters = buildFilters(filterSet)
@@ -113,19 +115,6 @@ func dataSourceComputeInstanceListRead(ctx context.Context, d *schema.ResourceDa
 		instanceData, err := dataSourceComputeInstanceBuildData(instance)
 		if err != nil {
 			return diag.FromErr(err)
-		}
-
-		if filtersSpecified {
-			matched := false
-			for _, filter := range filters {
-				if instance.Name != nil && *instance.Name == filter.Value {
-					matched = true
-				}
-			}
-
-			if !matched {
-				continue
-			}
 		}
 
 		rdns, err := client.GetInstanceReverseDNS(ctx, zone, *instance.ID)
@@ -155,6 +144,31 @@ func dataSourceComputeInstanceListRead(ctx context.Context, d *schema.ResourceDa
 			instanceData[dsComputeInstanceAttrType] = instanceTypes[tid]
 		}
 
+		if filtersSpecified {
+			matched := false
+			for _, filter := range filters {
+				instanceAttr, ok := instanceData[filter.Attribute]
+				if !ok {
+					continue
+				}
+
+				switch v := instanceAttr.(type) {
+				case string:
+					if v == filter.Value {
+						matched = true
+					}
+				case *string:
+					if *v == filter.Value {
+						matched = true
+					}
+				}
+			}
+
+			if !matched {
+				continue
+			}
+		}
+
 		data = append(data, instanceData)
 	}
 
@@ -176,17 +190,17 @@ func dataSourceComputeInstanceListRead(ctx context.Context, d *schema.ResourceDa
 	return nil
 }
 
-func DataSourceFiltersSchema() *schema.Schema {
+func filterStringSchema() *schema.Schema {
 	return &schema.Schema{
 		Type:     schema.TypeSet,
 		Optional: true,
 		Elem: &schema.Resource{
 			Schema: map[string]*schema.Schema{
-				"name": {
+				attributePropName: {
 					Type:     schema.TypeString,
 					Required: true,
 				},
-				"value": {
+				valuePropName: {
 					Type:     schema.TypeString,
 					Required: true,
 					Elem:     &schema.Schema{Type: schema.TypeString},

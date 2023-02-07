@@ -55,9 +55,14 @@ resource "exoscale_compute_instance" "my_small_instance" {
 
 data "exoscale_compute_instance_list" "small_instances" {
   zone = "ch-gva-2"
-  filter {
-    name  = "name"
-    value = "my-small-instance"
+  filter_string {
+    attribute = "name"
+    value     = "my-small-instance"
+  }
+
+  filter_string {
+    attribute = "type"
+    value     = "standard.medium"
   }
 }
 
