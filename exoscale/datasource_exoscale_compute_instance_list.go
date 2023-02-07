@@ -14,6 +14,32 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+const (
+	filterFieldName = "filter"
+)
+
+type ComputeInstanceListFilter struct {
+	Name  string
+	Value string
+}
+
+func buildFilters(set *schema.Set) []ComputeInstanceListFilter {
+	var filters []ComputeInstanceListFilter
+
+	for _, v := range set.List() {
+		m := v.(map[string]interface{})
+
+		filters = append(filters,
+			ComputeInstanceListFilter{
+				Name:  m["name"].(string),
+				Value: m["value"].(string),
+			},
+		)
+	}
+
+	return filters
+}
+
 func dataSourceComputeInstanceList() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -28,6 +54,7 @@ func dataSourceComputeInstanceList() *schema.Resource {
 					Schema: getDataSourceComputeInstanceSchema(),
 				},
 			},
+			filterFieldName: DataSourceFiltersSchema(),
 		},
 
 		ReadContext: dataSourceComputeInstanceListRead,
@@ -59,6 +86,13 @@ func dataSourceComputeInstanceListRead(ctx context.Context, d *schema.ResourceDa
 	ids := make([]string, 0, len(instances))
 	instanceTypes := map[string]string{}
 
+	var filters []ComputeInstanceListFilter
+	filter, filtersSpecified := d.GetOk(filterFieldName)
+	if filtersSpecified {
+		filterSet := filter.(*schema.Set)
+		filters = buildFilters(filterSet)
+	}
+
 	for _, item := range instances {
 		// we use ID to generate a resource ID, we cannot list instances without ID.
 		if item.ID == nil {
@@ -79,6 +113,19 @@ func dataSourceComputeInstanceListRead(ctx context.Context, d *schema.ResourceDa
 		instanceData, err := dataSourceComputeInstanceBuildData(instance)
 		if err != nil {
 			return diag.FromErr(err)
+		}
+
+		if filtersSpecified {
+			matched := false
+			for _, filter := range filters {
+				if instance.Name != nil && *instance.Name == filter.Value {
+					matched = true
+				}
+			}
+
+			if !matched {
+				continue
+			}
 		}
 
 		rdns, err := client.GetInstanceReverseDNS(ctx, zone, *instance.ID)
@@ -127,4 +174,24 @@ func dataSourceComputeInstanceListRead(ctx context.Context, d *schema.ResourceDa
 	})
 
 	return nil
+}
+
+func DataSourceFiltersSchema() *schema.Schema {
+	return &schema.Schema{
+		Type:     schema.TypeSet,
+		Optional: true,
+		Elem: &schema.Resource{
+			Schema: map[string]*schema.Schema{
+				"name": {
+					Type:     schema.TypeString,
+					Required: true,
+				},
+				"value": {
+					Type:     schema.TypeString,
+					Required: true,
+					Elem:     &schema.Schema{Type: schema.TypeString},
+				},
+			},
+		},
+	}
 }
