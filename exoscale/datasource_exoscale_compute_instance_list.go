@@ -246,10 +246,6 @@ func dataSourceComputeInstanceListRead(ctx context.Context, d *schema.ResourceDa
 	return nil
 }
 
-func pp(ctx context.Context, msg string) {
-	tflog.Info(ctx, msg)
-}
-
 func filterStringSchema() *schema.Schema {
 	return &schema.Schema{
 		Type:     schema.TypeSet,
