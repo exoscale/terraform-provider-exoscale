@@ -60,14 +60,13 @@ resource "exoscale_compute_instance" "my_small_instance" {
 data "exoscale_compute_instance_list" "small_instances" {
   zone = "ch-gva-2"
 
-  filter_string {
-    attribute = "type"
-    value     = "standard.medium"
+  filter_regex {
+    attribute = "name"
+    value     = ".*big.*"
   }
 
-  filter_labels {
-    key   = "testkey"
-    value = "testvalue"
+  labels = {
+    "testkey" = "testvalue"
   }
 }
 

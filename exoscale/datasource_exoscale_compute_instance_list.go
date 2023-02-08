@@ -5,6 +5,7 @@ import (
 	"crypto/md5"
 	"errors"
 	"fmt"
+	"regexp"
 	"sort"
 	"strings"
 
@@ -16,54 +17,52 @@ import (
 
 const (
 	filterStringPropName = "filter_string"
-	filterLabelsPropName = "filter_labels"
+	filterRegexPropName  = "filter_regex"
+	filterLabelsPropName = "labels"
 	attributePropName    = "attribute"
 	keyPropName          = "key"
 	valuePropName        = "value"
 )
 
-type stringFilter struct {
-	Attribute string
-	Value     string
-}
+func createStrFilterFuncs(stringFilterProp interface{}, match matchFunc) []filterFunc {
+	set := stringFilterProp.(*schema.Set)
 
-type labelFilter struct {
-	Key   string
-	Value string
-}
-
-func buildStringFilters(set *schema.Set) []stringFilter {
-	var filters []stringFilter
+	var filters []filterFunc
 
 	for _, v := range set.List() {
 		m := v.(map[string]interface{})
 
-		filters = append(filters,
-			stringFilter{
-				Attribute: m[attributePropName].(string),
-				Value:     m[valuePropName].(string),
-			},
-		)
+		filters = append(filters, createStrFilterFunc(m[attributePropName].(string), m[valuePropName].(string), match))
 	}
 
 	return filters
 }
 
-func buildLabelFilters(set *schema.Set) []labelFilter {
-	var filters []labelFilter
-
-	for _, v := range set.List() {
-		m := v.(map[string]interface{})
-
-		filters = append(filters,
-			labelFilter{
-				Key:   m[keyPropName].(string),
-				Value: m[valuePropName].(string),
+func filterStringSchema() *schema.Schema {
+	return &schema.Schema{
+		Type:     schema.TypeSet,
+		Optional: true,
+		Elem: &schema.Resource{
+			Schema: map[string]*schema.Schema{
+				attributePropName: {
+					Type:     schema.TypeString,
+					Required: true,
+				},
+				valuePropName: {
+					Type:     schema.TypeString,
+					Required: true,
+				},
 			},
-		)
+		},
 	}
+}
 
-	return filters
+func filterLabelsSchema() *schema.Schema {
+	return &schema.Schema{
+		Type:     schema.TypeMap,
+		Elem:     &schema.Schema{Type: schema.TypeString},
+		Optional: true,
+	}
 }
 
 func dataSourceComputeInstanceList() *schema.Resource {
@@ -81,11 +80,94 @@ func dataSourceComputeInstanceList() *schema.Resource {
 				},
 			},
 			filterStringPropName: filterStringSchema(),
+			filterRegexPropName:  filterStringSchema(),
 			filterLabelsPropName: filterLabelsSchema(),
 		},
 
 		ReadContext: dataSourceComputeInstanceListRead,
 	}
+}
+
+type filterFunc = func(map[string]interface{}) bool
+
+type matchFunc = func(string, string) bool
+
+func matchExact(given, expected string) bool {
+	return given == expected
+}
+
+func matchRegex(given, expectedRegex string) bool {
+	r, err := regexp.Compile(expectedRegex)
+	if err != nil {
+		// TODO terraform error
+		panic(err)
+	}
+
+	return r.MatchString(given)
+}
+
+func createStrFilterFunc(filterAttribute, filterValue string, match matchFunc) filterFunc {
+	return func(data map[string]interface{}) bool {
+		attr, ok := data[filterAttribute]
+		if !ok {
+			return false
+		}
+
+		switch v := attr.(type) {
+		case string:
+			if match(v, filterValue) {
+				return true
+			}
+		case *string:
+			if match(*v, filterValue) {
+				return true
+			}
+		}
+
+		return false
+	}
+}
+
+func createLabelFilterFunc(labelsFilterProp interface{}) filterFunc {
+	labelsFilter := make(map[string]string)
+	labels := labelsFilterProp.(map[string]interface{})
+	for k, v := range labels {
+		labelsFilter[k] = v.(string)
+	}
+
+	return func(data map[string]interface{}) bool {
+		labelsAttr, ok := data["labels"]
+		if !ok {
+			return false
+		}
+
+		labels, isMap := labelsAttr.(map[string]string)
+		if !isMap {
+			// TODO
+			// tflog.Info(ctx, fmt.Sprintf("attribute of compute instance has unexpected type %T for labels", labelsAttr))
+
+			return false
+		}
+
+		for filterKey, filterValue := range labelsFilter {
+			value, ok := labels[filterKey]
+			if !ok || value != filterValue {
+				return false
+			}
+		}
+
+		return true
+	}
+}
+
+func checkForMatch(data map[string]interface{}, filters []filterFunc) bool {
+	for _, filter := range filters {
+		if filter(data) {
+			return true
+		}
+	}
+
+	return false
 }
 
 func dataSourceComputeInstanceListRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -113,16 +195,21 @@ func dataSourceComputeInstanceListRead(ctx context.Context, d *schema.ResourceDa
 	ids := make([]string, 0, len(instances))
 	instanceTypes := map[string]string{}
 
-	var strFilters []stringFilter
+	var filters []filterFunc
+
 	strFilterProp, stringFiltersSpecified := d.GetOk(filterStringPropName)
 	if stringFiltersSpecified {
-		strFilters = buildStringFilters(strFilterProp.(*schema.Set))
+		filters = append(filters, createStrFilterFuncs(strFilterProp, matchExact)...)
 	}
 
-	var labelsFilters []labelFilter
+	regexFilterProp, regexFiltersSpecified := d.GetOk(filterRegexPropName)
+	if regexFiltersSpecified {
+		filters = append(filters, createStrFilterFuncs(regexFilterProp, matchRegex)...)
+	}
+
 	labelsFilterProp, labelFiltersSpecified := d.GetOk(filterLabelsPropName)
 	if labelFiltersSpecified {
-		labelsFilters = buildLabelFilters(labelsFilterProp.(*schema.Set))
+		filters = append(filters, createLabelFilterFunc(labelsFilterProp))
 	}
 
 	for _, item := range instances {
@@ -174,54 +261,7 @@ func dataSourceComputeInstanceListRead(ctx context.Context, d *schema.ResourceDa
 			instanceData[dsComputeInstanceAttrType] = instanceTypes[tid]
 		}
 
-		matched := false
-
-		if stringFiltersSpecified {
-			for _, filter := range strFilters {
-				instanceAttr, ok := instanceData[filter.Attribute]
-				if !ok {
-					continue
-				}
-
-				switch v := instanceAttr.(type) {
-				case string:
-					if v == filter.Value {
-						matched = true
-					}
-				case *string:
-					if *v == filter.Value {
-						matched = true
-					}
-				}
-			}
-		}
-
-		if !matched && labelFiltersSpecified {
-			labelsAttr, ok := instanceData["labels"]
-			if !ok {
-				continue
-			}
-
-			labels, isMap := labelsAttr.(map[string]string)
-			if !isMap {
-				tflog.Info(ctx, fmt.Sprintf("attribute of compute instance has unexpected type %T for labels", labelsAttr))
-
-				continue
-			}
-
-			for _, filter := range labelsFilters {
-				value, ok := labels[filter.Key]
-				if !ok {
-					continue
-				}
-
-				if value == filter.Value {
-					matched = true
-				}
-			}
-		}
-
-		if !matched {
+		if !checkForMatch(instanceData, filters) {
 			continue
 		}
 
@@ -244,42 +284,4 @@ func dataSourceComputeInstanceListRead(ctx context.Context, d *schema.ResourceDa
 	})
 
 	return nil
-}
-
-func filterStringSchema() *schema.Schema {
-	return &schema.Schema{
-		Type:     schema.TypeSet,
-		Optional: true,
-		Elem: &schema.Resource{
-			Schema: map[string]*schema.Schema{
-				attributePropName: {
-					Type:     schema.TypeString,
-					Required: true,
-				},
-				valuePropName: {
-					Type:     schema.TypeString,
-					Required: true,
-				},
-			},
-		},
-	}
-}
-
-func filterLabelsSchema() *schema.Schema {
-	return &schema.Schema{
-		Type:     schema.TypeSet,
-		Optional: true,
-		Elem: &schema.Resource{
-			Schema: map[string]*schema.Schema{
-				keyPropName: {
-					Type:     schema.TypeString,
-					Required: true,
-				},
-				valuePropName: {
-					Type:     schema.TypeString,
-					Required: true,
-				},
-			},
-		},
-	}
 }
