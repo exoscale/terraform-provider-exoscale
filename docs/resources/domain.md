@@ -42,12 +42,11 @@ In addition to the arguments listed above, the following attributes are exported
 
 ## Import
 
-An existing DNS domain may be imported by `<name>`:
+An existing DNS domain may be imported by `ID`:
 
 ```console
 $ terraform import \
   exoscale_domain.my_domain \
-  my.domain
+  89083a5c-b648-474a-0000-0000000f67bd
 ```
 
-~> **NOTE:** importing an `exoscale_domain` resource will also import all related `exoscale_domain_record` resources (except `NS` and `SOA`).

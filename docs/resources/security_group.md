@@ -52,5 +52,3 @@ $ terraform import \
   exoscale_security_group.my_security_group \
   f81d4fae-7dec-11d0-a765-00a0c91e6bf6
 ```
-
-~> **NOTE:** Importing a `exoscale_security_group` resource also imports related `exoscale_security_group_rule` resources.

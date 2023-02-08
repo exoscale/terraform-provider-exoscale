@@ -65,4 +65,3 @@ $ terraform import \
   f81d4fae-7dec-11d0-a765-00a0c91e6bf6
 ```
 
-~> **NOTE:** importing an `exoscale_domain` resource will also import all related `exoscale_domain_record` resources (except `NS` and `SOA`).

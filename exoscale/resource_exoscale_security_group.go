@@ -276,27 +276,7 @@ func resourceSecurityGroupImport(
 		return nil, err
 	}
 
-	resources := make([]*schema.ResourceData, 0)
-	resources = append(resources, d)
-
-	for _, securityGroupRule := range securityGroup.Rules {
-		resource := resourceSecurityGroupRule()
-		rd := resource.Data(nil)
-		rd.SetType("exoscale_security_group_rule")
-		rd.SetId(*securityGroupRule.ID)
-
-		if err := rd.Set(resSecurityGroupRuleAttrFlowDirection, strings.ToUpper(*securityGroupRule.FlowDirection)); err != nil {
-			return nil, err
-		}
-
-		if err := resourceSecurityGroupRuleApply(ctx, rd, meta, securityGroup, securityGroupRule); err != nil {
-			return nil, err
-		}
-
-		resources = append(resources, rd)
-	}
-
-	return resources, nil
+	return []*schema.ResourceData{d}, nil
 }
 
 func resourceSecurityGroupApply(
