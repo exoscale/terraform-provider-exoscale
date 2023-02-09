@@ -24,7 +24,11 @@ const (
 	valuePropName        = "value"
 )
 
-func createStrFilterFuncs(stringFilterProp interface{}, match matchFunc) []filterFunc {
+type matchStringFunc = func(given string) bool
+
+type createStringMatchFunc = func(filterValue string) (matchStringFunc, error)
+
+func createStringFilterFuncs(stringFilterProp interface{}, createMatch createStringMatchFunc) ([]filterFunc, error) {
 	set := stringFilterProp.(*schema.Set)
 
 	var filters []filterFunc
@@ -32,10 +36,15 @@ func createStrFilterFuncs(stringFilterProp interface{}, match matchFunc) []filte
 	for _, v := range set.List() {
 		m := v.(map[string]interface{})
 
-		filters = append(filters, createStrFilterFunc(m[attributePropName].(string), m[valuePropName].(string), match))
+		match, err := createMatch(m[valuePropName].(string))
+		if err != nil {
+			return nil, err
+		}
+
+		filters = append(filters, createStrFilterFunc(m[attributePropName].(string), match))
 	}
 
-	return filters
+	return filters, nil
 }
 
 func filterStringSchema() *schema.Schema {
@@ -90,23 +99,24 @@ func dataSourceComputeInstanceList() *schema.Resource {
 
 type filterFunc = func(map[string]interface{}) bool
 
-type matchFunc = func(string, string) bool
-
-func matchExact(given, expected string) bool {
-	return given == expected
+func matchExact(expected string) (matchStringFunc, error) {
+	return func(given string) bool {
+		return given == expected
+	}, nil
 }
 
-func matchRegex(given, expectedRegex string) bool {
+func matchRegex(expectedRegex string) (matchStringFunc, error) {
 	r, err := regexp.Compile(expectedRegex)
 	if err != nil {
-		// TODO terraform error
-		panic(err)
+		return nil, err
 	}
 
-	return r.MatchString(given)
+	return func(given string) bool {
+		return r.MatchString(given)
+	}, nil
 }
 
-func createStrFilterFunc(filterAttribute, filterValue string, match matchFunc) filterFunc {
+func createStrFilterFunc(filterAttribute string, match matchStringFunc) filterFunc {
 	return func(data map[string]interface{}) bool {
 		attr, ok := data[filterAttribute]
 		if !ok {
@@ -115,11 +125,11 @@ func createStrFilterFunc(filterAttribute, filterValue string, match matchFunc) f
 
 		switch v := attr.(type) {
 		case string:
-			if match(v, filterValue) {
+			if match(v) {
 				return true
 			}
 		case *string:
-			if match(*v, filterValue) {
+			if match(*v) {
 				return true
 			}
 		}
@@ -128,7 +138,7 @@ func createStrFilterFunc(filterAttribute, filterValue string, match matchFunc) f
 	}
 }
 
-func createLabelFilterFunc(labelsFilterProp interface{}) filterFunc {
+func createLabelFilterFunc(ctx context.Context, labelsFilterProp interface{}) filterFunc {
 	labelsFilter := make(map[string]string)
 	labels := labelsFilterProp.(map[string]interface{})
 	for k, v := range labels {
@@ -143,8 +153,7 @@ func createLabelFilterFunc(labelsFilterProp interface{}) filterFunc {
 
 		labels, isMap := labelsAttr.(map[string]string)
 		if !isMap {
-			// TODO
-			// tflog.Info(ctx, fmt.Sprintf("attribute of compute instance has unexpected type %T for labels", labelsAttr))
+			tflog.Info(ctx, fmt.Sprintf("attribute of compute instance has unexpected type %T for labels", labelsAttr))
 
 			return false
 		}
@@ -199,17 +208,27 @@ func dataSourceComputeInstanceListRead(ctx context.Context, d *schema.ResourceDa
 
 	strFilterProp, stringFiltersSpecified := d.GetOk(filterStringPropName)
 	if stringFiltersSpecified {
-		filters = append(filters, createStrFilterFuncs(strFilterProp, matchExact)...)
+		newFilters, err := createStringFilterFuncs(strFilterProp, matchExact)
+		if err != nil {
+			return diag.Errorf("failed to create filter: %w", err)
+		}
+
+		filters = append(filters, newFilters...)
 	}
 
 	regexFilterProp, regexFiltersSpecified := d.GetOk(filterRegexPropName)
 	if regexFiltersSpecified {
-		filters = append(filters, createStrFilterFuncs(regexFilterProp, matchRegex)...)
+		newFilters, err := createStringFilterFuncs(regexFilterProp, matchRegex)
+		if err != nil {
+			return diag.Errorf("failed to create filter: %w", err)
+		}
+
+		filters = append(filters, newFilters...)
 	}
 
 	labelsFilterProp, labelFiltersSpecified := d.GetOk(filterLabelsPropName)
 	if labelFiltersSpecified {
-		filters = append(filters, createLabelFilterFunc(labelsFilterProp))
+		filters = append(filters, createLabelFilterFunc(ctx, labelsFilterProp))
 	}
 
 	for _, item := range instances {
