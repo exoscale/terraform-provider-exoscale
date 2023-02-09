@@ -60,7 +60,7 @@ resource "exoscale_compute_instance" "my_small_instance" {
 data "exoscale_compute_instance_list" "small_instances" {
   zone = "ch-gva-2"
 
-  filter_regex {
+  regex_match {
     attribute = "name"
     match     = ".*big.*"
   }
