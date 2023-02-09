@@ -62,7 +62,7 @@ data "exoscale_compute_instance_list" "small_instances" {
 
   filter_regex {
     attribute = "name"
-    value     = ".*big.*"
+    match     = ".*big.*"
   }
 
   labels = {

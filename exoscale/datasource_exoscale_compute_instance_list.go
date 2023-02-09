@@ -20,8 +20,7 @@ const (
 	filterRegexPropName  = "filter_regex"
 	filterLabelsPropName = "labels"
 	attributePropName    = "attribute"
-	keyPropName          = "key"
-	valuePropName        = "value"
+	matchPropName        = "match"
 )
 
 type matchStringFunc = func(given string) bool
@@ -36,12 +35,12 @@ func createStringFilterFuncs(stringFilterProp interface{}, createMatch createStr
 	for _, v := range set.List() {
 		m := v.(map[string]interface{})
 
-		match, err := createMatch(m[valuePropName].(string))
+		match, err := createMatch(m[matchPropName].(string))
 		if err != nil {
 			return nil, err
 		}
 
-		filters = append(filters, createStrFilterFunc(m[attributePropName].(string), match))
+		filters = append(filters, createStringFilterFunc(m[attributePropName].(string), match))
 	}
 
 	return filters, nil
@@ -57,7 +56,7 @@ func filterStringSchema() *schema.Schema {
 					Type:     schema.TypeString,
 					Required: true,
 				},
-				valuePropName: {
+				matchPropName: {
 					Type:     schema.TypeString,
 					Required: true,
 				},
@@ -99,13 +98,13 @@ func dataSourceComputeInstanceList() *schema.Resource {
 
 type filterFunc = func(map[string]interface{}) bool
 
-func matchExact(expected string) (matchStringFunc, error) {
+func createExactMatchStringFunc(expected string) (matchStringFunc, error) {
 	return func(given string) bool {
 		return given == expected
 	}, nil
 }
 
-func matchRegex(expectedRegex string) (matchStringFunc, error) {
+func createRegexMatchStringFunc(expectedRegex string) (matchStringFunc, error) {
 	r, err := regexp.Compile(expectedRegex)
 	if err != nil {
 		return nil, err
@@ -116,7 +115,7 @@ func matchRegex(expectedRegex string) (matchStringFunc, error) {
 	}, nil
 }
 
-func createStrFilterFunc(filterAttribute string, match matchStringFunc) filterFunc {
+func createStringFilterFunc(filterAttribute string, match matchStringFunc) filterFunc {
 	return func(data map[string]interface{}) bool {
 		attr, ok := data[filterAttribute]
 		if !ok {
@@ -208,9 +207,9 @@ func dataSourceComputeInstanceListRead(ctx context.Context, d *schema.ResourceDa
 
 	strFilterProp, stringFiltersSpecified := d.GetOk(filterStringPropName)
 	if stringFiltersSpecified {
-		newFilters, err := createStringFilterFuncs(strFilterProp, matchExact)
+		newFilters, err := createStringFilterFuncs(strFilterProp, createExactMatchStringFunc)
 		if err != nil {
-			return diag.Errorf("failed to create filter: %w", err)
+			return diag.Errorf("failed to create filter: %q", err)
 		}
 
 		filters = append(filters, newFilters...)
@@ -218,9 +217,9 @@ func dataSourceComputeInstanceListRead(ctx context.Context, d *schema.ResourceDa
 
 	regexFilterProp, regexFiltersSpecified := d.GetOk(filterRegexPropName)
 	if regexFiltersSpecified {
-		newFilters, err := createStringFilterFuncs(regexFilterProp, matchRegex)
+		newFilters, err := createStringFilterFuncs(regexFilterProp, createRegexMatchStringFunc)
 		if err != nil {
-			return diag.Errorf("failed to create filter: %w", err)
+			return diag.Errorf("failed to create filter: %q", err)
 		}
 
 		filters = append(filters, newFilters...)

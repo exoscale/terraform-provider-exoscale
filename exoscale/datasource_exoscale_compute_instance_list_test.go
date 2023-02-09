@@ -7,6 +7,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
@@ -86,6 +87,58 @@ data "exoscale_compute_instance_list" "test" {
 			},
 		},
 	})
+}
+
+func TestComputeInsanceListFilterString(t *testing.T) {
+	attributeToMatch := "my-test-attr"
+
+	dataToFilter := map[string]interface{}{
+		attributeToMatch: "string-to-match",
+	}
+
+	filterItem := map[string]interface{}{
+		attributePropName: attributeToMatch,
+		matchPropName:     "string-to-match",
+	}
+	schemaFunc := func(interface{}) int {
+		return 1
+	}
+	stringFilterProp := schema.NewSet(schemaFunc, []interface{}{filterItem})
+
+	filters, err := createStringFilterFuncs(stringFilterProp, createExactMatchStringFunc)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !checkForMatch(dataToFilter, filters) {
+		t.Error("should match")
+	}
+}
+
+func TestComputeInsanceListFilterRegex(t *testing.T) {
+	attributeToMatch := "my-test-attr"
+
+	dataToFilter := map[string]interface{}{
+		attributeToMatch: "string-123-to-match-by-regex",
+	}
+
+	filterItem := map[string]interface{}{
+		attributePropName: attributeToMatch,
+		matchPropName:     ".*123.*",
+	}
+	schemaFunc := func(interface{}) int {
+		return 1
+	}
+	stringFilterProp := schema.NewSet(schemaFunc, []interface{}{filterItem})
+
+	filters, err := createStringFilterFuncs(stringFilterProp, createRegexMatchStringFunc)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !checkForMatch(dataToFilter, filters) {
+		t.Error("should match")
+	}
 }
 
 func testAccDataSourceComputeInstanceListAttributes(ds string, expected testAttrs) resource.TestCheckFunc {
