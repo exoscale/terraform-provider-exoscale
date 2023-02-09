@@ -17,7 +17,7 @@ import (
 
 const (
 	filterStringPropName = "filter_string"
-	filterRegexPropName  = "filter_regex"
+	filterRegexPropName  = "regex_match"
 	filterLabelsPropName = "labels"
 	attributePropName    = "attribute"
 	matchPropName        = "match"
