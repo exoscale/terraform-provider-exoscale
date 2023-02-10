@@ -276,7 +276,7 @@ func dataSourceComputeInstanceListRead(ctx context.Context, d *schema.ResourceDa
 			instanceData[dsComputeInstanceAttrType] = instanceTypes[tid]
 		}
 
-		if !checkForMatch(instanceData, filters) {
+		if len(filters) > 0 && !checkForMatch(instanceData, filters) {
 			continue
 		}
 
