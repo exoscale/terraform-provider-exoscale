@@ -17,7 +17,6 @@ import (
 
 const (
 	filterStringPropName = "match"
-	filterRegexPropName  = "regex_match"
 	filterLabelsPropName = "labels"
 	attributePropName    = "attribute"
 	matchPropName        = "match"
@@ -25,9 +24,25 @@ const (
 
 type matchStringFunc = func(given string) bool
 
-type createStringMatchFunc = func(filterValue string) (matchStringFunc, error)
+func createMatchStringFunc(expected string) (matchStringFunc, error) {
+	lenExp := len(expected)
+	if lenExp > 1 && expected[0] == '/' && expected[lenExp-1] == '/' {
+		r, err := regexp.Compile(expected[1 : lenExp-1])
+		if err != nil {
+			return nil, err
+		}
 
-func createStringFilterFuncs(stringFilterProp interface{}, createMatch createStringMatchFunc) ([]filterFunc, error) {
+		return func(given string) bool {
+			return r.MatchString(given)
+		}, nil
+	}
+
+	return func(given string) bool {
+		return given == expected
+	}, nil
+}
+
+func createStringFilterFuncs(stringFilterProp interface{}) ([]filterFunc, error) {
 	set := stringFilterProp.(*schema.Set)
 
 	var filters []filterFunc
@@ -35,7 +50,7 @@ func createStringFilterFuncs(stringFilterProp interface{}, createMatch createStr
 	for _, v := range set.List() {
 		m := v.(map[string]interface{})
 
-		match, err := createMatch(m[matchPropName].(string))
+		match, err := createMatchStringFunc(m[matchPropName].(string))
 		if err != nil {
 			return nil, err
 		}
@@ -88,7 +103,6 @@ func dataSourceComputeInstanceList() *schema.Resource {
 				},
 			},
 			filterStringPropName: filterStringSchema(),
-			filterRegexPropName:  filterStringSchema(),
 			filterLabelsPropName: filterLabelsSchema(),
 		},
 
@@ -97,23 +111,6 @@ func dataSourceComputeInstanceList() *schema.Resource {
 }
 
 type filterFunc = func(map[string]interface{}) bool
-
-func createExactMatchStringFunc(expected string) (matchStringFunc, error) {
-	return func(given string) bool {
-		return given == expected
-	}, nil
-}
-
-func createRegexMatchStringFunc(expectedRegex string) (matchStringFunc, error) {
-	r, err := regexp.Compile(expectedRegex)
-	if err != nil {
-		return nil, err
-	}
-
-	return func(given string) bool {
-		return r.MatchString(given)
-	}, nil
-}
 
 func createStringFilterFunc(filterAttribute string, match matchStringFunc) filterFunc {
 	return func(data map[string]interface{}) bool {
@@ -137,11 +134,16 @@ func createStringFilterFunc(filterAttribute string, match matchStringFunc) filte
 	}
 }
 
-func createLabelFilterFunc(ctx context.Context, labelsFilterProp interface{}) filterFunc {
-	labelsFilter := make(map[string]string)
+func createLabelFilterFunc(ctx context.Context, labelsFilterProp interface{}) (filterFunc, error) {
+	labelFilters := make(map[string]matchStringFunc)
 	labels := labelsFilterProp.(map[string]interface{})
 	for k, v := range labels {
-		labelsFilter[k] = v.(string)
+		filter, err := createMatchStringFunc(v.(string))
+		if err != nil {
+			return nil, err
+		}
+
+		labelFilters[k] = filter
 	}
 
 	return func(data map[string]interface{}) bool {
@@ -157,15 +159,15 @@ func createLabelFilterFunc(ctx context.Context, labelsFilterProp interface{}) fi
 			return false
 		}
 
-		for filterKey, filterValue := range labelsFilter {
+		for filterKey, filterValue := range labelFilters {
 			value, ok := labels[filterKey]
-			if !ok || value != filterValue {
+			if !ok || !filterValue(value) {
 				return false
 			}
 		}
 
 		return true
-	}
+	}, nil
 }
 
 func checkForMatch(data map[string]interface{}, filters []filterFunc) bool {
@@ -207,17 +209,7 @@ func dataSourceComputeInstanceListRead(ctx context.Context, d *schema.ResourceDa
 
 	strFilterProp, stringFiltersSpecified := d.GetOk(filterStringPropName)
 	if stringFiltersSpecified {
-		newFilters, err := createStringFilterFuncs(strFilterProp, createExactMatchStringFunc)
-		if err != nil {
-			return diag.Errorf("failed to create filter: %q", err)
-		}
-
-		filters = append(filters, newFilters...)
-	}
-
-	regexFilterProp, regexFiltersSpecified := d.GetOk(filterRegexPropName)
-	if regexFiltersSpecified {
-		newFilters, err := createStringFilterFuncs(regexFilterProp, createRegexMatchStringFunc)
+		newFilters, err := createStringFilterFuncs(strFilterProp)
 		if err != nil {
 			return diag.Errorf("failed to create filter: %q", err)
 		}
@@ -227,7 +219,12 @@ func dataSourceComputeInstanceListRead(ctx context.Context, d *schema.ResourceDa
 
 	labelsFilterProp, labelFiltersSpecified := d.GetOk(filterLabelsPropName)
 	if labelFiltersSpecified {
-		filters = append(filters, createLabelFilterFunc(ctx, labelsFilterProp))
+		newFilter, err := createLabelFilterFunc(ctx, labelsFilterProp)
+		if err != nil {
+			return diag.Errorf("failed to create filter: %q", err)
+		}
+
+		filters = append(filters, newFilter)
 	}
 
 	for _, item := range instances {

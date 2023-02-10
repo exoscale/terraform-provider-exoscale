@@ -22,13 +22,13 @@ data "exoscale_compute_instance_list" "my_compute_instance_list" {
     match     = "standard.micro"
   }
 
-  regex_match {
+  match {
     attribute = "name"
-    match     = ".*ubuntu.*"
+    match     = "/.*ubuntu.*/"
   }
 
   labels = {
-    "customer" = "big-bank"
+    "customer" = "/.*bank.*/"
     "contract" = "premium-support"
   }
 }
@@ -49,17 +49,12 @@ directory for complete configuration examples.
 [zone]: https://www.exoscale.com/datacenters/
 
 * `zone` - (Required) The Exoscale [Zone][zone] name.
-* `match` - (Block) Filter instances by exactly matching a string attribute of the instances. Structure is documented below.
-* `regex_match` - (Block) Filter instances by regex matching a string attribute of the instances. Structure is documented below.
+* `match` - (Block) Filter instances by matching a string attribute of the instances. Structure is documented below.
 * `labels` - A map of key/value labels to match.
 
 ### `match` block
 * `attribute` - (Required) String attribute of [exoscale_compute_instance](./compute_instance.md) to match against.
-* `match` - (Required) String that should be matched.
-
-### `regex_match` block
-* `attribute` - (Required) String attribute of [exoscale_compute_instance](./compute_instance.md) to match against.
-* `match` - (Required) Regex string that should be matched.
+* `match` - (Required) String that should be matched. If you supply a string that starts and ends with '/' it will be matched as a regex, otherwise an exact match will be performed.
 
 ## Atributes Reference
 

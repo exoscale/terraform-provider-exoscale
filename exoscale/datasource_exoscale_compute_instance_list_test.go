@@ -1,6 +1,7 @@
 package exoscale
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"testing"
@@ -89,7 +90,7 @@ data "exoscale_compute_instance_list" "test" {
 	})
 }
 
-func TestComputeInsanceListFilterString(t *testing.T) {
+func TestComputeInstanceListFilterString(t *testing.T) {
 	attributeToMatch := "my-test-attr"
 
 	dataToFilter := map[string]interface{}{
@@ -105,7 +106,7 @@ func TestComputeInsanceListFilterString(t *testing.T) {
 	}
 	stringFilterProp := schema.NewSet(schemaFunc, []interface{}{filterItem})
 
-	filters, err := createStringFilterFuncs(stringFilterProp, createExactMatchStringFunc)
+	filters, err := createStringFilterFuncs(stringFilterProp)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -115,7 +116,7 @@ func TestComputeInsanceListFilterString(t *testing.T) {
 	}
 }
 
-func TestComputeInsanceListFilterRegex(t *testing.T) {
+func TestComputeInstanceListFilterRegex(t *testing.T) {
 	attributeToMatch := "my-test-attr"
 
 	dataToFilter := map[string]interface{}{
@@ -124,19 +125,67 @@ func TestComputeInsanceListFilterRegex(t *testing.T) {
 
 	filterItem := map[string]interface{}{
 		attributePropName: attributeToMatch,
-		matchPropName:     ".*123.*",
+		matchPropName:     "/.*123.*/",
 	}
+
 	schemaFunc := func(interface{}) int {
 		return 1
 	}
+
 	stringFilterProp := schema.NewSet(schemaFunc, []interface{}{filterItem})
 
-	filters, err := createStringFilterFuncs(stringFilterProp, createRegexMatchStringFunc)
+	filters, err := createStringFilterFuncs(stringFilterProp)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	if !checkForMatch(dataToFilter, filters) {
+		t.Error("should match")
+	}
+}
+
+func TestComputeInstanceListFilterLabelsExactly(t *testing.T) {
+	labelToMatch := "my-label"
+
+	dataToFilter := map[string]interface{}{
+		"labels": map[string]string{
+			labelToMatch: "label-string-to-match",
+		},
+	}
+
+	labelsFilterProp := map[string]interface{}{
+		labelToMatch: "label-string-to-match",
+	}
+
+	filter, err := createLabelFilterFunc(context.Background(), labelsFilterProp)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !checkForMatch(dataToFilter, []filterFunc{filter}) {
+		t.Error("should match")
+	}
+}
+
+func TestComputeInstanceListFilterLabelsRegex(t *testing.T) {
+	labelToMatch := "my-label"
+
+	dataToFilter := map[string]interface{}{
+		"labels": map[string]string{
+			labelToMatch: "label-string-to-match",
+		},
+	}
+
+	labelsFilterProp := map[string]interface{}{
+		labelToMatch: "/.*-to.*-/",
+	}
+
+	filter, err := createLabelFilterFunc(context.Background(), labelsFilterProp)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !checkForMatch(dataToFilter, []filterFunc{filter}) {
 		t.Error("should match")
 	}
 }
