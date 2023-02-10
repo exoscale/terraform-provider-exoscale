@@ -8,7 +8,6 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
@@ -92,54 +91,40 @@ data "exoscale_compute_instance_list" "test" {
 
 func TestComputeInstanceListFilterString(t *testing.T) {
 	attributeToMatch := "my-test-attr"
+	valueToMatch := "string-to-match"
 
 	dataToFilter := map[string]interface{}{
-		attributeToMatch: "string-to-match",
+		attributeToMatch: valueToMatch,
 	}
 
-	filterItem := map[string]interface{}{
-		attributePropName: attributeToMatch,
-		matchPropName:     "string-to-match",
-	}
-	schemaFunc := func(interface{}) int {
-		return 1
-	}
-	stringFilterProp := schema.NewSet(schemaFunc, []interface{}{filterItem})
-
-	filters, err := createStringFilterFuncs(stringFilterProp)
+	matchFn, err := createMatchStringFunc(valueToMatch)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if !checkForMatch(dataToFilter, filters) {
+	filter := createStringFilterFunc(attributeToMatch, matchFn)
+
+	if !checkForMatch(dataToFilter, []filterFunc{filter}) {
 		t.Error("should match")
 	}
 }
 
 func TestComputeInstanceListFilterRegex(t *testing.T) {
 	attributeToMatch := "my-test-attr"
+	valueToMatch := "string-123-to-match-by-regex"
 
 	dataToFilter := map[string]interface{}{
-		attributeToMatch: "string-123-to-match-by-regex",
+		attributeToMatch: valueToMatch,
 	}
 
-	filterItem := map[string]interface{}{
-		attributePropName: attributeToMatch,
-		matchPropName:     "/.*123.*/",
-	}
-
-	schemaFunc := func(interface{}) int {
-		return 1
-	}
-
-	stringFilterProp := schema.NewSet(schemaFunc, []interface{}{filterItem})
-
-	filters, err := createStringFilterFuncs(stringFilterProp)
+	matchFn, err := createMatchStringFunc("/.*123.*/")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if !checkForMatch(dataToFilter, filters) {
+	filter := createStringFilterFunc(attributeToMatch, matchFn)
+
+	if !checkForMatch(dataToFilter, []filterFunc{filter}) {
 		t.Error("should match")
 	}
 }

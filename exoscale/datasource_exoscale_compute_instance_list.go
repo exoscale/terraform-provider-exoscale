@@ -42,41 +42,10 @@ func createMatchStringFunc(expected string) (matchStringFunc, error) {
 	}, nil
 }
 
-func createStringFilterFuncs(stringFilterProp interface{}) ([]filterFunc, error) {
-	set := stringFilterProp.(*schema.Set)
-
-	var filters []filterFunc
-
-	for _, v := range set.List() {
-		m := v.(map[string]interface{})
-
-		match, err := createMatchStringFunc(m[matchPropName].(string))
-		if err != nil {
-			return nil, err
-		}
-
-		filters = append(filters, createStringFilterFunc(m[attributePropName].(string), match))
-	}
-
-	return filters, nil
-}
-
 func filterStringSchema() *schema.Schema {
 	return &schema.Schema{
-		Type:     schema.TypeSet,
+		Type:     schema.TypeString,
 		Optional: true,
-		Elem: &schema.Resource{
-			Schema: map[string]*schema.Schema{
-				attributePropName: {
-					Type:     schema.TypeString,
-					Required: true,
-				},
-				matchPropName: {
-					Type:     schema.TypeString,
-					Required: true,
-				},
-			},
-		},
 	}
 }
 
@@ -89,12 +58,8 @@ func filterLabelsSchema() *schema.Schema {
 }
 
 func dataSourceComputeInstanceList() *schema.Resource {
-	return &schema.Resource{
+	ret := &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			dsComputeInstanceAttrZone: {
-				Type:     schema.TypeString,
-				Required: true,
-			},
 			"instances": {
 				Type:     schema.TypeList,
 				Computed: true,
@@ -102,12 +67,20 @@ func dataSourceComputeInstanceList() *schema.Resource {
 					Schema: getDataSourceComputeInstanceSchema(),
 				},
 			},
-			filterStringPropName: filterStringSchema(),
 			filterLabelsPropName: filterLabelsSchema(),
 		},
 
 		ReadContext: dataSourceComputeInstanceListRead,
 	}
+
+	computeInstanceSchema := getDataSourceComputeInstanceSchema()
+	for k, v := range computeInstanceSchema {
+		if v.Type == schema.TypeString {
+			ret.Schema[k] = filterStringSchema()
+		}
+	}
+
+	return ret
 }
 
 type filterFunc = func(map[string]interface{}) bool
@@ -207,14 +180,25 @@ func dataSourceComputeInstanceListRead(ctx context.Context, d *schema.ResourceDa
 
 	var filters []filterFunc
 
-	strFilterProp, stringFiltersSpecified := d.GetOk(filterStringPropName)
-	if stringFiltersSpecified {
-		newFilters, err := createStringFilterFuncs(strFilterProp)
+	computeInstanceSchema := getDataSourceComputeInstanceSchema()
+	for argIdentifier, argSpec := range computeInstanceSchema {
+		if argIdentifier == dsComputeInstanceAttrZone || argSpec.Type != schema.TypeString {
+			continue
+		}
+
+		argValue, ok := d.GetOk(argIdentifier)
+		if !ok {
+			continue
+		}
+
+		matchFn, err := createMatchStringFunc(argValue.(string))
 		if err != nil {
 			return diag.Errorf("failed to create filter: %q", err)
 		}
 
-		filters = append(filters, newFilters...)
+		newFilterFunc := createStringFilterFunc(argIdentifier, matchFn)
+
+		filters = append(filters, newFilterFunc)
 	}
 
 	labelsFilterProp, labelFiltersSpecified := d.GetOk(filterLabelsPropName)
