@@ -49,7 +49,7 @@ func optionalAttribute(typ schema.ValueType) *schema.Schema {
 	}
 }
 
-func filterLabelsSchema() *schema.Schema {
+func optionalMapOfStrToStrAtribute() *schema.Schema {
 	return &schema.Schema{
 		Type:     schema.TypeMap,
 		Elem:     &schema.Schema{Type: schema.TypeString},
@@ -67,7 +67,6 @@ func dataSourceComputeInstanceList() *schema.Resource {
 					Schema: getDataSourceComputeInstanceSchema(),
 				},
 			},
-			filterLabelsPropName: filterLabelsSchema(),
 		},
 
 		ReadContext: dataSourceComputeInstanceListRead,
@@ -77,6 +76,11 @@ func dataSourceComputeInstanceList() *schema.Resource {
 		switch attrSpec.Type {
 		case schema.TypeBool, schema.TypeInt, schema.TypeString:
 			ret.Schema[attrIdentifier] = optionalAttribute(attrSpec.Type)
+		case schema.TypeMap:
+			elem, ok := attrSpec.Elem.(*schema.Schema)
+			if ok && elem.Type == schema.TypeString {
+				ret.Schema[attrIdentifier] = optionalMapOfStrToStrAtribute()
+			}
 		}
 	}
 
@@ -129,33 +133,33 @@ func createStringFilterFunc(filterAttribute string, match matchStringFunc) filte
 	}
 }
 
-func createLabelFilterFunc(ctx context.Context, labelsFilterProp interface{}) (filterFunc, error) {
-	labelFilters := make(map[string]matchStringFunc)
-	labels := labelsFilterProp.(map[string]interface{})
-	for k, v := range labels {
+func createMapStrToStrFilterFunc(ctx context.Context, filterProp interface{}) (filterFunc, error) {
+	filters := make(map[string]matchStringFunc)
+	maps := filterProp.(map[string]interface{})
+	for k, v := range maps {
 		filter, err := createMatchStringFunc(v.(string))
 		if err != nil {
 			return nil, err
 		}
 
-		labelFilters[k] = filter
+		filters[k] = filter
 	}
 
 	return func(data map[string]interface{}) bool {
-		labelsAttr, ok := data["labels"]
+		mapAttr, ok := data["labels"]
 		if !ok {
 			return false
 		}
 
-		labels, isMap := labelsAttr.(map[string]string)
+		mapToFilter, isMap := mapAttr.(map[string]string)
 		if !isMap {
-			tflog.Info(ctx, fmt.Sprintf("attribute of compute instance has unexpected type %T for labels", labelsAttr))
+			tflog.Info(ctx, fmt.Sprintf("attribute of compute instance has unexpected type %T for labels", mapAttr))
 
 			return false
 		}
 
-		for filterKey, filterValue := range labelFilters {
-			value, ok := labels[filterKey]
+		for filterKey, filterValue := range filters {
+			value, ok := mapToFilter[filterKey]
 			if !ok || !filterValue(value) {
 				return false
 			}
@@ -215,19 +219,16 @@ func createFilters(ctx context.Context, d *schema.ResourceData) ([]filterFunc, e
 			}
 
 			filters = append(filters, newFilterFunc)
+		case schema.TypeMap:
+			newFilter, err := createMapStrToStrFilterFunc(ctx, argValue)
+			if err != nil {
+				return nil, err
+			}
+
+			filters = append(filters, newFilter)
 		default:
 			continue
 		}
-	}
-
-	labelsFilterProp, labelFiltersSpecified := d.GetOk(filterLabelsPropName)
-	if labelFiltersSpecified {
-		newFilter, err := createLabelFilterFunc(ctx, labelsFilterProp)
-		if err != nil {
-			return nil, err
-		}
-
-		filters = append(filters, newFilter)
 	}
 
 	return filters, nil
