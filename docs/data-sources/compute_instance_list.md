@@ -17,15 +17,9 @@ Corresponding resource: [exoscale_compute_instance](../resources/compute_instanc
 data "exoscale_compute_instance_list" "my_compute_instance_list" {
   zone = "ch-gva-2"
 
-  match {
-    attribute = "type"
-    match     = "standard.micro"
-  }
+  type = "standard.micro"
 
-  match {
-    attribute = "name"
-    match     = "/.*ubuntu.*/"
-  }
+  name = "/.*ubuntu.*/"
 
   labels = {
     "customer" = "/.*bank.*/"
@@ -49,12 +43,8 @@ directory for complete configuration examples.
 [zone]: https://www.exoscale.com/datacenters/
 
 * `zone` - (Required) The Exoscale [Zone][zone] name.
-* `match` - (Block) Filter instances by matching a string attribute of the instances. Structure is documented below.
-* `labels` - A map of key/value labels to match.
 
-### `match` block
-* `attribute` - (Required) String attribute of [exoscale_compute_instance](./compute_instance.md) to match against.
-* `match` - (Required) String that should be matched. If you supply a string that starts and ends with '/' it will be matched as a regex, otherwise an exact match will be performed.
+You may filter instances by any string, bool, int or map[string]string attribute of [exoscale_compute_instance](./compute_instance.md) as in the example above. If you supply a string that begins and ends with a "/" it will be matched as a regex. 
 
 ## Atributes Reference
 
