@@ -42,9 +42,9 @@ func createMatchStringFunc(expected string) (matchStringFunc, error) {
 	}, nil
 }
 
-func filterStringSchema() *schema.Schema {
+func optionalAttribute(typ schema.ValueType) *schema.Schema {
 	return &schema.Schema{
-		Type:     schema.TypeString,
+		Type:     typ,
 		Optional: true,
 	}
 }
@@ -73,10 +73,10 @@ func dataSourceComputeInstanceList() *schema.Resource {
 		ReadContext: dataSourceComputeInstanceListRead,
 	}
 
-	computeInstanceSchema := getDataSourceComputeInstanceSchema()
-	for k, v := range computeInstanceSchema {
-		if v.Type == schema.TypeString {
-			ret.Schema[k] = filterStringSchema()
+	for attrIdentifier, attrSpec := range getDataSourceComputeInstanceSchema() {
+		switch attrSpec.Type {
+		case schema.TypeBool, schema.TypeInt, schema.TypeString:
+			ret.Schema[attrIdentifier] = optionalAttribute(attrSpec.Type)
 		}
 	}
 
@@ -84,6 +84,28 @@ func dataSourceComputeInstanceList() *schema.Resource {
 }
 
 type filterFunc = func(map[string]interface{}) bool
+
+func createEqualityFilter[T comparable](argIdentifier string, expected T) (filterFunc, error) {
+	return func(data map[string]interface{}) bool {
+		attr, ok := data[argIdentifier]
+		if !ok {
+			return false
+		}
+
+		switch v := attr.(type) {
+		case T:
+			if v == expected {
+				return true
+			}
+		case *T:
+			if *v == expected {
+				return true
+			}
+		}
+
+		return false
+	}, nil
+}
 
 func createStringFilterFunc(filterAttribute string, match matchStringFunc) filterFunc {
 	return func(data map[string]interface{}) bool {
@@ -145,12 +167,70 @@ func createLabelFilterFunc(ctx context.Context, labelsFilterProp interface{}) (f
 
 func checkForMatch(data map[string]interface{}, filters []filterFunc) bool {
 	for _, filter := range filters {
-		if filter(data) {
-			return true
+		if !filter(data) {
+			return false
 		}
 	}
 
-	return false
+	return true
+}
+
+func createStringFilter(argIdentifier, expected string) (filterFunc, error) {
+	matchFn, err := createMatchStringFunc(expected)
+	if err != nil {
+		return nil, err
+	}
+
+	return createStringFilterFunc(argIdentifier, matchFn), nil
+}
+
+func createFilters(ctx context.Context, d *schema.ResourceData) ([]filterFunc, error) {
+	var filters []filterFunc
+
+	for argIdentifier, argSpec := range getDataSourceComputeInstanceSchema() {
+		argValue, ok := d.GetOk(argIdentifier)
+		if !ok {
+			continue
+		}
+
+		switch argSpec.Type {
+		case schema.TypeBool:
+			newFilterFunc, err := createEqualityFilter(argIdentifier, argValue.(bool))
+			if err != nil {
+				return nil, err
+			}
+
+			filters = append(filters, newFilterFunc)
+		case schema.TypeInt:
+			newFilterFunc, err := createEqualityFilter(argIdentifier, int64(argValue.(int)))
+			if err != nil {
+				return nil, err
+			}
+
+			filters = append(filters, newFilterFunc)
+		case schema.TypeString:
+			newFilterFunc, err := createStringFilter(argIdentifier, argValue.(string))
+			if err != nil {
+				return nil, err
+			}
+
+			filters = append(filters, newFilterFunc)
+		default:
+			continue
+		}
+	}
+
+	labelsFilterProp, labelFiltersSpecified := d.GetOk(filterLabelsPropName)
+	if labelFiltersSpecified {
+		newFilter, err := createLabelFilterFunc(ctx, labelsFilterProp)
+		if err != nil {
+			return nil, err
+		}
+
+		filters = append(filters, newFilter)
+	}
+
+	return filters, nil
 }
 
 func dataSourceComputeInstanceListRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -178,37 +258,9 @@ func dataSourceComputeInstanceListRead(ctx context.Context, d *schema.ResourceDa
 	ids := make([]string, 0, len(instances))
 	instanceTypes := map[string]string{}
 
-	var filters []filterFunc
-
-	computeInstanceSchema := getDataSourceComputeInstanceSchema()
-	for argIdentifier, argSpec := range computeInstanceSchema {
-		if argIdentifier == dsComputeInstanceAttrZone || argSpec.Type != schema.TypeString {
-			continue
-		}
-
-		argValue, ok := d.GetOk(argIdentifier)
-		if !ok {
-			continue
-		}
-
-		matchFn, err := createMatchStringFunc(argValue.(string))
-		if err != nil {
-			return diag.Errorf("failed to create filter: %q", err)
-		}
-
-		newFilterFunc := createStringFilterFunc(argIdentifier, matchFn)
-
-		filters = append(filters, newFilterFunc)
-	}
-
-	labelsFilterProp, labelFiltersSpecified := d.GetOk(filterLabelsPropName)
-	if labelFiltersSpecified {
-		newFilter, err := createLabelFilterFunc(ctx, labelsFilterProp)
-		if err != nil {
-			return diag.Errorf("failed to create filter: %q", err)
-		}
-
-		filters = append(filters, newFilter)
+	filters, err := createFilters(ctx, d)
+	if err != nil {
+		return diag.Errorf("failed to create filter: %q", err)
 	}
 
 	for _, item := range instances {
@@ -260,7 +312,7 @@ func dataSourceComputeInstanceListRead(ctx context.Context, d *schema.ResourceDa
 			instanceData[dsComputeInstanceAttrType] = instanceTypes[tid]
 		}
 
-		if len(filters) > 0 && !checkForMatch(instanceData, filters) {
+		if !checkForMatch(instanceData, filters) {
 			continue
 		}
 
