@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+
+BUG FIX:
+
+- `datasource_elastic_ip`: Fix label filtering (#242)
+
 ## 0.44.0 (January 31, 2023)
 
 BUG FIX:

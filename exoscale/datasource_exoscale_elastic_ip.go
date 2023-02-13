@@ -165,19 +165,15 @@ func dataSourceElasticIPRead(ctx context.Context, d *schema.ResourceData, meta i
 	}
 
 	if searchByElasticIPLabels {
-		searchLabels := make(map[string]string)
-		for k, v := range elasticIPLabels.(map[string]interface{}) {
-			searchLabels[k] = v.(string)
-		}
-
 		filterElasticIP = func(eip *egoscale.ElasticIP) bool {
 			if eip.Labels == nil {
 				return false
 			}
 
-			for searchKey, searchValue := range searchLabels {
-				if foundValue, ok := (*eip.Labels)[searchKey]; ok && foundValue == searchValue {
-					continue
+			for searchKey, searchValue := range elasticIPLabels.(map[string]interface{}) {
+				v, ok := (*eip.Labels)[searchKey]
+				if !ok || v != searchValue {
+					return false
 				}
 			}
 
