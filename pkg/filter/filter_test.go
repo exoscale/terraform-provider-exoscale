@@ -20,7 +20,7 @@ func TestComputeInstanceListFilterString(t *testing.T) {
 
 	filter := createStringFilterFunc(attributeToMatch, matchFn)
 
-	if !CheckForMatch(dataToFilter, []filterFunc{filter}) {
+	if !CheckForMatch(dataToFilter, []FilterFunc{filter}) {
 		t.Error("should match")
 	}
 }
@@ -40,7 +40,7 @@ func TestComputeInstanceListFilterRegex(t *testing.T) {
 
 	filter := createStringFilterFunc(attributeToMatch, matchFn)
 
-	if !CheckForMatch(dataToFilter, []filterFunc{filter}) {
+	if !CheckForMatch(dataToFilter, []FilterFunc{filter}) {
 		t.Error("should match")
 	}
 }
@@ -63,7 +63,7 @@ func TestComputeInstanceListFilterLabelsExactly(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if !CheckForMatch(dataToFilter, []filterFunc{filter}) {
+	if !CheckForMatch(dataToFilter, []FilterFunc{filter}) {
 		t.Error("should match")
 	}
 }
@@ -86,7 +86,7 @@ func TestComputeInstanceListFilterLabelsRegex(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if !CheckForMatch(dataToFilter, []filterFunc{filter}) {
+	if !CheckForMatch(dataToFilter, []FilterFunc{filter}) {
 		t.Error("should match")
 	}
 }
