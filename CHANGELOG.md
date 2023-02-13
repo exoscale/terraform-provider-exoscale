@@ -1,11 +1,14 @@
 # Changelog
 
-## Unreleased
-
+## 0.45.0 (February 13, 2023)
 
 BUG FIX:
 
 - `datasource_elastic_ip`: Fix label filtering (#242)
+
+DEPRECATIONS:
+
+- Removed nested imports feature from resources: `exoscale_domain` and `exoscale_security_group`
 
 ## 0.44.0 (January 31, 2023)
 
