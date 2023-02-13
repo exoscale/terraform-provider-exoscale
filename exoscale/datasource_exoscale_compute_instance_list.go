@@ -5,57 +5,16 @@ import (
 	"crypto/md5"
 	"errors"
 	"fmt"
-	"regexp"
 	"sort"
 	"strings"
 
 	exoapi "github.com/exoscale/egoscale/v2/api"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/filter"
+
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
-
-const (
-	filterStringPropName = "match"
-	filterLabelsPropName = "labels"
-	attributePropName    = "attribute"
-	matchPropName        = "match"
-)
-
-type matchStringFunc = func(given string) bool
-
-func createMatchStringFunc(expected string) (matchStringFunc, error) {
-	lenExp := len(expected)
-	if lenExp > 1 && expected[0] == '/' && expected[lenExp-1] == '/' {
-		r, err := regexp.Compile(expected[1 : lenExp-1])
-		if err != nil {
-			return nil, err
-		}
-
-		return func(given string) bool {
-			return r.MatchString(given)
-		}, nil
-	}
-
-	return func(given string) bool {
-		return given == expected
-	}, nil
-}
-
-func optionalAttribute(typ schema.ValueType) *schema.Schema {
-	return &schema.Schema{
-		Type:     typ,
-		Optional: true,
-	}
-}
-
-func optionalMapOfStrToStrAtribute() *schema.Schema {
-	return &schema.Schema{
-		Type:     schema.TypeMap,
-		Elem:     &schema.Schema{Type: schema.TypeString},
-		Optional: true,
-	}
-}
 
 func dataSourceComputeInstanceList() *schema.Resource {
 	ret := &schema.Resource{
@@ -72,166 +31,9 @@ func dataSourceComputeInstanceList() *schema.Resource {
 		ReadContext: dataSourceComputeInstanceListRead,
 	}
 
-	for attrIdentifier, attrSpec := range getDataSourceComputeInstanceSchema() {
-		switch attrSpec.Type {
-		case schema.TypeBool, schema.TypeInt, schema.TypeString:
-			ret.Schema[attrIdentifier] = optionalAttribute(attrSpec.Type)
-		case schema.TypeMap:
-			elem, ok := attrSpec.Elem.(*schema.Schema)
-			if ok && elem.Type == schema.TypeString {
-				ret.Schema[attrIdentifier] = optionalMapOfStrToStrAtribute()
-			}
-		}
-	}
+	filter.AddFilterAttributes(ret, getDataSourceComputeInstanceSchema())
 
 	return ret
-}
-
-type filterFunc = func(map[string]interface{}) bool
-
-func createEqualityFilter[T comparable](argIdentifier string, expected T) (filterFunc, error) {
-	return func(data map[string]interface{}) bool {
-		attr, ok := data[argIdentifier]
-		if !ok {
-			return false
-		}
-
-		switch v := attr.(type) {
-		case T:
-			if v == expected {
-				return true
-			}
-		case *T:
-			if *v == expected {
-				return true
-			}
-		}
-
-		return false
-	}, nil
-}
-
-func createStringFilterFunc(filterAttribute string, match matchStringFunc) filterFunc {
-	return func(data map[string]interface{}) bool {
-		attr, ok := data[filterAttribute]
-		if !ok {
-			return false
-		}
-
-		switch v := attr.(type) {
-		case string:
-			if match(v) {
-				return true
-			}
-		case *string:
-			if match(*v) {
-				return true
-			}
-		}
-
-		return false
-	}
-}
-
-func createMapStrToStrFilterFunc(ctx context.Context, filterProp interface{}) (filterFunc, error) {
-	filters := make(map[string]matchStringFunc)
-	maps := filterProp.(map[string]interface{})
-	for k, v := range maps {
-		filter, err := createMatchStringFunc(v.(string))
-		if err != nil {
-			return nil, err
-		}
-
-		filters[k] = filter
-	}
-
-	return func(data map[string]interface{}) bool {
-		mapAttr, ok := data["labels"]
-		if !ok {
-			return false
-		}
-
-		mapToFilter, isMap := mapAttr.(map[string]string)
-		if !isMap {
-			tflog.Info(ctx, fmt.Sprintf("attribute of compute instance has unexpected type %T for labels", mapAttr))
-
-			return false
-		}
-
-		for filterKey, filterValue := range filters {
-			value, ok := mapToFilter[filterKey]
-			if !ok || !filterValue(value) {
-				return false
-			}
-		}
-
-		return true
-	}, nil
-}
-
-func checkForMatch(data map[string]interface{}, filters []filterFunc) bool {
-	for _, filter := range filters {
-		if !filter(data) {
-			return false
-		}
-	}
-
-	return true
-}
-
-func createStringFilter(argIdentifier, expected string) (filterFunc, error) {
-	matchFn, err := createMatchStringFunc(expected)
-	if err != nil {
-		return nil, err
-	}
-
-	return createStringFilterFunc(argIdentifier, matchFn), nil
-}
-
-func createFilters(ctx context.Context, d *schema.ResourceData) ([]filterFunc, error) {
-	var filters []filterFunc
-
-	for argIdentifier, argSpec := range getDataSourceComputeInstanceSchema() {
-		argValue, ok := d.GetOk(argIdentifier)
-		if !ok {
-			continue
-		}
-
-		switch argSpec.Type {
-		case schema.TypeBool:
-			newFilterFunc, err := createEqualityFilter(argIdentifier, argValue.(bool))
-			if err != nil {
-				return nil, err
-			}
-
-			filters = append(filters, newFilterFunc)
-		case schema.TypeInt:
-			newFilterFunc, err := createEqualityFilter(argIdentifier, int64(argValue.(int)))
-			if err != nil {
-				return nil, err
-			}
-
-			filters = append(filters, newFilterFunc)
-		case schema.TypeString:
-			newFilterFunc, err := createStringFilter(argIdentifier, argValue.(string))
-			if err != nil {
-				return nil, err
-			}
-
-			filters = append(filters, newFilterFunc)
-		case schema.TypeMap:
-			newFilter, err := createMapStrToStrFilterFunc(ctx, argValue)
-			if err != nil {
-				return nil, err
-			}
-
-			filters = append(filters, newFilter)
-		default:
-			continue
-		}
-	}
-
-	return filters, nil
 }
 
 func dataSourceComputeInstanceListRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -259,7 +61,7 @@ func dataSourceComputeInstanceListRead(ctx context.Context, d *schema.ResourceDa
 	ids := make([]string, 0, len(instances))
 	instanceTypes := map[string]string{}
 
-	filters, err := createFilters(ctx, d)
+	filters, err := filter.CreateFilters(ctx, d, getDataSourceComputeInstanceSchema())
 	if err != nil {
 		return diag.Errorf("failed to create filter: %q", err)
 	}
@@ -313,7 +115,7 @@ func dataSourceComputeInstanceListRead(ctx context.Context, d *schema.ResourceDa
 			instanceData[dsComputeInstanceAttrType] = instanceTypes[tid]
 		}
 
-		if !checkForMatch(instanceData, filters) {
+		if !filter.CheckForMatch(instanceData, filters) {
 			continue
 		}
 

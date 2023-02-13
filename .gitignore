@@ -6,7 +6,6 @@ terraform.tfplan
 terraform.tfstate
 /bin/
 /build/
-/pkg/
 .vagrant/
 *.backup
 ./*.tfstate
