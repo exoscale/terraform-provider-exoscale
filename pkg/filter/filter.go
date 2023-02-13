@@ -39,12 +39,12 @@ func createEqualityFilter[T comparable](argIdentifier string, expected T) (Filte
 		}
 
 		switch v := attr.(type) {
-		case T:
-			if v == expected {
-				return true
-			}
 		case *T:
 			if *v == expected {
+				return true
+			}
+		case T:
+			if v == expected {
 				return true
 			}
 		}
