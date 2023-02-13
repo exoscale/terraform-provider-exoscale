@@ -167,6 +167,8 @@ func Provider() *schema.Provider {
 			"exoscale_private_network":       dataSourcePrivateNetwork(),
 			"exoscale_security_group":        dataSourceSecurityGroup(),
 			"exoscale_template":              dataSourceTemplate(),
+			"exoscale_sks_cluster":           dataSourceSKSCluster(),
+			"exoscale_sks_nodepool":          dataSourceSKSNodepool(),
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
