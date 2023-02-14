@@ -312,7 +312,7 @@ func resourceDatabaseUpdateKafka(
 
 		if d.HasChange(resDatabaseAttrKafka(resDatabaseAttrKafkaIPFilter)) {
 			dg := newResourceDataGetter(d)
-			dgos := dg.Under("redis").Under("0")
+			dgos := dg.Under("kafka").Under("0")
 
 			databaseService.IpFilter = dgos.GetSet(resDatabaseAttrKafkaIPFilter)
 			updated = true
