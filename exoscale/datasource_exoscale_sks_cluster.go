@@ -36,8 +36,7 @@ func dataSourceSKSCluster() *schema.Resource {
 		ReadContext: dataSourceSKSClusterRead,
 	}
 
-	clusterSchema := resourceSKSCluster()
-	for attributeIdentifier, attributeValue := range clusterSchema.Schema {
+	for attributeIdentifier, attributeValue := range resourceSKSCluster().Schema {
 		_, attributeAlreadySet := ret.Schema[attributeIdentifier]
 		if !attributeAlreadySet {
 			ret.Schema[attributeIdentifier] = attributeValue
@@ -45,6 +44,45 @@ func dataSourceSKSCluster() *schema.Resource {
 	}
 
 	return ret
+}
+
+type tfData = map[string]interface{}
+
+func clusterToMap(cluster *v2.SKSCluster) tfData {
+	ret := make(tfData)
+
+	ret[resSKSClusterAttrAddons] = cluster.AddOns
+	ret[resSKSClusterAttrAutoUpgrade] = cluster.AutoUpgrade
+	ret[resSKSClusterAttrCNI] = cluster.CNI
+	// TODO
+	// ret[resSKSClusterAttrCreatedAt] = cluster.CreatedAt
+	ret[resSKSClusterAttrDescription] = cluster.Description
+	ret[resSKSClusterAttrEndpoint] = cluster.Endpoint
+	ret[resSKSClusterAttrLabels] = cluster.Labels
+	ret[resSKSClusterAttrName] = cluster.Name
+	ret[dsSKSClusterID] = cluster.ID
+	// TODO
+	// ret[resSKSClusterAttrNodepools] = cluster.Nodepools
+	ret[resSKSClusterAttrServiceLevel] = cluster.ServiceLevel
+	ret[resSKSClusterAttrState] = cluster.State
+	ret[resSKSClusterAttrVersion] = cluster.Version
+
+	return ret
+}
+
+func applyClusterDataToDataSource(data tfData, d *schema.ResourceData) error {
+	schema := dataSourceSKSCluster().Schema
+
+	for attrIdentifier, attrVal := range data {
+		_, hasAttribute := schema[attrIdentifier]
+		if hasAttribute {
+			if err := d.Set(attrIdentifier, attrVal); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 func dataSourceSKSClusterRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -89,7 +127,10 @@ func dataSourceSKSClusterRead(ctx context.Context, d *schema.ResourceData, meta 
 
 	d.SetId(*cluster.ID)
 
-	// TODO write data
+	clusterData := clusterToMap(cluster)
+	if err := applyClusterDataToDataSource(clusterData, d); err != nil {
+		return diag.FromErr(err)
+	}
 
 	return nil
 }
