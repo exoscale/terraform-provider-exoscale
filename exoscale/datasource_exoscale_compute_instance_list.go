@@ -9,18 +9,16 @@ import (
 	"strings"
 
 	exoapi "github.com/exoscale/egoscale/v2/api"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/filter"
+
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func dataSourceComputeInstanceList() *schema.Resource {
-	return &schema.Resource{
+	ret := &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			dsComputeInstanceAttrZone: {
-				Type:     schema.TypeString,
-				Required: true,
-			},
 			"instances": {
 				Type:     schema.TypeList,
 				Computed: true,
@@ -32,6 +30,10 @@ func dataSourceComputeInstanceList() *schema.Resource {
 
 		ReadContext: dataSourceComputeInstanceListRead,
 	}
+
+	filter.AddFilterAttributes(ret, getDataSourceComputeInstanceSchema())
+
+	return ret
 }
 
 func dataSourceComputeInstanceListRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -58,6 +60,11 @@ func dataSourceComputeInstanceListRead(ctx context.Context, d *schema.ResourceDa
 	data := make([]interface{}, 0, len(instances))
 	ids := make([]string, 0, len(instances))
 	instanceTypes := map[string]string{}
+
+	filters, err := filter.CreateFilters(ctx, d, getDataSourceComputeInstanceSchema())
+	if err != nil {
+		return diag.Errorf("failed to create filter: %q", err)
+	}
 
 	for _, item := range instances {
 		// we use ID to generate a resource ID, we cannot list instances without ID.
@@ -106,6 +113,10 @@ func dataSourceComputeInstanceListRead(ctx context.Context, d *schema.ResourceDa
 			}
 
 			instanceData[dsComputeInstanceAttrType] = instanceTypes[tid]
+		}
+
+		if !filter.CheckForMatch(instanceData, filters) {
+			continue
 		}
 
 		data = append(data, instanceData)

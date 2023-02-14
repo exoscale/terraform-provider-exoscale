@@ -16,6 +16,15 @@ Corresponding resource: [exoscale_compute_instance](../resources/compute_instanc
 ```hcl
 data "exoscale_compute_instance_list" "my_compute_instance_list" {
   zone = "ch-gva-2"
+
+  type = "standard.micro"
+
+  name = "/.*ubuntu.*/"
+
+  labels = {
+    "customer" = "/.*bank.*/"
+    "contract" = "premium-support"
+  }
 }
 
 output "my_compute_instance_ids" {
@@ -35,6 +44,7 @@ directory for complete configuration examples.
 
 * `zone` - (Required) The Exoscale [Zone][zone] name.
 
+You may filter instances by any string, bool, int or map[string]string attribute of [exoscale_compute_instance](./compute_instance.md) as in the example above. If you supply a string that begins and ends with a "/" it will be matched as a regex. 
 
 ## Atributes Reference
 
