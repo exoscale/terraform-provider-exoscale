@@ -3,7 +3,6 @@ package exoscale
 import (
 	"context"
 	"fmt"
-	"log"
 
 	v2 "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"

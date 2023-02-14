@@ -49,10 +49,11 @@ func dataSourceSKSCluster() *schema.Resource {
 
 type tfData = map[string]interface{}
 
-func clusterToMap(cluster *v2.SKSCluster) tfData {
+func clusterToDataMap(cluster *v2.SKSCluster) tfData {
 	ret := make(tfData)
 
-	ret[resSKSClusterAttrAddons] = cluster.AddOns
+	// TODO
+	// ret[resSKSClusterAttrAddons] = cluster.AddOns
 	ret[resSKSClusterAttrAutoUpgrade] = cluster.AutoUpgrade
 	ret[resSKSClusterAttrCNI] = cluster.CNI
 	// TODO
@@ -126,7 +127,7 @@ func dataSourceSKSClusterRead(ctx context.Context, d *schema.ResourceData, meta 
 
 	d.SetId(*cluster.ID)
 
-	clusterData := clusterToMap(cluster)
+	clusterData := clusterToDataMap(cluster)
 	if err := applyClusterDataToDataSource(clusterData, d, dataSourceSKSCluster().Schema); err != nil {
 		return diag.FromErr(err)
 	}

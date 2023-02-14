@@ -168,6 +168,7 @@ func Provider() *schema.Provider {
 			"exoscale_security_group":        dataSourceSecurityGroup(),
 			"exoscale_template":              dataSourceTemplate(),
 			"exoscale_sks_cluster":           dataSourceSKSCluster(),
+			dsSKSClustersListIdentifier:      dataSourceSKSClusterList(),
 			"exoscale_sks_nodepool":          dataSourceSKSNodepool(),
 		},
 
