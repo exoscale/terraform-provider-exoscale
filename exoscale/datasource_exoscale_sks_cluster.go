@@ -36,6 +36,7 @@ func dataSourceSKSCluster() *schema.Resource {
 		ReadContext: dataSourceSKSClusterRead,
 	}
 
+	// TODO do we really need all attributes?
 	for attributeIdentifier, attributeValue := range resourceSKSCluster().Schema {
 		_, attributeAlreadySet := ret.Schema[attributeIdentifier]
 		if !attributeAlreadySet {
@@ -70,9 +71,7 @@ func clusterToMap(cluster *v2.SKSCluster) tfData {
 	return ret
 }
 
-func applyClusterDataToDataSource(data tfData, d *schema.ResourceData) error {
-	schema := dataSourceSKSCluster().Schema
-
+func applyClusterDataToDataSource(data tfData, d *schema.ResourceData, schema map[string]*schema.Schema) error {
 	for attrIdentifier, attrVal := range data {
 		_, hasAttribute := schema[attrIdentifier]
 		if hasAttribute {
@@ -128,7 +127,7 @@ func dataSourceSKSClusterRead(ctx context.Context, d *schema.ResourceData, meta 
 	d.SetId(*cluster.ID)
 
 	clusterData := clusterToMap(cluster)
-	if err := applyClusterDataToDataSource(clusterData, d); err != nil {
+	if err := applyClusterDataToDataSource(clusterData, d, dataSourceSKSCluster().Schema); err != nil {
 		return diag.FromErr(err)
 	}
 
