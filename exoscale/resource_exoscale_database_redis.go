@@ -77,18 +77,10 @@ func resourceDatabaseCreateRedis(
 		databaseService.TerminationProtection = &b
 	}
 
-	if s, ok := d.GetOk(resDatabaseAttrRedis(resDatabaseAttrRedisIPFilter)); ok {
-		databaseService.IpFilter = func() (v *[]string) {
-			if l := s.(*schema.Set).Len(); l > 0 {
-				list := make([]string, l)
-				for i, v := range s.(*schema.Set).List() {
-					list[i] = v.(string)
-				}
-				v = &list
-			}
-			return
-		}()
-	}
+	dg := newResourceDataGetter(d)
+	dgos := dg.Under("redis").Under("0")
+
+	databaseService.IpFilter = dgos.GetSet(resDatabaseAttrRedisIPFilter)
 
 	if v, ok := d.GetOk(resDatabaseAttrRedis(resDatabaseAttrRedisSettings)); ok {
 		settings, err := validateDatabaseServiceSettings(v.(string), settingsSchema.JSON200.Settings.Redis)
@@ -123,7 +115,6 @@ func resourceDatabaseUpdateRedis(
 	client *egoscale.Client,
 ) diag.Diagnostics {
 	var updated bool
-
 	databaseService := oapi.UpdateDbaasServiceRedisJSONRequestBody{}
 
 	settingsSchema, err := client.GetDbaasSettingsRedisWithResponse(ctx)
@@ -159,13 +150,10 @@ func resourceDatabaseUpdateRedis(
 
 	if d.HasChange("redis") {
 		if d.HasChange(resDatabaseAttrRedis(resDatabaseAttrRedisIPFilter)) {
-			databaseService.IpFilter = func() *[]string {
-				list := make([]string, 0)
-				for _, v := range d.Get(resDatabaseAttrRedis(resDatabaseAttrRedisIPFilter)).(*schema.Set).List() {
-					list = append(list, v.(string))
-				}
-				return &list
-			}()
+			dg := newResourceDataGetter(d)
+			dgos := dg.Under("redis").Under("0")
+
+			databaseService.IpFilter = dgos.GetSet(resDatabaseAttrRedisIPFilter)
 			updated = true
 		}
 

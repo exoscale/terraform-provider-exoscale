@@ -140,18 +140,10 @@ func resourceDatabaseCreatePg(
 		}
 	}
 
-	if s, ok := d.GetOk(resDatabaseAttrPg(resDatabaseAttrPgIPFilter)); ok {
-		databaseService.IpFilter = func() (v *[]string) {
-			if l := s.(*schema.Set).Len(); l > 0 {
-				list := make([]string, l)
-				for i, v := range s.(*schema.Set).List() {
-					list[i] = v.(string)
-				}
-				v = &list
-			}
-			return
-		}()
-	}
+	dg := newResourceDataGetter(d)
+	dgos := dg.Under("pg").Under("0")
+
+	databaseService.IpFilter = dgos.GetSet(resDatabaseAttrPgIPFilter)
 
 	if v, ok := d.GetOk(resDatabaseAttrPg(resDatabaseAttrPgSettings)); ok {
 		settings, err := validateDatabaseServiceSettings(v.(string), settingsSchema.JSON200.Settings.Pg)
@@ -261,13 +253,10 @@ func resourceDatabaseUpdatePg(
 		}
 
 		if d.HasChange(resDatabaseAttrPg(resDatabaseAttrPgIPFilter)) {
-			databaseService.IpFilter = func() *[]string {
-				list := make([]string, 0)
-				for _, v := range d.Get(resDatabaseAttrPg(resDatabaseAttrPgIPFilter)).(*schema.Set).List() {
-					list = append(list, v.(string))
-				}
-				return &list
-			}()
+			dg := newResourceDataGetter(d)
+			dgos := dg.Under("pg").Under("0")
+
+			databaseService.IpFilter = dgos.GetSet(resDatabaseAttrPgIPFilter)
 			updated = true
 		}
 

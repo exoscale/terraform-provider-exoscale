@@ -128,18 +128,10 @@ func resourceDatabaseCreateMysql(
 		}
 	}
 
-	if s, ok := d.GetOk(resDatabaseAttrMysql(resDatabaseAttrMysqlIPFilter)); ok {
-		databaseService.IpFilter = func() (v *[]string) {
-			if l := s.(*schema.Set).Len(); l > 0 {
-				list := make([]string, l)
-				for i, v := range s.(*schema.Set).List() {
-					list[i] = v.(string)
-				}
-				v = &list
-			}
-			return
-		}()
-	}
+	dg := newResourceDataGetter(d)
+	dgos := dg.Under("mysql").Under("0")
+
+	databaseService.IpFilter = dgos.GetSet(resDatabaseAttrMysqlIPFilter)
 
 	if v, ok := d.GetOk(resDatabaseAttrMysql(resDatabaseAttrMysqlSettings)); ok {
 		settings, err := validateDatabaseServiceSettings(v.(string), settingsSchema.JSON200.Settings.Mysql)
@@ -233,13 +225,10 @@ func resourceDatabaseUpdateMysql(
 		}
 
 		if d.HasChange(resDatabaseAttrMysql(resDatabaseAttrMysqlIPFilter)) {
-			databaseService.IpFilter = func() *[]string {
-				list := make([]string, 0)
-				for _, v := range d.Get(resDatabaseAttrMysql(resDatabaseAttrMysqlIPFilter)).(*schema.Set).List() {
-					list = append(list, v.(string))
-				}
-				return &list
-			}()
+			dg := newResourceDataGetter(d)
+			dgos := dg.Under("mysql").Under("0")
+
+			databaseService.IpFilter = dgos.GetSet(resDatabaseAttrMysqlIPFilter)
 			updated = true
 		}
 

@@ -169,18 +169,10 @@ func resourceDatabaseCreateKafka(
 		databaseService.SchemaRegistryEnabled = &enabled
 	}
 
-	if s, ok := d.GetOk(resDatabaseAttrKafka(resDatabaseAttrKafkaIPFilter)); ok {
-		databaseService.IpFilter = func() (v *[]string) {
-			if l := s.(*schema.Set).Len(); l > 0 {
-				list := make([]string, l)
-				for i, v := range s.(*schema.Set).List() {
-					list[i] = v.(string)
-				}
-				v = &list
-			}
-			return
-		}()
-	}
+	dg := newResourceDataGetter(d)
+	dgos := dg.Under("kafka").Under("0")
+
+	databaseService.IpFilter = dgos.GetSet(resDatabaseAttrKafkaIPFilter)
 
 	if v, ok := d.GetOk(resDatabaseAttrKafka(resDatabaseAttrKafkaRESTSettings)); ok {
 		settings, err := validateDatabaseServiceSettings(v.(string), settingsSchema.JSON200.Settings.KafkaRest)
@@ -319,13 +311,10 @@ func resourceDatabaseUpdateKafka(
 		}
 
 		if d.HasChange(resDatabaseAttrKafka(resDatabaseAttrKafkaIPFilter)) {
-			databaseService.IpFilter = func() *[]string {
-				list := make([]string, 0)
-				for _, v := range d.Get(resDatabaseAttrKafka(resDatabaseAttrKafkaIPFilter)).(*schema.Set).List() {
-					list = append(list, v.(string))
-				}
-				return &list
-			}()
+			dg := newResourceDataGetter(d)
+			dgos := dg.Under("redis").Under("0")
+
+			databaseService.IpFilter = dgos.GetSet(resDatabaseAttrKafkaIPFilter)
 			updated = true
 		}
 
