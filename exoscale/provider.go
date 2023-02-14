@@ -169,6 +169,7 @@ func Provider() *schema.Provider {
 			"exoscale_template":              dataSourceTemplate(),
 			"exoscale_sks_cluster":           dataSourceSKSCluster(),
 			dsSKSClustersListIdentifier:      dataSourceSKSClusterList(),
+			dsSKSNodepoolsListIdentifier:     dataSourceSKSNodepoolList(),
 			"exoscale_sks_nodepool":          dataSourceSKSNodepool(),
 		},
 

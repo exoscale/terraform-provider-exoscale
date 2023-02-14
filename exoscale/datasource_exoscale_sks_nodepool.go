@@ -63,8 +63,8 @@ func dataSourceSKSNodepool() *schema.Resource {
 func nodepoolToDataMap(nodepool *v2.SKSNodepool) tfData {
 	ret := make(tfData)
 
-	ret[resSKSNodepoolAttrAntiAffinityGroupIDs] = nodepool.AntiAffinityGroupIDs
 	// TODO
+	// ret[resSKSNodepoolAttrAntiAffinityGroupIDs] = nodepool.AntiAffinityGroupIDs
 	// ret[resSKSNodepoolAttrCreatedAt] = nodepool.CreatedAt
 	ret[resSKSNodepoolAttrDeployTargetID] = nodepool.DeployTargetID
 	ret[resSKSNodepoolAttrDescription] = nodepool.Description
@@ -74,8 +74,9 @@ func nodepoolToDataMap(nodepool *v2.SKSNodepool) tfData {
 	ret[resSKSNodepoolAttrInstanceType] = nodepool.InstanceTypeID
 	ret[resSKSNodepoolAttrLabels] = nodepool.Labels
 	ret[resSKSNodepoolAttrName] = nodepool.Name
-	ret[resSKSNodepoolAttrPrivateNetworkIDs] = nodepool.PrivateNetworkIDs
-	ret[resSKSNodepoolAttrSecurityGroupIDs] = nodepool.SecurityGroupIDs
+	// TODO
+	// ret[resSKSNodepoolAttrPrivateNetworkIDs] = nodepool.PrivateNetworkIDs
+	// ret[resSKSNodepoolAttrSecurityGroupIDs] = nodepool.SecurityGroupIDs
 	ret[resSKSNodepoolAttrSize] = nodepool.Size
 	ret[resSKSNodepoolAttrState] = nodepool.State
 	ret[resSKSNodepoolAttrTaints] = nodepool.Taints

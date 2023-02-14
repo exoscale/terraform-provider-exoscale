@@ -9,9 +9,6 @@ import (
 
 	v2 "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
-	"github.com/exoscale/terraform-provider-exoscale/pkg/filter"
-	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -20,30 +17,12 @@ const (
 	dsSKSClustersListClusters   = "clusters"
 )
 
-func dataSourceSKSClusterListGetElementScheme() map[string]*schema.Schema {
+func dataSourceSKSClusterListGetElementScheme() schemaMap {
 	return dataSourceSKSCluster().Schema
 }
 
 func dataSourceSKSClusterList() *schema.Resource {
-	// TODO make zone required
-	elemSchema := dataSourceSKSClusterListGetElementScheme()
-	ret := &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			dsSKSClustersListClusters: {
-				Type:     schema.TypeList,
-				Computed: true,
-				Elem: &schema.Resource{
-					Schema: elemSchema,
-				},
-			},
-		},
-
-		ReadContext: dataSourceSKSClusterListRead,
-	}
-
-	filter.AddFilterAttributes(ret, elemSchema)
-
-	return ret
+	return filterableListDataSource(dsSKSClustersListIdentifier, dsSKSClustersListClusters, resSKSClusterAttrZone, getClusterList, clusterToDataMap, generateSKSClusterListID, dataSourceSKSClusterListGetElementScheme)
 }
 
 func generateSKSClusterListID(clusters []*v2.SKSCluster) string {
@@ -58,11 +37,7 @@ func generateSKSClusterListID(clusters []*v2.SKSCluster) string {
 	return fmt.Sprintf("%x", md5.Sum([]byte(strings.Join(ids, ""))))
 }
 
-func dataSourceSKSClusterListRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning read", map[string]interface{}{
-		"id": resourceIDString(d, dsSKSClustersListIdentifier),
-	})
-
+func getClusterList(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*v2.SKSCluster, error) {
 	zone := d.Get(resSKSClusterAttrZone).(string)
 
 	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
@@ -73,36 +48,8 @@ func dataSourceSKSClusterListRead(ctx context.Context, d *schema.ResourceData, m
 
 	clusters, err := client.ListSKSClusters(ctx, zone)
 	if err != nil {
-		return diag.Errorf("error getting cluster list from zone %q: %s", zone, err)
+		return nil, fmt.Errorf("error getting cluster list from zone %q: %s", zone, err)
 	}
 
-	filters, err := filter.CreateFilters(ctx, d, getDataSourceComputeInstanceSchema())
-	if err != nil {
-		return diag.Errorf("failed to create filter: %q", err)
-	}
-
-	data := make([]interface{}, 0, len(clusters))
-	for _, cluster := range clusters {
-		clusterData := clusterToDataMap(cluster)
-		clusterData[resSKSClusterAttrZone] = zone
-
-		if !filter.CheckForMatch(clusterData, filters) {
-			continue
-		}
-
-		data = append(data, clusterData)
-	}
-
-	d.SetId(generateSKSClusterListID(clusters))
-
-	err = d.Set(dsSKSClustersListClusters, data)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
-		"id": resourceIDString(d, "exoscale_compute_instance_list"),
-	})
-
-	return nil
+	return clusters, nil
 }

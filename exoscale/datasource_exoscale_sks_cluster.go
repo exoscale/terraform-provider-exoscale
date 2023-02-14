@@ -47,6 +47,7 @@ func dataSourceSKSCluster() *schema.Resource {
 	return ret
 }
 
+// TODO find a better name
 type tfData = map[string]interface{}
 
 func clusterToDataMap(cluster *v2.SKSCluster) tfData {
