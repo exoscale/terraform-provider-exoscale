@@ -10,6 +10,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+const (
+	ZoneAttributeIdentifier = "zone"
+)
+
 type SchemaMap map[string]*schema.Schema
 
 func FilterableListDataSource[T any](
@@ -18,10 +22,13 @@ func FilterableListDataSource[T any](
 	toTFObj toTerraformObjectFunc[T],
 	generateListID generateListIDFunc[T],
 	getScheme func() SchemaMap) *schema.Resource {
-	// TODO make zone required
 	elemScheme := getScheme()
 	ret := &schema.Resource{
 		Schema: map[string]*schema.Schema{
+			ZoneAttributeIdentifier: {
+				Type:     schema.TypeString,
+				Required: true,
+			},
 			listAttributeIdentifier: {
 				Type:     schema.TypeList,
 				Computed: true,
@@ -32,7 +39,7 @@ func FilterableListDataSource[T any](
 		},
 
 		ReadContext: createDataSourceReadFunc(
-			dataSourceIdentifier, listAttributeIdentifier, zoneAttribute,
+			dataSourceIdentifier, listAttributeIdentifier,
 			getList,
 			toTFObj,
 			generateListID,
@@ -51,7 +58,7 @@ type generateListIDFunc[T any] func([]*T) string
 type toTerraformObjectFunc[T any] func(*T) TerraformObject
 
 func createDataSourceReadFunc[T any](
-	dataSourceIdentifier, listAttributeIdentifier, zoneAttribute string,
+	dataSourceIdentifier, listAttributeIdentifier string,
 	getList getListFunc[T],
 	toTFObj toTerraformObjectFunc[T],
 	generateListID generateListIDFunc[T],
@@ -61,8 +68,7 @@ func createDataSourceReadFunc[T any](
 			"id": general.ResourceIDString(d, dataSourceIdentifier),
 		})
 
-		// TODO
-		zone := d.Get(zoneAttribute).(string)
+		zone := d.Get(ZoneAttributeIdentifier).(string)
 
 		clusters, err := getList(ctx, d, meta)
 		if err != nil {
@@ -77,7 +83,7 @@ func createDataSourceReadFunc[T any](
 		data := make([]interface{}, 0, len(clusters))
 		for _, cluster := range clusters {
 			clusterData := toTFObj(cluster)
-			clusterData[zoneAttribute] = zone
+			clusterData[ZoneAttributeIdentifier] = zone
 
 			if !filter.CheckForMatch(clusterData, filters) {
 				continue
