@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/filter"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/gen/datasource"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -47,7 +48,7 @@ type getListFunc[T any] func(ctx context.Context, d *schema.ResourceData, meta i
 
 type generateListIDFunc[T any] func([]*T) string
 
-type toDataMapFunc[T any] func(*T) terraformObject
+type toDataMapFunc[T any] func(*T) datasource.TerraformObject
 
 func createDataSourceReadFunc[T any](
 	dataSourceIdentifier, listAttributeIdentifier, zoneAttribute string,
