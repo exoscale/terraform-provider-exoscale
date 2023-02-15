@@ -47,7 +47,7 @@ type getListFunc[T any] func(ctx context.Context, d *schema.ResourceData, meta i
 
 type generateListIDFunc[T any] func([]*T) string
 
-type toDataMapFunc[T any] func(*T) tfData
+type toDataMapFunc[T any] func(*T) terraformObject
 
 func createDataSourceReadFunc[T any](
 	dataSourceIdentifier, listAttributeIdentifier, zoneAttribute string,

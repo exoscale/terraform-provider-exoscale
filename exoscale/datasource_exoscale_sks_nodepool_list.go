@@ -45,10 +45,7 @@ func getNodepoolList(ctx context.Context, d *schema.ResourceData, meta interface
 	var nodepools []*v2.SKSNodepool
 
 	for _, cluster := range clusters {
-		for _, nodepool := range cluster.Nodepools {
-			// TODO use a library method
-			nodepools = append(nodepools, nodepool)
-		}
+		nodepools = append(nodepools, cluster.Nodepools...)
 	}
 
 	return nodepools, nil

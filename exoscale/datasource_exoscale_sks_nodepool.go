@@ -3,6 +3,7 @@ package exoscale
 import (
 	"context"
 	"fmt"
+	"time"
 
 	v2 "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
@@ -60,29 +61,44 @@ func dataSourceSKSNodepool() *schema.Resource {
 	return ret
 }
 
-func nodepoolToDataMap(nodepool *v2.SKSNodepool) tfData {
-	ret := make(tfData)
+// TODO move to package
+func assignTime(data terraformObject, attributeIdentifier string, value *time.Time) {
+	if value == nil {
+		return
+	}
 
-	// TODO
-	// ret[resSKSNodepoolAttrAntiAffinityGroupIDs] = nodepool.AntiAffinityGroupIDs
-	// ret[resSKSNodepoolAttrCreatedAt] = nodepool.CreatedAt
-	ret[resSKSNodepoolAttrDeployTargetID] = nodepool.DeployTargetID
-	ret[resSKSNodepoolAttrDescription] = nodepool.Description
-	ret[resSKSNodepoolAttrDiskSize] = nodepool.DiskSize
-	ret[resSKSNodepoolAttrInstancePoolID] = nodepool.InstancePoolID
-	ret[resSKSNodepoolAttrInstancePrefix] = nodepool.InstancePrefix
-	ret[resSKSNodepoolAttrInstanceType] = nodepool.InstanceTypeID
-	ret[resSKSNodepoolAttrLabels] = nodepool.Labels
-	ret[resSKSNodepoolAttrName] = nodepool.Name
-	// TODO
-	// ret[resSKSNodepoolAttrPrivateNetworkIDs] = nodepool.PrivateNetworkIDs
-	// ret[resSKSNodepoolAttrSecurityGroupIDs] = nodepool.SecurityGroupIDs
-	ret[resSKSNodepoolAttrSize] = nodepool.Size
-	ret[resSKSNodepoolAttrState] = nodepool.State
-	ret[resSKSNodepoolAttrTaints] = nodepool.Taints
-	ret[resSKSNodepoolAttrTemplateID] = nodepool.TemplateID
-	ret[resSKSNodepoolAttrVersion] = nodepool.Version
-	ret[dsSKSNodepoolID] = nodepool.ID
+	data[attributeIdentifier] = value.Format(time.RFC3339)
+}
+
+func assign[T any](data terraformObject, attributeIdentifier string, value *T) {
+	if value == nil {
+		return
+	}
+
+	data[attributeIdentifier] = *value
+}
+
+func nodepoolToDataMap(nodepool *v2.SKSNodepool) terraformObject {
+	ret := make(terraformObject)
+
+	assign(ret, resSKSNodepoolAttrAntiAffinityGroupIDs, nodepool.AntiAffinityGroupIDs)
+	assignTime(ret, resSKSNodepoolAttrCreatedAt, nodepool.CreatedAt)
+	assign(ret, resSKSNodepoolAttrDeployTargetID, nodepool.DeployTargetID)
+	assign(ret, resSKSNodepoolAttrDescription, nodepool.Description)
+	assign(ret, resSKSNodepoolAttrDiskSize, nodepool.DiskSize)
+	assign(ret, resSKSNodepoolAttrInstancePoolID, nodepool.InstancePoolID)
+	assign(ret, resSKSNodepoolAttrInstancePrefix, nodepool.InstancePrefix)
+	assign(ret, resSKSNodepoolAttrInstanceType, nodepool.InstanceTypeID)
+	assign(ret, resSKSNodepoolAttrLabels, nodepool.Labels)
+	assign(ret, resSKSNodepoolAttrName, nodepool.Name)
+	assign(ret, resSKSNodepoolAttrPrivateNetworkIDs, nodepool.PrivateNetworkIDs)
+	assign(ret, resSKSNodepoolAttrSecurityGroupIDs, nodepool.SecurityGroupIDs)
+	assign(ret, resSKSNodepoolAttrSize, nodepool.Size)
+	assign(ret, resSKSNodepoolAttrState, nodepool.State)
+	assign(ret, resSKSNodepoolAttrTaints, nodepool.Taints)
+	assign(ret, resSKSNodepoolAttrTemplateID, nodepool.TemplateID)
+	assign(ret, resSKSNodepoolAttrVersion, nodepool.Version)
+	assign(ret, dsSKSNodepoolID, nodepool.ID)
 
 	return ret
 }
@@ -111,7 +127,7 @@ func dataSourceSKSNodepoolRead(ctx context.Context, d *schema.ResourceData, meta
 		return diag.Errorf("failed to create filter: %q", err)
 	}
 
-	var matchingNodePool tfData
+	var matchingNodePool terraformObject
 	nMatches := 0
 
 	for _, nodepool := range cluster.Nodepools {

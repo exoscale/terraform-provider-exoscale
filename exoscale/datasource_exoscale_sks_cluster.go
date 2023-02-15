@@ -47,33 +47,35 @@ func dataSourceSKSCluster() *schema.Resource {
 	return ret
 }
 
-// TODO find a better name
-type tfData = map[string]interface{}
+type terraformObject = map[string]interface{}
 
-func clusterToDataMap(cluster *v2.SKSCluster) tfData {
-	ret := make(tfData)
+func clusterToDataMap(cluster *v2.SKSCluster) terraformObject {
+	ret := make(terraformObject)
 
-	// TODO
-	// ret[resSKSClusterAttrAddons] = cluster.AddOns
-	ret[resSKSClusterAttrAutoUpgrade] = cluster.AutoUpgrade
-	ret[resSKSClusterAttrCNI] = cluster.CNI
-	// TODO
-	// ret[resSKSClusterAttrCreatedAt] = cluster.CreatedAt
-	ret[resSKSClusterAttrDescription] = cluster.Description
-	ret[resSKSClusterAttrEndpoint] = cluster.Endpoint
-	ret[resSKSClusterAttrLabels] = cluster.Labels
-	ret[resSKSClusterAttrName] = cluster.Name
-	ret[dsSKSClusterID] = cluster.ID
-	// TODO
-	// ret[resSKSClusterAttrNodepools] = cluster.Nodepools
-	ret[resSKSClusterAttrServiceLevel] = cluster.ServiceLevel
-	ret[resSKSClusterAttrState] = cluster.State
-	ret[resSKSClusterAttrVersion] = cluster.Version
+	assign(ret, resSKSClusterAttrAddons, cluster.AddOns)
+	assign(ret, resSKSClusterAttrAutoUpgrade, cluster.AutoUpgrade)
+	assign(ret, resSKSClusterAttrCNI, cluster.CNI)
+	assignTime(ret, resSKSClusterAttrCreatedAt, cluster.CreatedAt)
+	assign(ret, resSKSClusterAttrDescription, cluster.Description)
+	assign(ret, resSKSClusterAttrEndpoint, cluster.Endpoint)
+	assign(ret, resSKSClusterAttrLabels, cluster.Labels)
+	assign(ret, resSKSClusterAttrName, cluster.Name)
+	assign(ret, dsSKSClusterID, cluster.ID)
+
+	nodepools := make([]string, len(cluster.Nodepools))
+	for i, nodepool := range cluster.Nodepools {
+		nodepools[i] = *nodepool.ID
+	}
+	assign(ret, resSKSClusterAttrNodepools, &nodepools)
+
+	assign(ret, resSKSClusterAttrServiceLevel, cluster.ServiceLevel)
+	assign(ret, resSKSClusterAttrState, cluster.State)
+	assign(ret, resSKSClusterAttrVersion, cluster.Version)
 
 	return ret
 }
 
-func applyClusterDataToDataSource(data tfData, d *schema.ResourceData, schema map[string]*schema.Schema) error {
+func applyClusterDataToDataSource(data terraformObject, d *schema.ResourceData, schema map[string]*schema.Schema) error {
 	for attrIdentifier, attrVal := range data {
 		_, hasAttribute := schema[attrIdentifier]
 		if hasAttribute {
