@@ -1,23 +1,23 @@
-package exoscale
+package datasource
 
 import (
 	"context"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/filter"
-	"github.com/exoscale/terraform-provider-exoscale/pkg/gen/datasource"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/general"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-type schemaMap map[string]*schema.Schema
+type SchemaMap map[string]*schema.Schema
 
-func filterableListDataSource[T any](
+func FilterableListDataSource[T any](
 	dataSourceIdentifier, listAttributeIdentifier, zoneAttribute string,
 	getList getListFunc[T],
-	toDataMap toDataMapFunc[T],
+	toTFObj toTerraformObjectFunc[T],
 	generateListID generateListIDFunc[T],
-	getScheme func() schemaMap) *schema.Resource {
+	getScheme func() SchemaMap) *schema.Resource {
 	// TODO make zone required
 	elemScheme := getScheme()
 	ret := &schema.Resource{
@@ -34,7 +34,7 @@ func filterableListDataSource[T any](
 		ReadContext: createDataSourceReadFunc(
 			dataSourceIdentifier, listAttributeIdentifier, zoneAttribute,
 			getList,
-			toDataMap,
+			toTFObj,
 			generateListID,
 			elemScheme),
 	}
@@ -48,17 +48,17 @@ type getListFunc[T any] func(ctx context.Context, d *schema.ResourceData, meta i
 
 type generateListIDFunc[T any] func([]*T) string
 
-type toDataMapFunc[T any] func(*T) datasource.TerraformObject
+type toTerraformObjectFunc[T any] func(*T) TerraformObject
 
 func createDataSourceReadFunc[T any](
 	dataSourceIdentifier, listAttributeIdentifier, zoneAttribute string,
 	getList getListFunc[T],
-	toDataMap toDataMapFunc[T],
+	toTFObj toTerraformObjectFunc[T],
 	generateListID generateListIDFunc[T],
-	elemScheme schemaMap) func(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	elemScheme SchemaMap) func(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	return func(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 		tflog.Debug(ctx, "beginning read", map[string]interface{}{
-			"id": resourceIDString(d, dataSourceIdentifier),
+			"id": general.ResourceIDString(d, dataSourceIdentifier),
 		})
 
 		// TODO
@@ -76,7 +76,7 @@ func createDataSourceReadFunc[T any](
 
 		data := make([]interface{}, 0, len(clusters))
 		for _, cluster := range clusters {
-			clusterData := toDataMap(cluster)
+			clusterData := toTFObj(cluster)
 			clusterData[zoneAttribute] = zone
 
 			if !filter.CheckForMatch(clusterData, filters) {
@@ -94,7 +94,7 @@ func createDataSourceReadFunc[T any](
 		}
 
 		tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
-			"id": resourceIDString(d, dataSourceIdentifier),
+			"id": general.ResourceIDString(d, dataSourceIdentifier),
 		})
 
 		return nil

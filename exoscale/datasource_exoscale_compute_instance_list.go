@@ -10,6 +10,7 @@ import (
 
 	exoapi "github.com/exoscale/egoscale/v2/api"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/filter"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/general"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -42,7 +43,7 @@ Corresponding resource: [exoscale_compute_instance](../resources/compute_instanc
 
 func dataSourceComputeInstanceListRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	tflog.Debug(ctx, "beginning read", map[string]interface{}{
-		"id": resourceIDString(d, "exoscale_compute_instance_list"),
+		"id": general.ResourceIDString(d, "exoscale_compute_instance_list"),
 	})
 
 	zone := d.Get(dsComputeInstanceAttrZone).(string)
@@ -138,7 +139,7 @@ func dataSourceComputeInstanceListRead(ctx context.Context, d *schema.ResourceDa
 	d.SetId(fmt.Sprintf("%x", md5.Sum([]byte(strings.Join(ids, "")))))
 
 	tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
-		"id": resourceIDString(d, "exoscale_compute_instance_list"),
+		"id": general.ResourceIDString(d, "exoscale_compute_instance_list"),
 	})
 
 	return nil

@@ -7,6 +7,7 @@ import (
 
 	egoscale "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/general"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -24,8 +25,8 @@ const (
 	resPrivateNetworkDocHint = "(For managed Privnets) "
 )
 
-func resourcePrivateNetworkIDString(d resourceIDStringer) string {
-	return resourceIDString(d, "exoscale_private_network")
+func resourcePrivateNetworkIDString(d general.ResourceIDStringer) string {
+	return general.ResourceIDString(d, "exoscale_private_network")
 }
 
 func resourcePrivateNetwork() *schema.Resource {

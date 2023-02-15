@@ -6,6 +6,7 @@ import (
 
 	v2 "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/general"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -62,7 +63,7 @@ func dataSourceTemplate() *schema.Resource {
 
 func dataSourceTemplateRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	tflog.Debug(ctx, "beginning read", map[string]interface{}{
-		"id": resourceIDString(d, "exoscale_template"),
+		"id": general.ResourceIDString(d, "exoscale_template"),
 	})
 
 	zone := d.Get(dsTemplateAttrZone).(string)
@@ -108,7 +109,7 @@ func dataSourceTemplateRead(ctx context.Context, d *schema.ResourceData, meta in
 	}
 
 	tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
-		"id": resourceIDString(d, "exoscale_template"),
+		"id": general.ResourceIDString(d, "exoscale_template"),
 	})
 
 	return nil

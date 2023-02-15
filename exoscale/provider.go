@@ -362,19 +362,6 @@ func handleNotFound(d *schema.ResourceData, err error) error {
 	return err
 }
 
-type resourceIDStringer interface {
-	Id() string
-}
-
-func resourceIDString(d resourceIDStringer, name string) string {
-	id := d.Id()
-	if id == "" {
-		id = "<new resource>"
-	}
-
-	return fmt.Sprintf("%s (ID = %s)", name, id)
-}
-
 // zonedStateContextFunc is an alternative resource importer function to be
 // used for importing zone-local resources, where the resource ID is expected
 // to be suffixed with "@ZONE" (e.g. "c01af84d-6ac6-4784-98bb-127c98be8258@ch-gva-2").
