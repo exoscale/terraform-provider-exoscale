@@ -11,6 +11,7 @@ import (
 
 var (
 	cluster1Name = "test-cluster-1"
+	cluster2Name = "test-cluster-2"
 )
 
 func TestAccSKSDataSources(t *testing.T) {
@@ -99,17 +100,66 @@ data %q %q {
 data %q %q {
   zone = %q
   #cluster_id = "7149e9fc-75f5-48e6-b9ce-fcdf10f40b12"
-  name = "/.*cluster.*/"
+  name = %q
+}
+`, dsId, dsName, zone, cluster1Name),
+			DataSourceIdentifier: dsId,
+			DataSourceName:       dsName,
+			Attributes: testAttrs{
+				"clusters.#":      validateString("1"),
+				"clusters.0.name": validateString(cluster1Name),
+			},
+		},
+		{
+			Config: fmt.Sprintf(`
+data %q %q {
+  zone = %q
+  labels = {
+    "customer" = "/.*telecom.*/"
+}
 }
 `, dsId, dsName, zone),
 			DataSourceIdentifier: dsId,
 			DataSourceName:       dsName,
 			Attributes: testAttrs{
-				"clusters.#": validateString("1"),
+				"clusters.#": validateString("2"),
 			},
 		},
 	}...,
 	)
+
+	dsId = dsSKSNodepoolsListIdentifier
+	dsName = "my_nodepool_list"
+	testCases = append(testCases, []testCase{
+		{
+			Config: fmt.Sprintf(`
+data %q %q {
+  zone = %q
+  size = 3
+  name = "/.*nodepool-2/"
+}
+`, dsId, dsName, zone),
+			DataSourceIdentifier: dsId,
+			DataSourceName:       dsName,
+			Attributes: testAttrs{
+				"nodepools.#":      validateString("1"),
+				"nodepools.0.name": validateString("my-sks-nodepool-2"),
+			},
+		},
+		{
+			Config: fmt.Sprintf(`
+data %q %q {
+  zone = %q
+  name = "/.*-nodepool.*/"
+}
+`, dsId, dsName, zone),
+			DataSourceIdentifier: dsId,
+			DataSourceName:       dsName,
+			Attributes: testAttrs{
+				"nodepools.#": validateString("2"),
+			},
+		},
+	}...)
 
 	resTC := resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
