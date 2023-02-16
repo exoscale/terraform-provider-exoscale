@@ -11,7 +11,6 @@ import (
 
 var (
 	cluster1Name                = "ds-sks-test-cluster-1"
-	cluster2Name                = "ds-sks-test-cluster-2"
 	testAccSKSDataSourcesConfig = `
 locals {
   my_zone = "ch-gva-2"
