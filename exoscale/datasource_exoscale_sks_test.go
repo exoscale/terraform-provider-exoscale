@@ -10,8 +10,116 @@ import (
 )
 
 var (
-	cluster1Name = "test-cluster-1"
-	cluster2Name = "test-cluster-2"
+	cluster1Name                = "ds-sks-test-cluster-1"
+	cluster2Name                = "ds-sks-test-cluster-2"
+	testAccSKSDataSourcesConfig = `
+locals {
+  my_zone = "ch-gva-2"
+}
+
+data "exoscale_security_group" "default" {
+  name = "default"
+}
+
+resource "exoscale_sks_cluster" "my_sks_cluster" {
+  zone = local.my_zone
+  name = "ds-sks-test-cluster-1"
+  labels = {
+    "customer" = "your-telecom"
+  }
+}
+
+resource "exoscale_sks_cluster" "my_sks_cluster_2" {
+  zone = local.my_zone
+  name = "ds-sks-test-cluster-2"
+  labels = {
+    "customer" = "your-telecom"
+  }
+}
+
+resource "exoscale_anti_affinity_group" "my_sks_anti_affinity_group" {
+  name = "ds-sks-list-test-anti-affinity-group"
+}
+
+resource "exoscale_security_group" "my_sks_security_group" {
+  name = "ds-sks-list-test-security-group"
+}
+
+resource "exoscale_security_group_rule" "kubelet" {
+  security_group_id = exoscale_security_group.my_sks_security_group.id
+  description       = "Kubelet"
+  type              = "INGRESS"
+  protocol          = "TCP"
+  start_port        = 10250
+  end_port          = 10250
+  # (beetwen worker nodes only)
+  user_security_group_id = exoscale_security_group.my_sks_security_group.id
+}
+
+resource "exoscale_security_group_rule" "calico_vxlan" {
+  security_group_id = exoscale_security_group.my_sks_security_group.id
+  description       = "VXLAN (Calico)"
+  type              = "INGRESS"
+  protocol          = "UDP"
+  start_port        = 4789
+  end_port          = 4789
+  user_security_group_id = exoscale_security_group.my_sks_security_group.id
+}
+
+resource "exoscale_security_group_rule" "nodeport_tcp" {
+  security_group_id = exoscale_security_group.my_sks_security_group.id
+  description       = "Nodeport TCP services"
+  type              = "INGRESS"
+  protocol          = "TCP"
+  start_port        = 30000
+  end_port          = 32767
+  cidr = "0.0.0.0/0"
+}
+
+resource "exoscale_security_group_rule" "nodeport_udp" {
+  security_group_id = exoscale_security_group.my_sks_security_group.id
+  description       = "Nodeport UDP services"
+  type              = "INGRESS"
+  protocol          = "UDP"
+  start_port        = 30000
+  end_port          = 32767
+  cidr = "0.0.0.0/0"
+}
+
+resource "exoscale_sks_nodepool" "my_sks_nodepool" {
+  zone       = local.my_zone
+  cluster_id = exoscale_sks_cluster.my_sks_cluster.id
+  name       = "ds-sks-test-nodepool"
+
+  instance_type = "standard.medium"
+  size          = 3
+
+  anti_affinity_group_ids = [
+    exoscale_anti_affinity_group.my_sks_anti_affinity_group.id,
+  ]
+  security_group_ids = [
+    data.exoscale_security_group.default.id,
+    resource.exoscale_security_group.my_sks_security_group.id,
+  ]
+}
+
+resource "exoscale_sks_nodepool" "my_sks_nodepool_2" {
+  zone       = local.my_zone
+  cluster_id = exoscale_sks_cluster.my_sks_cluster_2.id
+  name       = "ds-sks-test-nodepool-2"
+
+  instance_type = "standard.medium"
+  size          = 3
+
+  anti_affinity_group_ids = [
+    exoscale_anti_affinity_group.my_sks_anti_affinity_group.id,
+  ]
+  security_group_ids = [
+    data.exoscale_security_group.default.id,
+    resource.exoscale_security_group.my_sks_security_group.id,
+  ]
+}
+`
 )
 
 func TestAccSKSDataSources(t *testing.T) {
@@ -30,9 +138,9 @@ func TestAccSKSDataSources(t *testing.T) {
 			Config: fmt.Sprintf(`
 				data %q %q {
 				  zone = %q
-				  name = %q
+				  name = exoscale_sks_cluster.my_sks_cluster.name
 				}
-				`, dsId, dsName, zone, cluster1Name),
+				`, dsId, dsName, zone),
 			DataSourceIdentifier: dsId,
 			DataSourceName:       dsName,
 			Attributes: testAttrs{
@@ -43,7 +151,7 @@ func TestAccSKSDataSources(t *testing.T) {
 			Config: fmt.Sprintf(`
 		data %q %q {
 		  zone = %q
-		  id = "7149e9fc-75f5-48e6-b9ce-fcdf10f40b12"
+		  id = exoscale_sks_cluster.my_sks_cluster.id
 		}
 		`, dsId, dsName, zone),
 			DataSourceIdentifier: dsId,
@@ -54,16 +162,15 @@ func TestAccSKSDataSources(t *testing.T) {
 		},
 	}
 
-	nodepoolName := "my-sks-nodepool"
+	nodepoolName := "ds-sks-test-nodepool"
 	dsId = dsSKSNodepoolIdentifier
 	dsName = "my_nodepool_ds"
 	testCases = append(testCases, []testCase{
 		{
-			// TODO use cluster id
 			Config: fmt.Sprintf(`
 data %q %q {
   zone = %q
-  cluster_id = "7149e9fc-75f5-48e6-b9ce-fcdf10f40b12"
+  cluster_id = exoscale_sks_cluster.my_sks_cluster.id
   name = %q
 }
 `, dsId, dsName, zone, nodepoolName),
@@ -74,12 +181,11 @@ data %q %q {
 			},
 		},
 		{
-			// TODO use id
 			Config: fmt.Sprintf(`
 data %q %q {
   zone = %q
-  cluster_id = "7149e9fc-75f5-48e6-b9ce-fcdf10f40b12"
-  id = "4f6912d5-f761-4e8b-80f3-53e2c4fd0d1f"
+  cluster_id = exoscale_sks_cluster.my_sks_cluster.id
+  id = exoscale_sks_nodepool.my_sks_nodepool.id
 }
 `, dsId, dsName, zone),
 			DataSourceIdentifier: dsId,
@@ -95,11 +201,9 @@ data %q %q {
 	dsName = "my_cluster_list"
 	testCases = append(testCases, []testCase{
 		{
-			// TODO use cluster id
 			Config: fmt.Sprintf(`
 data %q %q {
   zone = %q
-  #cluster_id = "7149e9fc-75f5-48e6-b9ce-fcdf10f40b12"
   name = %q
 }
 `, dsId, dsName, zone, cluster1Name),
@@ -143,7 +247,7 @@ data %q %q {
 			DataSourceName:       dsName,
 			Attributes: testAttrs{
 				"nodepools.#":      validateString("1"),
-				"nodepools.0.name": validateString("my-sks-nodepool-2"),
+				"nodepools.0.name": validateString("ds-sks-test-nodepool-2"),
 			},
 		},
 		{
@@ -164,17 +268,19 @@ data %q %q {
 	resTC := resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviders,
-		Steps:             []resource.TestStep{
-			// {
-			// 	Config:             testAccDataSourceComputeInstanceListConfig,
-			// 	ExpectNonEmptyPlan: true,
-			// },
+		Steps: []resource.TestStep{
+			{
+				Config: testAccSKSDataSourcesConfig,
+			},
 		},
 	}
 
 	for _, c := range testCases {
 		resTC.Steps = append(resTC.Steps, resource.TestStep{
-			Config: c.Config,
+			Config: fmt.Sprintf(`
+%s
+
+%s`, testAccSKSDataSourcesConfig, c.Config),
 			Check: resource.ComposeTestCheckFunc(
 				testAccSKSDataSourcesAttributes("data."+c.DataSourceIdentifier+"."+c.DataSourceName, c.Attributes)),
 		})
