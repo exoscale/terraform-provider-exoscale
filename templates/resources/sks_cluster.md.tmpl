@@ -1,0 +1,34 @@
+---
+page_title: "{{.Name}} {{.Type}} - {{.ProviderName}}"
+subcategory: ""
+description: |-
+{{ .Description | plainmarkdown | trimspace | prefixlines "  " }}
+---
+
+# {{.Name}} ({{.Type}})
+
+{{ .Description | trimspace }}
+
+{{ if .HasExample -}}
+## Example Usage
+
+{{ tffile .ExampleFile }}
+
+Next step is to attach [exoscale_sks_nodepool](./sks_nodepool.md)(s) to the cluster.
+
+Please refer to the [examples](https://github.com/exoscale/terraform-provider-exoscale/tree/master/examples/)
+directory for complete configuration examples.
+
+{{- end }}
+
+{{ .SchemaMarkdown | trimspace }}
+
+{{ if .HasImport -}}
+## Import
+
+An existing SKS cluster may be imported by `<ID>@<zone>`:
+
+{{ codefile "shell" .ImportFile }}
+
+~> **NOTE:** Importing an `exoscale_sks_cluster` resource does _not_ import related `exoscale_sks_nodepool` resources.
+{{- end }}
