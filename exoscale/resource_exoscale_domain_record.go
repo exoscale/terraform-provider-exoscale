@@ -26,39 +26,49 @@ func resourceDomainRecordIDString(d resourceIDStringer) string {
 
 func resourceDomainRecord() *schema.Resource {
 	return &schema.Resource{
+		Description: `Manage Exoscale [DNS](https://community.exoscale.com/documentation/dns/) Domain Records.
+
+Corresponding data source: [exoscale_domain_record](../data-sources/domain_record.md).`,
 		Schema: map[string]*schema.Schema{
 			"domain": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
+				Description: "The parent [exoscale_domain](./domain.md) to attach the record to.",
 			},
 			"record_type": {
 				Type:         schema.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: validation.StringInSlice(supportedRecordTypes, true),
+				Description:  "The record type (`A`, `AAAA`, `ALIAS`, `CAA`, `CNAME`, `HINFO`, `MX`, `NAPTR`, `NS`, `POOL`, `SPF`, `SRV`, `SSHFP`, `TXT`, `URL`).",
 			},
 			"name": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "The record name, Leave blank (`\"\"`) to create a root record (similar to using `@` in a DNS zone file).",
 			},
 			"content": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "The record value.",
 			},
 			"ttl": {
-				Type:     schema.TypeInt,
-				Optional: true,
-				Computed: true,
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Computed:    true,
+				Description: "The record TTL (seconds; minimum `0`; default: `3600`).",
 			},
 			"prio": {
-				Type:     schema.TypeInt,
-				Optional: true,
-				Computed: true,
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Computed:    true,
+				Description: "The record priority (for types that support it; minimum `0`).",
 			},
 			"hostname": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The record *Fully Qualified Domain Name* (FQDN). Useful for aliasing `A`/`AAAA` records with `CNAME`.",
 			},
 		},
 
