@@ -2,15 +2,85 @@ package testutils
 
 import (
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
+	"testing"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
+
+// testAttrs represents a map of expected resource attributes during acceptance tests.
+type TestAttrs map[string]schema.SchemaValidateDiagFunc
+
+func AccPreCheck(t *testing.T) {
+	key := os.Getenv("EXOSCALE_API_KEY")
+	secret := os.Getenv("EXOSCALE_API_SECRET")
+	if key == "" || secret == "" {
+		t.Fatal("EXOSCALE_API_KEY and EXOSCALE_API_SECRET must be set for acceptance tests")
+	}
+}
+
+// testResourceStateValidationFunc represents a resource state validation function.
+type TestResourceStateValidationFunc func(state *terraform.InstanceState) error
+
+// checkResourceAttributes compares a map of resource attributes against a map
+// of expected resource attributes and performs validation on the values.
+func CheckResourceAttributes(want TestAttrs, got map[string]string) error {
+	for attr, validateFunc := range want {
+		v, ok := got[attr]
+		if !ok {
+			return fmt.Errorf("expected attribute %q not found in map", attr)
+		} else if diags := validateFunc(v, cty.GetAttrPath(attr)); diags.HasError() {
+			errors := make([]string, 0)
+			for _, d := range diags {
+				if d.Severity == diag.Error {
+					errors = append(errors, d.Summary)
+				}
+			}
+
+			return fmt.Errorf("invalid value for attribute %q:\n%s\n", // nolint:revive
+				attr, strings.Join(errors, "\n"))
+		}
+	}
+
+	return nil
+}
+
+// checkResourceState executes the specified TestResourceStateValidationFunc
+// functions against the state of the resource matching the specified
+// identifier r (e.g. "exoscale_compute.test"), and returns an error if any
+// test function returns an error.
+func CheckResourceState(r string, tests ...TestResourceStateValidationFunc) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		res, ok := s.RootModule().Resources[r]
+		if !ok {
+			return fmt.Errorf("resource %q not found in the state", r)
+		}
+
+		for _, t := range tests {
+			if err := t(res.Primary); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	}
+}
+
+// CheckResourceStateValidateAttributes compares a map of resource attributes against
+// a map of expected resource attributes and performs validation on the values.
+func CheckResourceStateValidateAttributes(want TestAttrs) TestResourceStateValidationFunc {
+	return func(s *terraform.InstanceState) error {
+		return CheckResourceAttributes(want, s.Attributes)
+	}
+}
 
 // ValidateString validates that the given field is a string and matches the expected value.
 func ValidateString(str string) schema.SchemaValidateDiagFunc {

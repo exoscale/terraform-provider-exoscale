@@ -44,7 +44,7 @@ Corresponding resource: [exoscale_anti_affinity_group](../resources/anti_affinit
 
 func dsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	tflog.Debug(ctx, "beginning read", map[string]interface{}{
-		"id": utils.IDString(d, "exoscale_anti_affinity_group"),
+		"id": utils.IDString(d, Name),
 	})
 
 	zone := config.DefaultZone
@@ -97,7 +97,7 @@ func dsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.
 	}
 
 	tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
-		"id": utils.IDString(d, "exoscale_anti_affinity_group"),
+		"id": utils.IDString(d, Name),
 	})
 
 	return nil

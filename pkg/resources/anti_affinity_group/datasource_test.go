@@ -36,7 +36,7 @@ data "exoscale_anti_affinity_group" "by-id" {
   id = exoscale_anti_affinity_group.test.id
 }`, dsGroupName),
 				Check: resource.ComposeTestCheckFunc(
-					testDataSourceAttributes("data.exoscale_anti_affinity_group.by-id", testutils.TestAttrs{
+					dsTestAttributes("data.exoscale_anti_affinity_group.by-id", testutils.TestAttrs{
 						aagroup.AttrID:   validation.ToDiagFunc(validation.IsUUID),
 						aagroup.AttrName: testutils.ValidateString(dsGroupName),
 					}),
@@ -52,7 +52,7 @@ data "exoscale_anti_affinity_group" "by-name" {
   name = exoscale_anti_affinity_group.test.name
 }`, dsGroupName),
 				Check: resource.ComposeTestCheckFunc(
-					testDataSourceAttributes("data.exoscale_anti_affinity_group.by-name", testutils.TestAttrs{
+					dsTestAttributes("data.exoscale_anti_affinity_group.by-name", testutils.TestAttrs{
 						aagroup.AttrID:   validation.ToDiagFunc(validation.IsUUID),
 						aagroup.AttrName: testutils.ValidateString(dsGroupName),
 					}),
@@ -81,7 +81,7 @@ data "exoscale_anti_affinity_group" "test" {
 					testutils.TestInstanceTemplateName,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					testDataSourceAttributes("data.exoscale_anti_affinity_group.test", testutils.TestAttrs{
+					dsTestAttributes("data."+aagroup.Name+".test", testutils.TestAttrs{
 						aagroup.AttrID:               validation.ToDiagFunc(validation.IsUUID),
 						aagroup.AttrInstances + ".#": testutils.ValidateString("1"),
 						aagroup.AttrName:             testutils.ValidateString(dsGroupName),
@@ -92,7 +92,7 @@ data "exoscale_anti_affinity_group" "test" {
 	})
 }
 
-func testDataSourceAttributes(ds string, expected testutils.TestAttrs) resource.TestCheckFunc {
+func dsTestAttributes(ds string, expected testutils.TestAttrs) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		for name, res := range s.RootModule().Resources {
 			if name == ds {

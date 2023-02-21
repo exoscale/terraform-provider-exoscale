@@ -180,7 +180,7 @@ func Provider() *schema.Provider {
 
 		ResourcesMap: map[string]*schema.Resource{
 			"exoscale_affinity":             resourceAffinity(),
-			"exoscale_anti_affinity_group":  resourceAntiAffinityGroup(),
+			"exoscale_anti_affinity_group":  anti_affinity_group.Resource(),
 			"exoscale_compute":              resourceCompute(),
 			"exoscale_compute_instance":     resourceComputeInstance(),
 			"exoscale_database":             resourceDatabase(),

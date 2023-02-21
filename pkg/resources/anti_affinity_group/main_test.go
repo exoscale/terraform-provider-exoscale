@@ -4,4 +4,5 @@ import "testing"
 
 func TestAntiAffinityGroup(t *testing.T) {
 	t.Run("DataSource", testDataSource)
+	t.Run("Resource", testResource)
 }
