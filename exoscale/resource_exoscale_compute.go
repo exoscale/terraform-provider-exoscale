@@ -26,9 +26,10 @@ func resourceComputeIDString(d resourceIDStringer) string {
 func resourceCompute() *schema.Resource {
 	s := map[string]*schema.Schema{
 		"zone": {
-			Type:     schema.TypeString,
-			Required: true,
-			ForceNew: true,
+			Type:        schema.TypeString,
+			Required:    true,
+			ForceNew:    true,
+			Description: "The Exoscale Zone name.",
 		},
 		"template": {
 			Type:          schema.TypeString,
@@ -36,6 +37,7 @@ func resourceCompute() *schema.Resource {
 			Computed:      true,
 			ForceNew:      true,
 			ConflictsWith: []string{"template_id"},
+			Description:   "The compute instance template (name). Only *featured* templates are available, if you want to reference *custom templates* use the `template_id` attribute instead.",
 		},
 		"template_id": {
 			Type:          schema.TypeString,
@@ -43,26 +45,31 @@ func resourceCompute() *schema.Resource {
 			Computed:      true,
 			ForceNew:      true,
 			ConflictsWith: []string{"template"},
+			Description:   "The compute instance template (ID). Usage of the `exoscale_compute_template` data source is recommended.",
 		},
 		"disk_size": {
 			Type:         schema.TypeInt,
 			Required:     true,
 			ValidateFunc: validation.IntAtLeast(10),
+			Description:  "The instance disk size (GiB; at least `10`).",
 		},
 		"key_pair": {
-			Type:     schema.TypeString,
-			Optional: true,
-			ForceNew: true,
+			Type:        schema.TypeString,
+			Optional:    true,
+			ForceNew:    true,
+			Description: "The SSH keypair (name) to authorize in the instance.",
 		},
 		"name": {
-			Type:       schema.TypeString,
-			Computed:   true,
-			Deprecated: "use `hostname` attribute instead",
+			Type:        schema.TypeString,
+			Computed:    true,
+			Deprecated:  "use `hostname` attribute instead",
+			Description: "The instance hostname. Please use the `hostname` argument instead.",
 		},
 		"display_name": {
-			Type:     schema.TypeString,
-			Optional: true,
-			Computed: true,
+			Type:        schema.TypeString,
+			Optional:    true,
+			Computed:    true,
+			Description: "The displayed instance name. Note: if the `hostname` attribute is not set, this attribute is also used to set the OS' *hostname* during creation, so the value must contain only alphanumeric and hyphen (\" - \") characters; it can be changed to any character during a later update. If neither `display_name` or `hostname` attributes are set, a random value will be generated automatically.",
 		},
 		"hostname": {
 			Type:     schema.TypeString,
@@ -72,16 +79,18 @@ func resourceCompute() *schema.Resource {
 				regexp.MustCompile(computeHostnameRegexp),
 				"alphanumeric and hyphen characters",
 			),
+			Description: "The instance hostname, must contain only alphanumeric and hyphen (`-`) characters. If neither `display_name` or `hostname` attributes are set, a random value will be generated automatically. Note: updating this attribute's value requires to reboot the instance.",
 		},
 		"size": {
-			Type:     schema.TypeString,
-			Optional: true,
-			Default:  "Medium",
+			Type:        schema.TypeString,
+			Optional:    true,
+			Default:     "Medium",
+			Description: "The instance size (`Tiny`, `Small`, `Medium`, `Large`, etc.)",
 		},
 		"user_data": {
 			Type:             schema.TypeString,
 			Optional:         true,
-			Description:      "cloud-init configuration",
+			Description:      "cloud-init configuration (no need to base64-encode or gzip it as the provider will take care of it).",
 			ValidateDiagFunc: validateComputeUserData,
 		},
 		"user_data_base64": {
@@ -96,11 +105,13 @@ func resourceCompute() *schema.Resource {
 				"de", "de-ch", "es", "fi", "fr", "fr-be", "fr-ch", "is",
 				"it", "jp", "nl-be", "no", "pt", "uk", "us",
 			}, true),
+			Description: "The keyboard layout configuration (`de`, `de-ch`, `es`, `fi`, `fr`, `fr-be`, `fr-ch`, `is`, `it`, `jp`, `nl-be`, `no`, `pt`, `uk`, `us`; at creation time only).",
 		},
 		"reverse_dns": {
 			Type:         schema.TypeString,
 			Optional:     true,
 			ValidateFunc: validation.StringMatch(regexp.MustCompile(`^.*\.$`), ""),
+			Description:  "The instance reverse DNS record (must end with a `.`; e.g: `my-instance.example.net.`).",
 		},
 		"state": {
 			Type:     schema.TypeString,
@@ -109,6 +120,7 @@ func resourceCompute() *schema.Resource {
 			ValidateFunc: validation.StringInSlice([]string{
 				"Running", "Stopped",
 			}, true),
+			Description: "The instance state (`Running` or `Stopped`; default: `Running`)",
 		},
 		"ip4": {
 			Type:        schema.TypeBool,
@@ -123,16 +135,18 @@ func resourceCompute() *schema.Resource {
 			Description: "Request an IPv6 address on the default NIC",
 		},
 		"ip_address": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Type:        schema.TypeString,
+			Computed:    true,
+			Description: "The instance (main network interface) IPv4 address.",
 		},
 		"gateway": {
 			Type:     schema.TypeString,
 			Computed: true,
 		},
 		"ip6_address": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Type:        schema.TypeString,
+			Computed:    true,
+			Description: "The instance (main network interface) IPv6 address (if enabled).",
 		},
 		"ip6_cidr": {
 			Type:     schema.TypeString,
@@ -148,6 +162,7 @@ func resourceCompute() *schema.Resource {
 			Elem: &schema.Schema{
 				Type: schema.TypeString,
 			},
+			Description: "A list of anti-affinity groups (IDs; at creation time only; conflicts with `affinity_groups`).",
 		},
 		"affinity_groups": {
 			Type:          schema.TypeSet,
@@ -159,6 +174,7 @@ func resourceCompute() *schema.Resource {
 			Elem: &schema.Schema{
 				Type: schema.TypeString,
 			},
+			Description: "A list of anti-affinity groups (names; at creation time only; conflicts with `affinity_group_ids`).",
 		},
 		"security_group_ids": {
 			Type:          schema.TypeSet,
@@ -169,6 +185,7 @@ func resourceCompute() *schema.Resource {
 			Elem: &schema.Schema{
 				Type: schema.TypeString,
 			},
+			Description: "A list of security groups (IDs; conflicts with `security_groups`).",
 		},
 		"security_groups": {
 			Type:          schema.TypeSet,
@@ -179,16 +196,19 @@ func resourceCompute() *schema.Resource {
 			Elem: &schema.Schema{
 				Type: schema.TypeString,
 			},
+			Description: "A list of security groups (names; conflicts with `security_group_ids`).",
 		},
 		"username": {
-			Type:       schema.TypeString,
-			Computed:   true,
-			Deprecated: "broken, use `compute_template` data source `username` attribute",
+			Type:        schema.TypeString,
+			Computed:    true,
+			Deprecated:  "broken, use `compute_template` data source `username` attribute",
+			Description: "The user to use to connect to the instance. If you've referenced a *custom template* in the resource, use the `exoscale_compute_template` data source `username` attribute instead.",
 		},
 		"password": {
-			Type:      schema.TypeString,
-			Computed:  true,
-			Sensitive: true,
+			Type:        schema.TypeString,
+			Computed:    true,
+			Sensitive:   true,
+			Description: "The instance initial password and/or encrypted password.",
 		},
 	}
 
@@ -196,6 +216,9 @@ func resourceCompute() *schema.Resource {
 
 	return &schema.Resource{
 		Schema: s,
+
+		Description:        "Manage Exoscale Compute Instances.",
+		DeprecationMessage: "!> **WARNING:** This resource is **DEPRECATED** and will be removed in the next major version. Please use [exoscale_compute_instance](./compute_instance.md) instead.",
 
 		Create: resourceComputeCreate,
 		Read:   resourceComputeRead,

@@ -14,7 +14,7 @@ func addTags(s map[string]*schema.Schema, key string) {
 		Elem: &schema.Schema{
 			Type: schema.TypeString,
 		},
-		Description: "Map of tags (key: value)",
+		Description: "Map of tags (key/value). To remove all tags, set `tags = {}`.",
 	}
 }
 
