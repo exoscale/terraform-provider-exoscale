@@ -23,72 +23,75 @@ func resourceIPAddress() *schema.Resource {
 			Type:        schema.TypeString,
 			Required:    true,
 			ForceNew:    true,
-			Description: "Name of the zone",
+			Description: "The Exoscale Zone name",
 		},
 		"healthcheck_mode": {
 			Type:         schema.TypeString,
-			Description:  "Healthcheck probing mode",
+			Description:  "The healthcheck probing mode (must be `tcp`, `http` or `https`).",
 			Optional:     true,
 			ValidateFunc: validation.StringMatch(regexp.MustCompile("(?:tcp|https?)"), `must be either "tcp", "http", or "https"`),
 			ForceNew:     true,
 		},
 		"healthcheck_port": {
 			Type:         schema.TypeInt,
-			Description:  "Healthcheck service port to probe",
+			Description:  "The healthcheck service port to probe (must be between `1` and `65535`).",
 			Optional:     true,
 			ValidateFunc: validation.IntBetween(1, 65535),
 		},
 		"healthcheck_path": {
 			Type:        schema.TypeString,
-			Description: "Healthcheck probe HTTP request path, must be specified in \"http\" mode",
+			Description: "The healthcheck probe HTTP request path (must be specified in `http`/`https` modes).",
 			Optional:    true,
 		},
 		"healthcheck_tls_skip_verify": {
 			Type:        schema.TypeBool,
-			Description: "Healthcheck probe disable TLS verification",
+			Description: "Disable TLS certificate validation in `https` mode (boolean; default: `false`). Note: this parameter can only be changed to `true`, it cannot be reset to `false` later on (requires a resource re-creation).",
 			Optional:    true,
 		},
 		"healthcheck_tls_sni": {
 			Type:        schema.TypeString,
-			Description: "Healthcheck probe set server name for TLS SNI",
+			Description: "The healthcheck TLS server name to specify in `https` mode. Note: this parameter can only be changed to a non-empty value, it cannot be reset to its default empty value later on (requires a resource re-creation).",
 			Optional:    true,
 		},
 		"healthcheck_interval": {
 			Type:         schema.TypeInt,
-			Description:  "Healthcheck probing interval in seconds",
+			Description:  "The healthcheck probing interval (seconds; must be between `5` and `300`).",
 			Optional:     true,
 			ValidateFunc: validation.IntBetween(5, 300),
 		},
 		"healthcheck_timeout": {
 			Type:         schema.TypeInt,
-			Description:  "Time in seconds before considering a healthcheck probing failed",
+			Description:  "The time in seconds before considering a healthcheck probing failed (must be between `2` and `60`).",
 			Optional:     true,
 			ValidateFunc: validation.IntBetween(2, 60),
 		},
 		"healthcheck_strikes_ok": {
 			Type:         schema.TypeInt,
-			Description:  "Number of successful healthcheck probes before considering the target healthy",
+			Description:  "The number of successful healthcheck probes before considering the target healthy (must be between `1` and `20`).",
 			Optional:     true,
 			ValidateFunc: validation.IntBetween(1, 20),
 		},
 		"healthcheck_strikes_fail": {
 			Type:         schema.TypeInt,
-			Description:  "Number of unsuccessful healthcheck probes before considering the target unhealthy",
+			Description:  "The number of unsuccessful healthcheck probes before considering the target unhealthy (must be between `1` and `20`).",
 			Optional:     true,
 			ValidateFunc: validation.IntBetween(1, 20),
 		},
 		"description": {
-			Type:     schema.TypeString,
-			Optional: true,
+			Type:        schema.TypeString,
+			Optional:    true,
+			Description: "A free-form text describing the Elastic IP (EIP).",
 		},
 		"reverse_dns": {
 			Type:         schema.TypeString,
 			Optional:     true,
 			ValidateFunc: validation.StringMatch(regexp.MustCompile(`^.*\.$`), ""),
+			Description:  "The EIP reverse DNS record (must end with a `.`; e.g: `my-eip.example.net.`).",
 		},
 		"ip_address": {
-			Type:     schema.TypeString,
-			Computed: true,
+			Type:        schema.TypeString,
+			Computed:    true,
+			Description: "The Elastic IP (EIP) IPv4 address.",
 		},
 	}
 
@@ -96,6 +99,8 @@ func resourceIPAddress() *schema.Resource {
 
 	return &schema.Resource{
 		Schema: s,
+
+		Description: "Manage Exoscale Elastic IPs (EIP).",
 
 		Create: resourceIPAddressCreate,
 		Read:   resourceIPAddressRead,
