@@ -50,20 +50,24 @@ func resourceSecurityGroupRulesSchema() map[string]*schema.Schema {
 						Type:         schema.TypeString,
 						ValidateFunc: validation.IsCIDRNetwork(0, 128),
 					},
+					Description: "A list of (`INGRESS`) source / (`EGRESS`) destination IP subnet (in CIDR notation) to match.",
 				},
 				resSecurityGroupRulesAttrDescription: {
-					Type:     schema.TypeString,
-					Optional: true,
+					Type:        schema.TypeString,
+					Optional:    true,
+					Description: "A free-form text describing the block.",
 				},
 				resSecurityGroupRulesAttrICMPCode: {
 					Type:         schema.TypeInt,
 					Optional:     true,
 					ValidateFunc: validation.IntBetween(0, 255),
+					Description:  "An ICMP/ICMPv6 type/code to match.",
 				},
 				resSecurityGroupRulesAttrICMPType: {
 					Type:         schema.TypeInt,
 					Optional:     true,
 					ValidateFunc: validation.IntBetween(0, 255),
+					Description:  "An ICMP/ICMPv6 type/code to match.",
 				},
 				resSecurityGroupRulesAttrPorts: {
 					Type:     schema.TypeSet,
@@ -72,12 +76,14 @@ func resourceSecurityGroupRulesSchema() map[string]*schema.Schema {
 						Type:         schema.TypeString,
 						ValidateFunc: validatePortRange,
 					},
+					Description: "A list of ports or port ranges (`<start_port>-<end_port>`).",
 				},
 				resSecurityGroupRulesAttrProtocol: {
 					Type:         schema.TypeString,
 					Optional:     true,
 					Default:      "TCP",
 					ValidateFunc: validation.StringInSlice(securityGroupRuleProtocols, true),
+					Description:  "The network protocol to match (`TCP`, `UDP`, `ICMP`, `ICMPv6`, `AH`, `ESP`, `GRE`, `IPIP` or `ALL`).",
 				},
 				resSecurityGroupRulesAttrUserSecurityGroupList: {
 					Type:     schema.TypeSet,
@@ -85,6 +91,7 @@ func resourceSecurityGroupRulesSchema() map[string]*schema.Schema {
 					Elem: &schema.Schema{
 						Type: schema.TypeString,
 					},
+					Description: "A list of source (for ingress)/destination (for egress) identified by a security group.",
 				},
 
 				// This attribute is intended for internal bookkeeping, not for to public usage.
@@ -95,6 +102,7 @@ func resourceSecurityGroupRulesSchema() map[string]*schema.Schema {
 				},
 			},
 		},
+		Description: "A security group rule definition (can be specified multiple times).",
 	}
 
 	return map[string]*schema.Schema{
@@ -104,6 +112,7 @@ func resourceSecurityGroupRulesSchema() map[string]*schema.Schema {
 			Computed:      true,
 			ForceNew:      true,
 			ConflictsWith: []string{resSecurityGroupRulesAttrSecurityGroupName},
+			Description:   "The security group (ID) the rules apply to (conficts with `security_group)`.",
 		},
 		resSecurityGroupRulesAttrSecurityGroupName: {
 			Type:          schema.TypeString,
@@ -111,6 +120,7 @@ func resourceSecurityGroupRulesSchema() map[string]*schema.Schema {
 			Computed:      true,
 			ForceNew:      true,
 			ConflictsWith: []string{resSecurityGroupRulesAttrSecurityGroupID},
+			Description:   "The security group (name) the rules apply to (conflicts with `security_group_id`).",
 		},
 		"ingress": ruleSchema,
 		"egress":  ruleSchema,
@@ -120,6 +130,7 @@ func resourceSecurityGroupRulesSchema() map[string]*schema.Schema {
 func resourceSecurityGroupRules() *schema.Resource {
 	return &schema.Resource{
 		Schema:        resourceSecurityGroupRulesSchema(),
+		Description:   "Manage Exoscale Security Group Rules.",
 		SchemaVersion: 2,
 		StateUpgraders: []schema.StateUpgrader{
 			{
