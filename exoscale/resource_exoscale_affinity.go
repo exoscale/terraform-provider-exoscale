@@ -18,7 +18,7 @@ func resourceAffinityIDString(d resourceIDStringer) string {
 
 func resourceAffinity() *schema.Resource {
 	return &schema.Resource{
-		Description:        "Manage Exoscale Anti-Affinity Groups.\n\n" + resAffinityDeprecationMessage,
+		Description:        "Manage Exoscale Anti-Affinity Groups.",
 		DeprecationMessage: resAffinityDeprecationMessage,
 		Schema: map[string]*schema.Schema{
 			"name": {
