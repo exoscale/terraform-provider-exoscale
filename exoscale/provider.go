@@ -4,19 +4,24 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"os/user"
 	"path/filepath"
 	"strings"
 	"time"
 
-	ini "gopkg.in/ini.v1"
-
 	"github.com/exoscale/egoscale"
 	exo "github.com/exoscale/egoscale/v2"
+	exov2 "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
+	"github.com/hashicorp/go-retryablehttp"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/logging"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	ini "gopkg.in/ini.v1"
+
+	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/anti_affinity_group"
 )
 
 const (
@@ -151,7 +156,7 @@ func Provider() *schema.Provider {
 
 		DataSourcesMap: map[string]*schema.Resource{
 			"exoscale_affinity":              dataSourceAffinity(),
-			"exoscale_anti_affinity_group":   dataSourceAntiAffinityGroup(),
+			"exoscale_anti_affinity_group":   anti_affinity_group.DataSource(),
 			"exoscale_compute":               dataSourceCompute(),
 			"exoscale_compute_instance":      dataSourceComputeInstance(),
 			"exoscale_compute_instance_list": dataSourceComputeInstanceList(),
@@ -233,7 +238,7 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 			)
 		}
 	} else {
-		config := d.Get("config").(string)
+		configFile := d.Get("config").(string)
 		region := d.Get("region")
 
 		// deprecation support
@@ -245,17 +250,17 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 		// Support `~/`
 		usr, err := user.Current()
 		if err == nil {
-			if strings.HasPrefix(config, "~/") {
-				config = filepath.Join(usr.HomeDir, config[2:])
+			if strings.HasPrefix(configFile, "~/") {
+				configFile = filepath.Join(usr.HomeDir, configFile[2:])
 			}
 		}
 
 		// Convert relative path to absolute
-		config, _ = filepath.Abs(config)
+		configFile, _ = filepath.Abs(configFile)
 		localConfig, _ := filepath.Abs("cloudstack.ini")
 
 		inis := []string{
-			config,
+			configFile,
 			localConfig,
 		}
 
@@ -264,16 +269,16 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 		}
 
 		// Stops at the first file that exists
-		config = ""
+		configFile = ""
 		for _, i := range inis {
 			if _, err := os.Stat(i); err != nil {
 				continue
 			}
-			config = i
+			configFile = i
 			break
 		}
 
-		if config == "" {
+		if configFile == "" {
 			return nil, diag.Errorf(
 				"key (%s), secret are missing, or config file not found within: %s",
 				key,
@@ -281,7 +286,7 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 			)
 		}
 
-		cfg, err := ini.LoadSources(ini.LoadOptions{IgnoreInlineComment: true}, config)
+		cfg, err := ini.LoadSources(ini.LoadOptions{IgnoreInlineComment: true}, configFile)
 		if err != nil {
 			return nil, diag.Errorf("config file not loaded: %s", err)
 		}
@@ -324,7 +329,30 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 		gzipUserData:    d.Get("gzip_user_data").(bool),
 	}
 
-	return baseConfig, diags
+	clv2, err := exov2.NewClient(
+		baseConfig.key,
+		baseConfig.secret,
+		exov2.ClientOptWithAPIEndpoint(endpoint),
+		exov2.ClientOptWithTimeout(baseConfig.timeout),
+		exov2.ClientOptWithHTTPClient(func() *http.Client {
+			rc := retryablehttp.NewClient()
+			rc.Logger = LeveledTFLogger{Verbose: logging.IsDebugOrHigher()}
+			hc := rc.StandardClient()
+			if logging.IsDebugOrHigher() {
+				hc.Transport = logging.NewTransport("exoscale", hc.Transport)
+			}
+			return hc
+		}()))
+	if err != nil {
+		return nil, diag.FromErr(err)
+	}
+
+	return map[string]interface{}{
+			"config":      baseConfig,
+			"client":      clv2,
+			"environment": environment,
+		},
+		diags
 }
 
 func getZoneByName(ctx context.Context, client *egoscale.Client, zoneName string) (*egoscale.Zone, error) {

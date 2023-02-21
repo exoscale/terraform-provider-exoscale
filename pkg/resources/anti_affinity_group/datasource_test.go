@@ -1,4 +1,4 @@
-package exoscale
+package anti_affinity_group_test
 
 import (
 	"errors"
@@ -10,14 +10,17 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+
+	aagroup "github.com/exoscale/terraform-provider-exoscale/pkg/resources/anti_affinity_group"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/testutils"
 )
 
-var testAccDataSourceAntiAffinityGroupName = acctest.RandomWithPrefix(testPrefix)
+var dsGroupName = acctest.RandomWithPrefix(testutils.Prefix)
 
-func TestAccDataSourceAntiAffinityGroup(t *testing.T) {
+func testDataSource(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviders,
+		PreCheck:          func() { testutils.AccPreCheck(t) },
+		ProviderFactories: testutils.Providers(),
 		Steps: []resource.TestStep{
 			{
 				Config:      `data "exoscale_anti_affinity_group" "test" {}`,
@@ -31,11 +34,11 @@ resource "exoscale_anti_affinity_group" "test" {
 
 data "exoscale_anti_affinity_group" "by-id" {
   id = exoscale_anti_affinity_group.test.id
-}`, testAccDataSourceAntiAffinityGroupName),
+}`, dsGroupName),
 				Check: resource.ComposeTestCheckFunc(
-					testAccDataSourceAntiAffinityGroupAttributes("data.exoscale_anti_affinity_group.by-id", testAttrs{
-						dsAntiAffinityGroupAttrID:   validation.ToDiagFunc(validation.IsUUID),
-						dsAntiAffinityGroupAttrName: validateString(testAccDataSourceAntiAffinityGroupName),
+					testDataSourceAttributes("data.exoscale_anti_affinity_group.by-id", testutils.TestAttrs{
+						aagroup.AttrID:   validation.ToDiagFunc(validation.IsUUID),
+						aagroup.AttrName: testutils.ValidateString(dsGroupName),
 					}),
 				),
 			},
@@ -47,11 +50,11 @@ resource "exoscale_anti_affinity_group" "test" {
 
 data "exoscale_anti_affinity_group" "by-name" {
   name = exoscale_anti_affinity_group.test.name
-}`, testAccDataSourceAntiAffinityGroupName),
+}`, dsGroupName),
 				Check: resource.ComposeTestCheckFunc(
-					testAccDataSourceAntiAffinityGroupAttributes("data.exoscale_anti_affinity_group.by-name", testAttrs{
-						dsAntiAffinityGroupAttrID:   validation.ToDiagFunc(validation.IsUUID),
-						dsAntiAffinityGroupAttrName: validateString(testAccDataSourceAntiAffinityGroupName),
+					testDataSourceAttributes("data.exoscale_anti_affinity_group.by-name", testutils.TestAttrs{
+						aagroup.AttrID:   validation.ToDiagFunc(validation.IsUUID),
+						aagroup.AttrName: testutils.ValidateString(dsGroupName),
 					}),
 				),
 			},
@@ -73,15 +76,15 @@ data "exoscale_anti_affinity_group" "test" {
   id         = exoscale_anti_affinity_group.test.id
   depends_on = [exoscale_compute.test]
 }`,
-					testAccDataSourceAntiAffinityGroupName,
-					testZoneName,
-					testInstanceTemplateName,
+					dsGroupName,
+					testutils.TestZoneName,
+					testutils.TestInstanceTemplateName,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					testAccDataSourceAntiAffinityGroupAttributes("data.exoscale_anti_affinity_group.test", testAttrs{
-						dsAntiAffinityGroupAttrID:               validation.ToDiagFunc(validation.IsUUID),
-						dsAntiAffinityGroupAttrInstances + ".#": validateString("1"),
-						dsAntiAffinityGroupAttrName:             validateString(testAccDataSourceAntiAffinityGroupName),
+					testDataSourceAttributes("data.exoscale_anti_affinity_group.test", testutils.TestAttrs{
+						aagroup.AttrID:               validation.ToDiagFunc(validation.IsUUID),
+						aagroup.AttrInstances + ".#": testutils.ValidateString("1"),
+						aagroup.AttrName:             testutils.ValidateString(dsGroupName),
 					}),
 				),
 			},
@@ -89,11 +92,11 @@ data "exoscale_anti_affinity_group" "test" {
 	})
 }
 
-func testAccDataSourceAntiAffinityGroupAttributes(ds string, expected testAttrs) resource.TestCheckFunc {
+func testDataSourceAttributes(ds string, expected testutils.TestAttrs) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		for name, res := range s.RootModule().Resources {
 			if name == ds {
-				return checkResourceAttributes(expected, res.Primary.Attributes)
+				return testutils.CheckResourceAttributes(expected, res.Primary.Attributes)
 			}
 		}
 
