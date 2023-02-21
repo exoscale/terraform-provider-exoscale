@@ -24,30 +24,35 @@ const (
 )
 
 var resDatabaseMysqlSchema = &schema.Schema{
-	Type:     schema.TypeList,
-	MaxItems: 1,
-	Optional: true,
+	Description: "*mysql* database service type specific arguments.",
+	Type:        schema.TypeList,
+	MaxItems:    1,
+	Optional:    true,
 	Elem: &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			resDatabaseAttrMysqlAdminPassword: {
-				Type:      schema.TypeString,
-				Optional:  true,
-				Computed:  true,
-				Sensitive: true,
+				Description: "A custom administrator account password (may only be set at creation time).",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				Sensitive:   true,
 			},
 			resDatabaseAttrMysqlAdminUsername: {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
+				Description: "A custom administrator account username (may only be set at creation time).",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
 			},
 			resDatabaseAttrMysqlBackupSchedule: {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
+				Description: "The automated backup schedule (`HH:MM`).",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
 			},
 			resDatabaseAttrMysqlIPFilter: {
-				Type: schema.TypeSet,
-				Set:  schema.HashString,
+				Description: "A list of CIDR blocks to allow incoming connections from.",
+				Type:        schema.TypeSet,
+				Set:         schema.HashString,
 				Elem: &schema.Schema{
 					Type:         schema.TypeString,
 					ValidateFunc: validation.IsCIDRNetwork(0, 128),
@@ -56,14 +61,16 @@ var resDatabaseMysqlSchema = &schema.Schema{
 				Computed: true,
 			},
 			resDatabaseAttrMysqlSettings: {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
+				Description: "MySQL configuration settings in JSON format (`exo dbaas type show mysql --settings=mysql` for reference).",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
 			},
 			resDatabaseAttrMysqlVersion: {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
+				Description: "MySQL major version (`exo dbaas type show mysql` for reference; may only be set at creation time).",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
 			},
 		},
 	},

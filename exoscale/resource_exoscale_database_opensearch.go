@@ -36,15 +36,17 @@ const (
 )
 
 var resDatabaseOpensearchSchema = &schema.Schema{
-	Type:     schema.TypeList,
-	MaxItems: 1,
-	Optional: true,
+	Description: "*opensearch* database service type specific arguments.",
+	Type:        schema.TypeList,
+	MaxItems:    1,
+	Optional:    true,
 	Elem: &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			resDatabaseAttrOpensearchForkFromService: {
-				Type:     schema.TypeString,
-				Optional: true,
-				ForceNew: true,
+				Description: "Service name",
+				Type:        schema.TypeString,
+				Optional:    true,
+				ForceNew:    true,
 			},
 			resDatabaseAttrOpensearchRecoveryBackupName: {
 				Type:     schema.TypeString,
@@ -52,31 +54,58 @@ var resDatabaseOpensearchSchema = &schema.Schema{
 				ForceNew: true,
 			},
 			resDatabaseAttrOpensearchIndexPatterns: {
-				Type: schema.TypeList,
+				Description: "(can be used multiple times) Allows you to create glob style patterns and set a max number of indexes matching this pattern you want to keep. Creating indexes exceeding this value will cause the oldest one to get deleted. You could for example create a pattern looking like 'logs.?' and then create index logs.1, logs.2 etc, it will delete logs.1 once you create logs.6. Do note 'logs.?' does not apply to logs.10. Note: Setting max_index_count to 0 will do nothing and the pattern gets ignored.",
+				Type:        schema.TypeList,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						resDatabaseAttrOpensearchMaxIndexCount:                 {Type: schema.TypeInt, Optional: true},
-						resDatabaseAttrOpensearchIndexPatternsPattern:          {Type: schema.TypeString, Optional: true},
-						resDatabaseAttrOpensearchIndexPatternsSortingAlgorithm: {Type: schema.TypeString, Optional: true},
+						resDatabaseAttrOpensearchMaxIndexCount: {
+							Description: "Maximum number of indexes to keep before deleting the oldest one (Minimum value is `0`)",
+							Type:        schema.TypeInt,
+							Optional:    true,
+						},
+						resDatabaseAttrOpensearchIndexPatternsPattern: {
+							Description: "fnmatch pattern",
+							Type:        schema.TypeString,
+							Optional:    true,
+						},
+						resDatabaseAttrOpensearchIndexPatternsSortingAlgorithm: {
+							Description: "`alphabetical` or `creation_date`.",
+							Type:        schema.TypeString,
+							Optional:    true,
+						},
 					},
 				},
 				Optional: true,
 			},
 			resDatabaseAttrOpensearchIndexTemplate: {
-				Type:     schema.TypeList,
-				MaxItems: 1,
+				Description: "Template settings for all new indexes",
+				Type:        schema.TypeList,
+				MaxItems:    1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						resDatabaseAttrOpensearchIndexTemplateMappingNestedObjectsLimit: {Type: schema.TypeInt, Optional: true},
-						resDatabaseAttrOpensearchIndexTemplateNumberOfReplicas:          {Type: schema.TypeInt, Optional: true},
-						resDatabaseAttrOpensearchIndexTemplateNumberOfShards:            {Type: schema.TypeInt, Optional: true},
+						resDatabaseAttrOpensearchIndexTemplateMappingNestedObjectsLimit: {
+							Description: "The maximum number of nested JSON objects that a single document can contain across all nested types. This limit helps to prevent out of memory errors when a document contains too many nested objects. (Default is 10000. Minimum value is `0`, maximum value is `100000`.)",
+							Type:        schema.TypeInt,
+							Optional:    true,
+						},
+						resDatabaseAttrOpensearchIndexTemplateNumberOfReplicas: {
+							Description: "The number of replicas each primary shard has. (Minimum value is `0`, maximum value is `29`)",
+							Type:        schema.TypeInt,
+							Optional:    true,
+						},
+						resDatabaseAttrOpensearchIndexTemplateNumberOfShards: {
+							Description: "The number of primary shards that an index should have. (Minimum value is `1`, maximum value is `1024`.)",
+							Type:        schema.TypeInt,
+							Optional:    true,
+						},
 					},
 				},
 				Optional: true,
 			},
 			resDatabaseAttrOpensearchIPFilter: {
-				Type: schema.TypeSet,
-				Set:  schema.HashString,
+				Description: "Allow incoming connections from this list of CIDR address block, e.g. `[\"10.20.0.0/16\"]`",
+				Type:        schema.TypeSet,
+				Set:         schema.HashString,
 				Elem: &schema.Schema{
 					Type:         schema.TypeString,
 					ValidateFunc: validation.IsCIDRNetwork(0, 128),
@@ -85,34 +114,53 @@ var resDatabaseOpensearchSchema = &schema.Schema{
 				Computed: true,
 			},
 			resDatabaseAttrOpensearchKeepIndexRefreshInterval: {
-				Type:     schema.TypeBool,
-				Optional: true,
+				Description: "Aiven automation resets index.refresh_interval to default value for every index to be sure that indices are always visible to search. If it doesn't fit your case, you can disable this by setting up this flag to true.",
+				Type:        schema.TypeBool,
+				Optional:    true,
 			},
 			resDatabaseAttrOpensearchMaxIndexCount: {
-				Type:     schema.TypeInt,
-				Optional: true,
+				Description: "Maximum number of indexes to keep (Minimum value is `0`)",
+				Type:        schema.TypeInt,
+				Optional:    true,
 			},
 			resDatabaseAttrOpensearchOpensearchDashboards: {
 				Type:     schema.TypeList,
 				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						resDatabaseAttrOpensearchOpensearchDashboardsEnabled:                  {Type: schema.TypeBool, Optional: true, Default: true},
-						resDatabaseAttrOpensearchOpensearchDashboardsMaxOldSpaceSize:          {Type: schema.TypeInt, Optional: true, Default: 128},
-						resDatabaseAttrOpensearchOpensearchDashboardsOpensearchRequestTimeout: {Type: schema.TypeInt, Optional: true, Default: 30000},
+						resDatabaseAttrOpensearchOpensearchDashboardsEnabled: {
+							Description: "{Type -  schema.TypeBool, Optional -  true, Default -  true}",
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Default:     true,
+						},
+						resDatabaseAttrOpensearchOpensearchDashboardsMaxOldSpaceSize: {
+							Description: "{Type -  schema.TypeInt, Optional -  true, Default -  128}",
+							Type:        schema.TypeInt,
+							Optional:    true,
+							Default:     128,
+						},
+						resDatabaseAttrOpensearchOpensearchDashboardsOpensearchRequestTimeout: {
+							Description: "{Type -  schema.TypeInt, Optional -  true, Default -  30000}",
+							Type:        schema.TypeInt,
+							Optional:    true,
+							Default:     30000,
+						},
 					},
 				},
 				Optional: true,
 			},
 			resDatabaseAttrOpensearchOpensearchSettings: {
-				Type:     schema.TypeString,
-				Optional: true,
+				Description: "OpenSearch-specific settings, in json. e.g.`jsonencode({thread_pool_search_size: 64})`. Use `exo x get-dbaas-settings-opensearch` to get a list of available settings.",
+				Type:        schema.TypeString,
+				Optional:    true,
 			},
 			resDatabaseAttrOpensearchVersion: {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-				ForceNew: true,
+				Description: "OpenSearch major version.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				ForceNew:    true,
 			},
 		},
 	},

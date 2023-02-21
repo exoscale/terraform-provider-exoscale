@@ -19,14 +19,16 @@ const (
 )
 
 var resDatabaseRedisSchema = &schema.Schema{
-	Type:     schema.TypeList,
-	MaxItems: 1,
-	Optional: true,
+	Description: "*redis* database service type specific arguments. Structure is documented below.",
+	Type:        schema.TypeList,
+	MaxItems:    1,
+	Optional:    true,
 	Elem: &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			resDatabaseAttrRedisIPFilter: {
-				Type: schema.TypeSet,
-				Set:  schema.HashString,
+				Description: "A list of CIDR blocks to allow incoming connections from.",
+				Type:        schema.TypeSet,
+				Set:         schema.HashString,
 				Elem: &schema.Schema{
 					Type:         schema.TypeString,
 					ValidateFunc: validation.IsCIDRNetwork(0, 128),
@@ -35,9 +37,10 @@ var resDatabaseRedisSchema = &schema.Schema{
 				Computed: true,
 			},
 			resDatabaseAttrRedisSettings: {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
+				Description: "Redis configuration settings in JSON format (`exo dbaas type show redis --settings=redis` for reference).",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
 			},
 		},
 	},
