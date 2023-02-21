@@ -25,19 +25,22 @@ func resourceSSHKey() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			resSSHKeyAttrFingerprint: {
-				Type:     schema.TypeString,
-				Computed: true,
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The SSH key unique identifier.",
 			},
 			resSSHKeyAttrName: {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
+				Description: "The SSH key name.",
 			},
 			resSSHKeyAttrPublicKey: {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-				ForceNew: true,
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				ForceNew:    true,
+				Description: "The SSH *public* key that will be authorized in compute instances.",
 			},
 		},
 
