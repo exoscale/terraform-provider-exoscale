@@ -19,9 +19,10 @@ func resourceNetworkIDString(d resourceIDStringer) string {
 func resourceNetwork() *schema.Resource {
 	s := map[string]*schema.Schema{
 		"zone": {
-			Type:     schema.TypeString,
-			Required: true,
-			ForceNew: true,
+			Type:        schema.TypeString,
+			Required:    true,
+			ForceNew:    true,
+			Description: "The Exoscale Zone name.",
 		},
 		"network_offering": {
 			Type:       schema.TypeString,
@@ -29,28 +30,33 @@ func resourceNetwork() *schema.Resource {
 			Deprecated: "This attribute is deprecated, please remove it from your configuration.",
 		},
 		"name": {
-			Type:     schema.TypeString,
-			Required: true,
+			Type:        schema.TypeString,
+			Required:    true,
+			Description: "The private network name.",
 		},
 		"display_text": { // TODO: rename to "description"
-			Type:     schema.TypeString,
-			Optional: true,
-			Computed: true,
+			Type:        schema.TypeString,
+			Optional:    true,
+			Computed:    true,
+			Description: "A free-form text describing the network.",
 		},
 		"start_ip": {
 			Type:         schema.TypeString,
 			Optional:     true,
 			ValidateFunc: validation.IsIPAddress,
+			Description:  "The first/last IP addresses used by the DHCP service for dynamic leases. Required for *managed* private networks.",
 		},
 		"end_ip": {
 			Type:         schema.TypeString,
 			Optional:     true,
 			ValidateFunc: validation.IsIPAddress,
+			Description:  "The first/last IP addresses used by the DHCP service for dynamic leases. Required for *managed* private networks.",
 		},
 		"netmask": {
 			Type:         schema.TypeString,
 			Optional:     true,
 			ValidateFunc: validation.IsIPAddress,
+			Description:  "The network mask defining the IP network allowed for static leases (see `exoscale_nic` resource). Required for *managed* private networks.",
 		},
 	}
 
@@ -58,6 +64,8 @@ func resourceNetwork() *schema.Resource {
 
 	return &schema.Resource{
 		Schema: s,
+
+		Description: "Manage Exoscale Private Networks.",
 
 		Create: resourceNetworkCreate,
 		Read:   resourceNetworkRead,
