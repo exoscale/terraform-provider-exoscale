@@ -1,0 +1,41 @@
+---
+page_title: "{{.Name}} {{.Type}} - {{.ProviderName}}"
+subcategory: ""
+description: |-
+  Manage Exoscale IAM Access Keys
+---
+
+# {{.Name}} ({{.Type}})
+
+Manage Exoscale [IAM Access Keys](https://community.exoscale.com/documentation/iam/)
+
+!> **WARNING:** This resource stores sensitive information in your Terraform state. Please be sure to correctly understand implications and how to mitigate potential risks before using it.
+
+## Example Usage
+
+```hcl
+resource "exoscale_iam_access_key" "my_sos_access_key" {
+  name       = "my-sos-access-key"
+  operations = ["get-sos-object", "list-sos-bucket"]
+  resources  = ["sos/bucket:my-bucket"]
+}
+
+resource "exoscale_iam_access_key" "my_sks_access_key" {
+  name = "my-sks-access-key"
+  tags = ["sks"]
+}
+```
+
+Please refer to the [examples](https://github.com/exoscale/terraform-provider-exoscale/tree/master/examples/)
+directory for complete configuration examples.
+
+-> **NOTE:** You can retrieve the list of available operations and tags using the [Exoscale CLI](https://github.com/exoscale/cli/): `exo iam access-key list-operations`.
+
+{{ .SchemaMarkdown | trimspace }}
+
+{{ if .HasImport -}}
+## Import
+
+{{ codefile "shell" .ImportFile }}
+
+{{- end }}
