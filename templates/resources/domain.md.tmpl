@@ -1,0 +1,37 @@
+---
+page_title: "{{.Name}} {{.Type}} - {{.ProviderName}}"
+subcategory: ""
+description: |-
+{{ .Description | plainmarkdown | trimspace | prefixlines "  " }}
+---
+
+# {{.Name}} ({{.Type}})
+
+Manage Exoscale [DNS](https://community.exoscale.com/documentation/dns/) Domains.
+
+Corresponding data source: [exoscale_domain](../data-sources/domain.md).
+
+## Example Usage
+
+```terraform
+resource "exoscale_domain" "my_domain" {
+  name = "my.domain"
+}
+```
+
+Next step is to attach [exoscale_domain_record](./domain_record.md)(s) to the domain.
+
+Please refer to the [examples](https://github.com/exoscale/terraform-provider-exoscale/tree/master/examples/)
+directory for complete configuration examples.
+
+{{ .SchemaMarkdown | trimspace }}
+
+## Import
+
+An existing DNS domain may be imported by `ID`:
+
+```shell
+terraform import \
+  exoscale_domain.my_domain \
+  89083a5c-b648-474a-0000-0000000f67bd
+```
