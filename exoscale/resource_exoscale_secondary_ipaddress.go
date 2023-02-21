@@ -19,26 +19,30 @@ func resourceSecondaryIPAddressIDString(d resourceIDStringer) string {
 
 func resourceSecondaryIPAddress() *schema.Resource {
 	return &schema.Resource{
+		Description: "Associate Exoscale Elastic IPs (EIP) to Compute Instances.",
 		Schema: map[string]*schema.Schema{
 			"compute_id": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
+				Description: "The compute instance ID.",
 			},
 			"ip_address": {
 				Type:         schema.TypeString,
 				Required:     true,
 				ForceNew:     true,
-				Description:  "Elastic IP address",
+				Description:  "The Elastic IP (EIP) address.",
 				ValidateFunc: validation.IsIPAddress,
 			},
 			"nic_id": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The network interface (NIC) ID.",
 			},
 			"network_id": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The network (ID) the compute instance NIC is attached to.",
 			},
 		},
 
