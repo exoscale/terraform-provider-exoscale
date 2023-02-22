@@ -17,40 +17,52 @@ const (
 	dsPrivateNetworkAttrNetmask     = "netmask"
 	dsPrivateNetworkAttrStartIP     = "start_ip"
 	dsPrivateNetworkAttrZone        = "zone"
+
+	dsPrivateNetworkStartEndIPDescription = "The first/last IPv4 addresses used by the DHCP service for dynamic leases."
 )
 
 func dataSourcePrivateNetwork() *schema.Resource {
 	return &schema.Resource{
+		Description: `Fetch Exoscale [Private Networks](https://community.exoscale.com/documentation/compute/private-networks/) data.
+
+Corresponding resource: [exoscale_private_network](../resources/private_network.md).`,
 		Schema: map[string]*schema.Schema{
 			dsPrivateNetworkAttrDescription: {
-				Type:     schema.TypeString,
-				Optional: true,
+				Description: "The private network description.",
+				Type:        schema.TypeString,
+				Optional:    true,
 			},
 			dsPrivateNetworkAttrEndIP: {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: dsPrivateNetworkStartEndIPDescription,
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 			dsPrivateNetworkAttrID: {
+				Description:   "The private network ID to match (conflicts with `name`).",
 				Type:          schema.TypeString,
 				Optional:      true,
 				ConflictsWith: []string{dsPrivateNetworkAttrName},
 			},
 			dsPrivateNetworkAttrName: {
+				Description:   "The network name to match (conflicts with `id`).",
 				Type:          schema.TypeString,
 				Optional:      true,
 				ConflictsWith: []string{dsPrivateNetworkAttrID},
 			},
 			dsPrivateNetworkAttrNetmask: {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "The network mask defining the IPv4 network allowed for static leases.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 			dsPrivateNetworkAttrStartIP: {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: dsPrivateNetworkStartEndIPDescription,
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 			dsPrivateNetworkAttrZone: {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 		},
 
