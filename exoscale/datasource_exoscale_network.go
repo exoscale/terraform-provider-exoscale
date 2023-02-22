@@ -9,42 +9,51 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+const (
+	dsNetworkStartEndIPDescription = "The first/last IPv4 addresses used by the DHCP service for dynamic leases."
+)
+
 func dataSourceNetwork() *schema.Resource {
 	return &schema.Resource{
+		Description: "Fetch Exoscale Private Networks data.",
 		Schema: map[string]*schema.Schema{
 			"zone": {
+				Description: "(Required) The Exoscale Zone name.",
 				Type:        schema.TypeString,
-				Description: "Name of the zone",
 				Required:    true,
 			},
 			"id": {
+				Description:   "The private network ID to match (conflicts with `name`).",
 				Type:          schema.TypeString,
-				Description:   "ID of the network",
 				Optional:      true,
 				ConflictsWith: []string{"name"},
 			},
 			"name": {
+				Description:   "The network name to match (conflicts with `id`).",
 				Type:          schema.TypeString,
-				Description:   "Name of the network",
 				Optional:      true,
 				ConflictsWith: []string{"id"},
 			},
 
 			"description": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "The private network description.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 			"start_ip": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: dsNetworkStartEndIPDescription,
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 			"end_ip": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: dsNetworkStartEndIPDescription,
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 			"netmask": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "The network mask defining the IPv4 network allowed for static leases.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 		},
 
