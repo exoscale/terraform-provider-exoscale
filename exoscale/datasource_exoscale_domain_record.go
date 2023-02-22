@@ -20,34 +20,43 @@ func dataSourceDomainRecord() *schema.Resource {
 	return &schema.Resource{
 		ReadContext: dataSourceDomainRecordRead,
 
+		Description: `Fetch Exoscale [DNS](https://community.exoscale.com/documentation/dns/) Domain Records data.
+
+Corresponding resource: [exoscale_domain_record](../resources/domain_record.md).`,
+
 		Schema: map[string]*schema.Schema{
 			"domain": {
+				Description: "The [exoscale_domain](./domain.md) name to match.",
 				Type:        schema.TypeString,
-				Description: "Domain of the Record",
 				Required:    true,
 			},
 			"filter": {
-				Type:     schema.TypeList,
-				Required: true,
-				MaxItems: 1,
+				Description: "Filter to apply when looking up domain records.",
+				Type:        schema.TypeList,
+				Required:    true,
+				MaxItems:    1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"id": {
+							Description:   "The record ID to match.",
 							Type:          schema.TypeString,
 							Optional:      true,
 							ConflictsWith: []string{"filter.0.name", "filter.0.record_type", "filter.0.content_regex"},
 						},
 						"name": {
+							Description:   "The domain record name to match.",
 							Type:          schema.TypeString,
 							Optional:      true,
 							ConflictsWith: []string{"filter.0.id", "filter.0.content_regex"},
 						},
 						"record_type": {
+							Description:   "The record type to match.",
 							Type:          schema.TypeString,
 							Optional:      true,
 							ConflictsWith: []string{"filter.0.id", "filter.0.content_regex"},
 						},
 						"content_regex": {
+							Description:   "A regular expression to match the record content.",
 							Type:          schema.TypeString,
 							Optional:      true,
 							ValidateFunc:  validation.StringIsValidRegExp,
@@ -57,8 +66,9 @@ func dataSourceDomainRecord() *schema.Resource {
 				},
 			},
 			"records": {
-				Type:     schema.TypeList,
-				Computed: true,
+				Description: "The list of matching records. Structure is documented below.",
+				Type:        schema.TypeList,
+				Computed:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"id": {
