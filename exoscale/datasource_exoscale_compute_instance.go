@@ -135,8 +135,9 @@ func getDataSourceComputeInstanceSchema() map[string]*schema.Schema {
 			Computed: true,
 		},
 		dsComputeInstanceAttrZone: {
-			Type:     schema.TypeString,
-			Required: true,
+			Description: "The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.",
+			Type:        schema.TypeString,
+			Required:    true,
 		},
 	}
 }
