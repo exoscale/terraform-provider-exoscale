@@ -11,33 +11,34 @@ import (
 
 func dataSourceComputeIPAddress() *schema.Resource {
 	return &schema.Resource{
+		Description: "Fetch Exoscale Elastic IPs (EIP) data.",
 		Schema: map[string]*schema.Schema{
 			"zone": {
+				Description: "The Exoscale Zone name.",
 				Type:        schema.TypeString,
-				Description: "Name of the zone",
 				Required:    true,
 			},
 			"description": {
+				Description:   "The EIP description to match.",
 				Type:          schema.TypeString,
-				Description:   "Description of the Elastic IP",
 				Optional:      true,
 				ConflictsWith: []string{"ip_address", "id", "tags"},
 			},
 			"ip_address": {
+				Description:   "The EIP IPv4 address to match.",
 				Type:          schema.TypeString,
-				Description:   "IP Address",
 				Optional:      true,
 				ConflictsWith: []string{"description", "id", "tags"},
 			},
 			"id": {
+				Description:   "The Elastic IP (EIP) ID to match.",
 				Type:          schema.TypeString,
-				Description:   "ID of the Elastic IP",
 				Optional:      true,
 				ConflictsWith: []string{"description", "ip_address", "tags"},
 			},
 			"tags": {
+				Description:   "The EIP tags to match.",
 				Type:          schema.TypeMap,
-				Description:   "Map of tags (key: value)",
 				Optional:      true,
 				ConflictsWith: []string{"description", "ip_address", "id"},
 				Elem: &schema.Schema{
