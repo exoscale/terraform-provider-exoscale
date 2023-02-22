@@ -14,27 +14,28 @@ import (
 
 func dataSourceComputeTemplate() *schema.Resource {
 	return &schema.Resource{
+		Description: "Fetch Exoscale Compute Instance Templates data.",
 		Schema: map[string]*schema.Schema{
 			"zone": {
+				Description: "The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.",
 				Type:        schema.TypeString,
-				Description: "Name of the zone",
 				Required:    true,
 			},
 			"name": {
+				Description:   "The template name to match (conflicts with `id`).",
 				Type:          schema.TypeString,
-				Description:   "Name of the template",
 				Optional:      true,
 				ConflictsWith: []string{"id"},
 			},
 			"id": {
+				Description:   "The compute instance template ID to match (conflicts with `name`).",
 				Type:          schema.TypeString,
-				Description:   "ID of the template",
 				Optional:      true,
 				ConflictsWith: []string{"name"},
 			},
 			"filter": {
+				Description: "A template category filter (default: `featured`); among: - `featured` - official Exoscale templates - `community` - community-contributed templates - `mine` - custom templates private to my organization",
 				Type:        schema.TypeString,
-				Description: "Template filter to apply",
 				ValidateFunc: validation.StringMatch(regexp.MustCompile("(?:featured|community|mine)"),
 					`must be either "featured", "community" or "mine"`),
 				Optional: true,
