@@ -15,14 +15,19 @@ import (
 
 func dataSourceInstancePoolList() *schema.Resource {
 	return &schema.Resource{
+		Description: `List Exoscale [Instance Pools](https://community.exoscale.com/documentation/compute/instance-pools/).
+
+Corresponding resource: [exoscale_instance_pool](../resources/instance_pool.md).`,
 		Schema: map[string]*schema.Schema{
 			dsInstancePoolAttrZone: {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 			"pools": {
-				Type:     schema.TypeList,
-				Computed: true,
+				Description: "The list of [exoscale_instance_pool](./instance_pool.md).",
+				Type:        schema.TypeList,
+				Computed:    true,
 				Elem: &schema.Resource{
 					Schema: getDataSourceInstancePoolSchema(),
 				},
