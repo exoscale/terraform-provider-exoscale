@@ -11,6 +11,7 @@ import (
 	"github.com/exoscale/egoscale/v2/oapi"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 const (
@@ -74,9 +75,14 @@ var resDatabaseOpensearchSchema = &schema.Schema{
 				Optional: true,
 			},
 			resDatabaseAttrOpensearchIPFilter: {
-				Type:     schema.TypeList,
-				Elem:     &schema.Schema{Type: schema.TypeString},
+				Type: schema.TypeSet,
+				Set:  schema.HashString,
+				Elem: &schema.Schema{
+					Type:         schema.TypeString,
+					ValidateFunc: validation.IsCIDRNetwork(0, 128),
+				},
 				Optional: true,
+				Computed: true,
 			},
 			resDatabaseAttrOpensearchKeepIndexRefreshInterval: {
 				Type:     schema.TypeBool,
@@ -279,7 +285,7 @@ func resourceDatabaseCreateOpensearch(ctx context.Context, d *schema.ResourceDat
 		ForkFromService:          (*oapi.DbaasServiceName)(dgos.GetStringPtr(resDatabaseAttrOpensearchForkFromService)),
 		IndexPatterns:            resourceDatabaseBuildIndexPatternsCreate(dgos),
 		IndexTemplate:            resourceDatabaseBuildIndexTemplates(dgos),
-		IpFilter:                 dgos.GetStringSlicePtr(resDatabaseAttrOpensearchIPFilter),
+		IpFilter:                 dgos.GetSet(resDatabaseAttrOpensearchIPFilter),
 		KeepIndexRefreshInterval: dgos.GetBoolPtr(resDatabaseAttrOpensearchKeepIndexRefreshInterval),
 		Maintenance:              resourceDatabaseBuildMaintenanceCreate(dg),
 		MaxIndexCount:            dgos.GetInt64Ptr(resDatabaseAttrOpensearchMaxIndexCount),
@@ -321,7 +327,7 @@ func resourceDatabaseUpdateOpensearch(
 	databaseService := oapi.UpdateDbaasServiceOpensearchJSONRequestBody{
 		IndexPatterns:            resourceDatabaseBuildIndexPatternsUpdate(dgos),
 		IndexTemplate:            resourceDatabaseBuildIndexTemplates(dgos),
-		IpFilter:                 dgos.GetStringSlicePtr(resDatabaseAttrOpensearchIPFilter),
+		IpFilter:                 dgos.GetSet(resDatabaseAttrOpensearchIPFilter),
 		KeepIndexRefreshInterval: dgos.GetBoolPtr(resDatabaseAttrOpensearchKeepIndexRefreshInterval),
 		Maintenance:              resourceDatabaseBuildMaintenanceUpdate(dg),
 		MaxIndexCount:            dgos.GetInt64Ptr(resDatabaseAttrOpensearchMaxIndexCount),
@@ -356,14 +362,16 @@ func resourceDatabaseApplyOpensearch(ctx context.Context, d *schema.ResourceData
 	}
 
 	opensearch := map[string]interface{}{
-		resDatabaseAttrOpensearchIPFilter:                 resp.JSON200.IpFilter,
 		resDatabaseAttrOpensearchKeepIndexRefreshInterval: resp.JSON200.KeepIndexRefreshInterval,
 		resDatabaseAttrOpensearchMaxIndexCount:            resp.JSON200.MaxIndexCount,
 		resDatabaseAttrOpensearchVersion:                  strings.SplitN(*resp.JSON200.Version, ".", 2)[0],
 	}
 
-	if resp.JSON200.OpensearchSettings != nil {
+	if v := resp.JSON200.IpFilter; v != nil {
+		opensearch[resDatabaseAttrOpensearchIPFilter] = *v
+	}
 
+	if resp.JSON200.OpensearchSettings != nil {
 		// if indices_fielddata_cache_size is not set, the API returns it as nil
 		// this is a fix to avoid a null -> null diff each time
 		if (*resp.JSON200.OpensearchSettings)["indices_fielddata_cache_size"] == nil {

@@ -118,3 +118,20 @@ func (rdg resourceDataGetter) GetMapPtr(path string) *map[string]interface{} {
 	r := v.(map[string]interface{})
 	return &r
 }
+
+func (rdg resourceDataGetter) GetSet(path string) *[]string {
+	list := []string{}
+
+	v := rdg.Get(path)
+	if v != nil {
+		l := v.(*schema.Set).Len()
+		if l > 0 {
+			list = make([]string, l)
+			for i, j := range v.(*schema.Set).List() {
+				list[i] = j.(string)
+			}
+		}
+	}
+
+	return &list
+}
