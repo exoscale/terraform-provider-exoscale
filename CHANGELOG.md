@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.46.0 (February 23, 2023)
+
+FEATURES:
+
+- `compute_instance_list`: allow filtering by string properties and labels (#241)
+
+BUG FIX:
+
+- `resource_database`: Make opensearch ip-filter a set to fix sorting issue (#244)
+
 ## 0.45.0 (February 13, 2023)
 
 BUG FIX:
