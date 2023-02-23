@@ -25,7 +25,7 @@ func resourceAffinity() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
-				Description: "The anti-affinity group name. TEST",
+				Description: "The anti-affinity group name.",
 			},
 			"description": {
 				Type:        schema.TypeString,
