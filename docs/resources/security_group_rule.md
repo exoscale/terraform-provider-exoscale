@@ -35,22 +35,22 @@ directory for complete configuration examples.
 
 ### Required
 
-- `type` (String) The traffic direction to match (`INGRESS` or `EGRESS`).
+- `type` (String) ❗ The traffic direction to match (`INGRESS` or `EGRESS`).
 
 ### Optional
 
-- `cidr` (String) An (`INGRESS`) source / (`EGRESS`) destination IP subnet (in [CIDR notation](https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing#CIDR_notation)) to match (conflicts with `user_security_group`/`user_security_group_id`).
-- `description` (String) A free-form text describing the security group rule.
-- `end_port` (Number) A `TCP`/`UDP` port range to match.
-- `icmp_code` (Number) An ICMP/ICMPv6 [type/code](https://en.wikipedia.org/wiki/Internet_Control_Message_Protocol#Control_messages) to match.
-- `icmp_type` (Number) An ICMP/ICMPv6 [type/code](https://en.wikipedia.org/wiki/Internet_Control_Message_Protocol#Control_messages) to match.
-- `protocol` (String) The network protocol to match (`TCP`, `UDP`, `ICMP`, `ICMPv6`, `AH`, `ESP`, `GRE`, `IPIP` or `ALL`)
-- `security_group` (String, Deprecated) The parent security group name. Please use the `security_group_id` argument along the [exoscale_security_group](../data-sources/security_group.md) data source instead.
-- `security_group_id` (String) The parent [exoscale_security_group](./security_group.md) ID.
-- `start_port` (Number) A `TCP`/`UDP` port range to match.
+- `cidr` (String) ❗ An (`INGRESS`) source / (`EGRESS`) destination IP subnet (in [CIDR notation](https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing#CIDR_notation)) to match (conflicts with `user_security_group`/`user_security_group_id`).
+- `description` (String) ❗ A free-form text describing the security group rule.
+- `end_port` (Number) ❗ A `TCP`/`UDP` port range to match.
+- `icmp_code` (Number) ❗ An ICMP/ICMPv6 [type/code](https://en.wikipedia.org/wiki/Internet_Control_Message_Protocol#Control_messages) to match.
+- `icmp_type` (Number) ❗ An ICMP/ICMPv6 [type/code](https://en.wikipedia.org/wiki/Internet_Control_Message_Protocol#Control_messages) to match.
+- `protocol` (String) ❗ The network protocol to match (`TCP`, `UDP`, `ICMP`, `ICMPv6`, `AH`, `ESP`, `GRE`, `IPIP` or `ALL`)
+- `security_group` (String, Deprecated) ❗ The parent security group name. Please use the `security_group_id` argument along the [exoscale_security_group](../data-sources/security_group.md) data source instead.
+- `security_group_id` (String) ❗ The parent [exoscale_security_group](./security_group.md) ID.
+- `start_port` (Number) ❗ A `TCP`/`UDP` port range to match.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- `user_security_group` (String, Deprecated) An (`INGRESS`) source / (`EGRESS`) destination security group name to match (conflicts with `cidr`/`user_security_group_id`). Please use the `user_security_group_id` argument along the [exoscale_security_group](../data-sources/security_group.md) data source instead.
-- `user_security_group_id` (String) An (`INGRESS`) source / (`EGRESS`) destination security group ID to match (conflicts with `cidr`/`user_security_group)`).
+- `user_security_group` (String, Deprecated) ❗ An (`INGRESS`) source / (`EGRESS`) destination security group name to match (conflicts with `cidr`/`user_security_group_id`). Please use the `user_security_group_id` argument along the [exoscale_security_group](../data-sources/security_group.md) data source instead.
+- `user_security_group_id` (String) ❗ An (`INGRESS`) source / (`EGRESS`) destination security group ID to match (conflicts with `cidr`/`user_security_group)`).
 
 ### Read-Only
 
@@ -64,6 +64,8 @@ Optional:
 - `create` (String)
 - `delete` (String)
 - `read` (String)
+
+* The symbol ❗ in an attribute indicates that modifying it, will force the creation of a new resource.
 
 ## Import
 

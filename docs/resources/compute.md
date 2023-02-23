@@ -19,17 +19,17 @@ Manage Exoscale Compute Instances.
 ### Required
 
 - `disk_size` (Number) The instance disk size (GiB; at least `10`).
-- `zone` (String) The Exoscale Zone name.
+- `zone` (String) ❗ The Exoscale Zone name.
 
 ### Optional
 
-- `affinity_group_ids` (Set of String) A list of anti-affinity groups (IDs; at creation time only; conflicts with `affinity_groups`).
-- `affinity_groups` (Set of String) A list of anti-affinity groups (names; at creation time only; conflicts with `affinity_group_ids`).
+- `affinity_group_ids` (Set of String) ❗ A list of anti-affinity groups (IDs; at creation time only; conflicts with `affinity_groups`).
+- `affinity_groups` (Set of String) ❗ A list of anti-affinity groups (names; at creation time only; conflicts with `affinity_group_ids`).
 - `display_name` (String) The displayed instance name. Note: if the `hostname` attribute is not set, this attribute is also used to set the OS' *hostname* during creation, so the value must contain only alphanumeric and hyphen (" - ") characters; it can be changed to any character during a later update. If neither `display_name` or `hostname` attributes are set, a random value will be generated automatically.
 - `hostname` (String) The instance hostname, must contain only alphanumeric and hyphen (`-`) characters. If neither `display_name` or `hostname` attributes are set, a random value will be generated automatically. Note: updating this attribute's value requires to reboot the instance.
 - `ip4` (Boolean) Request an IPv4 address on the default NIC
 - `ip6` (Boolean) Request an IPv6 address on the default NIC
-- `key_pair` (String) The SSH keypair (name) to authorize in the instance.
+- `key_pair` (String) ❗ The SSH keypair (name) to authorize in the instance.
 - `keyboard` (String) The keyboard layout configuration (`de`, `de-ch`, `es`, `fi`, `fr`, `fr-be`, `fr-ch`, `is`, `it`, `jp`, `nl-be`, `no`, `pt`, `uk`, `us`; at creation time only).
 - `reverse_dns` (String) The instance reverse DNS record (must end with a `.`; e.g: `my-instance.example.net.`).
 - `security_group_ids` (Set of String) A list of security groups (IDs; conflicts with `security_groups`).
@@ -37,8 +37,8 @@ Manage Exoscale Compute Instances.
 - `size` (String) The instance size (`Tiny`, `Small`, `Medium`, `Large`, etc.)
 - `state` (String) The instance state (`Running` or `Stopped`; default: `Running`)
 - `tags` (Map of String) Map of tags (key/value). To remove all tags, set `tags = {}`.
-- `template` (String) The compute instance template (name). Only *featured* templates are available, if you want to reference *custom templates* use the `template_id` attribute instead.
-- `template_id` (String) The compute instance template (ID). Usage of the `exoscale_compute_template` data source is recommended.
+- `template` (String) ❗ The compute instance template (name). Only *featured* templates are available, if you want to reference *custom templates* use the `template_id` attribute instead.
+- `template_id` (String) ❗ The compute instance template (ID). Usage of the `exoscale_compute_template` data source is recommended.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `user_data` (String) cloud-init configuration (no need to base64-encode or gzip it as the provider will take care of it).
 
@@ -63,5 +63,7 @@ Optional:
 - `delete` (String)
 - `read` (String)
 - `update` (String)
+
+* The symbol ❗ in an attribute indicates that modifying it, will force the creation
 
 

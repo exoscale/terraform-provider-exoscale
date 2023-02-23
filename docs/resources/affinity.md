@@ -16,13 +16,13 @@ description: |-
 
 ### Required
 
-- `name` (String) The anti-affinity group name.
+- `name` (String) ❗ The anti-affinity group name.
 
 ### Optional
 
-- `description` (String) A free-form text describing the group.
+- `description` (String) ❗ A free-form text describing the group.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- `type` (String) The type of the group (`host anti-affinity` is the only supported value).
+- `type` (String) ❗ The type of the group (`host anti-affinity` is the only supported value).
 
 ### Read-Only
 
@@ -37,5 +37,7 @@ Optional:
 - `create` (String)
 - `delete` (String)
 - `read` (String)
+
+* The symbol ❗ in an attribute indicates that modifying it, will force the creation
 
 

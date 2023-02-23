@@ -16,8 +16,8 @@ description: |-
 
 ### Required
 
-- `compute_id` (String) The compute instance ID.
-- `ip_address` (String) The Elastic IP (EIP) address.
+- `compute_id` (String) ❗ The compute instance ID.
+- `ip_address` (String) ❗ The Elastic IP (EIP) address.
 
 ### Optional
 
@@ -37,5 +37,7 @@ Optional:
 - `create` (String)
 - `delete` (String)
 - `read` (String)
+
+* The symbol ❗ in an attribute indicates that modifying it, will force the creation
 
 

@@ -33,7 +33,7 @@ directory for complete configuration examples.
 ### Required
 
 - `name` (String) The SKS cluster name.
-- `zone` (String) The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.
+- `zone` (String) ❗ The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.
 
 ### Optional
 
@@ -86,6 +86,8 @@ Optional:
 - `delete` (String)
 - `read` (String)
 - `update` (String)
+
+* The symbol ❗ in an attribute indicates that modifying it, will force the creation
 
 ## Import
 

@@ -36,16 +36,16 @@ directory for complete configuration examples.
 
 ### Required
 
-- `cluster_id` (String) The parent [exoscale_sks_cluster](./sks_cluster.md) ID.
-- `groups` (Set of String) Group names in the generated Kubeconfig. The certificate present in the Kubeconfig will have these roles set in the Organization field.
-- `user` (String) User name in the generated Kubeconfig. The certificate present in the Kubeconfig will also have this name set for the CN field.
-- `zone` (String) The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.
+- `cluster_id` (String) ❗ The parent [exoscale_sks_cluster](./sks_cluster.md) ID.
+- `groups` (Set of String) ❗ Group names in the generated Kubeconfig. The certificate present in the Kubeconfig will have these roles set in the Organization field.
+- `user` (String) ❗ User name in the generated Kubeconfig. The certificate present in the Kubeconfig will also have this name set for the CN field.
+- `zone` (String) ❗ The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.
 
 ### Optional
 
 - `early_renewal_seconds` (Number) If set, the resource will consider the Kubeconfig to have expired the given number of seconds before its actual CA certificate or client certificate expiry time. This can be useful to deploy an updated Kubeconfig in advance of the expiration of its internal current certificate. Note however that the old certificate remains valid until its true expiration time since this resource does not (and cannot) support revocation. Also note this advance update can only take place if the Terraform configuration is applied during the early renewal period (seconds; default: 0).
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- `ttl_seconds` (Number) The Time-to-Live of the Kubeconfig, after which it will expire / become invalid (seconds; default: 2592000 = 30 days).
+- `ttl_seconds` (Number) ❗ The Time-to-Live of the Kubeconfig, after which it will expire / become invalid (seconds; default: 2592000 = 30 days).
 
 ### Read-Only
 
@@ -62,6 +62,8 @@ Optional:
 - `delete` (String)
 - `read` (String)
 - `update` (String)
+
+* The symbol ❗ in an attribute indicates that modifying it, will force the creation
 
 
 

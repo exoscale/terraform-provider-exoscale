@@ -40,11 +40,11 @@ Please refer to the [examples](https://github.com/exoscale/terraform-provider-ex
 
 ### Required
 
-- `name` (String) The SSH key name.
+- `name` (String) ❗ The SSH key name.
 
 ### Optional
 
-- `public_key` (String) The SSH *public* key that will be authorized in compute instances.
+- `public_key` (String) ❗ The SSH *public* key that will be authorized in compute instances.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
@@ -60,6 +60,8 @@ Optional:
 - `create` (String)
 - `delete` (String)
 - `read` (String)
+
+* The symbol ❗ in an attribute indicates that modifying it, will force the creation
 
 ## Import
 

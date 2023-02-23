@@ -50,11 +50,11 @@ directory for complete configuration examples.
 
 ### Required
 
-- `zone` (String) The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.
+- `zone` (String) ❗ The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.
 
 ### Optional
 
-- `address_family` (String) The Elastic IP (EIP) address family (`inet4` or `inet6`; default: `inet4`).
+- `address_family` (String) ❗ The Elastic IP (EIP) address family (`inet4` or `inet6`; default: `inet4`).
 - `description` (String) A free-form text describing the Elastic IP (EIP).
 - `healthcheck` (Block List, Max: 1) Healthcheck configuration for *managed* EIPs. It can not be added to an existing *Unmanaged* EIP. (see [below for nested schema](#nestedblock--healthcheck))
 - `labels` (Map of String) A map of key/value labels.
@@ -95,6 +95,8 @@ Optional:
 - `delete` (String)
 - `read` (String)
 - `update` (String)
+
+* The symbol ❗ in an attribute indicates that modifying it, will force the creation
 
 ## Import
 

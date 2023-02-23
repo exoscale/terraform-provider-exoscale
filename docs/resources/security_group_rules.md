@@ -18,8 +18,8 @@ description: |-
 
 - `egress` (Block Set) A security group rule definition (can be specified multiple times). (see [below for nested schema](#nestedblock--egress))
 - `ingress` (Block Set) A security group rule definition (can be specified multiple times). (see [below for nested schema](#nestedblock--ingress))
-- `security_group` (String) The security group (name) the rules apply to (conflicts with `security_group_id`).
-- `security_group_id` (String) The security group (ID) the rules apply to (conficts with `security_group)`.
+- `security_group` (String) ❗ The security group (name) the rules apply to (conflicts with `security_group_id`).
+- `security_group_id` (String) ❗ The security group (ID) the rules apply to (conficts with `security_group)`.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
@@ -71,5 +71,7 @@ Optional:
 - `delete` (String)
 - `read` (String)
 - `update` (String)
+
+* The symbol ❗ in an attribute indicates that modifying it, will force the creation
 
 

@@ -40,14 +40,14 @@ directory for complete configuration examples.
 ### Required
 
 - `name` (String) The compute instance name.
-- `template_id` (String) The [exoscale_compute_template](../data-sources/compute_template.md) (ID) to use when creating the instance.
+- `template_id` (String) ❗ The [exoscale_compute_template](../data-sources/compute_template.md) (ID) to use when creating the instance.
 - `type` (String) The instance type (`<family>.<size>`, e.g. `standard.medium`; use the [Exoscale CLI](https://github.com/exoscale/cli/) - `exo compute instance-type list` - for the list of available types). **WARNING**: updating this attribute stops/restarts the instance.
-- `zone` (String) The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.
+- `zone` (String) ❗ The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.
 
 ### Optional
 
-- `anti_affinity_group_ids` (Set of String) A list of [exoscale_anti_affinity_group](./anti_affinity_group.md) (IDs) to attach to the instance (may only be set at creation time).
-- `deploy_target_id` (String) A deploy target ID.
+- `anti_affinity_group_ids` (Set of String) ❗ A list of [exoscale_anti_affinity_group](./anti_affinity_group.md) (IDs) to attach to the instance (may only be set at creation time).
+- `deploy_target_id` (String) ❗ A deploy target ID.
 - `disk_size` (Number) The instance disk size (GiB; at least `10`). **WARNING**: updating this attribute stops/restarts the instance.
 - `elastic_ip_ids` (Set of String) A list of [exoscale_elastic_ip](./elastic_ip.md) (IDs) to attach to the instance.
 - `ipv6` (Boolean) Enable IPv6 on the instance (boolean; default: `false`).
@@ -89,6 +89,8 @@ Optional:
 - `delete` (String)
 - `read` (String)
 - `update` (String)
+
+* The symbol ❗ in an attribute indicates that modifying it, will force the creation of a new resource.
 
 ## Import
 

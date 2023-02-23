@@ -52,10 +52,10 @@ directory for complete configuration examples.
 - `healthcheck` (Block Set, Min: 1) The service health checking configuration (may only bet set at creation time). (see [below for nested schema](#nestedblock--healthcheck))
 - `instance_pool_id` (String) The [exoscale_instance_pool](./instance_pool.md) (ID) to forward traffic to.
 - `name` (String) The NLB service name.
-- `nlb_id` (String) The parent [exoscale_nlb](./nlb.md) ID.
+- `nlb_id` (String) ❗ The parent [exoscale_nlb](./nlb.md) ID.
 - `port` (Number) The healthcheck port.
 - `target_port` (Number) The (TCP/UDP) port to forward traffic to (on target instance pool members).
-- `zone` (String) The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.
+- `zone` (String) ❗ The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.
 
 ### Optional
 
@@ -95,6 +95,8 @@ Optional:
 - `delete` (String)
 - `read` (String)
 - `update` (String)
+
+* The symbol ❗ in an attribute indicates that modifying it, will force the creation of a new resource.
 
 ## Import
 

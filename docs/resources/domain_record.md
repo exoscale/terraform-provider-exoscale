@@ -44,9 +44,9 @@ directory for complete configuration examples.
 ### Required
 
 - `content` (String) The record value.
-- `domain` (String) The parent [exoscale_domain](./domain.md) to attach the record to.
+- `domain` (String) ❗ The parent [exoscale_domain](./domain.md) to attach the record to.
 - `name` (String) The record name, Leave blank (`""`) to create a root record (similar to using `@` in a DNS zone file).
-- `record_type` (String) The record type (`A`, `AAAA`, `ALIAS`, `CAA`, `CNAME`, `HINFO`, `MX`, `NAPTR`, `NS`, `POOL`, `SPF`, `SRV`, `SSHFP`, `TXT`, `URL`).
+- `record_type` (String) ❗ The record type (`A`, `AAAA`, `ALIAS`, `CAA`, `CNAME`, `HINFO`, `MX`, `NAPTR`, `NS`, `POOL`, `SPF`, `SRV`, `SSHFP`, `TXT`, `URL`).
 
 ### Optional
 
@@ -68,6 +68,8 @@ Optional:
 - `delete` (String)
 - `read` (String)
 - `update` (String)
+
+* The symbol ❗ in an attribute indicates that modifying it, will force the creation of a new resource.
 
 ## Import
 

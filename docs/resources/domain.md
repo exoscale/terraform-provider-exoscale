@@ -29,7 +29,7 @@ directory for complete configuration examples.
 
 ### Required
 
-- `name` (String) The DNS domain name.
+- `name` (String) ❗ The DNS domain name.
 
 ### Optional
 
@@ -51,6 +51,8 @@ Optional:
 - `create` (String)
 - `delete` (String)
 - `read` (String)
+
+* The symbol ❗ in an attribute indicates that modifying it, will force the creation
 
 ## Import
 

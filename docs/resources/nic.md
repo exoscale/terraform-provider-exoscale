@@ -16,8 +16,8 @@ description: |-
 
 ### Required
 
-- `compute_id` (String) The compute instance ID.
-- `network_id` (String) The private network ID.
+- `compute_id` (String) ❗ The compute instance ID.
+- `network_id` (String) ❗ The private network ID.
 
 ### Optional
 
@@ -40,5 +40,7 @@ Optional:
 - `delete` (String)
 - `read` (String)
 - `update` (String)
+
+* The symbol ❗ in an attribute indicates that modifying it, will force the creation
 
 

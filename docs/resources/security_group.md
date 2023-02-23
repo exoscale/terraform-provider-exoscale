@@ -29,11 +29,11 @@ directory for complete configuration examples.
 
 ### Required
 
-- `name` (String) The security group name.
+- `name` (String) ❗ The security group name.
 
 ### Optional
 
-- `description` (String) A free-form text describing the group.
+- `description` (String) ❗ A free-form text describing the group.
 - `external_sources` (Set of String) A list of external network sources, in [CIDR](https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing#CIDR_notatio) notation.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
@@ -49,6 +49,8 @@ Optional:
 - `create` (String)
 - `delete` (String)
 - `read` (String)
+
+* The symbol ❗ in an attribute indicates that modifying it, will force the creation
 
 ## Import
 

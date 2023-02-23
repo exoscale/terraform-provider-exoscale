@@ -18,11 +18,11 @@ description: |-
 
 ### Required
 
-- `name` (String) The SSH keypair name.
+- `name` (String) ❗ The SSH keypair name.
 
 ### Optional
 
-- `public_key` (String) A SSH *public* key that will be authorized in compute instances. If not provided, an SSH keypair (including the *private* key) is generated and saved locally (see the `private_key` attribute).
+- `public_key` (String) ❗ A SSH *public* key that will be authorized in compute instances. If not provided, an SSH keypair (including the *private* key) is generated and saved locally (see the `private_key` attribute).
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
@@ -39,5 +39,7 @@ Optional:
 - `create` (String)
 - `delete` (String)
 - `read` (String)
+
+* The symbol ❗ in an attribute indicates that modifying it, will force the creation
 
 

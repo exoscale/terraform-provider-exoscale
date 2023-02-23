@@ -36,13 +36,13 @@ directory for complete configuration examples.
 
 ### Required
 
-- `name` (String) The IAM access key name.
+- `name` (String) ❗ The IAM access key name.
 
 ### Optional
 
-- `operations` (Set of String) A list of API operations to restrict the key to.
-- `resources` (Set of String) A list of API [resources](https://community.exoscale.com/documentation/iam/quick-start/#restricting-api-access-keys-to-resources) to restrict the key to (`<domain>/<type>:<name>`).
-- `tags` (Set of String) A list of tags to restrict the key to.
+- `operations` (Set of String) ❗ A list of API operations to restrict the key to.
+- `resources` (Set of String) ❗ A list of API [resources](https://community.exoscale.com/documentation/iam/quick-start/#restricting-api-access-keys-to-resources) to restrict the key to (`<domain>/<type>:<name>`).
+- `tags` (Set of String) ❗ A list of tags to restrict the key to.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
@@ -60,5 +60,7 @@ Optional:
 - `create` (String)
 - `delete` (String)
 - `read` (String)
+
+* The symbol ❗ in an attribute indicates that modifying it, will force the creation
 
 

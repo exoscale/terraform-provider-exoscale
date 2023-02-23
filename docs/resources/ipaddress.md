@@ -16,13 +16,13 @@ description: |-
 
 ### Required
 
-- `zone` (String) The Exoscale Zone name
+- `zone` (String) ❗ The Exoscale Zone name
 
 ### Optional
 
 - `description` (String) A free-form text describing the Elastic IP (EIP).
 - `healthcheck_interval` (Number) The healthcheck probing interval (seconds; must be between `5` and `300`).
-- `healthcheck_mode` (String) The healthcheck probing mode (must be `tcp`, `http` or `https`).
+- `healthcheck_mode` (String) ❗ The healthcheck probing mode (must be `tcp`, `http` or `https`).
 - `healthcheck_path` (String) The healthcheck probe HTTP request path (must be specified in `http`/`https` modes).
 - `healthcheck_port` (Number) The healthcheck service port to probe (must be between `1` and `65535`).
 - `healthcheck_strikes_fail` (Number) The number of unsuccessful healthcheck probes before considering the target unhealthy (must be between `1` and `20`).
@@ -48,5 +48,7 @@ Optional:
 - `delete` (String)
 - `read` (String)
 - `update` (String)
+
+* The symbol ❗ in an attribute indicates that modifying it, will force the creation
 
 

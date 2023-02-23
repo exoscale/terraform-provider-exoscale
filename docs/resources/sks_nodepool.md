@@ -35,11 +35,11 @@ directory for complete configuration examples.
 
 ### Required
 
-- `cluster_id` (String) The parent [exoscale_sks_cluster](./sks_cluster.md) ID.
+- `cluster_id` (String) ❗ The parent [exoscale_sks_cluster](./sks_cluster.md) ID.
 - `instance_type` (String) The managed compute instances type (`<family>.<size>`, e.g. `standard.medium`; use the [Exoscale CLI](https://github.com/exoscale/cli/) - `exo compute instance-type list` - for the list of available types).
 - `name` (String) The SKS node pool name.
 - `size` (Number)
-- `zone` (String) The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.
+- `zone` (String) ❗ The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.
 
 ### Optional
 
@@ -72,6 +72,8 @@ Optional:
 - `delete` (String)
 - `read` (String)
 - `update` (String)
+
+* The symbol ❗ in an attribute indicates that modifying it, will force the creation
 
 ## Import
 

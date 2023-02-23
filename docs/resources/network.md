@@ -17,7 +17,7 @@ description: |-
 ### Required
 
 - `name` (String) The private network name.
-- `zone` (String) The Exoscale Zone name.
+- `zone` (String) ❗ The Exoscale Zone name.
 
 ### Optional
 
@@ -42,5 +42,7 @@ Optional:
 - `delete` (String)
 - `read` (String)
 - `update` (String)
+
+* The symbol ❗ in an attribute indicates that modifying it, will force the creation
 
 

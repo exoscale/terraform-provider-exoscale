@@ -43,7 +43,7 @@ directory for complete configuration examples.
 - `name` (String) The instance pool name.
 - `size` (Number) The number of managed instances.
 - `template_id` (String) The [exoscale_compute_template](../data-sources/compute_template.md) (ID) to use when creating the managed instances.
-- `zone` (String) The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.
+- `zone` (String) ❗ The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.
 
 ### Optional
 
@@ -93,6 +93,8 @@ Optional:
 - `delete` (String)
 - `read` (String)
 - `update` (String)
+
+* The symbol ❗ in an attribute indicates that modifying it, will force the creation of a new resource.
 
 ## Import
 

@@ -54,10 +54,10 @@ directory for complete configuration examples.
 
 ### Required
 
-- `name` (String) The name of the database service.
+- `name` (String) ❗ The name of the database service.
 - `plan` (String) The plan of the database service (use the [Exoscale CLI](https://github.com/exoscale/cli/) - `exo dbaas type show <TYPE>` - for reference).
-- `type` (String) The type of the database service (`kafka`, `mysql`, `opensearch`, `pg`, `redis`).
-- `zone` (String) The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.
+- `type` (String) ❗ The type of the database service (`kafka`, `mysql`, `opensearch`, `pg`, `redis`).
+- `zone` (String) ❗ The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.
 
 ### Optional
 
@@ -121,15 +121,15 @@ Optional:
 Optional:
 
 - `dashboards` (Block List, Max: 1) (see [below for nested schema](#nestedblock--opensearch--dashboards))
-- `fork_from_service` (String) Service name
+- `fork_from_service` (String) ❗ Service name
 - `index_pattern` (Block List) (can be used multiple times) Allows you to create glob style patterns and set a max number of indexes matching this pattern you want to keep. Creating indexes exceeding this value will cause the oldest one to get deleted. You could for example create a pattern looking like 'logs.?' and then create index logs.1, logs.2 etc, it will delete logs.1 once you create logs.6. Do note 'logs.?' does not apply to logs.10. Note: Setting max_index_count to 0 will do nothing and the pattern gets ignored. (see [below for nested schema](#nestedblock--opensearch--index_pattern))
 - `index_template` (Block List, Max: 1) Template settings for all new indexes (see [below for nested schema](#nestedblock--opensearch--index_template))
 - `ip_filter` (List of String) Allow incoming connections from this list of CIDR address block, e.g. `["10.20.0.0/16"]`
 - `keep_index_refresh_interval` (Boolean) Aiven automation resets index.refresh_interval to default value for every index to be sure that indices are always visible to search. If it doesn't fit your case, you can disable this by setting up this flag to true.
 - `max_index_count` (Number) Maximum number of indexes to keep (Minimum value is `0`)
-- `recovery_backup_name` (String)
+- `recovery_backup_name` (String) ❗
 - `settings` (String) OpenSearch-specific settings, in json. e.g.`jsonencode({thread_pool_search_size: 64})`. Use `exo x get-dbaas-settings-opensearch` to get a list of available settings.
-- `version` (String) OpenSearch major version.
+- `version` (String) ❗ OpenSearch major version.
 
 <a id="nestedblock--opensearch--dashboards"></a>
 ### Nested Schema for `opensearch.dashboards`
@@ -195,6 +195,8 @@ Optional:
 - `delete` (String)
 - `read` (String)
 - `update` (String)
+
+* The symbol ❗ in an attribute indicates that modifying it, will force the creation of a new resource.
 
 ## Import
 
