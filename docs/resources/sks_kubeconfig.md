@@ -1,6 +1,6 @@
 ---
 page_title: "exoscale_sks_kubeconfig Resource - terraform-provider-exoscale"
-subcategory: "Deprecated"
+subcategory: ""
 description: |-
   Manage Exoscale Scalable Kubernetes Service (SKS) Credentials (Kubeconfig).
 ---
