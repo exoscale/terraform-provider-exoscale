@@ -57,7 +57,7 @@ Optional:
 An existing security group may be imported by `<ID>`:
 
 ```shell
-$ terraform import \
+terraform import \
   exoscale_security_group.my_security_group \
   f81d4fae-7dec-11d0-a765-00a0c91e6bf6
 ```

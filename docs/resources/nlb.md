@@ -64,7 +64,7 @@ Optional:
 An existing network load balancer (NLB) may be imported by `<ID>@<zone>`:
 
 ```console
-$ terraform import \
+terraform import \
   exoscale_nlb.my_nlb \
   f81d4fae-7dec-11d0-a765-00a0c91e6bf6@ch-gva-2
 ```
