@@ -124,7 +124,9 @@ resource "exoscale_compute_instance" "my_instance" {
 ```
 
 ```console
-$ terraform init
+terraform init
+
+Output:
 
 Initializing the backend...
 
@@ -135,9 +137,11 @@ Initializing provider plugins...
 
 ...
 
-$ terraform apply \
+terraform apply \
   -var exoscale_api_key=$EXOSCALE_API_KEY \
   -var exoscale_api_secret=$EXOSCALE_API_SECRET
+
+Output:
 
 Terraform used the selected providers to generate the following execution plan. Resource actions are indicated with the following symbols:
   + create

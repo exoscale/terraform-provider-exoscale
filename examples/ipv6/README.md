@@ -10,8 +10,8 @@ One should note the IPv6-specific security groups rules set up for the SSH acces
 (see the [ssh.tf](./ssh.tf) file).
 
 ```console
-$ terraform init
-$ terraform apply \
+terraform init
+terraform apply \
   -var exoscale_api_key=$EXOSCALE_API_KEY \
   -var exoscale_api_secret=$EXOSCALE_API_SECRET
 

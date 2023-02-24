@@ -25,7 +25,9 @@ Terraform configuration files referencing [Exoscale provider
 resources][tf-exo-doc]:
 
 ```console
-$ terraform init
+terraform init
+
+Output:
 
 Initializing the backend...
 

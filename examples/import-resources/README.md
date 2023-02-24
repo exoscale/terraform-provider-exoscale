@@ -19,7 +19,7 @@ Create a compute instance in the [Portal](https://portal.exoscale.com/):
 And initialize your Terraform configuration:
 
 ``` console
-$ terraform init
+terraform init
 ```
 
 ## Using Exoscale CLI
@@ -58,7 +58,7 @@ $ exo compute security-group list | grep -Fw default
 ## Import the security group
 
 ```console
-$ terraform import \
+terraform import \
   -var exoscale_api_key=$EXOSCALE_API_KEY \
   -var exoscale_api_secret=$EXOSCALE_API_SECRET \
   exoscale_security_group.default dd31c3cd-e19d-47d4-b187-914386bc0303
@@ -75,7 +75,7 @@ Import successful!
 ## Import the compute instance
 
 ```console
-$ terraform import \
+terraform import \
   -var exoscale_api_key=$EXOSCALE_API_KEY \
   -var exoscale_api_secret=$EXOSCALE_API_SECRET \
   exoscale_compute_instance.my_instance 66afd436-5243-4bdb-8929-963d81bf7325@ch-gva-2
