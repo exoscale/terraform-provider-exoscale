@@ -8,7 +8,7 @@ locals {
 }
 
 # Existing resources (<-> data sources)
-data "exoscale_compute_template" "my_template" {
+data "exoscale_template" "my_template" {
   zone = local.my_zone
   name = local.my_template
 }
@@ -35,7 +35,7 @@ resource "exoscale_compute_instance" "my_instance_static" {
   zone = local.my_zone
   name = "my-instance-static"
 
-  template_id = data.exoscale_compute_template.my_template.id
+  template_id = data.exoscale_template.my_template.id
   type        = "standard.medium"
   disk_size   = 10
 
@@ -52,7 +52,7 @@ resource "exoscale_compute_instance" "my_instance_static" {
   provisioner "remote-exec" {
     connection {
       host        = self.public_ip_address
-      user        = data.exoscale_compute_template.my_template.username
+      user        = data.exoscale_template.my_template.default_user
       private_key = tls_private_key.my_ssh_key.private_key_openssh
     }
 
@@ -67,7 +67,7 @@ resource "exoscale_compute_instance" "my_instance_dynamic" {
   zone = local.my_zone
   name = "my-instance-dynamic"
 
-  template_id = data.exoscale_compute_template.my_template.id
+  template_id = data.exoscale_template.my_template.id
   type        = "standard.medium"
   disk_size   = 10
 
@@ -83,7 +83,7 @@ resource "exoscale_compute_instance" "my_instance_dynamic" {
   provisioner "remote-exec" {
     connection {
       host        = self.public_ip_address
-      user        = data.exoscale_compute_template.my_template.username
+      user        = data.exoscale_template.my_template.default_user
       private_key = tls_private_key.my_ssh_key.private_key_openssh
     }
 
@@ -98,7 +98,7 @@ resource "exoscale_compute_instance" "my_instance_dynamic" {
 output "ssh_connection_static" {
   value = format(
     "ssh -i id_ssh %s@%s",
-    data.exoscale_compute_template.my_template.username,
+    data.exoscale_template.my_template.default_user,
     exoscale_compute_instance.my_instance_static.public_ip_address,
   )
 }
@@ -106,7 +106,7 @@ output "ssh_connection_static" {
 output "ssh_connection_dynamic" {
   value = format(
     "ssh -i id_ssh %s@%s",
-    data.exoscale_compute_template.my_template.username,
+    data.exoscale_template.my_template.default_user,
     exoscale_compute_instance.my_instance_dynamic.public_ip_address,
   )
 }

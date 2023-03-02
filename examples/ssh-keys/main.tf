@@ -8,7 +8,7 @@ locals {
 }
 
 # Existing resources (<-> data sources)
-data "exoscale_compute_template" "my_template" {
+data "exoscale_template" "my_template" {
   zone = local.my_zone
   name = local.my_template
 }
@@ -63,7 +63,7 @@ resource "exoscale_compute_instance" "my_instance" {
   zone = local.my_zone
   name = "my-instance"
 
-  template_id = data.exoscale_compute_template.my_template.id
+  template_id = data.exoscale_template.my_template.id
   type        = "standard.medium"
   disk_size   = 10
 
@@ -77,7 +77,7 @@ resource "exoscale_compute_instance" "my_instance" {
   provisioner "remote-exec" {
     connection {
       host        = self.public_ip_address
-      user        = data.exoscale_compute_template.my_template.username
+      user        = data.exoscale_template.my_template.default_user
       private_key = tls_private_key.my_ssh_key.private_key_openssh
     }
 
@@ -89,7 +89,7 @@ resource "exoscale_compute_instance" "my_instance" {
 output "ssh_connection" {
   value = format(
     "ssh -i id_ssh %s@%s",
-    data.exoscale_compute_template.my_template.username,
+    data.exoscale_template.my_template.default_user,
     exoscale_compute_instance.my_instance.public_ip_address,
   )
 }

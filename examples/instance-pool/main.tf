@@ -8,7 +8,7 @@ locals {
 }
 
 # Existing resources (<-> data sources)
-data "exoscale_compute_template" "my_template" {
+data "exoscale_template" "my_template" {
   zone = local.my_zone
   name = local.my_template
 }
@@ -25,7 +25,7 @@ resource "exoscale_instance_pool" "my_instance_pool" {
   zone = local.my_zone
   name = "my-instance-pool"
 
-  template_id   = data.exoscale_compute_template.my_template.id
+  template_id   = data.exoscale_template.my_template.id
   instance_type = "standard.medium"
   disk_size     = 10
   size          = 3
@@ -42,7 +42,7 @@ resource "exoscale_instance_pool" "my_instance_pool" {
 output "ssh_connection" {
   value = join("\n", formatlist(
     "ssh -i id_ssh %s@%s  # %s",
-    data.exoscale_compute_template.my_template.username,
+    data.exoscale_template.my_template.default_user,
     exoscale_instance_pool.my_instance_pool.instances.*.public_ip_address,
     exoscale_instance_pool.my_instance_pool.instances.*.name,
   ))
