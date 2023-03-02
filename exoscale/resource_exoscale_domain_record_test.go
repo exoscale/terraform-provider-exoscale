@@ -19,8 +19,8 @@ var (
 	testAccResourceDomainRecordName           = "mail1"
 	testAccResourceDomainRecordNameUpdated    = "mail2"
 	testAccResourceDomainRecordType           = "MX"
-	testAccResourceDomainRecordContent        = "mta1"
-	testAccResourceDomainRecordContentUpdated = "mta2"
+	testAccResourceDomainRecordContent        = "mta1." + testAccResourceDomainRecordDomainName
+	testAccResourceDomainRecordContentUpdated = "mta2." + testAccResourceDomainRecordDomainName
 	testAccResourceDomainRecordPrio           = 10
 	testAccResourceDomainRecordPrioUpdated    = 20
 	testAccResourceDomainRecordTTL            = 10
