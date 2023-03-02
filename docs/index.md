@@ -102,12 +102,11 @@ provider "exoscale" {
 locals {
   my_zone     = "ch-gva-2"
   my_template = "Linux Ubuntu 22.04 LTS 64-bit"
-  my_ssh_key  = "my-ssh-key"
 }
 
 data "exoscale_compute_template" "my_template" {
   zone = local.my_zone
-  name = local.my_tempate
+  name = local.my_template
 }
 
 resource "exoscale_compute_instance" "my_instance" {
@@ -118,7 +117,6 @@ resource "exoscale_compute_instance" "my_instance" {
   type        = "standard.medium"
   disk_size   = 10
 
-  ssh_key     = local.my_ssh_key
   user_data   = "#cloud-config\npackage_upgrade: true\n"
 }
 ```

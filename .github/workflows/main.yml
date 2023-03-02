@@ -13,15 +13,16 @@ on:
     - 'v*' # Don't run CI tests on release tags
 
 jobs:
+  check-docs:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: ./.github/actions/setup.yaml
+    - name: Check documentation is up to date
+      run: './scripts/check-documentation-clean.sh'
   test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-go@v2
-      with:
-        go-version: '~1.18'
-    - name: Check documentation is up to date
-      run: './scripts/check-documentation-clean.sh'
+    - uses: ./.github/actions/setup.yaml
     - name: Run tests
       run: |
         git submodule update --init --recursive go.mk
