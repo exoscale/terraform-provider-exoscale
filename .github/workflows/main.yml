@@ -16,13 +16,13 @@ jobs:
   check-docs:
     runs-on: ubuntu-latest
     steps:
-    - uses: ./.github/actions/setup.yaml
+    - uses: ./.github/actions/setup
     - name: Check documentation is up to date
       run: './scripts/check-documentation-clean.sh'
   test:
     runs-on: ubuntu-latest
     steps:
-    - uses: ./.github/actions/setup.yaml
+    - uses: ./.github/actions/setup
     - name: Run tests
       run: |
         git submodule update --init --recursive go.mk
