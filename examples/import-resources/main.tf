@@ -8,7 +8,7 @@ locals {
 }
 
 # Existing resources (<-> data sources)
-data "exoscale_compute_template" "my_template" {
+data "exoscale_template" "my_template" {
   zone = local.my_zone
   name = local.my_template
 }
@@ -43,7 +43,7 @@ resource "exoscale_compute_instance" "my_instance" {
   zone = local.my_zone
   name = "my-instance"
 
-  template_id = data.exoscale_compute_template.my_template.id
+  template_id = data.exoscale_template.my_template.id
   type        = "standard.medium"
   disk_size   = 10
 
