@@ -112,10 +112,6 @@ resource "exoscale_affinity" "test" {
   name = "%s"
 }
 
-resource "exoscale_ipaddress" "test" {
-  zone = local.zone
-}
-
 resource "exoscale_instance_pool" "test" {
   zone = local.zone
   name = "%s"
@@ -128,7 +124,6 @@ resource "exoscale_instance_pool" "test" {
   key_pair = exoscale_ssh_keypair.test.name
   affinity_group_ids = [exoscale_affinity.test.id]
   network_ids = [exoscale_network.test.id]
-  elastic_ip_ids = [exoscale_ipaddress.test.id]
   user_data = "%s"
   labels = {
     test = "%s"
@@ -252,7 +247,6 @@ func TestAccResourceInstancePool(t *testing.T) {
 						resInstancePoolAttrAffinityGroupIDs + ".#": validateString("1"),
 						resInstancePoolAttrDescription:             validateString(testAccResourceInstancePoolDescriptionUpdated),
 						resInstancePoolAttrDiskSize:                validateString(fmt.Sprint(testAccResourceInstancePoolDiskSizeUpdated)),
-						resInstancePoolAttrElasticIPIDs + ".#":     validateString("1"),
 						resInstancePoolAttrInstancePrefix:          validateString(defaultInstancePoolInstancePrefix),
 						resInstancePoolAttrInstanceType:            validateString(testAccResourceInstancePoolInstanceTypeUpdated),
 						resInstancePoolAttrIPv6:                    validateString("false"),
@@ -283,7 +277,6 @@ func TestAccResourceInstancePool(t *testing.T) {
 							resInstancePoolAttrAffinityGroupIDs + ".#": validateString("1"),
 							resInstancePoolAttrDescription:             validateString(testAccResourceInstancePoolDescriptionUpdated),
 							resInstancePoolAttrDiskSize:                validateString(fmt.Sprint(testAccResourceInstancePoolDiskSizeUpdated)),
-							resInstancePoolAttrElasticIPIDs + ".#":     validateString("1"),
 							resInstancePoolAttrInstancePrefix:          validateString(defaultInstancePoolInstancePrefix),
 							resInstancePoolAttrInstanceType:            validateString(testAccResourceInstancePoolInstanceTypeUpdated),
 							resInstancePoolAttrIPv6:                    validateString("false"),

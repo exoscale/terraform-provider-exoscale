@@ -27,9 +27,10 @@ func resourceSecurityGroupIDString(d resourceIDStringer) string {
 func resourceSecurityGroupSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		resSecurityGroupAttrDescription: {
-			Type:     schema.TypeString,
-			Optional: true,
-			ForceNew: true,
+			Type:        schema.TypeString,
+			Optional:    true,
+			ForceNew:    true,
+			Description: "A free-form text describing the group.",
 		},
 		resSecurityGroupAttrExternalSources: {
 			Type:     schema.TypeSet,
@@ -38,6 +39,7 @@ func resourceSecurityGroupSchema() map[string]*schema.Schema {
 				Type:         schema.TypeString,
 				ValidateFunc: validation.IsCIDRNetwork(0, 128),
 			},
+			Description: "A list of external network sources, in [CIDR](https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing#CIDR_notatio) notation.",
 		},
 		resSecurityGroupAttrName: {
 			Type:     schema.TypeString,
@@ -49,6 +51,7 @@ func resourceSecurityGroupSchema() map[string]*schema.Schema {
 			DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
 				return strings.EqualFold(old, new)
 			},
+			Description: "The security group name.",
 		},
 	}
 }
@@ -56,6 +59,7 @@ func resourceSecurityGroupSchema() map[string]*schema.Schema {
 func resourceSecurityGroup() *schema.Resource {
 	return &schema.Resource{
 		Schema:        resourceSecurityGroupSchema(),
+		Description:   "Manage Exoscale Security Groups.",
 		SchemaVersion: 1,
 		StateUpgraders: []schema.StateUpgrader{
 			{

@@ -22,35 +22,36 @@ const (
 
 func dataSourceTemplate() *schema.Resource {
 	return &schema.Resource{
+		Description: "Fetch Exoscale [Compute Instance Templates](https://community.exoscale.com/documentation/compute/custom-templates/) data.",
 		Schema: map[string]*schema.Schema{
 			dsTemplateAttrZone: {
+				Description: "The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.",
 				Type:        schema.TypeString,
-				Description: "Name of the zone",
 				Required:    true,
 			},
 			dsTemplateAttrName: {
+				Description:   "The template name to match (conflicts with `id`) (when multiple templates have the same name, the newest one will be returned).",
 				Type:          schema.TypeString,
-				Description:   "Name of the template",
 				Optional:      true,
 				ConflictsWith: []string{"id"},
 			},
 			dsTemplateAttrID: {
+				Description:   "The compute instance template ID to match (conflicts with `name`).",
 				Type:          schema.TypeString,
-				Description:   "ID of the template",
 				Optional:      true,
 				ConflictsWith: []string{"name"},
 			},
 			dsTemplateAttrVisibility: {
+				Description: "A template category filter (default: `public`); among: - `public` - official Exoscale templates - `private` - custom templates private to my organization",
 				Type:        schema.TypeString,
-				Description: "template visibility (public|private)",
 				ValidateFunc: validation.StringMatch(regexp.MustCompile("(?:public|private)"),
 					`must be either "public" or "private"`),
 				Optional: true,
 				Default:  "public",
 			},
 			dsTemplateAttrDefaultUser: {
+				Description: "Username to use to log into a compute instance based on this template",
 				Type:        schema.TypeString,
-				Description: "Template default user",
 				Computed:    true,
 			},
 		},

@@ -29,14 +29,16 @@ func resourceIAMAccessKey() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			resIAMAccessKeyAttrKey: {
-				Type:      schema.TypeString,
-				Computed:  true,
-				Sensitive: true,
+				Type:        schema.TypeString,
+				Computed:    true,
+				Sensitive:   true,
+				Description: "The IAM access key (identifier).",
 			},
 			resIAMAccessKeyAttrName: {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
+				Description: "The IAM access key name.",
 			},
 			resIAMAccessKeyAttrOperations: {
 				Type:     schema.TypeSet,
@@ -91,6 +93,7 @@ func resourceIAMAccessKey() *schema.Resource {
 
 					return true
 				},
+				Description: "A list of API operations to restrict the key to.",
 			},
 			resIAMAccessKeyAttrResources: {
 				Type:     schema.TypeSet,
@@ -100,11 +103,13 @@ func resourceIAMAccessKey() *schema.Resource {
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
+				Description: "A list of API [resources](https://community.exoscale.com/documentation/iam/quick-start/#restricting-api-access-keys-to-resources) to restrict the key to (`<domain>/<type>:<name>`).",
 			},
 			resIAMAccessKeyAttrSecret: {
-				Type:      schema.TypeString,
-				Computed:  true,
-				Sensitive: true,
+				Type:        schema.TypeString,
+				Computed:    true,
+				Sensitive:   true,
+				Description: "The key secret.",
 			},
 			resIAMAccessKeyAttrTags: {
 				Type:     schema.TypeSet,
@@ -114,6 +119,7 @@ func resourceIAMAccessKey() *schema.Resource {
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
+				Description: "A list of tags to restrict the key to.",
 			},
 			resIAMAccessKeyAttrTagsOperations: {
 				Type:     schema.TypeSet,

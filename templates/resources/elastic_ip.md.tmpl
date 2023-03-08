@@ -1,0 +1,60 @@
+---
+page_title: "{{.Name}} {{.Type}} - {{.ProviderName}}"
+subcategory: ""
+description: |-
+  Manage Exoscale Elastic IPs (EIP).
+---
+
+# {{.Name}} ({{.Type}})
+
+Manage Exoscale [Elastic IPs (EIP)](https://community.exoscale.com/documentation/compute/eip/).
+
+Corresponding data source: [exoscale_elastic_ip](../data-sources/elastic_ip.md).
+
+## Example Usage
+
+*Unmanaged* EIPv4:
+
+```hcl
+resource "exoscale_elastic_ip" "my_elastic_ip" {
+  zone = "ch-gva-2"
+}
+```
+
+*Managed* EIPv6:
+
+```hcl
+resource "exoscale_elastic_ip" "my_managed_elastic_ip" {
+  zone = "ch-gva-2"
+  address_family = "inet6"
+  reverse_dns = "example.net"
+
+  healthcheck {
+    mode         = "https"
+    port         = 443
+    uri          = "/health"
+    interval     = 5
+    timeout      = 3
+    strikes_ok   = 2
+    strikes_fail = 3
+    tls_sni      = "example.net"
+  }
+}
+```
+
+Please refer to the [examples](https://github.com/exoscale/terraform-provider-exoscale/tree/master/examples/)
+directory for complete configuration examples.
+
+{{ .SchemaMarkdown | trimspace }}
+
+* The symbol ❗ in an attribute indicates that modifying it, will force the creation of a new resource.
+
+## Import
+
+An existing Elastic IP (EIP) may be imported by `<ID>@<zone>`:
+
+```shell
+terraform import \
+  exoscale_elastic_ip.my_elastic_ip \
+  f81d4fae-7dec-11d0-a765-00a0c91e6bf6@ch-gva-2
+```

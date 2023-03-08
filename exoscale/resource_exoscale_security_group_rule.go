@@ -48,11 +48,13 @@ func resourceSecurityGroupRuleIDString(d resourceIDStringer) string {
 
 func resourceSecurityGroupRule() *schema.Resource {
 	return &schema.Resource{
+		Description: "Manage Exoscale [Security Group](https://community.exoscale.com/documentation/compute/security-groups/) Rules.",
 		Schema: map[string]*schema.Schema{
 			resSecurityGroupRuleAttrDescription: {
-				Type:     schema.TypeString,
-				Optional: true,
-				ForceNew: true,
+				Type:        schema.TypeString,
+				Optional:    true,
+				ForceNew:    true,
+				Description: "A free-form text describing the security group rule.",
 			},
 			resSecurityGroupRuleAttrEndPort: {
 				Type:         schema.TypeInt,
@@ -63,12 +65,14 @@ func resourceSecurityGroupRule() *schema.Resource {
 					resSecurityGroupRuleAttrICMPCode,
 					resSecurityGroupRuleAttrICMPType,
 				},
+				Description: "A `TCP`/`UDP` port range to match.",
 			},
 			resSecurityGroupRuleAttrFlowDirection: {
 				Type:         schema.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: validation.StringInSlice([]string{"INGRESS", "EGRESS"}, false),
+				Description:  "The traffic direction to match (`INGRESS` or `EGRESS`).",
 			},
 			resSecurityGroupRuleAttrICMPCode: {
 				Type:         schema.TypeInt,
@@ -79,6 +83,7 @@ func resourceSecurityGroupRule() *schema.Resource {
 					resSecurityGroupRuleAttrEndPort,
 					resSecurityGroupRuleAttrStartPort,
 				},
+				Description: "An ICMP/ICMPv6 [type/code](https://en.wikipedia.org/wiki/Internet_Control_Message_Protocol#Control_messages) to match.",
 			},
 			resSecurityGroupRuleAttrICMPType: {
 				Type:         schema.TypeInt,
@@ -89,6 +94,7 @@ func resourceSecurityGroupRule() *schema.Resource {
 					resSecurityGroupRuleAttrEndPort,
 					resSecurityGroupRuleAttrStartPort,
 				},
+				Description: "An ICMP/ICMPv6 [type/code](https://en.wikipedia.org/wiki/Internet_Control_Message_Protocol#Control_messages) to match.",
 			},
 			resSecurityGroupRuleAttrNetwork: {
 				Type:         schema.TypeString,
@@ -99,6 +105,7 @@ func resourceSecurityGroupRule() *schema.Resource {
 					resSecurityGroupRuleAttrUserSecurityGroupID,
 					resSecurityGroupRuleAttrUserSecurityGroupName,
 				},
+				Description: "An (`INGRESS`) source / (`EGRESS`) destination IP subnet (in [CIDR notation](https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing#CIDR_notation)) to match (conflicts with `user_security_group`/`user_security_group_id`).",
 			},
 			resSecurityGroupRuleAttrProtocol: {
 				Type:         schema.TypeString,
@@ -108,6 +115,7 @@ func resourceSecurityGroupRule() *schema.Resource {
 				ValidateFunc: validation.StringInSlice(securityGroupRuleProtocols, true),
 				// Ignore case differences
 				DiffSuppressFunc: suppressCaseDiff,
+				Description:      "The network protocol to match (`TCP`, `UDP`, `ICMP`, `ICMPv6`, `AH`, `ESP`, `GRE`, `IPIP` or `ALL`)",
 			},
 			resSecurityGroupRuleAttrSecurityGroupID: {
 				Type:          schema.TypeString,
@@ -115,6 +123,7 @@ func resourceSecurityGroupRule() *schema.Resource {
 				Computed:      true,
 				ForceNew:      true,
 				ConflictsWith: []string{resSecurityGroupRuleAttrSecurityGroupName},
+				Description:   "The parent [exoscale_security_group](./security_group.md) ID.",
 			},
 			resSecurityGroupRuleAttrSecurityGroupName: {
 				Type:          schema.TypeString,
@@ -122,6 +131,8 @@ func resourceSecurityGroupRule() *schema.Resource {
 				Computed:      true,
 				ForceNew:      true,
 				ConflictsWith: []string{resSecurityGroupRuleAttrSecurityGroupID},
+				Deprecated:    "Deprecated in favor of `security_group_id`",
+				Description:   "The parent security group name. Please use the `security_group_id` argument along the [exoscale_security_group](../data-sources/security_group.md) data source instead.",
 			},
 			resSecurityGroupRuleAttrStartPort: {
 				Type:         schema.TypeInt,
@@ -132,6 +143,7 @@ func resourceSecurityGroupRule() *schema.Resource {
 					resSecurityGroupRuleAttrICMPCode,
 					resSecurityGroupRuleAttrICMPType,
 				},
+				Description: "A `TCP`/`UDP` port range to match.",
 			},
 			resSecurityGroupRuleAttrUserSecurityGroupID: {
 				Type:     schema.TypeString,
@@ -141,6 +153,7 @@ func resourceSecurityGroupRule() *schema.Resource {
 					resSecurityGroupRuleAttrNetwork,
 					resSecurityGroupRuleAttrUserSecurityGroupName,
 				},
+				Description: "An (`INGRESS`) source / (`EGRESS`) destination security group ID to match (conflicts with `cidr`/`user_security_group)`).",
 			},
 			resSecurityGroupRuleAttrUserSecurityGroupName: {
 				Type:     schema.TypeString,
@@ -151,6 +164,8 @@ func resourceSecurityGroupRule() *schema.Resource {
 					resSecurityGroupRuleAttrNetwork,
 					resSecurityGroupRuleAttrUserSecurityGroupID,
 				},
+				Deprecated:  "Deprecated in favor of `user_security_group_id`",
+				Description: "An (`INGRESS`) source / (`EGRESS`) destination security group name to match (conflicts with `cidr`/`user_security_group_id`). Please use the `user_security_group_id` argument along the [exoscale_security_group](../data-sources/security_group.md) data source instead.",
 			},
 		},
 

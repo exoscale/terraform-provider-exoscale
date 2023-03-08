@@ -18,10 +18,14 @@ import (
 
 func dataSourceComputeInstanceList() *schema.Resource {
 	ret := &schema.Resource{
+		Description: `List Exoscale [Compute Instances](https://community.exoscale.com/documentation/compute/).
+
+Corresponding resource: [exoscale_compute_instance](../resources/compute_instance.md).`,
 		Schema: map[string]*schema.Schema{
 			"instances": {
-				Type:     schema.TypeList,
-				Computed: true,
+				Description: "The list of [exoscale_compute_instance](./compute_instance.md).",
+				Type:        schema.TypeList,
+				Computed:    true,
 				Elem: &schema.Resource{
 					Schema: getDataSourceComputeInstanceSchema(),
 				},

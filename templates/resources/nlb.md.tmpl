@@ -1,0 +1,42 @@
+---
+page_title: "{{.Name}} {{.Type}} - {{.ProviderName}}"
+subcategory: ""
+description: |-
+{{ .Description | plainmarkdown | trimspace | prefixlines "  " }}
+---
+
+# {{.Name}} ({{.Type}})
+
+Manage Exoscale [Network Load Balancers (NLB)](https://community.exoscale.com/documentation/compute/network-load-balancer/).
+
+Corresponding data source: [exoscale_nlb](../data-sources/nlb.md).
+
+## Example Usage
+
+```hcl
+resource "exoscale_nlb" "my_nlb" {
+  zone = "ch-gva-2"
+  name = "my-nlb"
+}
+```
+
+Next step is to attach [exoscale_nlb_service](./nlb_service.md)(s) to the NLB.
+
+Please refer to the [examples](https://github.com/exoscale/terraform-provider-exoscale/tree/master/examples/)
+directory for complete configuration examples.
+
+{{ .SchemaMarkdown | trimspace }}
+
+* The symbol ❗ in an attribute indicates that modifying it, will force the creation of a new resource.
+
+## Import
+
+An existing network load balancer (NLB) may be imported by `<ID>@<zone>`:
+
+```console
+terraform import \
+  exoscale_nlb.my_nlb \
+  f81d4fae-7dec-11d0-a765-00a0c91e6bf6@ch-gva-2
+```
+
+~> **NOTE:** Importing an `exoscale_nlb` resource does _not_ import related `exoscale_nlb_service` resources.

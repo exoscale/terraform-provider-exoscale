@@ -11,16 +11,17 @@ import (
 
 func dataSourceAffinity() *schema.Resource {
 	return &schema.Resource{
+		Description: "Fetch Exoscale Anti-Affinity Groups data.",
 		Schema: map[string]*schema.Schema{
 			"id": {
+				Description:   "The anti-affinity group ID to match (conflicts with `name`)",
 				Type:          schema.TypeString,
-				Description:   "ID of the Affinity Group",
 				Optional:      true,
 				ConflictsWith: []string{"name"},
 			},
 			"name": {
+				Description:   "The group name to match (conflicts with `id`)",
 				Type:          schema.TypeString,
-				Description:   "Name of the Affinity Group",
 				Optional:      true,
 				ConflictsWith: []string{"id"},
 			},

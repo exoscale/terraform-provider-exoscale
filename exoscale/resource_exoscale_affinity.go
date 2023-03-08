@@ -8,28 +8,37 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+const (
+	resAffinityDeprecationMessage = `**WARNING:** This resource is **DEPRECATED** and will be removed in the next major version. Please use [exoscale_anti_affinity_group](./anti_affinity_group.md) instead.`
+)
+
 func resourceAffinityIDString(d resourceIDStringer) string {
 	return resourceIDString(d, "exoscale_affinity")
 }
 
 func resourceAffinity() *schema.Resource {
 	return &schema.Resource{
+		Description:        "Manage Exoscale Anti-Affinity Groups.",
+		DeprecationMessage: resAffinityDeprecationMessage,
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
+				Description: "The anti-affinity group name.",
 			},
 			"description": {
-				Type:     schema.TypeString,
-				ForceNew: true,
-				Optional: true,
+				Type:        schema.TypeString,
+				ForceNew:    true,
+				Optional:    true,
+				Description: "A free-form text describing the group.",
 			},
 			"type": {
-				Type:     schema.TypeString,
-				Optional: true,
-				ForceNew: true,
-				Default:  "host anti-affinity",
+				Type:        schema.TypeString,
+				Optional:    true,
+				ForceNew:    true,
+				Default:     "host anti-affinity",
+				Description: "The type of the group (`host anti-affinity` is the only supported value).",
 			},
 			"virtual_machine_ids": {
 				Type:     schema.TypeSet,
@@ -38,6 +47,7 @@ func resourceAffinity() *schema.Resource {
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
+				Description: "The compute instances (IDs) members of the group.",
 			},
 		},
 

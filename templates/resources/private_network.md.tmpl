@@ -1,0 +1,53 @@
+---
+page_title: "{{.Name}} {{.Type}} - {{.ProviderName}}"
+subcategory: ""
+description: |-
+{{ .Description | plainmarkdown | trimspace | prefixlines "  " }}
+---
+
+# {{.Name}} ({{.Type}})
+
+Manage Exoscale [Private Networks](https://community.exoscale.com/documentation/compute/private-networks/).
+
+Corresponding data source: [exoscale_private_network](../data-sources/private_network.md).
+
+## Example Usage
+
+*Unmanaged* private network:
+
+```hcl
+resource "exoscale_private_network" "my_private_network" {
+  zone = "ch-gva-2"
+  name = "my-private-network"
+}
+```
+
+*Managed* private network:
+
+```hcl
+resource "exoscale_private_network" "my_managed_private_network" {
+  zone = "ch-gva-2"
+  name = "my-managed-private-network"
+
+  netmask  = "255.255.255.0"
+  start_ip = "10.0.0.20"
+  end_ip   = "10.0.0.253"
+}
+```
+
+Please refer to the [examples](https://github.com/exoscale/terraform-provider-exoscale/tree/master/examples/)
+directory for complete configuration examples.
+
+{{ .SchemaMarkdown | trimspace }}
+
+* The symbol ❗ in an attribute indicates that modifying it, will force the creation of a new resource.
+
+## Import
+
+An existing private network may be imported by `<ID>@<zone>`:
+
+```shell
+terraform import \
+  exoscale_private_network.my_private_network \
+  f81d4fae-7dec-11d0-a765-00a0c91e6bf6@ch-gva-2
+```

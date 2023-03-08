@@ -13,10 +13,13 @@ import (
 
 func dataSourceDomain() *schema.Resource {
 	return &schema.Resource{
+		Description: `Fetch Exoscale [DNS](https://community.exoscale.com/documentation/dns/) Domains data.
+
+Corresponding resource: [exoscale_domain](../resources/domain.md).`,
 		Schema: map[string]*schema.Schema{
 			"name": {
+				Description: "The DNS domain name to match.",
 				Type:        schema.TypeString,
-				Description: "Name of the Domain",
 				Required:    true,
 			},
 		},

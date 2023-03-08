@@ -19,31 +19,37 @@ func resourceDomainIDString(d resourceIDStringer) string {
 
 func resourceDomain() *schema.Resource {
 	return &schema.Resource{
+		Description: "Manage Exoscale DNS Domains.",
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
+				Description: "The DNS domain name.",
 			},
 			"token": {
-				Type:       schema.TypeString,
-				Computed:   true,
-				Deprecated: "Not used, will be removed in the future",
+				Type:        schema.TypeString,
+				Computed:    true,
+				Deprecated:  "Not used, will be removed in the future",
+				Description: "A security token that can be used as an alternative way to manage DNS domains via the Exoscale API.",
 			},
 			"state": {
-				Type:       schema.TypeString,
-				Computed:   true,
-				Deprecated: "Not used, will be removed in the future",
+				Type:        schema.TypeString,
+				Computed:    true,
+				Deprecated:  "Not used, will be removed in the future",
+				Description: "The domain state.",
 			},
 			"auto_renew": {
-				Type:       schema.TypeBool,
-				Computed:   true,
-				Deprecated: "Not used, will be removed in the future",
+				Type:        schema.TypeBool,
+				Computed:    true,
+				Deprecated:  "Not used, will be removed in the future",
+				Description: "Whether the DNS domain has automatic renewal enabled (boolean).",
 			},
 			"expires_on": {
-				Type:       schema.TypeString,
-				Computed:   true,
-				Deprecated: "Not used, will be removed in the future",
+				Type:        schema.TypeString,
+				Computed:    true,
+				Deprecated:  "Not used, will be removed in the future",
+				Description: "The domain expiration date, if known.",
 			},
 		},
 

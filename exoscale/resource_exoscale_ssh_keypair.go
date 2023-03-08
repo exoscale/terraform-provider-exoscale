@@ -14,25 +14,31 @@ func resourceSSHKeypairIDString(d resourceIDStringer) string {
 
 func resourceSSHKeypair() *schema.Resource {
 	return &schema.Resource{
+		Description: "Manage Exoscale SSH Keypairs.",
+
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
+				Description: "The SSH keypair name.",
 			},
 			"public_key": {
-				Type:     schema.TypeString,
-				Optional: true,
-				ForceNew: true,
+				Type:        schema.TypeString,
+				Optional:    true,
+				ForceNew:    true,
+				Description: "A SSH *public* key that will be authorized in compute instances. If not provided, an SSH keypair (including the *private* key) is generated and saved locally (see the `private_key` attribute).",
 			},
 			"private_key": {
-				Type:      schema.TypeString,
-				Computed:  true,
-				Sensitive: true,
+				Type:        schema.TypeString,
+				Computed:    true,
+				Sensitive:   true,
+				Description: "The SSH *private* key generated if no public key was provided.",
 			},
 			"fingerprint": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The SSH keypair unique identifier.",
 			},
 		},
 

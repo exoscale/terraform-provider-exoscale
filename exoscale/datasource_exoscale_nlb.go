@@ -21,38 +21,45 @@ const (
 
 func dataSourceNLB() *schema.Resource {
 	return &schema.Resource{
+		Description: `Fetch Exoscale [Network Load Balancers (NLB)](https://community.exoscale.com/documentation/compute/network-load-balancer/) data.
+
+Corresponding resource: [exoscale_nlb](../resources/nlb.md).`,
 		Schema: map[string]*schema.Schema{
 			dsNLBAttrCreatedAt: {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "The NLB creation date.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 			dsNLBAttrDescription: {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "The Network Load Balancers (NLB) description.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 			dsNLBAttrID: {
+				Description:   "The Network Load Balancers (NLB) ID to match (conflicts with `name`).",
 				Type:          schema.TypeString,
-				Description:   "ID of the Network Load Balancer",
 				Optional:      true,
 				ConflictsWith: []string{dsNLBAttrName},
 			},
 			dsNLBAttrIPAddress: {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "The NLB public IPv4 address.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 			dsNLBAttrName: {
+				Description:   "The NLB name to match (conflicts with `id`).",
 				Type:          schema.TypeString,
-				Description:   "Name of the Network Load Balancer",
 				Optional:      true,
 				ConflictsWith: []string{dsNLBAttrID},
 			},
 			dsNLBAttrState: {
-				Type:     schema.TypeString,
-				Computed: true,
+				Description: "The current NLB state.",
+				Type:        schema.TypeString,
+				Computed:    true,
 			},
 			dsNLBAttrZone: {
+				Description: "The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.",
 				Type:        schema.TypeString,
-				Description: "Zone of the Network Load Balancer",
 				Required:    true,
 			},
 		},

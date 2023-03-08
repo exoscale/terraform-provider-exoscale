@@ -16,13 +16,18 @@ const (
 
 func dataSourceSecurityGroup() *schema.Resource {
 	return &schema.Resource{
+		Description: `Fetch Exoscale [Security Groups](https://community.exoscale.com/documentation/compute/security-groups/) data.
+
+Corresponding resource: [exoscale_security_group](../resources/security_group.md).`,
 		Schema: map[string]*schema.Schema{
 			dsSecurityGroupAttrID: {
+				Description:   "The security group ID to match (conflicts with `name`)",
 				Type:          schema.TypeString,
 				Optional:      true,
 				ConflictsWith: []string{dsSecurityGroupAttrName},
 			},
 			dsSecurityGroupAttrName: {
+				Description:   "The name to match (conflicts with `id`)",
 				Type:          schema.TypeString,
 				Optional:      true,
 				ConflictsWith: []string{dsSecurityGroupAttrID},

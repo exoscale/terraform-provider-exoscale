@@ -11,25 +11,26 @@ import (
 
 func dataSourceCompute() *schema.Resource {
 	return &schema.Resource{
+		Description: "Fetch Exoscale Compute Instances data.",
 		Schema: map[string]*schema.Schema{
 			"id": {
+				Description:   "The compute instance ID to match.",
 				Type:          schema.TypeString,
-				Description:   "ID of the Compute instance",
 				Optional:      true,
 				ConflictsWith: []string{"hostname", "tags"},
 			},
 			"hostname": {
+				Description:   "The instance hostname to match.",
 				Type:          schema.TypeString,
-				Description:   "Hostname of the Compute instance",
 				Optional:      true,
 				ConflictsWith: []string{"id", "tags"},
 			},
 			"tags": {
-				Type: schema.TypeMap,
+				Description: "The instance tags to match (map of key/value).",
+				Type:        schema.TypeMap,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
-				Description:   "Map of tags (key: value)",
 				Optional:      true,
 				ConflictsWith: []string{"id", "hostname"},
 			},

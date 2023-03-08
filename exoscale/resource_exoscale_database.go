@@ -43,12 +43,14 @@ func resourceDatabaseIDString(d resourceIDStringer) string {
 func resourceDatabase() *schema.Resource {
 	s := map[string]*schema.Schema{
 		resDatabaseAttrCreatedAt: {
-			Type:     schema.TypeString,
-			Computed: true,
+			Description: "The creation date of the database service.",
+			Type:        schema.TypeString,
+			Computed:    true,
 		},
 		resDatabaseAttrDiskSize: {
-			Type:     schema.TypeInt,
-			Computed: true,
+			Description: "The disk size of the database service.",
+			Type:        schema.TypeInt,
+			Computed:    true,
 		},
 		resDatabaseAttrMaintenanceDOW: {
 			Type:         schema.TypeString,
@@ -67,46 +69,56 @@ func resourceDatabase() *schema.Resource {
 					"sunday",
 				},
 				false)),
+			Description: "The day of week to perform the automated database service maintenance (`never`, `monday`, `tuesday`, `wednesday`, `thursday`, `friday`, `saturday`, `sunday`).",
 		},
 		resDatabaseAttrMaintenanceTime: {
 			Type:         schema.TypeString,
 			Optional:     true,
 			Computed:     true,
 			RequiredWith: []string{resDatabaseAttrMaintenanceDOW},
+			Description:  "The time of day to perform the automated database service maintenance (`HH:MM:SS`)",
 		},
 		resDatabaseAttrName: {
-			Type:     schema.TypeString,
-			Required: true,
-			ForceNew: true,
+			Type:        schema.TypeString,
+			Required:    true,
+			ForceNew:    true,
+			Description: "The name of the database service.",
 		},
 		resDatabaseAttrNodeCPUs: {
-			Type:     schema.TypeInt,
-			Computed: true,
+			Description: "The number of CPUs of the database service.",
+			Type:        schema.TypeInt,
+			Computed:    true,
 		},
 		resDatabaseAttrNodeMemory: {
-			Type:     schema.TypeInt,
-			Computed: true,
+			Description: "The amount of memory of the database service.",
+			Type:        schema.TypeInt,
+			Computed:    true,
 		},
 		resDatabaseAttrNodes: {
-			Type:     schema.TypeInt,
-			Computed: true,
+			Description: "The number of nodes of the database service.",
+			Type:        schema.TypeInt,
+			Computed:    true,
 		},
 		resDatabaseAttrPlan: {
-			Type:     schema.TypeString,
-			Required: true,
+			Type:        schema.TypeString,
+			Required:    true,
+			Description: "The plan of the database service (use the [Exoscale CLI](https://github.com/exoscale/cli/) - `exo dbaas type show <TYPE>` - for reference).",
 		},
 		resDatabaseAttrState: {
-			Type:     schema.TypeString,
-			Computed: true,
+			Description: "The current state of the database service.",
+			Type:        schema.TypeString,
+			Computed:    true,
 		},
 		resDatabaseAttrCA: {
-			Type:     schema.TypeString,
-			Computed: true,
+			Description: "CA Certificate required to reach a DBaaS service through a TLS-protected connection.",
+			Type:        schema.TypeString,
+			Computed:    true,
 		},
 		resDatabaseAttrTerminationProtection: {
-			Type:     schema.TypeBool,
-			Optional: true,
-			Default:  true,
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Default:     true,
+			Description: "The database service protection boolean flag against termination/power-off.",
 		},
 		resDatabaseAttrType: {
 			Type:     schema.TypeString,
@@ -119,21 +131,25 @@ func resourceDatabase() *schema.Resource {
 				"redis",
 				"opensearch",
 			}, false)),
+			Description: "The type of the database service (`kafka`, `mysql`, `opensearch`, `pg`, `redis`).",
 		},
 		resDatabaseAttrUpdatedAt: {
-			Type:     schema.TypeString,
-			Computed: true,
+			Description: "The date of the latest database service update.",
+			Type:        schema.TypeString,
+			Computed:    true,
 		},
 		resDatabaseAttrURI: {
-			Type:      schema.TypeString,
-			Computed:  true,
-			Sensitive: true,
+			Description: "The database service connection URI.",
+			Type:        schema.TypeString,
+			Computed:    true,
+			Sensitive:   true,
 		},
 		resDatabaseAttrZone: {
 			Type:         schema.TypeString,
 			Required:     true,
 			ForceNew:     true,
 			ValidateFunc: validateZone(),
+			Description:  "The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.",
 		},
 
 		"kafka":      resDatabaseKafkaSchema,
@@ -145,6 +161,8 @@ func resourceDatabase() *schema.Resource {
 
 	return &schema.Resource{
 		Schema: s,
+
+		Description: "Manage Exoscale [Database Services (DBaaS)](https://community.exoscale.com/documentation/dbaas/).",
 
 		CreateContext: resourceDatabaseCreate,
 		ReadContext:   resourceDatabaseRead,

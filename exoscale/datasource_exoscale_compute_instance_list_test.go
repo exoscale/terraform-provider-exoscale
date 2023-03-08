@@ -70,9 +70,11 @@ func TestAccDataSourceComputeInstanceList(t *testing.T) {
 
 data "exoscale_compute_instance_list" "test" {
   zone = local.zone
+  name = %q
 }
 `,
 					testAccDataSourceComputeInstanceListConfig,
+					testAccDataSourceComputeInstanceListName,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDataSourceComputeInstanceListAttributes("data.exoscale_compute_instance_list.test", testAttrs{

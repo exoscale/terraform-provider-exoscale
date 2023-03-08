@@ -179,17 +179,29 @@ func CheckForMatch(data map[string]interface{}, filters []FilterFunc) bool {
 }
 
 func createFilterAttribute(typ schema.ValueType) *schema.Schema {
+	filterMessage := ""
+	switch typ {
+	case schema.TypeBool:
+		filterMessage = "Match against this bool"
+	case schema.TypeInt:
+		filterMessage = "Match against this int"
+	case schema.TypeString:
+		filterMessage = "Match against this string. If you supply a string that begins and ends with a \"/\" it will be matched as a regex."
+	}
+
 	return &schema.Schema{
-		Type:     typ,
-		Optional: true,
+		Description: filterMessage,
+		Type:        typ,
+		Optional:    true,
 	}
 }
 
 func createMapFilterAttribute() *schema.Schema {
 	return &schema.Schema{
-		Type:     schema.TypeMap,
-		Elem:     &schema.Schema{Type: schema.TypeString},
-		Optional: true,
+		Description: "Match against key/values. Keys are matched exactly, while values may be matched as a regex if you supply a string that begins and ends with \"/\"",
+		Type:        schema.TypeMap,
+		Elem:        &schema.Schema{Type: schema.TypeString},
+		Optional:    true,
 	}
 }
 

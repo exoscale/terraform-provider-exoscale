@@ -17,22 +17,25 @@ func resourceNICIDString(d resourceIDStringer) string {
 
 func resourceNIC() *schema.Resource {
 	return &schema.Resource{
+		Description: "Manage Exoscale Compute Instance Private Network Interfaces (NIC).",
 		Schema: map[string]*schema.Schema{
 			"compute_id": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
+				Description: "The compute instance ID.",
 			},
 			"network_id": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
+				Description: "The private network ID.",
 			},
 			"ip_address": {
 				Type:             schema.TypeString,
 				Optional:         true,
 				Computed:         true,
-				Description:      "IP address",
+				Description:      "The IPv4 address to request as static DHCP lease if the NIC is attached to a *managed* private network.",
 				ValidateDiagFunc: validation.ToDiagFunc(validation.IsIPv4Address),
 			},
 			"netmask": {
@@ -44,8 +47,9 @@ func resourceNIC() *schema.Resource {
 				Computed: true,
 			},
 			"mac_address": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The NIC MAC address.",
 			},
 		},
 

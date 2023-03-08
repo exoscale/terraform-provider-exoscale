@@ -17,19 +17,25 @@ const (
 
 func dataSourceAntiAffinityGroup() *schema.Resource {
 	return &schema.Resource{
+		Description: `Fetch Exoscale [Anti-Affinity Groups](https://community.exoscale.com/documentation/compute/anti-affinity-groups/) data.
+
+Corresponding resource: [exoscale_anti_affinity_group](../resources/anti_affinity_group.md).`,
 		Schema: map[string]*schema.Schema{
 			dsAntiAffinityGroupAttrID: {
+				Description:   "The anti-affinity group ID to match (conflicts with `name`).",
 				Type:          schema.TypeString,
 				Optional:      true,
 				ConflictsWith: []string{dsAntiAffinityGroupAttrName},
 			},
 			dsAntiAffinityGroupAttrInstances: {
-				Type:     schema.TypeSet,
-				Computed: true,
-				Set:      schema.HashString,
-				Elem:     &schema.Schema{Type: schema.TypeString},
+				Description: "The list of attached [exoscale_compute_instance](../resources/compute_instance.md) (IDs).",
+				Type:        schema.TypeSet,
+				Computed:    true,
+				Set:         schema.HashString,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			dsAntiAffinityGroupAttrName: {
+				Description:   "The group name to match (conflicts with `id`).",
 				Type:          schema.TypeString,
 				Optional:      true,
 				ConflictsWith: []string{dsAntiAffinityGroupAttrID},

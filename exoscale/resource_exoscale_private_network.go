@@ -20,6 +20,8 @@ const (
 	resPrivateNetworkAttrNetmask     = "netmask"
 	resPrivateNetworkAttrStartIP     = "start_ip"
 	resPrivateNetworkAttrZone        = "zone"
+
+	resPrivateNetworkDocHint = "(For managed Privnets) "
 )
 
 func resourcePrivateNetworkIDString(d resourceIDStringer) string {
@@ -28,34 +30,41 @@ func resourcePrivateNetworkIDString(d resourceIDStringer) string {
 
 func resourcePrivateNetwork() *schema.Resource {
 	return &schema.Resource{
+		Description: "Manage Exoscale Private Networks.",
 		Schema: map[string]*schema.Schema{
 			resPrivateNetworkAttrDescription: {
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "A free-form text describing the network.",
 			},
 			resPrivateNetworkAttrEndIP: {
 				Type:         schema.TypeString,
 				Optional:     true,
 				ValidateFunc: validation.IsIPAddress,
+				Description:  "(For managed Privnets) The first/last IPv4 addresses used by the DHCP service for dynamic leases.",
 			},
 			resPrivateNetworkAttrName: {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "The private network name.",
 			},
 			resPrivateNetworkAttrNetmask: {
 				Type:         schema.TypeString,
 				Optional:     true,
 				ValidateFunc: validation.IsIPAddress,
+				Description:  "(For managed Privnets) The network mask defining the IPv4 network allowed for static leases.",
 			},
 			resPrivateNetworkAttrStartIP: {
 				Type:         schema.TypeString,
 				Optional:     true,
 				ValidateFunc: validation.IsIPAddress,
+				Description:  resPrivateNetworkDocHint + "The first/last IPv4 addresses used by the DHCP service for dynamic leases.",
 			},
 			resPrivateNetworkAttrZone: {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
+				Description: "The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.",
 			},
 		},
 

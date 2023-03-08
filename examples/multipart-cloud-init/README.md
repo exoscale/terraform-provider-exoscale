@@ -16,8 +16,8 @@ One should note:
 
 
 ```console
-$ terraform init
-$ terraform apply \
+terraform init
+terraform apply \
   -var exoscale_api_key=$EXOSCALE_API_KEY \
   -var exoscale_api_secret=$EXOSCALE_API_SECRET
 

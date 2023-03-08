@@ -10,8 +10,8 @@ One should note the adminitration credentials - `kubeconfig` - being dumped loca
 `exoscale_sks_kubeconfig` and `local_sensitive_file` resources.
 
 ```console
-$ terraform init
-$ terraform apply \
+terraform init
+terraform apply \
   -var exoscale_api_key=$EXOSCALE_API_KEY \
   -var exoscale_api_secret=$EXOSCALE_API_SECRET
 

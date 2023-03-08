@@ -18,8 +18,10 @@ One should note:
   `exo storage mb -z <zone> sos://<bucket>`
 
 ```console
-$ export AWS_ACCESS_KEY_ID=$EXOSCALE_API_KEY AWS_SECRET_ACCESS_KEY=$EXOSCALE_API_SECRET
-$ terraform init
+export AWS_ACCESS_KEY_ID=$EXOSCALE_API_KEY AWS_SECRET_ACCESS_KEY=$EXOSCALE_API_SECRET
+terraform init
+
+Output
 
 Initializing the backend...
 

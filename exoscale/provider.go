@@ -31,6 +31,19 @@ const (
 	defaultZone = "ch-gva-2"
 )
 
+func init() {
+	schema.DescriptionKind = schema.StringMarkdown
+
+	schema.SchemaDescriptionBuilder = func(s *schema.Schema) string {
+		if s.ForceNew {
+			// we add an indication that modifying this attribute, will force the creation of a new resource.
+			return fmt.Sprintf("❗ %s", s.Description)
+		}
+
+		return s.Description
+	}
+}
+
 // Provider returns an Exoscale Provider.
 func Provider() *schema.Provider {
 	return &schema.Provider{
