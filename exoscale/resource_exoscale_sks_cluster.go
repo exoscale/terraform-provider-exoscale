@@ -33,6 +33,7 @@ const (
 	resSKSClusterAttrKubeletCA          = "kubelet_ca"
 	resSKSClusterAttrLabels             = "labels"
 	resSKSClusterAttrMetricsServer      = "metrics_server"
+	resSKSClusterAttrID                 = "id"
 	resSKSClusterAttrName               = "name"
 	resSKSClusterAttrNodepools          = "nodepools"
 	resSKSClusterAttrOIDCClientID       = "client_id"
@@ -126,6 +127,11 @@ func resourceSKSCluster() *schema.Resource {
 			Type:        schema.TypeString,
 			Required:    true,
 			Description: "The SKS cluster name.",
+		},
+		resSKSClusterAttrID: {
+			Type:        schema.TypeString,
+			Computed:    true,
+			Description: "The SKS cluster ID.",
 		},
 		resSKSClusterAttrNodepools: {
 			Type:        schema.TypeSet,

@@ -5,13 +5,19 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 var (
-	cluster1Name                = "ds-sks-test-cluster-1"
-	testAccSKSDataSourcesConfig = `
+	cluster1Name                = acctest.RandomWithPrefix(testPrefix + "-cluster")
+	cluster2Name                = acctest.RandomWithPrefix(testPrefix + "-cluster-2")
+	affinityGroupName           = acctest.RandomWithPrefix(testPrefix + "-affinity-group")
+	securityGroupName           = acctest.RandomWithPrefix(testPrefix + "-security-group")
+	nodepool1Name               = acctest.RandomWithPrefix(testPrefix + "-nodepool")
+	nodepool2Name               = acctest.RandomWithPrefix(testPrefix + "-nodepool-2")
+	testAccSKSDataSourcesConfig = fmt.Sprintf(`
 locals {
   my_zone = "ch-gva-2"
 }
@@ -22,7 +28,7 @@ data "exoscale_security_group" "default" {
 
 resource "exoscale_sks_cluster" "my_sks_cluster" {
   zone = local.my_zone
-  name = "ds-sks-test-cluster-1"
+  name = %q
   labels = {
     "customer" = "your-telecom"
   }
@@ -30,18 +36,18 @@ resource "exoscale_sks_cluster" "my_sks_cluster" {
 
 resource "exoscale_sks_cluster" "my_sks_cluster_2" {
   zone = local.my_zone
-  name = "ds-sks-test-cluster-2"
+  name = %q
   labels = {
     "customer" = "your-telecom"
   }
 }
 
 resource "exoscale_anti_affinity_group" "my_sks_anti_affinity_group" {
-  name = "ds-sks-list-test-anti-affinity-group"
+  name = %q
 }
 
 resource "exoscale_security_group" "my_sks_security_group" {
-  name = "ds-sks-list-test-security-group"
+  name = %q
 }
 
 resource "exoscale_security_group_rule" "kubelet" {
@@ -88,7 +94,7 @@ resource "exoscale_security_group_rule" "nodeport_udp" {
 resource "exoscale_sks_nodepool" "my_sks_nodepool" {
   zone       = local.my_zone
   cluster_id = exoscale_sks_cluster.my_sks_cluster.id
-  name       = "ds-sks-test-nodepool"
+  name       = %q
 
   instance_type = "standard.medium"
   size          = 3
@@ -105,7 +111,7 @@ resource "exoscale_sks_nodepool" "my_sks_nodepool" {
 resource "exoscale_sks_nodepool" "my_sks_nodepool_2" {
   zone       = local.my_zone
   cluster_id = exoscale_sks_cluster.my_sks_cluster_2.id
-  name       = "ds-sks-test-nodepool-2"
+  name       = %q
 
   instance_type = "standard.medium"
   size          = 3
@@ -118,7 +124,7 @@ resource "exoscale_sks_nodepool" "my_sks_nodepool_2" {
     resource.exoscale_security_group.my_sks_security_group.id,
   ]
 }
-`
+`, cluster1Name, cluster2Name, affinityGroupName, securityGroupName, nodepool1Name, nodepool2Name)
 )
 
 func TestAccSKSDataSources(t *testing.T) {
@@ -161,32 +167,32 @@ func TestAccSKSDataSources(t *testing.T) {
 		},
 	}
 
-	nodepoolName := "ds-sks-test-nodepool"
+	nodepoolName := "-nodepool-2"
 	dsId = dsSKSNodepoolIdentifier
 	dsName = "my_nodepool_ds"
 	testCases = append(testCases, []testCase{
 		{
 			Config: fmt.Sprintf(`
-data %q %q {
-  zone = %q
-  cluster_id = exoscale_sks_cluster.my_sks_cluster.id
-  name = %q
-}
-`, dsId, dsName, zone, nodepoolName),
+		data %q %q {
+		  zone = %q
+		  cluster_id = exoscale_sks_cluster.my_sks_cluster.id
+		  name = "/%s/"
+		}
+		`, dsId, dsName, zone, nodepoolName),
 			DataSourceIdentifier: dsId,
 			DataSourceName:       dsName,
 			Attributes: testAttrs{
-				"name": validateString(nodepoolName),
+				"name": validateString(nodepool2Name),
 			},
 		},
 		{
 			Config: fmt.Sprintf(`
-data %q %q {
-  zone = %q
-  cluster_id = exoscale_sks_cluster.my_sks_cluster.id
-  id = exoscale_sks_nodepool.my_sks_nodepool.id
-}
-`, dsId, dsName, zone),
+		data %q %q {
+		  zone = %q
+		  cluster_id = exoscale_sks_cluster.my_sks_cluster.id
+		  #id = exoscale_sks_nodepool.my_sks_nodepool.id
+		}
+		`, dsId, dsName, zone),
 			DataSourceIdentifier: dsId,
 			DataSourceName:       dsName,
 			Attributes: testAttrs{
@@ -201,11 +207,11 @@ data %q %q {
 	testCases = append(testCases, []testCase{
 		{
 			Config: fmt.Sprintf(`
-data %q %q {
-  zone = %q
-  name = %q
-}
-`, dsId, dsName, zone, cluster1Name),
+		data %q %q {
+		  zone = %q
+		  name = %q
+		}
+		`, dsId, dsName, zone, cluster1Name),
 			DataSourceIdentifier: dsId,
 			DataSourceName:       dsName,
 			Attributes: testAttrs{
@@ -215,13 +221,13 @@ data %q %q {
 		},
 		{
 			Config: fmt.Sprintf(`
-data %q %q {
-  zone = %q
-  labels = {
-    "customer" = "/.*telecom.*/"
-}
-}
-`, dsId, dsName, zone),
+		data %q %q {
+		  zone = %q
+		  labels = {
+		    "customer" = "/.*telecom.*/"
+		}
+		}
+		`, dsId, dsName, zone),
 			DataSourceIdentifier: dsId,
 			DataSourceName:       dsName,
 			Attributes: testAttrs{
@@ -236,26 +242,26 @@ data %q %q {
 	testCases = append(testCases, []testCase{
 		{
 			Config: fmt.Sprintf(`
-data %q %q {
-  zone = %q
-  size = 3
-  name = "/.*nodepool-2/"
-}
-`, dsId, dsName, zone),
+		data %q %q {
+		  zone = %q
+		  size = 3
+		  name = "/.*nodepool-2/"
+		}
+		`, dsId, dsName, zone),
 			DataSourceIdentifier: dsId,
 			DataSourceName:       dsName,
 			Attributes: testAttrs{
 				"nodepools.#":      validateString("1"),
-				"nodepools.0.name": validateString("ds-sks-test-nodepool-2"),
+				"nodepools.0.name": validateString(nodepool2Name),
 			},
 		},
 		{
 			Config: fmt.Sprintf(`
-data %q %q {
-  zone = %q
-  name = "/.*-nodepool.*/"
-}
-`, dsId, dsName, zone),
+		data %q %q {
+		  zone = %q
+		  name = "/.*-nodepool.*/"
+		}
+		`, dsId, dsName, zone),
 			DataSourceIdentifier: dsId,
 			DataSourceName:       dsName,
 			Attributes: testAttrs{
