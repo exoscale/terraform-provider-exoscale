@@ -110,6 +110,8 @@ func dataSourceSKSNodepoolRead(ctx context.Context, d *schema.ResourceData, meta
 				d.SetId(*nodepool.ID)
 
 				matchingNodePool = nodepoolData
+
+				nMatches++
 			} else {
 				tflog.Info(ctx, fmt.Sprintf("nodepool %q matches multiple nodepools, this shouldn't be possible", clusterID))
 			}
