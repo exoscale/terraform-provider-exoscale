@@ -7,7 +7,7 @@ import (
 	v2 "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/filter"
-	"github.com/exoscale/terraform-provider-exoscale/pkg/gen/datasource"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/general"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -44,32 +44,32 @@ func dataSourceSKSNodepool() *schema.Resource {
 		ReadContext: dataSourceSKSNodepoolRead,
 	}
 
-	datasource.AddAttributes(ret, resourceSKSNodepool().Schema)
+	general.AddAttributes(ret, resourceSKSNodepool().Schema)
 
 	return ret
 }
 
-func nodepoolToDataMap(nodepool *v2.SKSNodepool) datasource.TerraformObject {
-	ret := make(datasource.TerraformObject)
+func nodepoolToDataMap(nodepool *v2.SKSNodepool) general.TerraformObject {
+	ret := make(general.TerraformObject)
 
-	datasource.Assign(ret, resSKSNodepoolAttrAntiAffinityGroupIDs, nodepool.AntiAffinityGroupIDs)
-	datasource.AssignTime(ret, resSKSNodepoolAttrCreatedAt, nodepool.CreatedAt)
-	datasource.Assign(ret, resSKSNodepoolAttrDeployTargetID, nodepool.DeployTargetID)
-	datasource.Assign(ret, resSKSNodepoolAttrDescription, nodepool.Description)
-	datasource.Assign(ret, resSKSNodepoolAttrDiskSize, nodepool.DiskSize)
-	datasource.Assign(ret, resSKSNodepoolAttrInstancePoolID, nodepool.InstancePoolID)
-	datasource.Assign(ret, resSKSNodepoolAttrInstancePrefix, nodepool.InstancePrefix)
-	datasource.Assign(ret, resSKSNodepoolAttrInstanceType, nodepool.InstanceTypeID)
-	datasource.Assign(ret, resSKSNodepoolAttrLabels, nodepool.Labels)
-	datasource.Assign(ret, resSKSNodepoolAttrName, nodepool.Name)
-	datasource.Assign(ret, resSKSNodepoolAttrPrivateNetworkIDs, nodepool.PrivateNetworkIDs)
-	datasource.Assign(ret, resSKSNodepoolAttrSecurityGroupIDs, nodepool.SecurityGroupIDs)
-	datasource.Assign(ret, resSKSNodepoolAttrSize, nodepool.Size)
-	datasource.Assign(ret, resSKSNodepoolAttrState, nodepool.State)
-	datasource.Assign(ret, resSKSNodepoolAttrTaints, nodepool.Taints)
-	datasource.Assign(ret, resSKSNodepoolAttrTemplateID, nodepool.TemplateID)
-	datasource.Assign(ret, resSKSNodepoolAttrVersion, nodepool.Version)
-	datasource.Assign(ret, dsSKSNodepoolID, nodepool.ID)
+	general.Assign(ret, resSKSNodepoolAttrAntiAffinityGroupIDs, nodepool.AntiAffinityGroupIDs)
+	general.AssignTime(ret, resSKSNodepoolAttrCreatedAt, nodepool.CreatedAt)
+	general.Assign(ret, resSKSNodepoolAttrDeployTargetID, nodepool.DeployTargetID)
+	general.Assign(ret, resSKSNodepoolAttrDescription, nodepool.Description)
+	general.Assign(ret, resSKSNodepoolAttrDiskSize, nodepool.DiskSize)
+	general.Assign(ret, resSKSNodepoolAttrInstancePoolID, nodepool.InstancePoolID)
+	general.Assign(ret, resSKSNodepoolAttrInstancePrefix, nodepool.InstancePrefix)
+	general.Assign(ret, resSKSNodepoolAttrInstanceType, nodepool.InstanceTypeID)
+	general.Assign(ret, resSKSNodepoolAttrLabels, nodepool.Labels)
+	general.Assign(ret, resSKSNodepoolAttrName, nodepool.Name)
+	general.Assign(ret, resSKSNodepoolAttrPrivateNetworkIDs, nodepool.PrivateNetworkIDs)
+	general.Assign(ret, resSKSNodepoolAttrSecurityGroupIDs, nodepool.SecurityGroupIDs)
+	general.Assign(ret, resSKSNodepoolAttrSize, nodepool.Size)
+	general.Assign(ret, resSKSNodepoolAttrState, nodepool.State)
+	general.Assign(ret, resSKSNodepoolAttrTaints, nodepool.Taints)
+	general.Assign(ret, resSKSNodepoolAttrTemplateID, nodepool.TemplateID)
+	general.Assign(ret, resSKSNodepoolAttrVersion, nodepool.Version)
+	general.Assign(ret, dsSKSNodepoolID, nodepool.ID)
 
 	return ret
 }
@@ -98,7 +98,7 @@ func dataSourceSKSNodepoolRead(ctx context.Context, d *schema.ResourceData, meta
 		return diag.Errorf("failed to create filter: %q", err)
 	}
 
-	var matchingNodePool datasource.TerraformObject
+	var matchingNodePool general.TerraformObject
 	nMatches := 0
 
 	for _, nodepool := range cluster.Nodepools {
@@ -124,7 +124,7 @@ func dataSourceSKSNodepoolRead(ctx context.Context, d *schema.ResourceData, meta
 		return diag.Errorf("no nodepool matches cluster %q with name %q or id %q", clusterID, nodepoolName, nodepoolID)
 	}
 
-	if err := datasource.Apply(matchingNodePool, d, dataSourceSKSNodepool().Schema); err != nil {
+	if err := general.Apply(matchingNodePool, d, dataSourceSKSNodepool().Schema); err != nil {
 		return diag.FromErr(err)
 	}
 

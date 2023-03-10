@@ -8,7 +8,8 @@ import (
 	"strings"
 
 	v2 "github.com/exoscale/egoscale/v2"
-	"github.com/exoscale/terraform-provider-exoscale/pkg/gen/datasource"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/general"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/list"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -17,12 +18,12 @@ const (
 	dsSKSNodepoolsListAttributeIdentifier = "nodepools"
 )
 
-func dataSourceSKSNodepoolListGetElementScheme() datasource.SchemaMap {
+func dataSourceSKSNodepoolListGetElementScheme() general.SchemaMap {
 	return dataSourceSKSNodepool().Schema
 }
 
 func dataSourceSKSNodepoolList() *schema.Resource {
-	return datasource.FilterableListDataSource(dsSKSNodepoolsListIdentifier, dsSKSNodepoolsListAttributeIdentifier, resSKSNodepoolAttrZone, getNodepoolList, nodepoolToDataMap, generateSKSNodepoolListID, dataSourceSKSNodepoolListGetElementScheme)
+	return list.FilterableListDataSource(dsSKSNodepoolsListIdentifier, dsSKSNodepoolsListAttributeIdentifier, resSKSNodepoolAttrZone, getNodepoolList, nodepoolToDataMap, generateSKSNodepoolListID, dataSourceSKSNodepoolListGetElementScheme)
 }
 
 func generateSKSNodepoolListID(nodepools []*v2.SKSNodepool) string {

@@ -9,7 +9,8 @@ import (
 
 	v2 "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
-	"github.com/exoscale/terraform-provider-exoscale/pkg/gen/datasource"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/general"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/list"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -18,12 +19,12 @@ const (
 	dsSKSClustersListClusters   = "clusters"
 )
 
-func dataSourceSKSClusterListGetElementScheme() datasource.SchemaMap {
+func dataSourceSKSClusterListGetElementScheme() general.SchemaMap {
 	return dataSourceSKSCluster().Schema
 }
 
 func dataSourceSKSClusterList() *schema.Resource {
-	return datasource.FilterableListDataSource(dsSKSClustersListIdentifier, dsSKSClustersListClusters, resSKSClusterAttrZone, getClusterList, clusterToDataMap, generateSKSClusterListID, dataSourceSKSClusterListGetElementScheme)
+	return list.FilterableListDataSource(dsSKSClustersListIdentifier, dsSKSClustersListClusters, resSKSClusterAttrZone, getClusterList, clusterToDataMap, generateSKSClusterListID, dataSourceSKSClusterListGetElementScheme)
 }
 
 func generateSKSClusterListID(clusters []*v2.SKSCluster) string {

@@ -5,7 +5,7 @@ import (
 
 	v2 "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
-	"github.com/exoscale/terraform-provider-exoscale/pkg/gen/datasource"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/general"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -38,33 +38,33 @@ func dataSourceSKSCluster() *schema.Resource {
 		ReadContext: dataSourceSKSClusterRead,
 	}
 
-	datasource.AddAttributes(ret, resourceSKSCluster().Schema)
+	general.AddAttributes(ret, resourceSKSCluster().Schema)
 
 	return ret
 }
 
-func clusterToDataMap(cluster *v2.SKSCluster) datasource.TerraformObject {
-	ret := make(datasource.TerraformObject)
+func clusterToDataMap(cluster *v2.SKSCluster) general.TerraformObject {
+	ret := make(general.TerraformObject)
 
-	datasource.Assign(ret, resSKSClusterAttrAddons, cluster.AddOns)
-	datasource.Assign(ret, resSKSClusterAttrAutoUpgrade, cluster.AutoUpgrade)
-	datasource.Assign(ret, resSKSClusterAttrCNI, cluster.CNI)
-	datasource.AssignTime(ret, resSKSClusterAttrCreatedAt, cluster.CreatedAt)
-	datasource.Assign(ret, resSKSClusterAttrDescription, cluster.Description)
-	datasource.Assign(ret, resSKSClusterAttrEndpoint, cluster.Endpoint)
-	datasource.Assign(ret, resSKSClusterAttrLabels, cluster.Labels)
-	datasource.Assign(ret, resSKSClusterAttrName, cluster.Name)
-	datasource.Assign(ret, dsSKSClusterID, cluster.ID)
+	general.Assign(ret, resSKSClusterAttrAddons, cluster.AddOns)
+	general.Assign(ret, resSKSClusterAttrAutoUpgrade, cluster.AutoUpgrade)
+	general.Assign(ret, resSKSClusterAttrCNI, cluster.CNI)
+	general.AssignTime(ret, resSKSClusterAttrCreatedAt, cluster.CreatedAt)
+	general.Assign(ret, resSKSClusterAttrDescription, cluster.Description)
+	general.Assign(ret, resSKSClusterAttrEndpoint, cluster.Endpoint)
+	general.Assign(ret, resSKSClusterAttrLabels, cluster.Labels)
+	general.Assign(ret, resSKSClusterAttrName, cluster.Name)
+	general.Assign(ret, dsSKSClusterID, cluster.ID)
 
 	nodepools := make([]string, len(cluster.Nodepools))
 	for i, nodepool := range cluster.Nodepools {
 		nodepools[i] = *nodepool.ID
 	}
-	datasource.Assign(ret, resSKSClusterAttrNodepools, &nodepools)
+	general.Assign(ret, resSKSClusterAttrNodepools, &nodepools)
 
-	datasource.Assign(ret, resSKSClusterAttrServiceLevel, cluster.ServiceLevel)
-	datasource.Assign(ret, resSKSClusterAttrState, cluster.State)
-	datasource.Assign(ret, resSKSClusterAttrVersion, cluster.Version)
+	general.Assign(ret, resSKSClusterAttrServiceLevel, cluster.ServiceLevel)
+	general.Assign(ret, resSKSClusterAttrState, cluster.State)
+	general.Assign(ret, resSKSClusterAttrVersion, cluster.Version)
 
 	return ret
 }
@@ -112,7 +112,7 @@ func dataSourceSKSClusterRead(ctx context.Context, d *schema.ResourceData, meta 
 	d.SetId(*cluster.ID)
 
 	clusterData := clusterToDataMap(cluster)
-	if err := datasource.Apply(clusterData, d, dataSourceSKSCluster().Schema); err != nil {
+	if err := general.Apply(clusterData, d, dataSourceSKSCluster().Schema); err != nil {
 		return diag.FromErr(err)
 	}
 
