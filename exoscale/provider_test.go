@@ -19,7 +19,7 @@ import (
 const (
 	testPrefix                     = "test-terraform-exoscale"
 	testDescription                = "Created by the terraform-exoscale provider"
-	testZoneName                   = "ch-dk-2"
+	testZoneName                   = "bg-sof-1"
 	testInstanceTemplateName       = "Linux Ubuntu 20.04 LTS 64-bit"
 	testInstanceTemplateUsername   = "ubuntu"
 	testInstanceTemplateFilter     = "featured"
