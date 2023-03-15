@@ -100,15 +100,6 @@ func ValidateString(str string) schema.SchemaValidateDiagFunc {
 	})
 }
 
-// ValidateLowercaseString validates that the given fields contains only lowercase characters
-func validateLowercaseString(val interface{}, key string) (warns []string, errs []error) {
-	v := val.(string)
-	if strings.ContainsAny(v, "ABCDEFGHIJKLMNOPQRSTUVWXYZ") {
-		errs = append(errs, fmt.Errorf("%q must be lowercase, got: %q", key, v))
-	}
-	return
-}
-
 // ValidatePortRange validates that the given field contains a port range.
 func ValidatePortRange(i interface{}, k string) (s []string, es []error) {
 	value, ok := i.(string)

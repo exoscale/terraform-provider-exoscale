@@ -1,4 +1,4 @@
-package exoscale
+package instance_pool_test
 
 import (
 	"errors"
@@ -9,16 +9,18 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+
+	"github.com/exoscale/terraform-provider-exoscale/pkg/testutils"
 )
 
 var (
-	testAccDataSourceInstancePoolListDiskSize     = "10"
-	testAccDataSourceInstancePoolListInstanceType = "standard.tiny"
-	testAccDataSourceInstancePoolListKeyPair      = acctest.RandomWithPrefix(testPrefix)
-	testAccDataSourceInstancePoolListName         = acctest.RandomWithPrefix(testPrefix)
+	dsListDiskSize     = "10"
+	dsListInstanceType = "standard.tiny"
+	dsListKeyPair      = acctest.RandomWithPrefix(testutils.Prefix)
+	dsListName         = acctest.RandomWithPrefix(testutils.Prefix)
 )
 
-var testAccDataSourceInstancePoolListConfig = fmt.Sprintf(`
+var dsListConfig = fmt.Sprintf(`
 locals {
   zone = "%s"
 	instance_type = "%s"
@@ -49,21 +51,21 @@ resource "exoscale_instance_pool" "test2" {
   disk_size = local.disk_size
   key_pair = exoscale_ssh_keypair.test.name
 }`,
-	testZoneName,
-	testAccDataSourceInstancePoolListInstanceType,
-	testAccDataSourceInstancePoolListDiskSize,
-	testAccDataSourceInstancePoolListKeyPair,
-	testAccDataSourceInstancePoolListName+"_1",
-	testAccDataSourceInstancePoolListName+"_2",
+	testutils.TestZoneName,
+	dsListInstanceType,
+	dsDiskSize,
+	dsListKeyPair,
+	dsListName+"_1",
+	dsListName+"_2",
 )
 
-func TestAccDataSourceInstancePoolList(t *testing.T) {
+func testListDataSource(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviders,
+		PreCheck:          func() { testutils.AccPreCheck(t) },
+		ProviderFactories: testutils.Providers(),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDataSourceInstancePoolListConfig,
+				Config: dsListConfig,
 			},
 			{
 				Config: fmt.Sprintf(`
@@ -72,15 +74,15 @@ data "exoscale_instance_pool_list" "test" {
   zone = local.zone
 }
 `,
-					testAccDataSourceInstancePoolListConfig,
+					dsListConfig,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					testAccDataSourceInstancePoolListAttributes("data.exoscale_instance_pool_list.test", testAttrs{
-						"pools.#":             validateString("2"),
+					dsCheckListAttrs("data.exoscale_instance_pool_list.test", testutils.TestAttrs{
+						"pools.#":             testutils.ValidateString("2"),
 						"pools.0.id":          validation.ToDiagFunc(validation.NoZeroValues),
-						"pools.0.instances.#": validateString("1"),
+						"pools.0.instances.#": testutils.ValidateString("1"),
 						"pools.1.id":          validation.ToDiagFunc(validation.NoZeroValues),
-						"pools.1.instances.#": validateString("1"),
+						"pools.1.instances.#": testutils.ValidateString("1"),
 					}),
 				),
 			},
@@ -88,11 +90,11 @@ data "exoscale_instance_pool_list" "test" {
 	})
 }
 
-func testAccDataSourceInstancePoolListAttributes(ds string, expected testAttrs) resource.TestCheckFunc {
+func dsCheckListAttrs(ds string, expected testutils.TestAttrs) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		for name, res := range s.RootModule().Resources {
 			if name == ds {
-				return checkResourceAttributes(expected, res.Primary.Attributes)
+				return testutils.CheckResourceAttributes(expected, res.Primary.Attributes)
 			}
 		}
 

@@ -258,3 +258,12 @@ func ValidateComputeUserData(v interface{}, _ cty.Path) diag.Diagnostics {
 
 	return nil
 }
+
+// ValidateLowercaseString validates that the given fields contains only lowercase characters
+func ValidateLowercaseString(val interface{}, key string) (warns []string, errs []error) {
+	v := val.(string)
+	if strings.ContainsAny(v, "ABCDEFGHIJKLMNOPQRSTUVWXYZ") {
+		errs = append(errs, fmt.Errorf("%q must be lowercase, got: %q", key, v))
+	}
+	return
+}

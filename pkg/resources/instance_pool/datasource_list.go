@@ -1,4 +1,4 @@
-package exoscale
+package instance_pool
 
 import (
 	"context"
@@ -8,19 +8,21 @@ import (
 	"strings"
 
 	exoapi "github.com/exoscale/egoscale/v2/api"
-	"github.com/exoscale/terraform-provider-exoscale/pkg/general"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+
+	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
 )
 
-func dataSourceInstancePoolList() *schema.Resource {
+func DataSourceList() *schema.Resource {
 	return &schema.Resource{
 		Description: `List Exoscale [Instance Pools](https://community.exoscale.com/documentation/compute/instance-pools/).
 
 Corresponding resource: [exoscale_instance_pool](../resources/instance_pool.md).`,
 		Schema: map[string]*schema.Schema{
-			dsInstancePoolAttrZone: {
+			AttrZone: {
 				Description: "The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.",
 				Type:        schema.TypeString,
 				Required:    true,
@@ -30,27 +32,30 @@ Corresponding resource: [exoscale_instance_pool](../resources/instance_pool.md).
 				Type:        schema.TypeList,
 				Computed:    true,
 				Elem: &schema.Resource{
-					Schema: getDataSourceInstancePoolSchema(),
+					Schema: DataSourceSchema(),
 				},
 			},
 		},
 
-		ReadContext: dataSourceInstancePoolListRead,
+		ReadContext: dsListRead,
 	}
 }
 
-func dataSourceInstancePoolListRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dsListRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	tflog.Debug(ctx, "beginning read", map[string]interface{}{
-		"id": general.ResourceIDString(d, "exoscale_instance_pool_list"),
+		"id": utils.IDString(d, NameList),
 	})
 
-	zone := d.Get(dsInstancePoolAttrZone).(string)
+	zone := d.Get(AttrZone).(string)
 
 	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(config.GetEnvironment(meta), zone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client, err := config.GetClient(meta)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
 	pools, err := client.ListInstancePools(
 		ctx,
@@ -81,7 +86,7 @@ func dataSourceInstancePoolListRead(ctx context.Context, d *schema.ResourceData,
 			return diag.FromErr(err)
 		}
 
-		poolData, err := dataSourceInstancePoolBuildData(pool)
+		poolData, err := dsBuildData(pool)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -104,7 +109,7 @@ func dataSourceInstancePoolListRead(ctx context.Context, d *schema.ResourceData,
 				)
 			}
 
-			poolData[dsInstancePoolAttrInstanceType] = instanceTypes[tid]
+			poolData[AttrInstanceType] = instanceTypes[tid]
 		}
 
 		if pool.InstanceIDs != nil {
@@ -124,14 +129,14 @@ func dataSourceInstancePoolListRead(ctx context.Context, d *schema.ResourceData,
 				}
 
 				instancesData[i] = map[string]interface{}{
-					dsInstancePoolAttrInstanceID:              id,
-					dsInstancePoolAttrInstanceIPv6Address:     ipv6,
-					dsInstancePoolAttrInstanceName:            instance.Name,
-					dsInstancePoolAttrInstancePublicIPAddress: publicIp,
+					AttrInstanceID:              id,
+					AttrInstanceIPv6Address:     ipv6,
+					AttrInstanceName:            instance.Name,
+					AttrInstancePublicIPAddress: publicIp,
 				}
 			}
 
-			poolData[dsInstancePoolAttrInstances] = instancesData
+			poolData[AttrInstances] = instancesData
 		}
 
 		data = append(data, poolData)
@@ -149,7 +154,7 @@ func dataSourceInstancePoolListRead(ctx context.Context, d *schema.ResourceData,
 	d.SetId(fmt.Sprintf("%x", md5.Sum([]byte(strings.Join(ids, "")))))
 
 	tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
-		"id": general.ResourceIDString(d, "exoscale_instance_pool_list"),
+		"id": utils.IDString(d, NameList),
 	})
 
 	return nil

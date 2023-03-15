@@ -3,11 +3,13 @@ package testutils
 import (
 	"context"
 	"errors"
+	"time"
 
 	egoscale "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/ssgreg/repeat"
 )
 
 func CheckAntiAffinityGroupExists(r string, res *egoscale.AntiAffinityGroup) resource.TestCheckFunc {
@@ -310,5 +312,69 @@ func CheckSSHKeyDestroy(sshKey *egoscale.SSHKey) resource.TestCheckFunc {
 		}
 
 		return errors.New("SSH Key still exists")
+	}
+}
+
+func CheckInstancePoolExists(r string, pool *egoscale.InstancePool) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[r]
+		if !ok {
+			return errors.New("resource not found in the state")
+		}
+
+		if rs.Primary.ID == "" {
+			return errors.New("resource ID not set")
+		}
+
+		client, err := APIClient()
+		if err != nil {
+			return err
+		}
+		ctx := exoapi.WithEndpoint(context.Background(), exoapi.NewReqEndpoint(TestEnvironment(), TestZoneName))
+
+		res, err := client.GetInstancePool(ctx, TestZoneName, rs.Primary.ID)
+		if err != nil {
+			return err
+		}
+
+		*pool = *res
+		return nil
+	}
+}
+
+func CheckInstancePoolDestroy(pool *egoscale.InstancePool) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		client, err := APIClient()
+		if err != nil {
+			return err
+		}
+		ctx := exoapi.WithEndpoint(context.Background(), exoapi.NewReqEndpoint(TestEnvironment(), TestZoneName))
+
+		// The Exoscale API can be a bit slow to reflect the deletion operation
+		// in the Instance Pool state, so we give it the benefit of the doubt
+		// by retrying a few times before returning an error.
+		return repeat.Repeat(
+			repeat.Fn(func() error {
+				pool, err := client.GetInstancePool(ctx, TestZoneName, *pool.ID)
+				if err != nil {
+					if errors.Is(err, exoapi.ErrNotFound) {
+						return nil
+					}
+					return err
+				}
+
+				if *pool.State == "destroying" {
+					return nil
+				}
+
+				return errors.New("Instance Pool still exists")
+			}),
+			repeat.StopOnSuccess(),
+			repeat.LimitMaxTries(10),
+			repeat.WithDelay(
+				repeat.FixedBackoff(3*time.Second).Set(),
+				repeat.SetContext(ctx),
+			),
+		)
 	}
 }

@@ -23,6 +23,7 @@ import (
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/anti_affinity_group"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/instance"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/instance_pool"
 )
 
 const (
@@ -166,8 +167,8 @@ func Provider() *schema.Provider {
 			"exoscale_domain":                dataSourceDomain(),
 			"exoscale_domain_record":         dataSourceDomainRecord(),
 			"exoscale_elastic_ip":            dataSourceElasticIP(),
-			"exoscale_instance_pool":         dataSourceInstancePool(),
-			"exoscale_instance_pool_list":    dataSourceInstancePoolList(),
+			"exoscale_instance_pool":         instance_pool.DataSource(),
+			"exoscale_instance_pool_list":    instance_pool.DataSourceList(),
 			"exoscale_network":               dataSourceNetwork(),
 			"exoscale_nlb":                   dataSourceNLB(),
 			"exoscale_private_network":       dataSourcePrivateNetwork(),
@@ -189,7 +190,7 @@ func Provider() *schema.Provider {
 			"exoscale_domain_record":        resourceDomainRecord(),
 			"exoscale_elastic_ip":           resourceElasticIP(),
 			"exoscale_iam_access_key":       resourceIAMAccessKey(),
-			"exoscale_instance_pool":        resourceInstancePool(),
+			"exoscale_instance_pool":        instance_pool.Resource(),
 			"exoscale_ipaddress":            resourceIPAddress(),
 			"exoscale_network":              resourceNetwork(),
 			"exoscale_nic":                  resourceNIC(),
