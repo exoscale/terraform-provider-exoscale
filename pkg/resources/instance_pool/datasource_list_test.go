@@ -53,7 +53,7 @@ resource "exoscale_instance_pool" "test2" {
 }`,
 	testutils.TestZoneName,
 	dsListInstanceType,
-	dsDiskSize,
+	dsListDiskSize,
 	dsListKeyPair,
 	dsListName+"_1",
 	dsListName+"_2",

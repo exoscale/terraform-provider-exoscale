@@ -2,13 +2,9 @@ package config
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	egoscale "github.com/exoscale/egoscale/v2"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/meta"
-
-	"github.com/exoscale/terraform-provider-exoscale/pkg/version"
 )
 
 const (
@@ -19,23 +15,11 @@ const (
 	//  global endpoint.
 	DefaultZone = "ch-gva-2"
 
-	DefaultConfig          = "cloudstack.ini"
-	DefaultProfile         = "cloudstack"
-	DefaultComputeEndpoint = "https://api.exoscale.com/v1"
-	DefaultDNSEndpoint     = "https://api.exoscale.com/dns"
-	DefaultEnvironment     = "api"
-	DefaultTimeout         = 5 * time.Minute
-	DefaultGzipUserData    = true
+	DefaultEnvironment = "api"
+	DefaultTimeout     = 5 * time.Minute
 
 	ComputeMaxUserDataLength = 32768
 )
-
-// userAgent represents the User Agent to advertise in outgoing HTTP requests.
-var UserAgent = fmt.Sprintf("Exoscale-Terraform-Provider/%s (%s) Terraform-SDK/%s %s",
-	version.Version,
-	version.Commit,
-	meta.SDKVersionString(),
-	egoscale.UserAgent)
 
 var Zones = []string{
 	"ch-gva-2",

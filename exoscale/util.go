@@ -6,8 +6,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"net"
 	"strings"
 
 	egoscale "github.com/exoscale/egoscale/v2"
@@ -51,16 +49,6 @@ func defaultBool(v *bool, def bool) bool {
 	}
 
 	return def
-}
-
-// addressToStringPtr returns a string representation of addr if not nil, otherwise nil.
-func addressToStringPtr(addr *net.IP) *string {
-	if addr != nil {
-		addrStr := addr.String()
-		return &addrStr
-	}
-
-	return nil
 }
 
 // nonEmptyStringPtr returns a non-nil pointer to s if the string is not empty, otherwise nil.
@@ -133,32 +121,6 @@ func encodeUserData(userData string) (string, bool, error) {
 	}
 
 	return userDataBase64, false, nil
-}
-
-// user-data base64 decoding & decompression, used in resource_exoscale_compute[_instance[_pool]]
-func decodeUserData(data string) (string, error) {
-	b64Decoded, err := base64.StdEncoding.DecodeString(data)
-	if err != nil {
-		return "", err
-	}
-
-	gz, err := gzip.NewReader(bytes.NewReader(b64Decoded))
-	if err != nil {
-		if errors.Is(err, gzip.ErrHeader) {
-			// User data are not compressed, returning as-is.
-			return string(b64Decoded), nil
-		}
-
-		return "", err
-	}
-	defer gz.Close()
-
-	userData, err := ioutil.ReadAll(gz)
-	if err != nil {
-		return "", err
-	}
-
-	return string(userData), nil
 }
 
 func parseIAMAccessKeyResource(v string) (*egoscale.IAMAccessKeyResource, error) {
