@@ -752,7 +752,7 @@ func resourceInstancePoolApply(ctx context.Context, client *egoscale.Client, d *
 
 			instanceType, err := client.GetInstanceType(
 				ctx,
-				d.Get(dsComputeInstanceAttrZone).(string),
+				d.Get(resInstancePoolAttrZone).(string),
 				*instance.InstanceTypeID,
 			)
 			if err != nil {

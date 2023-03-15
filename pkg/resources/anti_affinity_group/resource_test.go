@@ -1,13 +1,10 @@
 package anti_affinity_group_test
 
 import (
-	"context"
-	"errors"
 	"fmt"
 	"testing"
 
 	egoscale "github.com/exoscale/egoscale/v2"
-	exoapi "github.com/exoscale/egoscale/v2/api"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -41,13 +38,13 @@ func testResource(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testutils.AccPreCheck(t) },
 		ProviderFactories: testutils.Providers(),
-		CheckDestroy:      testGroupDestroy(&res),
+		CheckDestroy:      testutils.CheckAntiAffinityGroupDestroy(&res),
 		Steps: []resource.TestStep{
 			{
 				// Create
 				Config: rConfigCreate,
 				Check: resource.ComposeTestCheckFunc(
-					rExists(r, &res),
+					testutils.CheckAntiAffinityGroupExists(r, &res),
 					func(s *terraform.State) error {
 						a := assert.New(t)
 
@@ -78,59 +75,4 @@ func testResource(t *testing.T) {
 			},
 		},
 	})
-}
-
-func rExists(r string, res *egoscale.AntiAffinityGroup) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		rs, ok := s.RootModule().Resources[r]
-		if !ok {
-			return errors.New("resource not found in the state")
-		}
-
-		if rs.Primary.ID == "" {
-			return errors.New("resource ID not set")
-		}
-
-		client, err := testutils.APIClient()
-		if err != nil {
-			return err
-		}
-
-		ctx := exoapi.WithEndpoint(
-			context.Background(),
-			exoapi.NewReqEndpoint(testutils.TestEnvironment(), testutils.TestZoneName),
-		)
-		data, err := client.GetAntiAffinityGroup(ctx, testutils.TestZoneName, rs.Primary.ID)
-		if err != nil {
-			return err
-		}
-
-		*res = *data
-		return nil
-	}
-}
-
-func testGroupDestroy(res *egoscale.AntiAffinityGroup) resource.TestCheckFunc {
-	return func(_ *terraform.State) error {
-		client, err := testutils.APIClient()
-		if err != nil {
-			return err
-		}
-
-		ctx := exoapi.WithEndpoint(
-			context.Background(),
-			exoapi.NewReqEndpoint(testutils.TestEnvironment(), testutils.TestZoneName),
-		)
-
-		_, err = client.GetAntiAffinityGroup(ctx, testutils.TestZoneName, *res.ID)
-		if err != nil {
-			if errors.Is(err, exoapi.ErrNotFound) {
-				return nil
-			}
-
-			return err
-		}
-
-		return errors.New("Anti-Affinity Group still exists")
-	}
 }

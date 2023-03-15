@@ -1,4 +1,4 @@
-package exoscale
+package instance
 
 import (
 	"context"
@@ -9,15 +9,16 @@ import (
 	"strings"
 
 	exoapi "github.com/exoscale/egoscale/v2/api"
-	"github.com/exoscale/terraform-provider-exoscale/pkg/filter"
-	"github.com/exoscale/terraform-provider-exoscale/pkg/general"
-
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+
+	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/filter"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
 )
 
-func dataSourceComputeInstanceList() *schema.Resource {
+func DataSourceList() *schema.Resource {
 	ret := &schema.Resource{
 		Description: `List Exoscale [Compute Instances](https://community.exoscale.com/documentation/compute/).
 
@@ -28,31 +29,34 @@ Corresponding resource: [exoscale_compute_instance](../resources/compute_instanc
 				Type:        schema.TypeList,
 				Computed:    true,
 				Elem: &schema.Resource{
-					Schema: getDataSourceComputeInstanceSchema(),
+					Schema: DataSourceSchema(),
 				},
 			},
 		},
 
-		ReadContext: dataSourceComputeInstanceListRead,
+		ReadContext: dsListRead,
 	}
 
-	filter.AddFilterAttributes(ret, getDataSourceComputeInstanceSchema())
+	filter.AddFilterAttributes(ret, DataSourceSchema())
 
 	return ret
 }
 
-func dataSourceComputeInstanceListRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dsListRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	tflog.Debug(ctx, "beginning read", map[string]interface{}{
-		"id": general.ResourceIDString(d, "exoscale_compute_instance_list"),
+		"id": utils.IDString(d, NameList),
 	})
 
-	zone := d.Get(dsComputeInstanceAttrZone).(string)
+	zone := d.Get(AttrZone).(string)
 
 	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(config.GetEnvironment(meta), zone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client, err := config.GetClient(meta)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
 	instances, err := client.ListInstances(
 		ctx,
@@ -66,7 +70,7 @@ func dataSourceComputeInstanceListRead(ctx context.Context, d *schema.ResourceDa
 	ids := make([]string, 0, len(instances))
 	instanceTypes := map[string]string{}
 
-	filters, err := filter.CreateFilters(ctx, d, getDataSourceComputeInstanceSchema())
+	filters, err := filter.CreateFilters(ctx, d, DataSourceSchema())
 	if err != nil {
 		return diag.Errorf("failed to create filter: %q", err)
 	}
@@ -79,7 +83,7 @@ func dataSourceComputeInstanceListRead(ctx context.Context, d *schema.ResourceDa
 
 		ids = append(ids, *item.ID)
 
-		instance, err := client.FindInstance(
+		testInstance, err := client.FindInstance(
 			ctx,
 			zone,
 			*item.ID,
@@ -88,19 +92,19 @@ func dataSourceComputeInstanceListRead(ctx context.Context, d *schema.ResourceDa
 			return diag.FromErr(err)
 		}
 
-		instanceData, err := dataSourceComputeInstanceBuildData(instance)
+		instanceData, err := dsBuildData(testInstance)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 
-		rdns, err := client.GetInstanceReverseDNS(ctx, zone, *instance.ID)
+		rdns, err := client.GetInstanceReverseDNS(ctx, zone, *testInstance.ID)
 		if err != nil && !errors.Is(err, exoapi.ErrNotFound) {
 			return diag.Errorf("unable to retrieve instance reverse-dns: %s", err)
 		}
-		instanceData[dsComputeInstanceAttrReverseDNS] = rdns
+		instanceData[AttrReverseDNS] = rdns
 
-		if instance.InstanceTypeID != nil {
-			tid := *instance.InstanceTypeID
+		if testInstance.InstanceTypeID != nil {
+			tid := *testInstance.InstanceTypeID
 			if _, ok := instanceTypes[tid]; !ok {
 				instanceType, err := client.GetInstanceType(
 					ctx,
@@ -117,7 +121,7 @@ func dataSourceComputeInstanceListRead(ctx context.Context, d *schema.ResourceDa
 				)
 			}
 
-			instanceData[dsComputeInstanceAttrType] = instanceTypes[tid]
+			instanceData[AttrType] = instanceTypes[tid]
 		}
 
 		if !filter.CheckForMatch(instanceData, filters) {
@@ -139,7 +143,7 @@ func dataSourceComputeInstanceListRead(ctx context.Context, d *schema.ResourceDa
 	d.SetId(fmt.Sprintf("%x", md5.Sum([]byte(strings.Join(ids, "")))))
 
 	tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
-		"id": general.ResourceIDString(d, "exoscale_compute_instance_list"),
+		"id": utils.IDString(d, NameList),
 	})
 
 	return nil

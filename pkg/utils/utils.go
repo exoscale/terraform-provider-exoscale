@@ -3,6 +3,7 @@ package utils
 import (
 	"bytes"
 	"compress/gzip"
+	"context"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -11,11 +12,33 @@ import (
 	"strings"
 
 	egoscale "github.com/exoscale/egoscale/v2"
+	"github.com/hashicorp/go-cty/cty"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 )
+
+// ZonedStateContextFunc is an alternative resource importer function to be
+// used for importing zone-local resources, where the resource ID is expected
+// to be suffixed with "@ZONE" (e.g. "c01af84d-6ac6-4784-98bb-127c98be8258@ch-gva-2").
+// Upon successful execution, the returned resource state contains the ID of the
+// resource and the "zone" attribute set to the value parsed from the import ID.
+func ZonedStateContextFunc(_ context.Context, d *schema.ResourceData, _ interface{}) ([]*schema.ResourceData, error) {
+	parts := strings.SplitN(d.Id(), "@", 2)
+	if len(parts) != 2 {
+		return nil, fmt.Errorf(`invalid ID %q, expected format "<ID>@<ZONE>"`, d.Id())
+	}
+
+	d.SetId(parts[0])
+
+	if err := d.Set("zone", parts[1]); err != nil {
+		return nil, err
+	}
+
+	return []*schema.ResourceData{d}, nil
+}
 
 type IDStringer interface {
 	Id() string
@@ -205,4 +228,33 @@ func ParseIAMAccessKeyResource(v string) (*egoscale.IAMAccessKeyResource, error)
 // ValidateZone validates zone string.
 func ValidateZone() schema.SchemaValidateFunc {
 	return validation.StringInSlice(config.Zones, false)
+}
+
+// ValidateComputeInstanceType validates that the given field contains a valid Exoscale Compute instance type.
+func ValidateComputeInstanceType(v interface{}, _ cty.Path) diag.Diagnostics {
+	value, ok := v.(string)
+	if !ok {
+		return diag.Errorf("expected field %q type to be string", v)
+	}
+
+	if !strings.Contains(value, ".") {
+		return diag.Errorf(`invalid value %q, expected format "FAMILY.SIZE"`, value)
+	}
+
+	return nil
+}
+
+// ValidateComputeUserData validates that the given field contains a valid data.
+func ValidateComputeUserData(v interface{}, _ cty.Path) diag.Diagnostics {
+	value, ok := v.(string)
+	if !ok {
+		return diag.Errorf("expected field %q type to be string", v)
+	}
+
+	_, _, err := EncodeUserData(value)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	return nil
 }

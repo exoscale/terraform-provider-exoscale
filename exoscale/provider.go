@@ -22,6 +22,7 @@ import (
 	ini "gopkg.in/ini.v1"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/anti_affinity_group"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/instance"
 )
 
 const (
@@ -158,8 +159,8 @@ func Provider() *schema.Provider {
 			"exoscale_affinity":              dataSourceAffinity(),
 			"exoscale_anti_affinity_group":   anti_affinity_group.DataSource(),
 			"exoscale_compute":               dataSourceCompute(),
-			"exoscale_compute_instance":      dataSourceComputeInstance(),
-			"exoscale_compute_instance_list": dataSourceComputeInstanceList(),
+			"exoscale_compute_instance":      instance.DataSource(),
+			"exoscale_compute_instance_list": instance.DataSourceList(),
 			"exoscale_compute_ipaddress":     dataSourceComputeIPAddress(),
 			"exoscale_compute_template":      dataSourceComputeTemplate(),
 			"exoscale_domain":                dataSourceDomain(),
@@ -182,7 +183,7 @@ func Provider() *schema.Provider {
 			"exoscale_affinity":             resourceAffinity(),
 			"exoscale_anti_affinity_group":  anti_affinity_group.Resource(),
 			"exoscale_compute":              resourceCompute(),
-			"exoscale_compute_instance":     resourceComputeInstance(),
+			"exoscale_compute_instance":     instance.Resource(),
 			"exoscale_database":             resourceDatabase(),
 			"exoscale_domain":               resourceDomain(),
 			"exoscale_domain_record":        resourceDomainRecord(),

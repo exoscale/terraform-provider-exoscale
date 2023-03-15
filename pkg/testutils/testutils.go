@@ -1,10 +1,12 @@
 package testutils
 
 import (
+	"fmt"
 	"os"
 
 	egoscale "github.com/exoscale/egoscale/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 
 	"github.com/exoscale/terraform-provider-exoscale/exoscale"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
@@ -52,4 +54,29 @@ func TestEnvironment() string {
 	}
 
 	return env
+}
+
+// AttrFromState returns the value of the attribute a for the resource r from the current global state s.
+func AttrFromState(s *terraform.State, r, a string) (string, error) {
+	res, err := resFromState(s, r)
+	if err != nil {
+		return "", err
+	}
+
+	v, ok := res.Attributes[a]
+	if !ok {
+		return "", fmt.Errorf("resource %q has no attribute %q", r, a)
+	}
+
+	return v, nil
+}
+
+// resFromState returns the state of the resource r from the current global state s.
+func resFromState(s *terraform.State, r string) (*terraform.InstanceState, error) {
+	res, ok := s.RootModule().Resources[r]
+	if !ok {
+		return nil, fmt.Errorf("no resource %q found in state", r)
+	}
+
+	return res.Primary, nil
 }
