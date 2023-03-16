@@ -52,7 +52,7 @@ func getClient(endpoint string, meta interface{}) *egoscale.Client {
 	httpClient := cleanhttp.DefaultPooledClient()
 	httpClient.Transport = &defaultTransport{next: httpClient.Transport}
 	if logging.IsDebugOrHigher() {
-		httpClient.Transport = logging.NewTransport(
+		httpClient.Transport = logging.NewSubsystemLoggingHTTPTransport(
 			"exoscale",
 			httpClient.Transport,
 		)
@@ -81,7 +81,7 @@ func getClient(endpoint string, meta interface{}) *egoscale.Client {
 			rc.Logger = LeveledTFLogger{Verbose: logging.IsDebugOrHigher()}
 			hc := rc.StandardClient()
 			if logging.IsDebugOrHigher() {
-				hc.Transport = logging.NewTransport("exoscale", hc.Transport)
+				hc.Transport = logging.NewSubsystemLoggingHTTPTransport("exoscale", hc.Transport)
 			}
 			return hc
 		}()),

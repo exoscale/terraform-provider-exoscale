@@ -560,9 +560,7 @@ func resourceSKSNodepoolApply(
 ) error {
 	if sksNodepool.AntiAffinityGroupIDs != nil {
 		antiAffinityGroupIDs := make([]string, len(*sksNodepool.AntiAffinityGroupIDs))
-		for i, id := range *sksNodepool.AntiAffinityGroupIDs {
-			antiAffinityGroupIDs[i] = id
-		}
+		copy(antiAffinityGroupIDs, *sksNodepool.AntiAffinityGroupIDs)
 		if err := d.Set(resSKSNodepoolAttrAntiAffinityGroupIDs, antiAffinityGroupIDs); err != nil {
 			return err
 		}
@@ -618,9 +616,7 @@ func resourceSKSNodepoolApply(
 
 	if sksNodepool.PrivateNetworkIDs != nil {
 		privateNetworkIDs := make([]string, len(*sksNodepool.PrivateNetworkIDs))
-		for i, id := range *sksNodepool.PrivateNetworkIDs {
-			privateNetworkIDs[i] = id
-		}
+		copy(privateNetworkIDs, *sksNodepool.PrivateNetworkIDs)
 		if err := d.Set(resSKSNodepoolAttrPrivateNetworkIDs, privateNetworkIDs); err != nil {
 			return err
 		}
@@ -628,9 +624,7 @@ func resourceSKSNodepoolApply(
 
 	if sksNodepool.SecurityGroupIDs != nil {
 		securityGroupIDs := make([]string, len(*sksNodepool.SecurityGroupIDs))
-		for i, id := range *sksNodepool.SecurityGroupIDs {
-			securityGroupIDs[i] = id
-		}
+		copy(securityGroupIDs, *sksNodepool.SecurityGroupIDs)
 		if err := d.Set(resSKSNodepoolAttrSecurityGroupIDs, securityGroupIDs); err != nil {
 			return err
 		}

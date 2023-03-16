@@ -86,9 +86,7 @@ func dataSourceAntiAffinityGroupRead(ctx context.Context, d *schema.ResourceData
 
 	if antiAffinityGroup.InstanceIDs != nil {
 		instanceIDs := make([]string, len(*antiAffinityGroup.InstanceIDs))
-		for i, id := range *antiAffinityGroup.InstanceIDs {
-			instanceIDs[i] = id
-		}
+		copy(instanceIDs, *antiAffinityGroup.InstanceIDs)
 
 		if err := d.Set(dsAntiAffinityGroupAttrInstances, instanceIDs); err != nil {
 			return diag.FromErr(err)

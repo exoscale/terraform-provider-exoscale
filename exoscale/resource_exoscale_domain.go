@@ -219,7 +219,7 @@ func resourceDomainDelete(ctx context.Context, d *schema.ResourceData, meta inte
 }
 
 func resourceDomainImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
+	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), defaultZone))
 	defer cancel()
 

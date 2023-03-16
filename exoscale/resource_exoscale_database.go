@@ -146,11 +146,11 @@ func resourceDatabase() *schema.Resource {
 			Sensitive:   true,
 		},
 		resDatabaseAttrZone: {
-			Type:         schema.TypeString,
-			Required:     true,
-			ForceNew:     true,
-			ValidateFunc: validateZone(),
-			Description:  "The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.",
+			Type:             schema.TypeString,
+			Required:         true,
+			ForceNew:         true,
+			ValidateDiagFunc: validateZone(),
+			Description:      "The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.",
 		},
 
 		"kafka":      resDatabaseKafkaSchema,

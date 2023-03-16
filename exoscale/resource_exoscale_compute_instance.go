@@ -703,9 +703,7 @@ func resourceComputeInstanceApply(
 
 	if computeInstance.AntiAffinityGroupIDs != nil {
 		antiAffinityGroupIDs := make([]string, len(*computeInstance.AntiAffinityGroupIDs))
-		for i, id := range *computeInstance.AntiAffinityGroupIDs {
-			antiAffinityGroupIDs[i] = id
-		}
+		copy(antiAffinityGroupIDs, *computeInstance.AntiAffinityGroupIDs)
 		if err := d.Set(resComputeInstanceAttrAntiAffinityGroupIDs, antiAffinityGroupIDs); err != nil {
 			return diag.FromErr(err)
 		}
@@ -728,9 +726,7 @@ func resourceComputeInstanceApply(
 
 	if computeInstance.ElasticIPIDs != nil {
 		elasticIPIDs := make([]string, len(*computeInstance.ElasticIPIDs))
-		for i, id := range *computeInstance.ElasticIPIDs {
-			elasticIPIDs[i] = id
-		}
+		copy(elasticIPIDs, *computeInstance.ElasticIPIDs)
 		if err := d.Set(resComputeInstanceAttrElasticIPIDs, elasticIPIDs); err != nil {
 			return diag.FromErr(err)
 		}
@@ -801,9 +797,7 @@ func resourceComputeInstanceApply(
 
 	if computeInstance.SecurityGroupIDs != nil {
 		securityGroupIDs := make([]string, len(*computeInstance.SecurityGroupIDs))
-		for i, id := range *computeInstance.SecurityGroupIDs {
-			securityGroupIDs[i] = id
-		}
+		copy(securityGroupIDs, *computeInstance.SecurityGroupIDs)
 		if err := d.Set(resComputeInstanceAttrSecurityGroupIDs, securityGroupIDs); err != nil {
 			return diag.FromErr(err)
 		}

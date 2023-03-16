@@ -638,9 +638,7 @@ func resourceInstancePoolApply(ctx context.Context, client *egoscale.Client, d *
 
 	if instancePool.AntiAffinityGroupIDs != nil {
 		antiAffinityGroupIDs := make([]string, len(*instancePool.AntiAffinityGroupIDs))
-		for i, id := range *instancePool.AntiAffinityGroupIDs {
-			antiAffinityGroupIDs[i] = id
-		}
+		copy(antiAffinityGroupIDs, *instancePool.AntiAffinityGroupIDs)
 		if err := d.Set(resInstancePoolAttrAffinityGroupIDs, antiAffinityGroupIDs); err != nil {
 			return diag.FromErr(err)
 		}
@@ -660,9 +658,7 @@ func resourceInstancePoolApply(ctx context.Context, client *egoscale.Client, d *
 
 	if instancePool.ElasticIPIDs != nil {
 		elasticIPIDs := make([]string, len(*instancePool.ElasticIPIDs))
-		for i, id := range *instancePool.ElasticIPIDs {
-			elasticIPIDs[i] = id
-		}
+		copy(elasticIPIDs, *instancePool.ElasticIPIDs)
 		if err := d.Set(resInstancePoolAttrElasticIPIDs, elasticIPIDs); err != nil {
 			return diag.FromErr(err)
 		}

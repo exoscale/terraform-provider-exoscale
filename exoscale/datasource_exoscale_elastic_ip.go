@@ -170,18 +170,12 @@ func dataSourceElasticIPRead(ctx context.Context, d *schema.ResourceData, meta i
 
 	// search by address by default
 	filterElasticIP := func(eip *egoscale.ElasticIP) bool {
-		if eip.IPAddress.String() == elasticIPAddress {
-			return true
-		}
-		return false
+		return eip.IPAddress.String() == elasticIPAddress
 	}
 
 	if searchByElasticIPID {
 		filterElasticIP = func(eip *egoscale.ElasticIP) bool {
-			if *eip.ID == elasticIPID {
-				return true
-			}
-			return false
+			return *eip.ID == elasticIPID
 		}
 	}
 
