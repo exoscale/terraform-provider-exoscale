@@ -8,6 +8,7 @@ import (
 
 	egoscale "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/general"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -44,8 +45,8 @@ const (
 	resInstancePoolAttrZone                    = "zone"
 )
 
-func resourceInstancePoolIDString(d resourceIDStringer) string {
-	return resourceIDString(d, "exoscale_instance_pool")
+func resourceInstancePoolIDString(d general.ResourceIDStringer) string {
+	return general.ResourceIDString(d, "exoscale_instance_pool")
 }
 
 func resourceInstancePool() *schema.Resource {
@@ -637,9 +638,7 @@ func resourceInstancePoolApply(ctx context.Context, client *egoscale.Client, d *
 
 	if instancePool.AntiAffinityGroupIDs != nil {
 		antiAffinityGroupIDs := make([]string, len(*instancePool.AntiAffinityGroupIDs))
-		for i, id := range *instancePool.AntiAffinityGroupIDs {
-			antiAffinityGroupIDs[i] = id
-		}
+		copy(antiAffinityGroupIDs, *instancePool.AntiAffinityGroupIDs)
 		if err := d.Set(resInstancePoolAttrAffinityGroupIDs, antiAffinityGroupIDs); err != nil {
 			return diag.FromErr(err)
 		}
@@ -659,9 +658,7 @@ func resourceInstancePoolApply(ctx context.Context, client *egoscale.Client, d *
 
 	if instancePool.ElasticIPIDs != nil {
 		elasticIPIDs := make([]string, len(*instancePool.ElasticIPIDs))
-		for i, id := range *instancePool.ElasticIPIDs {
-			elasticIPIDs[i] = id
-		}
+		copy(elasticIPIDs, *instancePool.ElasticIPIDs)
 		if err := d.Set(resInstancePoolAttrElasticIPIDs, elasticIPIDs); err != nil {
 			return diag.FromErr(err)
 		}

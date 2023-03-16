@@ -8,6 +8,7 @@ import (
 
 	egoscale "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/general"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -32,6 +33,7 @@ const (
 	resSKSClusterAttrKubeletCA          = "kubelet_ca"
 	resSKSClusterAttrLabels             = "labels"
 	resSKSClusterAttrMetricsServer      = "metrics_server"
+	resSKSClusterAttrID                 = "id"
 	resSKSClusterAttrName               = "name"
 	resSKSClusterAttrNodepools          = "nodepools"
 	resSKSClusterAttrOIDCClientID       = "client_id"
@@ -47,8 +49,8 @@ const (
 	resSKSClusterAttrZone               = "zone"
 )
 
-func resourceSKSClusterIDString(d resourceIDStringer) string {
-	return resourceIDString(d, "exoscale_sks_cluster")
+func resourceSKSClusterIDString(d general.ResourceIDStringer) string {
+	return general.ResourceIDString(d, "exoscale_sks_cluster")
 }
 
 func resourceSKSCluster() *schema.Resource {
@@ -125,6 +127,11 @@ func resourceSKSCluster() *schema.Resource {
 			Type:        schema.TypeString,
 			Required:    true,
 			Description: "The SKS cluster name.",
+		},
+		resSKSClusterAttrID: {
+			Type:        schema.TypeString,
+			Computed:    true,
+			Description: "The SKS cluster ID.",
 		},
 		resSKSClusterAttrNodepools: {
 			Type:        schema.TypeSet,

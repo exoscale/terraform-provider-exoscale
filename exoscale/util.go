@@ -195,6 +195,6 @@ var zones = []string{
 	"de-muc-1",
 }
 
-func validateZone() schema.SchemaValidateFunc {
-	return validation.StringInSlice(zones, false)
+func validateZone() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(validation.StringInSlice(zones, false))
 }

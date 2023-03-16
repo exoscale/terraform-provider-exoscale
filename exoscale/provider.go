@@ -167,6 +167,10 @@ func Provider() *schema.Provider {
 			"exoscale_private_network":       dataSourcePrivateNetwork(),
 			"exoscale_security_group":        dataSourceSecurityGroup(),
 			"exoscale_template":              dataSourceTemplate(),
+			dsSKSClusterIdentifier:           dataSourceSKSCluster(),
+			dsSKSClustersListIdentifier:      dataSourceSKSClusterList(),
+			dsSKSNodepoolsListIdentifier:     dataSourceSKSNodepoolList(),
+			dsSKSNodepoolIdentifier:          dataSourceSKSNodepool(),
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
@@ -356,19 +360,6 @@ func handleNotFound(d *schema.ResourceData, err error) error {
 	}
 
 	return err
-}
-
-type resourceIDStringer interface {
-	Id() string
-}
-
-func resourceIDString(d resourceIDStringer, name string) string {
-	id := d.Id()
-	if id == "" {
-		id = "<new resource>"
-	}
-
-	return fmt.Sprintf("%s (ID = %s)", name, id)
 }
 
 // zonedStateContextFunc is an alternative resource importer function to be

@@ -75,7 +75,7 @@ func createStringFilterFunc(filterAttribute string, match matchStringFunc) Filte
 	}
 }
 
-func createMapStrToStrFilterFunc(ctx context.Context, filterProp interface{}) (FilterFunc, error) {
+func createMapStrToStrFilterFunc(ctx context.Context, argIdentifier string, filterProp interface{}) (FilterFunc, error) {
 	filters := make(map[string]matchStringFunc)
 	maps := filterProp.(map[string]interface{})
 	for k, v := range maps {
@@ -88,7 +88,7 @@ func createMapStrToStrFilterFunc(ctx context.Context, filterProp interface{}) (F
 	}
 
 	return func(data map[string]interface{}) bool {
-		mapAttr, ok := data["labels"]
+		mapAttr, ok := data[argIdentifier]
 		if !ok {
 			return false
 		}
@@ -153,7 +153,7 @@ func CreateFilters(ctx context.Context, d *schema.ResourceData, s map[string]*sc
 
 			filters = append(filters, newFilterFunc)
 		case schema.TypeMap:
-			newFilter, err := createMapStrToStrFilterFunc(ctx, argValue)
+			newFilter, err := createMapStrToStrFilterFunc(ctx, argIdentifier, argValue)
 			if err != nil {
 				return nil, err
 			}

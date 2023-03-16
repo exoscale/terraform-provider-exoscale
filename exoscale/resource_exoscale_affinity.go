@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/exoscale/egoscale"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/general"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -12,8 +13,8 @@ const (
 	resAffinityDeprecationMessage = `**WARNING:** This resource is **DEPRECATED** and will be removed in the next major version. Please use [exoscale_anti_affinity_group](./anti_affinity_group.md) instead.`
 )
 
-func resourceAffinityIDString(d resourceIDStringer) string {
-	return resourceIDString(d, "exoscale_affinity")
+func resourceAffinityIDString(d general.ResourceIDStringer) string {
+	return general.ResourceIDString(d, "exoscale_affinity")
 }
 
 func resourceAffinity() *schema.Resource {

@@ -10,6 +10,7 @@ import (
 
 	egoscale "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/general"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -39,8 +40,8 @@ const (
 	resComputeInstanceAttrZone                 = "zone"
 )
 
-func resourceComputeInstanceIDString(d resourceIDStringer) string {
-	return resourceIDString(d, "exoscale_instance_pool")
+func resourceComputeInstanceIDString(d general.ResourceIDStringer) string {
+	return general.ResourceIDString(d, "exoscale_instance_pool")
 }
 
 func resourceComputeInstance() *schema.Resource {
@@ -702,9 +703,7 @@ func resourceComputeInstanceApply(
 
 	if computeInstance.AntiAffinityGroupIDs != nil {
 		antiAffinityGroupIDs := make([]string, len(*computeInstance.AntiAffinityGroupIDs))
-		for i, id := range *computeInstance.AntiAffinityGroupIDs {
-			antiAffinityGroupIDs[i] = id
-		}
+		copy(antiAffinityGroupIDs, *computeInstance.AntiAffinityGroupIDs)
 		if err := d.Set(resComputeInstanceAttrAntiAffinityGroupIDs, antiAffinityGroupIDs); err != nil {
 			return diag.FromErr(err)
 		}
@@ -727,9 +726,7 @@ func resourceComputeInstanceApply(
 
 	if computeInstance.ElasticIPIDs != nil {
 		elasticIPIDs := make([]string, len(*computeInstance.ElasticIPIDs))
-		for i, id := range *computeInstance.ElasticIPIDs {
-			elasticIPIDs[i] = id
-		}
+		copy(elasticIPIDs, *computeInstance.ElasticIPIDs)
 		if err := d.Set(resComputeInstanceAttrElasticIPIDs, elasticIPIDs); err != nil {
 			return diag.FromErr(err)
 		}
@@ -800,9 +797,7 @@ func resourceComputeInstanceApply(
 
 	if computeInstance.SecurityGroupIDs != nil {
 		securityGroupIDs := make([]string, len(*computeInstance.SecurityGroupIDs))
-		for i, id := range *computeInstance.SecurityGroupIDs {
-			securityGroupIDs[i] = id
-		}
+		copy(securityGroupIDs, *computeInstance.SecurityGroupIDs)
 		if err := d.Set(resComputeInstanceAttrSecurityGroupIDs, securityGroupIDs); err != nil {
 			return diag.FromErr(err)
 		}

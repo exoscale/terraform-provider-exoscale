@@ -8,6 +8,7 @@ import (
 
 	egoscale "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/general"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -27,6 +28,7 @@ const (
 	resSKSNodepoolAttrInstancePrefix       = "instance_prefix"
 	resSKSNodepoolAttrInstanceType         = "instance_type"
 	resSKSNodepoolAttrLabels               = "labels"
+	resSKSNodepoolAttrID                   = "id"
 	resSKSNodepoolAttrName                 = "name"
 	resSKSNodepoolAttrPrivateNetworkIDs    = "private_network_ids"
 	resSKSNodepoolAttrSecurityGroupIDs     = "security_group_ids"
@@ -38,8 +40,8 @@ const (
 	resSKSNodepoolAttrZone                 = "zone"
 )
 
-func resourceSKSNodepoolIDString(d resourceIDStringer) string {
-	return resourceIDString(d, "exoscale_sks_nodepool")
+func resourceSKSNodepoolIDString(d general.ResourceIDStringer) string {
+	return general.ResourceIDString(d, "exoscale_sks_nodepool")
 }
 
 func resourceSKSNodepool() *schema.Resource {
@@ -102,6 +104,11 @@ func resourceSKSNodepool() *schema.Resource {
 			Elem:        &schema.Schema{Type: schema.TypeString},
 			Optional:    true,
 			Description: "A map of key/value labels.",
+		},
+		resSKSNodepoolAttrID: {
+			Type:        schema.TypeString,
+			Computed:    true,
+			Description: "The SKS node pool ID.",
 		},
 		resSKSNodepoolAttrName: {
 			Type:        schema.TypeString,
@@ -559,9 +566,7 @@ func resourceSKSNodepoolApply(
 ) error {
 	if sksNodepool.AntiAffinityGroupIDs != nil {
 		antiAffinityGroupIDs := make([]string, len(*sksNodepool.AntiAffinityGroupIDs))
-		for i, id := range *sksNodepool.AntiAffinityGroupIDs {
-			antiAffinityGroupIDs[i] = id
-		}
+		copy(antiAffinityGroupIDs, *sksNodepool.AntiAffinityGroupIDs)
 		if err := d.Set(resSKSNodepoolAttrAntiAffinityGroupIDs, antiAffinityGroupIDs); err != nil {
 			return err
 		}
@@ -617,9 +622,7 @@ func resourceSKSNodepoolApply(
 
 	if sksNodepool.PrivateNetworkIDs != nil {
 		privateNetworkIDs := make([]string, len(*sksNodepool.PrivateNetworkIDs))
-		for i, id := range *sksNodepool.PrivateNetworkIDs {
-			privateNetworkIDs[i] = id
-		}
+		copy(privateNetworkIDs, *sksNodepool.PrivateNetworkIDs)
 		if err := d.Set(resSKSNodepoolAttrPrivateNetworkIDs, privateNetworkIDs); err != nil {
 			return err
 		}
@@ -627,9 +630,7 @@ func resourceSKSNodepoolApply(
 
 	if sksNodepool.SecurityGroupIDs != nil {
 		securityGroupIDs := make([]string, len(*sksNodepool.SecurityGroupIDs))
-		for i, id := range *sksNodepool.SecurityGroupIDs {
-			securityGroupIDs[i] = id
-		}
+		copy(securityGroupIDs, *sksNodepool.SecurityGroupIDs)
 		if err := d.Set(resSKSNodepoolAttrSecurityGroupIDs, securityGroupIDs); err != nil {
 			return err
 		}

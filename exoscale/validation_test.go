@@ -1,7 +1,6 @@
 package exoscale
 
 import (
-	"fmt"
 	"regexp"
 	"testing"
 
@@ -156,4 +155,4 @@ func Test_validateComputeInstanceType(t *testing.T) {
 	}
 }
 
-var testPemCertificateFormatRegex = regexp.MustCompile(fmt.Sprintf(`^-----BEGIN CERTIFICATE-----\n(.|\s)+\n-----END CERTIFICATE-----\n$`))
+var testPemCertificateFormatRegex = regexp.MustCompile(`^-----BEGIN CERTIFICATE-----\n(.|\s)+\n-----END CERTIFICATE-----\n$`)

@@ -55,7 +55,7 @@ directory for complete configuration examples.
 - `control_plane_ca` (String) The CA certificate (in PEM format) for TLS communications between control plane components.
 - `created_at` (String) The cluster creation date.
 - `endpoint` (String) The cluster API endpoint.
-- `id` (String) The ID of this resource.
+- `id` (String) The SKS cluster ID.
 - `kubelet_ca` (String) The CA certificate (in PEM format) for TLS communications between kubelets and the control plane.
 - `nodepools` (Set of String) The list of [exoscale_sks_nodepool](./sks_nodepool.md) (IDs) attached to the cluster.
 - `state` (String) The cluster state.
