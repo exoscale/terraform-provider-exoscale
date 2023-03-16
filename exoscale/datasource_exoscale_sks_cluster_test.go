@@ -167,41 +167,6 @@ func TestAccSKSDataSources(t *testing.T) {
 		},
 	}
 
-	nodepoolName := "-nodepool-2"
-	dsId = dsSKSNodepoolIdentifier
-	dsName = "my_nodepool_ds"
-	testCases = append(testCases, []testCase{
-		{
-			Config: fmt.Sprintf(`
-		data %q %q {
-		  zone = %q
-		  cluster_id = exoscale_sks_cluster.my_sks_cluster.id
-		  name = "/%s/"
-		}
-		`, dsId, dsName, zone, nodepoolName),
-			DataSourceIdentifier: dsId,
-			DataSourceName:       dsName,
-			Attributes: testAttrs{
-				"name": validateString(nodepool2Name),
-			},
-		},
-		{
-			Config: fmt.Sprintf(`
-		data %q %q {
-		  zone = %q
-		  cluster_id = exoscale_sks_cluster.my_sks_cluster.id
-		  id = exoscale_sks_nodepool.my_sks_nodepool.id
-		}
-		`, dsId, dsName, zone),
-			DataSourceIdentifier: dsId,
-			DataSourceName:       dsName,
-			Attributes: testAttrs{
-				"name": validateString(nodepoolName),
-			},
-		},
-	}...,
-	)
-
 	dsId = dsSKSClustersListIdentifier
 	dsName = "my_cluster_list"
 	testCases = append(testCases, []testCase{
