@@ -16,16 +16,21 @@ import (
 
 func Resource() *schema.Resource {
 	return &schema.Resource{
+		Description: `Manage Exoscale [Anti-Affinity Groups](https://community.exoscale.com/documentation/compute/anti-affinity-groups/).
+
+Corresponding data source: [exoscale_anti_affinity_group](../data-sources/anti_affinity_group.md).`,
 		Schema: map[string]*schema.Schema{
 			AttrDescription: {
-				Type:     schema.TypeString,
-				Optional: true,
-				ForceNew: true,
+				Description: "A free-form text describing the group.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				ForceNew:    true,
 			},
 			AttrName: {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Description: "The anti-affinity group name.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 		},
 

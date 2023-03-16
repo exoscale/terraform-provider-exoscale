@@ -84,8 +84,9 @@ func Resource() *schema.Resource {
 			Deprecated:  "Use the network_interface block instead.",
 		},
 		AttrNetworkInterface: {
-			Type:     schema.TypeSet,
-			Optional: true,
+			Description: "Private network interfaces (may be specified multiple times). Structure is documented below.",
+			Type:        schema.TypeSet,
+			Optional:    true,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"ip_address": {

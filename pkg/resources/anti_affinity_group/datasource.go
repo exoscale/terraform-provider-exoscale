@@ -19,6 +19,7 @@ func DataSource() *schema.Resource {
 Corresponding resource: [exoscale_anti_affinity_group](../resources/anti_affinity_group.md).`,
 		Schema: map[string]*schema.Schema{
 			AttrID: {
+				Description:   "The anti-affinity group ID to match (conflicts with `name`).",
 				Type:          schema.TypeString,
 				Optional:      true,
 				ConflictsWith: []string{AttrName},
