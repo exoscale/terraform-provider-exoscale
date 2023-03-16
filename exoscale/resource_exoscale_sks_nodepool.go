@@ -28,6 +28,7 @@ const (
 	resSKSNodepoolAttrInstancePrefix       = "instance_prefix"
 	resSKSNodepoolAttrInstanceType         = "instance_type"
 	resSKSNodepoolAttrLabels               = "labels"
+	resSKSNodepoolAttrID                   = "id"
 	resSKSNodepoolAttrName                 = "name"
 	resSKSNodepoolAttrPrivateNetworkIDs    = "private_network_ids"
 	resSKSNodepoolAttrSecurityGroupIDs     = "security_group_ids"
@@ -103,6 +104,11 @@ func resourceSKSNodepool() *schema.Resource {
 			Elem:        &schema.Schema{Type: schema.TypeString},
 			Optional:    true,
 			Description: "A map of key/value labels.",
+		},
+		resSKSNodepoolAttrID: {
+			Type:        schema.TypeString,
+			Computed:    true,
+			Description: "The SKS node pool ID.",
 		},
 		resSKSNodepoolAttrName: {
 			Type:        schema.TypeString,

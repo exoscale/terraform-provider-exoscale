@@ -190,7 +190,7 @@ func TestAccSKSDataSources(t *testing.T) {
 		data %q %q {
 		  zone = %q
 		  cluster_id = exoscale_sks_cluster.my_sks_cluster.id
-		  #id = exoscale_sks_nodepool.my_sks_nodepool.id
+		  id = exoscale_sks_nodepool.my_sks_nodepool.id
 		}
 		`, dsId, dsName, zone),
 			DataSourceIdentifier: dsId,

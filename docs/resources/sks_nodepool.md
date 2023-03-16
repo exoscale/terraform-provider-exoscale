@@ -57,7 +57,7 @@ directory for complete configuration examples.
 ### Read-Only
 
 - `created_at` (String) The pool creation date.
-- `id` (String) The ID of this resource.
+- `id` (String) The SKS node pool ID.
 - `instance_pool_id` (String) The underlying [exoscale_instance_pool](./instance_pool.md) ID.
 - `state` (String) The current pool state.
 - `template_id` (String) The managed instances template ID.
