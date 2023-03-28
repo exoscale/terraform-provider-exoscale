@@ -226,8 +226,8 @@ func ParseIAMAccessKeyResource(v string) (*egoscale.IAMAccessKeyResource, error)
 }
 
 // ValidateZone validates zone string.
-func ValidateZone() schema.SchemaValidateFunc {
-	return validation.StringInSlice(config.Zones, false)
+func ValidateZone() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(validation.StringInSlice(config.Zones, false))
 }
 
 // ValidateComputeInstanceType validates that the given field contains a valid Exoscale Compute instance type.

@@ -341,7 +341,7 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 			rc.Logger = LeveledTFLogger{Verbose: logging.IsDebugOrHigher()}
 			hc := rc.StandardClient()
 			if logging.IsDebugOrHigher() {
-				hc.Transport = logging.NewTransport("exoscale", hc.Transport)
+				hc.Transport = logging.NewSubsystemLoggingHTTPTransport("exoscale", hc.Transport)
 			}
 			return hc
 		}()))
