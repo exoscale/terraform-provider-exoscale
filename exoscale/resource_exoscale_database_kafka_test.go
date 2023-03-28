@@ -14,7 +14,7 @@ import (
 
 var (
 	testAccResourceDatabaseKafkaIPFilter = []string{"1.2.3.4/32"}
-	testAccResourceDatabaseKafkaVersion  = "3.2"
+	testAccResourceDatabaseKafkaVersion  = "3.3"
 	testAccResourceDatabasePlanKafka     = "business-4"
 
 	testAccResourceDatabaseConfigCreateKafka = fmt.Sprintf(`
