@@ -46,9 +46,13 @@ type BaseConfig struct {
 	dnsClient       *egoscale.Client
 }
 
-func getClient(endpoint string, meta interface{}) *egoscale.Client {
+func getConfig(meta interface{}) BaseConfig {
 	t := meta.(map[string]interface{})
-	config := t["config"].(BaseConfig)
+	return t["config"].(BaseConfig)
+}
+
+func getClient(endpoint string, meta interface{}) *egoscale.Client {
+	config := getConfig(meta)
 
 	httpClient := cleanhttp.DefaultPooledClient()
 	httpClient.Transport = &defaultTransport{next: httpClient.Transport}
@@ -97,8 +101,7 @@ func getClient(endpoint string, meta interface{}) *egoscale.Client {
 
 // GetComputeClient builds a CloudStack client
 func GetComputeClient(meta interface{}) *egoscale.Client {
-	t := meta.(map[string]interface{})
-	config := t["config"].(BaseConfig)
+	config := getConfig(meta)
 	if config.computeClient == nil {
 		config.computeClient = getClient(config.computeEndpoint, meta)
 	}
@@ -107,8 +110,7 @@ func GetComputeClient(meta interface{}) *egoscale.Client {
 
 // GetDNSClient builds a DNS client
 func GetDNSClient(meta interface{}) *egoscale.Client {
-	t := meta.(map[string]interface{})
-	config := t["config"].(BaseConfig)
+	config := getConfig(meta)
 	if config.dnsClient == nil {
 		config.dnsClient = getClient(config.dnsEndpoint, meta)
 	}
@@ -116,8 +118,7 @@ func GetDNSClient(meta interface{}) *egoscale.Client {
 }
 
 func getEnvironment(meta interface{}) string {
-	t := meta.(map[string]interface{})
-	config := t["config"].(BaseConfig)
+	config := getConfig(meta)
 	if config.environment == "" {
 		return defaultEnvironment
 	}
