@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/exoscale/egoscale"
-	exo "github.com/exoscale/egoscale/v2"
 	exov2 "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
 	retryablehttp "github.com/hashicorp/go-retryablehttp"
@@ -216,7 +215,7 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 	var diags diag.Diagnostics
 
 	// we only need to set UserAgent once, so lets do it right away.
-	exo.UserAgent = userAgent
+	exov2.UserAgent = userAgent
 
 	key, keyOK := d.GetOk("key")
 	secret, secretOK := d.GetOk("secret")
