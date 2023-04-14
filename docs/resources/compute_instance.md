@@ -5,6 +5,7 @@ subcategory: ""
 description: |-
   Manage Exoscale Compute Instances https://community.exoscale.com/documentation/compute/.
   Corresponding data sources: exoscalecomputeinstance ../data-sources/compute_instance.md, exoscalecomputeinstance_list ../data-sources/compute_instance_list.md.
+  After the creation, you can retrieve the password of an instance with Exoscale CLI https://github.com/exoscale/cli: exo compute instance reveal-password NAME.
 ---
 
 # exoscale_compute_instance (Resource)
@@ -12,6 +13,8 @@ description: |-
 Manage Exoscale [Compute Instances](https://community.exoscale.com/documentation/compute/).
 
 Corresponding data sources: [exoscale_compute_instance](../data-sources/compute_instance.md), [exoscale_compute_instance_list](../data-sources/compute_instance_list.md).
+
+After the creation, you can retrieve the password of an instance with [Exoscale CLI](https://github.com/exoscale/cli): `exo compute instance reveal-password NAME`.
 
 ## Example Usage
 

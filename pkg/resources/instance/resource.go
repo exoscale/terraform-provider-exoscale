@@ -162,9 +162,11 @@ func Resource() *schema.Resource {
 	return &schema.Resource{
 		Schema: s,
 
-		Description: `Manage Exoscale [Compute Instances](https://community.exoscale.com/documentation/compute/).
-
-Corresponding data sources: [exoscale_compute_instance](../data-sources/compute_instance.md), [exoscale_compute_instance_list](../data-sources/compute_instance_list.md).`,
+		Description: "Manage Exoscale [Compute Instances](https://community.exoscale.com/documentation/compute/).\n" +
+                 "\n" +
+                 "Corresponding data sources: [exoscale_compute_instance](../data-sources/compute_instance.md), [exoscale_compute_instance_list](../data-sources/compute_instance_list.md).\n" +
+                 "\n" +
+                 "After the creation, you can retrieve the password of an instance with [Exoscale CLI](https://github.com/exoscale/cli): `exo compute instance reveal-password NAME`.",
 
 		CreateContext: rCreate,
 		ReadContext:   rRead,
