@@ -25,7 +25,6 @@ const (
 	testInstanceTemplateFilter     = "featured"
 	testInstanceTemplateVisibility = "public"
 
-	testInstanceTypeIDTiny   = "b6cd1ff5-3a2f-4e9d-a4d1-8988c1191fe8"
 	testInstanceTypeIDSmall  = "21624abb-764e-4def-81d7-9fc54b5957fb"
 	testInstanceTypeIDMedium = "b6e9d1e8-89fc-4db3-aaa4-9b4c5b1d0844"
 )

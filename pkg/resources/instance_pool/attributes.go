@@ -1,0 +1,33 @@
+package instance_pool
+
+const (
+	Name     = "exoscale_instance_pool"
+	NameList = "exoscale_instance_pool_list"
+
+	AttrAffinityGroupIDs        = "affinity_group_ids"
+	AttrDeployTargetID          = "deploy_target_id"
+	AttrDescription             = "description"
+	AttrDiskSize                = "disk_size"
+	AttrElasticIPIDs            = "elastic_ip_ids"
+	AttrInstancePrefix          = "instance_prefix"
+	AttrInstanceType            = "instance_type"
+	AttrIPv6                    = "ipv6"
+	AttrKeyPair                 = "key_pair"
+	AttrLabels                  = "labels"
+	AttrID                      = "id"
+	AttrName                    = "name"
+	AttrNetworkIDs              = "network_ids"
+	AttrServiceOffering         = "service_offering"
+	AttrSecurityGroupIDs        = "security_group_ids"
+	AttrSize                    = "size"
+	AttrState                   = "state"
+	AttrTemplateID              = "template_id"
+	AttrUserData                = "user_data"
+	AttrInstances               = "instances"
+	AttrInstanceID              = "id"
+	AttrInstanceIPv6Address     = "ipv6_address"
+	AttrInstanceName            = "name"
+	AttrInstancePublicIPAddress = "public_ip_address"
+	AttrVirtualMachines         = "virtual_machines"
+	AttrZone                    = "zone"
+)

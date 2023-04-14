@@ -4,19 +4,25 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"os/user"
 	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/exoscale/egoscale"
+	exov2 "github.com/exoscale/egoscale/v2"
+	exoapi "github.com/exoscale/egoscale/v2/api"
+	retryablehttp "github.com/hashicorp/go-retryablehttp"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/logging"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	ini "gopkg.in/ini.v1"
 
-	"github.com/exoscale/egoscale"
-	exo "github.com/exoscale/egoscale/v2"
-	exoapi "github.com/exoscale/egoscale/v2/api"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/anti_affinity_group"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/instance"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/instance_pool"
 )
 
 const (
@@ -151,17 +157,17 @@ func Provider() *schema.Provider {
 
 		DataSourcesMap: map[string]*schema.Resource{
 			"exoscale_affinity":              dataSourceAffinity(),
-			"exoscale_anti_affinity_group":   dataSourceAntiAffinityGroup(),
+			"exoscale_anti_affinity_group":   anti_affinity_group.DataSource(),
 			"exoscale_compute":               dataSourceCompute(),
-			"exoscale_compute_instance":      dataSourceComputeInstance(),
-			"exoscale_compute_instance_list": dataSourceComputeInstanceList(),
+			"exoscale_compute_instance":      instance.DataSource(),
+			"exoscale_compute_instance_list": instance.DataSourceList(),
 			"exoscale_compute_ipaddress":     dataSourceComputeIPAddress(),
 			"exoscale_compute_template":      dataSourceComputeTemplate(),
 			"exoscale_domain":                dataSourceDomain(),
 			"exoscale_domain_record":         dataSourceDomainRecord(),
 			"exoscale_elastic_ip":            dataSourceElasticIP(),
-			"exoscale_instance_pool":         dataSourceInstancePool(),
-			"exoscale_instance_pool_list":    dataSourceInstancePoolList(),
+			"exoscale_instance_pool":         instance_pool.DataSource(),
+			"exoscale_instance_pool_list":    instance_pool.DataSourceList(),
 			"exoscale_network":               dataSourceNetwork(),
 			"exoscale_nlb":                   dataSourceNLB(),
 			"exoscale_private_network":       dataSourcePrivateNetwork(),
@@ -175,15 +181,15 @@ func Provider() *schema.Provider {
 
 		ResourcesMap: map[string]*schema.Resource{
 			"exoscale_affinity":             resourceAffinity(),
-			"exoscale_anti_affinity_group":  resourceAntiAffinityGroup(),
+			"exoscale_anti_affinity_group":  anti_affinity_group.Resource(),
 			"exoscale_compute":              resourceCompute(),
-			"exoscale_compute_instance":     resourceComputeInstance(),
+			"exoscale_compute_instance":     instance.Resource(),
 			"exoscale_database":             resourceDatabase(),
 			"exoscale_domain":               resourceDomain(),
 			"exoscale_domain_record":        resourceDomainRecord(),
 			"exoscale_elastic_ip":           resourceElasticIP(),
 			"exoscale_iam_access_key":       resourceIAMAccessKey(),
-			"exoscale_instance_pool":        resourceInstancePool(),
+			"exoscale_instance_pool":        instance_pool.Resource(),
 			"exoscale_ipaddress":            resourceIPAddress(),
 			"exoscale_network":              resourceNetwork(),
 			"exoscale_nic":                  resourceNIC(),
@@ -209,7 +215,7 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 	var diags diag.Diagnostics
 
 	// we only need to set UserAgent once, so lets do it right away.
-	exo.UserAgent = userAgent
+	exov2.UserAgent = userAgent
 
 	key, keyOK := d.GetOk("key")
 	secret, secretOK := d.GetOk("secret")
@@ -233,7 +239,7 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 			)
 		}
 	} else {
-		config := d.Get("config").(string)
+		configFile := d.Get("config").(string)
 		region := d.Get("region")
 
 		// deprecation support
@@ -245,17 +251,17 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 		// Support `~/`
 		usr, err := user.Current()
 		if err == nil {
-			if strings.HasPrefix(config, "~/") {
-				config = filepath.Join(usr.HomeDir, config[2:])
+			if strings.HasPrefix(configFile, "~/") {
+				configFile = filepath.Join(usr.HomeDir, configFile[2:])
 			}
 		}
 
 		// Convert relative path to absolute
-		config, _ = filepath.Abs(config)
+		configFile, _ = filepath.Abs(configFile)
 		localConfig, _ := filepath.Abs("cloudstack.ini")
 
 		inis := []string{
-			config,
+			configFile,
 			localConfig,
 		}
 
@@ -264,16 +270,16 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 		}
 
 		// Stops at the first file that exists
-		config = ""
+		configFile = ""
 		for _, i := range inis {
 			if _, err := os.Stat(i); err != nil {
 				continue
 			}
-			config = i
+			configFile = i
 			break
 		}
 
-		if config == "" {
+		if configFile == "" {
 			return nil, diag.Errorf(
 				"key (%s), secret are missing, or config file not found within: %s",
 				key,
@@ -281,7 +287,7 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 			)
 		}
 
-		cfg, err := ini.LoadSources(ini.LoadOptions{IgnoreInlineComment: true}, config)
+		cfg, err := ini.LoadSources(ini.LoadOptions{IgnoreInlineComment: true}, configFile)
 		if err != nil {
 			return nil, diag.Errorf("config file not loaded: %s", err)
 		}
@@ -324,7 +330,30 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 		gzipUserData:    d.Get("gzip_user_data").(bool),
 	}
 
-	return baseConfig, diags
+	clv2, err := exov2.NewClient(
+		baseConfig.key,
+		baseConfig.secret,
+		exov2.ClientOptWithAPIEndpoint(endpoint),
+		exov2.ClientOptWithTimeout(baseConfig.timeout),
+		exov2.ClientOptWithHTTPClient(func() *http.Client {
+			rc := retryablehttp.NewClient()
+			rc.Logger = LeveledTFLogger{Verbose: logging.IsDebugOrHigher()}
+			hc := rc.StandardClient()
+			if logging.IsDebugOrHigher() {
+				hc.Transport = logging.NewSubsystemLoggingHTTPTransport("exoscale", hc.Transport)
+			}
+			return hc
+		}()))
+	if err != nil {
+		return nil, diag.FromErr(err)
+	}
+
+	return map[string]interface{}{
+			"config":      baseConfig,
+			"client":      clv2,
+			"environment": environment,
+		},
+		diags
 }
 
 func getZoneByName(ctx context.Context, client *egoscale.Client, zoneName string) (*egoscale.Zone, error) {

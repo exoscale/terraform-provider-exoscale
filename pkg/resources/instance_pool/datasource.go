@@ -1,4 +1,4 @@
-package exoscale
+package instance_pool
 
 import (
 	"context"
@@ -7,162 +7,137 @@ import (
 
 	exo "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-const (
-	dsInstancePoolAttrAffinityGroupIDs        = "affinity_group_ids"
-	dsInstancePoolAttrDeployTargetID          = "deploy_target_id"
-	dsInstancePoolAttrDescription             = "description"
-	dsInstancePoolAttrDiskSize                = "disk_size"
-	dsInstancePoolAttrElasticIPIDs            = "elastic_ip_ids"
-	dsInstancePoolAttrInstancePrefix          = "instance_prefix"
-	dsInstancePoolAttrInstanceType            = "instance_type"
-	dsInstancePoolAttrIPv6                    = "ipv6"
-	dsInstancePoolAttrKeyPair                 = "key_pair"
-	dsInstancePoolAttrLabels                  = "labels"
-	dsInstancePoolAttrID                      = "id"
-	dsInstancePoolAttrName                    = "name"
-	dsInstancePoolAttrNetworkIDs              = "network_ids"
-	dsInstancePoolAttrSecurityGroupIDs        = "security_group_ids"
-	dsInstancePoolAttrSize                    = "size"
-	dsInstancePoolAttrState                   = "state"
-	dsInstancePoolAttrTemplateID              = "template_id"
-	dsInstancePoolAttrUserData                = "user_data"
-	dsInstancePoolAttrInstances               = "instances"
-	dsInstancePoolAttrInstanceID              = "id"
-	dsInstancePoolAttrInstanceIPv6Address     = "ipv6_address"
-	dsInstancePoolAttrInstanceName            = "name"
-	dsInstancePoolAttrInstancePublicIPAddress = "public_ip_address"
-	dsInstancePoolAttrZone                    = "zone"
-)
-
-// getDataSourceInstancePoolSchema returns a schema for a single instance pool data source.
-func getDataSourceInstancePoolSchema() map[string]*schema.Schema {
+// DataSourceSchema returns a schema for a single instance pool data source.
+func DataSourceSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
-		dsInstancePoolAttrAffinityGroupIDs: {
+		AttrAffinityGroupIDs: {
 			Description: "The list of attached [exoscale_anti_affinity_group](../resources/anti_affinity_group.md) (IDs).",
 			Type:        schema.TypeSet,
 			Computed:    true,
 			Set:         schema.HashString,
 			Elem:        &schema.Schema{Type: schema.TypeString},
 		},
-		dsInstancePoolAttrDeployTargetID: {
+		AttrDeployTargetID: {
 			Description: "The deploy target ID.",
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
-		dsInstancePoolAttrDescription: {
+		AttrDescription: {
 			Description: "The instance pool description.",
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
-		dsInstancePoolAttrDiskSize: {
+		AttrDiskSize: {
 			Description: "The managed instances disk size.",
 			Type:        schema.TypeInt,
 			Computed:    true,
 		},
-		dsInstancePoolAttrElasticIPIDs: {
+		AttrElasticIPIDs: {
 			Description: "The list of attached [exoscale_elastic_ip](../resources/elastic_ip.md) (IDs).",
 			Type:        schema.TypeSet,
 			Computed:    true,
 			Set:         schema.HashString,
 			Elem:        &schema.Schema{Type: schema.TypeString},
 		},
-		dsInstancePoolAttrInstancePrefix: {
+		AttrInstancePrefix: {
 			Description: "The string used to prefix the managed instances name.",
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
-		dsInstancePoolAttrInstanceType: {
+		AttrInstanceType: {
 			Description: "The managed instances type.",
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
-		dsInstancePoolAttrIPv6: {
+		AttrIPv6: {
 			Description: "Whether IPv6 is enabled on managed instances.",
 			Type:        schema.TypeBool,
 			Computed:    true,
 		},
-		dsInstancePoolAttrKeyPair: {
+		AttrKeyPair: {
 			Description: "The [exoscale_ssh_key](../resources/ssh_key.md) (name) authorized on the managed instances.",
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
-		dsInstancePoolAttrLabels: {
+		AttrLabels: {
 			Description: "A map of key/value labels.",
 			Type:        schema.TypeMap,
 			Elem:        &schema.Schema{Type: schema.TypeString},
 			Optional:    true,
 		},
-		dsInstancePoolAttrName: {
+		AttrName: {
 			Description: "The pool name to match (conflicts with `id`).",
 			Type:        schema.TypeString,
 			Optional:    true,
 		},
-		dsInstancePoolAttrID: {
+		AttrID: {
 			Description: "The instance pool ID to match (conflicts with `name`).",
 			Type:        schema.TypeString,
 			Optional:    true,
 		},
-		dsInstancePoolAttrNetworkIDs: {
+		AttrNetworkIDs: {
 			Description: "The list of attached [exoscale_private_network](../resources/private_network.md) (IDs).",
 			Type:        schema.TypeSet,
 			Computed:    true,
 			Set:         schema.HashString,
 			Elem:        &schema.Schema{Type: schema.TypeString},
 		},
-		dsInstancePoolAttrSecurityGroupIDs: {
+		AttrSecurityGroupIDs: {
 			Description: "The list of attached [exoscale_security_group](../resources/security_group.md) (IDs).",
 			Type:        schema.TypeSet,
 			Computed:    true,
 			Set:         schema.HashString,
 			Elem:        &schema.Schema{Type: schema.TypeString},
 		},
-		dsInstancePoolAttrSize: {
+		AttrSize: {
 			Description: "The number managed instances.",
 			Type:        schema.TypeInt,
 			Computed:    true,
 		},
-		dsInstancePoolAttrState: {
+		AttrState: {
 			Description: "The pool state.",
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
-		dsInstancePoolAttrTemplateID: {
+		AttrTemplateID: {
 			Description: "The managed instances [exoscale_compute_template](./compute_template.md) ID.",
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
-		dsInstancePoolAttrUserData: {
+		AttrUserData: {
 			Description: "[cloud-init](http://cloudinit.readthedocs.io/en/latest/) configuration.",
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
-		dsInstancePoolAttrInstances: {
+		AttrInstances: {
 			Description: "The list of managed instances. Structure is documented below.",
 			Type:        schema.TypeSet,
 			Computed:    true,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
-					dsInstancePoolAttrInstanceID: {
+					AttrInstanceID: {
 						Description: "The compute instance ID.",
 						Type:        schema.TypeString,
 						Optional:    true,
 					},
-					dsInstancePoolAttrInstanceIPv6Address: {
+					AttrInstanceIPv6Address: {
 						Description: "The instance (main network interface) IPv6 address.",
 						Type:        schema.TypeString,
 						Computed:    true,
 					},
-					dsInstancePoolAttrInstanceName: {
+					AttrInstanceName: {
 						Description: "The instance name.",
 						Type:        schema.TypeString,
 						Optional:    true,
 					},
-					dsInstancePoolAttrInstancePublicIPAddress: {
+					AttrInstancePublicIPAddress: {
 						Description: "The instance (main network interface) IPv4 address.",
 						Type:        schema.TypeString,
 						Computed:    true,
@@ -170,7 +145,7 @@ func getDataSourceInstancePoolSchema() map[string]*schema.Schema {
 				},
 			},
 		},
-		dsInstancePoolAttrZone: {
+		AttrZone: {
 			Description: "The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.",
 			Type:        schema.TypeString,
 			Required:    true,
@@ -178,62 +153,65 @@ func getDataSourceInstancePoolSchema() map[string]*schema.Schema {
 	}
 }
 
-func dataSourceInstancePool() *schema.Resource {
+func DataSource() *schema.Resource {
 	return &schema.Resource{
 		Description: `Fetch Exoscale [Instance Pools](https://community.exoscale.com/documentation/compute/instance-pools/) data.
 
 Corresponding resource: [exoscale_instance_pool](../resources/instance_pool.md).`,
 		Schema: func() map[string]*schema.Schema {
-			schema := getDataSourceInstancePoolSchema()
+			schema := DataSourceSchema()
 
 			// adding context-aware schema settings here so getDataSourceInstancePoolSchema can be used in list method
-			schema[dsInstancePoolAttrID].ConflictsWith = []string{dsInstancePoolAttrName}
-			schema[dsInstancePoolAttrName].ConflictsWith = []string{dsInstancePoolAttrID}
+			schema[AttrID].ConflictsWith = []string{AttrName}
+			schema[AttrName].ConflictsWith = []string{AttrID}
 			return schema
 		}(),
-		ReadContext: dataSourceInstancePoolRead,
+		ReadContext: dsRead,
 	}
 }
 
-func dataSourceInstancePoolRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	tflog.Debug(ctx, "beginning read", map[string]interface{}{
-		"id": resourceInstancePoolIDString(d),
+		"id": utils.IDString(d, Name),
 	})
 
-	zone := d.Get(dsInstancePoolAttrZone).(string)
+	zone := d.Get(AttrZone).(string)
 
 	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(config.GetEnvironment(meta), zone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client, err := config.GetClient(meta)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
-	instancePoolID, byInstancePoolID := d.GetOk(dsInstancePoolAttrID)
-	instancePoolName, byInstancePoolName := d.GetOk(dsInstancePoolAttrName)
-	if !byInstancePoolID && !byInstancePoolName {
+	id, byID := d.GetOk(AttrID)
+	name, byName := d.GetOk(AttrName)
+	if !byID && !byName {
 		return diag.Errorf(
 			"either %s or %s must be specified",
-			dsInstancePoolAttrName,
-			dsInstancePoolAttrID,
+			AttrName,
+			AttrID,
 		)
 	}
 
-	instancePool, err := client.FindInstancePool(
+	pool, err := client.FindInstancePool(
 		ctx,
 		zone, func() string {
-			if byInstancePoolID {
-				return instancePoolID.(string)
+			if byID {
+				return id.(string)
 			}
-			return instancePoolName.(string)
+			return name.(string)
 		}(),
 	)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	d.SetId(*instancePool.ID)
+	d.SetId(*pool.ID)
 
-	data, err := dataSourceInstancePoolBuildData(instancePool)
+	data, err := dsBuildData(pool)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -241,21 +219,21 @@ func dataSourceInstancePoolRead(ctx context.Context, d *schema.ResourceData, met
 	instanceType, err := client.GetInstanceType(
 		ctx,
 		zone,
-		*instancePool.InstanceTypeID,
+		*pool.InstanceTypeID,
 	)
 	if err != nil {
 		return diag.Errorf("error retrieving instance type: %s", err)
 	}
 
-	data[dsInstancePoolAttrInstanceType] = fmt.Sprintf(
+	data[AttrInstanceType] = fmt.Sprintf(
 		"%s.%s",
 		strings.ToLower(*instanceType.Family),
 		strings.ToLower(*instanceType.Size),
 	)
 
-	if instancePool.InstanceIDs != nil {
-		instancesData := make([]interface{}, len(*instancePool.InstanceIDs))
-		for i, id := range *instancePool.InstanceIDs {
+	if pool.InstanceIDs != nil {
+		instancesData := make([]interface{}, len(*pool.InstanceIDs))
+		for i, id := range *pool.InstanceIDs {
 			instance, err := client.GetInstance(ctx, zone, id)
 			if err != nil {
 				return diag.FromErr(err)
@@ -270,14 +248,14 @@ func dataSourceInstancePoolRead(ctx context.Context, d *schema.ResourceData, met
 			}
 
 			instancesData[i] = map[string]interface{}{
-				dsInstancePoolAttrInstanceID:              id,
-				dsInstancePoolAttrInstanceIPv6Address:     ipv6,
-				dsInstancePoolAttrInstanceName:            instance.Name,
-				dsInstancePoolAttrInstancePublicIPAddress: publicIp,
+				AttrInstanceID:              id,
+				AttrInstanceIPv6Address:     ipv6,
+				AttrInstanceName:            instance.Name,
+				AttrInstancePublicIPAddress: publicIp,
 			}
 		}
 
-		data[dsInstancePoolAttrInstances] = instancesData
+		data[AttrInstances] = instancesData
 	}
 
 	for key, value := range data {
@@ -288,52 +266,52 @@ func dataSourceInstancePoolRead(ctx context.Context, d *schema.ResourceData, met
 	}
 
 	tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
-		"id": resourceInstancePoolIDString(d),
+		"id": utils.IDString(d, Name),
 	})
 
 	return nil
 }
 
-// dataSourceInstancePoolBuildData builds terraform data object from egoscale API struct.
-func dataSourceInstancePoolBuildData(pool *exo.InstancePool) (map[string]interface{}, error) {
+// dsBuildData builds terraform data object from egoscale API struct.
+func dsBuildData(pool *exo.InstancePool) (map[string]interface{}, error) {
 	data := map[string]interface{}{}
 
-	data[dsInstancePoolAttrDeployTargetID] = pool.DeployTargetID
-	data[dsInstancePoolAttrDescription] = defaultString(pool.Description, "")
-	data[dsInstancePoolAttrDiskSize] = pool.DiskSize
-	data[dsInstancePoolAttrID] = pool.ID
-	data[dsInstancePoolAttrInstancePrefix] = defaultString(pool.InstancePrefix, "")
-	data[dsInstancePoolAttrIPv6] = defaultBool(pool.IPv6Enabled, false)
-	data[dsInstancePoolAttrKeyPair] = pool.SSHKey
-	data[dsInstancePoolAttrLabels] = pool.Labels
-	data[dsInstancePoolAttrName] = pool.Name
-	data[dsInstancePoolAttrSize] = pool.Size
-	data[dsInstancePoolAttrState] = pool.State
-	data[dsInstancePoolAttrTemplateID] = pool.TemplateID
-	data[dsInstancePoolAttrZone] = pool.Zone
+	data[AttrDeployTargetID] = pool.DeployTargetID
+	data[AttrDescription] = utils.DefaultString(pool.Description, "")
+	data[AttrDiskSize] = pool.DiskSize
+	data[AttrID] = pool.ID
+	data[AttrInstancePrefix] = utils.DefaultString(pool.InstancePrefix, "")
+	data[AttrIPv6] = utils.DefaultBool(pool.IPv6Enabled, false)
+	data[AttrKeyPair] = pool.SSHKey
+	data[AttrLabels] = pool.Labels
+	data[AttrName] = pool.Name
+	data[AttrSize] = pool.Size
+	data[AttrState] = pool.State
+	data[AttrTemplateID] = pool.TemplateID
+	data[AttrZone] = pool.Zone
 
 	if pool.AntiAffinityGroupIDs != nil {
-		data[dsInstancePoolAttrAffinityGroupIDs] = *pool.AntiAffinityGroupIDs
+		data[AttrAffinityGroupIDs] = *pool.AntiAffinityGroupIDs
 	}
 
 	if pool.ElasticIPIDs != nil {
-		data[dsInstancePoolAttrElasticIPIDs] = *pool.ElasticIPIDs
+		data[AttrElasticIPIDs] = *pool.ElasticIPIDs
 	}
 
 	if pool.PrivateNetworkIDs != nil {
-		data[dsInstancePoolAttrNetworkIDs] = *pool.PrivateNetworkIDs
+		data[AttrNetworkIDs] = *pool.PrivateNetworkIDs
 	}
 
 	if pool.SecurityGroupIDs != nil {
-		data[dsInstancePoolAttrSecurityGroupIDs] = *pool.SecurityGroupIDs
+		data[AttrSecurityGroupIDs] = *pool.SecurityGroupIDs
 	}
 
 	if pool.UserData != nil {
-		userData, err := decodeUserData(*pool.UserData)
+		userData, err := utils.DecodeUserData(*pool.UserData)
 		if err != nil {
 			return nil, fmt.Errorf("error decoding user data: %w", err)
 		}
-		data[dsInstancePoolAttrUserData] = userData
+		data[AttrUserData] = userData
 	}
 
 	return data, nil

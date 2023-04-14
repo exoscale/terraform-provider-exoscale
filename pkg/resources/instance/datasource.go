@@ -1,4 +1,4 @@
-package exoscale
+package instance
 
 import (
 	"context"
@@ -11,151 +11,129 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+
+	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
 )
 
-const (
-	dsComputeInstanceAttrAntiAffinityGroupIDs = "anti_affinity_group_ids"
-	dsComputeInstanceAttrCreatedAt            = "created_at"
-	dsComputeInstanceAttrDeployTargetID       = "deploy_target_id"
-	dsComputeInstanceAttrDiskSize             = "disk_size"
-	dsComputeInstanceAttrElasticIPIDs         = "elastic_ip_ids"
-	dsComputeInstanceAttrID                   = "id"
-	dsComputeInstanceAttrIPv6                 = "ipv6"
-	dsComputeInstanceAttrIPv6Address          = "ipv6_address"
-	dsComputeInstanceAttrLabels               = "labels"
-	dsComputeInstanceAttrManagerID            = "manager_id"
-	dsComputeInstanceAttrManagerType          = "manager_type"
-	dsComputeInstanceAttrName                 = "name"
-	dsComputeInstanceAttrPrivateNetworkIDs    = "private_network_ids"
-	dsComputeInstanceAttrPublicIPAddress      = "public_ip_address"
-	dsComputeInstanceAttrReverseDNS           = "reverse_dns"
-	dsComputeInstanceAttrSSHKey               = "ssh_key"
-	dsComputeInstanceAttrSecurityGroupIDs     = "security_group_ids"
-	dsComputeInstanceAttrState                = "state"
-	dsComputeInstanceAttrTemplateID           = "template_id"
-	dsComputeInstanceAttrType                 = "type"
-	dsComputeInstanceAttrUserData             = "user_data"
-	dsComputeInstanceAttrZone                 = "zone"
-)
-
-// getDataSourceComputeInstanceSchema returns a schema for a single Compute instance data source.
-func getDataSourceComputeInstanceSchema() map[string]*schema.Schema {
+// DataSourceSchema returns a schema for a single Compute instance data source.
+func DataSourceSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
-		dsComputeInstanceAttrAntiAffinityGroupIDs: {
+		AttrAntiAffinityGroupIDs: {
 			Description: "The list of attached [exoscale_anti_affinity_group](../resources/anti_affinity_group.md) (IDs).",
 			Type:        schema.TypeSet,
 			Optional:    true,
 			Set:         schema.HashString,
 			Elem:        &schema.Schema{Type: schema.TypeString},
 		},
-		dsComputeInstanceAttrCreatedAt: {
+		AttrCreatedAt: {
 			Description: "The compute instance creation date.",
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
-		dsComputeInstanceAttrDeployTargetID: {
+		AttrDeployTargetID: {
 			Description: "A deploy target ID.",
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
-		dsComputeInstanceAttrDiskSize: {
+		AttrDiskSize: {
 			Description: "The instance disk size (GiB).",
 			Type:        schema.TypeInt,
 			Computed:    true,
 		},
-		dsComputeInstanceAttrElasticIPIDs: {
+		AttrElasticIPIDs: {
 			Description: "The list of attached [exoscale_elastic_ip](../resources/elastic_ip.md) (IDs).",
 			Type:        schema.TypeSet,
 			Computed:    true,
 			Set:         schema.HashString,
 			Elem:        &schema.Schema{Type: schema.TypeString},
 		},
-		dsComputeInstanceAttrID: {
+		AttrID: {
 			Description: "The compute instance ID to match (conflicts with `name`).",
 			Type:        schema.TypeString,
 			Optional:    true,
 		},
-		dsComputeInstanceAttrIPv6: {
+		AttrIPv6: {
 			Description: "Whether IPv6 is enabled on the instance.",
 			Type:        schema.TypeBool,
 			Computed:    true,
 		},
-		dsComputeInstanceAttrIPv6Address: {
+		AttrIPv6Address: {
 			Description: "The instance (main network interface) IPv6 address (if enabled).",
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
-		dsComputeInstanceAttrLabels: {
+		AttrLabels: {
 			Description: "A map of key/value labels.",
 			Type:        schema.TypeMap,
 			Elem:        &schema.Schema{Type: schema.TypeString},
 			Optional:    true,
 		},
-		dsComputeInstanceAttrManagerID: {
+		AttrManagerID: {
 			Description: "The instance manager ID, if any.",
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
-		dsComputeInstanceAttrManagerType: {
+		AttrManagerType: {
 			Description: "The instance manager type (instance pool, SKS node pool, etc.), if any.",
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
-		dsComputeInstanceAttrName: {
+		AttrName: {
 			Description: "The instance name to match (conflicts with `id`).",
 			Type:        schema.TypeString,
 			Optional:    true,
 		},
-		dsComputeInstanceAttrPrivateNetworkIDs: {
+		AttrPrivateNetworkIDs: {
 			Description: "The list of attached [exoscale_private_network](../resources/private_network.md) (IDs).",
 			Type:        schema.TypeSet,
 			Computed:    true,
 			Set:         schema.HashString,
 			Elem:        &schema.Schema{Type: schema.TypeString},
 		},
-		dsComputeInstanceAttrPublicIPAddress: {
+		AttrPublicIPAddress: {
 			Description: "The instance (main network interface) IPv4 address.",
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
-		dsComputeInstanceAttrReverseDNS: {
+		AttrReverseDNS: {
 			Description: "Domain name for reverse DNS record.",
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
-		dsComputeInstanceAttrSSHKey: {
+		AttrSSHKey: {
 			Description: "The [exoscale_ssh_key](../resources/ssh_key.md) (name) authorized on the instance.",
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
-		dsComputeInstanceAttrSecurityGroupIDs: {
+		AttrSecurityGroupIDs: {
 			Description: "The list of attached [exoscale_security_group](../resources/security_group.md) (IDs).",
 			Type:        schema.TypeSet,
 			Computed:    true,
 			Set:         schema.HashString,
 			Elem:        &schema.Schema{Type: schema.TypeString},
 		},
-		dsComputeInstanceAttrState: {
+		AttrState: {
 			Description: "The instance state.",
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
-		dsComputeInstanceAttrTemplateID: {
+		AttrTemplateID: {
 			Description: "The instance [exoscale_compute_template](./compute_template.md) ID.",
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
-		dsComputeInstanceAttrType: {
+		AttrType: {
 			Description: "The instance type.",
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
-		dsComputeInstanceAttrUserData: {
+		AttrUserData: {
 			Description: "The instance [cloud-init](http://cloudinit.readthedocs.io/en/latest/) configuration.",
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
-		dsComputeInstanceAttrZone: {
+		AttrZone: {
 			Description: "The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.",
 			Type:        schema.TypeString,
 			Required:    true,
@@ -163,62 +141,65 @@ func getDataSourceComputeInstanceSchema() map[string]*schema.Schema {
 	}
 }
 
-func dataSourceComputeInstance() *schema.Resource {
+func DataSource() *schema.Resource {
 	return &schema.Resource{
 		Description: `Fetch Exoscale [Compute Instances](https://community.exoscale.com/documentation/compute/) data.
 
 Corresponding resource: [exoscale_compute_instance](../resources/compute_instance.md).`,
 		Schema: func() map[string]*schema.Schema {
-			schema := getDataSourceComputeInstanceSchema()
+			schema := DataSourceSchema()
 
 			// adding context-aware schema settings here so getDataSourceComputeInstanceSchema can be used elsewhere
-			schema[dsComputeInstanceAttrID].ConflictsWith = []string{dsComputeInstanceAttrName}
-			schema[dsComputeInstanceAttrName].ConflictsWith = []string{dsComputeInstanceAttrID}
+			schema[AttrID].ConflictsWith = []string{AttrName}
+			schema[AttrName].ConflictsWith = []string{AttrID}
 			return schema
 		}(),
-		ReadContext: dataSourceComputeInstanceRead,
+		ReadContext: dsRead,
 	}
 }
 
-func dataSourceComputeInstanceRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	tflog.Debug(ctx, "beginning read", map[string]interface{}{
-		"id": resourceComputeInstanceIDString(d),
+		"id": utils.IDString(d, Name),
 	})
 
-	zone := d.Get(dsComputeInstanceAttrZone).(string)
+	zone := d.Get(AttrZone).(string)
 
 	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(config.GetEnvironment(meta), zone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client, err := config.GetClient(meta)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
-	computeInstanceID, byComputeInstanceID := d.GetOk(dsComputeInstanceAttrID)
-	computeInstanceName, byComputeInstanceName := d.GetOk(dsComputeInstanceAttrName)
-	if !byComputeInstanceID && !byComputeInstanceName {
+	id, byID := d.GetOk(AttrID)
+	name, byName := d.GetOk(AttrName)
+	if !byID && !byName {
 		return diag.Errorf(
 			"either %s or %s must be specified",
-			dsComputeInstanceAttrName,
-			dsComputeInstanceAttrID,
+			AttrName,
+			AttrID,
 		)
 	}
 
-	computeInstance, err := client.FindInstance(
+	instance, err := client.FindInstance(
 		ctx,
 		zone, func() string {
-			if byComputeInstanceID {
-				return computeInstanceID.(string)
+			if byID {
+				return id.(string)
 			}
-			return computeInstanceName.(string)
+			return name.(string)
 		}(),
 	)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	d.SetId(*computeInstance.ID)
+	d.SetId(*instance.ID)
 
-	data, err := dataSourceComputeInstanceBuildData(computeInstance)
+	data, err := dsBuildData(instance)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -226,23 +207,23 @@ func dataSourceComputeInstanceRead(ctx context.Context, d *schema.ResourceData, 
 	instanceType, err := client.GetInstanceType(
 		ctx,
 		zone,
-		*computeInstance.InstanceTypeID,
+		*instance.InstanceTypeID,
 	)
 	if err != nil {
 		return diag.Errorf("unable to retrieve instance type: %s", err)
 	}
 
-	data[dsComputeInstanceAttrType] = fmt.Sprintf(
+	data[AttrType] = fmt.Sprintf(
 		"%s.%s",
 		strings.ToLower(*instanceType.Family),
 		strings.ToLower(*instanceType.Size),
 	)
 
-	rdns, err := client.GetInstanceReverseDNS(ctx, zone, *computeInstance.ID)
+	rdns, err := client.GetInstanceReverseDNS(ctx, zone, *instance.ID)
 	if err != nil && !errors.Is(err, exoapi.ErrNotFound) {
 		return diag.Errorf("unable to retrieve instance reverse-dns: %s", err)
 	}
-	data[dsComputeInstanceAttrReverseDNS] = strings.TrimSuffix(rdns, ".")
+	data[AttrReverseDNS] = strings.TrimSuffix(rdns, ".")
 
 	for key, value := range data {
 		err := d.Set(key, value)
@@ -252,66 +233,66 @@ func dataSourceComputeInstanceRead(ctx context.Context, d *schema.ResourceData, 
 	}
 
 	tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
-		"id": resourceComputeInstanceIDString(d),
+		"id": utils.IDString(d, Name),
 	})
 
 	return nil
 }
 
-// dataSourceComputeInstanceBuildData builds terraform data object from egoscale API struct.
-func dataSourceComputeInstanceBuildData(instance *exo.Instance) (map[string]interface{}, error) {
+// dsBuildData builds terraform data object from egoscale API struct.
+func dsBuildData(instance *exo.Instance) (map[string]interface{}, error) {
 	data := map[string]interface{}{}
 
-	data[dsComputeInstanceAttrDeployTargetID] = instance.DeployTargetID
-	data[dsComputeInstanceAttrDiskSize] = instance.DiskSize
-	data[dsComputeInstanceAttrID] = instance.ID
-	data[dsComputeInstanceAttrName] = instance.Name
-	data[dsComputeInstanceAttrSSHKey] = instance.SSHKey
-	data[dsComputeInstanceAttrState] = instance.State
-	data[dsComputeInstanceAttrTemplateID] = instance.TemplateID
-	data[dsComputeInstanceAttrZone] = instance.Zone
+	data[AttrDeployTargetID] = instance.DeployTargetID
+	data[AttrDiskSize] = instance.DiskSize
+	data[AttrID] = instance.ID
+	data[AttrName] = instance.Name
+	data[AttrSSHKey] = instance.SSHKey
+	data[AttrState] = instance.State
+	data[AttrTemplateID] = instance.TemplateID
+	data[AttrZone] = instance.Zone
 
-	data[dsComputeInstanceAttrIPv6] = defaultBool(instance.IPv6Enabled, false)
+	data[AttrIPv6] = utils.DefaultBool(instance.IPv6Enabled, false)
 
 	if instance.ElasticIPIDs != nil {
-		data[dsComputeInstanceAttrElasticIPIDs] = *instance.ElasticIPIDs
+		data[AttrElasticIPIDs] = *instance.ElasticIPIDs
 	}
 	if instance.AntiAffinityGroupIDs != nil {
-		data[dsComputeInstanceAttrAntiAffinityGroupIDs] = *instance.AntiAffinityGroupIDs
+		data[AttrAntiAffinityGroupIDs] = *instance.AntiAffinityGroupIDs
 	}
 	if instance.Labels != nil {
-		data[dsComputeInstanceAttrLabels] = *instance.Labels
+		data[AttrLabels] = *instance.Labels
 	}
 	if instance.PrivateNetworkIDs != nil {
-		data[dsComputeInstanceAttrPrivateNetworkIDs] = *instance.PrivateNetworkIDs
+		data[AttrPrivateNetworkIDs] = *instance.PrivateNetworkIDs
 	}
 	if instance.SecurityGroupIDs != nil {
-		data[dsComputeInstanceAttrSecurityGroupIDs] = *instance.SecurityGroupIDs
+		data[AttrSecurityGroupIDs] = *instance.SecurityGroupIDs
 	}
 
 	if instance.Manager != nil {
-		data[dsComputeInstanceAttrManagerID] = instance.Manager.ID
-		data[dsComputeInstanceAttrManagerType] = instance.Manager.Type
+		data[AttrManagerID] = instance.Manager.ID
+		data[AttrManagerType] = instance.Manager.Type
 	}
 
 	if instance.CreatedAt != nil {
-		data[dsComputeInstanceAttrCreatedAt] = instance.CreatedAt.String()
+		data[AttrCreatedAt] = instance.CreatedAt.String()
 	}
 
 	if instance.IPv6Address != nil {
-		data[dsComputeInstanceAttrIPv6Address] = instance.IPv6Address.String()
+		data[AttrIPv6Address] = instance.IPv6Address.String()
 	}
 
 	if instance.PublicIPAddress != nil {
-		data[dsComputeInstanceAttrPublicIPAddress] = instance.PublicIPAddress.String()
+		data[AttrPublicIPAddress] = instance.PublicIPAddress.String()
 	}
 
 	if instance.UserData != nil {
-		userData, err := decodeUserData(*instance.UserData)
+		userData, err := utils.DecodeUserData(*instance.UserData)
 		if err != nil {
 			return nil, fmt.Errorf("unable to decode user data: %w", err)
 		}
-		data[dsComputeInstanceAttrUserData] = userData
+		data[AttrUserData] = userData
 	}
 
 	return data, nil
