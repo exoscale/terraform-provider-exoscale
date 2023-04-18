@@ -66,6 +66,11 @@ website][tf-doc].
   fix a bug, please do so by opening a Pull Request in this GitHub repository.
   In case of feature contribution, we kindly ask you to open an issue to
   discuss it beforehand.
+* The documentation in the `docs` folder is generated from the descriptions
+  in the source code. If you change the .Description of a resource attribute
+  for example, you will need to run `go generate` in the root folder of the
+  repository to update the generated docs. This is necessary to mere any PR
+  as our CI checks whether the docs are up to date with the sources.
 * Code changes require associated *acceptance tests*: the complete provider
   test suite (`make test-acc`) is executed as part of the project's GitHub
   repository [CI workflow][tf-exo-gh-ci], however you can execute targeted
