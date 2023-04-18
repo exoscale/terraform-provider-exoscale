@@ -74,7 +74,7 @@ directory for complete configuration examples.
 
 Required:
 
-- `port` (Number) The NLB service (TCP/UPP) port.
+- `port` (Number) The NLB service (TCP/UDP) port.
 
 Optional:
 
