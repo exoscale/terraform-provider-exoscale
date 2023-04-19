@@ -75,7 +75,7 @@ func resourceNLBService() *schema.Resource {
 					resNLBServiceAttrHealthcheckPort: {
 						Type:        schema.TypeInt,
 						Required:    true,
-						Description: "The NLB service (TCP/UPP) port.",
+						Description: "The NLB service (TCP/UDP) port.",
 					},
 					resNLBServiceAttrHealthcheckRetries: {
 						Type:        schema.TypeInt,
