@@ -1,3 +1,4 @@
+## template: jinja
 #cloud-config
 
 package_update: true
@@ -7,4 +8,4 @@ packages:
 write_files:
   - path: /var/www/html/index.html
     content: |
-      <H1>Hello World!</H1>
+      <H1>Hello World! ({{ ds.meta_data.local_hostname }})</H1>
