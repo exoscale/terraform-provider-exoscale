@@ -125,7 +125,7 @@ func resourceSecurityGroupRule() *schema.Resource {
 				Optional: true,
 				Computed: true,
 				ForceNew: true,
-				Description: "An (`INGRESS`) source / (`EGRESS`) destination public security group name to match (conflicts with `cidr`/`user_security_group`/`user_security_group_id`). Please use the `user_security_group_id` argument along the [exoscale_security_group](../data-sources/security_group.md) data source instead.",
+				Description: "An (`INGRESS`) source / (`EGRESS`) destination public security group name to match (conflicts with `cidr`/`user_security_group`/`user_security_group_id`).",
 			},
 			resSecurityGroupRuleAttrSecurityGroupID: {
 				Type:          schema.TypeString,
