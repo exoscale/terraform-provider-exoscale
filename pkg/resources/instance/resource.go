@@ -108,6 +108,12 @@ func Resource() *schema.Resource {
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
+		AttrPrivate: {
+			Description: "Whether the instance is private(no public IP addresses; default: false)",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Default:     false,
+		},
 		AttrReverseDNS: {
 			Description: "Domain name for reverse DNS record.",
 			Type:        schema.TypeString,
@@ -228,6 +234,14 @@ func rCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 	if v, ok := d.GetOk(AttrDiskSize); ok {
 		i := int64(v.(int))
 		instance.DiskSize = &i
+	}
+
+	if privateInstance, ok := d.GetOk(AttrPrivate); ok {
+		privateInstanceBool := privateInstance.(bool)
+		if privateInstanceBool {
+			t := "none"
+			instance.PublicIPAssignment = &t
+		}
 	}
 
 	enableIPv6 := d.Get(AttrIPv6).(bool)
@@ -811,11 +825,13 @@ func rApply(
 		}
 	}
 
-	// Connection info for the `ssh` remote-exec provisioner
-	d.SetConnInfo(map[string]string{
-		"type": "ssh",
-		"host": instance.PublicIPAddress.String(),
-	})
+	if instance.PublicIPAddress != nil {
+		// Connection info for the `ssh` remote-exec provisioner
+		d.SetConnInfo(map[string]string{
+			"type": "ssh",
+			"host": instance.PublicIPAddress.String(),
+		})
+	}
 
 	return nil
 }

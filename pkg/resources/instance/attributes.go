@@ -19,6 +19,7 @@ const (
 	AttrNetworkInterface     = "network_interface"
 	AttrPrivateNetworkIDs    = "private_network_ids"
 	AttrPublicIPAddress      = "public_ip_address"
+	AttrPrivate              = "private"
 	AttrReverseDNS           = "reverse_dns"
 	AttrSSHKey               = "ssh_key"
 	AttrSecurityGroupIDs     = "security_group_ids"
