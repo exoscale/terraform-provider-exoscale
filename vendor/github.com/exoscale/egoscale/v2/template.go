@@ -2,6 +2,7 @@ package v2
 
 import (
 	"context"
+	"errors"
 	"sort"
 	"time"
 
@@ -165,7 +166,26 @@ func (c *Client) GetTemplateByName(ctx context.Context, zone string, templateNam
 		}
 	}
 
-	return nil, err
+	return nil, apiv2.ErrNotFound
+}
+
+// FindTemplate attempts to find a template by name or ID.
+// In case the identifier is a name and multiple resources match, the newest template is returned.
+func (c *Client) FindTemplate(ctx context.Context, zone, x string, visibilty string) (*Template, error) {
+	// Check if template is referenced by ID.
+	template, err := c.GetTemplate(ctx, zone, x)
+	if err != nil {
+		// ErrInvalidRequest when we pass an invalid id (should be a UUID)
+		// We can check if template is referenced by Name.
+		if errors.Is(err, apiv2.ErrInvalidRequest) || errors.Is(err, apiv2.ErrNotFound) {
+			template, err = c.GetTemplateByName(ctx, zone, x, visibilty)
+			if err == nil {
+				return template, nil
+			}
+		}
+		return nil, err
+	}
+	return template, nil
 }
 
 // ListTemplates returns the list of existing Templates.

@@ -1,11 +1,50 @@
 Changelog
 =========
 
+0.100.0
+-------
+
+- feature: v2: allow supply security group rules referencing public security groups.
+
+0.99.0
+------
+
+- feature: v2: add RevealInstancePassword
+
+0.98.1
+------
+
+- feature: v2: add FindSecurityGroups with parameter support
+
+0.98.0
+------
+
+- v2: refresh openapi generated code
+- feature: v2: add an option to the ListInstances call that allows users to filter by IP address
+
+0.97.0
+------
+
+- v2: database migration stop methods for databases supporting it: Redis, PostgreSQL, MySQL
+
+0.96.0
+------
+
+- v2: refresh openapi generated code
+- feature: v2: rename SKS nodepool addon
+
+
+0.95.0
+------
+
+- feature: v2: add `Client.FindTemplate()` method
+- fix: v2: error for `Client.GetTemplateByName()`
+
 0.94.0
 ------
 
 - feature: v2: add `Client.GetTemplateByName()` method
-- feature: v2: implement sort.Interface for []*Template by CreatedAt or by Nane
+- feature: v2: implement sort.Interface for []*Template by CreatedAt or by Name
 
 0.93.0
 ------
