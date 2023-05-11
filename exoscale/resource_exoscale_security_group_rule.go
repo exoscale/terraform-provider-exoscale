@@ -24,6 +24,7 @@ const (
 	resSecurityGroupRuleAttrICMPCode              = "icmp_code"
 	resSecurityGroupRuleAttrICMPType              = "icmp_type"
 	resSecurityGroupRuleAttrProtocol              = "protocol"
+	resSecurityGroupRuleAttrPublicSecurityGroup   = "public_security_group"
 	resSecurityGroupRuleAttrSecurityGroupID       = "security_group_id"
 	resSecurityGroupRuleAttrSecurityGroupName     = "security_group"
 	resSecurityGroupRuleAttrStartPort             = "start_port"
@@ -103,10 +104,11 @@ func resourceSecurityGroupRule() *schema.Resource {
 				ForceNew:     true,
 				ValidateFunc: validation.IsCIDRNetwork(0, 128),
 				ConflictsWith: []string{
+					resSecurityGroupRuleAttrPublicSecurityGroup,
 					resSecurityGroupRuleAttrUserSecurityGroupID,
 					resSecurityGroupRuleAttrUserSecurityGroupName,
 				},
-				Description: "An (`INGRESS`) source / (`EGRESS`) destination IP subnet (in [CIDR notation](https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing#CIDR_notation)) to match (conflicts with `user_security_group`/`user_security_group_id`).",
+				Description: "An (`INGRESS`) source / (`EGRESS`) destination IP subnet (in [CIDR notation](https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing#CIDR_notation)) to match (conflicts with `public_security_group`/`user_security_group`/`user_security_group_id`).",
 			},
 			resSecurityGroupRuleAttrProtocol: {
 				Type:         schema.TypeString,
@@ -117,6 +119,13 @@ func resourceSecurityGroupRule() *schema.Resource {
 				// Ignore case differences
 				DiffSuppressFunc: suppressCaseDiff,
 				Description:      "The network protocol to match (`TCP`, `UDP`, `ICMP`, `ICMPv6`, `AH`, `ESP`, `GRE`, `IPIP` or `ALL`)",
+			},
+			resSecurityGroupRuleAttrPublicSecurityGroup: {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+				ForceNew: true,
+				Description: "An (`INGRESS`) source / (`EGRESS`) destination public security group name to match (conflicts with `cidr`/`user_security_group`/`user_security_group_id`). Please use the `user_security_group_id` argument along the [exoscale_security_group](../data-sources/security_group.md) data source instead.",
 			},
 			resSecurityGroupRuleAttrSecurityGroupID: {
 				Type:          schema.TypeString,
@@ -152,9 +161,10 @@ func resourceSecurityGroupRule() *schema.Resource {
 				ForceNew: true,
 				ConflictsWith: []string{
 					resSecurityGroupRuleAttrNetwork,
+					resSecurityGroupRuleAttrPublicSecurityGroup,
 					resSecurityGroupRuleAttrUserSecurityGroupName,
 				},
-				Description: "An (`INGRESS`) source / (`EGRESS`) destination security group ID to match (conflicts with `cidr`/`user_security_group)`).",
+				Description: "An (`INGRESS`) source / (`EGRESS`) destination security group ID to match (conflicts with `cidr`/`public_security_group`/`user_security_group)`).",
 			},
 			resSecurityGroupRuleAttrUserSecurityGroupName: {
 				Type:     schema.TypeString,
@@ -163,10 +173,11 @@ func resourceSecurityGroupRule() *schema.Resource {
 				ForceNew: true,
 				ConflictsWith: []string{
 					resSecurityGroupRuleAttrNetwork,
+					resSecurityGroupRuleAttrPublicSecurityGroup,
 					resSecurityGroupRuleAttrUserSecurityGroupID,
 				},
 				Deprecated:  "Deprecated in favor of `user_security_group_id`",
-				Description: "An (`INGRESS`) source / (`EGRESS`) destination security group name to match (conflicts with `cidr`/`user_security_group_id`). Please use the `user_security_group_id` argument along the [exoscale_security_group](../data-sources/security_group.md) data source instead.",
+				Description: "An (`INGRESS`) source / (`EGRESS`) destination security group name to match (conflicts with `cidr`/`public_security_group`/`user_security_group_id`). Please use the `user_security_group_id` argument along the [exoscale_security_group](../data-sources/security_group.md) data source instead.",
 			},
 		},
 
@@ -255,13 +266,15 @@ func resourceSecurityGroupRuleCreate(ctx context.Context, d *schema.ResourceData
 	network, byNetwork := d.GetOk(resSecurityGroupRuleAttrNetwork)
 	userSecurityGroupID, byUserSecurityGroupID := d.GetOk(resSecurityGroupRuleAttrUserSecurityGroupID)
 	userSecurityGroupName, byUserSecurityGroupName := d.GetOk(resSecurityGroupRuleAttrUserSecurityGroupName)
+	publicSecurityGroupName, byPublicSecurityGroupName := d.GetOk(resSecurityGroupRuleAttrPublicSecurityGroup)
 
-	if !byNetwork && !byUserSecurityGroupID && !byUserSecurityGroupName {
+	if !byNetwork && !byUserSecurityGroupID && !byUserSecurityGroupName && !byPublicSecurityGroupName {
 		return diag.Errorf(
-			"either %s or %s or %s must be specified",
+			"either %s or %s or %s or %s must be specified",
 			resSecurityGroupRuleAttrNetwork,
 			resSecurityGroupRuleAttrUserSecurityGroupID,
 			resSecurityGroupRuleAttrUserSecurityGroupName,
+			resSecurityGroupRuleAttrPublicSecurityGroup,
 		)
 	}
 
@@ -271,8 +284,10 @@ func resourceSecurityGroupRuleCreate(ctx context.Context, d *schema.ResourceData
 			return diag.FromErr(err)
 		}
 		securityGroupRule.Network = cidr
+	} else if byPublicSecurityGroupName {
+		securityGroupName := publicSecurityGroupName.(string)
+		securityGroupRule.SecurityGroupName = &securityGroupName
 	} else {
-
 		userSecurityGroup, err := client.FindSecurityGroup(
 			ctx,
 			zone, func() string {
@@ -493,6 +508,11 @@ func resourceSecurityGroupRuleApply(
 			return err
 		}
 		if err := d.Set(resSecurityGroupRuleAttrUserSecurityGroupName, *userSecurityGroup.Name); err != nil {
+			return err
+		}
+	}
+	if securityGroupRule.SecurityGroupName != nil {
+		if err := d.Set(resSecurityGroupRuleAttrPublicSecurityGroup, *securityGroupRule.SecurityGroupName); err != nil {
 			return err
 		}
 	}
