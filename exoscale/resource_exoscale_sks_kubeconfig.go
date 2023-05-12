@@ -242,7 +242,7 @@ func KubeconfigExtractCertificates(kubeconfig string) ([]*x509.Certificate, []*x
 		return nil, nil, fmt.Errorf("error decoding kubeconfig certificates: %w", err)
 	}
 
-	var clusterCertificates []*x509.Certificate
+	clusterCertificates := make([]*x509.Certificate, 0, len(kubeconfigData.Clusters))
 	for _, cluster := range kubeconfigData.Clusters {
 		parsedCertificate, err := kubeconfigRawPEMDataToCertificate(cluster.Cluster.CertificateAuthorityData)
 		if err != nil {
@@ -252,7 +252,7 @@ func KubeconfigExtractCertificates(kubeconfig string) ([]*x509.Certificate, []*x
 		clusterCertificates = append(clusterCertificates, parsedCertificate)
 	}
 
-	var clientCertificates []*x509.Certificate
+	clientCertificates := make([]*x509.Certificate, 0, len(kubeconfigData.Users))
 	for _, user := range kubeconfigData.Users {
 		parsedCertificate, err := kubeconfigRawPEMDataToCertificate(user.User.ClientCertificateData)
 		if err != nil {

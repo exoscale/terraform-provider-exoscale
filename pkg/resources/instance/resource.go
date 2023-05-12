@@ -192,7 +192,7 @@ func Resource() *schema.Resource {
 	}
 }
 
-func rCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func rCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics { //nolint:gocyclo
 	tflog.Debug(ctx, "beginning create", map[string]interface{}{
 		"id": utils.IDString(d, Name),
 	})
@@ -396,7 +396,7 @@ func rRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.D
 	return rApply(ctx, client, d, instance)
 }
 
-func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics { //nolint:gocyclo
 	tflog.Debug(ctx, "beginning update", map[string]interface{}{
 		"id": utils.IDString(d, Name),
 	})
@@ -666,7 +666,7 @@ func rDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 	return nil
 }
 
-func rApply(
+func rApply( //nolint:gocyclo
 	ctx context.Context,
 	client *egoscale.Client,
 	d *schema.ResourceData,

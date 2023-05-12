@@ -240,7 +240,7 @@ func resourceCompute() *schema.Resource {
 	}
 }
 
-func resourceComputeCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceComputeCreate(d *schema.ResourceData, meta interface{}) error { //nolint:gocyclo
 	tflog.Debug(context.Background(), "beginning create", map[string]interface{}{
 		"id": resourceComputeIDString(d),
 	})
@@ -585,7 +585,7 @@ func resourceComputeRead(d *schema.ResourceData, meta interface{}) error {
 	return resourceComputeApply(d, machine)
 }
 
-func resourceComputeUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceComputeUpdate(d *schema.ResourceData, meta interface{}) error { //nolint:gocyclo
 	tflog.Debug(context.Background(), "beginning update", map[string]interface{}{
 		"id": resourceComputeIDString(d),
 	})

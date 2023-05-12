@@ -135,8 +135,6 @@ func ValidatePortRange(i interface{}, k string) (s []string, es []error) {
 			es = append(es, fmt.Errorf("port range should be ordered, %s < %s", ports[0], ports[1]))
 		}
 	}
-
-	return
 }
 
 // ValidateComputeInstanceType validates that the given field contains a valid Exoscale Compute instance type.

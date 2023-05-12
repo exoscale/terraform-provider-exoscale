@@ -210,7 +210,7 @@ Corresponding data sources: [exoscale_instance_pool](../data-sources/instance_po
 	}
 }
 
-func rCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func rCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics { //nolint:gocyclo
 	tflog.Debug(ctx, "beginning create", map[string]interface{}{
 		"id": utils.IDString(d, Name),
 	})
@@ -616,7 +616,7 @@ func rDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 	return nil
 }
 
-func rApply(ctx context.Context, client *egoscale.Client, d *schema.ResourceData, pool *egoscale.InstancePool) diag.Diagnostics {
+func rApply(ctx context.Context, client *egoscale.Client, d *schema.ResourceData, pool *egoscale.InstancePool) diag.Diagnostics { //nolint:gocyclo
 	zone := d.Get(AttrZone).(string)
 
 	if pool.AntiAffinityGroupIDs != nil {

@@ -311,7 +311,7 @@ func resourceIPAddressRead(d *schema.ResourceData, meta interface{}) error {
 	return resourceIPAddressApply(d, resp.(*egoscale.IPAddress), client)
 }
 
-func resourceIPAddressUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceIPAddressUpdate(d *schema.ResourceData, meta interface{}) error { //nolint:gocyclo
 	tflog.Debug(context.Background(), "beginning update", map[string]interface{}{
 		"id": resourceIPAddressIDString(d),
 	})

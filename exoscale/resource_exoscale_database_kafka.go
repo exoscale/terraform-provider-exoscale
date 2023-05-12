@@ -382,7 +382,7 @@ func resourceDatabaseUpdateKafka(
 	return nil
 }
 
-func resourceDatabaseApplyKafka(ctx context.Context, d *schema.ResourceData, client *egoscale.Client) error {
+func resourceDatabaseApplyKafka(ctx context.Context, d *schema.ResourceData, client *egoscale.Client) error { //nolint:gocyclo
 	res, err := client.GetDbaasServiceKafkaWithResponse(ctx, oapi.DbaasServiceName(d.Id()))
 	if err != nil {
 		return err
