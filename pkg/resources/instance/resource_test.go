@@ -569,7 +569,7 @@ func testResource(t *testing.T) {
 				}(&testInstance),
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{instance.AttrPrivateNetworkIDs},
+				ImportStateVerifyIgnore: []string{instance.AttrPrivateNetworkIDs, instance.AttrPrivate},
 				ImportStateCheck: func(s []*terraform.InstanceState) error {
 					return testutils.CheckResourceAttributes(
 						testutils.TestAttrs{
