@@ -109,7 +109,7 @@ func Resource() *schema.Resource {
 			Computed:    true,
 		},
 		AttrPrivate: {
-			Description: "Whether the instance is private(no public IP addresses; default: false)",
+			Description: "Whether the instance is private (no public IP addresses; default: false)",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Default:     false,
