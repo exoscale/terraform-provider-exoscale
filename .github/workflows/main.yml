@@ -16,19 +16,24 @@ jobs:
   check-docs:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - uses: ./.github/actions/setup
-    - name: Check documentation is up to date
-      run: './scripts/check-documentation-clean.sh'
+      - uses: actions/checkout@v3
+      - run: git submodule update --init --recursive go.mk
+      - uses: ./go.mk/.github/actions/setup
+      - name: Check documentation is up to date
+        run: './scripts/check-documentation-clean.sh'
+
   test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - uses: ./.github/actions/setup
-    - name: Run tests
-      run: |
-        git submodule update --init --recursive go.mk
-        PATH=$(go env GOPATH)/bin:$PATH make lint test-verbose test-acc
-      env:
-        EXOSCALE_API_KEY: ${{ secrets.EXOSCALE_API_KEY }}
-        EXOSCALE_API_SECRET: ${{ secrets.EXOSCALE_API_SECRET }}
+      - uses: actions/checkout@v3
+      - run: git submodule update --init --recursive go.mk
+      - uses: ./go.mk/.github/actions/setup
+
+      - uses: ./go.mk/.github/actions/pre-check
+
+      - name: Run tests
+        run: make test-verbose test-acc
+        env:
+          EXOSCALE_API_KEY: ${{ secrets.EXOSCALE_API_KEY }}
+          EXOSCALE_API_SECRET: ${{ secrets.EXOSCALE_API_SECRET }}
+
