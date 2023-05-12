@@ -1,10 +1,11 @@
 # Changelog
 
-## 0.48.0 (To be released)
+## 0.48.0 (May 12, 2023)
 
 FEATURES:
 
 - Resource `security_group_rule`: add the `public_security_group` attribute (#263)
+- Resource `compute_instance`: support creating private instances (#262)
 
 ## 0.47.0 (April 24, 2023)
 
