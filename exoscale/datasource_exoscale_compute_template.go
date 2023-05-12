@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/exoscale/egoscale"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
