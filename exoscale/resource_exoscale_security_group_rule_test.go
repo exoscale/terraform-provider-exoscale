@@ -17,17 +17,23 @@ import (
 )
 
 var (
-	testAccResourceSecurityGroupRule1Description          = acctest.RandomWithPrefix(testPrefix)
-	testAccResourceSecurityGroupRule1EndPort       uint16 = 2
-	testAccResourceSecurityGroupRule1FlowDirection        = "INGRESS"
-	testAccResourceSecurityGroupRule1Network              = "1.2.3.4/32"
-	testAccResourceSecurityGroupRule1Protocol             = "TCP"
-	testAccResourceSecurityGroupRule1StartPort     uint16 = 1
-	testAccResourceSecurityGroupRule2Description          = acctest.RandomWithPrefix(testPrefix)
-	testAccResourceSecurityGroupRule2FlowDirection        = "EGRESS"
-	testAccResourceSecurityGroupRule2ICMPCode      int64  = 0
-	testAccResourceSecurityGroupRule2ICMPType      int64  = 8
-	testAccResourceSecurityGroupRule2Protocol             = "ICMP"
+	testAccResourceSecurityGroupRule1Description                        = acctest.RandomWithPrefix(testPrefix)
+	testAccResourceSecurityGroupRule1EndPort                     uint16 = 2
+	testAccResourceSecurityGroupRule1FlowDirection                      = "INGRESS"
+	testAccResourceSecurityGroupRule1Network                            = "1.2.3.4/32"
+	testAccResourceSecurityGroupRule1Protocol                           = "TCP"
+	testAccResourceSecurityGroupRule1StartPort                   uint16 = 1
+	testAccResourceSecurityGroupRule2Description                        = acctest.RandomWithPrefix(testPrefix)
+	testAccResourceSecurityGroupRule2FlowDirection                      = "EGRESS"
+	testAccResourceSecurityGroupRule2ICMPCode                    int64  = 0
+	testAccResourceSecurityGroupRule2ICMPType                    int64  = 8
+	testAccResourceSecurityGroupRule2Protocol                           = "ICMP"
+	testAccResourceSecurityGroupRule3Description                        = acctest.RandomWithPrefix(testPrefix)
+	testAccResourceSecurityGroupRule3EndPort                     uint16 = 2
+	testAccResourceSecurityGroupRule3Protocol                           = "TCP"
+	testAccResourceSecurityGroupRule3ProtocolPublicSecurityGroup        = "public-nlb-healthcheck-sources"
+	testAccResourceSecurityGroupRule3StartPort                   uint16 = 1
+	testAccResourceSecurityGroupRule3FlowDirection                      = "INGRESS"
 
 	testAccResourceSecurityGroupRule1ConfigCreate = fmt.Sprintf(`
 resource "exoscale_security_group" "test" {
@@ -74,6 +80,30 @@ resource "exoscale_security_group_rule" "test" {
 		testAccResourceSecurityGroupRule2ICMPType,
 		testAccResourceSecurityGroupRule2Protocol,
 		testAccResourceSecurityGroupRule2FlowDirection,
+	)
+
+	testAccResourceSecurityGroupRule3ConfigCreate = fmt.Sprintf(`
+resource "exoscale_security_group" "test" {
+  name = "%s"
+}
+
+resource "exoscale_security_group_rule" "test" {
+  security_group        = exoscale_security_group.test.name
+  description           = "%s"
+  end_port              = %d
+  protocol              = "%s"
+  public_security_group = "%s"
+  start_port            = %d
+  type                  = "%s"
+}
+`,
+		testAccResourceSecurityGroupName,
+		testAccResourceSecurityGroupRule3Description,
+		testAccResourceSecurityGroupRule3EndPort,
+		testAccResourceSecurityGroupRule3Protocol,
+		testAccResourceSecurityGroupRule3ProtocolPublicSecurityGroup,
+		testAccResourceSecurityGroupRule3StartPort,
+		testAccResourceSecurityGroupRule3FlowDirection,
 	)
 )
 
@@ -195,6 +225,60 @@ func TestAccResourceSecurityGroupRule(t *testing.T) {
 							resSecurityGroupRuleAttrProtocol:              validateString(testAccResourceSecurityGroupRule2Protocol),
 							resSecurityGroupRuleAttrUserSecurityGroupID:   validation.ToDiagFunc(validation.IsUUID),
 							resSecurityGroupRuleAttrUserSecurityGroupName: validation.ToDiagFunc(validation.NoZeroValues),
+						},
+						s[0].Attributes)
+				},
+			},
+			{
+				// Create - rule #3
+				Config: testAccResourceSecurityGroupRule3ConfigCreate,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckResourceSecurityGroupExists("exoscale_security_group.test", &securityGroup),
+					testAccCheckResourceSecurityGroupRuleExists(r, &securityGroupRule),
+					func(s *terraform.State) error {
+						a := require.New(t)
+
+						a.Equal(testAccResourceSecurityGroupRule3Description, *securityGroupRule.Description)
+						a.Equal(testAccResourceSecurityGroupRule3EndPort, *securityGroupRule.EndPort)
+						a.Equal(testAccResourceSecurityGroupRule3FlowDirection, strings.ToUpper(*securityGroupRule.FlowDirection))
+						a.Equal(testAccResourceSecurityGroupRule3ProtocolPublicSecurityGroup, *securityGroupRule.SecurityGroupName)
+						a.Equal(testAccResourceSecurityGroupRule3Protocol, strings.ToUpper(*securityGroupRule.Protocol))
+						a.Equal(testAccResourceSecurityGroupRule3StartPort, *securityGroupRule.StartPort)
+
+						return nil
+					},
+					checkResourceState(r, checkResourceStateValidateAttributes(testAttrs{
+						resSecurityGroupRuleAttrDescription:         validateString(testAccResourceSecurityGroupRule3Description),
+						resSecurityGroupRuleAttrEndPort:             validateString(fmt.Sprint(testAccResourceSecurityGroupRule3EndPort)),
+						resSecurityGroupRuleAttrFlowDirection:       validateString(testAccResourceSecurityGroupRule3FlowDirection),
+						resSecurityGroupRuleAttrPublicSecurityGroup: validateString(testAccResourceSecurityGroupRule3ProtocolPublicSecurityGroup),
+						resSecurityGroupRuleAttrProtocol:            validateString(testAccResourceSecurityGroupRule3Protocol),
+						resSecurityGroupRuleAttrStartPort:           validateString(fmt.Sprint(testAccResourceSecurityGroupRule3StartPort)),
+					})),
+				),
+			},
+			{
+				// Import - rule #3
+				ResourceName: r,
+				ImportStateIdFunc: func(
+					securityGroup *egoscale.SecurityGroup,
+					securityGroupRule *egoscale.SecurityGroupRule,
+				) resource.ImportStateIdFunc {
+					return func(*terraform.State) (string, error) {
+						return fmt.Sprintf("%s/%s", *securityGroup.ID, *securityGroupRule.ID), nil
+					}
+				}(&securityGroup, &securityGroupRule),
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateCheck: func(s []*terraform.InstanceState) error {
+					return checkResourceAttributes(
+						testAttrs{
+							resSecurityGroupRuleAttrDescription:         validateString(testAccResourceSecurityGroupRule3Description),
+							resSecurityGroupRuleAttrEndPort:             validateString(fmt.Sprint(testAccResourceSecurityGroupRule3EndPort)),
+							resSecurityGroupRuleAttrFlowDirection:       validateString(testAccResourceSecurityGroupRule3FlowDirection),
+							resSecurityGroupRuleAttrPublicSecurityGroup: validateString(testAccResourceSecurityGroupRule3ProtocolPublicSecurityGroup),
+							resSecurityGroupRuleAttrProtocol:            validateString(testAccResourceSecurityGroupRule3Protocol),
+							resSecurityGroupRuleAttrStartPort:           validateString(fmt.Sprint(testAccResourceSecurityGroupRule3StartPort)),
 						},
 						s[0].Attributes)
 				},
