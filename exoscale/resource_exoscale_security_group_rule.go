@@ -121,10 +121,10 @@ func resourceSecurityGroupRule() *schema.Resource {
 				Description:      "The network protocol to match (`TCP`, `UDP`, `ICMP`, `ICMPv6`, `AH`, `ESP`, `GRE`, `IPIP` or `ALL`)",
 			},
 			resSecurityGroupRuleAttrPublicSecurityGroup: {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-				ForceNew: true,
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				ForceNew:    true,
 				Description: "An (`INGRESS`) source / (`EGRESS`) destination public security group name to match (conflicts with `cidr`/`user_security_group`/`user_security_group_id`).",
 			},
 			resSecurityGroupRuleAttrSecurityGroupID: {
@@ -278,16 +278,17 @@ func resourceSecurityGroupRuleCreate(ctx context.Context, d *schema.ResourceData
 		)
 	}
 
-	if byNetwork {
+	switch {
+	case byNetwork:
 		_, cidr, err := net.ParseCIDR(network.(string))
 		if err != nil {
 			return diag.FromErr(err)
 		}
 		securityGroupRule.Network = cidr
-	} else if byPublicSecurityGroupName {
+	case byPublicSecurityGroupName:
 		securityGroupName := publicSecurityGroupName.(string)
 		securityGroupRule.SecurityGroupName = &securityGroupName
-	} else {
+	default:
 		userSecurityGroup, err := client.FindSecurityGroup(
 			ctx,
 			zone, func() string {
