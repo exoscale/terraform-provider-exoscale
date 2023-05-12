@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.48.0 (To be released)
+
+FEATURES:
+
+- Resource `security_group_rule`: add the `public_security_group` attribute (#263)
+
 ## 0.47.0 (April 24, 2023)
 
 FEATURES:
