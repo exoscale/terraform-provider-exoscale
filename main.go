@@ -3,8 +3,9 @@ package main
 import (
 	"flag"
 
-	"github.com/exoscale/terraform-provider-exoscale/exoscale"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
+
+	"github.com/exoscale/terraform-provider-exoscale/exoscale"
 )
 
 //go:generate terraform fmt -recursive ./examples/
