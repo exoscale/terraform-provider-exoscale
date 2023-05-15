@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"testing"
 
-	egoscale "github.com/exoscale/egoscale/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/stretchr/testify/assert"
+
+	egoscale "github.com/exoscale/egoscale/v2"
 
 	aagroup "github.com/exoscale/terraform-provider-exoscale/pkg/resources/anti_affinity_group"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/testutils"

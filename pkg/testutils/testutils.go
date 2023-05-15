@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"os"
 
-	egoscale "github.com/exoscale/egoscale/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+
+	egoscale "github.com/exoscale/egoscale/v2"
 
 	"github.com/exoscale/terraform-provider-exoscale/exoscale"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
