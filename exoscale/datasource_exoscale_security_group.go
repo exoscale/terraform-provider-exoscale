@@ -10,8 +10,9 @@ import (
 )
 
 const (
-	dsSecurityGroupAttrID   = "id"
-	dsSecurityGroupAttrName = "name"
+	dsSecurityGroupAttrID              = "id"
+	dsSecurityGroupAttrName            = "name"
+	dsSecurityGroupAttrExternalSources = "external_sources"
 )
 
 func dataSourceSecurityGroup() *schema.Resource {
@@ -31,6 +32,14 @@ Corresponding resource: [exoscale_security_group](../resources/security_group.md
 				Type:          schema.TypeString,
 				Optional:      true,
 				ConflictsWith: []string{dsSecurityGroupAttrID},
+			},
+			dsSecurityGroupAttrExternalSources: {
+				Type:     schema.TypeSet,
+				Computed: true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				Description: "The list of external network sources, in [CIDR](https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing#CIDR_notatio) notation.",
 			},
 		},
 
@@ -78,6 +87,12 @@ func dataSourceSecurityGroupRead(ctx context.Context, d *schema.ResourceData, me
 
 	if err := d.Set(dsSecurityGroupAttrName, *securityGroup.Name); err != nil {
 		return diag.FromErr(err)
+	}
+
+	if securityGroup.ExternalSources != nil {
+		if err := d.Set(resSecurityGroupAttrExternalSources, *securityGroup.ExternalSources); err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
 	tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
