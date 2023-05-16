@@ -36,4 +36,8 @@ directory for complete configuration examples.
 - `id` (String) The security group ID to match (conflicts with `name`)
 - `name` (String) The name to match (conflicts with `id`)
 
+### Read-Only
+
+- `external_sources` (Set of String) The list of external network sources, in [CIDR](https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing#CIDR_notatio) notation.
+
 
