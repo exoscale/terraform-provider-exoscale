@@ -8,11 +8,12 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/exoscale/egoscale"
-	"github.com/exoscale/terraform-provider-exoscale/pkg/general"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+
+	"github.com/exoscale/egoscale"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/general"
 )
 
 const (
@@ -240,7 +241,7 @@ func resourceCompute() *schema.Resource {
 	}
 }
 
-func resourceComputeCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceComputeCreate(d *schema.ResourceData, meta interface{}) error { //nolint:gocyclo
 	tflog.Debug(context.Background(), "beginning create", map[string]interface{}{
 		"id": resourceComputeIDString(d),
 	})
@@ -585,7 +586,7 @@ func resourceComputeRead(d *schema.ResourceData, meta interface{}) error {
 	return resourceComputeApply(d, machine)
 }
 
-func resourceComputeUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceComputeUpdate(d *schema.ResourceData, meta interface{}) error { //nolint:gocyclo
 	tflog.Debug(context.Background(), "beginning update", map[string]interface{}{
 		"id": resourceComputeIDString(d),
 	})

@@ -8,9 +8,10 @@ import (
 	"fmt"
 	"strings"
 
-	egoscale "github.com/exoscale/egoscale/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+
+	egoscale "github.com/exoscale/egoscale/v2"
 )
 
 // in returns true if v is found in list.

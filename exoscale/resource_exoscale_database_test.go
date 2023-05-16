@@ -6,11 +6,12 @@ import (
 	"fmt"
 	"net/http"
 
-	exoapi "github.com/exoscale/egoscale/v2/api"
-	"github.com/exoscale/egoscale/v2/oapi"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+
+	exoapi "github.com/exoscale/egoscale/v2/api"
+	"github.com/exoscale/egoscale/v2/oapi"
 )
 
 // Note: at the moment we can't test updating the `plan` attribute, as the Aiven API

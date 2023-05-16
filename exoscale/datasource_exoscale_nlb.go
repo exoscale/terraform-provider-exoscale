@@ -4,9 +4,10 @@ import (
 	"context"
 	"errors"
 
-	exoapi "github.com/exoscale/egoscale/v2/api"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+
+	exoapi "github.com/exoscale/egoscale/v2/api"
 )
 
 const (

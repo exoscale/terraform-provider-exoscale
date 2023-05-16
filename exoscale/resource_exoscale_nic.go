@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/exoscale/egoscale"
-	"github.com/exoscale/terraform-provider-exoscale/pkg/general"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+
+	"github.com/exoscale/egoscale"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/general"
 )
 
 func resourceNICIDString(d general.ResourceIDStringer) string {

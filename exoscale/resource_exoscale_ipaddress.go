@@ -7,11 +7,12 @@ import (
 	"net"
 	"regexp"
 
-	"github.com/exoscale/egoscale"
-	"github.com/exoscale/terraform-provider-exoscale/pkg/general"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+
+	"github.com/exoscale/egoscale"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/general"
 )
 
 func resourceIPAddressIDString(d general.ResourceIDStringer) string {
@@ -311,7 +312,7 @@ func resourceIPAddressRead(d *schema.ResourceData, meta interface{}) error {
 	return resourceIPAddressApply(d, resp.(*egoscale.IPAddress), client)
 }
 
-func resourceIPAddressUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceIPAddressUpdate(d *schema.ResourceData, meta interface{}) error { //nolint:gocyclo
 	tflog.Debug(context.Background(), "beginning update", map[string]interface{}{
 		"id": resourceIPAddressIDString(d),
 	})

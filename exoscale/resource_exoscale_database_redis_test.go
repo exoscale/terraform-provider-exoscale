@@ -5,11 +5,12 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/exoscale/egoscale/v2/oapi"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/exoscale/egoscale/v2/oapi"
 )
 
 var (
