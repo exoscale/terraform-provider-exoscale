@@ -351,10 +351,6 @@ func resourceDatabaseApplyMysql(ctx context.Context, d *schema.ResourceData, cli
 		return err
 	}
 
-	if err := d.Set(resDatabaseAttrURI, defaultString(databaseService.Uri, "")); err != nil {
-		return err
-	}
-
 	mysql := make(map[string]interface{})
 
 	if databaseService.BackupSchedule != nil {

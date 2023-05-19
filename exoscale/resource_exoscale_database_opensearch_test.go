@@ -114,7 +114,6 @@ func TestAccResourceDatabase_Opensearch(t *testing.T) {
 						resDatabaseAttrTerminationProtection: validation.ToDiagFunc(validation.NoZeroValues), //
 						resDatabaseAttrType:                  validateString("opensearch"),
 						resDatabaseAttrUpdatedAt:             validation.ToDiagFunc(validation.NoZeroValues),
-						resDatabaseAttrURI:                   validation.ToDiagFunc(validation.NoZeroValues),
 						resDatabaseAttrMaintenanceDOW:        validateString(testAccResourceDatabaseMaintenanceDOW),
 						resDatabaseAttrMaintenanceTime:       validateString(testAccResourceDatabaseMaintenanceTime),
 						"opensearch.0." + resDatabaseAttrOpensearchIPFilter + ".0":                                                                                      validateString("0.0.0.0/0"),
@@ -180,7 +179,6 @@ func TestAccResourceDatabase_Opensearch(t *testing.T) {
 						resDatabaseAttrTerminationProtection: validation.ToDiagFunc(validation.NoZeroValues), //
 						resDatabaseAttrType:                  validateString("opensearch"),
 						resDatabaseAttrUpdatedAt:             validation.ToDiagFunc(validation.NoZeroValues),
-						resDatabaseAttrURI:                   validation.ToDiagFunc(validation.NoZeroValues),
 						resDatabaseAttrMaintenanceDOW:        validateString(testAccResourceDatabaseMaintenanceDOWUpdated),
 						resDatabaseAttrMaintenanceTime:       validateString(testAccResourceDatabaseMaintenanceTimeUpdated),
 						"opensearch.0." + resDatabaseAttrOpensearchIPFilter + ".0":                                                                                      validateString("1.1.1.1/32"),
@@ -228,7 +226,6 @@ func TestAccResourceDatabase_Opensearch(t *testing.T) {
 						resDatabaseAttrTerminationProtection: validation.ToDiagFunc(validation.NoZeroValues),
 						resDatabaseAttrType:                  validateString("opensearch"),
 						resDatabaseAttrUpdatedAt:             validation.ToDiagFunc(validation.NoZeroValues),
-						resDatabaseAttrURI:                   validation.ToDiagFunc(validation.NoZeroValues),
 						resDatabaseAttrMaintenanceDOW:        validateString(testAccResourceDatabaseMaintenanceDOWUpdated),
 						resDatabaseAttrMaintenanceTime:       validateString(testAccResourceDatabaseMaintenanceTimeUpdated),
 						"opensearch.0." + resDatabaseAttrOpensearchIPFilter + ".0":                                                                                      validateString("1.1.1.1/32"),

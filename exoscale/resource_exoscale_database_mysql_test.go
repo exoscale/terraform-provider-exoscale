@@ -156,7 +156,6 @@ func TestAccResourceDatabase_Mysql(t *testing.T) {
 						resDatabaseAttrState:                                     validation.ToDiagFunc(validation.NoZeroValues),
 						resDatabaseAttrCA:                                        validation.ToDiagFunc(validation.NoZeroValues),
 						resDatabaseAttrUpdatedAt:                                 validation.ToDiagFunc(validation.NoZeroValues),
-						resDatabaseAttrURI:                                       validation.ToDiagFunc(validation.NoZeroValues),
 						resDatabaseAttrMysql(resDatabaseAttrMysqlBackupSchedule): validateString(testAccResourceDatabaseMysqlBackupSchedule),
 						resDatabaseAttrMysql(resDatabaseAttrMysqlIPFilter) + ".0": validation.ToDiagFunc(
 							validation.StringMatch(regexp.MustCompile(testAccResourceDatabaseMysqlIPFilter[0]), ""),
@@ -238,7 +237,6 @@ func TestAccResourceDatabase_Mysql(t *testing.T) {
 							resDatabaseAttrState:           validation.ToDiagFunc(validation.NoZeroValues),
 							resDatabaseAttrCA:              validation.ToDiagFunc(validation.NoZeroValues),
 							resDatabaseAttrType:            validateString("mysql"),
-							resDatabaseAttrURI:             validation.ToDiagFunc(validation.NoZeroValues),
 							resDatabaseAttrUpdatedAt:       validation.ToDiagFunc(validation.NoZeroValues),
 							resDatabaseAttrMysql(resDatabaseAttrMysqlBackupSchedule):  validateString(testAccResourceDatabaseMysqlBackupScheduleUpdated),
 							resDatabaseAttrMysql(resDatabaseAttrMysqlIPFilter) + ".#": validateString("0"),

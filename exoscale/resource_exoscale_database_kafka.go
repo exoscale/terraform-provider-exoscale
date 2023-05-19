@@ -449,10 +449,6 @@ func resourceDatabaseApplyKafka(ctx context.Context, d *schema.ResourceData, cli
 		return err
 	}
 
-	if err := d.Set(resDatabaseAttrURI, defaultString(databaseService.Uri, "")); err != nil {
-		return err
-	}
-
 	kafka := make(map[string]interface{})
 
 	if v := databaseService.KafkaConnectSettings; v != nil {

@@ -168,7 +168,6 @@ func TestAccResourceDatabase_Pg(t *testing.T) {
 						resDatabaseAttrState:                               validation.ToDiagFunc(validation.NoZeroValues),
 						resDatabaseAttrCA:                                  validation.ToDiagFunc(validation.NoZeroValues),
 						resDatabaseAttrUpdatedAt:                           validation.ToDiagFunc(validation.NoZeroValues),
-						resDatabaseAttrURI:                                 validation.ToDiagFunc(validation.NoZeroValues),
 						resDatabaseAttrPg(resDatabaseAttrPgBackupSchedule): validateString(testAccResourceDatabasePgBackupSchedule),
 						resDatabaseAttrPg(resDatabaseAttrPgIPFilter) + ".0": validation.ToDiagFunc(
 							validation.StringMatch(regexp.MustCompile(testAccResourceDatabasePgIPFilter[0]), ""),
@@ -269,7 +268,6 @@ func TestAccResourceDatabase_Pg(t *testing.T) {
 							resDatabaseAttrState:                                validation.ToDiagFunc(validation.NoZeroValues),
 							resDatabaseAttrCA:                                   validation.ToDiagFunc(validation.NoZeroValues),
 							resDatabaseAttrType:                                 validateString("pg"),
-							resDatabaseAttrURI:                                  validation.ToDiagFunc(validation.NoZeroValues),
 							resDatabaseAttrUpdatedAt:                            validation.ToDiagFunc(validation.NoZeroValues),
 							resDatabaseAttrPg(resDatabaseAttrPgBackupSchedule):  validateString(testAccResourceDatabasePgBackupScheduleUpdated),
 							resDatabaseAttrPg(resDatabaseAttrPgIPFilter) + ".#": validateString("0"),
