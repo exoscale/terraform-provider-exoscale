@@ -82,7 +82,6 @@ directory for complete configuration examples.
 - `nodes` (Number) The number of nodes of the database service.
 - `state` (String) The current state of the database service.
 - `updated_at` (String) The date of the latest database service update.
-- `uri` (String, Sensitive) The database service connection URI.
 
 <a id="nestedblock--kafka"></a>
 ### Nested Schema for `kafka`
