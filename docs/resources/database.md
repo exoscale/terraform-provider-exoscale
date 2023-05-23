@@ -40,10 +40,6 @@ resource "exoscale_database" "my_database" {
     })
   }
 }
-
-output "my_database_uri" {
-  value = exoscale_database.my_database.uri
-}
 ```
 
 Please refer to the [examples](https://github.com/exoscale/terraform-provider-exoscale/tree/master/examples/)

@@ -25,7 +25,3 @@ resource "exoscale_database" "my_database" {
     })
   }
 }
-
-output "my_database_uri" {
-  value = exoscale_database.my_database.uri
-}
