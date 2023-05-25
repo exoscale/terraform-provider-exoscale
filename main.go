@@ -26,7 +26,7 @@ func main() {
 
 	ctx := context.Background()
 
-	upgradedSdkServer, err := tf5to6server.UpgradeServer(
+	upgradedProvider, err := tf5to6server.UpgradeServer(
 		ctx,
 		exoscale.Provider().GRPCProvider,
 	)
@@ -38,7 +38,7 @@ func main() {
 	providers := []func() tfprotov6.ProviderServer{
 		providerserver.NewProtocol6(provider.New("TODO")()),
 		func() tfprotov6.ProviderServer {
-			return upgradedSdkServer
+			return upgradedProvider
 		},
 	}
 

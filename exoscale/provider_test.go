@@ -51,7 +51,7 @@ func init() {
 
 	testEnvironment = os.Getenv("EXOSCALE_API_ENVIRONMENT")
 	if testEnvironment == "" {
-		testEnvironment = defaultEnvironment
+		testEnvironment = DefaultEnvironment
 	}
 }
 

@@ -64,9 +64,9 @@ func resourceDomain() *schema.Resource {
 		},
 
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(defaultTimeout),
-			Read:   schema.DefaultTimeout(defaultTimeout),
-			Delete: schema.DefaultTimeout(defaultTimeout),
+			Create: schema.DefaultTimeout(DefaultTimeout),
+			Read:   schema.DefaultTimeout(DefaultTimeout),
+			Delete: schema.DefaultTimeout(DefaultTimeout),
 		},
 
 		SchemaVersion: 1,

@@ -84,10 +84,10 @@ Corresponding data source: [exoscale_domain_record](../data-sources/domain_recor
 		},
 
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(defaultTimeout),
-			Read:   schema.DefaultTimeout(defaultTimeout),
-			Update: schema.DefaultTimeout(defaultTimeout),
-			Delete: schema.DefaultTimeout(defaultTimeout),
+			Create: schema.DefaultTimeout(DefaultTimeout),
+			Read:   schema.DefaultTimeout(DefaultTimeout),
+			Update: schema.DefaultTimeout(DefaultTimeout),
+			Delete: schema.DefaultTimeout(DefaultTimeout),
 		},
 
 		SchemaVersion: 1,
