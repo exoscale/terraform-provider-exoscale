@@ -15,6 +15,8 @@ import (
 	exov2 "github.com/exoscale/egoscale/v2"
 
 	"github.com/exoscale/terraform-provider-exoscale/exoscale"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/zones"
 )
 
 const (
@@ -34,12 +36,7 @@ const (
 
 var _ provider.Provider = &ExoscaleProvider{}
 
-type ExoscaleProvider struct {
-	// Version is an example field that can be set with an actual provider
-	// version on release, "dev" when the provider is built and ran locally,
-	// and "test" when running acceptance testing.
-	Version string
-}
+type ExoscaleProvider struct{}
 
 type ExoscaleProviderModel struct {
 	Key             types.String  `tfsdk:"key"`
@@ -117,12 +114,6 @@ func (p *ExoscaleProvider) Schema(ctx context.Context, req provider.SchemaReques
 			},
 		},
 	}
-}
-
-type ExoscaleProviderConfig struct {
-	Config      exoscale.BaseConfig
-	Client      *exov2.Client
-	Environment string
 }
 
 func multiEnvDefault(ks []string, dv string) string {
@@ -276,13 +267,16 @@ func (p *ExoscaleProvider) Configure(ctx context.Context, req provider.Configure
 		defaultTimeout := exoscale.DefaultTimeout.Seconds()
 
 		timeoutRaw := envDefault("EXOSCALE_TIMEOUT", "")
-
-		var err error
-		timeout, err = strconv.ParseFloat(timeoutRaw, 64)
-		if err != nil {
-			resp.Diagnostics.AddError(err.Error(), "")
-
+		if timeoutRaw == "" {
 			timeout = defaultTimeout
+		} else {
+			var err error
+			timeout, err = strconv.ParseFloat(timeoutRaw, 64)
+			if err != nil {
+				resp.Diagnostics.AddError(err.Error(), "")
+
+				timeout = defaultTimeout
+			}
 		}
 	}
 
@@ -316,6 +310,10 @@ func (p *ExoscaleProvider) Configure(ctx context.Context, req provider.Configure
 		GZIPUserData:    gzipUserData,
 	}
 
+	clv1 := exoscale.GetComputeClient(map[string]interface{}{
+		"config": baseConfig,
+	})
+
 	clv2, err := exoscale.CreateClient(&baseConfig)
 	if err != nil {
 		resp.Diagnostics.AddError(err.Error(), "")
@@ -323,29 +321,24 @@ func (p *ExoscaleProvider) Configure(ctx context.Context, req provider.Configure
 		return
 	}
 
-	resp.ResourceData = ExoscaleProviderConfig{
+	_ = clv2
+
+	resp.DataSourceData = &config.ExoscaleProviderConfig{
 		Config:      baseConfig,
-		Client:      clv2,
+		ClientV1:    clv1,
+		ClientV2:    clv2,
 		Environment: environment,
 	}
 }
 
 func (p *ExoscaleProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
-		// Provider specific implementation
+		func() datasource.DataSource {
+			return &zones.ZonesDataSource{}
+		},
 	}
 }
 
 func (p *ExoscaleProvider) Resources(ctx context.Context) []func() resource.Resource {
-	return []func() resource.Resource{
-		// Provider specific implementation
-	}
-}
-
-func New(version string) func() provider.Provider {
-	return func() provider.Provider {
-		return &ExoscaleProvider{
-			Version: version,
-		}
-	}
+	return []func() resource.Resource{}
 }
