@@ -15,8 +15,9 @@ const (
 	//  global endpoint.
 	DefaultZone = "ch-gva-2"
 
-	DefaultEnvironment = "api"
-	DefaultTimeout     = 5 * time.Minute
+	DefaultEnvironment  = "api"
+	DefaultTimeout      = 5 * time.Minute
+	DefaultGzipUserData = true
 
 	ComputeMaxUserDataLength = 32768
 )

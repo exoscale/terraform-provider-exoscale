@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/exoscale/egoscale"
 	exov2 "github.com/exoscale/egoscale/v2"
@@ -14,6 +13,8 @@ import (
 	retryablehttp "github.com/hashicorp/go-retryablehttp"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/logging"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/meta"
+
+	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
 )
 
 const (
@@ -22,8 +23,6 @@ const (
 	DefaultComputeEndpoint = "https://api.exoscale.com/v1"
 	DefaultDNSEndpoint     = "https://api.exoscale.com/dns"
 	DefaultEnvironment     = "api"
-	DefaultTimeout         = 5 * time.Minute
-	DefaultGzipUserData    = true
 )
 
 // UserAgent represents the User Agent to advertise in outgoing HTTP requests.
@@ -33,22 +32,9 @@ var UserAgent = fmt.Sprintf("Exoscale-Terraform-Provider/%s (%s) Terraform-SDK/%
 	meta.SDKVersionString(),
 	egoscale.UserAgent)
 
-// BaseConfig represents the provider structure
-type BaseConfig struct {
-	Key             string
-	Secret          string
-	Timeout         time.Duration
-	ComputeEndpoint string
-	DNSEndpoint     string
-	Environment     string
-	GZIPUserData    bool
-	ComputeClient   *egoscale.Client
-	DNSClient       *egoscale.Client
-}
-
-func getConfig(meta interface{}) BaseConfig {
+func getConfig(meta interface{}) providerConfig.BaseConfig {
 	t := meta.(map[string]interface{})
-	return t["config"].(BaseConfig)
+	return t["config"].(providerConfig.BaseConfig)
 }
 
 func getClient(endpoint string, meta interface{}) *egoscale.Client {

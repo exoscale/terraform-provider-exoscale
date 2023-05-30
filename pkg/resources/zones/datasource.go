@@ -83,8 +83,6 @@ func (d *ZonesDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
 		attrs = append(attrs, basetypes.NewStringValue(zone.Name))
 	}
 
-	// TODO sort
-
 	zonesList, listDiags := types.ListValue(types.StringType, attrs)
 	resp.Diagnostics.Append(listDiags...)
 	data.Zones = zonesList

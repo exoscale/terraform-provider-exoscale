@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	"github.com/exoscale/egoscale"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/general"
 )
 
@@ -58,9 +59,9 @@ func resourceSecondaryIPAddress() *schema.Resource {
 		},
 
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(DefaultTimeout),
-			Read:   schema.DefaultTimeout(DefaultTimeout),
-			Delete: schema.DefaultTimeout(DefaultTimeout),
+			Create: schema.DefaultTimeout(config.DefaultTimeout),
+			Read:   schema.DefaultTimeout(config.DefaultTimeout),
+			Delete: schema.DefaultTimeout(config.DefaultTimeout),
 		},
 	}
 }

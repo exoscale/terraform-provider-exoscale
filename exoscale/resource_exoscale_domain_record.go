@@ -7,6 +7,7 @@ import (
 
 	exo "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/general"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -84,10 +85,10 @@ Corresponding data source: [exoscale_domain_record](../data-sources/domain_recor
 		},
 
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(DefaultTimeout),
-			Read:   schema.DefaultTimeout(DefaultTimeout),
-			Update: schema.DefaultTimeout(DefaultTimeout),
-			Delete: schema.DefaultTimeout(DefaultTimeout),
+			Create: schema.DefaultTimeout(config.DefaultTimeout),
+			Read:   schema.DefaultTimeout(config.DefaultTimeout),
+			Update: schema.DefaultTimeout(config.DefaultTimeout),
+			Delete: schema.DefaultTimeout(config.DefaultTimeout),
 		},
 
 		SchemaVersion: 1,

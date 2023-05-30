@@ -8,8 +8,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6/tf6server"
+	"github.com/hashicorp/terraform-plugin-mux/tf5to6server"
 	"github.com/hashicorp/terraform-plugin-mux/tf6muxserver"
 
+	"github.com/exoscale/terraform-provider-exoscale/exoscale"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/provider"
 )
 
@@ -30,17 +32,19 @@ func main() {
 
 	ctx := context.Background()
 
-	// upgradedProvider, err := tf5to6server.UpgradeServer(
-	// 	ctx,
-	// 	exoscale.Provider().GRPCProvider,
-	// )
-	// check(err)
+	upgradedProvider, err := tf5to6server.UpgradeServer(
+		ctx,
+		exoscale.Provider().GRPCProvider,
+	)
+	check(err)
+
+	newProvider := providerserver.NewProtocol6(&provider.ExoscaleProvider{})
 
 	providers := []func() tfprotov6.ProviderServer{
-		providerserver.NewProtocol6(&provider.ExoscaleProvider{}),
-		// func() tfprotov6.ProviderServer {
-		// 	return upgradedProvider
-		// },
+		func() tfprotov6.ProviderServer {
+			return upgradedProvider
+		},
+		newProvider,
 	}
 
 	muxServer, err := tf6muxserver.NewMuxServer(ctx, providers...)

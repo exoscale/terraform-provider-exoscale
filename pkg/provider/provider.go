@@ -3,8 +3,6 @@ package provider
 import (
 	"context"
 	"fmt"
-	"os"
-	"strconv"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
@@ -15,7 +13,8 @@ import (
 	exov2 "github.com/exoscale/egoscale/v2"
 
 	"github.com/exoscale/terraform-provider-exoscale/exoscale"
-	"github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
+	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/zones"
 )
 
@@ -100,13 +99,13 @@ func (p *ExoscaleProvider) Schema(ctx context.Context, req provider.SchemaReques
 				Optional: true,
 				MarkdownDescription: fmt.Sprintf(
 					"Timeout in seconds for waiting on compute resources to become available (by default: %.0f)",
-					exoscale.DefaultTimeout.Seconds()),
+					config.DefaultTimeout.Seconds()),
 			},
 			GzipUserDataAttrName: schema.BoolAttribute{
 				Optional: true,
 				MarkdownDescription: fmt.Sprintf(
 					"Defines if the user-data of compute instances should be gzipped (by default: %t)",
-					exoscale.DefaultGzipUserData),
+					config.DefaultGzipUserData),
 			},
 			DelayAttrName: schema.Int64Attribute{
 				Optional:           true,
@@ -116,31 +115,13 @@ func (p *ExoscaleProvider) Schema(ctx context.Context, req provider.SchemaReques
 	}
 }
 
-func multiEnvDefault(ks []string, dv string) string {
-	for _, k := range ks {
-		if v := os.Getenv(k); v != "" {
-			return v
-		}
-	}
-
-	return dv
-}
-
-func envDefault(k string, dv string) string {
-	if v := os.Getenv(k); v != "" {
-		return v
-	}
-
-	return dv
-}
-
 func (p *ExoscaleProviderModel) GetRegion() string {
 	if !p.Profile.IsNull() {
 		return p.Profile.ValueString()
 	}
 
 	if p.Region.IsNull() {
-		return multiEnvDefault([]string{
+		return providerConfig.GetMultiEnvDefault([]string{
 			"EXOSCALE_PROFILE",
 			"EXOSCALE_REGION",
 			"CLOUDSTACK_PROFILE",
@@ -158,7 +139,7 @@ func (p *ExoscaleProvider) Configure(ctx context.Context, req provider.Configure
 
 	var key string
 	if data.Key.IsNull() {
-		key = multiEnvDefault([]string{
+		key = providerConfig.GetMultiEnvDefault([]string{
 			"EXOSCALE_KEY",
 			"EXOSCALE_API_KEY",
 			"CLOUDSTACK_KEY",
@@ -175,7 +156,7 @@ func (p *ExoscaleProvider) Configure(ctx context.Context, req provider.Configure
 
 	var secret string
 	if data.Secret.IsNull() {
-		secret = multiEnvDefault([]string{
+		secret = providerConfig.GetMultiEnvDefault([]string{
 			"EXOSCALE_SECRET",
 			"EXOSCALE_SECRET_KEY",
 			"EXOSCALE_API_SECRET",
@@ -188,7 +169,7 @@ func (p *ExoscaleProvider) Configure(ctx context.Context, req provider.Configure
 
 	var endpoint string
 	if data.ComputeEndpoint.IsNull() {
-		endpoint = multiEnvDefault([]string{
+		endpoint = providerConfig.GetMultiEnvDefault([]string{
 			"EXOSCALE_ENDPOINT",
 			"EXOSCALE_API_ENDPOINT",
 			"EXOSCALE_COMPUTE_ENDPOINT",
@@ -200,7 +181,7 @@ func (p *ExoscaleProvider) Configure(ctx context.Context, req provider.Configure
 
 	var dnsEndpoint string
 	if data.DnsEndpoint.IsNull() {
-		dnsEndpoint = envDefault("EXOSCALE_DNS_ENDPOINT", exoscale.DefaultDNSEndpoint)
+		dnsEndpoint = providerConfig.GetEnvDefault("EXOSCALE_DNS_ENDPOINT", exoscale.DefaultDNSEndpoint)
 	} else {
 		dnsEndpoint = data.Key.ValueString()
 	}
@@ -220,7 +201,7 @@ func (p *ExoscaleProvider) Configure(ctx context.Context, req provider.Configure
 	} else {
 		var config string
 		if data.Config.IsNull() {
-			config = multiEnvDefault([]string{
+			config = providerConfig.GetMultiEnvDefault([]string{
 				"EXOSCALE_CONFIG",
 				"CLOUDSTACK_CONFIG",
 			}, exoscale.DefaultConfig)
@@ -255,7 +236,7 @@ func (p *ExoscaleProvider) Configure(ctx context.Context, req provider.Configure
 
 	var environment string
 	if data.Environment.IsNull() {
-		environment = multiEnvDefault([]string{
+		environment = providerConfig.GetMultiEnvDefault([]string{
 			"EXOSCALE_API_ENVIRONMENT",
 		}, exoscale.DefaultEnvironment)
 	} else {
@@ -264,35 +245,23 @@ func (p *ExoscaleProvider) Configure(ctx context.Context, req provider.Configure
 
 	var timeout float64
 	if data.Timeout.IsNull() {
-		defaultTimeout := exoscale.DefaultTimeout.Seconds()
+		var err error
+		timeout, err = providerConfig.GetTimeout()
 
-		timeoutRaw := envDefault("EXOSCALE_TIMEOUT", "")
-		if timeoutRaw == "" {
-			timeout = defaultTimeout
-		} else {
-			var err error
-			timeout, err = strconv.ParseFloat(timeoutRaw, 64)
-			if err != nil {
-				resp.Diagnostics.AddError(err.Error(), "")
-
-				timeout = defaultTimeout
-			}
+		if err != nil {
+			resp.Diagnostics.AddError(err.Error(), "")
 		}
+	} else {
+		timeout = data.Timeout.ValueFloat64()
 	}
 
 	var gzipUserData bool
 	if data.GzipUserData.IsNull() {
-		gzipUserDataRaw := envDefault("EXOSCALE_GZIP_USER_DATA", "")
-		if gzipUserDataRaw == "" {
-			gzipUserData = exoscale.DefaultGzipUserData
-		} else {
-			var err error
-			gzipUserData, err = strconv.ParseBool(gzipUserDataRaw)
-			if err != nil {
-				resp.Diagnostics.AddError(err.Error(), "")
+		var err error
+		gzipUserData, err = providerConfig.GetGZIPUserData()
 
-				gzipUserData = exoscale.DefaultGzipUserData
-			}
+		if err != nil {
+			resp.Diagnostics.AddError(err.Error(), "")
 		}
 	} else {
 		gzipUserData = data.GzipUserData.ValueBool()
@@ -300,7 +269,7 @@ func (p *ExoscaleProvider) Configure(ctx context.Context, req provider.Configure
 
 	exov2.UserAgent = exoscale.UserAgent
 
-	baseConfig := exoscale.BaseConfig{
+	baseConfig := providerConfig.BaseConfig{
 		Key:             key,
 		Secret:          secret,
 		Timeout:         exoscale.ConvertTimeout(timeout),
@@ -323,7 +292,7 @@ func (p *ExoscaleProvider) Configure(ctx context.Context, req provider.Configure
 
 	_ = clv2
 
-	resp.DataSourceData = &config.ExoscaleProviderConfig{
+	resp.DataSourceData = &providerConfig.ExoscaleProviderConfig{
 		Config:      baseConfig,
 		ClientV1:    clv1,
 		ClientV2:    clv2,

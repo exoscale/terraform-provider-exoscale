@@ -17,13 +17,15 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	ini "gopkg.in/ini.v1"
 
-	"github.com/exoscale/egoscale"
-	exov2 "github.com/exoscale/egoscale/v2"
-	exoapi "github.com/exoscale/egoscale/v2/api"
-
+	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/anti_affinity_group"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/instance"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/instance_pool"
+
+	"github.com/exoscale/egoscale"
+	exov2 "github.com/exoscale/egoscale/v2"
+	exoapi "github.com/exoscale/egoscale/v2/api"
+	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
 )
 
 const (
@@ -59,12 +61,6 @@ func Provider() *schema.Provider {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Description: "Exoscale API key",
-				DefaultFunc: schema.MultiEnvDefaultFunc([]string{
-					"EXOSCALE_KEY",
-					"EXOSCALE_API_KEY",
-					"CLOUDSTACK_KEY",
-					"CLOUDSTACK_API_KEY",
-				}, nil),
 			},
 			"token": {
 				Type:       schema.TypeString,
@@ -76,22 +72,11 @@ func Provider() *schema.Provider {
 				Optional:    true,
 				Sensitive:   true,
 				Description: "Exoscale API secret",
-				DefaultFunc: schema.MultiEnvDefaultFunc([]string{
-					"EXOSCALE_SECRET",
-					"EXOSCALE_SECRET_KEY",
-					"EXOSCALE_API_SECRET",
-					"CLOUDSTACK_SECRET",
-					"CLOUDSTACK_SECRET_KEY",
-				}, nil),
 			},
 			"config": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Description: fmt.Sprintf("CloudStack ini configuration filename (by default: %s)", DefaultConfig),
-				DefaultFunc: schema.MultiEnvDefaultFunc([]string{
-					"EXOSCALE_CONFIG",
-					"CLOUDSTACK_CONFIG",
-				}, DefaultConfig),
 			},
 			"profile": {
 				Type:       schema.TypeString,
@@ -102,52 +87,34 @@ func Provider() *schema.Provider {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Description: fmt.Sprintf("CloudStack ini configuration section name (by default: %s)", DefaultProfile),
-				DefaultFunc: schema.MultiEnvDefaultFunc([]string{
-					"EXOSCALE_PROFILE",
-					"EXOSCALE_REGION",
-					"CLOUDSTACK_PROFILE",
-					"CLOUDSTACK_REGION",
-				}, DefaultProfile),
 			},
 			"compute_endpoint": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Description: fmt.Sprintf("Exoscale CloudStack API endpoint (by default: %s)", DefaultComputeEndpoint),
-				DefaultFunc: schema.MultiEnvDefaultFunc([]string{
-					"EXOSCALE_ENDPOINT",
-					"EXOSCALE_API_ENDPOINT",
-					"EXOSCALE_COMPUTE_ENDPOINT",
-					"CLOUDSTACK_ENDPOINT",
-				}, DefaultComputeEndpoint),
 			},
 			"dns_endpoint": {
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
 				Description: fmt.Sprintf("Exoscale DNS API endpoint (by default: %s)", DefaultDNSEndpoint),
-				DefaultFunc: schema.EnvDefaultFunc("EXOSCALE_DNS_ENDPOINT", DefaultDNSEndpoint),
 			},
 			"environment": {
 				Type:     schema.TypeString,
 				Optional: true,
-				DefaultFunc: schema.MultiEnvDefaultFunc([]string{
-					"EXOSCALE_API_ENVIRONMENT",
-				}, DefaultEnvironment),
 			},
 			"timeout": {
 				Type:     schema.TypeFloat,
-				Required: true,
+				Optional: true,
 				Description: fmt.Sprintf(
 					"Timeout in seconds for waiting on compute resources to become available (by default: %.0f)",
-					DefaultTimeout.Seconds()),
-				DefaultFunc: schema.EnvDefaultFunc("EXOSCALE_TIMEOUT", DefaultTimeout.Seconds()),
+					config.DefaultTimeout.Seconds()),
 			},
 			"gzip_user_data": {
 				Type:     schema.TypeBool,
 				Optional: true,
 				Description: fmt.Sprintf(
 					"Defines if the user-data of compute instances should be gzipped (by default: %t)",
-					DefaultGzipUserData),
-				DefaultFunc: schema.EnvDefaultFunc("EXOSCALE_GZIP_USER_DATA", DefaultGzipUserData),
+					config.DefaultGzipUserData),
 			},
 			"delay": {
 				Type:       schema.TypeInt,
@@ -300,7 +267,7 @@ func ConvertTimeout(timeout float64) time.Duration {
 	return time.Duration(int64(timeout) * int64(time.Second))
 }
 
-func CreateClient(baseConfig *BaseConfig) (*exov2.Client, error) {
+func CreateClient(baseConfig *providerConfig.BaseConfig) (*exov2.Client, error) {
 	return exov2.NewClient(
 		baseConfig.Key,
 		baseConfig.Secret,
@@ -324,10 +291,55 @@ func ProviderConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 	exov2.UserAgent = UserAgent
 
 	key, keyOK := d.GetOk("key")
+	if !keyOK {
+		key = providerConfig.GetMultiEnvDefault([]string{
+			"EXOSCALE_KEY",
+			"EXOSCALE_API_KEY",
+			"CLOUDSTACK_KEY",
+			"CLOUDSTACK_API_KEY",
+		}, "")
+
+		if key != "" {
+			keyOK = true
+		}
+	}
+
 	secret, secretOK := d.GetOk("secret")
-	endpoint := d.Get("compute_endpoint").(string)
-	dnsEndpoint := d.Get("dns_endpoint").(string)
-	environment := d.Get("environment").(string)
+	if !secretOK {
+		secret = providerConfig.GetMultiEnvDefault([]string{
+			"EXOSCALE_SECRET",
+			"EXOSCALE_SECRET_KEY",
+			"EXOSCALE_API_SECRET",
+			"CLOUDSTACK_SECRET",
+			"CLOUDSTACK_SECRET_KEY",
+		}, "")
+
+		if secret != "" {
+			secretOK = true
+		}
+	}
+
+	endpoint, endpointOK := d.GetOk("compute_endpoint")
+	if !endpointOK {
+		endpoint = providerConfig.GetMultiEnvDefault([]string{
+			"EXOSCALE_ENDPOINT",
+			"EXOSCALE_API_ENDPOINT",
+			"EXOSCALE_COMPUTE_ENDPOINT",
+			"CLOUDSTACK_ENDPOINT",
+		}, DefaultComputeEndpoint)
+	}
+
+	dnsEndpoint, dnsEndpointOK := d.GetOk("dns_endpoint")
+	if !dnsEndpointOK {
+		dnsEndpoint = providerConfig.GetEnvDefault("EXOSCALE_DNS_ENDPOINT", DefaultDNSEndpoint)
+	}
+
+	environment, environmentOK := d.GetOk("environment")
+	if !environmentOK {
+		environment = providerConfig.GetEnvDefault(
+			"EXOSCALE_API_ENVIRONMENT",
+			DefaultEnvironment)
+	}
 
 	// deprecation support
 	token, tokenOK := d.GetOk("token")
@@ -347,8 +359,24 @@ func ProviderConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 			)
 		}
 	} else {
-		configFile := d.Get("config").(string)
-		region := d.Get("region")
+		configFile, configFileOK := d.Get("config").(string)
+		if !configFileOK {
+			configFile = providerConfig.GetMultiEnvDefault(
+				[]string{
+					"EXOSCALE_CONFIG",
+					"CLOUDSTACK_CONFIG",
+				}, DefaultConfig)
+		}
+
+		region, regionOK := d.GetOk("region")
+		if !regionOK {
+			region = providerConfig.GetMultiEnvDefault([]string{
+				"EXOSCALE_PROFILE",
+				"EXOSCALE_REGION",
+				"CLOUDSTACK_PROFILE",
+				"CLOUDSTACK_REGION",
+			}, DefaultProfile)
+		}
 
 		// deprecation support
 		profile, profileOK := d.GetOk("profile")
@@ -377,14 +405,37 @@ func ProviderConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 		}
 	}
 
-	baseConfig := BaseConfig{
+	var timeout float64
+	timeoutRaw, timeoutOk := d.GetOk("timeout")
+	if timeoutOk {
+		timeout = timeoutRaw.(float64)
+	} else {
+		var err error
+		timeout, err = providerConfig.GetTimeout()
+
+		if err != nil {
+			return nil, diag.FromErr(err)
+		}
+	}
+
+	gzipUserData, gzipUserDataOK := d.GetOk("gzip_user_data")
+	if !gzipUserDataOK {
+		var err error
+		gzipUserData, err = providerConfig.GetGZIPUserData()
+
+		if err != nil {
+			return nil, diag.FromErr(err)
+		}
+	}
+
+	baseConfig := providerConfig.BaseConfig{
 		Key:             key.(string),
 		Secret:          secret.(string),
-		Timeout:         ConvertTimeout(d.Get("timeout").(float64)),
-		ComputeEndpoint: endpoint,
-		DNSEndpoint:     dnsEndpoint,
-		Environment:     environment,
-		GZIPUserData:    d.Get("gzip_user_data").(bool),
+		Timeout:         ConvertTimeout(timeout),
+		ComputeEndpoint: endpoint.(string),
+		DNSEndpoint:     dnsEndpoint.(string),
+		Environment:     environment.(string),
+		GZIPUserData:    gzipUserData.(bool),
 	}
 
 	clv2, err := CreateClient(&baseConfig)
