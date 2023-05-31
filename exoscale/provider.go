@@ -180,6 +180,7 @@ func Provider() *schema.Provider {
 }
 
 type Configuration struct {
+	Key         string
 	Secret      string
 	Endpoint    string
 	DNSEndpoint string
@@ -240,14 +241,14 @@ func ParseConfig(configFile, key, region string) (*Configuration, error) {
 	if err != nil {
 		return nil, err
 	}
-	key = t.String()
+	var configuration Configuration
+
+	configuration.Key = t.String()
 
 	s, err := section.GetKey("secret")
 	if err != nil {
 		return nil, err
 	}
-
-	var configuration Configuration
 
 	configuration.Secret = s.String()
 
@@ -398,6 +399,10 @@ func ProviderConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 
 		if configuration.DNSEndpoint != "" {
 			dnsEndpoint = configuration.DNSEndpoint
+		}
+
+		if configuration.Key != "" {
+			key = configuration.Key
 		}
 
 		if configuration.Secret != "" {

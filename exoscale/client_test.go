@@ -4,15 +4,18 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
+	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
 )
 
 func Test_getClient(t *testing.T) {
 	var (
 		testEndpoint = DefaultComputeEndpoint
-		testConfig   = BaseConfig{
+		testConfig   = providerConfig.BaseConfig{
 			Key:     "x",
 			Secret:  "x",
-			Timeout: DefaultTimeout,
+			Timeout: config.DefaultTimeout,
 		}
 	)
 

@@ -229,6 +229,10 @@ func (p *ExoscaleProvider) Configure(ctx context.Context, req provider.Configure
 			dnsEndpoint = configuration.DNSEndpoint
 		}
 
+		if configuration.Key != "" {
+			key = configuration.Key
+		}
+
 		if configuration.Secret != "" {
 			secret = configuration.Secret
 		}

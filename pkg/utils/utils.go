@@ -7,7 +7,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"strings"
 
@@ -192,7 +192,7 @@ func DecodeUserData(data string) (string, error) {
 	}
 	defer gz.Close()
 
-	userData, err := ioutil.ReadAll(gz)
+	userData, err := io.ReadAll(gz)
 	if err != nil {
 		return "", err
 	}
