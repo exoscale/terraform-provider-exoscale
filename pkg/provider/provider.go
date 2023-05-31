@@ -29,7 +29,7 @@ const (
 	DnsEndpointAttrName     = "dns_endpoint"
 	EnvironmentAttrName     = "environment"
 	TimeoutAttrName         = "timeout"
-	GzipUserDataAttrName    = "gzip_user_data"
+	GZIPUserDataAttrName    = "gzip_user_data"
 	DelayAttrName           = "delay"
 )
 
@@ -101,7 +101,7 @@ func (p *ExoscaleProvider) Schema(ctx context.Context, req provider.SchemaReques
 					"Timeout in seconds for waiting on compute resources to become available (by default: %.0f)",
 					config.DefaultTimeout.Seconds()),
 			},
-			GzipUserDataAttrName: schema.BoolAttribute{
+			GZIPUserDataAttrName: schema.BoolAttribute{
 				Optional: true,
 				MarkdownDescription: fmt.Sprintf(
 					"Defines if the user-data of compute instances should be gzipped (by default: %t)",

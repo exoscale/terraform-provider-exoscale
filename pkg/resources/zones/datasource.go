@@ -15,8 +15,6 @@ import (
 
 const (
 	ZonesAttrName = "zones"
-	ZoneName      = "name"
-	ZoneID        = "id"
 )
 
 var _ datasource.DataSourceWithConfigure = &ZonesDataSource{}
@@ -26,9 +24,7 @@ type ZonesDataSource struct {
 }
 
 type ZonesDataSourceModel struct {
-	Zones types.List   `tfsdk:"zones"`
-	Name  types.String `tfsdk:"name"`
-	ID    types.String `tfsdk:"id"`
+	Zones types.List `tfsdk:"zones"`
 }
 
 func (d *ZonesDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
@@ -46,12 +42,6 @@ func (d *ZonesDataSource) Metadata(ctx context.Context, req datasource.MetadataR
 func (d *ZonesDataSource) GetSchema() schema.Schema {
 	return schema.Schema{
 		Attributes: map[string]schema.Attribute{
-			"name": schema.StringAttribute{
-				Required: true,
-			},
-			"id": schema.StringAttribute{
-				Computed: true,
-			},
 			ZonesAttrName: schema.ListAttribute{
 				ElementType: types.StringType,
 				Computed:    true,

@@ -1,5 +1,4 @@
 data "exoscale_zones" "example_zones" {
-  name = "gva"
 }
 
 # Outputs
