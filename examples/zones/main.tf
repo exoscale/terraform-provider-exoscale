@@ -1,5 +1,4 @@
-data "exoscale_zones" "example_zones" {
-}
+data "exoscale_zones" "example_zones" {}
 
 # Outputs
 output "zones_output" {
