@@ -164,6 +164,7 @@ func Provider() *schema.Provider {
 			"exoscale_compute_instance_list": instance.DataSourceList(),
 			"exoscale_compute_ipaddress":     dataSourceComputeIPAddress(),
 			"exoscale_compute_template":      dataSourceComputeTemplate(),
+			"exoscale_database_uri":          dataSourceDatabaseURI(),
 			"exoscale_domain":                dataSourceDomain(),
 			"exoscale_domain_record":         dataSourceDomainRecord(),
 			"exoscale_elastic_ip":            dataSourceElasticIP(),

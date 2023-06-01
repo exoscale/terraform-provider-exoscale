@@ -484,7 +484,6 @@ func resourceDatabaseApplyOpensearch(ctx context.Context, d *schema.ResourceData
 		resDatabaseAttrTerminationProtection: resp.JSON200.TerminationProtection,
 		resDatabaseAttrType:                  resp.JSON200.Type,
 		resDatabaseAttrUpdatedAt:             resp.JSON200.UpdatedAt.String(),
-		resDatabaseAttrURI:                   defaultString(resp.JSON200.Uri, ""),
 		resDatabaseAttrMaintenanceDOW:        resp.JSON200.Maintenance.Dow,
 		resDatabaseAttrMaintenanceTime:       resp.JSON200.Maintenance.Time,
 		"opensearch":                         []interface{}{opensearch},

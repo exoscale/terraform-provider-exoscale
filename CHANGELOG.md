@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.49.0 (TO BE RELEASE)
+
+BREAKING CHANGES:
+
+- Resource `exoscale_database` doesn't expose anymore the `uri` read-only property. This allows one to use this resource without being
+forced to store this sensitive information in the Terraform state.
+
+FEATURES:
+
+- Datasource `exoscale_database_uri`: optionally expose an `exoscale_database` URI (which contains sensitive information).
+
 ## 0.48.0 (May 12, 2023)
 
 FEATURES:

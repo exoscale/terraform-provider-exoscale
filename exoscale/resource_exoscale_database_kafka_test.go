@@ -151,7 +151,6 @@ func TestAccResourceDatabase_Kafka(t *testing.T) {
 						resDatabaseAttrState:           validation.ToDiagFunc(validation.NoZeroValues),
 						resDatabaseAttrCA:              validation.ToDiagFunc(validation.NoZeroValues),
 						resDatabaseAttrUpdatedAt:       validation.ToDiagFunc(validation.NoZeroValues),
-						resDatabaseAttrURI:             validation.ToDiagFunc(validation.NoZeroValues),
 						resDatabaseAttrKafka(resDatabaseAttrKafkaIPFilter) + ".0": validation.ToDiagFunc(
 							validation.StringMatch(regexp.MustCompile(testAccResourceDatabaseKafkaIPFilter[0]), ""),
 						),
@@ -242,7 +241,6 @@ func TestAccResourceDatabase_Kafka(t *testing.T) {
 							resDatabaseAttrState:           validation.ToDiagFunc(validation.NoZeroValues),
 							resDatabaseAttrCA:              validation.ToDiagFunc(validation.NoZeroValues),
 							resDatabaseAttrType:            validateString("kafka"),
-							resDatabaseAttrURI:             validation.ToDiagFunc(validation.NoZeroValues),
 							resDatabaseAttrUpdatedAt:       validation.ToDiagFunc(validation.NoZeroValues),
 							resDatabaseAttrKafka(resDatabaseAttrKafkaEnableCertAuth):  validateString("false"),
 							resDatabaseAttrKafka(resDatabaseAttrKafkaEnableSASLAuth):  validateString("true"),

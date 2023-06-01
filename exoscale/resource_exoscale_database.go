@@ -33,7 +33,6 @@ const (
 	resDatabaseAttrCA                    = "ca_certificate"
 	resDatabaseAttrTerminationProtection = "termination_protection"
 	resDatabaseAttrType                  = "type"
-	resDatabaseAttrURI                   = "uri"
 	resDatabaseAttrUpdatedAt             = "updated_at"
 	resDatabaseAttrZone                  = "zone"
 )
@@ -139,12 +138,6 @@ func resourceDatabase() *schema.Resource {
 			Description: "The date of the latest database service update.",
 			Type:        schema.TypeString,
 			Computed:    true,
-		},
-		resDatabaseAttrURI: {
-			Description: "The database service connection URI.",
-			Type:        schema.TypeString,
-			Computed:    true,
-			Sensitive:   true,
 		},
 		resDatabaseAttrZone: {
 			Type:             schema.TypeString,

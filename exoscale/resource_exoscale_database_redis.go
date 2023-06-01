@@ -255,10 +255,6 @@ func resourceDatabaseApplyRedis(ctx context.Context, d *schema.ResourceData, cli
 		return err
 	}
 
-	if err := d.Set(resDatabaseAttrURI, defaultString(databaseService.Uri, "")); err != nil {
-		return err
-	}
-
 	redis := make(map[string]interface{})
 
 	if v := databaseService.IpFilter; v != nil {

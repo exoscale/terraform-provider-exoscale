@@ -405,10 +405,6 @@ func resourceDatabaseApplyPg(ctx context.Context, d *schema.ResourceData, client
 		return err
 	}
 
-	if err := d.Set(resDatabaseAttrURI, defaultString(databaseService.Uri, "")); err != nil {
-		return err
-	}
-
 	pg := make(map[string]interface{})
 
 	if databaseService.BackupSchedule != nil {
