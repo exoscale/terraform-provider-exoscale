@@ -17,13 +17,15 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	ini "gopkg.in/ini.v1"
 
-	"github.com/exoscale/egoscale"
-	exov2 "github.com/exoscale/egoscale/v2"
-	exoapi "github.com/exoscale/egoscale/v2/api"
-
+	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/anti_affinity_group"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/instance"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/instance_pool"
+
+	"github.com/exoscale/egoscale"
+	exov2 "github.com/exoscale/egoscale/v2"
+	exoapi "github.com/exoscale/egoscale/v2/api"
+	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
 )
 
 const (
@@ -59,12 +61,6 @@ func Provider() *schema.Provider {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Description: "Exoscale API key",
-				DefaultFunc: schema.MultiEnvDefaultFunc([]string{
-					"EXOSCALE_KEY",
-					"EXOSCALE_API_KEY",
-					"CLOUDSTACK_KEY",
-					"CLOUDSTACK_API_KEY",
-				}, nil),
 			},
 			"token": {
 				Type:       schema.TypeString,
@@ -76,22 +72,11 @@ func Provider() *schema.Provider {
 				Optional:    true,
 				Sensitive:   true,
 				Description: "Exoscale API secret",
-				DefaultFunc: schema.MultiEnvDefaultFunc([]string{
-					"EXOSCALE_SECRET",
-					"EXOSCALE_SECRET_KEY",
-					"EXOSCALE_API_SECRET",
-					"CLOUDSTACK_SECRET",
-					"CLOUDSTACK_SECRET_KEY",
-				}, nil),
 			},
 			"config": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				Description: fmt.Sprintf("CloudStack ini configuration filename (by default: %s)", defaultConfig),
-				DefaultFunc: schema.MultiEnvDefaultFunc([]string{
-					"EXOSCALE_CONFIG",
-					"CLOUDSTACK_CONFIG",
-				}, defaultConfig),
+				Description: fmt.Sprintf("CloudStack ini configuration filename (by default: %s)", DefaultConfig),
 			},
 			"profile": {
 				Type:       schema.TypeString,
@@ -101,53 +86,35 @@ func Provider() *schema.Provider {
 			"region": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				Description: fmt.Sprintf("CloudStack ini configuration section name (by default: %s)", defaultProfile),
-				DefaultFunc: schema.MultiEnvDefaultFunc([]string{
-					"EXOSCALE_PROFILE",
-					"EXOSCALE_REGION",
-					"CLOUDSTACK_PROFILE",
-					"CLOUDSTACK_REGION",
-				}, defaultProfile),
+				Description: fmt.Sprintf("CloudStack ini configuration section name (by default: %s)", DefaultProfile),
 			},
 			"compute_endpoint": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				Description: fmt.Sprintf("Exoscale CloudStack API endpoint (by default: %s)", defaultComputeEndpoint),
-				DefaultFunc: schema.MultiEnvDefaultFunc([]string{
-					"EXOSCALE_ENDPOINT",
-					"EXOSCALE_API_ENDPOINT",
-					"EXOSCALE_COMPUTE_ENDPOINT",
-					"CLOUDSTACK_ENDPOINT",
-				}, defaultComputeEndpoint),
+				Description: fmt.Sprintf("Exoscale CloudStack API endpoint (by default: %s)", DefaultComputeEndpoint),
 			},
 			"dns_endpoint": {
 				Type:        schema.TypeString,
-				Required:    true,
-				Description: fmt.Sprintf("Exoscale DNS API endpoint (by default: %s)", defaultDNSEndpoint),
-				DefaultFunc: schema.EnvDefaultFunc("EXOSCALE_DNS_ENDPOINT", defaultDNSEndpoint),
+				Optional:    true,
+				Description: fmt.Sprintf("Exoscale DNS API endpoint (by default: %s)", DefaultDNSEndpoint),
 			},
 			"environment": {
 				Type:     schema.TypeString,
 				Optional: true,
-				DefaultFunc: schema.MultiEnvDefaultFunc([]string{
-					"EXOSCALE_API_ENVIRONMENT",
-				}, defaultEnvironment),
 			},
 			"timeout": {
 				Type:     schema.TypeFloat,
-				Required: true,
+				Optional: true,
 				Description: fmt.Sprintf(
 					"Timeout in seconds for waiting on compute resources to become available (by default: %.0f)",
-					defaultTimeout.Seconds()),
-				DefaultFunc: schema.EnvDefaultFunc("EXOSCALE_TIMEOUT", defaultTimeout.Seconds()),
+					config.DefaultTimeout.Seconds()),
 			},
 			"gzip_user_data": {
 				Type:     schema.TypeBool,
 				Optional: true,
 				Description: fmt.Sprintf(
 					"Defines if the user-data of compute instances should be gzipped (by default: %t)",
-					defaultGzipUserData),
-				DefaultFunc: schema.EnvDefaultFunc("EXOSCALE_GZIP_USER_DATA", defaultGzipUserData),
+					config.DefaultGzipUserData),
 			},
 			"delay": {
 				Type:       schema.TypeInt,
@@ -209,21 +176,172 @@ func Provider() *schema.Provider {
 			"exoscale_ssh_keypair":          resourceSSHKeypair(),
 		},
 
-		ConfigureContextFunc: providerConfigure,
+		ConfigureContextFunc: ProviderConfigure,
 	}
 }
 
-func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
+type Configuration struct {
+	Key         string
+	Secret      string
+	Endpoint    string
+	DNSEndpoint string
+}
+
+func ParseConfig(configFile, key, region string) (*Configuration, error) {
+	// Support `~/`
+	usr, err := user.Current()
+	if err == nil {
+		if strings.HasPrefix(configFile, "~/") {
+			configFile = filepath.Join(usr.HomeDir, configFile[2:])
+		}
+	}
+
+	// Convert relative path to absolute
+	configFile, _ = filepath.Abs(configFile)
+	localConfig, _ := filepath.Abs("cloudstack.ini")
+
+	inis := []string{
+		configFile,
+		localConfig,
+	}
+
+	if usr != nil {
+		inis = append(inis, filepath.Join(usr.HomeDir, ".cloudstack.ini"))
+	}
+
+	// Stops at the first file that exists
+	configFile = ""
+	for _, i := range inis {
+		if _, err := os.Stat(i); err != nil {
+			continue
+		}
+		configFile = i
+		break
+	}
+
+	if configFile == "" {
+		return nil, fmt.Errorf(
+			"key (%s), secret are missing, or config file not found within: %s",
+			key,
+			strings.Join(inis, ", "),
+		)
+	}
+
+	cfg, err := ini.LoadSources(ini.LoadOptions{IgnoreInlineComment: true}, configFile)
+	if err != nil {
+		return nil, fmt.Errorf("config file not loaded: %s", err)
+	}
+
+	section, err := cfg.GetSection(region)
+	if err != nil {
+		sections := strings.Join(cfg.SectionStrings(), ", ")
+		return nil, fmt.Errorf("%s. Existing sections: %s", err, sections)
+	}
+
+	t, err := section.GetKey("key")
+	if err != nil {
+		return nil, err
+	}
+	var configuration Configuration
+
+	configuration.Key = t.String()
+
+	s, err := section.GetKey("secret")
+	if err != nil {
+		return nil, err
+	}
+
+	configuration.Secret = s.String()
+
+	e, err := section.GetKey("endpoint")
+	if err == nil {
+		configuration.Endpoint = e.String()
+		configuration.DNSEndpoint = strings.Replace(configuration.Endpoint, "/"+apiVersion, "/dns", 1)
+		if strings.Contains(configuration.DNSEndpoint, "/"+legacyAPIVersion) {
+			configuration.DNSEndpoint = strings.Replace(configuration.Endpoint, "/"+legacyAPIVersion, "/dns", 1)
+		}
+	}
+
+	return &configuration, nil
+}
+
+func ConvertTimeout(timeout float64) time.Duration {
+	return time.Duration(int64(timeout) * int64(time.Second))
+}
+
+func CreateClient(baseConfig *providerConfig.BaseConfig) (*exov2.Client, error) {
+	return exov2.NewClient(
+		baseConfig.Key,
+		baseConfig.Secret,
+		exov2.ClientOptWithAPIEndpoint(baseConfig.ComputeEndpoint),
+		exov2.ClientOptWithTimeout(baseConfig.Timeout),
+		exov2.ClientOptWithHTTPClient(func() *http.Client {
+			rc := retryablehttp.NewClient()
+			rc.Logger = LeveledTFLogger{Verbose: logging.IsDebugOrHigher()}
+			hc := rc.StandardClient()
+			if logging.IsDebugOrHigher() {
+				hc.Transport = logging.NewSubsystemLoggingHTTPTransport("exoscale", hc.Transport)
+			}
+			return hc
+		}()))
+}
+
+func ProviderConfigure(_ context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	// we only need to set UserAgent once, so lets do it right away.
-	exov2.UserAgent = userAgent
+	exov2.UserAgent = UserAgent
 
 	key, keyOK := d.GetOk("key")
+	if !keyOK {
+		key = providerConfig.GetMultiEnvDefault([]string{
+			"EXOSCALE_KEY",
+			"EXOSCALE_API_KEY",
+			"CLOUDSTACK_KEY",
+			"CLOUDSTACK_API_KEY",
+		}, "")
+
+		if key != "" {
+			keyOK = true
+		}
+	}
+
 	secret, secretOK := d.GetOk("secret")
-	endpoint := d.Get("compute_endpoint").(string)
-	dnsEndpoint := d.Get("dns_endpoint").(string)
-	environment := d.Get("environment").(string)
+	if !secretOK {
+		secret = providerConfig.GetMultiEnvDefault([]string{
+			"EXOSCALE_SECRET",
+			"EXOSCALE_SECRET_KEY",
+			"EXOSCALE_API_SECRET",
+			"CLOUDSTACK_SECRET",
+			"CLOUDSTACK_SECRET_KEY",
+		}, "")
+
+		if secret != "" {
+			secretOK = true
+		}
+	}
+
+	endpoint, endpointOK := d.GetOk("compute_endpoint")
+	if !endpointOK {
+		endpoint = providerConfig.GetMultiEnvDefault([]string{
+			"EXOSCALE_ENDPOINT",
+			"EXOSCALE_API_ENDPOINT",
+			"EXOSCALE_COMPUTE_ENDPOINT",
+			"CLOUDSTACK_ENDPOINT",
+		}, DefaultComputeEndpoint)
+	}
+
+	dnsEndpoint, dnsEndpointOK := d.GetOk("dns_endpoint")
+	if !dnsEndpointOK {
+		dnsEndpoint = providerConfig.GetEnvDefault("EXOSCALE_DNS_ENDPOINT", DefaultDNSEndpoint)
+	}
+
+	environment, environmentOK := d.GetOk("environment")
+	if !environmentOK {
+		environment = providerConfig.GetEnvDefault(
+			"EXOSCALE_API_ENVIRONMENT",
+			DefaultEnvironment)
+	}
 
 	// deprecation support
 	token, tokenOK := d.GetOk("token")
@@ -231,6 +349,8 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 		keyOK = tokenOK
 		key = token
 	}
+
+	var configuration *Configuration
 
 	if keyOK || secretOK {
 		if !keyOK || !secretOK {
@@ -241,8 +361,24 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 			)
 		}
 	} else {
-		configFile := d.Get("config").(string)
-		region := d.Get("region")
+		configFile, configFileOK := d.Get("config").(string)
+		if !configFileOK {
+			configFile = providerConfig.GetMultiEnvDefault(
+				[]string{
+					"EXOSCALE_CONFIG",
+					"CLOUDSTACK_CONFIG",
+				}, DefaultConfig)
+		}
+
+		region, regionOK := d.GetOk("region")
+		if !regionOK {
+			region = providerConfig.GetMultiEnvDefault([]string{
+				"EXOSCALE_PROFILE",
+				"EXOSCALE_REGION",
+				"CLOUDSTACK_PROFILE",
+				"CLOUDSTACK_REGION",
+			}, DefaultProfile)
+		}
 
 		// deprecation support
 		profile, profileOK := d.GetOk("profile")
@@ -250,102 +386,65 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 			region = profile
 		}
 
-		// Support `~/`
-		usr, err := user.Current()
-		if err == nil {
-			if strings.HasPrefix(configFile, "~/") {
-				configFile = filepath.Join(usr.HomeDir, configFile[2:])
-			}
-		}
-
-		// Convert relative path to absolute
-		configFile, _ = filepath.Abs(configFile)
-		localConfig, _ := filepath.Abs("cloudstack.ini")
-
-		inis := []string{
-			configFile,
-			localConfig,
-		}
-
-		if usr != nil {
-			inis = append(inis, filepath.Join(usr.HomeDir, ".cloudstack.ini"))
-		}
-
-		// Stops at the first file that exists
-		configFile = ""
-		for _, i := range inis {
-			if _, err := os.Stat(i); err != nil {
-				continue
-			}
-			configFile = i
-			break
-		}
-
-		if configFile == "" {
-			return nil, diag.Errorf(
-				"key (%s), secret are missing, or config file not found within: %s",
-				key,
-				strings.Join(inis, ", "),
-			)
-		}
-
-		cfg, err := ini.LoadSources(ini.LoadOptions{IgnoreInlineComment: true}, configFile)
-		if err != nil {
-			return nil, diag.Errorf("config file not loaded: %s", err)
-		}
-
-		section, err := cfg.GetSection(region.(string))
-		if err != nil {
-			sections := strings.Join(cfg.SectionStrings(), ", ")
-			return nil, diag.Errorf("%s. Existing sections: %s", err, sections)
-		}
-
-		t, err := section.GetKey("key")
+		var err error
+		configuration, err = ParseConfig(configFile, key.(string), region.(string))
 		if err != nil {
 			return nil, diag.FromErr(err)
 		}
-		key = t.String()
+	}
 
-		s, err := section.GetKey("secret")
+	if configuration != nil {
+		if configuration.Endpoint != "" {
+			endpoint = configuration.Endpoint
+		}
+
+		if configuration.DNSEndpoint != "" {
+			dnsEndpoint = configuration.DNSEndpoint
+		}
+
+		if configuration.Key != "" {
+			key = configuration.Key
+		}
+
+		if configuration.Secret != "" {
+			secret = configuration.Secret
+		}
+	}
+
+	var timeout float64
+	timeoutRaw, timeoutOk := d.GetOk("timeout")
+	if timeoutOk {
+		timeout = timeoutRaw.(float64)
+	} else {
+		var err error
+		timeout, err = providerConfig.GetTimeout()
+
 		if err != nil {
 			return nil, diag.FromErr(err)
 		}
-		secret = s.String()
+	}
 
-		e, err := section.GetKey("endpoint")
-		if err == nil {
-			endpoint = e.String()
-			dnsEndpoint = strings.Replace(endpoint, "/"+apiVersion, "/dns", 1)
-			if strings.Contains(dnsEndpoint, "/"+legacyAPIVersion) {
-				dnsEndpoint = strings.Replace(endpoint, "/"+legacyAPIVersion, "/dns", 1)
-			}
+	gzipUserData, gzipUserDataOK := d.GetOk("gzip_user_data")
+	if !gzipUserDataOK {
+		var err error
+		gzipUserData, err = providerConfig.GetGZIPUserData()
+
+		if err != nil {
+			return nil, diag.FromErr(err)
 		}
 	}
 
-	baseConfig := BaseConfig{
-		key:             key.(string),
-		secret:          secret.(string),
-		timeout:         time.Duration(int64(d.Get("timeout").(float64)) * int64(time.Second)),
-		computeEndpoint: endpoint,
-		dnsEndpoint:     dnsEndpoint,
-		environment:     environment,
-		gzipUserData:    d.Get("gzip_user_data").(bool),
+	baseConfig := providerConfig.BaseConfig{
+		Key:             key.(string),
+		Secret:          secret.(string),
+		Timeout:         ConvertTimeout(timeout),
+		ComputeEndpoint: endpoint.(string),
+		DNSEndpoint:     dnsEndpoint.(string),
+		Environment:     environment.(string),
+		GZIPUserData:    gzipUserData.(bool),
 	}
 
-	clv2, err := exov2.NewClient(
-		baseConfig.key,
-		baseConfig.secret,
-		exov2.ClientOptWithAPIEndpoint(endpoint),
-		exov2.ClientOptWithTimeout(baseConfig.timeout),
-		exov2.ClientOptWithHTTPClient(func() *http.Client {
-			rc := retryablehttp.NewClient()
-			rc.Logger = LeveledTFLogger{Verbose: logging.IsDebugOrHigher()}
-			hc := rc.StandardClient()
-			if logging.IsDebugOrHigher() {
-				hc.Transport = logging.NewSubsystemLoggingHTTPTransport("exoscale", hc.Transport)
-			}
-			return hc
-		}()))
+	clv2, err := CreateClient(&baseConfig)
 	if err != nil {
 		return nil, diag.FromErr(err)
 	}

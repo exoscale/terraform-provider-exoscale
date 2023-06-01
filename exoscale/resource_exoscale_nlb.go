@@ -9,6 +9,7 @@ import (
 
 	egoscale "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/general"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -91,10 +92,10 @@ func resourceNLB() *schema.Resource {
 		},
 
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(defaultTimeout),
-			Read:   schema.DefaultTimeout(defaultTimeout),
-			Update: schema.DefaultTimeout(defaultTimeout),
-			Delete: schema.DefaultTimeout(defaultTimeout),
+			Create: schema.DefaultTimeout(config.DefaultTimeout),
+			Read:   schema.DefaultTimeout(config.DefaultTimeout),
+			Update: schema.DefaultTimeout(config.DefaultTimeout),
+			Delete: schema.DefaultTimeout(config.DefaultTimeout),
 		},
 	}
 }

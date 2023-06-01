@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	"github.com/exoscale/egoscale"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/general"
 )
 
@@ -62,10 +63,10 @@ func resourceNIC() *schema.Resource {
 		Exists: resourceNICExists,
 
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(defaultTimeout),
-			Read:   schema.DefaultTimeout(defaultTimeout),
-			Update: schema.DefaultTimeout(defaultTimeout),
-			Delete: schema.DefaultTimeout(defaultTimeout),
+			Create: schema.DefaultTimeout(config.DefaultTimeout),
+			Read:   schema.DefaultTimeout(config.DefaultTimeout),
+			Update: schema.DefaultTimeout(config.DefaultTimeout),
+			Delete: schema.DefaultTimeout(config.DefaultTimeout),
 		},
 	}
 }

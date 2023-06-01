@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/exoscale/egoscale"
 	exov2 "github.com/exoscale/egoscale/v2"
@@ -14,41 +13,28 @@ import (
 	retryablehttp "github.com/hashicorp/go-retryablehttp"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/logging"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/meta"
+
+	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
 )
 
 const (
-	defaultConfig          = "cloudstack.ini"
-	defaultProfile         = "cloudstack"
-	defaultComputeEndpoint = "https://api.exoscale.com/v1"
-	defaultDNSEndpoint     = "https://api.exoscale.com/dns"
-	defaultEnvironment     = "api"
-	defaultTimeout         = 5 * time.Minute
-	defaultGzipUserData    = true
+	DefaultConfig          = "cloudstack.ini"
+	DefaultProfile         = "cloudstack"
+	DefaultComputeEndpoint = "https://api.exoscale.com/v1"
+	DefaultDNSEndpoint     = "https://api.exoscale.com/dns"
+	DefaultEnvironment     = "api"
 )
 
-// userAgent represents the User Agent to advertise in outgoing HTTP requests.
-var userAgent = fmt.Sprintf("Exoscale-Terraform-Provider/%s (%s) Terraform-SDK/%s %s",
+// UserAgent represents the User Agent to advertise in outgoing HTTP requests.
+var UserAgent = fmt.Sprintf("Exoscale-Terraform-Provider/%s (%s) Terraform-SDK/%s %s",
 	version.Version,
 	version.Commit,
 	meta.SDKVersionString(),
 	egoscale.UserAgent)
 
-// BaseConfig represents the provider structure
-type BaseConfig struct {
-	key             string
-	secret          string
-	timeout         time.Duration
-	computeEndpoint string
-	dnsEndpoint     string
-	environment     string
-	gzipUserData    bool
-	computeClient   *egoscale.Client
-	dnsClient       *egoscale.Client
-}
-
-func getConfig(meta interface{}) BaseConfig {
+func getConfig(meta interface{}) providerConfig.BaseConfig {
 	t := meta.(map[string]interface{})
-	return t["config"].(BaseConfig)
+	return t["config"].(providerConfig.BaseConfig)
 }
 
 func getClient(endpoint string, meta interface{}) *egoscale.Client {
@@ -65,10 +51,10 @@ func getClient(endpoint string, meta interface{}) *egoscale.Client {
 
 	client := egoscale.NewClient(
 		endpoint,
-		config.key,
-		config.secret,
+		config.Key,
+		config.Secret,
 		egoscale.WithHTTPClient(httpClient),
-		egoscale.WithTimeout(config.timeout),
+		egoscale.WithTimeout(config.Timeout),
 		egoscale.WithoutV2Client(),
 	)
 
@@ -77,10 +63,10 @@ func getClient(endpoint string, meta interface{}) *egoscale.Client {
 	// (http.Transport) clashes.
 	// This can be removed once the only API used is V2.
 	clientExoV2, err := exov2.NewClient(
-		config.key,
-		config.secret,
+		config.Key,
+		config.Secret,
 		exov2.ClientOptWithAPIEndpoint(endpoint),
-		exov2.ClientOptWithTimeout(config.timeout),
+		exov2.ClientOptWithTimeout(config.Timeout),
 		exov2.ClientOptWithHTTPClient(func() *http.Client {
 			rc := retryablehttp.NewClient()
 			rc.Logger = LeveledTFLogger{Verbose: logging.IsDebugOrHigher()}
@@ -102,27 +88,27 @@ func getClient(endpoint string, meta interface{}) *egoscale.Client {
 // GetComputeClient builds a CloudStack client
 func GetComputeClient(meta interface{}) *egoscale.Client {
 	config := getConfig(meta)
-	if config.computeClient == nil {
-		config.computeClient = getClient(config.computeEndpoint, meta)
+	if config.ComputeClient == nil {
+		config.ComputeClient = getClient(config.ComputeEndpoint, meta)
 	}
-	return config.computeClient
+	return config.ComputeClient
 }
 
 // GetDNSClient builds a DNS client
 func GetDNSClient(meta interface{}) *egoscale.Client {
 	config := getConfig(meta)
-	if config.dnsClient == nil {
-		config.dnsClient = getClient(config.dnsEndpoint, meta)
+	if config.DNSClient == nil {
+		config.DNSClient = getClient(config.DNSEndpoint, meta)
 	}
-	return config.dnsClient
+	return config.DNSClient
 }
 
 func getEnvironment(meta interface{}) string {
 	config := getConfig(meta)
-	if config.environment == "" {
-		return defaultEnvironment
+	if config.Environment == "" {
+		return DefaultEnvironment
 	}
-	return config.environment
+	return config.Environment
 }
 
 type defaultTransport struct {
@@ -131,7 +117,7 @@ type defaultTransport struct {
 
 // RoundTrip executes a single HTTP transaction while augmenting requests with custom headers.
 func (t *defaultTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	req.Header.Add("User-Agent", userAgent)
+	req.Header.Add("User-Agent", UserAgent)
 
 	resp, err := t.next.RoundTrip(req)
 	if err != nil {
