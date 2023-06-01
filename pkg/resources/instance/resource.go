@@ -94,6 +94,7 @@ func Resource() *schema.Resource {
 						Description:      "The IPv4 address to request as static DHCP lease if the network interface is attached to a *managed* private network.",
 						Type:             schema.TypeString,
 						Optional:         true,
+						Computed:         true,
 						ValidateDiagFunc: validation.ToDiagFunc(validation.IsIPv4Address),
 					},
 					"network_id": {

@@ -94,7 +94,7 @@ resource "exoscale_compute_instance" "test" {
 	reverse_dns             = "%s"
 
   network_interface {
-	network_id = exoscale_private_network.test.id
+	  network_id = exoscale_private_network.test.id
   }
 
   labels = {
@@ -340,6 +340,53 @@ resource "exoscale_compute_instance" "test" {
 		rUserDataUpdated,
 		rStateRunning,
 		rLabelValueUpdated,
+	)
+
+	rConfigCreateManaged = fmt.Sprintf(`
+locals {
+  zone = "%s"
+}
+
+data "exoscale_compute_template" "ubuntu" {
+  zone = local.zone
+  name = "Linux Ubuntu 20.04 LTS 64-bit"
+}
+
+data "exoscale_security_group" "default" {
+  name = "default"
+}
+
+resource "exoscale_private_network" "test" {
+  zone = local.zone
+  name = "%s"
+	netmask  = "255.255.255.0"
+  start_ip = "10.0.0.50"
+  end_ip   = "10.0.0.250"
+}
+
+resource "exoscale_compute_instance" "test" {
+  zone                    = local.zone
+  name                    = "%s"
+  type                    = "%s"
+  disk_size               = %d
+  template_id             = data.exoscale_compute_template.ubuntu.id
+  security_group_ids      = [data.exoscale_security_group.default.id]
+
+  network_interface {
+	  network_id = exoscale_private_network.test.id
+		ip_address = "10.0.0.100"
+  }
+
+  timeouts {
+    delete = "10m"
+  }
+}
+`,
+		testutils.TestZoneName,
+		rPrivateNetworkName,
+		rName,
+		rType,
+		rDiskSize,
 	)
 )
 
@@ -592,6 +639,46 @@ func testResource(t *testing.T) {
 						}(s),
 					)
 				},
+			},
+		},
+	})
+
+	// Test for managed network interface
+	testInstance = egoscale.Instance{}
+	testPrivateNetwork = egoscale.PrivateNetwork{}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testutils.AccPreCheck(t) },
+		ProviderFactories: testutils.Providers(),
+		CheckDestroy:      testutils.CheckInstanceDestroy(&testInstance),
+		Steps: []resource.TestStep{
+			{
+				Config: rConfigCreateManaged,
+				Check: resource.ComposeTestCheckFunc(
+					testutils.CheckInstanceExists(r, &testInstance),
+					testutils.CheckPrivateNetworkExists("exoscale_private_network.test", &testPrivateNetwork),
+					func(s *terraform.State) error {
+						a := require.New(t)
+
+						a.Equal(rDiskSize, *testInstance.DiskSize)
+						a.Equal(testutils.TestInstanceTypeIDTiny, *testInstance.InstanceTypeID)
+						a.Equal(rName, *testInstance.Name)
+						a.NotNil(testInstance.PrivateNetworkIDs)
+						a.ElementsMatch([]string{*testPrivateNetwork.ID}, *testInstance.PrivateNetworkIDs)
+
+						return nil
+					},
+					testutils.CheckResourceState(r, testutils.CheckResourceStateValidateAttributes(testutils.TestAttrs{
+						instance.AttrCreatedAt:                          validation.ToDiagFunc(validation.NoZeroValues),
+						instance.AttrDiskSize:                           testutils.ValidateString(fmt.Sprint(rDiskSize)),
+						instance.AttrName:                               testutils.ValidateString(rName),
+						instance.AttrNetworkInterface + ".#":            testutils.ValidateString("1"),
+						instance.AttrNetworkInterface + ".0.ip_address": testutils.ValidateString("10.0.0.100"),
+						instance.AttrTemplateID:                         validation.ToDiagFunc(validation.IsUUID),
+						instance.AttrType:                               testutils.ValidateString(rType),
+						instance.AttrZone:                               testutils.ValidateString(testutils.TestZoneName),
+					})),
+				),
 			},
 		},
 	})
