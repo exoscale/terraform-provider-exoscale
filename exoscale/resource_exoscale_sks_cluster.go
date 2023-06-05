@@ -423,6 +423,14 @@ func resourceSKSClusterUpdate(ctx context.Context, d *schema.ResourceData, meta 
 
 	var updated bool
 
+	// First check if we need to upgrade cluster
+	if d.HasChange(resSKSClusterAttrVersion) {
+		v := d.Get(resSKSClusterAttrVersion).(string)
+		if err = client.UpgradeSKSCluster(ctx, zone, sksCluster, v); err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
 	if d.HasChange(resSKSClusterAttrAutoUpgrade) {
 		v := d.Get(resSKSClusterAttrAutoUpgrade).(bool)
 		sksCluster.AutoUpgrade = &v

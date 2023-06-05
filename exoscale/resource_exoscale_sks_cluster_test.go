@@ -101,7 +101,7 @@ resource "exoscale_sks_cluster" "test" {
   description = "%s"
   exoscale_ccm = true
   metrics_server = false
-  auto_upgrade = false
+  auto_upgrade = true
   labels = {
     test = "%s"
   }
@@ -129,6 +129,23 @@ resource "exoscale_sks_nodepool" "test" {
 		testAccResourceSKSClusterDescriptionUpdated,
 		testAccResourceSKSClusterLabelValueUpdated,
 	)
+
+	testAccResourceSKSClusterConfig2Format = `
+locals {
+  zone = "%s"
+}
+
+resource "exoscale_sks_cluster" "test" {
+  zone = local.zone
+  name = "%s"
+  auto_upgrade = false
+
+	version = "%s"
+
+  timeouts {
+    create = "10m"
+  }
+}`
 )
 
 func TestAccResourceSKSCluster(t *testing.T) {
@@ -154,6 +171,14 @@ func TestAccResourceSKSCluster(t *testing.T) {
 		exoapi.NewReqEndpoint(os.Getenv("EXOSCALE_API_ENVIRONMENT"), testZoneName),
 	)
 
+	versions, err := client.ListSKSClusterVersions(clientctx)
+	if err != nil || len(versions) == 0 {
+		if len(versions) == 0 {
+			t.Fatal("no version returned by the API")
+		}
+		t.Fatalf("unable to retrieve SKS versions: %s", err)
+	}
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviders,
@@ -167,15 +192,6 @@ func TestAccResourceSKSCluster(t *testing.T) {
 					func(s *terraform.State) error {
 						a := assert.New(t)
 
-						// Retrieve the latest SKS version available to test the
-						// exoscale_sks_cluster.version attribute default value.
-						versions, err := client.ListSKSClusterVersions(clientctx)
-						if err != nil || len(versions) == 0 {
-							if len(versions) == 0 {
-								err = errors.New("no version returned by the API")
-							}
-							return fmt.Errorf("unable to retrieve SKS versions: %s", err)
-						}
 						latestVersion := versions[0]
 
 						a.Equal([]string{sksClusterAddonExoscaleCCM}, *sksCluster.AddOns)
@@ -216,7 +232,7 @@ func TestAccResourceSKSCluster(t *testing.T) {
 					func(s *terraform.State) error {
 						a := assert.New(t)
 
-						a.False(defaultBool(sksCluster.AutoUpgrade, false))
+						a.True(defaultBool(sksCluster.AutoUpgrade, false))
 						a.Equal(testAccResourceSKSClusterDescriptionUpdated, *sksCluster.Description)
 						a.Equal(testAccResourceSKSClusterLabelValueUpdated, (*sksCluster.Labels)["test"])
 						a.Equal(testAccResourceSKSClusterNameUpdated, *sksCluster.Name)
@@ -238,7 +254,7 @@ func TestAccResourceSKSCluster(t *testing.T) {
 					},
 					checkResourceState(r, checkResourceStateValidateAttributes(testAttrs{
 						resSKSClusterAttrAggregationLayerCA: validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Aggregation CA must be a PEM certificate")),
-						resSKSClusterAttrAutoUpgrade:        validateString("false"),
+						resSKSClusterAttrAutoUpgrade:        validateString("true"),
 						resSKSClusterAttrCNI:                validateString(defaultSKSClusterCNI),
 						resSKSClusterAttrControlPlaneCA:     validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Control-plane CA must be a PEM certificate")),
 						resSKSClusterAttrCreatedAt:          validation.ToDiagFunc(validation.NoZeroValues),
@@ -251,7 +267,6 @@ func TestAccResourceSKSCluster(t *testing.T) {
 						resSKSClusterAttrName:               validateString(testAccResourceSKSClusterNameUpdated),
 						resSKSClusterAttrServiceLevel:       validateString(defaultSKSClusterServiceLevel),
 						resSKSClusterAttrState:              validation.ToDiagFunc(validation.NoZeroValues),
-						resSKSClusterAttrVersion:            validation.ToDiagFunc(validation.NoZeroValues),
 					})),
 				),
 			},
@@ -280,7 +295,7 @@ func TestAccResourceSKSCluster(t *testing.T) {
 					return checkResourceAttributes(
 						testAttrs{
 							resSKSClusterAttrAggregationLayerCA: validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Aggregation CA must be a PEM certificate")),
-							resSKSClusterAttrAutoUpgrade:        validateString("false"),
+							resSKSClusterAttrAutoUpgrade:        validateString("true"),
 							resSKSClusterAttrCNI:                validateString(defaultSKSClusterCNI),
 							resSKSClusterAttrControlPlaneCA:     validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Control-plane CA must be a PEM certificate")),
 							resSKSClusterAttrCreatedAt:          validation.ToDiagFunc(validation.NoZeroValues),
@@ -297,6 +312,56 @@ func TestAccResourceSKSCluster(t *testing.T) {
 						},
 						s[0].Attributes)
 				},
+			},
+		},
+	})
+
+	// Test cluster Upgrade
+	sksCluster = egoscale.SKSCluster{}
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviders,
+		CheckDestroy:      testAccCheckResourceSKSClusterDestroy(&sksCluster),
+		Steps: []resource.TestStep{
+			{
+				// Create old version cluster
+				Config: fmt.Sprintf(testAccResourceSKSClusterConfig2Format, testZoneName, testAccResourceSKSClusterName, versions[1]),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckResourceSKSClusterExists(r, &sksCluster),
+					func(s *terraform.State) error {
+						a := assert.New(t)
+
+						a.Equal(testAccResourceSKSClusterName, *sksCluster.Name)
+						a.Equal(versions[1], *sksCluster.Version)
+						return nil
+					},
+					checkResourceState(r, checkResourceStateValidateAttributes(testAttrs{
+						resSKSClusterAttrAutoUpgrade: validateString("false"),
+						resSKSClusterAttrName:        validateString(testAccResourceSKSClusterName),
+						resSKSClusterAttrState:       validation.ToDiagFunc(validation.NoZeroValues),
+						resSKSClusterAttrVersion:     validateString(versions[1]),
+					})),
+				),
+			},
+			{
+				// Upgrade cluster
+				Config: fmt.Sprintf(testAccResourceSKSClusterConfig2Format, testZoneName, testAccResourceSKSClusterName, versions[0]),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckResourceSKSClusterExists(r, &sksCluster),
+					func(s *terraform.State) error {
+						a := assert.New(t)
+
+						a.Equal(testAccResourceSKSClusterName, *sksCluster.Name)
+						a.Equal(versions[0], *sksCluster.Version)
+						return nil
+					},
+					checkResourceState(r, checkResourceStateValidateAttributes(testAttrs{
+						resSKSClusterAttrAutoUpgrade: validateString("false"),
+						resSKSClusterAttrName:        validateString(testAccResourceSKSClusterName),
+						resSKSClusterAttrState:       validation.ToDiagFunc(validation.NoZeroValues),
+						resSKSClusterAttrVersion:     validateString(versions[0]),
+					})),
+				),
 			},
 		},
 	})
