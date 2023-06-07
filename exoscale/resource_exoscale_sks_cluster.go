@@ -78,9 +78,10 @@ func resourceSKSCluster() *schema.Resource {
 			Description: "Enable automatic upgrading of the control plane version.",
 		},
 		resSKSClusterAttrCNI: {
-			Type:     schema.TypeString,
-			Optional: true,
-			Default:  defaultSKSClusterCNI,
+			Type:        schema.TypeString,
+			Optional:    true,
+			Default:     defaultSKSClusterCNI,
+			Description: fmt.Sprintf("The CNI plugin that is to be used. Defaults to %q.", defaultSKSClusterCNI),
 		},
 		resSKSClusterAttrControlPlaneCA: {
 			Type:        schema.TypeString,

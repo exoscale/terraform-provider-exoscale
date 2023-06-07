@@ -24,7 +24,7 @@ description: |-
 - `addons` (Set of String, Deprecated)
 - `aggregation_ca` (String) The CA certificate (in PEM format) for TLS communications between the control plane and the aggregation layer (e.g. `metrics-server`).
 - `auto_upgrade` (Boolean) Enable automatic upgrading of the control plane version.
-- `cni` (String)
+- `cni` (String) The CNI plugin that is to be used. Defaults to "calico".
 - `control_plane_ca` (String) The CA certificate (in PEM format) for TLS communications between control plane components.
 - `created_at` (String) The cluster creation date.
 - `description` (String) A free-form text describing the cluster.
