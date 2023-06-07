@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.49.0 (TO BE RELEASE)
+## 0.49.0 (June 7, 2023)
 
 BREAKING CHANGES:
 
@@ -10,6 +10,13 @@ forced to store this sensitive information in the Terraform state.
 FEATURES:
 
 - Datasource `exoscale_database_uri`: optionally expose an `exoscale_database` URI (which contains sensitive information).
+- Datasource `exoscale_zones`.
+- `resource_sks_cluster`: allow upgrades of SKS cluster.
+
+IMPROVEMENTS:
+
+- `resource_compute_instance`: read `network_interface.ip_address` from API when not set.
+- go.mk: standardize CI with other Go repos
 
 ## 0.48.0 (May 12, 2023)
 
