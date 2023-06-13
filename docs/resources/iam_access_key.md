@@ -61,6 +61,6 @@ Optional:
 - `delete` (String)
 - `read` (String)
 
-* The symbol ❗ in an attribute indicates that modifying it, will force the creation of a new resource.
+-> The symbol ❗ in an attribute indicates that modifying it, will force the creation of a new resource.
 
 
