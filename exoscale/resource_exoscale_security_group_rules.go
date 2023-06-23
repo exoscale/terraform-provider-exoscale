@@ -782,7 +782,18 @@ func ruleToID(
 		if securityGroupRule.Network != nil {
 			name = securityGroupRule.Network.String()
 		} else {
-			userSecurityGroup, err := client.GetSecurityGroup(ctx, zone, *securityGroupRule.SecurityGroupID)
+			var nameOrID string
+
+			switch {
+			case securityGroupRule.SecurityGroupID != nil:
+				nameOrID = *securityGroupRule.SecurityGroupID
+			case securityGroupRule.SecurityGroupName != nil:
+				nameOrID = *securityGroupRule.SecurityGroupName
+			default:
+				return "", fmt.Errorf("cannot retrieve Security Group with neither ID nor name")
+			}
+
+			userSecurityGroup, err := client.GetSecurityGroup(ctx, zone, nameOrID)
 			if err != nil {
 				return "", fmt.Errorf("unable to retrieve Security Group: %w", err)
 			}
