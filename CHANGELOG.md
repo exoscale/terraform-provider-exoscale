@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.50.0 (June 23, 2023)
+
+IMPROVEMENTS:
+
+- security group: fix panic if security group has no ID in security group rule (#274)
+- README: add a note about the terraform plugin framework (#273)
+- docs: wrap ! symbol explanation in a box  (#271)
+
 ## 0.49.0 (June 7, 2023)
 
 BREAKING CHANGES:
