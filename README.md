@@ -76,6 +76,9 @@ website][tf-doc].
   repository [CI workflow][tf-exo-gh-ci], however you can execute targeted
   tests locally before submitting a Pull Request to ensure tests pass (e.g. for
   the `exoscale_compute` resource only):
+* We are migrating the provider to the [new plugin framework](https://developer.hashicorp.com/terraform/plugin/framework). 
+  If you'd like to implement new resources, please do so in the framework.
+  The [zones datasource](./pkg/resources/zones/datasource.go) may provide the necessary inspiration.
 
 ```sh
 make GO_TEST_EXTRA_ARGS="-v -run ^TestAccResourceCompute$" test-acc
