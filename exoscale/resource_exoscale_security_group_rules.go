@@ -783,11 +783,13 @@ func ruleToID(
 			name = securityGroupRule.Network.String()
 		} else {
 			var nameOrID string
-			if securityGroupRule.SecurityGroupID != nil {
+
+			switch {
+			case securityGroupRule.SecurityGroupID != nil:
 				nameOrID = *securityGroupRule.SecurityGroupID
-			} else if securityGroupRule.SecurityGroupName != nil {
+			case securityGroupRule.SecurityGroupName != nil:
 				nameOrID = *securityGroupRule.SecurityGroupName
-			} else {
+			default:
 				return "", fmt.Errorf("cannot retrieve Security Group with neither ID nor name")
 			}
 
