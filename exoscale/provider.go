@@ -146,7 +146,6 @@ func Provider() *schema.Provider {
 			"exoscale_anti_affinity_group":  anti_affinity_group.Resource(),
 			"exoscale_compute":              resourceCompute(),
 			"exoscale_compute_instance":     instance.Resource(),
-			"exoscale_database":             resourceDatabase(),
 			"exoscale_domain":               resourceDomain(),
 			"exoscale_domain_record":        resourceDomainRecord(),
 			"exoscale_elastic_ip":           resourceElasticIP(),

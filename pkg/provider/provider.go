@@ -15,6 +15,7 @@ import (
 	"github.com/exoscale/terraform-provider-exoscale/exoscale"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/database"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/zones"
 )
 
@@ -281,6 +282,13 @@ func (p *ExoscaleProvider) Configure(ctx context.Context, req provider.Configure
 		ClientV2:    clv2,
 		Environment: environment,
 	}
+
+	resp.ResourceData = &providerConfig.ExoscaleProviderConfig{
+		Config:      baseConfig,
+		ClientV1:    clv1,
+		ClientV2:    clv2,
+		Environment: environment,
+	}
 }
 
 func (p *ExoscaleProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
@@ -292,5 +300,9 @@ func (p *ExoscaleProvider) DataSources(ctx context.Context) []func() datasource.
 }
 
 func (p *ExoscaleProvider) Resources(ctx context.Context) []func() resource.Resource {
-	return []func() resource.Resource{}
+	return []func() resource.Resource{
+		func() resource.Resource {
+			return &database.Resource{}
+		},
+	}
 }
