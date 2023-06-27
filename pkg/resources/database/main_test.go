@@ -15,6 +15,7 @@ import (
 
 func TestDatabase(t *testing.T) {
 	t.Run("ResourcePg", testResourcePg)
+	t.Run("ResourceGrafana", testResourceGrafana)
 }
 
 func CheckDestroy(dbType, name string) resource.TestCheckFunc {
@@ -27,6 +28,8 @@ func CheckDestroy(dbType, name string) resource.TestCheckFunc {
 		ctx := api.WithEndpoint(context.Background(), api.NewReqEndpoint(testutils.TestEnvironment(), testutils.TestZoneName))
 
 		switch dbType {
+		case "grafana":
+			_, err = client.GetDbaasServiceGrafanaWithResponse(ctx, oapi.DbaasServiceName(name))
 		case "kafka":
 			_, err = client.GetDbaasServiceKafkaWithResponse(ctx, oapi.DbaasServiceName(name))
 		case "mysql":

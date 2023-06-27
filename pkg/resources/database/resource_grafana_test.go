@@ -20,7 +20,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
-type TemplateModelPg struct {
+type TemplateModelGrafana struct {
 	ResourceName string
 
 	Name string
@@ -31,39 +31,30 @@ type TemplateModelPg struct {
 	MaintenanceTime       string
 	TerminationProtection bool
 
-	AdminPassword     string
-	AdminUsername     string
-	BackupSchedule    string
-	IpFilter          []string
-	PgSettings        string
-	PgbouncerSettings string
-	PglookoutSettings string
-	Version           string
+	IpFilter        []string
+	GrafanaSettings string
 }
 
-func testResourcePg(t *testing.T) {
-	tpl, err := template.ParseFiles("testdata/resource_pg.tmpl")
+func testResourceGrafana(t *testing.T) {
+	tpl, err := template.ParseFiles("testdata/resource_grafana.tmpl")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	fullResourceName := "exoscale_database.test"
-	dataBase := TemplateModelPg{
+	dataBase := TemplateModelGrafana{
 		ResourceName:          "test",
 		Name:                  acctest.RandomWithPrefix(testutils.Prefix),
 		Plan:                  "hobbyist-2",
 		Zone:                  testutils.TestZoneName,
 		TerminationProtection: false,
-		Version:               "13",
 	}
 
 	dataCreate := dataBase
 	dataCreate.MaintenanceDow = "monday"
 	dataCreate.MaintenanceTime = "01:23:00"
-	dataCreate.BackupSchedule = "01:23"
 	dataCreate.IpFilter = []string{"1.2.3.4/32"}
-	dataCreate.PgSettings = strconv.Quote(`{"timezone":"Europe/Zurich"}`)
-	dataCreate.PgbouncerSettings = strconv.Quote(`{"min_pool_size":10}`)
+	dataCreate.GrafanaSettings = strconv.Quote(`{"disable_gravatar":true}`)
 	buf := &bytes.Buffer{}
 	err = tpl.Execute(buf, &dataCreate)
 	if err != nil {
@@ -74,11 +65,8 @@ func testResourcePg(t *testing.T) {
 	dataUpdate := dataBase
 	dataUpdate.MaintenanceDow = "tuesday"
 	dataUpdate.MaintenanceTime = "02:34:00"
-	dataUpdate.BackupSchedule = "23:45"
 	dataUpdate.IpFilter = nil
-	dataUpdate.PgSettings = strconv.Quote(`{"autovacuum_max_workers":5,"timezone":"Europe/Zurich"}`)
-	dataUpdate.PgbouncerSettings = strconv.Quote(`{"autodb_pool_size":5,"min_pool_size":10}`)
-	dataUpdate.PglookoutSettings = strconv.Quote(`{"max_failover_replication_time_lag":30}`)
+	dataUpdate.GrafanaSettings = strconv.Quote(`{"allow_embedding":true,"disable_gravatar":true}`)
 	buf = &bytes.Buffer{}
 	err = tpl.Execute(buf, &dataUpdate)
 	if err != nil {
@@ -88,7 +76,7 @@ func testResourcePg(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testutils.AccPreCheck(t) },
-		CheckDestroy:             CheckDestroy("pg", dataBase.Name),
+		CheckDestroy:             CheckDestroy("grafana", dataBase.Name),
 		ProtoV6ProviderFactories: testutils.TestAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
@@ -103,7 +91,7 @@ func testResourcePg(t *testing.T) {
 					resource.TestCheckResourceAttrSet(fullResourceName, "ca_certificate"),
 					resource.TestCheckResourceAttrSet(fullResourceName, "updated_at"),
 					func(s *terraform.State) error {
-						err := CheckExistsPg(dataBase.Name, &dataCreate)
+						err := CheckExistsGrafana(dataBase.Name, &dataCreate)
 						if err != nil {
 							return err
 						}
@@ -117,7 +105,7 @@ func testResourcePg(t *testing.T) {
 				Config: configUpdate,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					func(s *terraform.State) error {
-						err := CheckExistsPg(dataBase.Name, &dataUpdate)
+						err := CheckExistsGrafana(dataBase.Name, &dataUpdate)
 						if err != nil {
 							return err
 						}
@@ -141,7 +129,7 @@ func testResourcePg(t *testing.T) {
 	})
 }
 
-func CheckExistsPg(name string, data *TemplateModelPg) error {
+func CheckExistsGrafana(name string, data *TemplateModelGrafana) error {
 	client, err := testutils.APIClient()
 	if err != nil {
 		return err
@@ -149,7 +137,7 @@ func CheckExistsPg(name string, data *TemplateModelPg) error {
 
 	ctx := exoapi.WithEndpoint(context.Background(), exoapi.NewReqEndpoint(testutils.TestEnvironment(), testutils.TestZoneName))
 
-	res, err := client.GetDbaasServicePgWithResponse(ctx, oapi.DbaasServiceName(name))
+	res, err := client.GetDbaasServiceGrafanaWithResponse(ctx, oapi.DbaasServiceName(name))
 	if err != nil {
 		return err
 	}
@@ -162,29 +150,25 @@ func CheckExistsPg(name string, data *TemplateModelPg) error {
 		return fmt.Errorf("plan: expected %q, got %q", data.Plan, service.Plan)
 	}
 
-	if v := fmt.Sprintf("%02d:%02d", *service.BackupSchedule.BackupHour, *service.BackupSchedule.BackupMinute); data.BackupSchedule != v {
-		return fmt.Errorf("backup_schedule: expected %q, got %q", data.BackupSchedule, v)
-	}
-
 	if *service.TerminationProtection != false {
 		return fmt.Errorf("termination_protection: expected false, got true")
 	}
 
 	if !cmp.Equal(data.IpFilter, *service.IpFilter, cmpopts.EquateEmpty()) {
-		return fmt.Errorf("pg.ip_filter: expected %q, got %q", data.IpFilter, *service.IpFilter)
+		return fmt.Errorf("grafana.ip_filter: expected %q, got %q", data.IpFilter, *service.IpFilter)
 	}
 
 	if v := string(service.Maintenance.Dow); data.MaintenanceDow != v {
-		return fmt.Errorf("pg.maintenance_dow: expected %q, got %q", data.MaintenanceDow, v)
+		return fmt.Errorf("grafana.maintenance_dow: expected %q, got %q", data.MaintenanceDow, v)
 	}
 
 	if data.MaintenanceTime != service.Maintenance.Time {
-		return fmt.Errorf("pg.maintenance_time: expected %q, got %q", data.MaintenanceTime, service.Maintenance.Time)
+		return fmt.Errorf("grafana.maintenance_time: expected %q, got %q", data.MaintenanceTime, service.Maintenance.Time)
 	}
 
-	if data.PgSettings != "" {
+	if data.GrafanaSettings != "" {
 		obj := map[string]interface{}{}
-		s, err := strconv.Unquote(data.PgSettings)
+		s, err := strconv.Unquote(data.GrafanaSettings)
 		if err != nil {
 			return err
 		}
@@ -194,50 +178,10 @@ func CheckExistsPg(name string, data *TemplateModelPg) error {
 		}
 		if !cmp.Equal(
 			obj,
-			*service.PgSettings,
+			*service.GrafanaSettings,
 		) {
-			return fmt.Errorf("pg.pg_settings: expected %q, got %q", obj, *service.PgSettings)
+			return fmt.Errorf("grafana.grafana_settings: expected %q, got %q", obj, *service.GrafanaSettings)
 		}
-	}
-
-	if data.PgbouncerSettings != "" {
-		obj := map[string]interface{}{}
-		s, err := strconv.Unquote(data.PgbouncerSettings)
-		if err != nil {
-			return err
-		}
-		err = json.Unmarshal([]byte(s), &obj)
-		if err != nil {
-			return err
-		}
-		if !cmp.Equal(
-			obj,
-			*service.PgbouncerSettings,
-		) {
-			return fmt.Errorf("pg.pgbouncer_settings: expected %q, got %q", obj, *service.PgbouncerSettings)
-		}
-	}
-
-	if data.PglookoutSettings != "" {
-		obj := map[string]interface{}{}
-		s, err := strconv.Unquote(data.PglookoutSettings)
-		if err != nil {
-			return err
-		}
-		err = json.Unmarshal([]byte(s), &obj)
-		if err != nil {
-			return err
-		}
-		if !cmp.Equal(
-			obj,
-			*service.PglookoutSettings,
-		) {
-			return fmt.Errorf("pg.pglookout_settings: expected %q, got %q", obj, *service.PglookoutSettings)
-		}
-	}
-
-	if data.Version != *service.Version {
-		return fmt.Errorf("pg.version: expected %q, got %q", data.Version, *service.Version)
 	}
 
 	return nil
