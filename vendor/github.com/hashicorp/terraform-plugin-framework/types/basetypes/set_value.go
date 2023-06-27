@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package basetypes
 
 import (
@@ -22,6 +25,22 @@ type SetValuable interface {
 
 	// ToSetValue should convert the value type to a Set.
 	ToSetValue(ctx context.Context) (SetValue, diag.Diagnostics)
+}
+
+// SetValuableWithSemanticEquals extends SetValuable with semantic equality
+// logic.
+type SetValuableWithSemanticEquals interface {
+	SetValuable
+
+	// SetSemanticEquals should return true if the given value is
+	// semantically equal to the current value. This logic is used to prevent
+	// Terraform data consistency errors and resource drift where a value change
+	// may have inconsequential differences, such as computed elements added by
+	// a remote system.
+	//
+	// Only known values are compared with this method as changing a value's
+	// state implicitly represents a different value.
+	SetSemanticEquals(context.Context, SetValuable) (bool, diag.Diagnostics)
 }
 
 // NewSetNull creates a Set with a null value. Determine whether the value is

@@ -1,6 +1,10 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package schema
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
@@ -17,9 +21,11 @@ import (
 
 // Ensure the implementation satisifies the desired interfaces.
 var (
-	_ NestedAttribute                            = SingleNestedAttribute{}
-	_ fwxschema.AttributeWithObjectPlanModifiers = SingleNestedAttribute{}
-	_ fwxschema.AttributeWithObjectValidators    = SingleNestedAttribute{}
+	_ NestedAttribute                              = SingleNestedAttribute{}
+	_ fwschema.AttributeWithValidateImplementation = SingleNestedAttribute{}
+	_ fwschema.AttributeWithObjectDefaultValue     = SingleNestedAttribute{}
+	_ fwxschema.AttributeWithObjectPlanModifiers   = SingleNestedAttribute{}
+	_ fwxschema.AttributeWithObjectValidators      = SingleNestedAttribute{}
 )
 
 // SingleNestedAttribute represents an attribute that is a single object where
@@ -184,11 +190,13 @@ func (a SingleNestedAttribute) ApplyTerraform5AttributePathStep(step tftypes.Att
 // Equal returns true if the given Attribute is a SingleNestedAttribute
 // and all fields are equal.
 func (a SingleNestedAttribute) Equal(o fwschema.Attribute) bool {
-	if _, ok := o.(SingleNestedAttribute); !ok {
+	other, ok := o.(SingleNestedAttribute)
+
+	if !ok {
 		return false
 	}
 
-	return fwschema.AttributesEqual(a, o)
+	return fwschema.NestedAttributesEqual(a, other)
 }
 
 // GetAttributes returns the Attributes field value.
@@ -276,4 +284,14 @@ func (a SingleNestedAttribute) ObjectPlanModifiers() []planmodifier.Object {
 // ObjectValidators returns the Validators field value.
 func (a SingleNestedAttribute) ObjectValidators() []validator.Object {
 	return a.Validators
+}
+
+// ValidateImplementation contains logic for validating the
+// provider-defined implementation of the attribute to prevent unexpected
+// errors or panics. This logic runs during the GetProviderSchema RPC and
+// should never include false positives.
+func (a SingleNestedAttribute) ValidateImplementation(ctx context.Context, req fwschema.ValidateImplementationRequest, resp *fwschema.ValidateImplementationResponse) {
+	if !a.IsComputed() && a.ObjectDefaultValue() != nil {
+		resp.Diagnostics.Append(nonComputedAttributeWithDefaultDiag(req.Path))
+	}
 }

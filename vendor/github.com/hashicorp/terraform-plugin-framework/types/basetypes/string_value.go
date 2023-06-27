@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package basetypes
 
 import (
@@ -21,6 +24,22 @@ type StringValuable interface {
 
 	// ToStringValue should convert the value type to a String.
 	ToStringValue(ctx context.Context) (StringValue, diag.Diagnostics)
+}
+
+// StringValuableWithSemanticEquals extends StringValuable with semantic
+// equality logic.
+type StringValuableWithSemanticEquals interface {
+	StringValuable
+
+	// StringSemanticEquals should return true if the given value is
+	// semantically equal to the current value. This logic is used to prevent
+	// Terraform data consistency errors and resource drift where a value change
+	// may have inconsequential differences, such as spacing character removal
+	// in JSON formatted strings.
+	//
+	// Only known values are compared with this method as changing a value's
+	// state implicitly represents a different value.
+	StringSemanticEquals(context.Context, StringValuable) (bool, diag.Diagnostics)
 }
 
 // NewStringNull creates a String with a null value. Determine whether the value is

@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package basetypes
 
 import (
@@ -21,6 +24,21 @@ type BoolValuable interface {
 
 	// ToBoolValue should convert the value type to a Bool.
 	ToBoolValue(ctx context.Context) (BoolValue, diag.Diagnostics)
+}
+
+// BoolValuableWithSemanticEquals extends BoolValuable with semantic
+// equality logic.
+type BoolValuableWithSemanticEquals interface {
+	BoolValuable
+
+	// BoolSemanticEquals should return true if the given value is
+	// semantically equal to the current value. This logic is used to prevent
+	// Terraform data consistency errors and resource drift where a value change
+	// may have inconsequential differences.
+	//
+	// Only known values are compared with this method as changing a value's
+	// state implicitly represents a different value.
+	BoolSemanticEquals(context.Context, BoolValuable) (bool, diag.Diagnostics)
 }
 
 // NewBoolNull creates a Bool with a null value. Determine whether the value is
