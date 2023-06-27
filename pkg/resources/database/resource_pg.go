@@ -227,7 +227,10 @@ func (r *Resource) readPg(ctx context.Context, data *ResourceModel, diagnostics 
 		data.Plan = types.StringValue(apiService.Plan)
 	}
 
-	if apiService.Maintenance != nil {
+	if apiService.Maintenance == nil {
+		data.MaintenanceDOW = types.StringNull()
+		data.MaintenanceTime = types.StringNull()
+	} else {
 		data.MaintenanceDOW = types.StringValue(string(apiService.Maintenance.Dow))
 		data.MaintenanceTime = types.StringValue(apiService.Maintenance.Time)
 	}
@@ -236,7 +239,9 @@ func (r *Resource) readPg(ctx context.Context, data *ResourceModel, diagnostics 
 		data.Pg = &ResourcePgModel{}
 	}
 
-	if apiService.BackupSchedule != nil {
+	if apiService.BackupSchedule == nil {
+		data.Pg.BackupSchedule = types.StringNull()
+	} else {
 		backupHour := types.Int64PointerValue(apiService.BackupSchedule.BackupHour)
 		backupMinute := types.Int64PointerValue(apiService.BackupSchedule.BackupMinute)
 		data.Pg.BackupSchedule = types.StringValue(fmt.Sprintf(
@@ -246,7 +251,9 @@ func (r *Resource) readPg(ctx context.Context, data *ResourceModel, diagnostics 
 		))
 	}
 
-	if apiService.IpFilter != nil {
+	if apiService.IpFilter == nil || len(*apiService.IpFilter) == 0 {
+		data.Pg.IpFilter = types.SetNull(types.StringType)
+	} else {
 		v, dg := types.SetValueFrom(ctx, types.StringType, *apiService.IpFilter)
 		if dg.HasError() {
 			diagnostics.Append(dg...)
@@ -256,41 +263,43 @@ func (r *Resource) readPg(ctx context.Context, data *ResourceModel, diagnostics 
 		data.Pg.IpFilter = v
 	}
 
-	if apiService.Version != nil {
+	if apiService.Version == nil {
+		data.Pg.Version = types.StringNull()
+	} else {
 		data.Pg.Version = types.StringValue(strings.SplitN(*apiService.Version, ".", 2)[0])
 	}
 
-	if apiService.PgSettings != nil {
+	if apiService.PgSettings == nil {
+		data.Pg.Settings = types.StringNull()
+	} else {
 		settings, err := json.Marshal(*apiService.PgSettings)
 		if err != nil {
 			diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
 			return
 		}
 		data.Pg.Settings = types.StringValue(string(settings))
-	} else {
-		data.Pg.Settings = types.StringValue("")
 	}
 
-	if apiService.PgbouncerSettings != nil {
+	if apiService.PgbouncerSettings == nil {
+		data.Pg.PgbouncerSettings = types.StringNull()
+	} else {
 		settings, err := json.Marshal(*apiService.PgbouncerSettings)
 		if err != nil {
 			diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
 			return
 		}
 		data.Pg.PgbouncerSettings = types.StringValue(string(settings))
-	} else {
-		data.Pg.PgbouncerSettings = types.StringValue("")
 	}
 
-	if apiService.PglookoutSettings != nil {
+	if apiService.PglookoutSettings == nil {
+		data.Pg.PglookoutSettings = types.StringNull()
+	} else {
 		settings, err := json.Marshal(*apiService.PglookoutSettings)
 		if err != nil {
 			diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
 			return
 		}
 		data.Pg.PglookoutSettings = types.StringValue(string(settings))
-	} else {
-		data.Pg.PglookoutSettings = types.StringValue("")
 	}
 }
 
@@ -359,12 +368,13 @@ func (r *Resource) updatePg(ctx context.Context, stateData *ResourceModel, planD
 
 	if !planPgData.IpFilter.Equal(statePgData.IpFilter) {
 		obj := []string{}
-		dg := planPgData.IpFilter.ElementsAs(ctx, &obj, false)
-		if dg.HasError() {
-			diagnostics.Append(dg...)
-			return
+		if len(planPgData.IpFilter.Elements()) > 0 {
+			dg := planPgData.IpFilter.ElementsAs(ctx, &obj, false)
+			if dg.HasError() {
+				diagnostics.Append(dg...)
+				return
+			}
 		}
-
 		service.IpFilter = &obj
 		updated = true
 	}

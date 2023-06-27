@@ -306,3 +306,9 @@ func (p *ExoscaleProvider) Resources(ctx context.Context) []func() resource.Reso
 		},
 	}
 }
+
+func New() func() provider.Provider {
+	return func() provider.Provider {
+		return &ExoscaleProvider{}
+	}
+}

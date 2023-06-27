@@ -1,56 +1,52 @@
 resource "exoscale_database" {{ .ResourceName }} {
   name = "{{ .Name }}"
-  type = pg
+  type = "pg"
   plan = "{{ .Plan }}"
   zone = "{{ .Zone }}"
 
-  {{ if .MaintenanceDow }}
+  {{- if .MaintenanceDow }}
   maintenance_dow = "{{ .MaintenanceDow }}"
-  {{ end }}
+  {{- end }}
 
-  {{ if .MaintenanceTime }}
+  {{- if .MaintenanceTime }}
   maintenance_time = "{{ .MaintenanceTime }}"
-  {{ end }}
-
-  {{ if .TerminationProtection }}
-  termination_protection = "{{ .TerminationProtection }}"
-  {{ end }}
-
+  {{- end }}
+  termination_protection = {{- .TerminationProtection }}
   pg {
-    {{ if .AdminPassword }}
+    {{- if .AdminPassword }}
     admin_password = "{{ .AdminPassword }}"
-    {{ end }}
+    {{- end }}
 
-    {{ if .AdminUsername }}
+    {{- if .AdminUsername }}
     admin_username = "{{ .AdminUsername }}"
-    {{ end }}
+    {{- end }}
 
-    {{ if .BackupSchedule }}
+    {{- if .BackupSchedule }}
     backup_schedule = "{{ .BackupSchedule }}"
-    {{ end }}
+    {{- end }}
 
-    {{ if .IpFilter }}
+    {{- if .IpFilter }}
     ip_filter = [
-    {{ range $k,$v := .IpFilter }}
+    {{- range $k,$v := .IpFilter }}
        "{{ $v }}",
-    {{ end }}
+    {{- end }}
     ]
-    {{ end }}
+    {{- end }}
 
-    {{ if .PgSettings }}
-    pg_settings = "{{ .PgSettings }}"
-    {{ end }}
+    {{- if .PgSettings }}
+    pg_settings = {{ .PgSettings }}
+    {{- end }}
 
-    {{ if .PgbouncerSettings }}
-    pgbouncer_settings = "{{ .PgbouncerSettings }}"
-    {{ end }}
+    {{- if .PgbouncerSettings }}
+    pgbouncer_settings = {{ .PgbouncerSettings }}
+    {{- end }}
 
-    {{ if .PglookoutSettings }}
-    pglookout_settings = "{{ .PglookoutSettings }}"
-    {{ end }}
+    {{- if .PglookoutSettings }}
+    pglookout_settings = {{ .PglookoutSettings }}
+    {{- end }}
 
-    {{ if .Version }}
+    {{- if .Version }}
     version = "{{ .Version }}"
-    {{ end }}
+    {{- end }}
   }
 }
