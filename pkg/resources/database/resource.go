@@ -50,7 +50,7 @@ type ResourceModel struct {
 	Nodes                 types.Int64  `tfsdk:"nodes"`
 	Plan                  types.String `tfsdk:"plan"`
 	State                 types.String `tfsdk:"state"`
-	CA                    types.String `tfsdk:"ca"`
+	CA                    types.String `tfsdk:"ca_certificate"`
 	TerminationProtection types.Bool   `tfsdk:"termination_protection"`
 	Type                  types.String `tfsdk:"type"`
 	UpdatedAt             types.String `tfsdk:"updated_at"`
@@ -68,7 +68,7 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 		MarkdownDescription: "Manage Exoscale [Database Services (DBaaS)](https://community.exoscale.com/documentation/dbaas/).",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				MarkdownDescription: "Database resource ID",
+				MarkdownDescription: "The ID of this resource.",
 				Computed:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
@@ -157,7 +157,7 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 				MarkdownDescription: "The current state of the database service.",
 				Computed:            true,
 			},
-			"ca": schema.StringAttribute{
+			"ca_certificate": schema.StringAttribute{
 				MarkdownDescription: "CA Certificate required to reach a DBaaS service through a TLS-protected connection.",
 				Computed:            true,
 				PlanModifiers: []planmodifier.String{
