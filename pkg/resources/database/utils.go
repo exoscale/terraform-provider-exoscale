@@ -10,6 +10,17 @@ import (
 	"github.com/xeipuuv/gojsonschema"
 )
 
+var (
+	ServicesList = []string{
+		"kafka",
+		"mysql",
+		"pg",
+		"redis",
+		"opensearch",
+		"grafana",
+	}
+)
+
 // validateSettings validates user-provided JSON-formatted
 // Database Service settings against a reference JSON Schema.
 func validateSettings(in string, schema interface{}) (map[string]interface{}, error) {
