@@ -7,6 +7,7 @@ import (
 
 	exoscale "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
+	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -57,6 +58,8 @@ type ResourceModel struct {
 	Zone                  types.String `tfsdk:"zone"`
 
 	Pg *ResourcePgModel `tfsdk:"pg"`
+
+	Timeouts timeouts.Value `tfsdk:"timeouts"`
 }
 
 func (r *Resource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -196,7 +199,8 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 			},
 		},
 		Blocks: map[string]schema.Block{
-			"pg": ResourcePgSchema,
+			"pg":       ResourcePgSchema,
+			"timeouts": timeouts.BlockAll(ctx),
 		},
 	}
 }
@@ -218,6 +222,15 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
+	// Set timeout
+	t, diags := data.Timeouts.Create(ctx, config.DefaultTimeout)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	ctx, cancel := context.WithTimeout(ctx, t)
+	defer cancel()
 
 	data.Id = data.Name
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(r.env, data.Zone.ValueString()))
@@ -246,6 +259,15 @@ func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *res
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
+	// Set timeout
+	t, diags := data.Timeouts.Read(ctx, config.DefaultTimeout)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	ctx, cancel := context.WithTimeout(ctx, t)
+	defer cancel()
 
 	data.Id = data.Name
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(r.env, data.Zone.ValueString()))
@@ -277,6 +299,15 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 		return
 	}
 
+	// Set timeout
+	t, diags := stateData.Timeouts.Update(ctx, config.DefaultTimeout)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	ctx, cancel := context.WithTimeout(ctx, t)
+	defer cancel()
+
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(r.env, planData.Zone.ValueString()))
 
 	switch planData.Type.ValueString() {
@@ -303,6 +334,15 @@ func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp 
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
+	// Set timeout
+	t, diags := data.Timeouts.Delete(ctx, config.DefaultTimeout)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	ctx, cancel := context.WithTimeout(ctx, t)
+	defer cancel()
 
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(r.env, data.Zone.ValueString()))
 
