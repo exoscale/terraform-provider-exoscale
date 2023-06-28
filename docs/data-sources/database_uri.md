@@ -48,6 +48,7 @@ resource "exoscale_database" "my_database" {
 data "exoscale_database_uri" "my_database" {
   name = "my-database"
   type = "pg"
+  zone = "ch-gva-2"
 }
 
 output "my_database_uri" {
