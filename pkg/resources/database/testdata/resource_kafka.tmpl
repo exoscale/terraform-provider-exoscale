@@ -1,0 +1,64 @@
+resource "exoscale_database" {{ .ResourceName }} {
+  name = "{{ .Name }}"
+  type = "kafka"
+  plan = "{{ .Plan }}"
+  zone = "{{ .Zone }}"
+
+  {{- if .MaintenanceDow }}
+  maintenance_dow = "{{ .MaintenanceDow }}"
+  {{- end }}
+
+  {{- if .MaintenanceTime }}
+  maintenance_time = "{{ .MaintenanceTime }}"
+  {{- end }}
+  termination_protection = {{- .TerminationProtection }}
+  kafka {
+    {{- if .EnableCertAuth }}
+    enable_cert_auth = {{ .EnableCertAuth }}
+    {{- end }}
+
+    {{- if .EnableKafkaConnect }}
+    enable_kafka_connect = {{ .EnableKafkaConnect }}
+    {{- end }}
+
+    {{- if .EnableKafkaREST }}
+    enable_kafka_rest = {{ .EnableKafkaREST }}
+    {{- end }}
+
+    {{- if .EnableSASLAuth }}
+    enable_sasl_auth = {{ .EnableSASLAuth }}
+    {{- end }}
+
+    {{- if .EnableSchemaRegistry }}
+    enable_schema_registry = {{ .EnableSchemaRegistry }}
+    {{- end }}
+
+    {{- if .IpFilter }}
+    ip_filter = [
+    {{- range $k,$v := .IpFilter }}
+       "{{ $v }}",
+    {{- end }}
+    ]
+    {{- end }}
+
+    {{- if .KafkaSettings }}
+    kafka_settings = {{ .KafkaSettings }}
+    {{- end }}
+
+    {{- if .ConnectSettings }}
+    kafka_connect_settings = {{ .ConnectSettings }}
+    {{- end }}
+
+    {{- if .ConnectSettings }}
+    kafka_rest_settings = {{ .RestSettings }}
+    {{- end }}
+
+    {{- if .SchemaRegistrySettings }}
+    schema_registry_settings = {{ .SchemaRegistrySettings }}
+    {{- end }}
+
+    {{- if .Version }}
+    version = "{{ .Version }}"
+    {{- end }}
+  }
+}

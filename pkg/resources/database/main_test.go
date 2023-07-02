@@ -17,6 +17,7 @@ func TestDatabase(t *testing.T) {
 	t.Run("ResourcePg", testResourcePg)
 	t.Run("ResourceMysql", testResourceMysql)
 	t.Run("ResourceRedis", testResourceRedis)
+	t.Run("ResourceKafka", testResourceKafka)
 	t.Run("ResourceGrafana", testResourceGrafana)
 }
 
