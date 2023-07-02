@@ -1,0 +1,44 @@
+resource "exoscale_database" {{ .ResourceName }} {
+  name = "{{ .Name }}"
+  type = "mysql"
+  plan = "{{ .Plan }}"
+  zone = "{{ .Zone }}"
+
+  {{- if .MaintenanceDow }}
+  maintenance_dow = "{{ .MaintenanceDow }}"
+  {{- end }}
+
+  {{- if .MaintenanceTime }}
+  maintenance_time = "{{ .MaintenanceTime }}"
+  {{- end }}
+  termination_protection = {{- .TerminationProtection }}
+  mysql {
+    {{- if .AdminPassword }}
+    admin_password = "{{ .AdminPassword }}"
+    {{- end }}
+
+    {{- if .AdminUsername }}
+    admin_username = "{{ .AdminUsername }}"
+    {{- end }}
+
+    {{- if .BackupSchedule }}
+    backup_schedule = "{{ .BackupSchedule }}"
+    {{- end }}
+
+    {{- if .IpFilter }}
+    ip_filter = [
+    {{- range $k,$v := .IpFilter }}
+       "{{ $v }}",
+    {{- end }}
+    ]
+    {{- end }}
+
+    {{- if .MysqlSettings }}
+    mysql_settings = {{ .MysqlSettings }}
+    {{- end }}
+
+    {{- if .Version }}
+    version = "{{ .Version }}"
+    {{- end }}
+  }
+}

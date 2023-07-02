@@ -58,6 +58,7 @@ type ResourceModel struct {
 	Zone                  types.String `tfsdk:"zone"`
 
 	Pg      *ResourcePgModel      `tfsdk:"pg"`
+	Mysql   *ResourceMysqlModel   `tfsdk:"mysql"`
 	Grafana *ResourceGrafanaModel `tfsdk:"grafana"`
 
 	Timeouts timeouts.Value `tfsdk:"timeouts"`
@@ -201,6 +202,7 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 		},
 		Blocks: map[string]schema.Block{
 			"pg":       ResourcePgSchema,
+			"mysql":    ResourceMysqlSchema,
 			"grafana":  ResourceGrafanaSchema,
 			"timeouts": timeouts.BlockAll(ctx),
 		},
@@ -240,6 +242,8 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 	switch data.Type.ValueString() {
 	case "pg":
 		r.createPg(ctx, &data, &resp.Diagnostics)
+	case "mysql":
+		r.createMysql(ctx, &data, &resp.Diagnostics)
 	case "grafana":
 		r.createGrafana(ctx, &data, &resp.Diagnostics)
 	}
@@ -279,6 +283,8 @@ func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *res
 	switch data.Type.ValueString() {
 	case "pg":
 		r.readPg(ctx, &data, &resp.Diagnostics)
+	case "mysql":
+		r.readMysql(ctx, &data, &resp.Diagnostics)
 	case "grafana":
 		r.readGrafana(ctx, &data, &resp.Diagnostics)
 	}
@@ -319,6 +325,8 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 	switch planData.Type.ValueString() {
 	case "pg":
 		r.updatePg(ctx, &stateData, &planData, &resp.Diagnostics)
+	case "mysql":
+		r.updateMysql(ctx, &stateData, &planData, &resp.Diagnostics)
 	case "grafana":
 		r.updateGrafana(ctx, &stateData, &planData, &resp.Diagnostics)
 	}
@@ -408,6 +416,8 @@ func (r *Resource) ImportState(ctx context.Context, req resource.ImportStateRequ
 	switch data.Type.ValueString() {
 	case "pg":
 		r.readPg(ctx, &data, &resp.Diagnostics)
+	case "mysql":
+		r.readMysql(ctx, &data, &resp.Diagnostics)
 	case "grafana":
 		r.readGrafana(ctx, &data, &resp.Diagnostics)
 	default:
