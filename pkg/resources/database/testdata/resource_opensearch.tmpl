@@ -1,0 +1,74 @@
+resource "exoscale_database" {{ .ResourceName }} {
+  name = "{{ .Name }}"
+  type = "opensearch"
+  plan = "{{ .Plan }}"
+  zone = "{{ .Zone }}"
+
+  {{- if .MaintenanceDow }}
+  maintenance_dow = "{{ .MaintenanceDow }}"
+  {{- end }}
+
+  {{- if .MaintenanceTime }}
+  maintenance_time = "{{ .MaintenanceTime }}"
+  {{- end }}
+  termination_protection = {{- .TerminationProtection }}
+  opensearch {
+    {{- if .ForkFromService }}
+    fork_from_service = "{{ .ForkFromService }}"
+    {{- end }}
+
+    {{- if .RecoveryBackupName }}
+    recovery_backup_name = "{{ .RecoveryBackupName }}"
+    {{- end }}
+
+    {{- if .IndexPatterns }}
+    {{- range $k,$v := .IndexPatterns }}
+    index_pattern {
+      max_index_count = {{ $v.MaxIndexCount }}
+      pattern = "{{ $v.MaxIndexCount }}"
+      sorting_algorithm = "{{ $v.SortingAlgorithm }}"
+    }
+    {{- end }}
+    {{- end }}
+
+    {{- if .IndexTemplate }}
+    index_template {
+      mapping_nested_objects_limit = {{ .IndexTemplate.MappingNestedObjectsLimit }}
+      number_of_replicas = {{ .IndexTemplate.NumberOfReplicas }}
+      number_of_shards = {{ .IndexTemplate.NumberOfShards }}
+    }
+    {{- end }}
+
+    {{- if .Dashboards }}
+    dashboards {
+     enabled = {{ .Dashboards.Enabled }}
+     max_old_space_size = {{ .Dashboards.MaxOldSpaceSize }}
+      request_timeout = {{ .Dashboards.RequestTimeout }}
+    }
+    {{- end }}
+
+    {{- if .KeepIndexRefreshInterval }}
+    keep_index_refresh_interval = {{ .KeepIndexRefreshInterval }}
+    {{- end }}
+
+    {{- if .MaxIndexCount }}
+    max_index_count = {{ .MaxIndexCount }}
+    {{- end }}
+
+    {{- if .IpFilter }}
+    ip_filter = [
+    {{- range $k,$v := .IpFilter }}
+       "{{ $v }}",
+    {{- end }}
+    ]
+    {{- end }}
+
+    {{- if .OpensearchSettings }}
+    settings = {{ .OpensearchSettings }}
+    {{- end }}
+
+    {{- if .Version }}
+    version = {{ .Version }}
+    {{- end }}
+  }
+}

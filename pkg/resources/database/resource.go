@@ -57,11 +57,12 @@ type ResourceModel struct {
 	UpdatedAt             types.String `tfsdk:"updated_at"`
 	Zone                  types.String `tfsdk:"zone"`
 
-	Pg      *ResourcePgModel      `tfsdk:"pg"`
-	Mysql   *ResourceMysqlModel   `tfsdk:"mysql"`
-	Redis   *ResourceRedisModel   `tfsdk:"redis"`
-	Kafka   *ResourceKafkaModel   `tfsdk:"kafka"`
-	Grafana *ResourceGrafanaModel `tfsdk:"grafana"`
+	Pg         *ResourcePgModel         `tfsdk:"pg"`
+	Mysql      *ResourceMysqlModel      `tfsdk:"mysql"`
+	Redis      *ResourceRedisModel      `tfsdk:"redis"`
+	Kafka      *ResourceKafkaModel      `tfsdk:"kafka"`
+	Opensearch *ResourceOpensearchModel `tfsdk:"opensearch"`
+	Grafana    *ResourceGrafanaModel    `tfsdk:"grafana"`
 
 	Timeouts timeouts.Value `tfsdk:"timeouts"`
 }
@@ -126,7 +127,7 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 				},
 			},
 			"name": schema.StringAttribute{
-				MarkdownDescription: "The name of the database service.",
+				MarkdownDescription: "❗ The name of the database service.",
 				Required:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -178,7 +179,7 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 				Default:             booldefault.StaticBool(true),
 			},
 			"type": schema.StringAttribute{
-				MarkdownDescription: "The type of the database service (`kafka`, `mysql`, `opensearch`, `pg`, `redis`, `grafana`).",
+				MarkdownDescription: "❗ The type of the database service (`kafka`, `mysql`, `opensearch`, `pg`, `redis`, `grafana`).",
 				Required:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -192,7 +193,7 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 				Computed:            true,
 			},
 			"zone": schema.StringAttribute{
-				MarkdownDescription: "The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.",
+				MarkdownDescription: "❗ The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.",
 				Required:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -203,12 +204,13 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 			},
 		},
 		Blocks: map[string]schema.Block{
-			"pg":       ResourcePgSchema,
-			"mysql":    ResourceMysqlSchema,
-			"redis":    ResourceRedisSchema,
-			"kafka":    ResourceKafkaSchema,
-			"grafana":  ResourceGrafanaSchema,
-			"timeouts": timeouts.BlockAll(ctx),
+			"grafana":    ResourceGrafanaSchema,
+			"kafka":      ResourceKafkaSchema,
+			"mysql":      ResourceMysqlSchema,
+			"opensearch": ResourceOpensearchSchema,
+			"pg":         ResourcePgSchema,
+			"redis":      ResourceRedisSchema,
+			"timeouts":   timeouts.BlockAll(ctx),
 		},
 	}
 }
@@ -252,6 +254,8 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 		r.createRedis(ctx, &data, &resp.Diagnostics)
 	case "kafka":
 		r.createKafka(ctx, &data, &resp.Diagnostics)
+	case "opensearch":
+		r.createOpensearch(ctx, &data, &resp.Diagnostics)
 	case "grafana":
 		r.createGrafana(ctx, &data, &resp.Diagnostics)
 	}
@@ -293,8 +297,12 @@ func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *res
 		r.readPg(ctx, &data, &resp.Diagnostics)
 	case "mysql":
 		r.readMysql(ctx, &data, &resp.Diagnostics)
+	case "redis":
+		r.readRedis(ctx, &data, &resp.Diagnostics)
 	case "kafka":
 		r.readKafka(ctx, &data, &resp.Diagnostics)
+	case "opensearch":
+		r.readOpensearch(ctx, &data, &resp.Diagnostics)
 	case "grafana":
 		r.readGrafana(ctx, &data, &resp.Diagnostics)
 	}
@@ -337,8 +345,12 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 		r.updatePg(ctx, &stateData, &planData, &resp.Diagnostics)
 	case "mysql":
 		r.updateMysql(ctx, &stateData, &planData, &resp.Diagnostics)
+	case "redis":
+		r.updateRedis(ctx, &stateData, &planData, &resp.Diagnostics)
 	case "kafka":
 		r.updateKafka(ctx, &stateData, &planData, &resp.Diagnostics)
+	case "opensearch":
+		r.updateOpensearch(ctx, &stateData, &planData, &resp.Diagnostics)
 	case "grafana":
 		r.updateGrafana(ctx, &stateData, &planData, &resp.Diagnostics)
 	}
@@ -347,7 +359,7 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 	}
 
 	// Save updated data into Terraform state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &stateData)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &planData)...)
 
 	tflog.Trace(ctx, "resource updated", map[string]interface{}{
 		"id": planData.Id,
@@ -434,6 +446,9 @@ func (r *Resource) ImportState(ctx context.Context, req resource.ImportStateRequ
 		r.readRedis(ctx, &data, &resp.Diagnostics)
 	case "kafka":
 		r.readKafka(ctx, &data, &resp.Diagnostics)
+	case "opensearch":
+		data.Opensearch = &ResourceOpensearchModel{Unknown: true}
+		r.readOpensearch(ctx, &data, &resp.Diagnostics)
 	case "grafana":
 		r.readGrafana(ctx, &data, &resp.Diagnostics)
 	default:
