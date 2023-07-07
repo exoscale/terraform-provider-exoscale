@@ -10,14 +10,16 @@ import (
 	"testing"
 	"text/template"
 
-	exoapi "github.com/exoscale/egoscale/v2/api"
-	"github.com/exoscale/egoscale/v2/oapi"
-	"github.com/exoscale/terraform-provider-exoscale/pkg/testutils"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
+
+	exoapi "github.com/exoscale/egoscale/v2/api"
+	"github.com/exoscale/egoscale/v2/oapi"
+
+	"github.com/exoscale/terraform-provider-exoscale/pkg/testutils"
 )
 
 type TemplateModelRedis struct {

@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/exoscale/egoscale/v2/oapi"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -16,6 +15,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
+
+	"github.com/exoscale/egoscale/v2/oapi"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/validators"
 )
@@ -518,15 +519,15 @@ func (r *Resource) updateOpensearch(ctx context.Context, stateData *ResourceMode
 			NumberOfReplicas          *int64 "json:\"number-of-replicas,omitempty\""
 			NumberOfShards            *int64 "json:\"number-of-shards,omitempty\""
 		}{}
-		if !stateOpensearchData.IndexTemplate.MappingNestedObjectsLimit.Equal(stateOpensearchData.IndexTemplate.MappingNestedObjectsLimit) {
+		if !planOpensearchData.IndexTemplate.MappingNestedObjectsLimit.Equal(stateOpensearchData.IndexTemplate.MappingNestedObjectsLimit) {
 			service.IndexTemplate.MappingNestedObjectsLimit = planOpensearchData.IndexTemplate.MappingNestedObjectsLimit.ValueInt64Pointer()
 			updated = true
 		}
-		if !stateOpensearchData.IndexTemplate.NumberOfReplicas.Equal(stateOpensearchData.IndexTemplate.NumberOfReplicas) {
+		if !planOpensearchData.IndexTemplate.NumberOfReplicas.Equal(stateOpensearchData.IndexTemplate.NumberOfReplicas) {
 			service.IndexTemplate.NumberOfReplicas = planOpensearchData.IndexTemplate.NumberOfReplicas.ValueInt64Pointer()
 			updated = true
 		}
-		if !stateOpensearchData.IndexTemplate.NumberOfShards.Equal(stateOpensearchData.IndexTemplate.NumberOfShards) {
+		if !planOpensearchData.IndexTemplate.NumberOfShards.Equal(stateOpensearchData.IndexTemplate.NumberOfShards) {
 			service.IndexTemplate.NumberOfShards = planOpensearchData.IndexTemplate.NumberOfShards.ValueInt64Pointer()
 			updated = true
 		}

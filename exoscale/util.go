@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	egoscale "github.com/exoscale/egoscale/v2"
 )
@@ -107,17 +106,4 @@ func parseIAMAccessKeyResource(v string) (*egoscale.IAMAccessKeyResource, error)
 	}
 
 	return &iamAccessKeyResource, nil
-}
-
-var zones = []string{
-	"ch-gva-2",
-	"ch-dk-2",
-	"at-vie-1",
-	"de-fra-1",
-	"bg-sof-1",
-	"de-muc-1",
-}
-
-func validateZone() schema.SchemaValidateDiagFunc {
-	return validation.ToDiagFunc(validation.StringInSlice(zones, false))
 }

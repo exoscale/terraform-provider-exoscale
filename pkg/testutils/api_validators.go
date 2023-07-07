@@ -5,8 +5,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/ssgreg/repeat"
 
 	egoscale "github.com/exoscale/egoscale/v2"

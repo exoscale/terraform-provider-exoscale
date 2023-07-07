@@ -6,11 +6,13 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/exoscale/egoscale/v2/api"
-	"github.com/exoscale/egoscale/v2/oapi"
-	"github.com/exoscale/terraform-provider-exoscale/pkg/testutils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
+
+	"github.com/exoscale/egoscale/v2/api"
+	"github.com/exoscale/egoscale/v2/oapi"
+
+	"github.com/exoscale/terraform-provider-exoscale/pkg/testutils"
 )
 
 func TestDatabase(t *testing.T) {
