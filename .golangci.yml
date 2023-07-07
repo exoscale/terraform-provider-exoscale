@@ -1,0 +1,30 @@
+run:
+  timeout: 10m
+
+linters-settings:
+  golint:
+    min-confidence: 0.3
+  goimports:
+    local-prefixes: github.com/exoscale
+  revive:
+    rules:
+      - name: if-return
+        disabled: true
+
+linters:
+  enable:
+    - errcheck
+    - exportloopref
+    - gocritic
+    - gofmt
+    - goimports
+    - gosimple
+    - govet
+    - ineffassign
+    - megacheck
+    - misspell
+    - prealloc
+    - revive
+    - staticcheck
+    - unused
+  disable-all: true
