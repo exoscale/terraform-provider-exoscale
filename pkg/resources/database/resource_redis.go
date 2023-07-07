@@ -272,5 +272,5 @@ func (r *Resource) updateRedis(ctx context.Context, stateData *ResourceModel, pl
 		return
 	}
 
-	r.readRedis(ctx, stateData, diagnostics)
+	r.readRedis(ctx, planData, diagnostics)
 }

@@ -373,5 +373,5 @@ func (r *Resource) updateMysql(ctx context.Context, stateData *ResourceModel, pl
 		return
 	}
 
-	r.readMysql(ctx, stateData, diagnostics)
+	r.readMysql(ctx, planData, diagnostics)
 }

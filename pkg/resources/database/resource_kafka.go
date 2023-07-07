@@ -482,5 +482,5 @@ func (r *Resource) updateKafka(ctx context.Context, stateData *ResourceModel, pl
 		return
 	}
 
-	r.readKafka(ctx, stateData, diagnostics)
+	r.readKafka(ctx, planData, diagnostics)
 }

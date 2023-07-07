@@ -272,5 +272,5 @@ func (r *Resource) updateGrafana(ctx context.Context, stateData *ResourceModel, 
 		return
 	}
 
-	r.readGrafana(ctx, stateData, diagnostics)
+	r.readGrafana(ctx, planData, diagnostics)
 }

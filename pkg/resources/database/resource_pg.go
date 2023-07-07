@@ -451,5 +451,5 @@ func (r *Resource) updatePg(ctx context.Context, stateData *ResourceModel, planD
 		return
 	}
 
-	r.readPg(ctx, stateData, diagnostics)
+	r.readPg(ctx, planData, diagnostics)
 }

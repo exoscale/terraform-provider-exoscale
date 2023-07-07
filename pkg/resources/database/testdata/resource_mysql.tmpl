@@ -1,6 +1,6 @@
 resource "exoscale_database" {{ .ResourceName }} {
   name = "{{ .Name }}"
-  type = "redis"
+  type = "mysql"
   plan = "{{ .Plan }}"
   zone = "{{ .Zone }}"
 
@@ -12,7 +12,19 @@ resource "exoscale_database" {{ .ResourceName }} {
   maintenance_time = "{{ .MaintenanceTime }}"
   {{- end }}
   termination_protection = {{- .TerminationProtection }}
-  redis {
+  mysql {
+    {{- if .AdminPassword }}
+    admin_password = "{{ .AdminPassword }}"
+    {{- end }}
+
+    {{- if .AdminUsername }}
+    admin_username = "{{ .AdminUsername }}"
+    {{- end }}
+
+    {{- if .BackupSchedule }}
+    backup_schedule = "{{ .BackupSchedule }}"
+    {{- end }}
+
     {{- if .IpFilter }}
     ip_filter = [
     {{- range $k,$v := .IpFilter }}
@@ -21,8 +33,12 @@ resource "exoscale_database" {{ .ResourceName }} {
     ]
     {{- end }}
 
-    {{- if .RedisSettings }}
-    redis_settings = {{ .RedisSettings }}
+    {{- if .MysqlSettings }}
+    mysql_settings = {{ .MysqlSettings }}
+    {{- end }}
+
+    {{- if .Version }}
+    version = "{{ .Version }}"
     {{- end }}
   }
 }
