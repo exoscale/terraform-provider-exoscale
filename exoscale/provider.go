@@ -109,13 +109,6 @@ func Provider() *schema.Provider {
 					"Timeout in seconds for waiting on compute resources to become available (by default: %.0f)",
 					config.DefaultTimeout.Seconds()),
 			},
-			"gzip_user_data": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Description: fmt.Sprintf(
-					"Defines if the user-data of compute instances should be gzipped (by default: %t)",
-					config.DefaultGzipUserData),
-			},
 			"delay": {
 				Type:       schema.TypeInt,
 				Optional:   true,
@@ -424,16 +417,6 @@ func ProviderConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 		}
 	}
 
-	gzipUserData, gzipUserDataOK := d.GetOk("gzip_user_data")
-	if !gzipUserDataOK {
-		var err error
-		gzipUserData, err = providerConfig.GetGZIPUserData()
-
-		if err != nil {
-			return nil, diag.FromErr(err)
-		}
-	}
-
 	baseConfig := providerConfig.BaseConfig{
 		Key:             key.(string),
 		Secret:          secret.(string),
@@ -441,7 +424,6 @@ func ProviderConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 		ComputeEndpoint: endpoint.(string),
 		DNSEndpoint:     dnsEndpoint.(string),
 		Environment:     environment.(string),
-		GZIPUserData:    gzipUserData.(bool),
 	}
 
 	clv2, err := CreateClient(&baseConfig)

@@ -17,7 +17,6 @@ const (
 
 	DefaultEnvironment  = "api"
 	DefaultTimeout      = 5 * time.Minute
-	DefaultGzipUserData = true
 
 	ComputeMaxUserDataLength = 32768
 )
