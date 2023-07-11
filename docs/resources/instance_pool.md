@@ -63,7 +63,7 @@ directory for complete configuration examples.
 - `service_offering` (String, Deprecated) The managed instances type. Please use the `instance_type` argument instead.
 - `state` (String)
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- `user_data` (String) [cloud-init](http://cloudinit.readthedocs.io/) configuration to apply to the managed instances (no need to base64-encode or gzip it as the provider will take care of it).
+- `user_data` (String) [cloud-init](http://cloudinit.readthedocs.io/) configuration to apply to the managed instances.
 - `virtual_machines` (Set of String, Deprecated) The list of managed instances (IDs). Please use the `instances.*.id` attribute instead.
 
 ### Read-Only

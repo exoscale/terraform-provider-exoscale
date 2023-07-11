@@ -52,7 +52,6 @@ provider "exoscale" {
 - `delay` (Number, Deprecated)
 - `dns_endpoint` (String) Exoscale DNS API endpoint (by default: https://api.exoscale.com/dns)
 - `environment` (String)
-- `gzip_user_data` (Boolean) Defines if the user-data of compute instances should be gzipped (by default: true)
 - `key` (String) Exoscale API key
 - `profile` (String, Deprecated)
 - `region` (String) CloudStack ini configuration section name (by default: cloudstack)

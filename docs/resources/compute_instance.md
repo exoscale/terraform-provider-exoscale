@@ -62,7 +62,7 @@ directory for complete configuration examples.
 - `ssh_key` (String) The [exoscale_ssh_key](./ssh_key.md) (name) to authorize in the instance (may only be set at creation time).
 - `state` (String) The instance state (`running` or `stopped`; default: `running`).
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- `user_data` (String) [cloud-init](https://cloudinit.readthedocs.io/) configuration (no need to base64-encode or gzip it as the provider will take care of it).
+- `user_data` (String) [cloud-init](https://cloudinit.readthedocs.io/) configuration.
 
 ### Read-Only
 
