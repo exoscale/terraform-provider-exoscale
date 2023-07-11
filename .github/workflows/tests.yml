@@ -1,4 +1,4 @@
-name: CI
+name: run-acceptance-tests
 
 on:
   push:
@@ -6,22 +6,12 @@ on:
     - '**'
     paths-ignore:
     - '**.md'
-    - 'website/**'
     - 'examples/**'
     - '.goreleaser.yml'
     tags-ignore:
     - 'v*' # Don't run CI tests on release tags
 
 jobs:
-  check-docs:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - run: git submodule update --init --recursive go.mk
-      - uses: ./go.mk/.github/actions/setup
-      - name: Check documentation is up to date
-        run: './scripts/check-documentation-clean.sh'
-
   test:
     runs-on: ubuntu-latest
     steps:
