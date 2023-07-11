@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	computeHostnameRegexp    = `^[a-zA-Z0-9][a-zA-Z0-9\-]+$`
+	computeHostnameRegexp = `^[a-zA-Z0-9][a-zA-Z0-9\-]+$`
 )
 
 func resourceComputeIDString(d general.ResourceIDStringer) string {
