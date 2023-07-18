@@ -22,6 +22,7 @@ func TestDatabase(t *testing.T) {
 	t.Run("ResourceKafka", testResourceKafka)
 	t.Run("ResourceOpensearch", testResourceOpensearch)
 	t.Run("ResourceGrafana", testResourceGrafana)
+	t.Run("DataSourceURI", testDataSourceURI)
 }
 
 func CheckDestroy(dbType, name string) resource.TestCheckFunc {

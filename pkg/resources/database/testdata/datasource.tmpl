@@ -1,0 +1,5 @@
+data "exoscale_database_uri" "{{ .ResourceName }}" {
+	name = {{ .Name }}
+	type = "{{ .Type }}"
+	zone = "{{ .Zone }}"
+}

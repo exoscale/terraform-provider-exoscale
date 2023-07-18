@@ -296,14 +296,13 @@ func (p *ExoscaleProvider) DataSources(ctx context.Context) []func() datasource.
 		func() datasource.DataSource {
 			return &zones.ZonesDataSource{}
 		},
+		database.NewDataSourceURI,
 	}
 }
 
 func (p *ExoscaleProvider) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
-		func() resource.Resource {
-			return &database.Resource{}
-		},
+		database.NewResource,
 	}
 }
 
