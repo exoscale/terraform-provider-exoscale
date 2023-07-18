@@ -113,7 +113,7 @@ func (r *Resource) createKafka(ctx context.Context, data *ResourceModel, diagnos
 		SchemaRegistryEnabled: kafkaData.EnableSchemaRegistry.ValueBoolPointer(),
 	}
 
-	if kafkaData.EnableCertAuth.ValueBool() || kafkaData.EnableSASLAuth.ValueBool() {
+	if !kafkaData.EnableCertAuth.IsUnknown() || !kafkaData.EnableSASLAuth.IsUnknown() {
 		service.AuthenticationMethods = &struct {
 			Certificate *bool `json:"certificate,omitempty"`
 			Sasl        *bool `json:"sasl,omitempty"`
@@ -123,18 +123,20 @@ func (r *Resource) createKafka(ctx context.Context, data *ResourceModel, diagnos
 		}
 	}
 
-	if len(kafkaData.IpFilter.Elements()) > 0 {
+	if !kafkaData.IpFilter.IsUnknown() {
 		obj := []string{}
-		dg := kafkaData.IpFilter.ElementsAs(ctx, &obj, false)
-		if dg.HasError() {
-			diagnostics.Append(dg...)
-			return
+		if len(kafkaData.IpFilter.Elements()) > 0 {
+			dg := kafkaData.IpFilter.ElementsAs(ctx, &obj, false)
+			if dg.HasError() {
+				diagnostics.Append(dg...)
+				return
+			}
 		}
 
 		service.IpFilter = &obj
 	}
 
-	if data.MaintenanceDOW.ValueString() != "" && data.MaintenanceTime.ValueString() != "" {
+	if !data.MaintenanceDOW.IsUnknown() && !data.MaintenanceTime.IsUnknown() {
 		service.Maintenance = &struct {
 			Dow  oapi.CreateDbaasServiceKafkaJSONBodyMaintenanceDow `json:"dow"`
 			Time string                                             `json:"time"`
@@ -154,9 +156,8 @@ func (r *Resource) createKafka(ctx context.Context, data *ResourceModel, diagnos
 		return
 	}
 
-	settings := kafkaData.Settings.ValueString()
-	if settings != "" {
-		obj, err := validateSettings(settings, settingsSchema.JSON200.Settings.Kafka)
+	if !kafkaData.Settings.IsUnknown() {
+		obj, err := validateSettings(kafkaData.Settings.ValueString(), settingsSchema.JSON200.Settings.Kafka)
 		if err != nil {
 			diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
 			return
@@ -164,9 +165,8 @@ func (r *Resource) createKafka(ctx context.Context, data *ResourceModel, diagnos
 		service.KafkaSettings = &obj
 	}
 
-	connectSettings := kafkaData.ConnectSettings.ValueString()
-	if connectSettings != "" {
-		obj, err := validateSettings(connectSettings, settingsSchema.JSON200.Settings.KafkaConnect)
+	if !kafkaData.ConnectSettings.IsUnknown() {
+		obj, err := validateSettings(kafkaData.ConnectSettings.ValueString(), settingsSchema.JSON200.Settings.KafkaConnect)
 		if err != nil {
 			diagnostics.AddError("Validation error", fmt.Sprintf("invalid Kafka Connect settings: %s", err))
 			return
@@ -174,9 +174,8 @@ func (r *Resource) createKafka(ctx context.Context, data *ResourceModel, diagnos
 		service.KafkaConnectSettings = &obj
 	}
 
-	restSettings := kafkaData.RestSettings.ValueString()
-	if restSettings != "" {
-		obj, err := validateSettings(restSettings, settingsSchema.JSON200.Settings.KafkaRest)
+	if !kafkaData.RestSettings.IsUnknown() {
+		obj, err := validateSettings(kafkaData.RestSettings.ValueString(), settingsSchema.JSON200.Settings.KafkaRest)
 		if err != nil {
 			diagnostics.AddError("Validation error", fmt.Sprintf("invalid Kafka REST settings: %s", err))
 			return
@@ -184,9 +183,8 @@ func (r *Resource) createKafka(ctx context.Context, data *ResourceModel, diagnos
 		service.KafkaRestSettings = &obj
 	}
 
-	schemaRegistrySettings := kafkaData.SchemaRegistrySettings.ValueString()
-	if schemaRegistrySettings != "" {
-		obj, err := validateSettings(schemaRegistrySettings, settingsSchema.JSON200.Settings.SchemaRegistry)
+	if !kafkaData.SchemaRegistrySettings.IsUnknown() {
+		obj, err := validateSettings(kafkaData.SchemaRegistrySettings.ValueString(), settingsSchema.JSON200.Settings.SchemaRegistry)
 		if err != nil {
 			diagnostics.AddError("Validation error", fmt.Sprintf("invalid Schema Registry settings: %s", err))
 			return

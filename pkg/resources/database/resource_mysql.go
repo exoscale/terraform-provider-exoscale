@@ -87,18 +87,20 @@ func (r *Resource) createMysql(ctx context.Context, data *ResourceModel, diagnos
 		service.AdminUsername = mysqlData.AdminUsername.ValueStringPointer()
 	}
 
-	if !mysqlData.IpFilter.IsNull() {
+	if !mysqlData.IpFilter.IsUnknown() {
 		obj := []string{}
-		dg := mysqlData.IpFilter.ElementsAs(ctx, &obj, false)
-		if dg.HasError() {
-			diagnostics.Append(dg...)
-			return
+		if len(mysqlData.IpFilter.Elements()) > 0 {
+			dg := mysqlData.IpFilter.ElementsAs(ctx, &obj, false)
+			if dg.HasError() {
+				diagnostics.Append(dg...)
+				return
+			}
 		}
 
 		service.IpFilter = &obj
 	}
 
-	if !data.MaintenanceDOW.IsNull() && !data.MaintenanceTime.IsNull() {
+	if !data.MaintenanceDOW.IsUnknown() && !data.MaintenanceTime.IsUnknown() {
 		service.Maintenance = &struct {
 			Dow  oapi.CreateDbaasServiceMysqlJSONBodyMaintenanceDow `json:"dow"`
 			Time string                                             `json:"time"`
@@ -108,7 +110,7 @@ func (r *Resource) createMysql(ctx context.Context, data *ResourceModel, diagnos
 		}
 	}
 
-	if !mysqlData.BackupSchedule.IsNull() {
+	if !mysqlData.BackupSchedule.IsUnknown() {
 		bh, bm, err := parseBackupSchedule(mysqlData.BackupSchedule.ValueString())
 		if err != nil {
 			diagnostics.AddError("Validation error", fmt.Sprintf("Unable to parse backup schedule, got error: %s", err))
@@ -134,9 +136,8 @@ func (r *Resource) createMysql(ctx context.Context, data *ResourceModel, diagnos
 		return
 	}
 
-	settings := mysqlData.Settings.ValueString()
-	if settings != "" {
-		obj, err := validateSettings(settings, settingsSchema.JSON200.Settings.Mysql)
+	if !mysqlData.Settings.IsUnknown() {
+		obj, err := validateSettings(mysqlData.Settings.ValueString(), settingsSchema.JSON200.Settings.Mysql)
 		if err != nil {
 			diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
 			return

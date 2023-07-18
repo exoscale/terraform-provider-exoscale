@@ -54,18 +54,20 @@ func (r *Resource) createRedis(ctx context.Context, data *ResourceModel, diagnos
 		TerminationProtection: data.TerminationProtection.ValueBoolPointer(),
 	}
 
-	if !redisData.IpFilter.IsNull() {
+	if !redisData.IpFilter.IsUnknown() {
 		obj := []string{}
-		dg := redisData.IpFilter.ElementsAs(ctx, &obj, false)
-		if dg.HasError() {
-			diagnostics.Append(dg...)
-			return
+		if len(redisData.IpFilter.Elements()) > 0 {
+			dg := redisData.IpFilter.ElementsAs(ctx, &obj, false)
+			if dg.HasError() {
+				diagnostics.Append(dg...)
+				return
+			}
 		}
 
 		service.IpFilter = &obj
 	}
 
-	if !data.MaintenanceDOW.IsNull() && !data.MaintenanceTime.IsNull() {
+	if !data.MaintenanceDOW.IsUnknown() && !data.MaintenanceTime.IsUnknown() {
 		service.Maintenance = &struct {
 			Dow  oapi.CreateDbaasServiceRedisJSONBodyMaintenanceDow `json:"dow"`
 			Time string                                             `json:"time"`
@@ -85,9 +87,8 @@ func (r *Resource) createRedis(ctx context.Context, data *ResourceModel, diagnos
 		return
 	}
 
-	settings := redisData.Settings.ValueString()
-	if settings != "" {
-		obj, err := validateSettings(settings, settingsSchema.JSON200.Settings.Redis)
+	if !redisData.Settings.IsUnknown() {
+		obj, err := validateSettings(redisData.Settings.ValueString(), settingsSchema.JSON200.Settings.Redis)
 		if err != nil {
 			diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
 			return

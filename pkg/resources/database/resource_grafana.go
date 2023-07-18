@@ -54,18 +54,20 @@ func (r *Resource) createGrafana(ctx context.Context, data *ResourceModel, diagn
 		TerminationProtection: data.TerminationProtection.ValueBoolPointer(),
 	}
 
-	if !grafanaData.IpFilter.IsNull() {
+	if !grafanaData.IpFilter.IsUnknown() {
 		obj := []string{}
-		dg := grafanaData.IpFilter.ElementsAs(ctx, &obj, false)
-		if dg.HasError() {
-			diagnostics.Append(dg...)
-			return
+		if len(grafanaData.IpFilter.Elements()) > 0 {
+			dg := grafanaData.IpFilter.ElementsAs(ctx, &obj, false)
+			if dg.HasError() {
+				diagnostics.Append(dg...)
+				return
+			}
 		}
 
 		service.IpFilter = &obj
 	}
 
-	if !data.MaintenanceDOW.IsNull() && !data.MaintenanceTime.IsNull() {
+	if !data.MaintenanceDOW.IsUnknown() && !data.MaintenanceTime.IsUnknown() {
 		service.Maintenance = &struct {
 			Dow  oapi.CreateDbaasServiceGrafanaJSONBodyMaintenanceDow `json:"dow"`
 			Time string                                               `json:"time"`
@@ -85,9 +87,8 @@ func (r *Resource) createGrafana(ctx context.Context, data *ResourceModel, diagn
 		return
 	}
 
-	settings := grafanaData.Settings.ValueString()
-	if settings != "" {
-		obj, err := validateSettings(settings, settingsSchema.JSON200.Settings.Grafana)
+	if !grafanaData.Settings.IsUnknown() {
+		obj, err := validateSettings(grafanaData.Settings.ValueString(), settingsSchema.JSON200.Settings.Grafana)
 		if err != nil {
 			diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
 			return

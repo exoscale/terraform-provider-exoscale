@@ -37,8 +37,8 @@ type TemplateModelOpensearch struct {
 	ForkFromService          string
 	RecoveryBackupName       string
 	IndexPatterns            []TemplateModelOpensearchIndexPattern
-	IndexTemplate            TemplateModelOpensearchIndexTemplate
-	Dashboards               TemplateModelOpensearchDashboards
+	IndexTemplate            *TemplateModelOpensearchIndexTemplate
+	Dashboards               *TemplateModelOpensearchDashboards
 	KeepIndexRefreshInterval bool
 	MaxIndexCount            int64
 	OpensearchSettings       string
@@ -86,8 +86,8 @@ func testResourceOpensearch(t *testing.T) {
 		{2, "log.?", "alphabetical"},
 		{12, "internet.*", "creation_date"},
 	}
-	dataCreate.IndexTemplate = TemplateModelOpensearchIndexTemplate{5, 4, 3}
-	dataCreate.Dashboards = TemplateModelOpensearchDashboards{true, 129, 30001}
+	dataCreate.IndexTemplate = &TemplateModelOpensearchIndexTemplate{5, 4, 3}
+	dataCreate.Dashboards = &TemplateModelOpensearchDashboards{true, 129, 30001}
 	dataCreate.KeepIndexRefreshInterval = true
 	dataCreate.IpFilter = []string{"0.0.0.0/0"}
 	buf := &bytes.Buffer{}
@@ -104,8 +104,8 @@ func testResourceOpensearch(t *testing.T) {
 		{4, "log.?", "alphabetical"},
 		{12, "internet.*", "creation_date"},
 	}
-	dataUpdate.IndexTemplate = TemplateModelOpensearchIndexTemplate{5, 4, 3}
-	dataUpdate.Dashboards = TemplateModelOpensearchDashboards{true, 132, 30006}
+	dataUpdate.IndexTemplate = &TemplateModelOpensearchIndexTemplate{5, 4, 3}
+	dataUpdate.Dashboards = &TemplateModelOpensearchDashboards{true, 132, 30006}
 	dataUpdate.KeepIndexRefreshInterval = true
 	dataUpdate.MaxIndexCount = 4
 	dataUpdate.IpFilter = []string{"1.1.1.1/32"}
@@ -207,6 +207,42 @@ func CheckExistsOpensearch(name string, data *TemplateModelOpensearch) error {
 
 	if data.MaintenanceTime != service.Maintenance.Time {
 		return fmt.Errorf("opensearch.maintenance_time: expected %q, got %q", data.MaintenanceTime, service.Maintenance.Time)
+	}
+
+	if data.KeepIndexRefreshInterval != *service.KeepIndexRefreshInterval {
+		return fmt.Errorf("keep_index_refresh_interval: expected %v, got %v", data.KeepIndexRefreshInterval, *service.KeepIndexRefreshInterval)
+	}
+
+	if data.MaxIndexCount != *service.MaxIndexCount {
+		return fmt.Errorf("max_index_count: expected %v, got %v", data.MaxIndexCount, *service.MaxIndexCount)
+	}
+
+	if len(data.IndexPatterns) != len(*service.IndexPatterns) {
+		return fmt.Errorf("index_patterns: expected length of %v, got %v", len(data.IndexPatterns), len(*service.IndexPatterns))
+	}
+
+	if data.IndexTemplate != nil && service.IndexTemplate != nil {
+		if data.IndexTemplate.MappingNestedObjectsLimit != *service.IndexTemplate.MappingNestedObjectsLimit {
+			return fmt.Errorf("index_template.mapping_nasted_objects_limit: expected %v, got %v", data.IndexTemplate.MappingNestedObjectsLimit, *service.IndexTemplate.MappingNestedObjectsLimit)
+		}
+		if data.IndexTemplate.NumberOfReplicas != *service.IndexTemplate.NumberOfReplicas {
+			return fmt.Errorf("index_template.number_of_replicas: expected %v, got %v", data.IndexTemplate.NumberOfReplicas, *service.IndexTemplate.NumberOfReplicas)
+		}
+		if data.IndexTemplate.NumberOfShards != *service.IndexTemplate.NumberOfShards {
+			return fmt.Errorf("index_template.number_of_shards: expected %v, got %v", data.IndexTemplate.NumberOfShards, *service.IndexTemplate.NumberOfShards)
+		}
+	}
+
+	if data.Dashboards != nil && service.OpensearchDashboards != nil {
+		if data.Dashboards.Enabled != *service.OpensearchDashboards.Enabled {
+			return fmt.Errorf("dashboards.enabled: expected %v, got %v", data.Dashboards.Enabled, *service.OpensearchDashboards.Enabled)
+		}
+		if data.Dashboards.MaxOldSpaceSize != *service.OpensearchDashboards.MaxOldSpaceSize {
+			return fmt.Errorf("dashboards.max_old_space_size: expected %v, got %v", data.Dashboards.MaxOldSpaceSize, *service.OpensearchDashboards.MaxOldSpaceSize)
+		}
+		if data.Dashboards.RequestTimeout != *service.OpensearchDashboards.OpensearchRequestTimeout {
+			return fmt.Errorf("dashboards.request_timeout: expected %v, got %v", data.Dashboards.RequestTimeout, *service.OpensearchDashboards.OpensearchRequestTimeout)
+		}
 	}
 
 	if data.OpensearchSettings != "" {

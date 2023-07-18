@@ -99,18 +99,20 @@ func (r *Resource) createPg(ctx context.Context, data *ResourceModel, diagnostic
 		service.AdminUsername = pgData.AdminUsername.ValueStringPointer()
 	}
 
-	if !pgData.IpFilter.IsNull() {
+	if !pgData.IpFilter.IsUnknown() {
 		obj := []string{}
-		dg := pgData.IpFilter.ElementsAs(ctx, &obj, false)
-		if dg.HasError() {
-			diagnostics.Append(dg...)
-			return
+		if len(pgData.IpFilter.Elements()) > 0 {
+			dg := pgData.IpFilter.ElementsAs(ctx, &obj, true)
+			if dg.HasError() {
+				diagnostics.Append(dg...)
+				return
+			}
 		}
 
 		service.IpFilter = &obj
 	}
 
-	if !data.MaintenanceDOW.IsNull() && !data.MaintenanceTime.IsNull() {
+	if !data.MaintenanceDOW.IsUnknown() && !data.MaintenanceTime.IsUnknown() {
 		service.Maintenance = &struct {
 			Dow  oapi.CreateDbaasServicePgJSONBodyMaintenanceDow `json:"dow"`
 			Time string                                          `json:"time"`
@@ -120,7 +122,7 @@ func (r *Resource) createPg(ctx context.Context, data *ResourceModel, diagnostic
 		}
 	}
 
-	if !pgData.BackupSchedule.IsNull() {
+	if !pgData.BackupSchedule.IsUnknown() {
 		bh, bm, err := parseBackupSchedule(pgData.BackupSchedule.ValueString())
 		if err != nil {
 			diagnostics.AddError("Validation error", fmt.Sprintf("Unable to parse backup schedule, got error: %s", err))
@@ -146,9 +148,8 @@ func (r *Resource) createPg(ctx context.Context, data *ResourceModel, diagnostic
 		return
 	}
 
-	settings := pgData.Settings.ValueString()
-	if settings != "" {
-		obj, err := validateSettings(settings, settingsSchema.JSON200.Settings.Pg)
+	if !pgData.Settings.IsUnknown() {
+		obj, err := validateSettings(pgData.Settings.ValueString(), settingsSchema.JSON200.Settings.Pg)
 		if err != nil {
 			diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
 			return
@@ -156,9 +157,8 @@ func (r *Resource) createPg(ctx context.Context, data *ResourceModel, diagnostic
 		service.PgSettings = &obj
 	}
 
-	bouncerSettings := pgData.PgbouncerSettings.ValueString()
-	if bouncerSettings != "" {
-		obj, err := validateSettings(bouncerSettings, settingsSchema.JSON200.Settings.Pgbouncer)
+	if !pgData.PgbouncerSettings.IsUnknown() {
+		obj, err := validateSettings(pgData.PgbouncerSettings.ValueString(), settingsSchema.JSON200.Settings.Pgbouncer)
 		if err != nil {
 			diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
 			return
@@ -166,9 +166,8 @@ func (r *Resource) createPg(ctx context.Context, data *ResourceModel, diagnostic
 		service.PgbouncerSettings = &obj
 	}
 
-	lookoutSettings := pgData.PglookoutSettings.ValueString()
-	if lookoutSettings != "" {
-		obj, err := validateSettings(lookoutSettings, settingsSchema.JSON200.Settings.Pglookout)
+	if !pgData.PglookoutSettings.IsUnknown() {
+		obj, err := validateSettings(pgData.PglookoutSettings.ValueString(), settingsSchema.JSON200.Settings.Pglookout)
 		if err != nil {
 			diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
 			return
@@ -220,13 +219,10 @@ func (r *Resource) readPg(ctx context.Context, data *ResourceModel, diagnostics 
 	data.NodeCPUs = types.Int64PointerValue(apiService.NodeCpuCount)
 	data.NodeMemory = types.Int64PointerValue(apiService.NodeMemory)
 	data.Nodes = types.Int64PointerValue(apiService.NodeCount)
+	data.Plan = types.StringValue(apiService.Plan)
 	data.State = types.StringPointerValue((*string)(apiService.State))
 	data.TerminationProtection = types.BoolPointerValue(apiService.TerminationProtection)
 	data.UpdatedAt = types.StringValue(apiService.UpdatedAt.String())
-
-	if data.Plan.IsNull() || data.Plan.IsUnknown() {
-		data.Plan = types.StringValue(apiService.Plan)
-	}
 
 	if apiService.Maintenance == nil {
 		data.MaintenanceDOW = types.StringNull()

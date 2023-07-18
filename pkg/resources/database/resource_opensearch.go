@@ -178,18 +178,20 @@ func (r *Resource) createOpensearch(ctx context.Context, data *ResourceModel, di
 		Version:                  data.Opensearch.Version.ValueStringPointer(),
 	}
 
-	if len(data.Opensearch.IpFilter.Elements()) > 0 {
+	if !data.Opensearch.IpFilter.IsUnknown() {
 		obj := []string{}
-		dg := data.Opensearch.IpFilter.ElementsAs(ctx, &obj, false)
-		if dg.HasError() {
-			diagnostics.Append(dg...)
-			return
+		if len(data.Opensearch.IpFilter.Elements()) > 0 {
+			dg := data.Opensearch.IpFilter.ElementsAs(ctx, &obj, false)
+			if dg.HasError() {
+				diagnostics.Append(dg...)
+				return
+			}
 		}
 
 		service.IpFilter = &obj
 	}
 
-	if data.MaintenanceDOW.ValueString() != "" && data.MaintenanceTime.ValueString() != "" {
+	if !data.MaintenanceDOW.IsUnknown() && !data.MaintenanceTime.IsUnknown() {
 		service.Maintenance = &struct {
 			Dow  oapi.CreateDbaasServiceOpensearchJSONBodyMaintenanceDow `json:"dow"`
 			Time string                                                  `json:"time"`
@@ -254,9 +256,8 @@ func (r *Resource) createOpensearch(ctx context.Context, data *ResourceModel, di
 		return
 	}
 
-	settings := data.Opensearch.Settings.ValueString()
-	if settings != "" {
-		obj, err := validateSettings(settings, settingsSchema.JSON200.Settings.Opensearch)
+	if !data.Opensearch.Settings.IsUnknown() {
+		obj, err := validateSettings(data.Opensearch.Settings.ValueString(), settingsSchema.JSON200.Settings.Opensearch)
 		if err != nil {
 			diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
 			return
@@ -329,9 +330,12 @@ func (r *Resource) readOpensearch(ctx context.Context, data *ResourceModel, diag
 		data.Opensearch = &ResourceOpensearchModel{}
 	}
 
-	if data.Opensearch.IndexPatterns == nil {
+	if data.Opensearch.Unknown {
 		data.Opensearch.IndexPatterns = []ResourceOpensearchIndexPatternsModel{}
+		data.Opensearch.IndexTemplate = &ResourceOpensearchIndexTemplateModel{}
+		data.Opensearch.Dashboards = &ResourceOpensearchDashboardsModel{}
 	}
+
 	if apiService.IndexPatterns == nil || len(*apiService.IndexPatterns) == 0 {
 		data.Opensearch.IndexPatterns = nil
 	} else {
@@ -349,31 +353,34 @@ func (r *Resource) readOpensearch(ctx context.Context, data *ResourceModel, diag
 		}
 	}
 
-	if data.Opensearch.IndexTemplate == nil {
-		data.Opensearch.IndexTemplate = &ResourceOpensearchIndexTemplateModel{}
-	}
-	if !data.Opensearch.IndexTemplate.MappingNestedObjectsLimit.IsNull() ||
-		(data.Opensearch.Unknown && apiService.IndexTemplate != nil) {
+	if data.Opensearch.IndexTemplate != nil {
 		if apiService.IndexTemplate == nil {
-			data.Opensearch.IndexTemplate.MappingNestedObjectsLimit = types.Int64Null()
+			data.Opensearch.IndexTemplate = nil
 		} else {
-			data.Opensearch.IndexTemplate.MappingNestedObjectsLimit = types.Int64PointerValue(apiService.IndexTemplate.MappingNestedObjectsLimit)
-		}
-	}
-	if !data.Opensearch.IndexTemplate.NumberOfReplicas.IsNull() ||
-		(data.Opensearch.Unknown && apiService.IndexTemplate.NumberOfReplicas != nil) {
-		if apiService.IndexTemplate == nil {
-			data.Opensearch.IndexTemplate.NumberOfReplicas = types.Int64Null()
-		} else {
-			data.Opensearch.IndexTemplate.NumberOfReplicas = types.Int64PointerValue(apiService.IndexTemplate.NumberOfReplicas)
-		}
-	}
-	if !data.Opensearch.IndexTemplate.NumberOfShards.IsNull() ||
-		(data.Opensearch.Unknown && apiService.IndexTemplate.NumberOfShards != nil) {
-		if apiService.IndexTemplate == nil {
-			data.Opensearch.IndexTemplate.NumberOfShards = types.Int64Null()
-		} else {
-			data.Opensearch.IndexTemplate.NumberOfShards = types.Int64PointerValue(apiService.IndexTemplate.NumberOfShards)
+			if !data.Opensearch.IndexTemplate.MappingNestedObjectsLimit.IsNull() ||
+				(data.Opensearch.Unknown && apiService.IndexTemplate != nil) {
+				if apiService.IndexTemplate == nil {
+					data.Opensearch.IndexTemplate.MappingNestedObjectsLimit = types.Int64Null()
+				} else {
+					data.Opensearch.IndexTemplate.MappingNestedObjectsLimit = types.Int64PointerValue(apiService.IndexTemplate.MappingNestedObjectsLimit)
+				}
+			}
+			if !data.Opensearch.IndexTemplate.NumberOfReplicas.IsNull() ||
+				(data.Opensearch.Unknown && apiService.IndexTemplate.NumberOfReplicas != nil) {
+				if apiService.IndexTemplate == nil {
+					data.Opensearch.IndexTemplate.NumberOfReplicas = types.Int64Null()
+				} else {
+					data.Opensearch.IndexTemplate.NumberOfReplicas = types.Int64PointerValue(apiService.IndexTemplate.NumberOfReplicas)
+				}
+			}
+			if !data.Opensearch.IndexTemplate.NumberOfShards.IsNull() ||
+				(data.Opensearch.Unknown && apiService.IndexTemplate.NumberOfShards != nil) {
+				if apiService.IndexTemplate == nil {
+					data.Opensearch.IndexTemplate.NumberOfShards = types.Int64Null()
+				} else {
+					data.Opensearch.IndexTemplate.NumberOfShards = types.Int64PointerValue(apiService.IndexTemplate.NumberOfShards)
+				}
+			}
 		}
 	}
 
@@ -389,31 +396,34 @@ func (r *Resource) readOpensearch(ctx context.Context, data *ResourceModel, diag
 		data.Opensearch.IpFilter = v
 	}
 
-	if data.Opensearch.Dashboards == nil {
-		data.Opensearch.Dashboards = &ResourceOpensearchDashboardsModel{}
-	}
-	if !data.Opensearch.Dashboards.Enabled.IsNull() ||
-		(data.Opensearch.Unknown && apiService.OpensearchDashboards.Enabled != nil) {
+	if data.Opensearch.Dashboards != nil {
 		if apiService.OpensearchDashboards == nil {
-			data.Opensearch.Dashboards.Enabled = types.BoolNull()
+			data.Opensearch.Dashboards = nil
 		} else {
-			data.Opensearch.Dashboards.Enabled = types.BoolPointerValue(apiService.OpensearchDashboards.Enabled)
-		}
-	}
-	if !data.Opensearch.Dashboards.MaxOldSpaceSize.IsNull() ||
-		(data.Opensearch.Unknown && apiService.OpensearchDashboards.MaxOldSpaceSize != nil) {
-		if apiService.OpensearchDashboards == nil {
-			data.Opensearch.Dashboards.MaxOldSpaceSize = types.Int64Null()
-		} else {
-			data.Opensearch.Dashboards.MaxOldSpaceSize = types.Int64PointerValue(apiService.OpensearchDashboards.MaxOldSpaceSize)
-		}
-	}
-	if !data.Opensearch.Dashboards.RequestTimeout.IsNull() ||
-		(data.Opensearch.Unknown && apiService.OpensearchDashboards.OpensearchRequestTimeout != nil) {
-		if apiService.OpensearchDashboards == nil {
-			data.Opensearch.Dashboards.RequestTimeout = types.Int64Null()
-		} else {
-			data.Opensearch.Dashboards.RequestTimeout = types.Int64PointerValue(apiService.OpensearchDashboards.OpensearchRequestTimeout)
+			if !data.Opensearch.Dashboards.Enabled.IsNull() ||
+				(data.Opensearch.Unknown && apiService.OpensearchDashboards.Enabled != nil) {
+				if apiService.OpensearchDashboards == nil {
+					data.Opensearch.Dashboards.Enabled = types.BoolNull()
+				} else {
+					data.Opensearch.Dashboards.Enabled = types.BoolPointerValue(apiService.OpensearchDashboards.Enabled)
+				}
+			}
+			if !data.Opensearch.Dashboards.MaxOldSpaceSize.IsNull() ||
+				(data.Opensearch.Unknown && apiService.OpensearchDashboards.MaxOldSpaceSize != nil) {
+				if apiService.OpensearchDashboards == nil {
+					data.Opensearch.Dashboards.MaxOldSpaceSize = types.Int64Null()
+				} else {
+					data.Opensearch.Dashboards.MaxOldSpaceSize = types.Int64PointerValue(apiService.OpensearchDashboards.MaxOldSpaceSize)
+				}
+			}
+			if !data.Opensearch.Dashboards.RequestTimeout.IsNull() ||
+				(data.Opensearch.Unknown && apiService.OpensearchDashboards.OpensearchRequestTimeout != nil) {
+				if apiService.OpensearchDashboards == nil {
+					data.Opensearch.Dashboards.RequestTimeout = types.Int64Null()
+				} else {
+					data.Opensearch.Dashboards.RequestTimeout = types.Int64PointerValue(apiService.OpensearchDashboards.OpensearchRequestTimeout)
+				}
+			}
 		}
 	}
 
