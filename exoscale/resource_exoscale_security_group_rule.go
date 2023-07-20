@@ -222,7 +222,7 @@ func resourceSecurityGroupRuleCreate(ctx context.Context, d *schema.ResourceData
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client := getClient(meta)
 
 	securityGroupID, bySecurityGroupID := d.GetOk(resSecurityGroupRuleAttrSecurityGroupID)
 	securityGroupName, bySecurityGroupName := d.GetOk(resSecurityGroupRuleAttrSecurityGroupName)
@@ -336,7 +336,7 @@ func resourceSecurityGroupRuleRead(ctx context.Context, d *schema.ResourceData, 
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client := getClient(meta)
 
 	securityGroup, err := client.FindSecurityGroup(
 		ctx,
@@ -388,7 +388,7 @@ func resourceSecurityGroupRuleDelete(ctx context.Context, d *schema.ResourceData
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client := getClient(meta)
 
 	securityGroup, err := client.FindSecurityGroup(
 		ctx,
@@ -434,7 +434,7 @@ func resourceSecurityGroupRuleApply(
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client := getClient(meta)
 
 	if err := d.Set(
 		resSecurityGroupRuleAttrDescription,

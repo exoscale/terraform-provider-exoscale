@@ -108,7 +108,7 @@ func DataSourceSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		AttrTemplateID: {
-			Description: "The managed instances [exoscale_compute_template](./compute_template.md) ID.",
+			Description: "The managed instances [exoscale_template](./template.md) ID.",
 			Type:        schema.TypeString,
 			Computed:    true,
 		},

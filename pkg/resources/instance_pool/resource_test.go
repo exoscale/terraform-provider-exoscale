@@ -42,7 +42,7 @@ locals {
   zone = "%s"
 }
 
-data "exoscale_compute_template" "ubuntu" {
+data "exoscale_template" "ubuntu" {
   zone = local.zone
   name = "Linux Ubuntu 20.04 LTS 64-bit"
 }
@@ -51,7 +51,7 @@ data "exoscale_security_group" "default" {
   name = "default"
 }
 
-resource "exoscale_affinity" "test" {
+resource "exoscale_anti_affinity_group" "test" {
   name = "%s"
 }
 
@@ -59,12 +59,12 @@ resource "exoscale_instance_pool" "test" {
   zone = local.zone
   name = "%s"
   description = "%s"
-  template_id = data.exoscale_compute_template.ubuntu.id
+  template_id = data.exoscale_template.ubuntu.id
   instance_type = "%s"
   size = %d
   disk_size = %d
   ipv6 = true
-  affinity_group_ids = [exoscale_affinity.test.id]
+  affinity_group_ids = [exoscale_anti_affinity_group.test.id]
   security_group_ids = [data.exoscale_security_group.default.id]
   instance_prefix = "%s"
   user_data = "%s"
@@ -94,21 +94,23 @@ locals {
   zone = "%s"
 }
 
-data "exoscale_compute_template" "debian" {
+data "exoscale_template" "debian" {
   zone = local.zone
   name = "Linux Debian 10 (Buster) 64-bit"
 }
 
-resource "exoscale_network" "test" {
+resource "exoscale_private_network" "test" {
   zone = local.zone
   name = "%s"
 }
 
-resource "exoscale_ssh_keypair" "test" {
+resource "exoscale_ssh_key" "test" {
   name = "%s"
+  public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB8bfA67mQWv4eGND/XVtPx1JW6RAqafub1lV1EcpB+b test"
+}
 }
 
-resource "exoscale_affinity" "test" {
+resource "exoscale_anti_affinity_group" "test" {
   name = "%s"
 }
 
@@ -116,14 +118,14 @@ resource "exoscale_instance_pool" "test" {
   zone = local.zone
   name = "%s"
   description = "%s"
-  template_id = data.exoscale_compute_template.debian.id
+  template_id = data.exoscale_template.debian.id
   instance_type = "%s"
   size = %d
   disk_size = %d
   ipv6 = false
-  key_pair = exoscale_ssh_keypair.test.name
-  affinity_group_ids = [exoscale_affinity.test.id]
-  network_ids = [exoscale_network.test.id]
+  key_pair = exoscale_ssh_key.test.name
+  affinity_group_ids = [exoscale_anti_affinity_group.test.id]
+  network_ids = [exoscale_private_network.test.id]
   user_data = "%s"
   labels = {
     test = "%s"
@@ -167,7 +169,7 @@ func testResource(t *testing.T) {
 					func(s *terraform.State) error {
 						a := require.New(t)
 
-						templateID, err := testutils.AttrFromState(s, "data.exoscale_compute_template.ubuntu", "id")
+						templateID, err := testutils.AttrFromState(s, "data.exoscale_template.ubuntu", "id")
 						a.NoError(err, "unable to retrieve template ID from state")
 
 						expectedUserData, _, err := utils.EncodeUserData(rUserData)
@@ -218,7 +220,7 @@ func testResource(t *testing.T) {
 					func(s *terraform.State) error {
 						a := require.New(t)
 
-						templateID, err := testutils.AttrFromState(s, "data.exoscale_compute_template.debian", "id")
+						templateID, err := testutils.AttrFromState(s, "data.exoscale_template.debian", "id")
 						a.NoError(err, "unable to retrieve template ID from state")
 
 						expectedUserData, _, err := utils.EncodeUserData(rUserDataUpdated)

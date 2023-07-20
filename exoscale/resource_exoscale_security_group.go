@@ -121,7 +121,7 @@ func resourceSecurityGroupCreate(ctx context.Context, d *schema.ResourceData, me
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client := getClient(meta)
 
 	securityGroup, err := client.CreateSecurityGroup(ctx, zone, &egoscale.SecurityGroup{
 		Name:        nonEmptyStringPtr(d.Get(resSecurityGroupAttrName).(string)),
@@ -159,7 +159,7 @@ func resourceSecurityGroupRead(ctx context.Context, d *schema.ResourceData, meta
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client := getClient(meta)
 
 	securityGroup, err := client.GetSecurityGroup(ctx, zone, d.Id())
 	if err != nil {
@@ -189,7 +189,7 @@ func resourceSecurityGroupUpdate(ctx context.Context, d *schema.ResourceData, me
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client := getClient(meta)
 
 	securityGroup, err := client.GetSecurityGroup(ctx, zone, d.Id())
 	if err != nil {
@@ -246,7 +246,7 @@ func resourceSecurityGroupDelete(ctx context.Context, d *schema.ResourceData, me
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client := getClient(meta)
 
 	if err := client.DeleteSecurityGroup(ctx, zone, &egoscale.SecurityGroup{
 		ID: nonEmptyStringPtr(d.Id()),
@@ -272,7 +272,7 @@ func resourceSecurityGroupImport(
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client := getClient(meta)
 
 	securityGroup, err := client.FindSecurityGroup(ctx, zone, d.Id())
 	if err != nil {

@@ -93,11 +93,11 @@ data "exoscale_security_group" "default" {
   name = "default"
 }
 
-resource "exoscale_affinity" "test" {
+resource "exoscale_anti_affinity_group" "test" {
   name = "%s"
 }
 
-resource "exoscale_network" "test" {
+resource "exoscale_private_network" "test" {
   zone     = local.zone
   name     = "%s"
   start_ip = "10.0.0.20"
@@ -123,9 +123,9 @@ resource "exoscale_sks_nodepool" "test" {
   disk_size = %d
   size = %d
   instance_prefix = "%s"
-  anti_affinity_group_ids = [exoscale_affinity.test.id]
+  anti_affinity_group_ids = [exoscale_anti_affinity_group.test.id]
   security_group_ids = [data.exoscale_security_group.default.id]
-  private_network_ids = [exoscale_network.test.id]
+  private_network_ids = [exoscale_private_network.test.id]
   labels = { test = "%s" }
   taints = { test = "%s:%s" }
   storage_lvm = %t
@@ -216,7 +216,6 @@ func TestAccResourceSKSNodepool(t *testing.T) {
 					testAccCheckResourceSKSNodepoolExists(r, &sksNodepool),
 					func(s *terraform.State) error {
 						a := require.New(t)
-
 						a.Len(*sksNodepool.AntiAffinityGroupIDs, 1)
 						a.Equal(testAccResourceSKSNodepoolDescriptionUpdated, *sksNodepool.Description)
 						a.Equal(testAccResourceSKSNodepoolDiskSizeUpdated, *sksNodepool.DiskSize)
@@ -327,7 +326,7 @@ func testAccCheckResourceSKSNodepoolExists(r string, sksNodepool *egoscale.SKSNo
 			return fmt.Errorf("resource attribute %q not set", resSKSNodepoolAttrClusterID)
 		}
 
-		client := GetComputeClient(testAccProvider.Meta())
+		client := getClient(testAccProvider.Meta())
 		ctx := exoapi.WithEndpoint(
 			context.Background(),
 			exoapi.NewReqEndpoint(testEnvironment, testZoneName),
@@ -383,7 +382,7 @@ func testAccCheckResourceSKSNodepoolDestroy(r string) resource.TestCheckFunc {
 			return fmt.Errorf("resource attribute %q not set", resSKSNodepoolAttrClusterID)
 		}
 
-		client := GetComputeClient(testAccProvider.Meta())
+		client := getClient(testAccProvider.Meta())
 		ctx := exoapi.WithEndpoint(
 			context.Background(),
 			exoapi.NewReqEndpoint(testEnvironment, testZoneName),

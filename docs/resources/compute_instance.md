@@ -19,7 +19,7 @@ After the creation, you can retrieve the password of an instance with [Exoscale 
 ## Example Usage
 
 ```terraform
-data "exoscale_compute_template" "my_template" {
+data "exoscale_template" "my_template" {
   zone = "ch-gva-2"
   name = "Linux Ubuntu 22.04 LTS 64-bit"
 }
@@ -28,7 +28,7 @@ resource "exoscale_compute_instance" "my_instance" {
   zone = "ch-gva-2"
   name = "my-instance"
 
-  template_id = data.exoscale_compute_template.my_template.id
+  template_id = data.exoscale_template.my_template.id
   type        = "standard.medium"
   disk_size   = 10
 }
@@ -43,7 +43,7 @@ directory for complete configuration examples.
 ### Required
 
 - `name` (String) The compute instance name.
-- `template_id` (String) ❗ The [exoscale_compute_template](../data-sources/compute_template.md) (ID) to use when creating the instance.
+- `template_id` (String) ❗ The [exoscale_template](../data-sources/template.md) (ID) to use when creating the instance.
 - `type` (String) The instance type (`<family>.<size>`, e.g. `standard.medium`; use the [Exoscale CLI](https://github.com/exoscale/cli/) - `exo compute instance-type list` - for the list of available types). **WARNING**: updating this attribute stops/restarts the instance.
 - `zone` (String) ❗ The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.
 

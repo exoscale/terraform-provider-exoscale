@@ -162,7 +162,7 @@ func resourceIAMAccessKeyCreate(ctx context.Context, d *schema.ResourceData, met
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client := getClient(meta)
 
 	opts := make([]egoscale.CreateIAMAccessKeyOpt, 0)
 
@@ -229,7 +229,7 @@ func resourceIAMAccessKeyRead(ctx context.Context, d *schema.ResourceData, meta 
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client := getClient(meta)
 
 	accessKey, err := client.GetIAMAccessKey(ctx, zone, d.Id())
 	if err != nil {
@@ -259,7 +259,7 @@ func resourceIAMAccessKeyDelete(ctx context.Context, d *schema.ResourceData, met
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client := getClient(meta)
 
 	key := d.Id()
 	if err := client.RevokeIAMAccessKey(ctx, zone, &egoscale.IAMAccessKey{Key: &key}); err != nil {

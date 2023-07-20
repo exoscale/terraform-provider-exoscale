@@ -178,7 +178,7 @@ func testAccCheckResourcePrivateNetworkExists(r string, privateNetwork *egoscale
 			return errors.New("resource ID not set")
 		}
 
-		client := GetComputeClient(testAccProvider.Meta())
+		client := getClient(testAccProvider.Meta())
 
 		ctx := exoapi.WithEndpoint(context.Background(), exoapi.NewReqEndpoint(testEnvironment, testZoneName))
 		res, err := client.GetPrivateNetwork(ctx, testZoneName, rs.Primary.ID)
@@ -193,7 +193,7 @@ func testAccCheckResourcePrivateNetworkExists(r string, privateNetwork *egoscale
 
 func testAccCheckResourcePrivateNetworkDestroy(privateNetwork *egoscale.PrivateNetwork) resource.TestCheckFunc {
 	return func(_ *terraform.State) error {
-		client := GetComputeClient(testAccProvider.Meta())
+		client := getClient(testAccProvider.Meta())
 		ctx := exoapi.WithEndpoint(context.Background(), exoapi.NewReqEndpoint(testEnvironment, testZoneName))
 
 		_, err := client.GetPrivateNetwork(ctx, testZoneName, *privateNetwork.ID)

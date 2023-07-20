@@ -58,7 +58,7 @@ directory for complete configuration examples.
 - `security_group_ids` (Set of String) The list of attached [exoscale_security_group](../resources/security_group.md) (IDs).
 - `size` (Number) The number managed instances.
 - `state` (String) The pool state.
-- `template_id` (String) The managed instances [exoscale_compute_template](./compute_template.md) ID.
+- `template_id` (String) The managed instances [exoscale_template](./template.md) ID.
 - `user_data` (String) [cloud-init](http://cloudinit.readthedocs.io/en/latest/) configuration.
 
 <a id="nestedatt--instances"></a>

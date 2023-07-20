@@ -140,7 +140,7 @@ func Resource() *schema.Resource {
 			Computed:    true,
 		},
 		AttrTemplateID: {
-			Description: "The [exoscale_compute_template](../data-sources/compute_template.md) (ID) to use when creating the instance.",
+			Description: "The [exoscale_template](../data-sources/template.md) (ID) to use when creating the instance.",
 			Type:        schema.TypeString,
 			Required:    true,
 			ForceNew:    true,

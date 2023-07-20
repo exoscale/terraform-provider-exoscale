@@ -3,8 +3,10 @@ package zones
 import (
 	"context"
 
-	exov1 "github.com/exoscale/egoscale"
-	"github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
+	exoscale "github.com/exoscale/egoscale/v2"
+	exoapi "github.com/exoscale/egoscale/v2/api"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
+	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
 
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -20,7 +22,8 @@ const (
 var _ datasource.DataSourceWithConfigure = &ZonesDataSource{}
 
 type ZonesDataSource struct {
-	clientV1 *exov1.Client
+	client *exoscale.Client
+	env    string
 }
 
 type ZonesDataSourceModel struct {
@@ -32,7 +35,8 @@ func (d *ZonesDataSource) Configure(ctx context.Context, req datasource.Configur
 		return
 	}
 
-	d.clientV1 = req.ProviderData.(*config.ExoscaleProviderConfig).ClientV1
+	d.client = req.ProviderData.(*providerConfig.ExoscaleProviderConfig).ClientV2
+	d.env = req.ProviderData.(*providerConfig.ExoscaleProviderConfig).Environment
 }
 
 func (d *ZonesDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -60,8 +64,8 @@ func (d *ZonesDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
 	var data ZonesDataSourceModel
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
-
-	exoZonesList, err := d.clientV1.ListWithContext(ctx, &exov1.Zone{})
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(d.env, config.DefaultZone))
+	exoZonesList, err := d.client.ListZones(ctx)
 	if err != nil {
 		resp.Diagnostics.AddError(err.Error(), "")
 
@@ -69,10 +73,9 @@ func (d *ZonesDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
 	}
 
 	attrs := make([]attr.Value, 0, len(exoZonesList))
-	for _, key := range exoZonesList {
-		zone := key.(*exov1.Zone)
+	for _, zone := range exoZonesList {
 
-		attrs = append(attrs, basetypes.NewStringValue(zone.Name))
+		attrs = append(attrs, basetypes.NewStringValue(zone))
 	}
 
 	zonesList, listDiags := types.ListValue(types.StringType, attrs)

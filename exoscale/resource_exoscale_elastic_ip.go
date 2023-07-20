@@ -185,7 +185,7 @@ func resourceElasticIPCreate(ctx context.Context, d *schema.ResourceData, meta i
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client := getClient(meta)
 
 	elasticIP := new(egoscale.ElasticIP)
 
@@ -292,7 +292,7 @@ func resourceElasticIPRead(ctx context.Context, d *schema.ResourceData, meta int
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client := getClient(meta)
 
 	elasticIP, err := client.GetElasticIP(ctx, zone, d.Id())
 	if err != nil {
@@ -308,7 +308,7 @@ func resourceElasticIPRead(ctx context.Context, d *schema.ResourceData, meta int
 		"id": resourceElasticIPIDString(d),
 	})
 
-	return resourceElasticIPApply(ctx, client.Client, d, elasticIP)
+	return resourceElasticIPApply(ctx, client, d, elasticIP)
 }
 
 func resourceElasticIPUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -322,7 +322,7 @@ func resourceElasticIPUpdate(ctx context.Context, d *schema.ResourceData, meta i
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client := getClient(meta)
 
 	elasticIP, err := client.GetElasticIP(ctx, zone, d.Id())
 	if err != nil {
@@ -445,7 +445,7 @@ func resourceElasticIPDelete(ctx context.Context, d *schema.ResourceData, meta i
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client := getClient(meta)
 
 	elasticIPID := d.Id()
 	if err := client.DeleteElasticIPReverseDNS(ctx, zone, elasticIPID); err != nil && !errors.Is(err, exoapi.ErrNotFound) {

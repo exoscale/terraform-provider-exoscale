@@ -100,7 +100,7 @@ func testAccCheckResourceSSHKeyExists(r string, sshKey *egoscale.SSHKey) resourc
 			return errors.New("resource ID not set")
 		}
 
-		client := GetComputeClient(testAccProvider.Meta())
+		client := getClient(testAccProvider.Meta())
 
 		ctx := exoapi.WithEndpoint(context.Background(), exoapi.NewReqEndpoint(testEnvironment, testZoneName))
 		res, err := client.GetSSHKey(ctx, testZoneName, rs.Primary.ID)
@@ -115,7 +115,7 @@ func testAccCheckResourceSSHKeyExists(r string, sshKey *egoscale.SSHKey) resourc
 
 func testAccCheckResourceSSHKeyDestroy(sshKey *egoscale.SSHKey) resource.TestCheckFunc {
 	return func(_ *terraform.State) error {
-		client := GetComputeClient(testAccProvider.Meta())
+		client := getClient(testAccProvider.Meta())
 		ctx := exoapi.WithEndpoint(context.Background(), exoapi.NewReqEndpoint(testEnvironment, testZoneName))
 
 		_, err := client.GetSSHKey(ctx, testZoneName, *sshKey.Name)

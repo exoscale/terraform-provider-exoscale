@@ -5,8 +5,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
-
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -79,21 +77,6 @@ func validateComputeInstanceType(v interface{}, _ cty.Path) diag.Diagnostics {
 
 	if !strings.Contains(value, ".") {
 		return diag.Errorf(`invalid value %q, expected format "FAMILY.SIZE"`, value)
-	}
-
-	return nil
-}
-
-// validateComputeUserData validates that the given field contains a valid data.
-func validateComputeUserData(v interface{}, _ cty.Path) diag.Diagnostics {
-	value, ok := v.(string)
-	if !ok {
-		return diag.Errorf("expected field %q type to be string", v)
-	}
-
-	_, _, err := utils.EncodeUserData(value)
-	if err != nil {
-		return diag.FromErr(err)
 	}
 
 	return nil

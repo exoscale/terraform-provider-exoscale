@@ -73,7 +73,7 @@ func dataSourceTemplateRead(ctx context.Context, d *schema.ResourceData, meta in
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client := getClient(meta)
 
 	templateID, byTemplateID := d.GetOk(dsTemplateAttrID)
 	templateName, byTemplateName := d.GetOk(dsTemplateAttrName)

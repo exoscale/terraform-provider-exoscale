@@ -32,7 +32,7 @@ locals {
   zone = "%s"
 }
 
-data "exoscale_compute_template" "ubuntu" {
+data "exoscale_template" "ubuntu" {
   zone = local.zone
   name = "Linux Ubuntu 20.04 LTS 64-bit"
 }
@@ -64,7 +64,7 @@ resource "exoscale_compute_instance" "test" {
   name                    = "%s"
   type                    = "%s"
   disk_size               = %d
-  template_id             = data.exoscale_compute_template.ubuntu.id
+  template_id             = data.exoscale_template.ubuntu.id
   ipv6                    = true
   anti_affinity_group_ids = [exoscale_anti_affinity_group.test.id]
   security_group_ids      = [exoscale_security_group.test.id]

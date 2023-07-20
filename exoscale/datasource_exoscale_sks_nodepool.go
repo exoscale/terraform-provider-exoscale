@@ -86,7 +86,7 @@ func dataSourceSKSNodepoolRead(ctx context.Context, d *schema.ResourceData, meta
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client := getClient(meta)
 
 	clusterID := d.Get(resSKSNodepoolAttrClusterID).(string)
 	cluster, err := client.GetSKSCluster(ctx, zone, clusterID)

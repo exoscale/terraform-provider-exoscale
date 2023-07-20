@@ -64,21 +64,33 @@ resource "exoscale_anti_affinity_group" "test" {
   name = "%s"
 }
 
-resource "exoscale_compute" "test" {
+data "exoscale_template" "ubuntu" {
+  zone = "%s"
+  name = "%s"
+}
+
+data "exoscale_security_group" "default" {
+  name = "default"
+}
+
+resource "exoscale_compute_instance" "test" {
   zone               = "%s"
-  template           = "%s"
-  size               = "Micro"
+  name               = "test"
+  template_id        = data.exoscale_template.ubuntu.id
+  security_group_ids = [data.exoscale_security_group.default.id]
+  type               = "standard.micro"
   disk_size          = "10"
-  affinity_group_ids = [exoscale_anti_affinity_group.test.id]
+  anti_affinity_group_ids = [exoscale_anti_affinity_group.test.id]
 }
 
 data "exoscale_anti_affinity_group" "test" {
   id         = exoscale_anti_affinity_group.test.id
-  depends_on = [exoscale_compute.test]
+  depends_on = [exoscale_compute_instance.test]
 }`,
 					dsGroupName,
 					testutils.TestZoneName,
 					testutils.TestInstanceTemplateName,
+					testutils.TestZoneName,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					dsTestAttributes("data."+aagroup.Name+".test", testutils.TestAttrs{

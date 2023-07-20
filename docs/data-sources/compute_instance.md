@@ -59,7 +59,7 @@ directory for complete configuration examples.
 - `security_group_ids` (Set of String) The list of attached [exoscale_security_group](../resources/security_group.md) (IDs).
 - `ssh_key` (String) The [exoscale_ssh_key](../resources/ssh_key.md) (name) authorized on the instance.
 - `state` (String) The instance state.
-- `template_id` (String) The instance [exoscale_compute_template](./compute_template.md) ID.
+- `template_id` (String) The instance [exoscale_template](./template.md) ID.
 - `type` (String) The instance type.
 - `user_data` (String) The instance [cloud-init](http://cloudinit.readthedocs.io/en/latest/) configuration.
 

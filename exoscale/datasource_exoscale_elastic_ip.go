@@ -155,7 +155,7 @@ func dataSourceElasticIPRead(ctx context.Context, d *schema.ResourceData, meta i
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client := getClient(meta)
 
 	elasticIPID, searchByElasticIPID := d.GetOk(dsElasticIPAttrID)
 	elasticIPAddress, searchByElasticIPAddress := d.GetOk(dsElasticIPAttrIPAddress)

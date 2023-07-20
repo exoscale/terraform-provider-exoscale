@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/exoscale/egoscale"
 	exov2 "github.com/exoscale/egoscale/v2"
 	"github.com/exoscale/terraform-provider-exoscale/version"
 
@@ -18,11 +17,7 @@ import (
 )
 
 const (
-	DefaultConfig          = "cloudstack.ini"
-	DefaultProfile         = "cloudstack"
-	DefaultComputeEndpoint = "https://api.exoscale.com/v1"
-	DefaultDNSEndpoint     = "https://api.exoscale.com/dns"
-	DefaultEnvironment     = "api"
+	DefaultEnvironment = "api"
 )
 
 // UserAgent represents the User Agent to advertise in outgoing HTTP requests.
@@ -30,14 +25,14 @@ var UserAgent = fmt.Sprintf("Exoscale-Terraform-Provider/%s (%s) Terraform-SDK/%
 	version.Version,
 	version.Commit,
 	meta.SDKVersionString(),
-	egoscale.UserAgent)
+	exov2.UserAgent)
 
 func getConfig(meta interface{}) providerConfig.BaseConfig {
 	t := meta.(map[string]interface{})
 	return t["config"].(providerConfig.BaseConfig)
 }
 
-func getClient(endpoint string, meta interface{}) *egoscale.Client {
+func getClient(meta interface{}) *exov2.Client {
 	config := getConfig(meta)
 
 	httpClient := cleanhttp.DefaultPooledClient()
@@ -49,15 +44,6 @@ func getClient(endpoint string, meta interface{}) *egoscale.Client {
 		)
 	}
 
-	client := egoscale.NewClient(
-		endpoint,
-		config.Key,
-		config.Secret,
-		egoscale.WithHTTPClient(httpClient),
-		egoscale.WithTimeout(config.Timeout),
-		egoscale.WithoutV2Client(),
-	)
-
 	// During the Exoscale API V1 -> V2 transition, we need to initialize the
 	// V2 client independently from the V1 client because of HTTP middleware
 	// (http.Transport) clashes.
@@ -65,7 +51,6 @@ func getClient(endpoint string, meta interface{}) *egoscale.Client {
 	clientExoV2, err := exov2.NewClient(
 		config.Key,
 		config.Secret,
-		exov2.ClientOptWithAPIEndpoint(endpoint),
 		exov2.ClientOptWithTimeout(config.Timeout),
 		exov2.ClientOptWithHTTPClient(func() *http.Client {
 			rc := retryablehttp.NewClient()
@@ -80,27 +65,8 @@ func getClient(endpoint string, meta interface{}) *egoscale.Client {
 	if err != nil {
 		panic(fmt.Sprintf("unable to initialize Exoscale API V2 client: %v", err))
 	}
-	client.Client = clientExoV2
 
-	return client
-}
-
-// GetComputeClient builds a CloudStack client
-func GetComputeClient(meta interface{}) *egoscale.Client {
-	config := getConfig(meta)
-	if config.ComputeClient == nil {
-		config.ComputeClient = getClient(config.ComputeEndpoint, meta)
-	}
-	return config.ComputeClient
-}
-
-// GetDNSClient builds a DNS client
-func GetDNSClient(meta interface{}) *egoscale.Client {
-	config := getConfig(meta)
-	if config.DNSClient == nil {
-		config.DNSClient = getClient(config.DNSEndpoint, meta)
-	}
-	return config.DNSClient
+	return clientExoV2
 }
 
 func getEnvironment(meta interface{}) string {

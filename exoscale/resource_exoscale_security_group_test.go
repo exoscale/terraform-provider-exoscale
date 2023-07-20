@@ -132,7 +132,7 @@ func testAccCheckResourceSecurityGroupExists(r string, securityGroup *egoscale.S
 			return errors.New("resource ID not set")
 		}
 
-		client := GetComputeClient(testAccProvider.Meta())
+		client := getClient(testAccProvider.Meta())
 
 		ctx := exoapi.WithEndpoint(context.Background(), exoapi.NewReqEndpoint(testEnvironment, testZoneName))
 		res, err := client.GetSecurityGroup(ctx, testZoneName, rs.Primary.ID)
@@ -147,7 +147,7 @@ func testAccCheckResourceSecurityGroupExists(r string, securityGroup *egoscale.S
 
 func testAccCheckResourceSecurityGroupDestroy(securityGroup *egoscale.SecurityGroup) resource.TestCheckFunc {
 	return func(_ *terraform.State) error {
-		client := GetComputeClient(testAccProvider.Meta())
+		client := getClient(testAccProvider.Meta())
 		ctx := exoapi.WithEndpoint(context.Background(), exoapi.NewReqEndpoint(testEnvironment, testZoneName))
 
 		_, err := client.GetSecurityGroup(ctx, testZoneName, *securityGroup.ID)

@@ -225,7 +225,7 @@ func resourceSKSNodepoolCreate(ctx context.Context, d *schema.ResourceData, meta
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client := getClient(meta)
 
 	sksCluster, err := client.GetSKSCluster(ctx, zone, d.Get(resSKSNodepoolAttrClusterID).(string))
 	if err != nil {
@@ -362,7 +362,7 @@ func resourceSKSNodepoolRead(ctx context.Context, d *schema.ResourceData, meta i
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client := getClient(meta)
 
 	sks, err := client.GetSKSCluster(ctx, zone, d.Get(resSKSNodepoolAttrClusterID).(string))
 	if err != nil {
@@ -391,7 +391,7 @@ func resourceSKSNodepoolRead(ctx context.Context, d *schema.ResourceData, meta i
 		"id": resourceSKSNodepoolIDString(d),
 	})
 
-	return diag.FromErr(resourceSKSNodepoolApply(ctx, client.Client, d, sksNodepool))
+	return diag.FromErr(resourceSKSNodepoolApply(ctx, client, d, sksNodepool))
 }
 
 func resourceSKSNodepoolUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -405,7 +405,7 @@ func resourceSKSNodepoolUpdate(ctx context.Context, d *schema.ResourceData, meta
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client := getClient(meta)
 
 	sksCluster, err := client.GetSKSCluster(ctx, zone, d.Get(resSKSNodepoolAttrClusterID).(string))
 	if err != nil {
@@ -558,7 +558,7 @@ func resourceSKSNodepoolDelete(ctx context.Context, d *schema.ResourceData, meta
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client := getClient(meta)
 
 	sksCluster, err := client.GetSKSCluster(ctx, zone, d.Get(resSKSNodepoolAttrClusterID).(string))
 	if err != nil {

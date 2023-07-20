@@ -196,7 +196,7 @@ func Test_defaultBool(t *testing.T) {
 }
 
 func GetTemplateIDByName(templateName string) (*string, error) {
-	client := GetComputeClient(testAccProvider.Meta())
+	client := getClient(testAccProvider.Meta())
 	ctx := exoapi.WithEndpoint(context.Background(), exoapi.NewReqEndpoint(testEnvironment, testZoneName))
 
 	templates, err := client.ListTemplates(ctx, testZoneName, egoscale.ListTemplatesWithVisibility("public"))

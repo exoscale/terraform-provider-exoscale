@@ -76,7 +76,7 @@ func dataSourceNLBRead(ctx context.Context, d *schema.ResourceData, meta interfa
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client := getClient(meta)
 
 	var x string
 	_, byID := d.GetOk(dsNLBAttrID)
