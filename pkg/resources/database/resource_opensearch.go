@@ -101,7 +101,7 @@ var ResourceOpensearchSchema = schema.SingleNestedBlock{
 			Optional:            true,
 			Computed:            true,
 			PlanModifiers: []planmodifier.String{
-				stringplanmodifier.RequiresReplace(),
+				stringplanmodifier.RequiresReplaceIfConfigured(),
 			},
 		},
 	},
@@ -493,7 +493,8 @@ func (r *Resource) updateOpensearch(ctx context.Context, stateData *ResourceMode
 		return
 	}
 
-	if !planData.MaintenanceDOW.Equal(stateData.MaintenanceDOW) || !planData.MaintenanceTime.Equal(stateData.MaintenanceTime) {
+	if (!planData.MaintenanceDOW.Equal(stateData.MaintenanceDOW) && !planData.MaintenanceDOW.IsUnknown()) ||
+		(!planData.MaintenanceTime.Equal(stateData.MaintenanceTime) && !planData.MaintenanceTime.IsUnknown()) {
 		service.Maintenance = &struct {
 			Dow  oapi.UpdateDbaasServiceOpensearchJSONBodyMaintenanceDow `json:"dow"`
 			Time string                                                  `json:"time"`

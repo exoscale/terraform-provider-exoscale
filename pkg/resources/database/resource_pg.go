@@ -319,7 +319,8 @@ func (r *Resource) updatePg(ctx context.Context, stateData *ResourceModel, planD
 		return
 	}
 
-	if !planData.MaintenanceDOW.Equal(stateData.MaintenanceDOW) || !planData.MaintenanceTime.Equal(stateData.MaintenanceTime) {
+	if (!planData.MaintenanceDOW.Equal(stateData.MaintenanceDOW) && !planData.MaintenanceDOW.IsUnknown()) ||
+		(!planData.MaintenanceTime.Equal(stateData.MaintenanceTime) && !planData.MaintenanceTime.IsUnknown()) {
 		service.Maintenance = &struct {
 			Dow  oapi.UpdateDbaasServicePgJSONBodyMaintenanceDow `json:"dow"`
 			Time string                                          `json:"time"`
