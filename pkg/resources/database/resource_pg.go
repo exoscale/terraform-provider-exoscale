@@ -195,7 +195,7 @@ func (r *Resource) createPg(ctx context.Context, data *ResourceModel, diagnostic
 // readPg function handles PostgreSQL specific part of database resource Read logic.
 // It is used in the dedicated Read action but also as a finishing step of Create, Update and Import.
 func (r *Resource) readPg(ctx context.Context, data *ResourceModel, diagnostics *diag.Diagnostics) {
-	caCert, err := r.client.GetDatabaseCACertificate(context.Background(), data.Zone.ValueString())
+	caCert, err := r.client.GetDatabaseCACertificate(ctx, data.Zone.ValueString())
 	if err != nil {
 		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to get CA Certificate: %s", err))
 		return
