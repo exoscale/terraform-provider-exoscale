@@ -107,10 +107,13 @@ func (r *Resource) createKafka(ctx context.Context, data *ResourceModel, diagnos
 	service := oapi.CreateDbaasServiceKafkaJSONRequestBody{
 		Plan:                  data.Plan.ValueString(),
 		TerminationProtection: data.TerminationProtection.ValueBoolPointer(),
-		Version:               kafkaData.Version.ValueStringPointer(),
 		KafkaConnectEnabled:   kafkaData.EnableKafkaConnect.ValueBoolPointer(),
 		KafkaRestEnabled:      kafkaData.EnableKafkaREST.ValueBoolPointer(),
 		SchemaRegistryEnabled: kafkaData.EnableSchemaRegistry.ValueBoolPointer(),
+	}
+
+	if !kafkaData.Version.IsUnknown() {
+		service.Version = kafkaData.Version.ValueStringPointer()
 	}
 
 	if !kafkaData.EnableCertAuth.IsUnknown() || !kafkaData.EnableSASLAuth.IsUnknown() {

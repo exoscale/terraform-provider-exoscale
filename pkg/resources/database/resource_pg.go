@@ -88,7 +88,10 @@ func (r *Resource) createPg(ctx context.Context, data *ResourceModel, diagnostic
 	service := oapi.CreateDbaasServicePgJSONRequestBody{
 		Plan:                  data.Plan.ValueString(),
 		TerminationProtection: data.TerminationProtection.ValueBoolPointer(),
-		Version:               pgData.Version.ValueStringPointer(),
+	}
+
+	if !pgData.Version.IsUnknown() {
+		service.Version = pgData.Version.ValueStringPointer()
 	}
 
 	if !pgData.AdminPassword.IsUnknown() {

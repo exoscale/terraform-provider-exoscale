@@ -76,7 +76,10 @@ func (r *Resource) createMysql(ctx context.Context, data *ResourceModel, diagnos
 	service := oapi.CreateDbaasServiceMysqlJSONRequestBody{
 		Plan:                  data.Plan.ValueString(),
 		TerminationProtection: data.TerminationProtection.ValueBoolPointer(),
-		Version:               mysqlData.Version.ValueStringPointer(),
+	}
+
+	if !mysqlData.Version.IsUnknown() {
+		service.Version = mysqlData.Version.ValueStringPointer()
 	}
 
 	if !mysqlData.AdminPassword.IsUnknown() {

@@ -44,7 +44,6 @@ func testDataSourceURI(t *testing.T) {
 		Plan:                  "hobbyist-2",
 		Zone:                  testutils.TestZoneName,
 		TerminationProtection: false,
-		Version:               "13",
 	}
 	buf := &bytes.Buffer{}
 	err = tplResourcePg.Execute(buf, &resourcePg)
@@ -86,7 +85,6 @@ func testDataSourceURI(t *testing.T) {
 		Plan:                  "hobbyist-2",
 		Zone:                  testutils.TestZoneName,
 		TerminationProtection: false,
-		Version:               "8",
 	}
 	buf = &bytes.Buffer{}
 	err = tplResourceMysql.Execute(buf, &resourceMysql)
@@ -169,7 +167,6 @@ func testDataSourceURI(t *testing.T) {
 		Plan:                  "business-4",
 		Zone:                  testutils.TestZoneName,
 		TerminationProtection: false,
-		Version:               "3.3",
 	}
 	buf = &bytes.Buffer{}
 	err = tplResourceKafka.Execute(buf, &resourceKafka)
@@ -211,7 +208,7 @@ func testDataSourceURI(t *testing.T) {
 		Plan:                  "hobbyist-2",
 		Zone:                  testutils.TestZoneName,
 		TerminationProtection: false,
-		Version:               "1",
+		Dashboards:            &TemplateModelOpensearchDashboards{Enabled: false},
 	}
 	buf = &bytes.Buffer{}
 	err = tplResourceOpensearch.Execute(buf, &resourceOpensearch)

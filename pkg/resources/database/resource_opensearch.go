@@ -175,7 +175,10 @@ func (r *Resource) createOpensearch(ctx context.Context, data *ResourceModel, di
 		ForkFromService:          (*oapi.DbaasServiceName)(data.Opensearch.ForkFromService.ValueStringPointer()),
 		RecoveryBackupName:       data.Opensearch.RecoveryBackupName.ValueStringPointer(),
 		KeepIndexRefreshInterval: data.Opensearch.KeepIndexRefreshInterval.ValueBoolPointer(),
-		Version:                  data.Opensearch.Version.ValueStringPointer(),
+	}
+
+	if !data.Opensearch.Version.IsUnknown() {
+		service.Version = data.Opensearch.Version.ValueStringPointer()
 	}
 
 	if !data.Opensearch.IpFilter.IsUnknown() {
@@ -208,15 +211,23 @@ func (r *Resource) createOpensearch(ctx context.Context, data *ResourceModel, di
 			SortingAlgorithm *oapi.CreateDbaasServiceOpensearchJSONBodyIndexPatternsSortingAlgorithm `json:"sorting-algorithm,omitempty"`
 		}{}
 		for _, pattern := range data.Opensearch.IndexPatterns {
-			patterns = append(patterns, struct {
+			obj := struct {
 				MaxIndexCount    *int64                                                                  `json:"max-index-count,omitempty"`
 				Pattern          *string                                                                 `json:"pattern,omitempty"`
 				SortingAlgorithm *oapi.CreateDbaasServiceOpensearchJSONBodyIndexPatternsSortingAlgorithm `json:"sorting-algorithm,omitempty"`
-			}{
-				pattern.MaxIndexCount.ValueInt64Pointer(),
-				pattern.Pattern.ValueStringPointer(),
-				(*oapi.CreateDbaasServiceOpensearchJSONBodyIndexPatternsSortingAlgorithm)(pattern.SortingAlgorithm.ValueStringPointer()),
-			})
+			}{}
+
+			if !pattern.MaxIndexCount.IsNull() {
+				obj.MaxIndexCount = pattern.MaxIndexCount.ValueInt64Pointer()
+			}
+			if !pattern.Pattern.IsNull() {
+				obj.Pattern = pattern.Pattern.ValueStringPointer()
+			}
+			if !pattern.SortingAlgorithm.IsNull() {
+				obj.SortingAlgorithm = (*oapi.CreateDbaasServiceOpensearchJSONBodyIndexPatternsSortingAlgorithm)(pattern.SortingAlgorithm.ValueStringPointer())
+			}
+
+			patterns = append(patterns, obj)
 		}
 
 		service.IndexPatterns = &patterns
@@ -227,10 +238,16 @@ func (r *Resource) createOpensearch(ctx context.Context, data *ResourceModel, di
 			MappingNestedObjectsLimit *int64 "json:\"mapping-nested-objects-limit,omitempty\""
 			NumberOfReplicas          *int64 "json:\"number-of-replicas,omitempty\""
 			NumberOfShards            *int64 "json:\"number-of-shards,omitempty\""
-		}{
-			data.Opensearch.IndexTemplate.MappingNestedObjectsLimit.ValueInt64Pointer(),
-			data.Opensearch.IndexTemplate.NumberOfReplicas.ValueInt64Pointer(),
-			data.Opensearch.IndexTemplate.NumberOfShards.ValueInt64Pointer(),
+		}{}
+
+		if !data.Opensearch.IndexTemplate.MappingNestedObjectsLimit.IsNull() {
+			service.IndexTemplate.MappingNestedObjectsLimit = data.Opensearch.IndexTemplate.MappingNestedObjectsLimit.ValueInt64Pointer()
+		}
+		if !data.Opensearch.IndexTemplate.NumberOfReplicas.IsNull() {
+			service.IndexTemplate.NumberOfReplicas = data.Opensearch.IndexTemplate.NumberOfReplicas.ValueInt64Pointer()
+		}
+		if !data.Opensearch.IndexTemplate.NumberOfShards.IsNull() {
+			service.IndexTemplate.NumberOfShards = data.Opensearch.IndexTemplate.NumberOfShards.ValueInt64Pointer()
 		}
 	}
 
@@ -239,10 +256,15 @@ func (r *Resource) createOpensearch(ctx context.Context, data *ResourceModel, di
 			Enabled                  *bool  "json:\"enabled,omitempty\""
 			MaxOldSpaceSize          *int64 "json:\"max-old-space-size,omitempty\""
 			OpensearchRequestTimeout *int64 "json:\"opensearch-request-timeout,omitempty\""
-		}{
-			data.Opensearch.Dashboards.Enabled.ValueBoolPointer(),
-			data.Opensearch.Dashboards.MaxOldSpaceSize.ValueInt64Pointer(),
-			data.Opensearch.Dashboards.RequestTimeout.ValueInt64Pointer(),
+		}{}
+		if !data.Opensearch.Dashboards.Enabled.IsNull() {
+			service.OpensearchDashboards.Enabled = data.Opensearch.Dashboards.Enabled.ValueBoolPointer()
+		}
+		if !data.Opensearch.Dashboards.MaxOldSpaceSize.IsNull() {
+			service.OpensearchDashboards.MaxOldSpaceSize = data.Opensearch.Dashboards.MaxOldSpaceSize.ValueInt64Pointer()
+		}
+		if !data.Opensearch.Dashboards.RequestTimeout.IsNull() {
+			service.OpensearchDashboards.OpensearchRequestTimeout = data.Opensearch.Dashboards.RequestTimeout.ValueInt64Pointer()
 		}
 	}
 
