@@ -7,7 +7,7 @@ description: |-
 
 # exoscale_compute (Resource)
 
-!> **WARNING:** This resource is **DEPRECATED** and will be removed in the next major version. Please use [exoscale_compute_instance](./compute_instance.md) instead.
+!> **WARNING:** This resource is **DEPRECATED** and will be removed in the next major version. Please use [exoscale_compute_instance](./compute_instance.md) instead (or refer to the ad-hoc [migration guide](../guides/migration-of-compute.md)).
 
 Manage Exoscale Compute Instances.
 
