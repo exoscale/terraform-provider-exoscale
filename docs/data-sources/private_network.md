@@ -40,6 +40,7 @@ directory for complete configuration examples.
 
 - `description` (String) The private network description.
 - `id` (String) The private network ID to match (conflicts with `name`).
+- `labels` (Map of String) A map of key/value labels.
 - `name` (String) The network name to match (conflicts with `id`).
 
 ### Read-Only
