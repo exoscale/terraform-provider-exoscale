@@ -19,6 +19,7 @@ import (
 const (
 	resPrivateNetworkAttrDescription = "description"
 	resPrivateNetworkAttrEndIP       = "end_ip"
+	resPrivateNetworkAttrLabels      = "labels"
 	resPrivateNetworkAttrName        = "name"
 	resPrivateNetworkAttrNetmask     = "netmask"
 	resPrivateNetworkAttrStartIP     = "start_ip"
@@ -45,6 +46,12 @@ func resourcePrivateNetwork() *schema.Resource {
 				Optional:     true,
 				ValidateFunc: validation.IsIPAddress,
 				Description:  "(For managed Privnets) The first/last IPv4 addresses used by the DHCP service for dynamic leases.",
+			},
+			resPrivateNetworkAttrLabels: {
+				Description: "A map of key/value labels.",
+				Type:        schema.TypeMap,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+				Optional:    true,
 			},
 			resPrivateNetworkAttrName: {
 				Type:        schema.TypeString,
@@ -113,6 +120,14 @@ func resourcePrivateNetworkCreate(ctx context.Context, d *schema.ResourceData, m
 	if v, ok := d.GetOk(resPrivateNetworkAttrEndIP); ok {
 		ip := net.ParseIP(v.(string))
 		privateNetwork.EndIP = &ip
+	}
+
+	if l, ok := d.GetOk(resPrivateNetworkAttrLabels); ok {
+		labels := make(map[string]string)
+		for k, v := range l.(map[string]interface{}) {
+			labels[k] = v.(string)
+		}
+		privateNetwork.Labels = &labels
 	}
 
 	if v, ok := d.GetOk(resPrivateNetworkAttrNetmask); ok {
@@ -201,6 +216,15 @@ func resourcePrivateNetworkUpdate(ctx context.Context, d *schema.ResourceData, m
 		updated = true
 	}
 
+	if d.HasChange(resPrivateNetworkAttrLabels) {
+		labels := make(map[string]string)
+		for k, v := range d.Get(resPrivateNetworkAttrLabels).(map[string]interface{}) {
+			labels[k] = v.(string)
+		}
+		privateNetwork.Labels = &labels
+		updated = true
+	}
+
 	if d.HasChange(resPrivateNetworkAttrNetmask) {
 		ip := net.ParseIP(d.Get(resPrivateNetworkAttrNetmask).(string))
 		privateNetwork.Netmask = &ip
@@ -270,6 +294,10 @@ func resourcePrivateNetworkApply(
 		if err := d.Set(resPrivateNetworkAttrEndIP, privateNetwork.EndIP.String()); err != nil {
 			return err
 		}
+	}
+
+	if err := d.Set(resPrivateNetworkAttrLabels, privateNetwork.Labels); err != nil {
+		return err
 	}
 
 	if privateNetwork.Netmask != nil {

@@ -21,6 +21,8 @@ var (
 	testAccResourcePrivateNetworkDescriptionUpdated = testAccResourcePrivateNetworkDescription + "-updated"
 	testAccResourcePrivateNetworkEndIP              = "10.0.0.50"
 	testAccResourcePrivateNetworkEndIPUpdated       = "10.0.0.100"
+	testAccResourcePrivateNetworkLabelValue         = acctest.RandomWithPrefix(testPrefix)
+	testAccResourcePrivateNetworkLabelValueUpdated  = testAccResourcePrivateNetworkLabelValue + "-updated"
 	testAccResourcePrivateNetworkName               = acctest.RandString(10)
 	testAccResourcePrivateNetworkNameUpdated        = testAccResourcePrivateNetworkName + "-updated"
 	testAccResourcePrivateNetworkNetmask            = "255.255.0.0"
@@ -36,6 +38,9 @@ resource "exoscale_private_network" "test" {
   start_ip    = "%s"
   end_ip      = "%s"
   netmask     = "%s"
+	labels = {
+    test = "%s"
+  }
 }
 `,
 		testZoneName,
@@ -44,6 +49,7 @@ resource "exoscale_private_network" "test" {
 		testAccResourcePrivateNetworkStartIP,
 		testAccResourcePrivateNetworkEndIP,
 		testAccResourcePrivateNetworkNetmask,
+		testAccResourcePrivateNetworkLabelValue,
 	)
 
 	testAccResourcePrivateNetworkConfigUpdate = fmt.Sprintf(`
@@ -54,6 +60,9 @@ resource "exoscale_private_network" "test" {
   start_ip    = "%s"
   end_ip      = "%s"
   netmask     = "%s"
+	labels = {
+    test = "%s"
+  }
 }
 `,
 		testZoneName,
@@ -62,6 +71,7 @@ resource "exoscale_private_network" "test" {
 		testAccResourcePrivateNetworkStartIPUpdated,
 		testAccResourcePrivateNetworkEndIPUpdated,
 		testAccResourcePrivateNetworkNetmaskUpdated,
+		testAccResourcePrivateNetworkLabelValueUpdated,
 	)
 )
 
@@ -85,6 +95,7 @@ func TestAccResourcePrivateNetwork(t *testing.T) {
 						a := assert.New(t)
 
 						a.Equal(testAccResourcePrivateNetworkDescription, *privateNetwork.Description)
+						a.Equal(testAccResourcePrivateNetworkLabelValue, (*privateNetwork.Labels)["test"])
 						a.Equal(testAccResourcePrivateNetworkName, *privateNetwork.Name)
 						a.True(privateNetwork.StartIP.Equal(net.ParseIP(testAccResourcePrivateNetworkStartIP)))
 						a.True(privateNetwork.EndIP.Equal(net.ParseIP(testAccResourcePrivateNetworkEndIP)))
@@ -93,11 +104,12 @@ func TestAccResourcePrivateNetwork(t *testing.T) {
 						return nil
 					},
 					checkResourceState(r, checkResourceStateValidateAttributes(testAttrs{
-						resPrivateNetworkAttrDescription: validateString(testAccResourcePrivateNetworkDescription),
-						resPrivateNetworkAttrEndIP:       validateString(testAccResourcePrivateNetworkEndIP),
-						resPrivateNetworkAttrName:        validateString(testAccResourcePrivateNetworkName),
-						resPrivateNetworkAttrNetmask:     validateString(testAccResourcePrivateNetworkNetmask),
-						resPrivateNetworkAttrStartIP:     validateString(testAccResourcePrivateNetworkStartIP),
+						resPrivateNetworkAttrDescription:      validateString(testAccResourcePrivateNetworkDescription),
+						resPrivateNetworkAttrEndIP:            validateString(testAccResourcePrivateNetworkEndIP),
+						resPrivateNetworkAttrLabels + ".test": validateString(testAccResourcePrivateNetworkLabelValue),
+						resPrivateNetworkAttrName:             validateString(testAccResourcePrivateNetworkName),
+						resPrivateNetworkAttrNetmask:          validateString(testAccResourcePrivateNetworkNetmask),
+						resPrivateNetworkAttrStartIP:          validateString(testAccResourcePrivateNetworkStartIP),
 					})),
 				),
 			},
@@ -110,6 +122,7 @@ func TestAccResourcePrivateNetwork(t *testing.T) {
 						a := assert.New(t)
 
 						a.Equal(testAccResourcePrivateNetworkDescriptionUpdated, *privateNetwork.Description)
+						a.Equal(testAccResourcePrivateNetworkLabelValueUpdated, (*privateNetwork.Labels)["test"])
 						a.Equal(testAccResourcePrivateNetworkNameUpdated, *privateNetwork.Name)
 						a.True(privateNetwork.StartIP.Equal(net.ParseIP(testAccResourcePrivateNetworkStartIPUpdated)))
 						a.True(privateNetwork.EndIP.Equal(net.ParseIP(testAccResourcePrivateNetworkEndIPUpdated)))
@@ -118,11 +131,12 @@ func TestAccResourcePrivateNetwork(t *testing.T) {
 						return nil
 					},
 					checkResourceState(r, checkResourceStateValidateAttributes(testAttrs{
-						resPrivateNetworkAttrDescription: validateString(testAccResourcePrivateNetworkDescriptionUpdated),
-						resPrivateNetworkAttrEndIP:       validateString(testAccResourcePrivateNetworkEndIPUpdated),
-						resPrivateNetworkAttrName:        validateString(testAccResourcePrivateNetworkNameUpdated),
-						resPrivateNetworkAttrNetmask:     validateString(testAccResourcePrivateNetworkNetmaskUpdated),
-						resPrivateNetworkAttrStartIP:     validateString(testAccResourcePrivateNetworkStartIPUpdated),
+						resPrivateNetworkAttrDescription:      validateString(testAccResourcePrivateNetworkDescriptionUpdated),
+						resPrivateNetworkAttrEndIP:            validateString(testAccResourcePrivateNetworkEndIPUpdated),
+						resPrivateNetworkAttrLabels + ".test": validateString(testAccResourcePrivateNetworkLabelValueUpdated),
+						resPrivateNetworkAttrName:             validateString(testAccResourcePrivateNetworkNameUpdated),
+						resPrivateNetworkAttrNetmask:          validateString(testAccResourcePrivateNetworkNetmaskUpdated),
+						resPrivateNetworkAttrStartIP:          validateString(testAccResourcePrivateNetworkStartIPUpdated),
 					})),
 				),
 			},
@@ -139,11 +153,12 @@ func TestAccResourcePrivateNetwork(t *testing.T) {
 				ImportStateCheck: func(s []*terraform.InstanceState) error {
 					return checkResourceAttributes(
 						testAttrs{
-							resPrivateNetworkAttrDescription: validateString(testAccResourcePrivateNetworkDescriptionUpdated),
-							resPrivateNetworkAttrEndIP:       validateString(testAccResourcePrivateNetworkEndIPUpdated),
-							resPrivateNetworkAttrName:        validateString(testAccResourcePrivateNetworkNameUpdated),
-							resPrivateNetworkAttrNetmask:     validateString(testAccResourcePrivateNetworkNetmaskUpdated),
-							resPrivateNetworkAttrStartIP:     validateString(testAccResourcePrivateNetworkStartIPUpdated),
+							resPrivateNetworkAttrDescription:      validateString(testAccResourcePrivateNetworkDescriptionUpdated),
+							resPrivateNetworkAttrEndIP:            validateString(testAccResourcePrivateNetworkEndIPUpdated),
+							resPrivateNetworkAttrLabels + ".test": validateString(testAccResourcePrivateNetworkLabelValueUpdated),
+							resPrivateNetworkAttrName:             validateString(testAccResourcePrivateNetworkNameUpdated),
+							resPrivateNetworkAttrNetmask:          validateString(testAccResourcePrivateNetworkNetmaskUpdated),
+							resPrivateNetworkAttrStartIP:          validateString(testAccResourcePrivateNetworkStartIPUpdated),
 						},
 						s[0].Attributes)
 				},
