@@ -2,6 +2,10 @@
 
 ## UNRELEASED
 
+FEATURES:
+
+- Datasource, resource `exoscale_private_network`: add labels (#281).
+
 BREAKING CHANGES:
 
 - user data are not gzipped anymore. If you want to gzip user data, you may want to use the cloudinit_config datasource.
