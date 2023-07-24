@@ -11,14 +11,6 @@ PROJECT_URL := https://$(PACKAGE)
 include go.mk/init.mk
 include go.mk/public.mk
 
-# GoLang
-
-GO_VERSION := $(shell go version | sed -nE 's|^.*\s+go([0-9]+\.[0-9]+)[^0-9].*$$|\1|p')
-GO_MOD_VERSION := $(shell sed -nE 's|^go\s+([0-9]+\.[0-9]+)$$|\1|p' go.mod)
-ifneq ($(GO_VERSION), $(GO_MOD_VERSION))
-$(warning GoLang versions mismatch (Toolchain: $(GO_VERSION); go.mod: $(GO_MOD_VERSION)))
-endif
-
 GO_TEST_EXTRA_ARGS := -mod=readonly -v
 GOLANGCI_EXTRA_ARGS := --modules-download-mode=readonly
 

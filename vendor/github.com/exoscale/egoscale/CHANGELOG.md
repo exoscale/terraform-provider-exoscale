@@ -1,6 +1,16 @@
 Changelog
 =========
 
+0.100.2
+-------
+
+- v2: add private network labels
+
+0.100.1
+-------
+
+- v2: refresh openapi generated code (patches generated code to fix codegen bug)
+
 0.100.0
 -------
 
