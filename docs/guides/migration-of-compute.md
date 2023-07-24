@@ -64,7 +64,7 @@ To achieve this migration, we have to remove all 3 deprecated resources from the
 
 ## Applying the migration plan
 
-### Removing the security group from the state 
+### Removing the resources from the state 
 
 This step is pretty straightforward: we will have to issue a `terraform state rm` command for each resources we have to remove from the state. In our example, we have to remove `exoscale_compute.my_instance`, `exoscale_network.my_network` and `exoscale_nic.my_nic`:
 
