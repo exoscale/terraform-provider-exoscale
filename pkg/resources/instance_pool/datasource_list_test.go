@@ -50,6 +50,7 @@ resource "exoscale_instance_pool" "test2" {
   size = 1
   disk_size = local.disk_size
   key_pair = exoscale_ssh_keypair.test.name
+  labels = { test="test"}
 }`,
 	testutils.TestZoneName,
 	dsListInstanceType,
