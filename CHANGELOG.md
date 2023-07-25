@@ -1,5 +1,11 @@
 # Changelog
 
+## UNRELEASED
+
+BUG FIX:
+
+- datasource `exoscale_instance_pool_list`: fix panic when instance pool with labels is found
+
 ## 0.50.0 (June 23, 2023)
 
 IMPROVEMENTS:
