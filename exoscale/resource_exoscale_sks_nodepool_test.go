@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -334,7 +335,25 @@ func testAccCheckResourceSKSNodepoolExists(r string, sksNodepool *egoscale.SKSNo
 		for _, np := range cluster.Nodepools {
 			if *np.ID == rs.Primary.ID {
 				*sksNodepool = *np
-				return nil
+				// (sc-74233) Additional tests to prevent deletion while instancepool is updating or scaling
+				// Wait for the nodepool and the underlying instancepool to be in running state
+				for i := 0; i < 60; i++ {
+					npool, err := client.GetSksNodepoolWithResponse(ctx, clusterID, *np.ID)
+					if err != nil {
+						return err
+					}
+					npstate := *npool.JSON200.State
+					ipool, err := client.GetInstancePoolWithResponse(ctx, *np.InstancePoolID)
+					if err != nil {
+						return err
+					}
+					ipstate := *ipool.JSON200.State
+					if npstate == "running" && ipstate == "running" {
+						return nil
+					}
+					time.Sleep(10 * time.Second)
+				}
+				return fmt.Errorf("resource SKS Nodepool (%s) and InstancePool (%s) not running", *np.ID, *np.InstancePoolID)
 			}
 		}
 
