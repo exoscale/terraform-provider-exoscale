@@ -1,5 +1,10 @@
 # Examples
 
+## [Database](./database)
+
+This example demonstrates how to setup [DBaaS service](https://community.exoscale.com/documentation/dbaas/)
+(Grafana in example) using `exoscale_database` resource.
+
 ## [Domain Name Service (DNS)](./dns)
 
 This example demonstrates how to manage
