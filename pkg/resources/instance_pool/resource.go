@@ -137,7 +137,7 @@ func Resource() *schema.Resource {
 			Required:    true,
 		},
 		AttrUserData: {
-			Description: "[cloud-init](http://cloudinit.readthedocs.io/) configuration to apply to the managed instances (no need to base64-encode or gzip it as the provider will take care of it).",
+			Description: "[cloud-init](http://cloudinit.readthedocs.io/) configuration to apply to the managed instances.",
 			Type:        schema.TypeString,
 			Optional:    true,
 		},

@@ -154,7 +154,7 @@ func Resource() *schema.Resource {
 			DiffSuppressFunc: utils.SuppressCaseDiff,
 		},
 		AttrUserData: {
-			Description:      "[cloud-init](https://cloudinit.readthedocs.io/) configuration (no need to base64-encode or gzip it as the provider will take care of it).",
+			Description:      "[cloud-init](https://cloudinit.readthedocs.io/) configuration.",
 			Type:             schema.TypeString,
 			ValidateDiagFunc: utils.ValidateComputeUserData,
 			Optional:         true,

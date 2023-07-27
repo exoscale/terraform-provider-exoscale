@@ -152,20 +152,7 @@ func EncodeUserData(userData string) (string, bool, error) {
 		return userData, true, nil
 	}
 
-	b := new(bytes.Buffer)
-	gz := gzip.NewWriter(b)
-
-	if _, err := gz.Write([]byte(userData)); err != nil {
-		return "", false, err
-	}
-	if err := gz.Flush(); err != nil {
-		return "", false, err
-	}
-	if err := gz.Close(); err != nil {
-		return "", false, err
-	}
-
-	userDataBase64 := base64.StdEncoding.EncodeToString(b.Bytes())
+	userDataBase64 := base64.StdEncoding.EncodeToString([]byte(userData))
 
 	if len(userDataBase64) >= config.ComputeMaxUserDataLength {
 		return "", false, fmt.Errorf("user-data maximum allowed length is %d bytes", config.ComputeMaxUserDataLength)

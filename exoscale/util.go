@@ -1,10 +1,6 @@
 package exoscale
 
 import (
-	"bytes"
-	"compress/gzip"
-	"encoding/base64"
-	"errors"
 	"fmt"
 	"strings"
 
@@ -86,42 +82,6 @@ func unique(s []string) []string {
 // Do no show case differences between state and resource
 func suppressCaseDiff(k, old, new string, d *schema.ResourceData) bool {
 	return strings.EqualFold(old, new)
-}
-
-// user-data compression and base64 encoding, used in resource_exoscale_compute[_instance[_pool]]
-// returns (user_data, user_data_already_base64, error)
-func encodeUserData(userData string) (string, bool, error) {
-	// template_cloudinit_config alows to gzip but not base64, prevent such case
-	if len(userData) > 2 && userData[0] == '\x1f' && userData[1] == '\x8b' {
-		return "", false, errors.New("user_data appears to be gzipped: it should be left raw, or also be base64 encoded")
-	}
-
-	// If user supplied data is already base64 encoded, do nothing.
-	_, err := base64.StdEncoding.DecodeString(userData)
-	if err == nil {
-		return userData, true, nil
-	}
-
-	b := new(bytes.Buffer)
-	gz := gzip.NewWriter(b)
-
-	if _, err := gz.Write([]byte(userData)); err != nil {
-		return "", false, err
-	}
-	if err := gz.Flush(); err != nil {
-		return "", false, err
-	}
-	if err := gz.Close(); err != nil {
-		return "", false, err
-	}
-
-	userDataBase64 := base64.StdEncoding.EncodeToString(b.Bytes())
-
-	if len(userDataBase64) >= computeMaxUserDataLength {
-		return "", false, fmt.Errorf("user-data maximum allowed length is %d bytes", computeMaxUserDataLength)
-	}
-
-	return userDataBase64, false, nil
 }
 
 func parseIAMAccessKeyResource(v string) (*egoscale.IAMAccessKeyResource, error) {

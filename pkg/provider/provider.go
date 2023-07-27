@@ -29,7 +29,6 @@ const (
 	DnsEndpointAttrName     = "dns_endpoint"
 	EnvironmentAttrName     = "environment"
 	TimeoutAttrName         = "timeout"
-	GZIPUserDataAttrName    = "gzip_user_data"
 	DelayAttrName           = "delay"
 )
 
@@ -48,7 +47,6 @@ type ExoscaleProviderModel struct {
 	DnsEndpoint     types.String  `tfsdk:"dns_endpoint"`
 	Environment     types.String  `tfsdk:"environment"`
 	Timeout         types.Float64 `tfsdk:"timeout"`
-	GzipUserData    types.Bool    `tfsdk:"gzip_user_data"`
 	Delay           types.Int64   `tfsdk:"delay"`
 }
 
@@ -100,12 +98,6 @@ func (p *ExoscaleProvider) Schema(ctx context.Context, req provider.SchemaReques
 				MarkdownDescription: fmt.Sprintf(
 					"Timeout in seconds for waiting on compute resources to become available (by default: %.0f)",
 					config.DefaultTimeout.Seconds()),
-			},
-			GZIPUserDataAttrName: schema.BoolAttribute{
-				Optional: true,
-				MarkdownDescription: fmt.Sprintf(
-					"Defines if the user-data of compute instances should be gzipped (by default: %t)",
-					config.DefaultGzipUserData),
 			},
 			DelayAttrName: schema.Int64Attribute{
 				Optional:           true,
@@ -259,18 +251,6 @@ func (p *ExoscaleProvider) Configure(ctx context.Context, req provider.Configure
 		timeout = data.Timeout.ValueFloat64()
 	}
 
-	var gzipUserData bool
-	if data.GzipUserData.IsNull() {
-		var err error
-		gzipUserData, err = providerConfig.GetGZIPUserData()
-
-		if err != nil {
-			resp.Diagnostics.AddError(err.Error(), "")
-		}
-	} else {
-		gzipUserData = data.GzipUserData.ValueBool()
-	}
-
 	exov2.UserAgent = exoscale.UserAgent
 
 	baseConfig := providerConfig.BaseConfig{
@@ -280,7 +260,6 @@ func (p *ExoscaleProvider) Configure(ctx context.Context, req provider.Configure
 		ComputeEndpoint: endpoint,
 		DNSEndpoint:     dnsEndpoint,
 		Environment:     environment,
-		GZIPUserData:    gzipUserData,
 	}
 
 	clv1 := exoscale.GetComputeClient(map[string]interface{}{

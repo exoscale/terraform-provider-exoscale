@@ -20,7 +20,6 @@ type BaseConfig struct {
 	ComputeEndpoint string
 	DNSEndpoint     string
 	Environment     string
-	GZIPUserData    bool
 	ComputeClient   *egoscale.Client
 	DNSClient       *egoscale.Client
 }
@@ -64,13 +63,4 @@ func GetTimeout() (float64, error) {
 	}
 
 	return defaultTimeout, nil
-}
-
-func GetGZIPUserData() (bool, error) {
-	gzipUserDataRaw := GetEnvDefault("EXOSCALE_GZIP_USER_DATA", "")
-	if gzipUserDataRaw == "" {
-		return config.DefaultGzipUserData, nil
-	} else {
-		return strconv.ParseBool(gzipUserDataRaw)
-	}
 }

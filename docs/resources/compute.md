@@ -40,7 +40,7 @@ Manage Exoscale Compute Instances.
 - `template` (String) ❗ The compute instance template (name). Only *featured* templates are available, if you want to reference *custom templates* use the `template_id` attribute instead.
 - `template_id` (String) ❗ The compute instance template (ID). Usage of the `exoscale_compute_template` data source is recommended.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- `user_data` (String) cloud-init configuration (no need to base64-encode or gzip it as the provider will take care of it).
+- `user_data` (String) cloud-init configuration.
 
 ### Read-Only
 

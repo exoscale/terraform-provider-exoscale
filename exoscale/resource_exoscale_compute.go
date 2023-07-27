@@ -15,11 +15,11 @@ import (
 	"github.com/exoscale/egoscale"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/general"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
 )
 
 const (
-	computeHostnameRegexp    = `^[a-zA-Z0-9][a-zA-Z0-9\-]+$`
-	computeMaxUserDataLength = 32768
+	computeHostnameRegexp = `^[a-zA-Z0-9][a-zA-Z0-9\-]+$`
 )
 
 func resourceComputeIDString(d general.ResourceIDStringer) string {
@@ -93,7 +93,7 @@ func resourceCompute() *schema.Resource {
 		"user_data": {
 			Type:             schema.TypeString,
 			Optional:         true,
-			Description:      "cloud-init configuration (no need to base64-encode or gzip it as the provider will take care of it).",
+			Description:      "cloud-init configuration.",
 			ValidateDiagFunc: validateComputeUserData,
 		},
 		"user_data_base64": {
@@ -1153,7 +1153,7 @@ func getSecurityGroup(ctx context.Context, client *egoscale.Client, name string)
 func prepareUserData(d *schema.ResourceData, meta interface{}, key string) (string, bool, error) {
 	userData := d.Get(key).(string)
 
-	userData, userDataBase64, err := encodeUserData(userData)
+	userData, userDataBase64, err := utils.EncodeUserData(userData)
 	if err != nil {
 		return "", false, err
 	}

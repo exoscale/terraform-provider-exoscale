@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
+
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -89,7 +91,7 @@ func validateComputeUserData(v interface{}, _ cty.Path) diag.Diagnostics {
 		return diag.Errorf("expected field %q type to be string", v)
 	}
 
-	_, _, err := encodeUserData(value)
+	_, _, err := utils.EncodeUserData(value)
 	if err != nil {
 		return diag.FromErr(err)
 	}
