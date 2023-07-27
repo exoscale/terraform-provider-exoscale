@@ -284,7 +284,6 @@ func dsBuildData(pool *exo.InstancePool) (map[string]interface{}, error) {
 	data[AttrInstancePrefix] = utils.DefaultString(pool.InstancePrefix, "")
 	data[AttrIPv6] = utils.DefaultBool(pool.IPv6Enabled, false)
 	data[AttrKeyPair] = pool.SSHKey
-	data[AttrLabels] = pool.Labels
 	data[AttrName] = pool.Name
 	data[AttrSize] = pool.Size
 	data[AttrState] = pool.State
@@ -293,6 +292,10 @@ func dsBuildData(pool *exo.InstancePool) (map[string]interface{}, error) {
 
 	if pool.AntiAffinityGroupIDs != nil {
 		data[AttrAffinityGroupIDs] = *pool.AntiAffinityGroupIDs
+	}
+
+	if pool.Labels != nil {
+		data[AttrLabels] = *pool.Labels
 	}
 
 	if pool.ElasticIPIDs != nil {

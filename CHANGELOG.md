@@ -1,10 +1,14 @@
 # Changelog
 
-## TO BE RELEASED
+## UNRELEASED
 
 BREAKING CHANGES:
 
 - user data are not gzipped anymore. If you want to gzip user data, you may want to use the cloudinit_config datasource.
+
+BUG FIX:
+
+- datasource `exoscale_instance_pool_list`: fix panic when instance pool with labels is found
 
 ## 0.50.0 (June 23, 2023)
 
