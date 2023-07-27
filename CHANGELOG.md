@@ -1,5 +1,11 @@
 # Changelog
 
+## TO BE RELEASED
+
+BREAKING CHANGES:
+
+- user data are not gzipped anymore. If you want to gzip user data, you may want to use the cloudinit_config datasource.
+
 ## 0.50.0 (June 23, 2023)
 
 IMPROVEMENTS:
