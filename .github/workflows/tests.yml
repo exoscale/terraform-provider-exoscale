@@ -1,3 +1,4 @@
+---
 name: run-acceptance-tests
 
 on:
@@ -11,8 +12,15 @@ on:
     tags-ignore:
     - 'v*' # Don't run CI tests on release tags
 
+# Prevent // execution of acc tests
+concurrency: acc-tests
+
 jobs:
   test:
+    # if test job is already running for the same branch, cancel it and run this one
+    concurrency:
+      group: acc-tests-${{ github.ref }}
+      cancel-in-progress: true
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -26,4 +34,3 @@ jobs:
         env:
           EXOSCALE_API_KEY: ${{ secrets.EXOSCALE_API_KEY }}
           EXOSCALE_API_SECRET: ${{ secrets.EXOSCALE_API_SECRET }}
-
