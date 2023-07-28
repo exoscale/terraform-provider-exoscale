@@ -15,12 +15,6 @@ resource "random_uuid" "my_uuid" {
 # SOS bucket
 resource "aws_s3_bucket" "my_bucket" {
   bucket = "${local.my_bucket}-${resource.random_uuid.my_uuid.result}"
-
-  lifecycle {
-    ignore_changes = [
-      object_lock_configuration,
-    ]
-  }
 }
 
 # (associated ACL)
@@ -40,6 +34,14 @@ resource "aws_s3_bucket_cors_configuration" "my_bucket_cors" {
     allowed_origins = ["https://s3-website-test.hashicorp.com"]
     expose_headers  = ["ETag"]
     max_age_seconds = 3000
+  }
+}
+
+# Enable versioning
+resource "aws_s3_bucket_versioning" "my_bucket_versioning" {
+  bucket = aws_s3_bucket.my_bucket.id
+  versioning_configuration {
+    status = "Enabled"
   }
 }
 
