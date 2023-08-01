@@ -451,6 +451,8 @@ func (r *Resource) ImportState(ctx context.Context, req resource.ImportStateRequ
 		data.Opensearch = &ResourceOpensearchModel{Unknown: true}
 		r.readOpensearch(ctx, &data, &resp.Diagnostics)
 	case "grafana":
+		// Set nested obect to non-nil value to trigger update in read
+		data.Grafana = &ResourceGrafanaModel{}
 		r.readGrafana(ctx, &data, &resp.Diagnostics)
 	default:
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Database service %q not found in zone %q", data.Id.ValueString(), data.Zone.ValueString()))
