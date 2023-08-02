@@ -1,3 +1,4 @@
+---
 name: run-acceptance-tests
 
 on:
@@ -10,6 +11,9 @@ on:
     - '.goreleaser.yml'
     tags-ignore:
     - 'v*' # Don't run CI tests on release tags
+
+# Prevent // execution of acc tests
+concurrency: acc-tests
 
 jobs:
   test:
@@ -26,4 +30,3 @@ jobs:
         env:
           EXOSCALE_API_KEY: ${{ secrets.EXOSCALE_API_KEY }}
           EXOSCALE_API_SECRET: ${{ secrets.EXOSCALE_API_SECRET }}
-
