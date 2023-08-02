@@ -6,6 +6,10 @@ BREAKING CHANGES:
 
 - user data are not gzipped anymore. If you want to gzip user data, you may want to use the cloudinit_config datasource.
 
+IMPROVEMENTS:
+
+- resource `sks_nodepool`: wait for nodepool and instancepool in running state in tests
+
 BUG FIX:
 
 - datasource `exoscale_instance_pool_list`: fix panic when instance pool with labels is found
