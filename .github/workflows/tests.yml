@@ -17,10 +17,6 @@ concurrency: acc-tests
 
 jobs:
   test:
-    # if test job is already running for the same branch, cancel it and run this one
-    concurrency:
-      group: acc-tests-${{ github.ref }}
-      cancel-in-progress: true
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
