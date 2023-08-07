@@ -30,6 +30,7 @@ description: |-
 - `name` (String) Match against this string. If you supply a string that begins and ends with a "/" it will be matched as a regex.
 - `size` (Number) Match against this int
 - `state` (String) Match against this string. If you supply a string that begins and ends with a "/" it will be matched as a regex.
+- `storage_lvm` (Boolean) Match against this bool
 - `taints` (Map of String) Match against key/values. Keys are matched exactly, while values may be matched as a regex if you supply a string that begins and ends with "/"
 - `template_id` (String) Match against this string. If you supply a string that begins and ends with a "/" it will be matched as a regex.
 - `version` (String) Match against this string. If you supply a string that begins and ends with a "/" it will be matched as a regex.
@@ -60,6 +61,7 @@ Read-Only:
 - `security_group_ids` (Set of String)
 - `size` (Number)
 - `state` (String)
+- `storage_lvm` (Boolean)
 - `taints` (Map of String)
 - `template_id` (String)
 - `version` (String)

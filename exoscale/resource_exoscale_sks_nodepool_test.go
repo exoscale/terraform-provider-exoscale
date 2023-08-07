@@ -21,8 +21,8 @@ var (
 	testAccResourceSKSNodepoolAntiAffinityGroupName       = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceSKSNodepoolDescription                 = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceSKSNodepoolDescriptionUpdated          = testAccResourceSKSNodepoolDescription + "-updated"
-	testAccResourceSKSNodepoolDiskSize                    = defaultSKSNodepoolDiskSize
-	testAccResourceSKSNodepoolDiskSizeUpdated             = defaultSKSNodepoolDiskSize * 2
+	testAccResourceSKSNodepoolDiskSize                    = defaultSKSNodepoolDiskSize * 2
+	testAccResourceSKSNodepoolDiskSizeUpdated             = defaultSKSNodepoolDiskSize*2 + 10
 	testAccResourceSKSNodepoolInstancePrefix              = "test"
 	testAccResourceSKSNodepoolInstanceType                = "standard.small"
 	testAccResourceSKSNodepoolInstanceTypeUpdated         = "standard.medium"
@@ -33,6 +33,7 @@ var (
 	testAccResourceSKSNodepoolPrivateNetworkName          = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceSKSNodepoolSize                  int64 = 2
 	testAccResourceSKSNodepoolSizeUpdated           int64 = 1
+	testAccResourceSKSNodepoolStorageLVM            bool  = true
 	testAccResourceSKSNodepoolTaintEffect                 = "NoSchedule"
 	testAccResourceSKSNodepoolTaintValue                  = "test"
 	testAccResourceSKSNodepoolTaintValueUpdated           = "test-updated"
@@ -62,6 +63,7 @@ resource "exoscale_sks_nodepool" "test" {
   instance_prefix = "%s"
   labels = { test = "%s" }
   taints = { test = "%s:%s" }
+  storage_lvm = %t
 
   timeouts {
     delete = "10m"
@@ -79,6 +81,7 @@ resource "exoscale_sks_nodepool" "test" {
 		testAccResourceSKSNodepoolLabelValue,
 		testAccResourceSKSNodepoolTaintValue,
 		testAccResourceSKSNodepoolTaintEffect,
+		testAccResourceSKSNodepoolStorageLVM,
 	)
 
 	testAccResourceSKSNodepoolConfigUpdate = fmt.Sprintf(`
@@ -125,6 +128,7 @@ resource "exoscale_sks_nodepool" "test" {
   private_network_ids = [exoscale_network.test.id]
   labels = { test = "%s" }
   taints = { test = "%s:%s" }
+  storage_lvm = %t
 
   timeouts {
     delete = "10m"
@@ -144,6 +148,7 @@ resource "exoscale_sks_nodepool" "test" {
 		testAccResourceSKSNodepoolLabelValueUpdated,
 		testAccResourceSKSNodepoolTaintValueUpdated,
 		testAccResourceSKSNodepoolTaintEffect,
+		testAccResourceSKSNodepoolStorageLVM,
 	)
 )
 
@@ -175,6 +180,7 @@ func TestAccResourceSKSNodepool(t *testing.T) {
 						a.Equal(testAccResourceSKSNodepoolInstancePrefix, *sksNodepool.InstancePrefix)
 						a.Equal(testInstanceTypeIDSmall, *sksNodepool.InstanceTypeID)
 						a.Equal(testAccResourceSKSNodepoolSize, *sksNodepool.Size)
+						a.Equal(1, len(*sksNodepool.AddOns))
 						a.Equal(&egoscale.SKSNodepoolTaint{
 							Effect: testAccResourceSKSNodepoolTaintEffect,
 							Value:  testAccResourceSKSNodepoolTaintValue,

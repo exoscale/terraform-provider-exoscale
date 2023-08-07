@@ -20,6 +20,8 @@ const (
 	defaultSKSNodepoolDiskSize       int64 = 50
 	defaultSKSNodepoolInstancePrefix       = "pool"
 
+	sksNodepoolAddonStorageLVM = "storage-lvm"
+
 	resSKSNodepoolAttrAntiAffinityGroupIDs = "anti_affinity_group_ids"
 	resSKSNodepoolAttrClusterID            = "cluster_id"
 	resSKSNodepoolAttrCreatedAt            = "created_at"
@@ -36,6 +38,7 @@ const (
 	resSKSNodepoolAttrSecurityGroupIDs     = "security_group_ids"
 	resSKSNodepoolAttrSize                 = "size"
 	resSKSNodepoolAttrState                = "state"
+	resSKSNodepoolAttrStorageLVM           = "storage_lvm"
 	resSKSNodepoolAttrTaints               = "taints"
 	resSKSNodepoolAttrTemplateID           = "template_id"
 	resSKSNodepoolAttrVersion              = "version"
@@ -139,6 +142,12 @@ func resourceSKSNodepool() *schema.Resource {
 			Type:        schema.TypeString,
 			Computed:    true,
 			Description: "The current pool state.",
+		},
+		resSKSNodepoolAttrStorageLVM: {
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Default:     false,
+			Description: "Create nodes with non-standard partitioning for persistent storage (requires min 100G of disk space) (may only be set at creation time).",
 		},
 		resSKSNodepoolAttrTaints: {
 			Type:        schema.TypeMap,
@@ -306,6 +315,14 @@ func resourceSKSNodepoolCreate(ctx context.Context, d *schema.ResourceData, meta
 	if v, ok := d.GetOk(resSKSNodepoolAttrSize); ok {
 		i := int64(v.(int))
 		sksNodepool.Size = &i
+	}
+
+	var addOns []string
+	if enableStorageLVM := d.Get(resSKSNodepoolAttrStorageLVM).(bool); enableStorageLVM {
+		addOns = append(addOns, sksNodepoolAddonStorageLVM)
+	}
+	if len(addOns) > 0 {
+		sksNodepool.AddOns = &addOns
 	}
 
 	if t, ok := d.GetOk(resSKSNodepoolAttrTaints); ok {
@@ -570,6 +587,12 @@ func resourceSKSNodepoolApply(
 		antiAffinityGroupIDs := make([]string, len(*sksNodepool.AntiAffinityGroupIDs))
 		copy(antiAffinityGroupIDs, *sksNodepool.AntiAffinityGroupIDs)
 		if err := d.Set(resSKSNodepoolAttrAntiAffinityGroupIDs, antiAffinityGroupIDs); err != nil {
+			return err
+		}
+	}
+
+	if sksNodepool.AddOns != nil {
+		if err := d.Set(resSKSNodepoolAttrStorageLVM, in(*sksNodepool.AddOns, sksNodepoolAddonStorageLVM)); err != nil {
 			return err
 		}
 	}

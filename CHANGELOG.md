@@ -9,6 +9,7 @@ BREAKING CHANGES:
 IMPROVEMENTS:
 
 - resource `sks_nodepool`: wait for nodepool and instancepool in running state in tests
+- resource `sks_nodepool`: add **storage_lvm** addon
 
 BUG FIX:
 
