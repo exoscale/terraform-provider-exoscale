@@ -1,6 +1,6 @@
 # Changelog
 
-## UNRELEASED
+## 0.51.0 (August 9, 2023)
 
 BREAKING CHANGES:
 
