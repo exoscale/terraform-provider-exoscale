@@ -105,7 +105,7 @@ Now replace `exoscale_compute` and `exoscale_nic` blocks with `exoscale_compute_
 
 ```hcl
 resource "exoscale_compute_instance" "my_instance" {
-	disk_size = 10
+  disk_size = 10
   name = "my-instance"
   security_group_ids = ["493ac3c0-c8ba-415a-a038-6578194a6d36"]
   template_id = "ee73810b-0245-43e0-8b15-0632473d56ba"
