@@ -73,7 +73,7 @@ $ terraform state rm exoscale_compute.my_instance
 Removed exoscale_compute.my_instance
 Successfully removed 1 resource instance(s).
 
-q$ terraform state rm exoscale_network.my_network
+$ terraform state rm exoscale_network.my_network
 Removed exoscale_network.my_network
 Successfully removed 1 resource instance(s).
 
