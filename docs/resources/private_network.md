@@ -50,6 +50,7 @@ directory for complete configuration examples.
 
 - `description` (String) A free-form text describing the network.
 - `end_ip` (String) (For managed Privnets) The first/last IPv4 addresses used by the DHCP service for dynamic leases.
+- `labels` (Map of String) A map of key/value labels.
 - `netmask` (String) (For managed Privnets) The network mask defining the IPv4 network allowed for static leases.
 - `start_ip` (String) (For managed Privnets) The first/last IPv4 addresses used by the DHCP service for dynamic leases.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))

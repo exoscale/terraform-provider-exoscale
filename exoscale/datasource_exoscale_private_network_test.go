@@ -15,6 +15,7 @@ import (
 var (
 	testAccDataSourcePrivateNetworkDescription = acctest.RandString(10)
 	testAccDataSourcePrivateNetworkEndIP       = "10.0.0.50"
+	testAccDataSourcePrivateNetworkLabelValue  = acctest.RandomWithPrefix(testPrefix)
 	testAccDataSourcePrivateNetworkName        = acctest.RandString(10)
 	testAccDataSourcePrivateNetworkNetmask     = "255.255.0.0"
 	testAccDataSourcePrivateNetworkStartIP     = "10.0.0.10"
@@ -81,6 +82,9 @@ resource "exoscale_private_network" "test" {
   start_ip    = "%s"
   end_ip      = "%s"
   netmask     = "%s"
+  labels = {
+    test = "%s"
+  }
 }
 
 data "exoscale_private_network" "test" {
@@ -93,14 +97,16 @@ data "exoscale_private_network" "test" {
 					testAccDataSourcePrivateNetworkStartIP,
 					testAccDataSourcePrivateNetworkEndIP,
 					testAccDataSourcePrivateNetworkNetmask,
+					testAccDataSourcePrivateNetworkLabelValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					testAccDataSourceAntiAffinityGroupAttributes("data.exoscale_private_network.test", testAttrs{
-						dsPrivateNetworkAttrDescription: validateString(testAccDataSourcePrivateNetworkDescription),
-						dsPrivateNetworkAttrEndIP:       validateString(testAccDataSourcePrivateNetworkEndIP),
-						dsPrivateNetworkAttrName:        validateString(testAccDataSourcePrivateNetworkName),
-						dsPrivateNetworkAttrNetmask:     validateString(testAccDataSourcePrivateNetworkNetmask),
-						dsPrivateNetworkAttrStartIP:     validateString(testAccDataSourcePrivateNetworkStartIP),
+						dsPrivateNetworkAttrDescription:      validateString(testAccDataSourcePrivateNetworkDescription),
+						dsPrivateNetworkAttrEndIP:            validateString(testAccDataSourcePrivateNetworkEndIP),
+						dsPrivateNetworkAttrName:             validateString(testAccDataSourcePrivateNetworkName),
+						dsPrivateNetworkAttrNetmask:          validateString(testAccDataSourcePrivateNetworkNetmask),
+						dsPrivateNetworkAttrStartIP:          validateString(testAccDataSourcePrivateNetworkStartIP),
+						dsPrivateNetworkAttrLabels + ".test": validateString(testAccDataSourcePrivateNetworkLabelValue),
 					}),
 				),
 			},

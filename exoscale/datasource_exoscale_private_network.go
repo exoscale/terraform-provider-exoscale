@@ -14,6 +14,7 @@ const (
 	dsPrivateNetworkAttrDescription = "description"
 	dsPrivateNetworkAttrEndIP       = "end_ip"
 	dsPrivateNetworkAttrID          = "id"
+	dsPrivateNetworkAttrLabels      = "labels"
 	dsPrivateNetworkAttrName        = "name"
 	dsPrivateNetworkAttrNetmask     = "netmask"
 	dsPrivateNetworkAttrStartIP     = "start_ip"
@@ -43,6 +44,12 @@ Corresponding resource: [exoscale_private_network](../resources/private_network.
 				Type:          schema.TypeString,
 				Optional:      true,
 				ConflictsWith: []string{dsPrivateNetworkAttrName},
+			},
+			dsPrivateNetworkAttrLabels: {
+				Description: "A map of key/value labels.",
+				Type:        schema.TypeMap,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+				Optional:    true,
 			},
 			dsPrivateNetworkAttrName: {
 				Description:   "The network name to match (conflicts with `id`).",
@@ -111,6 +118,12 @@ func dataSourcePrivateNetworkRead(ctx context.Context, d *schema.ResourceData, m
 
 	if err := d.Set(dsPrivateNetworkAttrDescription, defaultString(privateNetwork.Description, "")); err != nil {
 		return diag.FromErr(err)
+	}
+
+	if privateNetwork.Labels != nil {
+		if err := d.Set(dsPrivateNetworkAttrLabels, *privateNetwork.Labels); err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
 	if privateNetwork.EndIP != nil {
