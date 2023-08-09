@@ -98,7 +98,8 @@ resource "exoscale_private_network" "my_network" {
 
 In this example we are using unmanaged private network, for managed network you can copy values from `exoscale_network` definition with the following changes:
 - `display_text` must be renamed to `description`;
-- `network_offering` and `tags` are deprecated and should be removed.
+- `tags` must be renamed to `labels`;
+- `network_offering` is deprecated and should be removed.
 
 Now replace `exoscale_compute` and `exoscale_nic` blocks with `exoscale_compute_instance`:
 
