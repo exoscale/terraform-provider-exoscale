@@ -154,7 +154,7 @@ func (r *Resource) readRedis(ctx context.Context, data *ResourceModel, diagnosti
 		data.Redis = &ResourceRedisModel{}
 	}
 
-	data.Grafana.IpFilter = types.SetNull(types.StringType)
+	data.Redis.IpFilter = types.SetNull(types.StringType)
 	if apiService.IpFilter != nil {
 		v, dg := types.SetValueFrom(ctx, types.StringType, *apiService.IpFilter)
 		if dg.HasError() {
