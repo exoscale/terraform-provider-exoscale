@@ -151,27 +151,30 @@ func (r *Resource) readGrafana(ctx context.Context, data *ResourceModel, diagnos
 		data.Plan = types.StringValue(apiService.Plan)
 	}
 
-	if data.Grafana != nil {
-		data.Grafana.IpFilter = types.SetNull(types.StringType)
-		if apiService.IpFilter != nil {
-			v, dg := types.SetValueFrom(ctx, types.StringType, *apiService.IpFilter)
-			if dg.HasError() {
-				diagnostics.Append(dg...)
-				return
-			}
+	// Datbase block is required but it may be nil during import.
+	if data.Grafana == nil {
+		data.Grafana = &ResourceGrafanaModel{}
+	}
 
-			data.Grafana.IpFilter = v
+	data.Grafana.IpFilter = types.SetNull(types.StringType)
+	if apiService.IpFilter != nil {
+		v, dg := types.SetValueFrom(ctx, types.StringType, *apiService.IpFilter)
+		if dg.HasError() {
+			diagnostics.Append(dg...)
+			return
 		}
 
-		data.Grafana.Settings = types.StringNull()
-		if apiService.GrafanaSettings != nil {
-			settings, err := json.Marshal(*apiService.GrafanaSettings)
-			if err != nil {
-				diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
-				return
-			}
-			data.Grafana.Settings = types.StringValue(string(settings))
+		data.Grafana.IpFilter = v
+	}
+
+	data.Grafana.Settings = types.StringNull()
+	if apiService.GrafanaSettings != nil {
+		settings, err := json.Marshal(*apiService.GrafanaSettings)
+		if err != nil {
+			diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
+			return
 		}
+		data.Grafana.Settings = types.StringValue(string(settings))
 	}
 }
 

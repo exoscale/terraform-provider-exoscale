@@ -30,6 +30,7 @@ var ResourceRedisSchema = schema.SingleNestedBlock{
 			ElementType:         types.StringType,
 			MarkdownDescription: "A list of CIDR blocks to allow incoming connections from.",
 			Optional:            true,
+			Computed:            true,
 			Validators: []validator.Set{
 				setvalidator.ValueStringsAre(validators.IsCIDRNetworkValidator{Min: 0, Max: 128}),
 			},
@@ -44,27 +45,9 @@ var ResourceRedisSchema = schema.SingleNestedBlock{
 
 // createRedis function handles Redis specific part of database resource creation logic.
 func (r *Resource) createRedis(ctx context.Context, data *ResourceModel, diagnostics *diag.Diagnostics) {
-	redisData := &ResourceRedisModel{}
-	if data.Redis != nil {
-		redisData = data.Redis
-	}
-
 	service := oapi.CreateDbaasServiceRedisJSONRequestBody{
 		Plan:                  data.Plan.ValueString(),
 		TerminationProtection: data.TerminationProtection.ValueBoolPointer(),
-	}
-
-	if !redisData.IpFilter.IsUnknown() {
-		obj := []string{}
-		if len(redisData.IpFilter.Elements()) > 0 {
-			dg := redisData.IpFilter.ElementsAs(ctx, &obj, false)
-			if dg.HasError() {
-				diagnostics.Append(dg...)
-				return
-			}
-		}
-
-		service.IpFilter = &obj
 	}
 
 	if !data.MaintenanceDOW.IsUnknown() && !data.MaintenanceTime.IsUnknown() {
@@ -77,23 +60,38 @@ func (r *Resource) createRedis(ctx context.Context, data *ResourceModel, diagnos
 		}
 	}
 
-	settingsSchema, err := r.client.GetDbaasSettingsRedisWithResponse(ctx)
-	if err != nil {
-		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database settings schema, got error: %s", err))
-		return
-	}
-	if settingsSchema.StatusCode() != http.StatusOK {
-		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database settings schema, unexpected status: %s", settingsSchema.Status()))
-		return
-	}
+	if data.Redis != nil {
+		if !data.Redis.IpFilter.IsUnknown() {
+			obj := []string{}
+			if len(data.Redis.IpFilter.Elements()) > 0 {
+				dg := data.Redis.IpFilter.ElementsAs(ctx, &obj, false)
+				if dg.HasError() {
+					diagnostics.Append(dg...)
+					return
+				}
+			}
 
-	if !redisData.Settings.IsUnknown() {
-		obj, err := validateSettings(redisData.Settings.ValueString(), settingsSchema.JSON200.Settings.Redis)
-		if err != nil {
-			diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
-			return
+			service.IpFilter = &obj
 		}
-		service.RedisSettings = &obj
+
+		if !data.Redis.Settings.IsUnknown() {
+			settingsSchema, err := r.client.GetDbaasSettingsRedisWithResponse(ctx)
+			if err != nil {
+				diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database settings schema, got error: %s", err))
+				return
+			}
+			if settingsSchema.StatusCode() != http.StatusOK {
+				diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database settings schema, unexpected status: %s", settingsSchema.Status()))
+				return
+			}
+
+			obj, err := validateSettings(data.Redis.Settings.ValueString(), settingsSchema.JSON200.Settings.Redis)
+			if err != nil {
+				diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
+				return
+			}
+			service.RedisSettings = &obj
+		}
 	}
 
 	res, err := r.client.CreateDbaasServiceRedisWithResponse(
@@ -106,7 +104,7 @@ func (r *Resource) createRedis(ctx context.Context, data *ResourceModel, diagnos
 		return
 	}
 	if res.StatusCode() != http.StatusOK {
-		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database settings schema, unexpected status: %s", settingsSchema.Status()))
+		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create database service redis, unexpected status: %s", res.Status()))
 		return
 	}
 
@@ -144,25 +142,20 @@ func (r *Resource) readRedis(ctx context.Context, data *ResourceModel, diagnosti
 	data.TerminationProtection = types.BoolPointerValue(apiService.TerminationProtection)
 	data.UpdatedAt = types.StringValue(apiService.UpdatedAt.String())
 
-	if data.Plan.IsNull() || data.Plan.IsUnknown() {
-		data.Plan = types.StringValue(apiService.Plan)
-	}
-
-	if apiService.Maintenance == nil {
-		data.MaintenanceDOW = types.StringNull()
-		data.MaintenanceTime = types.StringNull()
-	} else {
+	data.MaintenanceDOW = types.StringNull()
+	data.MaintenanceTime = types.StringNull()
+	if apiService.Maintenance != nil {
 		data.MaintenanceDOW = types.StringValue(string(apiService.Maintenance.Dow))
 		data.MaintenanceTime = types.StringValue(apiService.Maintenance.Time)
 	}
 
-	if data.Redis == nil {
+	// Datbase block is required but it may be nil during import.
+	if data.Redis != nil {
 		data.Redis = &ResourceRedisModel{}
 	}
 
-	if apiService.IpFilter == nil || len(*apiService.IpFilter) == 0 {
-		data.Redis.IpFilter = types.SetNull(types.StringType)
-	} else {
+	data.Grafana.IpFilter = types.SetNull(types.StringType)
+	if apiService.IpFilter != nil {
 		v, dg := types.SetValueFrom(ctx, types.StringType, *apiService.IpFilter)
 		if dg.HasError() {
 			diagnostics.Append(dg...)
@@ -172,9 +165,8 @@ func (r *Resource) readRedis(ctx context.Context, data *ResourceModel, diagnosti
 		data.Redis.IpFilter = v
 	}
 
-	if apiService.RedisSettings == nil {
-		data.Redis.Settings = types.StringNull()
-	} else {
+	data.Redis.Settings = types.StringNull()
+	if apiService.RedisSettings != nil {
 		settings, err := json.Marshal(*apiService.RedisSettings)
 		if err != nil {
 			diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
@@ -189,16 +181,6 @@ func (r *Resource) updateRedis(ctx context.Context, stateData *ResourceModel, pl
 	var updated bool
 
 	service := oapi.UpdateDbaasServiceRedisJSONRequestBody{}
-
-	settingsSchema, err := r.client.GetDbaasSettingsRedisWithResponse(ctx)
-	if err != nil {
-		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database settings schema, got error: %s", err))
-		return
-	}
-	if settingsSchema.StatusCode() != http.StatusOK {
-		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database settings schema, unexpected status: %s", settingsSchema.Status()))
-		return
-	}
 
 	if (!planData.MaintenanceDOW.Equal(stateData.MaintenanceDOW) && !planData.MaintenanceDOW.IsUnknown()) ||
 		(!planData.MaintenanceTime.Equal(stateData.MaintenanceTime) && !planData.MaintenanceTime.IsUnknown()) {
@@ -222,57 +204,63 @@ func (r *Resource) updateRedis(ctx context.Context, stateData *ResourceModel, pl
 		updated = true
 	}
 
-	stateRedisData := &ResourceRedisModel{}
-	if stateData.Redis != nil {
-		stateRedisData = stateData.Redis
-	}
-	planRedisData := &ResourceRedisModel{}
 	if planData.Redis != nil {
-		planRedisData = planData.Redis
-	}
-
-	if !planRedisData.IpFilter.Equal(stateRedisData.IpFilter) {
-		obj := []string{}
-		if len(planRedisData.IpFilter.Elements()) > 0 {
-			dg := planRedisData.IpFilter.ElementsAs(ctx, &obj, false)
-			if dg.HasError() {
-				diagnostics.Append(dg...)
-				return
-			}
+		if stateData.Redis == nil {
+			stateData.Redis = &ResourceRedisModel{}
 		}
-		service.IpFilter = &obj
-		updated = true
-	}
 
-	if !planRedisData.Settings.Equal(stateRedisData.Settings) {
-		if planRedisData.Settings.ValueString() != "" {
-			obj, err := validateSettings(planRedisData.Settings.ValueString(), settingsSchema.JSON200.Settings.Redis)
+		if !planData.Redis.IpFilter.Equal(stateData.Redis.IpFilter) {
+			obj := []string{}
+			if len(planData.Redis.IpFilter.Elements()) > 0 {
+				dg := planData.Redis.IpFilter.ElementsAs(ctx, &obj, false)
+				if dg.HasError() {
+					diagnostics.Append(dg...)
+					return
+				}
+			}
+			service.IpFilter = &obj
+			updated = true
+		}
+
+		if !planData.Redis.Settings.Equal(stateData.Redis.Settings) {
+			settingsSchema, err := r.client.GetDbaasSettingsRedisWithResponse(ctx)
 			if err != nil {
-				diagnostics.AddError("Validation error", fmt.Sprintf("invalid Redis settings: %s", err))
+				diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database settings schema, got error: %s", err))
 				return
 			}
-			service.RedisSettings = &obj
+			if settingsSchema.StatusCode() != http.StatusOK {
+				diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database settings schema, unexpected status: %s", settingsSchema.Status()))
+				return
+			}
+
+			if planData.Redis.Settings.ValueString() != "" {
+				obj, err := validateSettings(planData.Redis.Settings.ValueString(), settingsSchema.JSON200.Settings.Redis)
+				if err != nil {
+					diagnostics.AddError("Validation error", fmt.Sprintf("invalid Redis settings: %s", err))
+					return
+				}
+				service.RedisSettings = &obj
+			}
+			updated = true
 		}
-		updated = true
 	}
 
 	if !updated {
 		tflog.Info(ctx, "no updates detected", map[string]interface{}{})
-		return
-	}
-
-	res, err := r.client.UpdateDbaasServiceRedisWithResponse(
-		ctx,
-		oapi.DbaasServiceName(planData.Id.ValueString()),
-		service,
-	)
-	if err != nil {
-		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create database service redis, got error: %s", err))
-		return
-	}
-	if res.StatusCode() != http.StatusOK {
-		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database settings schema, unexpected status: %s", settingsSchema.Status()))
-		return
+	} else {
+		res, err := r.client.UpdateDbaasServiceRedisWithResponse(
+			ctx,
+			oapi.DbaasServiceName(planData.Id.ValueString()),
+			service,
+		)
+		if err != nil {
+			diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create database service redis, got error: %s", err))
+			return
+		}
+		if res.StatusCode() != http.StatusOK {
+			diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create database service redis, unexpected status: %s", res.Status()))
+			return
+		}
 	}
 
 	r.readRedis(ctx, planData, diagnostics)

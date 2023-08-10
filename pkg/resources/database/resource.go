@@ -225,6 +225,38 @@ func (r *Resource) Configure(ctx context.Context, req resource.ConfigureRequest,
 	r.env = req.ProviderData.(*providerConfig.ExoscaleProviderConfig).Environment
 }
 
+func (r *Resource) ValidateConfig(
+	ctx context.Context,
+	req resource.ValidateConfigRequest,
+	resp *resource.ValidateConfigResponse,
+) {
+	// To prevent issues with import we require that the database block is defined for chosen database type.
+	var dbType types.String
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("type"), &dbType)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// If `type` is not configured, return as attribute validator will catch error.
+	if dbType.IsNull() || dbType.IsUnknown() {
+		return
+	}
+
+	var dbObj types.Object
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root(dbType.ValueString()), &dbObj)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if dbObj.IsNull() || dbObj.IsUnknown() {
+		resp.Diagnostics.AddAttributeError(
+			path.Root(dbType.ValueString()),
+			"Attribute is required",
+			fmt.Sprintf("Attribute %q must be defined when database type is %q", dbType.ValueString(), dbType.ValueString()),
+		)
+	}
+}
+
 func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var data ResourceModel
 
@@ -434,31 +466,9 @@ func (r *Resource) ImportState(ctx context.Context, req resource.ImportStateRequ
 	for _, s := range services {
 		if *s.Name == data.Id.ValueString() {
 			data.Type = types.StringPointerValue(s.Type)
+			data.Plan = types.StringPointerValue(s.Plan)
 			break
 		}
-	}
-
-	switch data.Type.ValueString() {
-	case "pg":
-		r.readPg(ctx, &data, &resp.Diagnostics)
-	case "mysql":
-		r.readMysql(ctx, &data, &resp.Diagnostics)
-	case "redis":
-		r.readRedis(ctx, &data, &resp.Diagnostics)
-	case "kafka":
-		r.readKafka(ctx, &data, &resp.Diagnostics)
-	case "opensearch":
-		data.Opensearch = &ResourceOpensearchModel{Unknown: true}
-		r.readOpensearch(ctx, &data, &resp.Diagnostics)
-	case "grafana":
-		// Set nested obect to non-nil value to trigger update in read
-		data.Grafana = &ResourceGrafanaModel{}
-		r.readGrafana(ctx, &data, &resp.Diagnostics)
-	default:
-		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Database service %q not found in zone %q", data.Id.ValueString(), data.Zone.ValueString()))
-	}
-	if resp.Diagnostics.HasError() {
-		return
 	}
 
 	// Save data into Terraform state
