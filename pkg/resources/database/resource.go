@@ -213,6 +213,7 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 			"redis":      ResourceRedisSchema,
 			"timeouts":   timeouts.BlockAll(ctx),
 		},
+		Version: 1,
 	}
 }
 
@@ -223,6 +224,144 @@ func (r *Resource) Configure(ctx context.Context, req resource.ConfigureRequest,
 
 	r.client = req.ProviderData.(*providerConfig.ExoscaleProviderConfig).ClientV2
 	r.env = req.ProviderData.(*providerConfig.ExoscaleProviderConfig).Environment
+}
+
+func (r *Resource) UpgradeState(ctx context.Context) map[int64]resource.StateUpgrader {
+	return map[int64]resource.StateUpgrader{
+		// SDKv2 to Framework migration requires state upgrade in database blocks
+		// to remove array from database blocks.
+		0: {
+			PriorSchema: &schema.Schema{
+				Attributes: map[string]schema.Attribute{
+					"id":                     schema.StringAttribute{Computed: true},
+					"created_at":             schema.StringAttribute{Computed: true},
+					"disk_size":              schema.Int64Attribute{Computed: true},
+					"maintenance_dow":        schema.StringAttribute{Computed: true, Optional: true},
+					"maintenance_time":       schema.StringAttribute{Computed: true, Optional: true},
+					"name":                   schema.StringAttribute{Required: true},
+					"node_cpus":              schema.Int64Attribute{Computed: true},
+					"node_memory":            schema.Int64Attribute{Computed: true},
+					"nodes":                  schema.Int64Attribute{Computed: true},
+					"plan":                   schema.StringAttribute{Required: true},
+					"state":                  schema.StringAttribute{Computed: true},
+					"ca_certificate":         schema.StringAttribute{Computed: true},
+					"termination_protection": schema.BoolAttribute{Computed: true, Optional: true},
+					"type":                   schema.StringAttribute{Required: true},
+					"updated_at":             schema.StringAttribute{Computed: true},
+					"zone":                   schema.StringAttribute{Required: true},
+				},
+				Blocks: map[string]schema.Block{
+					"grafana": schema.ListNestedBlock{
+						NestedObject: schema.NestedBlockObject{
+							Attributes: ResourceGrafanaSchema.Attributes,
+						},
+					},
+					"kafka": schema.ListNestedBlock{
+						NestedObject: schema.NestedBlockObject{
+							Attributes: ResourceKafkaSchema.Attributes,
+						},
+					},
+					"mysql": schema.ListNestedBlock{
+						NestedObject: schema.NestedBlockObject{
+							Attributes: ResourceMysqlSchema.Attributes,
+						},
+					},
+					"opensearch": schema.ListNestedBlock{
+						NestedObject: schema.NestedBlockObject{
+							Attributes: ResourceOpensearchSchema.Attributes,
+						},
+					},
+					"pg": schema.ListNestedBlock{
+						NestedObject: schema.NestedBlockObject{
+							Attributes: ResourcePgSchema.Attributes,
+						},
+					},
+					"redis": schema.ListNestedBlock{
+						NestedObject: schema.NestedBlockObject{
+							Attributes: ResourceRedisSchema.Attributes,
+						},
+					},
+					"timeouts": timeouts.BlockAll(ctx),
+				},
+			},
+			StateUpgrader: func(
+				ctx context.Context,
+				req resource.UpgradeStateRequest,
+				resp *resource.UpgradeStateResponse,
+			) {
+				priorState := struct {
+					Id                    types.String              `tfsdk:"id"`
+					CreatedAt             types.String              `tfsdk:"created_at"`
+					DiskSize              types.Int64               `tfsdk:"disk_size"`
+					MaintenanceDOW        types.String              `tfsdk:"maintenance_dow"`
+					MaintenanceTime       types.String              `tfsdk:"maintenance_time"`
+					Name                  types.String              `tfsdk:"name"`
+					NodeCPUs              types.Int64               `tfsdk:"node_cpus"`
+					NodeMemory            types.Int64               `tfsdk:"node_memory"`
+					Nodes                 types.Int64               `tfsdk:"nodes"`
+					Plan                  types.String              `tfsdk:"plan"`
+					State                 types.String              `tfsdk:"state"`
+					CA                    types.String              `tfsdk:"ca_certificate"`
+					TerminationProtection types.Bool                `tfsdk:"termination_protection"`
+					Type                  types.String              `tfsdk:"type"`
+					UpdatedAt             types.String              `tfsdk:"updated_at"`
+					Zone                  types.String              `tfsdk:"zone"`
+					Pg                    []ResourcePgModel         `tfsdk:"pg"`
+					Mysql                 []ResourceMysqlModel      `tfsdk:"mysql"`
+					Redis                 []ResourceRedisModel      `tfsdk:"redis"`
+					Kafka                 []ResourceKafkaModel      `tfsdk:"kafka"`
+					Opensearch            []ResourceOpensearchModel `tfsdk:"opensearch"`
+					Grafana               []ResourceGrafanaModel    `tfsdk:"grafana"`
+					Timeouts              timeouts.Value            `tfsdk:"timeouts"`
+				}{}
+
+				resp.Diagnostics.Append(req.State.Get(ctx, &priorState)...)
+				if resp.Diagnostics.HasError() {
+					return
+				}
+
+				upgradedStateData := ResourceModel{
+					Id:                    priorState.Id,
+					CreatedAt:             priorState.CreatedAt,
+					DiskSize:              priorState.DiskSize,
+					MaintenanceDOW:        priorState.MaintenanceDOW,
+					MaintenanceTime:       priorState.MaintenanceTime,
+					Name:                  priorState.Name,
+					NodeCPUs:              priorState.NodeCPUs,
+					NodeMemory:            priorState.NodeMemory,
+					Nodes:                 priorState.Nodes,
+					Plan:                  priorState.Plan,
+					State:                 priorState.State,
+					CA:                    priorState.CA,
+					TerminationProtection: priorState.TerminationProtection,
+					Type:                  priorState.Type,
+					UpdatedAt:             priorState.UpdatedAt,
+					Zone:                  priorState.Zone,
+					Timeouts:              priorState.Timeouts,
+				}
+				if len(priorState.Pg) > 0 {
+					upgradedStateData.Pg = &priorState.Pg[0]
+				}
+				if len(priorState.Mysql) > 0 {
+					upgradedStateData.Mysql = &priorState.Mysql[0]
+				}
+				if len(priorState.Redis) > 0 {
+					upgradedStateData.Redis = &priorState.Redis[0]
+				}
+				if len(priorState.Kafka) > 0 {
+					upgradedStateData.Kafka = &priorState.Kafka[0]
+				}
+				if len(priorState.Opensearch) > 0 {
+					upgradedStateData.Opensearch = &priorState.Opensearch[0]
+				}
+				if len(priorState.Grafana) > 0 {
+					upgradedStateData.Grafana = &priorState.Grafana[0]
+				}
+
+				resp.Diagnostics.Append(resp.State.Set(ctx, upgradedStateData)...)
+			},
+		},
+	}
 }
 
 func (r *Resource) ValidateConfig(
