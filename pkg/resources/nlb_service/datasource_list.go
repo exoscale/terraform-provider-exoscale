@@ -14,7 +14,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
@@ -220,9 +219,6 @@ func (d *NLBServiceListDataSource) Read(ctx context.Context, req datasource.Read
 	data.NLBName = types.StringValue(*nlb.Name)
 
 	for _, service := range nlb.Services {
-		ctx = tflog.SetField(ctx, "exoscale_service", service)
-		tflog.Info(ctx, "Loop NLB service")
-
 		var serviceState Service
 
 		if service.Description != nil {
