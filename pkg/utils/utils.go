@@ -138,10 +138,10 @@ func SuppressCaseDiff(k, old, new string, d *schema.ResourceData) bool {
 	return strings.EqualFold(old, new)
 }
 
-// EncodeUserData does compression and base64 encoding, used in resource_exoscale_compute[_instance[_pool]]
+// EncodeUserData does base64 encoding, used in resource_exoscale_compute[_instance[_pool]]
 // returns (user_data, user_data_already_base64, error)
 func EncodeUserData(userData string) (string, bool, error) {
-	// template_cloudinit_config alows to gzip but not base64, prevent such case
+	// template_cloudinit_config allows to gzip but not base64, prevent such case
 	if len(userData) > 2 && userData[0] == '\x1f' && userData[1] == '\x8b' {
 		return "", false, errors.New("user_data appears to be gzipped: it should be left raw, or also be base64 encoded")
 	}
