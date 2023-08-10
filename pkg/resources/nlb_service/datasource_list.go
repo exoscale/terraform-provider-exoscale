@@ -217,6 +217,7 @@ func (d *NLBServiceListDataSource) Read(ctx context.Context, req datasource.Read
 	}
 
 	data.NLBName = types.StringValue(*nlb.Name)
+	data.NLBID = types.StringValue(*nlb.ID)
 
 	for _, service := range nlb.Services {
 		var serviceState Service
