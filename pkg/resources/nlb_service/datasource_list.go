@@ -280,7 +280,4 @@ func (d *NLBServiceListDataSource) Read(ctx context.Context, req datasource.Read
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
 }
