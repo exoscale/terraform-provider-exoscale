@@ -101,11 +101,11 @@ func (r *Resource) createPg(ctx context.Context, data *ResourceModel, diagnostic
 			service.Version = data.Pg.Version.ValueStringPointer()
 		}
 
-		if !data.Pg.AdminPassword.IsUnknown() {
+		if !data.Pg.AdminPassword.IsNull() {
 			service.AdminPassword = data.Pg.AdminPassword.ValueStringPointer()
 		}
 
-		if !data.Pg.AdminUsername.IsUnknown() {
+		if !data.Pg.AdminUsername.IsNull() {
 			service.AdminUsername = data.Pg.AdminUsername.ValueStringPointer()
 		}
 
@@ -231,7 +231,7 @@ func (r *Resource) readPg(ctx context.Context, data *ResourceModel, diagnostics 
 		data.MaintenanceTime = types.StringValue(apiService.Maintenance.Time)
 	}
 
-	// Datbase block is required but it may be nil during import.
+	// Database block is required but it may be nil during import.
 	if data.Pg == nil {
 		data.Pg = &ResourcePgModel{}
 	}

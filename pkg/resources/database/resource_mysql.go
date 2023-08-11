@@ -49,6 +49,7 @@ var ResourceMysqlSchema = schema.SingleNestedBlock{
 			ElementType:         types.StringType,
 			MarkdownDescription: "A list of CIDR blocks to allow incoming connections from.",
 			Optional:            true,
+			Computed:            true,
 			Validators: []validator.Set{
 				setvalidator.ValueStringsAre(validators.IsCIDRNetworkValidator{Min: 0, Max: 128}),
 			},
@@ -78,15 +79,15 @@ func (r *Resource) createMysql(ctx context.Context, data *ResourceModel, diagnos
 		TerminationProtection: data.TerminationProtection.ValueBoolPointer(),
 	}
 
-	if !mysqlData.Version.IsUnknown() {
+	if !mysqlData.Version.IsNull() {
 		service.Version = mysqlData.Version.ValueStringPointer()
 	}
 
-	if !mysqlData.AdminPassword.IsUnknown() {
+	if !mysqlData.AdminPassword.IsNull() {
 		service.AdminPassword = mysqlData.AdminPassword.ValueStringPointer()
 	}
 
-	if !mysqlData.AdminUsername.IsUnknown() {
+	if !mysqlData.AdminUsername.IsNull() {
 		service.AdminUsername = mysqlData.AdminUsername.ValueStringPointer()
 	}
 
@@ -158,7 +159,7 @@ func (r *Resource) createMysql(ctx context.Context, data *ResourceModel, diagnos
 		return
 	}
 	if res.StatusCode() != http.StatusOK {
-		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database settings schema, unexpected status: %s", settingsSchema.Status()))
+		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create database settings schema, unexpected status: %s", res.Status()))
 		return
 	}
 
@@ -196,14 +197,9 @@ func (r *Resource) readMysql(ctx context.Context, data *ResourceModel, diagnosti
 	data.TerminationProtection = types.BoolPointerValue(apiService.TerminationProtection)
 	data.UpdatedAt = types.StringValue(apiService.UpdatedAt.String())
 
-	if data.Plan.IsNull() || data.Plan.IsUnknown() {
-		data.Plan = types.StringValue(apiService.Plan)
-	}
-
-	if apiService.Maintenance == nil {
-		data.MaintenanceDOW = types.StringNull()
-		data.MaintenanceTime = types.StringNull()
-	} else {
+	data.MaintenanceDOW = types.StringNull()
+	data.MaintenanceTime = types.StringNull()
+	if apiService.Maintenance != nil {
 		data.MaintenanceDOW = types.StringValue(string(apiService.Maintenance.Dow))
 		data.MaintenanceTime = types.StringValue(apiService.Maintenance.Time)
 	}
@@ -212,9 +208,8 @@ func (r *Resource) readMysql(ctx context.Context, data *ResourceModel, diagnosti
 		data.Mysql = &ResourceMysqlModel{}
 	}
 
-	if apiService.BackupSchedule == nil {
-		data.Mysql.BackupSchedule = types.StringNull()
-	} else {
+	data.Mysql.BackupSchedule = types.StringNull()
+	if apiService.BackupSchedule != nil {
 		backupHour := types.Int64PointerValue(apiService.BackupSchedule.BackupHour)
 		backupMinute := types.Int64PointerValue(apiService.BackupSchedule.BackupMinute)
 		data.Mysql.BackupSchedule = types.StringValue(fmt.Sprintf(
@@ -224,9 +219,8 @@ func (r *Resource) readMysql(ctx context.Context, data *ResourceModel, diagnosti
 		))
 	}
 
-	if apiService.IpFilter == nil || len(*apiService.IpFilter) == 0 {
-		data.Mysql.IpFilter = types.SetNull(types.StringType)
-	} else {
+	data.Mysql.IpFilter = types.SetNull(types.StringType)
+	if apiService.IpFilter != nil {
 		v, dg := types.SetValueFrom(ctx, types.StringType, *apiService.IpFilter)
 		if dg.HasError() {
 			diagnostics.Append(dg...)
@@ -236,15 +230,13 @@ func (r *Resource) readMysql(ctx context.Context, data *ResourceModel, diagnosti
 		data.Mysql.IpFilter = v
 	}
 
-	if apiService.Version == nil {
-		data.Mysql.Version = types.StringNull()
-	} else {
+	data.Mysql.Version = types.StringNull()
+	if apiService.Version != nil {
 		data.Mysql.Version = types.StringValue(strings.SplitN(*apiService.Version, ".", 2)[0])
 	}
 
-	if apiService.MysqlSettings == nil {
-		data.Mysql.Settings = types.StringNull()
-	} else {
+	data.Mysql.Settings = types.StringNull()
+	if apiService.MysqlSettings != nil {
 		settings, err := json.Marshal(*apiService.MysqlSettings)
 		if err != nil {
 			diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
@@ -259,16 +251,6 @@ func (r *Resource) updateMysql(ctx context.Context, stateData *ResourceModel, pl
 	var updated bool
 
 	service := oapi.UpdateDbaasServiceMysqlJSONRequestBody{}
-
-	settingsSchema, err := r.client.GetDbaasSettingsMysqlWithResponse(ctx)
-	if err != nil {
-		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database settings schema, got error: %s", err))
-		return
-	}
-	if settingsSchema.StatusCode() != http.StatusOK {
-		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database settings schema, unexpected status: %s", settingsSchema.Status()))
-		return
-	}
 
 	if (!planData.MaintenanceDOW.Equal(stateData.MaintenanceDOW) && !planData.MaintenanceDOW.IsUnknown()) ||
 		(!planData.MaintenanceTime.Equal(stateData.MaintenanceTime) && !planData.MaintenanceTime.IsUnknown()) {
@@ -292,91 +274,97 @@ func (r *Resource) updateMysql(ctx context.Context, stateData *ResourceModel, pl
 		updated = true
 	}
 
-	stateMysqlData := &ResourceMysqlModel{}
-	if stateData.Mysql != nil {
-		stateMysqlData = stateData.Mysql
-	}
-	planMysqlData := &ResourceMysqlModel{}
 	if planData.Mysql != nil {
-		planMysqlData = planData.Mysql
-	}
-
-	if !planMysqlData.BackupSchedule.Equal(stateMysqlData.BackupSchedule) {
-		bh, bm, err := parseBackupSchedule(planMysqlData.BackupSchedule.ValueString())
-		if err != nil {
-			diagnostics.AddError("Validation error", fmt.Sprintf("Unable to parse backup schedule, got error: %s", err))
-			return
+		if stateData.Mysql == nil {
+			stateData.Mysql = &ResourceMysqlModel{}
 		}
 
-		service.BackupSchedule = &struct {
-			BackupHour   *int64 `json:"backup-hour,omitempty"`
-			BackupMinute *int64 `json:"backup-minute,omitempty"`
-		}{
-			BackupHour:   &bh,
-			BackupMinute: &bm,
-		}
-		updated = true
-	}
-
-	if !planMysqlData.IpFilter.Equal(stateMysqlData.IpFilter) {
-		obj := []string{}
-		if len(planMysqlData.IpFilter.Elements()) > 0 {
-			dg := planMysqlData.IpFilter.ElementsAs(ctx, &obj, false)
-			if dg.HasError() {
-				diagnostics.Append(dg...)
-				return
-			}
-		}
-		service.IpFilter = &obj
-		updated = true
-	}
-
-	if !planMysqlData.Settings.Equal(stateMysqlData.Settings) {
-		if planMysqlData.Settings.ValueString() != "" {
-			obj, err := validateSettings(planMysqlData.Settings.ValueString(), settingsSchema.JSON200.Settings.Mysql)
+		if !planData.Mysql.BackupSchedule.Equal(stateData.Mysql.BackupSchedule) {
+			bh, bm, err := parseBackupSchedule(planData.Mysql.BackupSchedule.ValueString())
 			if err != nil {
-				diagnostics.AddError("Validation error", fmt.Sprintf("invalid Mysql settings: %s", err))
+				diagnostics.AddError("Validation error", fmt.Sprintf("Unable to parse backup schedule, got error: %s", err))
 				return
 			}
-			service.MysqlSettings = &obj
+
+			service.BackupSchedule = &struct {
+				BackupHour   *int64 `json:"backup-hour,omitempty"`
+				BackupMinute *int64 `json:"backup-minute,omitempty"`
+			}{
+				BackupHour:   &bh,
+				BackupMinute: &bm,
+			}
+			updated = true
 		}
-		updated = true
+
+		if !planData.Mysql.IpFilter.Equal(stateData.Mysql.IpFilter) {
+			obj := []string{}
+			if len(planData.Mysql.IpFilter.Elements()) > 0 {
+				dg := planData.Mysql.IpFilter.ElementsAs(ctx, &obj, false)
+				if dg.HasError() {
+					diagnostics.Append(dg...)
+					return
+				}
+			}
+			service.IpFilter = &obj
+			updated = true
+		}
+
+		if !planData.Mysql.Settings.Equal(stateData.Mysql.Settings) {
+			settingsSchema, err := r.client.GetDbaasSettingsMysqlWithResponse(ctx)
+			if err != nil {
+				diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database settings schema, got error: %s", err))
+				return
+			}
+			if settingsSchema.StatusCode() != http.StatusOK {
+				diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database settings schema, unexpected status: %s", settingsSchema.Status()))
+				return
+			}
+
+			if planData.Mysql.Settings.ValueString() != "" {
+				obj, err := validateSettings(planData.Mysql.Settings.ValueString(), settingsSchema.JSON200.Settings.Mysql)
+				if err != nil {
+					diagnostics.AddError("Validation error", fmt.Sprintf("invalid Mysql settings: %s", err))
+					return
+				}
+				service.MysqlSettings = &obj
+			}
+			updated = true
+		}
+
+		// Aiven would overwrite the backup schedule with random value if we don't specify it explicitly every time.
+		if service.BackupSchedule == nil {
+			bh, bm, err := parseBackupSchedule(planData.Mysql.BackupSchedule.ValueString())
+			if err != nil {
+				diagnostics.AddError("Validation error", fmt.Sprintf("Unable to parse backup schedule, got error: %s", err))
+				return
+			}
+
+			service.BackupSchedule = &struct {
+				BackupHour   *int64 `json:"backup-hour,omitempty"`
+				BackupMinute *int64 `json:"backup-minute,omitempty"`
+			}{
+				BackupHour:   &bh,
+				BackupMinute: &bm,
+			}
+		}
 	}
 
 	if !updated {
 		tflog.Info(ctx, "no updates detected", map[string]interface{}{})
-		return
-	}
-
-	// Aiven would overwrite the backup schedule with random value if we don't specify it explicitly every time.
-	if service.BackupSchedule == nil {
-		bh, bm, err := parseBackupSchedule(planMysqlData.BackupSchedule.ValueString())
+	} else {
+		res, err := r.client.UpdateDbaasServiceMysqlWithResponse(
+			ctx,
+			oapi.DbaasServiceName(planData.Id.ValueString()),
+			service,
+		)
 		if err != nil {
-			diagnostics.AddError("Validation error", fmt.Sprintf("Unable to parse backup schedule, got error: %s", err))
+			diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create database service mysql, got error: %s", err))
 			return
 		}
-
-		service.BackupSchedule = &struct {
-			BackupHour   *int64 `json:"backup-hour,omitempty"`
-			BackupMinute *int64 `json:"backup-minute,omitempty"`
-		}{
-			BackupHour:   &bh,
-			BackupMinute: &bm,
+		if res.StatusCode() != http.StatusOK {
+			diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create database service mysql, unexpected status: %s", res.Status()))
+			return
 		}
-	}
-
-	res, err := r.client.UpdateDbaasServiceMysqlWithResponse(
-		ctx,
-		oapi.DbaasServiceName(planData.Id.ValueString()),
-		service,
-	)
-	if err != nil {
-		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create database service mysql, got error: %s", err))
-		return
-	}
-	if res.StatusCode() != http.StatusOK {
-		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database settings schema, unexpected status: %s", settingsSchema.Status()))
-		return
 	}
 
 	r.readMysql(ctx, planData, diagnostics)
