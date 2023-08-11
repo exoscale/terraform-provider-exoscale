@@ -3,7 +3,7 @@
 
 # Customizable parameters
 locals {
-  my_zone     = "ch-gva-2"
+  my_zone = "ch-gva-2"
 }
 
 # Read local IP address
@@ -36,6 +36,6 @@ data "exoscale_database_uri" "my_database" {
 
 # Outputs
 output "database_uri" {
-  value = data.exoscale_database_uri.my_database.uri
+  value     = data.exoscale_database_uri.my_database.uri
   sensitive = true
 }
