@@ -51,6 +51,7 @@ var ResourcePgSchema = schema.SingleNestedBlock{
 			ElementType:         types.StringType,
 			MarkdownDescription: "A list of CIDR blocks to allow incoming connections from.",
 			Optional:            true,
+			Computed:            true,
 			Validators: []validator.Set{
 				setvalidator.ValueStringsAre(validators.IsCIDRNetworkValidator{Min: 0, Max: 128}),
 			},
@@ -80,39 +81,9 @@ var ResourcePgSchema = schema.SingleNestedBlock{
 
 // createPg function handles PostgreSQL specific part of database resource creation logic.
 func (r *Resource) createPg(ctx context.Context, data *ResourceModel, diagnostics *diag.Diagnostics) {
-	pgData := &ResourcePgModel{}
-	if data.Pg != nil {
-		pgData = data.Pg
-	}
-
 	service := oapi.CreateDbaasServicePgJSONRequestBody{
 		Plan:                  data.Plan.ValueString(),
 		TerminationProtection: data.TerminationProtection.ValueBoolPointer(),
-	}
-
-	if !pgData.Version.IsUnknown() {
-		service.Version = pgData.Version.ValueStringPointer()
-	}
-
-	if !pgData.AdminPassword.IsUnknown() {
-		service.AdminPassword = pgData.AdminPassword.ValueStringPointer()
-	}
-
-	if !pgData.AdminUsername.IsUnknown() {
-		service.AdminUsername = pgData.AdminUsername.ValueStringPointer()
-	}
-
-	if !pgData.IpFilter.IsUnknown() {
-		obj := []string{}
-		if len(pgData.IpFilter.Elements()) > 0 {
-			dg := pgData.IpFilter.ElementsAs(ctx, &obj, true)
-			if dg.HasError() {
-				diagnostics.Append(dg...)
-				return
-			}
-		}
-
-		service.IpFilter = &obj
 	}
 
 	if !data.MaintenanceDOW.IsUnknown() && !data.MaintenanceTime.IsUnknown() {
@@ -125,57 +96,83 @@ func (r *Resource) createPg(ctx context.Context, data *ResourceModel, diagnostic
 		}
 	}
 
-	if !pgData.BackupSchedule.IsUnknown() {
-		bh, bm, err := parseBackupSchedule(pgData.BackupSchedule.ValueString())
+	if data.Pg != nil {
+		if !data.Pg.Version.IsUnknown() {
+			service.Version = data.Pg.Version.ValueStringPointer()
+		}
+
+		if !data.Pg.AdminPassword.IsUnknown() {
+			service.AdminPassword = data.Pg.AdminPassword.ValueStringPointer()
+		}
+
+		if !data.Pg.AdminUsername.IsUnknown() {
+			service.AdminUsername = data.Pg.AdminUsername.ValueStringPointer()
+		}
+
+		if !data.Pg.IpFilter.IsUnknown() {
+			obj := []string{}
+			if len(data.Pg.IpFilter.Elements()) > 0 {
+				dg := data.Pg.IpFilter.ElementsAs(ctx, &obj, true)
+				if dg.HasError() {
+					diagnostics.Append(dg...)
+					return
+				}
+			}
+
+			service.IpFilter = &obj
+		}
+		if !data.Pg.BackupSchedule.IsUnknown() {
+			bh, bm, err := parseBackupSchedule(data.Pg.BackupSchedule.ValueString())
+			if err != nil {
+				diagnostics.AddError("Validation error", fmt.Sprintf("Unable to parse backup schedule, got error: %s", err))
+				return
+			}
+
+			service.BackupSchedule = &struct {
+				BackupHour   *int64 `json:"backup-hour,omitempty"`
+				BackupMinute *int64 `json:"backup-minute,omitempty"`
+			}{
+				BackupHour:   &bh,
+				BackupMinute: &bm,
+			}
+		}
+
+		settingsSchema, err := r.client.GetDbaasSettingsPgWithResponse(ctx)
 		if err != nil {
-			diagnostics.AddError("Validation error", fmt.Sprintf("Unable to parse backup schedule, got error: %s", err))
+			diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database settings schema, got error: %s", err))
+			return
+		}
+		if settingsSchema.StatusCode() != http.StatusOK {
+			diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database settings schema, unexpected status: %s", settingsSchema.Status()))
 			return
 		}
 
-		service.BackupSchedule = &struct {
-			BackupHour   *int64 `json:"backup-hour,omitempty"`
-			BackupMinute *int64 `json:"backup-minute,omitempty"`
-		}{
-			BackupHour:   &bh,
-			BackupMinute: &bm,
+		if !data.Pg.Settings.IsUnknown() {
+			obj, err := validateSettings(data.Pg.Settings.ValueString(), settingsSchema.JSON200.Settings.Pg)
+			if err != nil {
+				diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
+				return
+			}
+			service.PgSettings = &obj
 		}
-	}
 
-	settingsSchema, err := r.client.GetDbaasSettingsPgWithResponse(ctx)
-	if err != nil {
-		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database settings schema, got error: %s", err))
-		return
-	}
-	if settingsSchema.StatusCode() != http.StatusOK {
-		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database settings schema, unexpected status: %s", settingsSchema.Status()))
-		return
-	}
-
-	if !pgData.Settings.IsUnknown() {
-		obj, err := validateSettings(pgData.Settings.ValueString(), settingsSchema.JSON200.Settings.Pg)
-		if err != nil {
-			diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
-			return
+		if !data.Pg.PgbouncerSettings.IsUnknown() {
+			obj, err := validateSettings(data.Pg.PgbouncerSettings.ValueString(), settingsSchema.JSON200.Settings.Pgbouncer)
+			if err != nil {
+				diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
+				return
+			}
+			service.PgbouncerSettings = &obj
 		}
-		service.PgSettings = &obj
-	}
 
-	if !pgData.PgbouncerSettings.IsUnknown() {
-		obj, err := validateSettings(pgData.PgbouncerSettings.ValueString(), settingsSchema.JSON200.Settings.Pgbouncer)
-		if err != nil {
-			diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
-			return
+		if !data.Pg.PglookoutSettings.IsUnknown() {
+			obj, err := validateSettings(data.Pg.PglookoutSettings.ValueString(), settingsSchema.JSON200.Settings.Pglookout)
+			if err != nil {
+				diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
+				return
+			}
+			service.PglookoutSettings = &obj
 		}
-		service.PgbouncerSettings = &obj
-	}
-
-	if !pgData.PglookoutSettings.IsUnknown() {
-		obj, err := validateSettings(pgData.PglookoutSettings.ValueString(), settingsSchema.JSON200.Settings.Pglookout)
-		if err != nil {
-			diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
-			return
-		}
-		service.PglookoutSettings = &obj
 	}
 
 	res, err := r.client.CreateDbaasServicePgWithResponse(
@@ -188,7 +185,7 @@ func (r *Resource) createPg(ctx context.Context, data *ResourceModel, diagnostic
 		return
 	}
 	if res.StatusCode() != http.StatusOK {
-		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database settings schema, unexpected status: %s", settingsSchema.Status()))
+		diagnostics.AddError("Client Error", fmt.Sprintf("Unable create database service pg, unexpected status: %s", res.Status()))
 		return
 	}
 
@@ -227,21 +224,20 @@ func (r *Resource) readPg(ctx context.Context, data *ResourceModel, diagnostics 
 	data.TerminationProtection = types.BoolPointerValue(apiService.TerminationProtection)
 	data.UpdatedAt = types.StringValue(apiService.UpdatedAt.String())
 
-	if apiService.Maintenance == nil {
-		data.MaintenanceDOW = types.StringNull()
-		data.MaintenanceTime = types.StringNull()
-	} else {
+	data.MaintenanceDOW = types.StringNull()
+	data.MaintenanceTime = types.StringNull()
+	if apiService.Maintenance != nil {
 		data.MaintenanceDOW = types.StringValue(string(apiService.Maintenance.Dow))
 		data.MaintenanceTime = types.StringValue(apiService.Maintenance.Time)
 	}
 
+	// Datbase block is required but it may be nil during import.
 	if data.Pg == nil {
 		data.Pg = &ResourcePgModel{}
 	}
 
-	if apiService.BackupSchedule == nil {
-		data.Pg.BackupSchedule = types.StringNull()
-	} else {
+	data.Pg.BackupSchedule = types.StringNull()
+	if apiService.BackupSchedule != nil {
 		backupHour := types.Int64PointerValue(apiService.BackupSchedule.BackupHour)
 		backupMinute := types.Int64PointerValue(apiService.BackupSchedule.BackupMinute)
 		data.Pg.BackupSchedule = types.StringValue(fmt.Sprintf(
@@ -251,9 +247,8 @@ func (r *Resource) readPg(ctx context.Context, data *ResourceModel, diagnostics 
 		))
 	}
 
-	if apiService.IpFilter == nil || len(*apiService.IpFilter) == 0 {
-		data.Pg.IpFilter = types.SetNull(types.StringType)
-	} else {
+	data.Pg.IpFilter = types.SetNull(types.StringType)
+	if apiService.IpFilter != nil {
 		v, dg := types.SetValueFrom(ctx, types.StringType, *apiService.IpFilter)
 		if dg.HasError() {
 			diagnostics.Append(dg...)
@@ -263,15 +258,13 @@ func (r *Resource) readPg(ctx context.Context, data *ResourceModel, diagnostics 
 		data.Pg.IpFilter = v
 	}
 
-	if apiService.Version == nil {
-		data.Pg.Version = types.StringNull()
-	} else {
+	data.Pg.Version = types.StringNull()
+	if apiService.Version != nil {
 		data.Pg.Version = types.StringValue(strings.SplitN(*apiService.Version, ".", 2)[0])
 	}
 
-	if apiService.PgSettings == nil {
-		data.Pg.Settings = types.StringNull()
-	} else {
+	data.Pg.Settings = types.StringNull()
+	if apiService.PgSettings != nil {
 		settings, err := json.Marshal(*apiService.PgSettings)
 		if err != nil {
 			diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
@@ -280,9 +273,8 @@ func (r *Resource) readPg(ctx context.Context, data *ResourceModel, diagnostics 
 		data.Pg.Settings = types.StringValue(string(settings))
 	}
 
-	if apiService.PgbouncerSettings == nil {
-		data.Pg.PgbouncerSettings = types.StringNull()
-	} else {
+	data.Pg.PgbouncerSettings = types.StringNull()
+	if apiService.PgbouncerSettings != nil {
 		settings, err := json.Marshal(*apiService.PgbouncerSettings)
 		if err != nil {
 			diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
@@ -291,9 +283,8 @@ func (r *Resource) readPg(ctx context.Context, data *ResourceModel, diagnostics 
 		data.Pg.PgbouncerSettings = types.StringValue(string(settings))
 	}
 
-	if apiService.PglookoutSettings == nil {
-		data.Pg.PglookoutSettings = types.StringNull()
-	} else {
+	data.Pg.PglookoutSettings = types.StringNull()
+	if apiService.PglookoutSettings != nil {
 		settings, err := json.Marshal(*apiService.PglookoutSettings)
 		if err != nil {
 			diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
@@ -308,16 +299,6 @@ func (r *Resource) updatePg(ctx context.Context, stateData *ResourceModel, planD
 	var updated bool
 
 	service := oapi.UpdateDbaasServicePgJSONRequestBody{}
-
-	settingsSchema, err := r.client.GetDbaasSettingsPgWithResponse(ctx)
-	if err != nil {
-		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database settings schema, got error: %s", err))
-		return
-	}
-	if settingsSchema.StatusCode() != http.StatusOK {
-		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database settings schema, unexpected status: %s", settingsSchema.Status()))
-		return
-	}
 
 	if (!planData.MaintenanceDOW.Equal(stateData.MaintenanceDOW) && !planData.MaintenanceDOW.IsUnknown()) ||
 		(!planData.MaintenanceTime.Equal(stateData.MaintenanceTime) && !planData.MaintenanceTime.IsUnknown()) {
@@ -341,115 +322,121 @@ func (r *Resource) updatePg(ctx context.Context, stateData *ResourceModel, planD
 		updated = true
 	}
 
-	statePgData := &ResourcePgModel{}
-	if stateData.Pg != nil {
-		statePgData = stateData.Pg
-	}
-	planPgData := &ResourcePgModel{}
 	if planData.Pg != nil {
-		planPgData = planData.Pg
-	}
+		if stateData.Pg == nil {
+			stateData.Pg = &ResourcePgModel{}
+		}
 
-	if !planPgData.BackupSchedule.Equal(statePgData.BackupSchedule) {
-		bh, bm, err := parseBackupSchedule(planPgData.BackupSchedule.ValueString())
+		if !planData.Pg.BackupSchedule.Equal(stateData.Pg.BackupSchedule) {
+			bh, bm, err := parseBackupSchedule(planData.Pg.BackupSchedule.ValueString())
+			if err != nil {
+				diagnostics.AddError("Validation error", fmt.Sprintf("Unable to parse backup schedule, got error: %s", err))
+				return
+			}
+
+			service.BackupSchedule = &struct {
+				BackupHour   *int64 `json:"backup-hour,omitempty"`
+				BackupMinute *int64 `json:"backup-minute,omitempty"`
+			}{
+				BackupHour:   &bh,
+				BackupMinute: &bm,
+			}
+			updated = true
+		}
+
+		if !planData.Pg.IpFilter.Equal(stateData.Pg.IpFilter) {
+			obj := []string{}
+			if len(planData.Pg.IpFilter.Elements()) > 0 {
+				dg := planData.Pg.IpFilter.ElementsAs(ctx, &obj, false)
+				if dg.HasError() {
+					diagnostics.Append(dg...)
+					return
+				}
+			}
+			service.IpFilter = &obj
+			updated = true
+		}
+
+		settingsSchema, err := r.client.GetDbaasSettingsPgWithResponse(ctx)
 		if err != nil {
-			diagnostics.AddError("Validation error", fmt.Sprintf("Unable to parse backup schedule, got error: %s", err))
+			diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database settings schema, got error: %s", err))
+			return
+		}
+		if settingsSchema.StatusCode() != http.StatusOK {
+			diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database settings schema, unexpected status: %s", settingsSchema.Status()))
 			return
 		}
 
-		service.BackupSchedule = &struct {
-			BackupHour   *int64 `json:"backup-hour,omitempty"`
-			BackupMinute *int64 `json:"backup-minute,omitempty"`
-		}{
-			BackupHour:   &bh,
-			BackupMinute: &bm,
-		}
-		updated = true
-	}
-
-	if !planPgData.IpFilter.Equal(statePgData.IpFilter) {
-		obj := []string{}
-		if len(planPgData.IpFilter.Elements()) > 0 {
-			dg := planPgData.IpFilter.ElementsAs(ctx, &obj, false)
-			if dg.HasError() {
-				diagnostics.Append(dg...)
-				return
+		if !planData.Pg.Settings.Equal(stateData.Pg.Settings) {
+			if planData.Pg.Settings.ValueString() != "" {
+				obj, err := validateSettings(planData.Pg.Settings.ValueString(), settingsSchema.JSON200.Settings.Pg)
+				if err != nil {
+					diagnostics.AddError("Validation error", fmt.Sprintf("invalid Pg settings: %s", err))
+					return
+				}
+				service.PgSettings = &obj
 			}
+			updated = true
 		}
-		service.IpFilter = &obj
-		updated = true
-	}
 
-	if !planPgData.Settings.Equal(statePgData.Settings) {
-		if planPgData.Settings.ValueString() != "" {
-			obj, err := validateSettings(planPgData.Settings.ValueString(), settingsSchema.JSON200.Settings.Pg)
+		if !planData.Pg.PgbouncerSettings.Equal(stateData.Pg.PgbouncerSettings) {
+			if planData.Pg.PgbouncerSettings.ValueString() != "" {
+				obj, err := validateSettings(planData.Pg.PgbouncerSettings.ValueString(), settingsSchema.JSON200.Settings.Pgbouncer)
+				if err != nil {
+					diagnostics.AddError("Validation error", fmt.Sprintf("invalid Pgbouncer settings: %s", err))
+					return
+				}
+				service.PgbouncerSettings = &obj
+			}
+			updated = true
+		}
+
+		if !planData.Pg.PglookoutSettings.Equal(stateData.Pg.PglookoutSettings) {
+			if planData.Pg.PglookoutSettings.ValueString() != "" {
+				obj, err := validateSettings(planData.Pg.PglookoutSettings.ValueString(), settingsSchema.JSON200.Settings.Pglookout)
+				if err != nil {
+					diagnostics.AddError("Validation error", fmt.Sprintf("invalid Pglookout settings: %s", err))
+					return
+				}
+				service.PglookoutSettings = &obj
+			}
+			updated = true
+		}
+
+		// Aiven would overwrite the backup schedule with random value if we don't specify it explicitly every time.
+		if service.BackupSchedule == nil {
+			bh, bm, err := parseBackupSchedule(planData.Pg.BackupSchedule.ValueString())
 			if err != nil {
-				diagnostics.AddError("Validation error", fmt.Sprintf("invalid Pg settings: %s", err))
+				diagnostics.AddError("Validation error", fmt.Sprintf("Unable to parse backup schedule, got error: %s", err))
 				return
 			}
-			service.PgSettings = &obj
-		}
-		updated = true
-	}
 
-	if !planPgData.PgbouncerSettings.Equal(statePgData.PgbouncerSettings) {
-		if planPgData.PgbouncerSettings.ValueString() != "" {
-			obj, err := validateSettings(planPgData.PgbouncerSettings.ValueString(), settingsSchema.JSON200.Settings.Pgbouncer)
-			if err != nil {
-				diagnostics.AddError("Validation error", fmt.Sprintf("invalid Pgbouncer settings: %s", err))
-				return
+			service.BackupSchedule = &struct {
+				BackupHour   *int64 `json:"backup-hour,omitempty"`
+				BackupMinute *int64 `json:"backup-minute,omitempty"`
+			}{
+				BackupHour:   &bh,
+				BackupMinute: &bm,
 			}
-			service.PgbouncerSettings = &obj
 		}
-		updated = true
-	}
-
-	if !planPgData.PglookoutSettings.Equal(statePgData.PglookoutSettings) {
-		if planPgData.PglookoutSettings.ValueString() != "" {
-			obj, err := validateSettings(planPgData.PglookoutSettings.ValueString(), settingsSchema.JSON200.Settings.Pglookout)
-			if err != nil {
-				diagnostics.AddError("Validation error", fmt.Sprintf("invalid Pglookout settings: %s", err))
-				return
-			}
-			service.PglookoutSettings = &obj
-		}
-		updated = true
 	}
 
 	if !updated {
 		tflog.Info(ctx, "no updates detected", map[string]interface{}{})
-		return
-	}
-
-	// Aiven would overwrite the backup schedule with random value if we don't specify it explicitly every time.
-	if service.BackupSchedule == nil {
-		bh, bm, err := parseBackupSchedule(planPgData.BackupSchedule.ValueString())
+	} else {
+		res, err := r.client.UpdateDbaasServicePgWithResponse(
+			ctx,
+			oapi.DbaasServiceName(planData.Id.ValueString()),
+			service,
+		)
 		if err != nil {
-			diagnostics.AddError("Validation error", fmt.Sprintf("Unable to parse backup schedule, got error: %s", err))
+			diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create database service pg, got error: %s", err))
 			return
 		}
-
-		service.BackupSchedule = &struct {
-			BackupHour   *int64 `json:"backup-hour,omitempty"`
-			BackupMinute *int64 `json:"backup-minute,omitempty"`
-		}{
-			BackupHour:   &bh,
-			BackupMinute: &bm,
+		if res.StatusCode() != http.StatusOK {
+			diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create database service pg, unexpected status: %s", res.Status()))
+			return
 		}
-	}
-
-	res, err := r.client.UpdateDbaasServicePgWithResponse(
-		ctx,
-		oapi.DbaasServiceName(planData.Id.ValueString()),
-		service,
-	)
-	if err != nil {
-		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create database service pg, got error: %s", err))
-		return
-	}
-	if res.StatusCode() != http.StatusOK {
-		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database settings schema, unexpected status: %s", settingsSchema.Status()))
-		return
 	}
 
 	r.readPg(ctx, planData, diagnostics)
