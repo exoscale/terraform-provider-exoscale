@@ -149,7 +149,7 @@ func (r *Resource) readRedis(ctx context.Context, data *ResourceModel, diagnosti
 		data.MaintenanceTime = types.StringValue(apiService.Maintenance.Time)
 	}
 
-	// Datbase block is required but it may be nil during import.
+	// Database block is required but it may be nil during import.
 	if data.Redis == nil {
 		data.Redis = &ResourceRedisModel{}
 	}
