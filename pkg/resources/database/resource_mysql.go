@@ -79,7 +79,7 @@ func (r *Resource) createMysql(ctx context.Context, data *ResourceModel, diagnos
 		TerminationProtection: data.TerminationProtection.ValueBoolPointer(),
 	}
 
-	if !mysqlData.Version.IsNull() {
+	if !mysqlData.Version.IsUnknown() {
 		service.Version = mysqlData.Version.ValueStringPointer()
 	}
 

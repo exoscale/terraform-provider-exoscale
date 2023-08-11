@@ -151,7 +151,7 @@ func (r *Resource) readGrafana(ctx context.Context, data *ResourceModel, diagnos
 		data.Plan = types.StringValue(apiService.Plan)
 	}
 
-	// Datbase block is required but it may be nil during import.
+	// Database block is required but it may be nil during import.
 	if data.Grafana == nil {
 		data.Grafana = &ResourceGrafanaModel{}
 	}

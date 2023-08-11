@@ -22,10 +22,6 @@ import (
 )
 
 type ResourceOpensearchModel struct {
-	// Unknown is a shortcut to avoid implementing Unknownable interface.
-	// TODO: implement Unknownable
-	Unknown bool `tfsdk:"-"`
-
 	ForkFromService          types.String `tfsdk:"fork_from_service"`
 	RecoveryBackupName       types.String `tfsdk:"recovery_backup_name"`
 	IpFilter                 types.Set    `tfsdk:"ip_filter"`
@@ -177,6 +173,16 @@ func (r *Resource) createOpensearch(ctx context.Context, data *ResourceModel, di
 		KeepIndexRefreshInterval: data.Opensearch.KeepIndexRefreshInterval.ValueBoolPointer(),
 	}
 
+	if !data.MaintenanceDOW.IsUnknown() && !data.MaintenanceTime.IsUnknown() {
+		service.Maintenance = &struct {
+			Dow  oapi.CreateDbaasServiceOpensearchJSONBodyMaintenanceDow `json:"dow"`
+			Time string                                                  `json:"time"`
+		}{
+			Dow:  oapi.CreateDbaasServiceOpensearchJSONBodyMaintenanceDow(data.MaintenanceDOW.ValueString()),
+			Time: data.MaintenanceTime.ValueString(),
+		}
+	}
+
 	if !data.Opensearch.Version.IsUnknown() {
 		service.Version = data.Opensearch.Version.ValueStringPointer()
 	}
@@ -192,16 +198,6 @@ func (r *Resource) createOpensearch(ctx context.Context, data *ResourceModel, di
 		}
 
 		service.IpFilter = &obj
-	}
-
-	if !data.MaintenanceDOW.IsUnknown() && !data.MaintenanceTime.IsUnknown() {
-		service.Maintenance = &struct {
-			Dow  oapi.CreateDbaasServiceOpensearchJSONBodyMaintenanceDow `json:"dow"`
-			Time string                                                  `json:"time"`
-		}{
-			Dow:  oapi.CreateDbaasServiceOpensearchJSONBodyMaintenanceDow(data.MaintenanceDOW.ValueString()),
-			Time: data.MaintenanceTime.ValueString(),
-		}
 	}
 
 	if len(data.Opensearch.IndexPatterns) > 0 {
@@ -297,7 +293,7 @@ func (r *Resource) createOpensearch(ctx context.Context, data *ResourceModel, di
 		return
 	}
 	if res.StatusCode() != http.StatusOK {
-		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database settings schema, unexpected status: %s", settingsSchema.Status()))
+		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create database service opensearch, unexpected status: %s", res.Status()))
 		return
 	}
 
@@ -340,27 +336,36 @@ func (r *Resource) readOpensearch(ctx context.Context, data *ResourceModel, diag
 		data.Plan = types.StringValue(apiService.Plan)
 	}
 
-	if apiService.Maintenance == nil {
-		data.MaintenanceDOW = types.StringNull()
-		data.MaintenanceTime = types.StringNull()
-	} else {
+	data.MaintenanceDOW = types.StringNull()
+	data.MaintenanceTime = types.StringNull()
+	if apiService.Maintenance != nil {
 		data.MaintenanceDOW = types.StringValue(string(apiService.Maintenance.Dow))
 		data.MaintenanceTime = types.StringValue(apiService.Maintenance.Time)
 	}
 
+	// Database block is required but it may be nil during import.
+	var isImport bool
 	if data.Opensearch == nil {
-		data.Opensearch = &ResourceOpensearchModel{}
+		isImport = true
+		data.Opensearch = &ResourceOpensearchModel{
+			IndexPatterns: []ResourceOpensearchIndexPatternsModel{},
+			IndexTemplate: &ResourceOpensearchIndexTemplateModel{},
+			Dashboards:    &ResourceOpensearchDashboardsModel{},
+		}
 	}
 
-	if data.Opensearch.Unknown {
-		data.Opensearch.IndexPatterns = []ResourceOpensearchIndexPatternsModel{}
-		data.Opensearch.IndexTemplate = &ResourceOpensearchIndexTemplateModel{}
-		data.Opensearch.Dashboards = &ResourceOpensearchDashboardsModel{}
+	data.Opensearch.IpFilter = types.SetNull(types.StringType)
+	if apiService.IpFilter != nil {
+		v, dg := types.SetValueFrom(ctx, types.StringType, *apiService.IpFilter)
+		if dg.HasError() {
+			diagnostics.Append(dg...)
+			return
+		}
+
+		data.Opensearch.IpFilter = v
 	}
 
-	if apiService.IndexPatterns == nil || len(*apiService.IndexPatterns) == 0 {
-		data.Opensearch.IndexPatterns = nil
-	} else {
+	if apiService.IndexPatterns != nil && len(*apiService.IndexPatterns) > 0 {
 		data.Opensearch.IndexPatterns = []ResourceOpensearchIndexPatternsModel{}
 		for _, pattern := range *apiService.IndexPatterns {
 			model := ResourceOpensearchIndexPatternsModel{
@@ -375,99 +380,46 @@ func (r *Resource) readOpensearch(ctx context.Context, data *ResourceModel, diag
 		}
 	}
 
-	if data.Opensearch.IndexTemplate != nil {
-		if apiService.IndexTemplate == nil {
-			data.Opensearch.IndexTemplate = nil
-		} else {
-			if !data.Opensearch.IndexTemplate.MappingNestedObjectsLimit.IsNull() ||
-				(data.Opensearch.Unknown && apiService.IndexTemplate != nil) {
-				if apiService.IndexTemplate == nil {
-					data.Opensearch.IndexTemplate.MappingNestedObjectsLimit = types.Int64Null()
-				} else {
-					data.Opensearch.IndexTemplate.MappingNestedObjectsLimit = types.Int64PointerValue(apiService.IndexTemplate.MappingNestedObjectsLimit)
-				}
-			}
-			if !data.Opensearch.IndexTemplate.NumberOfReplicas.IsNull() ||
-				(data.Opensearch.Unknown && apiService.IndexTemplate.NumberOfReplicas != nil) {
-				if apiService.IndexTemplate == nil {
-					data.Opensearch.IndexTemplate.NumberOfReplicas = types.Int64Null()
-				} else {
-					data.Opensearch.IndexTemplate.NumberOfReplicas = types.Int64PointerValue(apiService.IndexTemplate.NumberOfReplicas)
-				}
-			}
-			if !data.Opensearch.IndexTemplate.NumberOfShards.IsNull() ||
-				(data.Opensearch.Unknown && apiService.IndexTemplate.NumberOfShards != nil) {
-				if apiService.IndexTemplate == nil {
-					data.Opensearch.IndexTemplate.NumberOfShards = types.Int64Null()
-				} else {
-					data.Opensearch.IndexTemplate.NumberOfShards = types.Int64PointerValue(apiService.IndexTemplate.NumberOfShards)
-				}
-			}
+	if data.Opensearch.IndexTemplate != nil && apiService.IndexTemplate != nil {
+		if !data.Opensearch.IndexTemplate.MappingNestedObjectsLimit.IsNull() || isImport {
+			data.Opensearch.IndexTemplate.MappingNestedObjectsLimit = types.Int64PointerValue(apiService.IndexTemplate.MappingNestedObjectsLimit)
+		}
+		if !data.Opensearch.IndexTemplate.NumberOfReplicas.IsNull() || isImport {
+			data.Opensearch.IndexTemplate.NumberOfReplicas = types.Int64PointerValue(apiService.IndexTemplate.NumberOfReplicas)
+		}
+		if !data.Opensearch.IndexTemplate.NumberOfShards.IsNull() || isImport {
+			data.Opensearch.IndexTemplate.NumberOfShards = types.Int64PointerValue(apiService.IndexTemplate.NumberOfShards)
 		}
 	}
 
-	if apiService.IpFilter == nil || len(*apiService.IpFilter) == 0 {
-		data.Opensearch.IpFilter = types.SetNull(types.StringType)
-	} else {
-		v, dg := types.SetValueFrom(ctx, types.StringType, *apiService.IpFilter)
-		if dg.HasError() {
-			diagnostics.Append(dg...)
-			return
+	if data.Opensearch.Dashboards != nil && apiService.OpensearchDashboards != nil {
+		if !data.Opensearch.Dashboards.Enabled.IsNull() || isImport {
+			data.Opensearch.Dashboards.Enabled = types.BoolPointerValue(apiService.OpensearchDashboards.Enabled)
 		}
+		if !data.Opensearch.Dashboards.MaxOldSpaceSize.IsNull() || isImport {
+			data.Opensearch.Dashboards.MaxOldSpaceSize = types.Int64PointerValue(apiService.OpensearchDashboards.MaxOldSpaceSize)
+		}
+		if !data.Opensearch.Dashboards.RequestTimeout.IsNull() || isImport {
+			data.Opensearch.Dashboards.RequestTimeout = types.Int64PointerValue(apiService.OpensearchDashboards.OpensearchRequestTimeout)
 
-		data.Opensearch.IpFilter = v
-	}
-
-	if data.Opensearch.Dashboards != nil {
-		if apiService.OpensearchDashboards == nil {
-			data.Opensearch.Dashboards = nil
-		} else {
-			if !data.Opensearch.Dashboards.Enabled.IsNull() ||
-				(data.Opensearch.Unknown && apiService.OpensearchDashboards.Enabled != nil) {
-				if apiService.OpensearchDashboards == nil {
-					data.Opensearch.Dashboards.Enabled = types.BoolNull()
-				} else {
-					data.Opensearch.Dashboards.Enabled = types.BoolPointerValue(apiService.OpensearchDashboards.Enabled)
-				}
-			}
-			if !data.Opensearch.Dashboards.MaxOldSpaceSize.IsNull() ||
-				(data.Opensearch.Unknown && apiService.OpensearchDashboards.MaxOldSpaceSize != nil) {
-				if apiService.OpensearchDashboards == nil {
-					data.Opensearch.Dashboards.MaxOldSpaceSize = types.Int64Null()
-				} else {
-					data.Opensearch.Dashboards.MaxOldSpaceSize = types.Int64PointerValue(apiService.OpensearchDashboards.MaxOldSpaceSize)
-				}
-			}
-			if !data.Opensearch.Dashboards.RequestTimeout.IsNull() ||
-				(data.Opensearch.Unknown && apiService.OpensearchDashboards.OpensearchRequestTimeout != nil) {
-				if apiService.OpensearchDashboards == nil {
-					data.Opensearch.Dashboards.RequestTimeout = types.Int64Null()
-				} else {
-					data.Opensearch.Dashboards.RequestTimeout = types.Int64PointerValue(apiService.OpensearchDashboards.OpensearchRequestTimeout)
-				}
-			}
 		}
 	}
 
-	if !data.Opensearch.KeepIndexRefreshInterval.IsNull() ||
-		(data.Opensearch.Unknown && apiService.KeepIndexRefreshInterval != nil) {
+	if !data.Opensearch.KeepIndexRefreshInterval.IsNull() || isImport {
 		data.Opensearch.KeepIndexRefreshInterval = types.BoolPointerValue(apiService.KeepIndexRefreshInterval)
 	}
 
-	if !data.Opensearch.MaxIndexCount.IsNull() ||
-		(data.Opensearch.Unknown && apiService.MaxIndexCount != nil) {
+	if !data.Opensearch.MaxIndexCount.IsNull() || isImport {
 		data.Opensearch.MaxIndexCount = types.Int64PointerValue(apiService.MaxIndexCount)
 	}
 
-	if apiService.Version == nil {
-		data.Opensearch.Version = types.StringNull()
-	} else {
+	data.Opensearch.Version = types.StringNull()
+	if apiService.Version != nil {
 		data.Opensearch.Version = types.StringValue(strings.SplitN(*apiService.Version, ".", 2)[0])
 	}
 
-	if apiService.OpensearchSettings == nil {
-		data.Opensearch.Settings = types.StringNull()
-	} else {
+	data.Opensearch.Settings = types.StringNull()
+	if apiService.OpensearchSettings != nil {
 		settings, err := json.Marshal(*apiService.OpensearchSettings)
 		if err != nil {
 			diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
@@ -482,16 +434,6 @@ func (r *Resource) updateOpensearch(ctx context.Context, stateData *ResourceMode
 	var updated bool
 
 	service := oapi.UpdateDbaasServiceOpensearchJSONRequestBody{}
-
-	settingsSchema, err := r.client.GetDbaasSettingsOpensearchWithResponse(ctx)
-	if err != nil {
-		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database settings schema, got error: %s", err))
-		return
-	}
-	if settingsSchema.StatusCode() != http.StatusOK {
-		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database settings schema, unexpected status: %s", settingsSchema.Status()))
-		return
-	}
 
 	if (!planData.MaintenanceDOW.Equal(stateData.MaintenanceDOW) && !planData.MaintenanceDOW.IsUnknown()) ||
 		(!planData.MaintenanceTime.Equal(stateData.MaintenanceTime) && !planData.MaintenanceTime.IsUnknown()) {
@@ -515,126 +457,132 @@ func (r *Resource) updateOpensearch(ctx context.Context, stateData *ResourceMode
 		updated = true
 	}
 
-	stateOpensearchData := &ResourceOpensearchModel{}
-	if stateData.Opensearch != nil {
-		stateOpensearchData = stateData.Opensearch
-	}
-	planOpensearchData := &ResourceOpensearchModel{}
 	if planData.Opensearch != nil {
-		planOpensearchData = planData.Opensearch
-	}
+		if stateData.Opensearch == nil {
+			stateData.Opensearch = &ResourceOpensearchModel{}
+		}
 
-	if planOpensearchData.IndexPatterns != nil && len(planOpensearchData.IndexPatterns) > 0 {
-		patterns := []struct {
-			MaxIndexCount    *int64                                                                  `json:"max-index-count,omitempty"`
-			Pattern          *string                                                                 `json:"pattern,omitempty"`
-			SortingAlgorithm *oapi.UpdateDbaasServiceOpensearchJSONBodyIndexPatternsSortingAlgorithm `json:"sorting-algorithm,omitempty"`
-		}{}
-		for _, pattern := range planOpensearchData.IndexPatterns {
-			patterns = append(patterns, struct {
+		if !planData.Opensearch.IpFilter.Equal(stateData.Opensearch.IpFilter) {
+			obj := []string{}
+			if len(planData.Opensearch.IpFilter.Elements()) > 0 {
+				dg := planData.Opensearch.IpFilter.ElementsAs(ctx, &obj, false)
+				if dg.HasError() {
+					diagnostics.Append(dg...)
+					return
+				}
+			}
+			service.IpFilter = &obj
+			updated = true
+		}
+
+		if planData.Opensearch.IndexPatterns != nil && len(planData.Opensearch.IndexPatterns) > 0 {
+			patterns := []struct {
 				MaxIndexCount    *int64                                                                  `json:"max-index-count,omitempty"`
 				Pattern          *string                                                                 `json:"pattern,omitempty"`
 				SortingAlgorithm *oapi.UpdateDbaasServiceOpensearchJSONBodyIndexPatternsSortingAlgorithm `json:"sorting-algorithm,omitempty"`
-			}{
-				pattern.MaxIndexCount.ValueInt64Pointer(),
-				pattern.Pattern.ValueStringPointer(),
-				(*oapi.UpdateDbaasServiceOpensearchJSONBodyIndexPatternsSortingAlgorithm)(pattern.SortingAlgorithm.ValueStringPointer()),
-			})
-		}
+			}{}
+			for _, pattern := range planData.Opensearch.IndexPatterns {
+				patterns = append(patterns, struct {
+					MaxIndexCount    *int64                                                                  `json:"max-index-count,omitempty"`
+					Pattern          *string                                                                 `json:"pattern,omitempty"`
+					SortingAlgorithm *oapi.UpdateDbaasServiceOpensearchJSONBodyIndexPatternsSortingAlgorithm `json:"sorting-algorithm,omitempty"`
+				}{
+					pattern.MaxIndexCount.ValueInt64Pointer(),
+					pattern.Pattern.ValueStringPointer(),
+					(*oapi.UpdateDbaasServiceOpensearchJSONBodyIndexPatternsSortingAlgorithm)(pattern.SortingAlgorithm.ValueStringPointer()),
+				})
+			}
 
-		service.IndexPatterns = &patterns
-		updated = true
-	}
-
-	if planOpensearchData.IndexTemplate != nil {
-		service.IndexTemplate = &struct {
-			MappingNestedObjectsLimit *int64 "json:\"mapping-nested-objects-limit,omitempty\""
-			NumberOfReplicas          *int64 "json:\"number-of-replicas,omitempty\""
-			NumberOfShards            *int64 "json:\"number-of-shards,omitempty\""
-		}{}
-		if !planOpensearchData.IndexTemplate.MappingNestedObjectsLimit.Equal(stateOpensearchData.IndexTemplate.MappingNestedObjectsLimit) {
-			service.IndexTemplate.MappingNestedObjectsLimit = planOpensearchData.IndexTemplate.MappingNestedObjectsLimit.ValueInt64Pointer()
+			service.IndexPatterns = &patterns
 			updated = true
 		}
-		if !planOpensearchData.IndexTemplate.NumberOfReplicas.Equal(stateOpensearchData.IndexTemplate.NumberOfReplicas) {
-			service.IndexTemplate.NumberOfReplicas = planOpensearchData.IndexTemplate.NumberOfReplicas.ValueInt64Pointer()
-			updated = true
-		}
-		if !planOpensearchData.IndexTemplate.NumberOfShards.Equal(stateOpensearchData.IndexTemplate.NumberOfShards) {
-			service.IndexTemplate.NumberOfShards = planOpensearchData.IndexTemplate.NumberOfShards.ValueInt64Pointer()
-			updated = true
-		}
-	}
 
-	if planOpensearchData.Dashboards != nil {
-		service.OpensearchDashboards = &struct {
-			Enabled                  *bool  "json:\"enabled,omitempty\""
-			MaxOldSpaceSize          *int64 "json:\"max-old-space-size,omitempty\""
-			OpensearchRequestTimeout *int64 "json:\"opensearch-request-timeout,omitempty\""
-		}{}
-		if !planOpensearchData.Dashboards.Enabled.Equal(stateOpensearchData.Dashboards.Enabled) {
-			service.OpensearchDashboards.Enabled = planOpensearchData.Dashboards.Enabled.ValueBoolPointer()
-		}
-		if !planOpensearchData.Dashboards.MaxOldSpaceSize.Equal(stateOpensearchData.Dashboards.MaxOldSpaceSize) {
-			service.OpensearchDashboards.MaxOldSpaceSize = planOpensearchData.Dashboards.MaxOldSpaceSize.ValueInt64Pointer()
-		}
-		if !planOpensearchData.Dashboards.RequestTimeout.Equal(stateOpensearchData.Dashboards.RequestTimeout) {
-			service.OpensearchDashboards.OpensearchRequestTimeout = planOpensearchData.Dashboards.RequestTimeout.ValueInt64Pointer()
-		}
-	}
-
-	if !planOpensearchData.IpFilter.Equal(stateOpensearchData.IpFilter) {
-		obj := []string{}
-		if len(planOpensearchData.IpFilter.Elements()) > 0 {
-			dg := planOpensearchData.IpFilter.ElementsAs(ctx, &obj, false)
-			if dg.HasError() {
-				diagnostics.Append(dg...)
-				return
+		if planData.Opensearch.IndexTemplate != nil {
+			service.IndexTemplate = &struct {
+				MappingNestedObjectsLimit *int64 "json:\"mapping-nested-objects-limit,omitempty\""
+				NumberOfReplicas          *int64 "json:\"number-of-replicas,omitempty\""
+				NumberOfShards            *int64 "json:\"number-of-shards,omitempty\""
+			}{}
+			if !planData.Opensearch.IndexTemplate.MappingNestedObjectsLimit.Equal(stateData.Opensearch.IndexTemplate.MappingNestedObjectsLimit) {
+				service.IndexTemplate.MappingNestedObjectsLimit = planData.Opensearch.IndexTemplate.MappingNestedObjectsLimit.ValueInt64Pointer()
+				updated = true
+			}
+			if !planData.Opensearch.IndexTemplate.NumberOfReplicas.Equal(stateData.Opensearch.IndexTemplate.NumberOfReplicas) {
+				service.IndexTemplate.NumberOfReplicas = planData.Opensearch.IndexTemplate.NumberOfReplicas.ValueInt64Pointer()
+				updated = true
+			}
+			if !planData.Opensearch.IndexTemplate.NumberOfShards.Equal(stateData.Opensearch.IndexTemplate.NumberOfShards) {
+				service.IndexTemplate.NumberOfShards = planData.Opensearch.IndexTemplate.NumberOfShards.ValueInt64Pointer()
+				updated = true
 			}
 		}
-		service.IpFilter = &obj
-		updated = true
-	}
 
-	if !planOpensearchData.KeepIndexRefreshInterval.IsNull() && !planOpensearchData.KeepIndexRefreshInterval.Equal(stateOpensearchData.KeepIndexRefreshInterval) {
-		service.KeepIndexRefreshInterval = planOpensearchData.KeepIndexRefreshInterval.ValueBoolPointer()
-		updated = true
-	}
-
-	if !planOpensearchData.MaxIndexCount.IsNull() && !planOpensearchData.MaxIndexCount.Equal(stateOpensearchData.MaxIndexCount) {
-		service.MaxIndexCount = planOpensearchData.MaxIndexCount.ValueInt64Pointer()
-		updated = true
-	}
-
-	if !planOpensearchData.Settings.Equal(stateOpensearchData.Settings) {
-		if planOpensearchData.Settings.ValueString() != "" {
-			obj, err := validateSettings(planOpensearchData.Settings.ValueString(), settingsSchema.JSON200.Settings.Opensearch)
-			if err != nil {
-				diagnostics.AddError("Validation error", fmt.Sprintf("invalid Opensearch settings: %s", err))
-				return
+		if planData.Opensearch.Dashboards != nil {
+			service.OpensearchDashboards = &struct {
+				Enabled                  *bool  "json:\"enabled,omitempty\""
+				MaxOldSpaceSize          *int64 "json:\"max-old-space-size,omitempty\""
+				OpensearchRequestTimeout *int64 "json:\"opensearch-request-timeout,omitempty\""
+			}{}
+			if !planData.Opensearch.Dashboards.Enabled.Equal(stateData.Opensearch.Dashboards.Enabled) {
+				service.OpensearchDashboards.Enabled = planData.Opensearch.Dashboards.Enabled.ValueBoolPointer()
 			}
-			service.OpensearchSettings = &obj
+			if !planData.Opensearch.Dashboards.MaxOldSpaceSize.Equal(stateData.Opensearch.Dashboards.MaxOldSpaceSize) {
+				service.OpensearchDashboards.MaxOldSpaceSize = planData.Opensearch.Dashboards.MaxOldSpaceSize.ValueInt64Pointer()
+			}
+			if !planData.Opensearch.Dashboards.RequestTimeout.Equal(stateData.Opensearch.Dashboards.RequestTimeout) {
+				service.OpensearchDashboards.OpensearchRequestTimeout = planData.Opensearch.Dashboards.RequestTimeout.ValueInt64Pointer()
+			}
 		}
-		updated = true
+
+		if !planData.Opensearch.KeepIndexRefreshInterval.IsNull() && !planData.Opensearch.KeepIndexRefreshInterval.Equal(stateData.Opensearch.KeepIndexRefreshInterval) {
+			service.KeepIndexRefreshInterval = planData.Opensearch.KeepIndexRefreshInterval.ValueBoolPointer()
+			updated = true
+		}
+
+		if !planData.Opensearch.MaxIndexCount.IsNull() && !planData.Opensearch.MaxIndexCount.Equal(stateData.Opensearch.MaxIndexCount) {
+			service.MaxIndexCount = planData.Opensearch.MaxIndexCount.ValueInt64Pointer()
+			updated = true
+		}
+
+		if !planData.Opensearch.Settings.Equal(stateData.Opensearch.Settings) {
+			if planData.Opensearch.Settings.ValueString() != "" {
+				settingsSchema, err := r.client.GetDbaasSettingsOpensearchWithResponse(ctx)
+				if err != nil {
+					diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database settings schema, got error: %s", err))
+					return
+				}
+				if settingsSchema.StatusCode() != http.StatusOK {
+					diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database settings schema, unexpected status: %s", settingsSchema.Status()))
+					return
+				}
+
+				obj, err := validateSettings(planData.Opensearch.Settings.ValueString(), settingsSchema.JSON200.Settings.Opensearch)
+				if err != nil {
+					diagnostics.AddError("Validation error", fmt.Sprintf("invalid Opensearch settings: %s", err))
+					return
+				}
+				service.OpensearchSettings = &obj
+			}
+			updated = true
+		}
 	}
 
 	if !updated {
 		tflog.Info(ctx, "no updates detected", map[string]interface{}{})
-		return
-	}
-
-	res, err := r.client.UpdateDbaasServiceOpensearchWithResponse(
-		ctx,
-		oapi.DbaasServiceName(planData.Id.ValueString()),
-		service,
-	)
-	if err != nil {
-		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create database service opensearch, got error: %s", err))
-		return
-	}
-	if res.StatusCode() != http.StatusOK {
-		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database settings schema, unexpected status: %s", settingsSchema.Status()))
-		return
+	} else {
+		res, err := r.client.UpdateDbaasServiceOpensearchWithResponse(
+			ctx,
+			oapi.DbaasServiceName(planData.Id.ValueString()),
+			service,
+		)
+		if err != nil {
+			diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update database service opensearch, got error: %s", err))
+			return
+		}
+		if res.StatusCode() != http.StatusOK {
+			diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update database service opensearch, unexpected status: %s", res.Status()))
+			return
+		}
 	}
 
 	r.readOpensearch(ctx, planData, diagnostics)
