@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package fwserver
 
 import (
@@ -243,7 +246,7 @@ func (s *Server) DataSourceSchemas(ctx context.Context) (map[string]fwschema.Sch
 			return s.dataSourceSchemas, s.dataSourceSchemasDiags
 		}
 
-		s.dataSourceSchemasDiags.Append(schemaResp.Schema.Validate()...)
+		s.dataSourceSchemasDiags.Append(schemaResp.Schema.ValidateImplementation(ctx)...)
 
 		if s.dataSourceSchemasDiags.HasError() {
 			return s.dataSourceSchemas, s.dataSourceSchemasDiags
@@ -276,7 +279,7 @@ func (s *Server) ProviderSchema(ctx context.Context) (fwschema.Schema, diag.Diag
 	s.providerSchema = schemaResp.Schema
 	s.providerSchemaDiags = schemaResp.Diagnostics
 
-	s.providerSchemaDiags.Append(schemaResp.Schema.Validate()...)
+	s.providerSchemaDiags.Append(schemaResp.Schema.ValidateImplementation(ctx)...)
 
 	return s.providerSchema, s.providerSchemaDiags
 }
@@ -310,7 +313,7 @@ func (s *Server) ProviderMetaSchema(ctx context.Context) (fwschema.Schema, diag.
 	s.providerMetaSchema = resp.Schema
 	s.providerMetaSchemaDiags = resp.Diagnostics
 
-	s.providerMetaSchemaDiags.Append(resp.Schema.Validate()...)
+	s.providerMetaSchemaDiags.Append(resp.Schema.ValidateImplementation(ctx)...)
 
 	return s.providerMetaSchema, s.providerMetaSchemaDiags
 }
@@ -440,7 +443,7 @@ func (s *Server) ResourceSchemas(ctx context.Context) (map[string]fwschema.Schem
 			return s.resourceSchemas, s.resourceSchemasDiags
 		}
 
-		s.resourceSchemasDiags.Append(schemaResp.Schema.Validate()...)
+		s.resourceSchemasDiags.Append(schemaResp.Schema.ValidateImplementation(ctx)...)
 
 		if s.resourceSchemasDiags.HasError() {
 			return s.resourceSchemas, s.resourceSchemasDiags

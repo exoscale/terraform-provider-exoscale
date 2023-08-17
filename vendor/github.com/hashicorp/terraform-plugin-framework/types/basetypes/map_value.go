@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package basetypes
 
 import (
@@ -23,6 +26,22 @@ type MapValuable interface {
 
 	// ToMapValue should convert the value type to a Map.
 	ToMapValue(ctx context.Context) (MapValue, diag.Diagnostics)
+}
+
+// MapValuableWithSemanticEquals extends MapValuable with semantic equality
+// logic.
+type MapValuableWithSemanticEquals interface {
+	MapValuable
+
+	// MapSemanticEquals should return true if the given value is
+	// semantically equal to the current value. This logic is used to prevent
+	// Terraform data consistency errors and resource drift where a value change
+	// may have inconsequential differences, such as computed elements added by
+	// a remote system.
+	//
+	// Only known values are compared with this method as changing a value's
+	// state implicitly represents a different value.
+	MapSemanticEquals(context.Context, MapValuable) (bool, diag.Diagnostics)
 }
 
 // NewMapNull creates a Map with a null value. Determine whether the value is

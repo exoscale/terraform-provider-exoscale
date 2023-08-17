@@ -63,9 +63,20 @@ output "my_database_uri" {
 
 - `name` (String) The database name to match.
 - `type` (String) The type of the database service (`kafka`, `mysql`, `opensearch`, `pg`, `redis`).
-- `zone` (String) (Required) The Exoscale Zone name.
+- `zone` (String) The Exoscale Zone name.
+
+### Optional
+
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
 - `id` (String) The ID of this resource.
 - `uri` (String, Sensitive) The database service connection URI.
+
+<a id="nestedblock--timeouts"></a>
+### Nested Schema for `timeouts`
+
+Optional:
+
+- `read` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.

@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package basetypes
 
 import (
@@ -21,6 +24,21 @@ type Int64Valuable interface {
 
 	// ToInt64Value should convert the value type to an Int64.
 	ToInt64Value(ctx context.Context) (Int64Value, diag.Diagnostics)
+}
+
+// Int64ValuableWithSemanticEquals extends Int64Valuable with semantic
+// equality logic.
+type Int64ValuableWithSemanticEquals interface {
+	Int64Valuable
+
+	// Int64SemanticEquals should return true if the given value is
+	// semantically equal to the current value. This logic is used to prevent
+	// Terraform data consistency errors and resource drift where a value change
+	// may have inconsequential differences, such as rounding.
+	//
+	// Only known values are compared with this method as changing a value's
+	// state implicitly represents a different value.
+	Int64SemanticEquals(context.Context, Int64Valuable) (bool, diag.Diagnostics)
 }
 
 // NewInt64Null creates a Int64 with a null value. Determine whether the value is

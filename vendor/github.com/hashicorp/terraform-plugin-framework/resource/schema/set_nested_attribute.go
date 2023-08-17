@@ -1,6 +1,10 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package schema
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
@@ -17,9 +21,11 @@ import (
 
 // Ensure the implementation satisifies the desired interfaces.
 var (
-	_ NestedAttribute                         = SetNestedAttribute{}
-	_ fwxschema.AttributeWithSetPlanModifiers = SetNestedAttribute{}
-	_ fwxschema.AttributeWithSetValidators    = SetNestedAttribute{}
+	_ NestedAttribute                              = SetNestedAttribute{}
+	_ fwschema.AttributeWithValidateImplementation = SetNestedAttribute{}
+	_ fwschema.AttributeWithSetDefaultValue        = SetNestedAttribute{}
+	_ fwxschema.AttributeWithSetPlanModifiers      = SetNestedAttribute{}
+	_ fwxschema.AttributeWithSetValidators         = SetNestedAttribute{}
 )
 
 // SetNestedAttribute represents an attribute that is a set of objects where
@@ -179,11 +185,13 @@ func (a SetNestedAttribute) ApplyTerraform5AttributePathStep(step tftypes.Attrib
 // Equal returns true if the given Attribute is a SetNestedAttribute
 // and all fields are equal.
 func (a SetNestedAttribute) Equal(o fwschema.Attribute) bool {
-	if _, ok := o.(SetNestedAttribute); !ok {
+	other, ok := o.(SetNestedAttribute)
+
+	if !ok {
 		return false
 	}
 
-	return fwschema.AttributesEqual(a, o)
+	return fwschema.NestedAttributesEqual(a, other)
 }
 
 // GetDeprecationMessage returns the DeprecationMessage field value.
@@ -255,4 +263,14 @@ func (a SetNestedAttribute) SetPlanModifiers() []planmodifier.Set {
 // SetValidators returns the Validators field value.
 func (a SetNestedAttribute) SetValidators() []validator.Set {
 	return a.Validators
+}
+
+// ValidateImplementation contains logic for validating the
+// provider-defined implementation of the attribute to prevent unexpected
+// errors or panics. This logic runs during the GetProviderSchema RPC and
+// should never include false positives.
+func (a SetNestedAttribute) ValidateImplementation(ctx context.Context, req fwschema.ValidateImplementationRequest, resp *fwschema.ValidateImplementationResponse) {
+	if !a.IsComputed() && a.SetDefaultValue() != nil {
+		resp.Diagnostics.Append(nonComputedAttributeWithDefaultDiag(req.Path))
+	}
 }

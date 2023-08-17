@@ -1,6 +1,10 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package schema
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
@@ -17,10 +21,11 @@ import (
 
 // Ensure the implementation satisifies the desired interfaces.
 var (
-	_ NestedAttribute                          = ListNestedAttribute{}
-	_ fwschema.AttributeWithListDefaultValue   = ListNestedAttribute{}
-	_ fwxschema.AttributeWithListPlanModifiers = ListNestedAttribute{}
-	_ fwxschema.AttributeWithListValidators    = ListNestedAttribute{}
+	_ NestedAttribute                              = ListNestedAttribute{}
+	_ fwschema.AttributeWithValidateImplementation = ListNestedAttribute{}
+	_ fwschema.AttributeWithListDefaultValue       = ListNestedAttribute{}
+	_ fwxschema.AttributeWithListPlanModifiers     = ListNestedAttribute{}
+	_ fwxschema.AttributeWithListValidators        = ListNestedAttribute{}
 )
 
 // ListNestedAttribute represents an attribute that is a list of objects where
@@ -185,11 +190,13 @@ func (a ListNestedAttribute) ApplyTerraform5AttributePathStep(step tftypes.Attri
 // Equal returns true if the given Attribute is a ListNestedAttribute
 // and all fields are equal.
 func (a ListNestedAttribute) Equal(o fwschema.Attribute) bool {
-	if _, ok := o.(ListNestedAttribute); !ok {
+	other, ok := o.(ListNestedAttribute)
+
+	if !ok {
 		return false
 	}
 
-	return fwschema.AttributesEqual(a, o)
+	return fwschema.NestedAttributesEqual(a, other)
 }
 
 // GetDeprecationMessage returns the DeprecationMessage field value.
@@ -261,4 +268,14 @@ func (a ListNestedAttribute) ListPlanModifiers() []planmodifier.List {
 // ListValidators returns the Validators field value.
 func (a ListNestedAttribute) ListValidators() []validator.List {
 	return a.Validators
+}
+
+// ValidateImplementation contains logic for validating the
+// provider-defined implementation of the attribute to prevent unexpected
+// errors or panics. This logic runs during the GetProviderSchema RPC and
+// should never include false positives.
+func (a ListNestedAttribute) ValidateImplementation(ctx context.Context, req fwschema.ValidateImplementationRequest, resp *fwschema.ValidateImplementationResponse) {
+	if !a.IsComputed() && a.ListDefaultValue() != nil {
+		resp.Diagnostics.Append(nonComputedAttributeWithDefaultDiag(req.Path))
+	}
 }
