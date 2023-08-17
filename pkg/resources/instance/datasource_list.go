@@ -25,6 +25,12 @@ func DataSourceList() *schema.Resource {
 
 Corresponding resource: [exoscale_compute_instance](../resources/compute_instance.md).`,
 		Schema: map[string]*schema.Schema{
+			AttrZone: {
+				Description: "The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+
 			"instances": {
 				Description: "The list of [exoscale_compute_instance](./compute_instance.md).",
 				Type:        schema.TypeList,

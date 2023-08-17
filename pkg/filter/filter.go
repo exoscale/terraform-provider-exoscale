@@ -208,6 +208,11 @@ func createMapFilterAttribute() *schema.Schema {
 // AddFilterAttributes adds filter attributes to your resource for all bool, int, string and map[string]string attributes in the supplied schema. In combination with CreateFilters you may use this to create aggregate data sources with filtering functionality.
 func AddFilterAttributes(r *schema.Resource, s map[string]*schema.Schema) {
 	for attrIdentifier, attrSpec := range s {
+		// existing attributes should not be overwritten.
+		if _, alreadySet := r.Schema[attrIdentifier]; alreadySet {
+			continue
+		}
+
 		switch attrSpec.Type {
 		case schema.TypeBool, schema.TypeInt, schema.TypeString:
 			r.Schema[attrIdentifier] = createFilterAttribute(attrSpec.Type)

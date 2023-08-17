@@ -25,8 +25,9 @@ func FilterableListDataSource[T any](
 	ret := &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			ZoneAttributeIdentifier: {
-				Type:     schema.TypeString,
-				Required: true,
+				Description: "The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 			listAttributeIdentifier: {
 				Type:     schema.TypeList,
