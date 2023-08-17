@@ -3,6 +3,7 @@ package instance_pool_test
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -72,9 +73,20 @@ func testListDataSource(t *testing.T) {
 				Config: fmt.Sprintf(`
 %s
 data "exoscale_instance_pool_list" "test" {
-  zone = local.zone
+  # we omit the zone to trigger an error as the zone attribute must be mandatory.
 }
 `,
+					dsListConfig,
+				),
+				ExpectError: regexp.MustCompile("Missing required argument"),
+			},
+			{
+				Config: fmt.Sprintf(`
+			%s
+			data "exoscale_instance_pool_list" "test" {
+			  zone = local.zone
+			}
+			`,
 					dsListConfig,
 				),
 				Check: resource.ComposeTestCheckFunc(
