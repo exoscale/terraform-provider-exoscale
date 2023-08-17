@@ -1,5 +1,12 @@
 # Changelog
 
+## UNRELEASED
+
+FEATURES:
+
+- `exoscale_database` resource & `exoscale_database_uri` datasource: migrate to framework (#276).
+- `exoscale_database` resource: add Grafana (#276).
+
 ## 0.51.0 (August 9, 2023)
 
 FEATURES:
