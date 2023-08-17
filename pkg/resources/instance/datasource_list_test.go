@@ -3,6 +3,7 @@ package instance_test
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
@@ -71,10 +72,24 @@ func testListDataSource(t *testing.T) {
 %s
 
 data "exoscale_compute_instance_list" "test" {
-  zone = local.zone
+  # we omit the zone to trigger an error as the zone attribute must be mandatory.
   name = %q
 }
 `,
+					dsListConfig,
+					dsListName,
+				),
+				ExpectError: regexp.MustCompile("Missing required argument"),
+			},
+			{
+				Config: fmt.Sprintf(`
+			%s
+
+			data "exoscale_compute_instance_list" "test" {
+			  zone = local.zone
+			  name = %q
+			}
+			`,
 					dsListConfig,
 					dsListName,
 				),
