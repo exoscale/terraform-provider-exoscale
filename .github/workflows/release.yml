@@ -21,6 +21,15 @@ jobs:
         with:
           fetch-depth: 0
 
+      - run: git submodule update --init --recursive go.mk
+        shell: bash
+
+      # TODO needed?
+      # - uses: ./go.mk/.github/actions/setup
+
+      # TODO needed?
+      # - uses: ./go.mk/.github/actions/pre-check
+
       - run: |
           # TODO(sauterp) remove
           # counts the number of seconds since yesterday and sets it as the patch version in the git tag
