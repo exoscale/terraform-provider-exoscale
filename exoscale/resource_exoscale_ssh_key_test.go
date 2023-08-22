@@ -50,7 +50,7 @@ func TestAccResourceSSHKey(t *testing.T) {
 			{
 				// Create (missing public_key)
 				Config:      `resource "exoscale_ssh_key" "test" { name = "lolnope" }`,
-				ExpectError: regexp.MustCompile(`a value must be provided`),
+				ExpectError: regexp.MustCompile(`The argument "public_key" is required, but no definition was found.`),
 			},
 			{
 				// Create
