@@ -24,12 +24,6 @@ jobs:
       - run: git submodule update --init --recursive go.mk
         shell: bash
 
-      # TODO needed?
-      # - uses: ./go.mk/.github/actions/setup
-
-      # TODO needed?
-      # - uses: ./go.mk/.github/actions/pre-check
-
       - run: |
           # TODO(sauterp) remove
           # counts the number of seconds since yesterday and sets it as the patch version in the git tag
@@ -40,7 +34,7 @@ jobs:
         shell: bash
 
       - name: Import GPG key
-        uses: crazy-max/ghaction-import-gpg@v5
+        uses: crazy-max/ghaction-import-gpg@72b6676b71ab476b77e676928516f6982eef7a41
         with:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.PASSPHRASE }}
