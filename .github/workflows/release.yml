@@ -1,0 +1,41 @@
+---
+name: release
+
+on:
+  push:
+    branches:
+      - 'sauterp/sc-75095/tf-release-in-gh-action'
+    # TODO uncomment
+    # tags:
+    #   - 'v[0-9]+\.[0-9]+\.[0-9]+'
+
+jobs:
+  goreleaser:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - run: |
+          # TODO(sauterp) remove
+          # counts the number of seconds since yesterday and sets it as the patch version in the git tag
+          current=$(date +%s)
+          yesterday=$(date -d "yesterday 00:00:00" +%s)
+          difference=$((current - yesterday))
+          git tag v1.70.$difference
+        shell: bash
+
+      - name: Import GPG key
+        uses: crazy-max/ghaction-import-gpg@v5
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.PASSPHRASE }}
+
+      - uses: ./go.mk/.github/actions/release
+        with:
+          release_github_token: ${{ secrets.GITHUB_TOKEN }}

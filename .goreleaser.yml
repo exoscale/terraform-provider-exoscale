@@ -33,11 +33,12 @@ checksum:
 signs:
   - artifacts: checksum
     cmd: gpg
-    args: ["--default-key", "B2DB6B250321137D9DB7210281426F034A3D05F7", "--detach-sign", "${artifact}"]
+    args: ["--default-key", "59EFBBAD405D53EB9D247E222011692C8159DECE", "--detach-sign", "${artifact}"]
 
 release:
   github:
-    owner: exoscale
+    # TODO temporary -> exoscale
+    owner: sauterp
     name: terraform-provider-exoscale
 
 changelog:
