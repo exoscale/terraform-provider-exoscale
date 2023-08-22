@@ -3,11 +3,8 @@ name: release
 
 on:
   push:
-    branches:
-      - 'sauterp/sc-75095/tf-release-in-gh-action'
-    # TODO uncomment
-    # tags:
-    #   - 'v[0-9]+\.[0-9]+\.[0-9]+'
+    tags:
+      - 'v[0-9]+\.[0-9]+\.[0-9]+'
 
 jobs:
   goreleaser:
@@ -22,15 +19,6 @@ jobs:
           fetch-depth: 0
 
       - run: git submodule update --init --recursive go.mk
-        shell: bash
-
-      - run: |
-          # TODO(sauterp) remove
-          # counts the number of seconds since yesterday and sets it as the patch version in the git tag
-          current=$(date +%s)
-          yesterday=$(date -d "yesterday 00:00:00" +%s)
-          difference=$((current - yesterday))
-          git tag v1.70.$difference
         shell: bash
 
       - name: Import GPG key

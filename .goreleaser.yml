@@ -37,8 +37,7 @@ signs:
 
 release:
   github:
-    # TODO temporary -> exoscale
-    owner: sauterp
+    owner: exoscale
     name: terraform-provider-exoscale
 
 changelog:
