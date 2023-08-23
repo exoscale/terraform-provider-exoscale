@@ -4,6 +4,9 @@ on:
   push:
     branches:
     - '**'
+    paths-ignore:
+    - '.github/ISSUE_TEMPLATE/*'
+    - '.github/*.md'
     tags-ignore:
     - 'v*' # Don't run CI tests on release tags
 
