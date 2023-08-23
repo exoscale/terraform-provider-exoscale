@@ -7,10 +7,10 @@
 -->
 
 ## Checklist
+(For exoscale contributors)
 
 * [ ] Changelog updated (under *Unreleased* block)
 * [ ] Acceptance tests OK
-
 * [ ] For a new resource, datasource or new attributes: acceptance test added/updated
 
 ## Testing
