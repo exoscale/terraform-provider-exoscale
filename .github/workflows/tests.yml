@@ -5,12 +5,11 @@ on:
   push:
     branches:
     - '**'
-    paths-ignore:
-    - '**.md'
-    - '.github/ISSUE_TEMPLATE/*'
-    - '.github/*.md'
-    - 'examples/**'
-    - '.goreleaser.yml'
+    paths:
+    - 'go.mod'
+    - 'go.sum'
+    - '**.go'
+    - '.github/workflows/tests.yml'
     tags-ignore:
     - 'v*' # Don't run CI tests on release tags
 
