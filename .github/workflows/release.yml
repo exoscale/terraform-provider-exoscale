@@ -8,6 +8,9 @@ on:
 
 jobs:
   goreleaser:
+    # TODO remove before merging the branch
+    if: ${{ false }}
+
     runs-on: ubuntu-latest
 
     permissions:
