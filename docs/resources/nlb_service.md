@@ -49,8 +49,8 @@ directory for complete configuration examples.
 
 ### Required
 
-- `healthcheck` (Block Set, Min: 1) The service health checking configuration (may only bet set at creation time). (see [below for nested schema](#nestedblock--healthcheck))
-- `instance_pool_id` (String) The [exoscale_instance_pool](./instance_pool.md) (ID) to forward traffic to.
+- `healthcheck` (Block Set, Min: 1) The service health checking configuration. (see [below for nested schema](#nestedblock--healthcheck))
+- `instance_pool_id` (String) ❗ The [exoscale_instance_pool](./instance_pool.md) (ID) to forward traffic to.
 - `name` (String) The NLB service name.
 - `nlb_id` (String) ❗ The parent [exoscale_nlb](./nlb.md) ID.
 - `port` (Number) The healthcheck port.

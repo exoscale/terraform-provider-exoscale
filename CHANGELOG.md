@@ -7,6 +7,10 @@ FEATURES:
 - `exoscale_database` resource & `exoscale_database_uri` datasource: migrate to framework (#276).
 - `exoscale_database` resource: add Grafana (#276).
 
+BUG FIXES:
+- `resource_exoscale_nlb_service`: unset uri and tls_sni when healthcheck mode is tcp (#295)
+- `resource_exoscale_nlb_service`: force service re-creation when InstancePool ID is updated (#295)
+
 ## 0.51.0 (August 9, 2023)
 
 FEATURES:

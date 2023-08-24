@@ -57,7 +57,7 @@ func resourceNLBService() *schema.Resource {
 			Description: "A free-form text describing the NLB service.",
 		},
 		resNLBServiceAttrHealthcheck: {
-			Description: "The service health checking configuration (may only bet set at creation time).",
+			Description: "The service health checking configuration.",
 			Type:        schema.TypeSet,
 			Required:    true,
 			Elem: &schema.Resource{
@@ -107,6 +107,7 @@ func resourceNLBService() *schema.Resource {
 		resNLBServiceAttrInstancePoolID: {
 			Type:        schema.TypeString,
 			Required:    true,
+			ForceNew:    true,
 			Description: "The [exoscale_instance_pool](./instance_pool.md) (ID) to forward traffic to.",
 		},
 		resNLBServiceAttrName: {
@@ -421,6 +422,15 @@ func resourceNLBServiceUpdate(ctx context.Context, d *schema.ResourceData, meta 
 			if v, ok := healthcheck[resNLBServiceAttrHealthcheckURI]; ok {
 				s := v.(string)
 				nlbService.Healthcheck.URI = &s
+			}
+			// We need a need struct to remove URI and TLSSNI
+		} else {
+			*nlbService.Healthcheck = egoscale.NetworkLoadBalancerServiceHealthcheck{
+				Interval: &nlbServiceHealthcheckInterval,
+				Mode:     &nlbServiceHealthcheckMode,
+				Port:     &nlbServiceHealthcheckPort,
+				Retries:  &nlbServiceHealthcheckRetries,
+				Timeout:  &nlbServiceHealthcheckTimeout,
 			}
 		}
 
