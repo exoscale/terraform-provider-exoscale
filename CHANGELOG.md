@@ -8,8 +8,13 @@ FEATURES:
 - `exoscale_database` resource: add Grafana (#276).
 
 BUG FIXES:
+
 - `resource_exoscale_nlb_service`: unset uri and tls_sni when healthcheck mode is tcp (#295)
 - `resource_exoscale_nlb_service`: force service re-creation when InstancePool ID is updated (#295)
+
+IMPROVEMENTS:
+
+- automate releases with a GitHub Action workflow
 
 ## 0.51.0 (August 9, 2023)
 

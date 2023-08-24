@@ -33,7 +33,7 @@ checksum:
 signs:
   - artifacts: checksum
     cmd: gpg
-    args: ["--default-key", "59EFBBAD405D53EB9D247E222011692C8159DECE", "--detach-sign", "${artifact}"]
+    args: ["--default-key", "7100E8BFD6199CE0374CB7F003686F8CDE378D41", "--detach-sign", "${artifact}"]
 
 release:
   github:
