@@ -12,6 +12,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/stretchr/testify/require"
 
+	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
+
 	egoscale "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
 )
@@ -33,8 +35,8 @@ var (
 	testAccResourceNLBServiceTargetPortUpdated  = "8443"
 	testAccResourceNLBServiceTemplateName       = testInstanceTemplateName
 
-	testAccResourceNLBServiceHealthcheckMode            = "tcp"
-	testAccResourceNLBServiceHealthcheckModeUpdated     = "https"
+	testAccResourceNLBServiceHealthcheckMode            = "https"
+	testAccResourceNLBServiceHealthcheckModeUpdated     = "tcp"
 	testAccResourceNLBServiceHealthcheckURI             = "/healthz"
 	testAccResourceNLBServiceHealthcheckTLSSNI          = "example.net"
 	testAccResourceNLBServiceHealthcheckInterval        = "10"
@@ -95,7 +97,9 @@ resource "exoscale_nlb_service" "test" {
     interval = %s
     timeout  = %s
     retries  = %s
-  }
+    uri      = "%s"
+    tls_sni  = "%s"
+    }
 
   timeouts {
     delete = "10m"
@@ -117,6 +121,8 @@ resource "exoscale_nlb_service" "test" {
 		testAccResourceNLBServiceHealthcheckInterval,
 		testAccResourceNLBServiceHealthcheckTimeout,
 		testAccResourceNLBServiceHealthcheckRetries,
+		testAccResourceNLBServiceHealthcheckURI,
+		testAccResourceNLBServiceHealthcheckTLSSNI,
 	)
 
 	testAccResourceNLBServiceConfigUpdate = fmt.Sprintf(`
@@ -165,8 +171,7 @@ resource "exoscale_nlb_service" "test" {
   healthcheck {
     mode     = "%s"
     port     = %s
-    uri      = "%s"
-    tls_sni  = "%s"
+
     interval = %s
     timeout  = %s
     retries  = %s
@@ -189,8 +194,6 @@ resource "exoscale_nlb_service" "test" {
 		testAccResourceNLBServiceStrategyUpdated,
 		testAccResourceNLBServiceHealthcheckModeUpdated,
 		testAccResourceNLBServiceHealthcheckPortUpdated,
-		testAccResourceNLBServiceHealthcheckURI,
-		testAccResourceNLBServiceHealthcheckTLSSNI,
 		testAccResourceNLBServiceHealthcheckIntervalUpdated,
 		testAccResourceNLBServiceHealthcheckTimeoutUpdated,
 		testAccResourceNLBServiceHealthcheckRetriesUpdated,
@@ -227,6 +230,8 @@ func TestAccResourceNLBService(t *testing.T) {
 						a.Equal(testAccResourceNLBServiceHealthcheckPort, fmt.Sprint(*nlbService.Healthcheck.Port))
 						a.Equal(testAccResourceNLBServiceHealthcheckRetries, fmt.Sprint(*nlbService.Healthcheck.Retries))
 						a.Equal(testAccResourceNLBServiceHealthcheckTimeout, fmt.Sprint(int(nlbService.Healthcheck.Timeout.Seconds())))
+						a.Equal(testAccResourceNLBServiceHealthcheckTLSSNI, fmt.Sprint(*nlbService.Healthcheck.TLSSNI))
+						a.Equal(testAccResourceNLBServiceHealthcheckURI, fmt.Sprint(*nlbService.Healthcheck.URI))
 						a.Equal(instancePoolID, *nlbService.InstancePoolID)
 						a.Equal(testAccResourceNLBServiceName, *nlbService.Name)
 						a.Equal(testAccResourceNLBServicePort, fmt.Sprint(*nlbService.Port))
@@ -244,6 +249,8 @@ func TestAccResourceNLBService(t *testing.T) {
 						resNLBServiceAttrHealthcheck + ".0." + resNLBServiceAttrHealthcheckPort:     validateString(testAccResourceNLBServiceHealthcheckPort),
 						resNLBServiceAttrHealthcheck + ".0." + resNLBServiceAttrHealthcheckRetries:  validateString(testAccResourceNLBServiceHealthcheckRetries),
 						resNLBServiceAttrHealthcheck + ".0." + resNLBServiceAttrHealthcheckTimeout:  validateString(testAccResourceNLBServiceHealthcheckTimeout),
+						resNLBServiceAttrHealthcheck + ".0." + resNLBServiceAttrHealthcheckTLSSNI:   validateString(testAccResourceNLBServiceHealthcheckTLSSNI),
+						resNLBServiceAttrHealthcheck + ".0." + resNLBServiceAttrHealthcheckURI:      validateString(testAccResourceNLBServiceHealthcheckURI),
 						resNLBServiceAttrName:       validateString(testAccResourceNLBServiceName),
 						resNLBServiceAttrPort:       validateString(testAccResourceNLBServicePort),
 						resNLBServiceAttrProtocol:   validateString(testAccResourceNLBServiceProtocol),
@@ -269,9 +276,9 @@ func TestAccResourceNLBService(t *testing.T) {
 						a.Equal(testAccResourceNLBServiceHealthcheckModeUpdated, *nlbService.Healthcheck.Mode)
 						a.Equal(testAccResourceNLBServiceHealthcheckPortUpdated, fmt.Sprint(*nlbService.Healthcheck.Port))
 						a.Equal(testAccResourceNLBServiceHealthcheckRetriesUpdated, fmt.Sprint(*nlbService.Healthcheck.Retries))
-						a.Equal(testAccResourceNLBServiceHealthcheckTLSSNI, *nlbService.Healthcheck.TLSSNI)
 						a.Equal(testAccResourceNLBServiceHealthcheckTimeoutUpdated, fmt.Sprint(int(nlbService.Healthcheck.Timeout.Seconds())))
-						a.Equal(testAccResourceNLBServiceHealthcheckURI, *nlbService.Healthcheck.URI)
+						a.Equal("", utils.DefaultString(nlbService.Healthcheck.TLSSNI, ""))
+						a.Equal("", utils.DefaultString(nlbService.Healthcheck.URI, ""))
 						a.Equal(instancePoolID, *nlbService.InstancePoolID)
 						a.Equal(testAccResourceNLBServiceNameUpdated, *nlbService.Name)
 						a.Equal(testAccResourceNLBServicePortUpdated, fmt.Sprint(*nlbService.Port))
@@ -289,8 +296,6 @@ func TestAccResourceNLBService(t *testing.T) {
 						resNLBServiceAttrHealthcheck + ".0." + resNLBServiceAttrHealthcheckPort:     validateString(testAccResourceNLBServiceHealthcheckPortUpdated),
 						resNLBServiceAttrHealthcheck + ".0." + resNLBServiceAttrHealthcheckRetries:  validateString(testAccResourceNLBServiceHealthcheckRetriesUpdated),
 						resNLBServiceAttrHealthcheck + ".0." + resNLBServiceAttrHealthcheckTimeout:  validateString(testAccResourceNLBServiceHealthcheckTimeoutUpdated),
-						resNLBServiceAttrHealthcheck + ".0." + resNLBServiceAttrHealthcheckTLSSNI:   validateString(testAccResourceNLBServiceHealthcheckTLSSNI),
-						resNLBServiceAttrHealthcheck + ".0." + resNLBServiceAttrHealthcheckURI:      validateString(testAccResourceNLBServiceHealthcheckURI),
 						resNLBServiceAttrName:       validateString(testAccResourceNLBServiceNameUpdated),
 						resNLBServiceAttrPort:       validateString(testAccResourceNLBServicePortUpdated),
 						resNLBServiceAttrProtocol:   validateString(testAccResourceNLBServiceProtocolUpdated),
@@ -323,8 +328,6 @@ func TestAccResourceNLBService(t *testing.T) {
 							resNLBServiceAttrHealthcheck + ".0." + resNLBServiceAttrHealthcheckPort:     validateString(testAccResourceNLBServiceHealthcheckPortUpdated),
 							resNLBServiceAttrHealthcheck + ".0." + resNLBServiceAttrHealthcheckRetries:  validateString(testAccResourceNLBServiceHealthcheckRetriesUpdated),
 							resNLBServiceAttrHealthcheck + ".0." + resNLBServiceAttrHealthcheckTimeout:  validateString(testAccResourceNLBServiceHealthcheckTimeoutUpdated),
-							resNLBServiceAttrHealthcheck + ".0." + resNLBServiceAttrHealthcheckTLSSNI:   validateString(testAccResourceNLBServiceHealthcheckTLSSNI),
-							resNLBServiceAttrHealthcheck + ".0." + resNLBServiceAttrHealthcheckURI:      validateString(testAccResourceNLBServiceHealthcheckURI),
 							resNLBServiceAttrNLBID:      validation.ToDiagFunc(validation.IsUUID),
 							resNLBServiceAttrName:       validateString(testAccResourceNLBServiceNameUpdated),
 							resNLBServiceAttrPort:       validateString(testAccResourceNLBServicePortUpdated),
