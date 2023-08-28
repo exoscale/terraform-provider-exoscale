@@ -58,6 +58,7 @@ type NLBServiceListDataSource struct {
 }
 
 type DataSourceModel struct {
+	ID             types.String `tfsdk:"id"`
 	NLBID          types.String `tfsdk:"nlb_id"`
 	NLBName        types.String `tfsdk:"nlb_name"`
 	NLBServiceList []Service    `tfsdk:"services"`
@@ -108,6 +109,10 @@ func (d *NLBServiceListDataSource) Schema(ctx context.Context, req datasource.Sc
 
 Corresponding resource: [exoscale_nlb](../resources/nlb.md).`,
 		Attributes: map[string]schema.Attribute{
+			NLBServiceAttrID: schema.StringAttribute{
+				MarkdownDescription: "The ID of this resource.",
+				Computed:            true,
+			},
 			NLBServiceListAttrZone: schema.StringAttribute{
 				Required: true,
 				Validators: []validator.String{
@@ -222,6 +227,9 @@ func (d *NLBServiceListDataSource) Read(ctx context.Context, req datasource.Read
 	if nlb.Name != nil && data.NLBName.IsNull() {
 		data.NLBName = types.StringValue(*nlb.Name)
 	}
+
+	// Use NLB ID as data source ID since it is unique.
+	data.ID = data.NLBID
 
 	for _, service := range nlb.Services {
 		var serviceState Service
