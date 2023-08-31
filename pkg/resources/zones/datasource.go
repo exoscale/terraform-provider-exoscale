@@ -4,6 +4,7 @@ import (
 	"context"
 
 	exov1 "github.com/exoscale/egoscale"
+	egov3 "github.com/exoscale/egoscale/v3"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
 
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -61,18 +62,23 @@ func (d *ZonesDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
 
-	exoZonesList, err := d.clientV1.ListWithContext(ctx, &exov1.Zone{})
+	v3Client, err := egov3.DefaultClient(egov3.ClientOptWithCredentialsFromEnv())
 	if err != nil {
 		resp.Diagnostics.AddError(err.Error(), "")
 
 		return
 	}
 
-	attrs := make([]attr.Value, 0, len(exoZonesList))
-	for _, key := range exoZonesList {
-		zone := key.(*exov1.Zone)
+	zones, err := v3Client.Global().Zones().List(ctx)
+	if err != nil {
+		resp.Diagnostics.AddError(err.Error(), "")
 
-		attrs = append(attrs, basetypes.NewStringValue(zone.Name))
+		return
+	}
+
+	attrs := make([]attr.Value, 0, len(zones))
+	for _, zone := range zones {
+		attrs = append(attrs, basetypes.NewStringValue(string(*zone.Name)))
 	}
 
 	zonesList, listDiags := types.ListValue(types.StringType, attrs)
