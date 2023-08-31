@@ -25,7 +25,8 @@ type ZonesDataSource struct {
 }
 
 type ZonesDataSourceModel struct {
-	Zones types.List `tfsdk:"zones"`
+	Id    types.String `tfsdk:"id"`
+	Zones types.List   `tfsdk:"zones"`
 }
 
 func (d *ZonesDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
@@ -48,6 +49,10 @@ func (d *ZonesDataSource) GetSchema() schema.Schema {
 				Description: `List of zones`,
 				ElementType: types.StringType,
 				Computed:    true,
+			},
+			"id": schema.StringAttribute{
+				MarkdownDescription: "The ID of this resource.",
+				Computed:            true,
 			},
 		},
 	}
