@@ -10,16 +10,35 @@ import (
 	openapi_types "github.com/deepmap/oapi-codegen/pkg/types"
 )
 
+type PrivateNetworksIface interface {
+
+   List(ctx context.Context) ([]oapi.PrivateNetwork, error)
+
+   Get(ctx context.Context, id openapi_types.UUID) (*oapi.PrivateNetwork, error)
+
+   Create(ctx context.Context, body oapi.CreatePrivateNetworkJSONRequestBody) (*oapi.Operation, error)
+
+   Update(ctx context.Context, id openapi_types.UUID, body oapi.UpdatePrivateNetworkJSONRequestBody) (*oapi.Operation, error)
+
+   Delete(ctx context.Context, id openapi_types.UUID) (*oapi.Operation, error)
+
+}
+
 type PrivateNetworks struct {
 	oapiClient *oapi.ClientWithResponses
 }
 
-func NewPrivateNetworks(c *oapi.ClientWithResponses) *PrivateNetworks {
+func NewPrivateNetworks(c *oapi.ClientWithResponses) PrivateNetworksIface {
 	return &PrivateNetworks{c}
 }
 
 func (a *PrivateNetworks) List(ctx context.Context) ([]oapi.PrivateNetwork, error) {
 	resp, err := a.oapiClient.ListPrivateNetworksWithResponse(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+    err = utils.WriteTestdata(nil, resp.JSON200, resp.StatusCode())
 	if err != nil {
 		return nil, err
 	}
@@ -38,6 +57,11 @@ func (a *PrivateNetworks) Get(ctx context.Context, id openapi_types.UUID) (*oapi
 		return nil, err
 	}
 
+    err = utils.WriteTestdata(nil, resp.JSON200, resp.StatusCode())
+	if err != nil {
+		return nil, err
+	}
+
 	err = utils.ParseResponseError(resp.StatusCode(), resp.Body)
 	if err != nil {
 		return nil, err
@@ -48,6 +72,11 @@ func (a *PrivateNetworks) Get(ctx context.Context, id openapi_types.UUID) (*oapi
 
 func (a *PrivateNetworks) Create(ctx context.Context, body oapi.CreatePrivateNetworkJSONRequestBody) (*oapi.Operation, error) {
 	resp, err := a.oapiClient.CreatePrivateNetworkWithResponse(ctx, body)
+	if err != nil {
+		return nil, err
+	}
+
+    err = utils.WriteTestdata(nil, resp.JSON200, resp.StatusCode())
 	if err != nil {
 		return nil, err
 	}
@@ -66,6 +95,11 @@ func (a *PrivateNetworks) Update(ctx context.Context, id openapi_types.UUID, bod
 		return nil, err
 	}
 
+    err = utils.WriteTestdata(nil, resp.JSON200, resp.StatusCode())
+	if err != nil {
+		return nil, err
+	}
+
 	err = utils.ParseResponseError(resp.StatusCode(), resp.Body)
 	if err != nil {
 		return nil, err
@@ -80,7 +114,93 @@ func (a *PrivateNetworks) Delete(ctx context.Context, id openapi_types.UUID) (*o
 		return nil, err
 	}
 
+    err = utils.WriteTestdata(nil, resp.JSON200, resp.StatusCode())
+	if err != nil {
+		return nil, err
+	}
+
 	err = utils.ParseResponseError(resp.StatusCode(), resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.JSON200, nil
+}
+
+
+type MockPrivateNetworks struct {
+     CallCount int
+}
+
+func NewMockPrivateNetworks() *MockPrivateNetworks {
+	return &MockPrivateNetworks{}
+}
+
+func (a *MockPrivateNetworks) List(ctx context.Context) ([]oapi.PrivateNetwork, error) {
+    a.CallCount++
+
+	resp := struct {
+		JSON200 struct {
+			PrivateNetworks *[]oapi.PrivateNetwork
+		}
+	}{}
+    err := utils.GetTestCall(a.CallCount, &resp.JSON200)
+	if err != nil {
+		return nil, err
+	}
+
+	return *resp.JSON200.PrivateNetworks, nil
+}
+
+func (a *MockPrivateNetworks) Get(ctx context.Context, id openapi_types.UUID) (*oapi.PrivateNetwork, error) {
+    a.CallCount++
+
+	resp := struct {
+		JSON200 *oapi.PrivateNetwork
+	}{}
+    err := utils.GetTestCall(a.CallCount, &resp.JSON200)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.JSON200, nil
+}
+
+func (a *MockPrivateNetworks) Create(ctx context.Context, body oapi.CreatePrivateNetworkJSONRequestBody) (*oapi.Operation, error) {
+    a.CallCount++
+
+	resp := struct {
+		JSON200 *oapi.Operation
+	}{}
+    err := utils.GetTestCall(a.CallCount, &resp.JSON200)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.JSON200, nil
+}
+
+func (a *MockPrivateNetworks) Update(ctx context.Context, id openapi_types.UUID, body oapi.UpdatePrivateNetworkJSONRequestBody) (*oapi.Operation, error) {
+    a.CallCount++
+
+	resp := struct {
+		JSON200 *oapi.Operation
+	}{}
+    err := utils.GetTestCall(a.CallCount, &resp.JSON200)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.JSON200, nil
+}
+
+func (a *MockPrivateNetworks) Delete(ctx context.Context, id openapi_types.UUID) (*oapi.Operation, error) {
+    a.CallCount++
+
+	resp := struct {
+		JSON200 *oapi.Operation
+	}{}
+    err := utils.GetTestCall(a.CallCount, &resp.JSON200)
 	if err != nil {
 		return nil, err
 	}

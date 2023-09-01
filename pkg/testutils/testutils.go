@@ -92,3 +92,7 @@ func resFromState(s *terraform.State, r string) (*terraform.InstanceState, error
 var TestAccProtoV6ProviderFactories = map[string]func() (tfprotov6.ProviderServer, error){
 	"exoscale": providerserver.NewProtocol6WithError(provider.New()()),
 }
+
+var TestAccProtoV6MockProviderFactories = map[string]func() (tfprotov6.ProviderServer, error){
+	"exoscale": providerserver.NewProtocol6WithError(provider.New()()),
+}

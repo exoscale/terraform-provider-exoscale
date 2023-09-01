@@ -8,16 +8,37 @@ import (
 	"github.com/exoscale/egoscale/v3/utils"
 )
 
+type AccessKeyIface interface {
+
+   List(ctx context.Context) ([]oapi.AccessKey, error)
+
+   ListKnownOperations(ctx context.Context) ([]oapi.AccessKeyOperation, error)
+
+   ListOperations(ctx context.Context) ([]oapi.AccessKeyOperation, error)
+
+   Get(ctx context.Context, key string) (*oapi.AccessKey, error)
+
+   Create(ctx context.Context, body oapi.CreateAccessKeyJSONRequestBody) (*oapi.AccessKey, error)
+
+   Revoke(ctx context.Context, key string) (*oapi.Operation, error)
+
+}
+
 type AccessKey struct {
 	oapiClient *oapi.ClientWithResponses
 }
 
-func NewAccessKey(c *oapi.ClientWithResponses) *AccessKey {
+func NewAccessKey(c *oapi.ClientWithResponses) AccessKeyIface {
 	return &AccessKey{c}
 }
 
 func (a *AccessKey) List(ctx context.Context) ([]oapi.AccessKey, error) {
 	resp, err := a.oapiClient.ListAccessKeysWithResponse(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+    err = utils.WriteTestdata(nil, resp.JSON200, resp.StatusCode())
 	if err != nil {
 		return nil, err
 	}
@@ -36,6 +57,11 @@ func (a *AccessKey) ListKnownOperations(ctx context.Context) ([]oapi.AccessKeyOp
 		return nil, err
 	}
 
+    err = utils.WriteTestdata(nil, resp.JSON200, resp.StatusCode())
+	if err != nil {
+		return nil, err
+	}
+
 	err = utils.ParseResponseError(resp.StatusCode(), resp.Body)
 	if err != nil {
 		return nil, err
@@ -46,6 +72,11 @@ func (a *AccessKey) ListKnownOperations(ctx context.Context) ([]oapi.AccessKeyOp
 
 func (a *AccessKey) ListOperations(ctx context.Context) ([]oapi.AccessKeyOperation, error) {
 	resp, err := a.oapiClient.ListAccessKeyOperationsWithResponse(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+    err = utils.WriteTestdata(nil, resp.JSON200, resp.StatusCode())
 	if err != nil {
 		return nil, err
 	}
@@ -64,6 +95,11 @@ func (a *AccessKey) Get(ctx context.Context, key string) (*oapi.AccessKey, error
 		return nil, err
 	}
 
+    err = utils.WriteTestdata(nil, resp.JSON200, resp.StatusCode())
+	if err != nil {
+		return nil, err
+	}
+
 	err = utils.ParseResponseError(resp.StatusCode(), resp.Body)
 	if err != nil {
 		return nil, err
@@ -74,6 +110,11 @@ func (a *AccessKey) Get(ctx context.Context, key string) (*oapi.AccessKey, error
 
 func (a *AccessKey) Create(ctx context.Context, body oapi.CreateAccessKeyJSONRequestBody) (*oapi.AccessKey, error) {
 	resp, err := a.oapiClient.CreateAccessKeyWithResponse(ctx, body)
+	if err != nil {
+		return nil, err
+	}
+
+    err = utils.WriteTestdata(nil, resp.JSON200, resp.StatusCode())
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +133,111 @@ func (a *AccessKey) Revoke(ctx context.Context, key string) (*oapi.Operation, er
 		return nil, err
 	}
 
+    err = utils.WriteTestdata(nil, resp.JSON200, resp.StatusCode())
+	if err != nil {
+		return nil, err
+	}
+
 	err = utils.ParseResponseError(resp.StatusCode(), resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.JSON200, nil
+}
+
+
+type MockAccessKey struct {
+     CallCount int
+}
+
+func NewMockAccessKey() *MockAccessKey {
+	return &MockAccessKey{}
+}
+
+func (a *MockAccessKey) List(ctx context.Context) ([]oapi.AccessKey, error) {
+    a.CallCount++
+
+	resp := struct {
+		JSON200 struct {
+			AccessKeys *[]oapi.AccessKey
+		}
+	}{}
+    err := utils.GetTestCall(a.CallCount, &resp.JSON200)
+	if err != nil {
+		return nil, err
+	}
+
+	return *resp.JSON200.AccessKeys, nil
+}
+
+func (a *MockAccessKey) ListKnownOperations(ctx context.Context) ([]oapi.AccessKeyOperation, error) {
+    a.CallCount++
+
+	resp := struct {
+		JSON200 struct {
+			AccessKeyOperations *[]oapi.AccessKeyOperation
+		}
+	}{}
+    err := utils.GetTestCall(a.CallCount, &resp.JSON200)
+	if err != nil {
+		return nil, err
+	}
+
+	return *resp.JSON200.AccessKeyOperations, nil
+}
+
+func (a *MockAccessKey) ListOperations(ctx context.Context) ([]oapi.AccessKeyOperation, error) {
+    a.CallCount++
+
+	resp := struct {
+		JSON200 struct {
+			AccessKeyOperations *[]oapi.AccessKeyOperation
+		}
+	}{}
+    err := utils.GetTestCall(a.CallCount, &resp.JSON200)
+	if err != nil {
+		return nil, err
+	}
+
+	return *resp.JSON200.AccessKeyOperations, nil
+}
+
+func (a *MockAccessKey) Get(ctx context.Context, key string) (*oapi.AccessKey, error) {
+    a.CallCount++
+
+	resp := struct {
+		JSON200 *oapi.AccessKey
+	}{}
+    err := utils.GetTestCall(a.CallCount, &resp.JSON200)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.JSON200, nil
+}
+
+func (a *MockAccessKey) Create(ctx context.Context, body oapi.CreateAccessKeyJSONRequestBody) (*oapi.AccessKey, error) {
+    a.CallCount++
+
+	resp := struct {
+		JSON200 *oapi.AccessKey
+	}{}
+    err := utils.GetTestCall(a.CallCount, &resp.JSON200)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.JSON200, nil
+}
+
+func (a *MockAccessKey) Revoke(ctx context.Context, key string) (*oapi.Operation, error) {
+    a.CallCount++
+
+	resp := struct {
+		JSON200 *oapi.Operation
+	}{}
+    err := utils.GetTestCall(a.CallCount, &resp.JSON200)
 	if err != nil {
 		return nil, err
 	}

@@ -10,11 +10,17 @@ import (
 	openapi_types "github.com/deepmap/oapi-codegen/pkg/types"
 )
 
+type OperationIface interface {
+
+   Get(ctx context.Context, id openapi_types.UUID) (*oapi.Operation, error)
+
+}
+
 type Operation struct {
 	oapiClient *oapi.ClientWithResponses
 }
 
-func NewOperation(c *oapi.ClientWithResponses) *Operation {
+func NewOperation(c *oapi.ClientWithResponses) OperationIface {
 	return &Operation{c}
 }
 
@@ -24,7 +30,35 @@ func (a *Operation) Get(ctx context.Context, id openapi_types.UUID) (*oapi.Opera
 		return nil, err
 	}
 
+    err = utils.WriteTestdata(nil, resp.JSON200, resp.StatusCode())
+	if err != nil {
+		return nil, err
+	}
+
 	err = utils.ParseResponseError(resp.StatusCode(), resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.JSON200, nil
+}
+
+
+type MockOperation struct {
+     CallCount int
+}
+
+func NewMockOperation() *MockOperation {
+	return &MockOperation{}
+}
+
+func (a *MockOperation) Get(ctx context.Context, id openapi_types.UUID) (*oapi.Operation, error) {
+    a.CallCount++
+
+	resp := struct {
+		JSON200 *oapi.Operation
+	}{}
+    err := utils.GetTestCall(a.CallCount, &resp.JSON200)
 	if err != nil {
 		return nil, err
 	}

@@ -104,7 +104,6 @@ github.com/exoscale/egoscale/version
 ## explicit; go 1.20
 github.com/exoscale/egoscale/v3
 github.com/exoscale/egoscale/v3/api/compute
-github.com/exoscale/egoscale/v3/api/dbaas
 github.com/exoscale/egoscale/v3/api/dns
 github.com/exoscale/egoscale/v3/api/global
 github.com/exoscale/egoscale/v3/api/iam

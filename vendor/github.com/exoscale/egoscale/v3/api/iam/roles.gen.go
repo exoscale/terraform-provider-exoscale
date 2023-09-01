@@ -10,16 +10,37 @@ import (
 	openapi_types "github.com/deepmap/oapi-codegen/pkg/types"
 )
 
+type RolesIface interface {
+
+   List(ctx context.Context) ([]oapi.IamRole, error)
+
+   Get(ctx context.Context, id openapi_types.UUID) (*oapi.IamRole, error)
+
+   Create(ctx context.Context, body oapi.CreateIamRoleJSONRequestBody) (*oapi.Operation, error)
+
+   Delete(ctx context.Context, id openapi_types.UUID) (*oapi.Operation, error)
+
+   Update(ctx context.Context, id openapi_types.UUID, body oapi.UpdateIamRoleJSONRequestBody) (*oapi.Operation, error)
+
+   UpdatePolicy(ctx context.Context, id openapi_types.UUID, body oapi.UpdateIamRolePolicyJSONRequestBody) (*oapi.Operation, error)
+
+}
+
 type Roles struct {
 	oapiClient *oapi.ClientWithResponses
 }
 
-func NewRoles(c *oapi.ClientWithResponses) *Roles {
+func NewRoles(c *oapi.ClientWithResponses) RolesIface {
 	return &Roles{c}
 }
 
 func (a *Roles) List(ctx context.Context) ([]oapi.IamRole, error) {
 	resp, err := a.oapiClient.ListIamRolesWithResponse(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+    err = utils.WriteTestdata(nil, resp.JSON200, resp.StatusCode())
 	if err != nil {
 		return nil, err
 	}
@@ -38,6 +59,11 @@ func (a *Roles) Get(ctx context.Context, id openapi_types.UUID) (*oapi.IamRole, 
 		return nil, err
 	}
 
+    err = utils.WriteTestdata(nil, resp.JSON200, resp.StatusCode())
+	if err != nil {
+		return nil, err
+	}
+
 	err = utils.ParseResponseError(resp.StatusCode(), resp.Body)
 	if err != nil {
 		return nil, err
@@ -48,6 +74,11 @@ func (a *Roles) Get(ctx context.Context, id openapi_types.UUID) (*oapi.IamRole, 
 
 func (a *Roles) Create(ctx context.Context, body oapi.CreateIamRoleJSONRequestBody) (*oapi.Operation, error) {
 	resp, err := a.oapiClient.CreateIamRoleWithResponse(ctx, body)
+	if err != nil {
+		return nil, err
+	}
+
+    err = utils.WriteTestdata(nil, resp.JSON200, resp.StatusCode())
 	if err != nil {
 		return nil, err
 	}
@@ -66,6 +97,11 @@ func (a *Roles) Delete(ctx context.Context, id openapi_types.UUID) (*oapi.Operat
 		return nil, err
 	}
 
+    err = utils.WriteTestdata(nil, resp.JSON200, resp.StatusCode())
+	if err != nil {
+		return nil, err
+	}
+
 	err = utils.ParseResponseError(resp.StatusCode(), resp.Body)
 	if err != nil {
 		return nil, err
@@ -76,6 +112,11 @@ func (a *Roles) Delete(ctx context.Context, id openapi_types.UUID) (*oapi.Operat
 
 func (a *Roles) Update(ctx context.Context, id openapi_types.UUID, body oapi.UpdateIamRoleJSONRequestBody) (*oapi.Operation, error) {
 	resp, err := a.oapiClient.UpdateIamRoleWithResponse(ctx, id, body)
+	if err != nil {
+		return nil, err
+	}
+
+    err = utils.WriteTestdata(nil, resp.JSON200, resp.StatusCode())
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +135,107 @@ func (a *Roles) UpdatePolicy(ctx context.Context, id openapi_types.UUID, body oa
 		return nil, err
 	}
 
+    err = utils.WriteTestdata(nil, resp.JSON200, resp.StatusCode())
+	if err != nil {
+		return nil, err
+	}
+
 	err = utils.ParseResponseError(resp.StatusCode(), resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.JSON200, nil
+}
+
+
+type MockRoles struct {
+     CallCount int
+}
+
+func NewMockRoles() *MockRoles {
+	return &MockRoles{}
+}
+
+func (a *MockRoles) List(ctx context.Context) ([]oapi.IamRole, error) {
+    a.CallCount++
+
+	resp := struct {
+		JSON200 struct {
+			IamRoles *[]oapi.IamRole
+		}
+	}{}
+    err := utils.GetTestCall(a.CallCount, &resp.JSON200)
+	if err != nil {
+		return nil, err
+	}
+
+	return *resp.JSON200.IamRoles, nil
+}
+
+func (a *MockRoles) Get(ctx context.Context, id openapi_types.UUID) (*oapi.IamRole, error) {
+    a.CallCount++
+
+	resp := struct {
+		JSON200 *oapi.IamRole
+	}{}
+    err := utils.GetTestCall(a.CallCount, &resp.JSON200)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.JSON200, nil
+}
+
+func (a *MockRoles) Create(ctx context.Context, body oapi.CreateIamRoleJSONRequestBody) (*oapi.Operation, error) {
+    a.CallCount++
+
+	resp := struct {
+		JSON200 *oapi.Operation
+	}{}
+    err := utils.GetTestCall(a.CallCount, &resp.JSON200)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.JSON200, nil
+}
+
+func (a *MockRoles) Delete(ctx context.Context, id openapi_types.UUID) (*oapi.Operation, error) {
+    a.CallCount++
+
+	resp := struct {
+		JSON200 *oapi.Operation
+	}{}
+    err := utils.GetTestCall(a.CallCount, &resp.JSON200)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.JSON200, nil
+}
+
+func (a *MockRoles) Update(ctx context.Context, id openapi_types.UUID, body oapi.UpdateIamRoleJSONRequestBody) (*oapi.Operation, error) {
+    a.CallCount++
+
+	resp := struct {
+		JSON200 *oapi.Operation
+	}{}
+    err := utils.GetTestCall(a.CallCount, &resp.JSON200)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.JSON200, nil
+}
+
+func (a *MockRoles) UpdatePolicy(ctx context.Context, id openapi_types.UUID, body oapi.UpdateIamRolePolicyJSONRequestBody) (*oapi.Operation, error) {
+    a.CallCount++
+
+	resp := struct {
+		JSON200 *oapi.Operation
+	}{}
+    err := utils.GetTestCall(a.CallCount, &resp.JSON200)
 	if err != nil {
 		return nil, err
 	}

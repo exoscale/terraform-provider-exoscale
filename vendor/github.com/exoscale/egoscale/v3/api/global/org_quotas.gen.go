@@ -8,16 +8,29 @@ import (
 	"github.com/exoscale/egoscale/v3/utils"
 )
 
+type OrgQuotasIface interface {
+
+   List(ctx context.Context) ([]oapi.Quota, error)
+
+   Get(ctx context.Context, entity string) (*oapi.Quota, error)
+
+}
+
 type OrgQuotas struct {
 	oapiClient *oapi.ClientWithResponses
 }
 
-func NewOrgQuotas(c *oapi.ClientWithResponses) *OrgQuotas {
+func NewOrgQuotas(c *oapi.ClientWithResponses) OrgQuotasIface {
 	return &OrgQuotas{c}
 }
 
 func (a *OrgQuotas) List(ctx context.Context) ([]oapi.Quota, error) {
 	resp, err := a.oapiClient.ListQuotasWithResponse(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+    err = utils.WriteTestdata(nil, resp.JSON200, resp.StatusCode())
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +49,51 @@ func (a *OrgQuotas) Get(ctx context.Context, entity string) (*oapi.Quota, error)
 		return nil, err
 	}
 
+    err = utils.WriteTestdata(nil, resp.JSON200, resp.StatusCode())
+	if err != nil {
+		return nil, err
+	}
+
 	err = utils.ParseResponseError(resp.StatusCode(), resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.JSON200, nil
+}
+
+
+type MockOrgQuotas struct {
+     CallCount int
+}
+
+func NewMockOrgQuotas() *MockOrgQuotas {
+	return &MockOrgQuotas{}
+}
+
+func (a *MockOrgQuotas) List(ctx context.Context) ([]oapi.Quota, error) {
+    a.CallCount++
+
+	resp := struct {
+		JSON200 struct {
+			Quotas *[]oapi.Quota
+		}
+	}{}
+    err := utils.GetTestCall(a.CallCount, &resp.JSON200)
+	if err != nil {
+		return nil, err
+	}
+
+	return *resp.JSON200.Quotas, nil
+}
+
+func (a *MockOrgQuotas) Get(ctx context.Context, entity string) (*oapi.Quota, error) {
+    a.CallCount++
+
+	resp := struct {
+		JSON200 *oapi.Quota
+	}{}
+    err := utils.GetTestCall(a.CallCount, &resp.JSON200)
 	if err != nil {
 		return nil, err
 	}

@@ -16,9 +16,9 @@ func TestGetZones(t *testing.T) {
 		ProtoV6ProviderFactories: testutils.TestAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: `
-data "exoscale_zones" "example_zones" {}
-`,
+				Config: `data "exoscale_zones" "example_zones" {
+
+}`,
 				Check: resource.ComposeTestCheckFunc(
 					dsCheckAttrs("data.exoscale_zones.example_zones", testutils.TestAttrs{
 						"zones.#": testutils.ValidateString("6"),

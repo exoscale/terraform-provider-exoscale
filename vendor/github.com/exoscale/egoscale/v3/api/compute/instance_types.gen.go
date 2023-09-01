@@ -10,16 +10,29 @@ import (
 	openapi_types "github.com/deepmap/oapi-codegen/pkg/types"
 )
 
+type InstanceTypesIface interface {
+
+   List(ctx context.Context) ([]oapi.InstanceType, error)
+
+   Get(ctx context.Context, id openapi_types.UUID) (*oapi.InstanceType, error)
+
+}
+
 type InstanceTypes struct {
 	oapiClient *oapi.ClientWithResponses
 }
 
-func NewInstanceTypes(c *oapi.ClientWithResponses) *InstanceTypes {
+func NewInstanceTypes(c *oapi.ClientWithResponses) InstanceTypesIface {
 	return &InstanceTypes{c}
 }
 
 func (a *InstanceTypes) List(ctx context.Context) ([]oapi.InstanceType, error) {
 	resp, err := a.oapiClient.ListInstanceTypesWithResponse(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+    err = utils.WriteTestdata(nil, resp.JSON200, resp.StatusCode())
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +51,51 @@ func (a *InstanceTypes) Get(ctx context.Context, id openapi_types.UUID) (*oapi.I
 		return nil, err
 	}
 
+    err = utils.WriteTestdata(nil, resp.JSON200, resp.StatusCode())
+	if err != nil {
+		return nil, err
+	}
+
 	err = utils.ParseResponseError(resp.StatusCode(), resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.JSON200, nil
+}
+
+
+type MockInstanceTypes struct {
+     CallCount int
+}
+
+func NewMockInstanceTypes() *MockInstanceTypes {
+	return &MockInstanceTypes{}
+}
+
+func (a *MockInstanceTypes) List(ctx context.Context) ([]oapi.InstanceType, error) {
+    a.CallCount++
+
+	resp := struct {
+		JSON200 struct {
+			InstanceTypes *[]oapi.InstanceType
+		}
+	}{}
+    err := utils.GetTestCall(a.CallCount, &resp.JSON200)
+	if err != nil {
+		return nil, err
+	}
+
+	return *resp.JSON200.InstanceTypes, nil
+}
+
+func (a *MockInstanceTypes) Get(ctx context.Context, id openapi_types.UUID) (*oapi.InstanceType, error) {
+    a.CallCount++
+
+	resp := struct {
+		JSON200 *oapi.InstanceType
+	}{}
+    err := utils.GetTestCall(a.CallCount, &resp.JSON200)
 	if err != nil {
 		return nil, err
 	}

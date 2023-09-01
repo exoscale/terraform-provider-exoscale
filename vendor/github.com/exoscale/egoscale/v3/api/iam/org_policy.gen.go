@@ -8,16 +8,29 @@ import (
 	"github.com/exoscale/egoscale/v3/utils"
 )
 
+type OrgPolicyIface interface {
+
+   Get(ctx context.Context) (*oapi.IamPolicy, error)
+
+   Update(ctx context.Context, body oapi.UpdateIamOrganizationPolicyJSONRequestBody) (*oapi.Operation, error)
+
+}
+
 type OrgPolicy struct {
 	oapiClient *oapi.ClientWithResponses
 }
 
-func NewOrgPolicy(c *oapi.ClientWithResponses) *OrgPolicy {
+func NewOrgPolicy(c *oapi.ClientWithResponses) OrgPolicyIface {
 	return &OrgPolicy{c}
 }
 
 func (a *OrgPolicy) Get(ctx context.Context) (*oapi.IamPolicy, error) {
 	resp, err := a.oapiClient.GetIamOrganizationPolicyWithResponse(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+    err = utils.WriteTestdata(nil, resp.JSON200, resp.StatusCode())
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +49,49 @@ func (a *OrgPolicy) Update(ctx context.Context, body oapi.UpdateIamOrganizationP
 		return nil, err
 	}
 
+    err = utils.WriteTestdata(nil, resp.JSON200, resp.StatusCode())
+	if err != nil {
+		return nil, err
+	}
+
 	err = utils.ParseResponseError(resp.StatusCode(), resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.JSON200, nil
+}
+
+
+type MockOrgPolicy struct {
+     CallCount int
+}
+
+func NewMockOrgPolicy() *MockOrgPolicy {
+	return &MockOrgPolicy{}
+}
+
+func (a *MockOrgPolicy) Get(ctx context.Context) (*oapi.IamPolicy, error) {
+    a.CallCount++
+
+	resp := struct {
+		JSON200 *oapi.IamPolicy
+	}{}
+    err := utils.GetTestCall(a.CallCount, &resp.JSON200)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.JSON200, nil
+}
+
+func (a *MockOrgPolicy) Update(ctx context.Context, body oapi.UpdateIamOrganizationPolicyJSONRequestBody) (*oapi.Operation, error) {
+    a.CallCount++
+
+	resp := struct {
+		JSON200 *oapi.Operation
+	}{}
+    err := utils.GetTestCall(a.CallCount, &resp.JSON200)
 	if err != nil {
 		return nil, err
 	}

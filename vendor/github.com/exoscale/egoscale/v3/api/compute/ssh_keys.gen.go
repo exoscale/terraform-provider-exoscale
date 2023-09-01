@@ -8,16 +8,33 @@ import (
 	"github.com/exoscale/egoscale/v3/utils"
 )
 
+type SSHKeysIface interface {
+
+   List(ctx context.Context) ([]oapi.SshKey, error)
+
+   Register(ctx context.Context, body oapi.RegisterSshKeyJSONRequestBody) (*oapi.Operation, error)
+
+   Delete(ctx context.Context, name string) (*oapi.Operation, error)
+
+   Get(ctx context.Context, name string) (*oapi.SshKey, error)
+
+}
+
 type SSHKeys struct {
 	oapiClient *oapi.ClientWithResponses
 }
 
-func NewSSHKeys(c *oapi.ClientWithResponses) *SSHKeys {
+func NewSSHKeys(c *oapi.ClientWithResponses) SSHKeysIface {
 	return &SSHKeys{c}
 }
 
 func (a *SSHKeys) List(ctx context.Context) ([]oapi.SshKey, error) {
 	resp, err := a.oapiClient.ListSshKeysWithResponse(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+    err = utils.WriteTestdata(nil, resp.JSON200, resp.StatusCode())
 	if err != nil {
 		return nil, err
 	}
@@ -36,6 +53,11 @@ func (a *SSHKeys) Register(ctx context.Context, body oapi.RegisterSshKeyJSONRequ
 		return nil, err
 	}
 
+    err = utils.WriteTestdata(nil, resp.JSON200, resp.StatusCode())
+	if err != nil {
+		return nil, err
+	}
+
 	err = utils.ParseResponseError(resp.StatusCode(), resp.Body)
 	if err != nil {
 		return nil, err
@@ -46,6 +68,11 @@ func (a *SSHKeys) Register(ctx context.Context, body oapi.RegisterSshKeyJSONRequ
 
 func (a *SSHKeys) Delete(ctx context.Context, name string) (*oapi.Operation, error) {
 	resp, err := a.oapiClient.DeleteSshKeyWithResponse(ctx, name)
+	if err != nil {
+		return nil, err
+	}
+
+    err = utils.WriteTestdata(nil, resp.JSON200, resp.StatusCode())
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +91,79 @@ func (a *SSHKeys) Get(ctx context.Context, name string) (*oapi.SshKey, error) {
 		return nil, err
 	}
 
+    err = utils.WriteTestdata(nil, resp.JSON200, resp.StatusCode())
+	if err != nil {
+		return nil, err
+	}
+
 	err = utils.ParseResponseError(resp.StatusCode(), resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.JSON200, nil
+}
+
+
+type MockSSHKeys struct {
+     CallCount int
+}
+
+func NewMockSSHKeys() *MockSSHKeys {
+	return &MockSSHKeys{}
+}
+
+func (a *MockSSHKeys) List(ctx context.Context) ([]oapi.SshKey, error) {
+    a.CallCount++
+
+	resp := struct {
+		JSON200 struct {
+			SshKeys *[]oapi.SshKey
+		}
+	}{}
+    err := utils.GetTestCall(a.CallCount, &resp.JSON200)
+	if err != nil {
+		return nil, err
+	}
+
+	return *resp.JSON200.SshKeys, nil
+}
+
+func (a *MockSSHKeys) Register(ctx context.Context, body oapi.RegisterSshKeyJSONRequestBody) (*oapi.Operation, error) {
+    a.CallCount++
+
+	resp := struct {
+		JSON200 *oapi.Operation
+	}{}
+    err := utils.GetTestCall(a.CallCount, &resp.JSON200)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.JSON200, nil
+}
+
+func (a *MockSSHKeys) Delete(ctx context.Context, name string) (*oapi.Operation, error) {
+    a.CallCount++
+
+	resp := struct {
+		JSON200 *oapi.Operation
+	}{}
+    err := utils.GetTestCall(a.CallCount, &resp.JSON200)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.JSON200, nil
+}
+
+func (a *MockSSHKeys) Get(ctx context.Context, name string) (*oapi.SshKey, error) {
+    a.CallCount++
+
+	resp := struct {
+		JSON200 *oapi.SshKey
+	}{}
+    err := utils.GetTestCall(a.CallCount, &resp.JSON200)
 	if err != nil {
 		return nil, err
 	}

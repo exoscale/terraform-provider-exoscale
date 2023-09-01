@@ -8,11 +8,17 @@ import (
 	"github.com/exoscale/egoscale/v3/utils"
 )
 
+type ZonesIface interface {
+
+   List(ctx context.Context) ([]oapi.Zone, error)
+
+}
+
 type Zones struct {
 	oapiClient *oapi.ClientWithResponses
 }
 
-func NewZones(c *oapi.ClientWithResponses) *Zones {
+func NewZones(c *oapi.ClientWithResponses) ZonesIface {
 	return &Zones{c}
 }
 
@@ -22,7 +28,37 @@ func (a *Zones) List(ctx context.Context) ([]oapi.Zone, error) {
 		return nil, err
 	}
 
+    err = utils.WriteTestdata(nil, resp.JSON200, resp.StatusCode())
+	if err != nil {
+		return nil, err
+	}
+
 	err = utils.ParseResponseError(resp.StatusCode(), resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return *resp.JSON200.Zones, nil
+}
+
+
+type MockZones struct {
+     CallCount int
+}
+
+func NewMockZones() *MockZones {
+	return &MockZones{}
+}
+
+func (a *MockZones) List(ctx context.Context) ([]oapi.Zone, error) {
+    a.CallCount++
+
+	resp := struct {
+		JSON200 struct {
+			Zones *[]oapi.Zone
+		}
+	}{}
+    err := utils.GetTestCall(a.CallCount, &resp.JSON200)
 	if err != nil {
 		return nil, err
 	}

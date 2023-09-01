@@ -11,11 +11,6 @@ import (
 
 	"github.com/hashicorp/go-retryablehttp"
 
-	"github.com/exoscale/egoscale/v3/api/compute"
-	"github.com/exoscale/egoscale/v3/api/dbaas"
-	"github.com/exoscale/egoscale/v3/api/dns"
-	"github.com/exoscale/egoscale/v3/api/global"
-	"github.com/exoscale/egoscale/v3/api/iam"
 	"github.com/exoscale/egoscale/v3/oapi"
 )
 
@@ -143,32 +138,10 @@ func (c *Client) Wait(
 	}
 }
 
+// TODO gen Client interface
+// TODO gen mock Client
+
 // OAPIClient returns configured instance of OpenAPI generated (low-level) API client.
 func (c *Client) OAPIClient() *oapi.ClientWithResponses {
 	return c.oapiClient
-}
-
-// IAM provides access to IAM resources on Exoscale platform.
-func (c *Client) IAM() *iam.IAM {
-	return iam.NewIAM(c.oapiClient)
-}
-
-// DBaaS provides access to DBaaS resources on Exoscale platform.
-func (c *Client) DBaaS() *dbaas.DBaaS {
-	return dbaas.NewDBaaS(c.oapiClient)
-}
-
-// Compute provides access to Compute resources on Exoscale platform.
-func (c *Client) Compute() *compute.Compute {
-	return compute.NewCompute(c.oapiClient)
-}
-
-// DNS provides access to DNS resources on Exoscale platform.
-func (c *Client) DNS() *dns.DNS {
-	return dns.NewDNS(c.oapiClient)
-}
-
-// Global provides access to global resources on Exoscale platform.
-func (c *Client) Global() *global.Global {
-	return global.NewGlobal(c.oapiClient)
 }

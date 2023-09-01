@@ -44,6 +44,7 @@ func (d *ZonesDataSource) Metadata(ctx context.Context, req datasource.MetadataR
 }
 
 func (d *ZonesDataSource) GetSchema() schema.Schema {
+
 	return schema.Schema{
 		Description: "Lists all zones.",
 		Attributes: map[string]schema.Attribute{
