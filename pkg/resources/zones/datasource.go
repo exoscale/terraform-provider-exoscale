@@ -3,6 +3,8 @@ package zones
 import (
 	"context"
 
+	"github.com/google/uuid"
+
 	exov1 "github.com/exoscale/egoscale"
 	egov3 "github.com/exoscale/egoscale/v3"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
@@ -45,14 +47,13 @@ func (d *ZonesDataSource) GetSchema() schema.Schema {
 	return schema.Schema{
 		Description: "Lists all zones.",
 		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
+				Computed: true,
+			},
 			ZonesAttrName: schema.ListAttribute{
 				Description: `List of zones`,
 				ElementType: types.StringType,
 				Computed:    true,
-			},
-			"id": schema.StringAttribute{
-				MarkdownDescription: "The ID of this resource.",
-				Computed:            true,
 			},
 		},
 	}
@@ -89,6 +90,9 @@ func (d *ZonesDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
 	zonesList, listDiags := types.ListValue(types.StringType, attrs)
 	resp.Diagnostics.Append(listDiags...)
 	data.Zones = zonesList
+
+	// An ID is required on every data source, therefore we set a random one as the zones endpoint doesn't provide one.
+	data.Id = types.StringValue(uuid.NewString())
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
