@@ -8,9 +8,6 @@ on:
 
 jobs:
   goreleaser:
-    # TODO remove before merging the branch
-    if: ${{ false }}
-
     runs-on: ubuntu-latest
 
     permissions:
@@ -32,7 +29,7 @@ jobs:
         uses: crazy-max/ghaction-import-gpg@72b6676b71ab476b77e676928516f6982eef7a41
         with:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
-          passphrase: ${{ secrets.PASSPHRASE }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
 
       - uses: ./go.mk/.github/actions/release
         with:
