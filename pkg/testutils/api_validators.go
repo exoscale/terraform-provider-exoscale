@@ -45,6 +45,10 @@ func CheckAntiAffinityGroupExists(r string, res *egoscale.AntiAffinityGroup) res
 
 func CheckAntiAffinityGroupDestroy(res *egoscale.AntiAffinityGroup) resource.TestCheckFunc {
 	return func(_ *terraform.State) error {
+		if res == nil {
+			return nil
+		}
+
 		client, err := APIClient()
 		if err != nil {
 			return err
@@ -101,6 +105,10 @@ func CheckInstanceExists(r string, testInstance *egoscale.Instance) resource.Tes
 
 func CheckInstanceDestroy(testInstance *egoscale.Instance) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
+		if testInstance == nil {
+			return nil
+		}
+
 		client, err := APIClient()
 		if err != nil {
 			return err
@@ -153,6 +161,10 @@ func CheckSecurityGroupExists(r string, securityGroup *egoscale.SecurityGroup) r
 
 func CheckSecurityGroupDestroy(securityGroup *egoscale.SecurityGroup) resource.TestCheckFunc {
 	return func(_ *terraform.State) error {
+		if securityGroup == nil {
+			return nil
+		}
+
 		client, err := APIClient()
 		if err != nil {
 			return err
@@ -201,6 +213,10 @@ func CheckPrivateNetworkExists(r string, privateNetwork *egoscale.PrivateNetwork
 
 func CheckPrivateNetworkDestroy(privateNetwork *egoscale.PrivateNetwork) resource.TestCheckFunc {
 	return func(_ *terraform.State) error {
+		if privateNetwork == nil {
+			return nil
+		}
+
 		client, err := APIClient()
 		if err != nil {
 			return err
@@ -249,6 +265,10 @@ func CheckElasticIPExists(r string, elasticIP *egoscale.ElasticIP) resource.Test
 
 func CheckElasticIPDestroy(elasticIP *egoscale.ElasticIP) resource.TestCheckFunc {
 	return func(_ *terraform.State) error {
+		if elasticIP == nil {
+			return nil
+		}
+
 		client, err := APIClient()
 		if err != nil {
 			return err
@@ -297,6 +317,10 @@ func CheckSSHKeyExists(r string, sshKey *egoscale.SSHKey) resource.TestCheckFunc
 
 func CheckSSHKeyDestroy(sshKey *egoscale.SSHKey) resource.TestCheckFunc {
 	return func(_ *terraform.State) error {
+		if sshKey == nil {
+			return nil
+		}
+
 		client, err := APIClient()
 		if err != nil {
 			return err
@@ -345,6 +369,10 @@ func CheckInstancePoolExists(r string, pool *egoscale.InstancePool) resource.Tes
 
 func CheckInstancePoolDestroy(pool *egoscale.InstancePool) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
+		if pool == nil {
+			return nil
+		}
+
 		client, err := APIClient()
 		if err != nil {
 			return err
