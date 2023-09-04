@@ -57,7 +57,13 @@ func (a *MockZones) List(ctx context.Context) ([]oapi.Zone, error) {
 		JSON200 struct {
 			Zones *[]oapi.Zone
 		}
-	}{}
+	}{
+		JSON200: struct {
+			Zones *[]oapi.Zone
+		} {
+			Zones: &[]oapi.Zone{},
+		},
+	}
     err := utils.GetTestCall(a.CallCount, &resp.JSON200)
 	if err != nil {
 		return nil, err

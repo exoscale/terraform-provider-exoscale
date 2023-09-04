@@ -78,7 +78,13 @@ func (a *MockOrgQuotas) List(ctx context.Context) ([]oapi.Quota, error) {
 		JSON200 struct {
 			Quotas *[]oapi.Quota
 		}
-	}{}
+	}{
+		JSON200: struct {
+			Quotas *[]oapi.Quota
+		} {
+			Quotas: &[]oapi.Quota{},
+		},
+	}
     err := utils.GetTestCall(a.CallCount, &resp.JSON200)
 	if err != nil {
 		return nil, err

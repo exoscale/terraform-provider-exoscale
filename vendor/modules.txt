@@ -102,11 +102,7 @@ github.com/exoscale/egoscale/v2/oapi
 github.com/exoscale/egoscale/version
 # github.com/exoscale/egoscale/v3 v3.0.0-00010101000000-000000000000 => /home/sauterp/src/github.com/exoscale/egoscale/v3
 ## explicit; go 1.20
-github.com/exoscale/egoscale/v3
-github.com/exoscale/egoscale/v3/api/compute
-github.com/exoscale/egoscale/v3/api/dns
 github.com/exoscale/egoscale/v3/api/global
-github.com/exoscale/egoscale/v3/api/iam
 github.com/exoscale/egoscale/v3/oapi
 github.com/exoscale/egoscale/v3/utils
 # github.com/fatih/color v1.13.0

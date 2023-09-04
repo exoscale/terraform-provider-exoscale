@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 
 	exov1 "github.com/exoscale/egoscale"
-	egov3 "github.com/exoscale/egoscale/v3"
+	"github.com/exoscale/egoscale/v3/api/global"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
 
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -69,14 +69,15 @@ func (d *ZonesDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
 
-	v3Client, err := egov3.DefaultClient(egov3.ClientOptWithCredentialsFromEnv())
-	if err != nil {
-		resp.Diagnostics.AddError(err.Error(), "")
+	// v3Client, err := egov3.DefaultClient(egov3.ClientOptWithCredentialsFromEnv())
+	// if err != nil {
+	// 	resp.Diagnostics.AddError(err.Error(), "")
 
-		return
-	}
+	// 	return
+	// }
 
-	zones, err := v3Client.Global().Zones().List(ctx)
+	zones, err := global.NewMockZones().List(ctx)
+	// zones, err := v3Client.Global().Zones().List(ctx)
 	if err != nil {
 		resp.Diagnostics.AddError(err.Error(), "")
 

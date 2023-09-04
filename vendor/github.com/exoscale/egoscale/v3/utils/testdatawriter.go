@@ -59,12 +59,12 @@ func GetTestCall(callNr int, callResp interface{}) error {
 	}
 
 	callIfval := testflow.Calls[callNr]
-	callIfvalJson, err := json.Marshal(callIfval)
+	callIfvalRespJson, err := json.Marshal(callIfval.Resp)
 	if err != nil {
 		return fmt.Errorf("error marshalling call %w", err)
 	}
 
-	err = json.Unmarshal(callIfvalJson, callResp)
+	err = json.Unmarshal(callIfvalRespJson, callResp)
 	if err != nil {
 		return fmt.Errorf("error unmarshalling call %w", err)
 	}
