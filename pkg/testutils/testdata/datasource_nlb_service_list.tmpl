@@ -1,0 +1,15 @@
+data "exoscale_nlb_service_list" "{{ .ResourceName }}" {
+  zone     = "{{ .Zone }}"
+
+  {{- if .ID }}
+  nlb_id   = {{ .ID }}
+  {{ end }}
+
+  {{- if .Name }}
+  nlb_name = {{ .Name }}
+  {{ end }}
+
+  {{- if .RawConfig }}
+  {{ .RawConfig }}
+  {{- end }}
+}

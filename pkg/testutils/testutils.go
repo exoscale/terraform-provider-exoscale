@@ -1,11 +1,14 @@
 package testutils
 
 import (
+	"context"
 	"fmt"
 	"os"
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
+	"github.com/hashicorp/terraform-plugin-mux/tf5to6server"
+	"github.com/hashicorp/terraform-plugin-mux/tf6muxserver"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
@@ -19,7 +22,7 @@ import (
 const (
 	Prefix                         = "test-terraform-exoscale"
 	TestDescription                = "Created by the terraform-exoscale provider"
-	TestZoneName                   = "ch-dk-2"
+	TestZoneName                   = "bg-sof-1"
 	TestInstanceTemplateName       = "Linux Ubuntu 20.04 LTS 64-bit"
 	TestInstanceTemplateUsername   = "ubuntu"
 	TestInstanceTemplateFilter     = "featured"
@@ -90,5 +93,25 @@ func resFromState(s *terraform.State, r string) (*terraform.InstanceState, error
 // CLI command executed to create a provider server to which the CLI can
 // reattach.
 var TestAccProtoV6ProviderFactories = map[string]func() (tfprotov6.ProviderServer, error){
-	"exoscale": providerserver.NewProtocol6WithError(provider.New()()),
+	"exoscale": func() (tfprotov6.ProviderServer, error) {
+		ctx := context.Background()
+		upgradedProvider, err := tf5to6server.UpgradeServer(
+			ctx,
+			exoscale.Provider().GRPCProvider,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		newProvider := providerserver.NewProtocol6(&provider.ExoscaleProvider{})
+
+		providers := []func() tfprotov6.ProviderServer{
+			func() tfprotov6.ProviderServer {
+				return upgradedProvider
+			},
+			newProvider,
+		}
+
+		return tf6muxserver.NewMuxServer(ctx, providers...)
+	},
 }

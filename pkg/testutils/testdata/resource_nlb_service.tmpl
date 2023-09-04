@@ -1,0 +1,48 @@
+resource "exoscale_nlb_service" "{{ .ResourceName }}" {
+  zone = "{{ .Zone }}"
+  name = "{{ .Name }}"
+  nlb_id = {{ .NLBID }}
+  instance_pool_id = {{ .InstancePoolID }}
+  port = {{ .Port }}
+  target_port = {{ .TargetPort }}
+
+  {{- if .Description }}
+  description = "{{ .Description }}"
+  {{ end }}
+
+  {{- if .Protocol }}
+  protocol = "{{ .Protocol }}"
+  {{ end }}
+
+  {{- if .Strategy }}
+  strategy = "{{ .Strategy }}"
+  {{ end }}
+
+  healthcheck {
+    port = {{ .HealthcheckPort }}
+
+    {{- if .HealthcheckInterval }}
+    interval = {{ .HealthcheckInterval }}
+    {{ end }}
+
+    {{- if .HealthcheckMode }}
+    mode = "{{ .HealthcheckMode }}"
+    {{ end }}
+
+    {{- if .HealthcheckRetries }}
+    retries = {{ .HealthcheckRetries }}
+    {{ end }}
+
+    {{- if .HealthcheckTimeout }}
+    timeout = {{ .HealthcheckTimeout }}
+    {{ end }}
+
+    {{- if .HealthcheckTLSSNI }}
+    tls_sni = "{{ .HealthcheckTLSSNI }}"
+    {{ end }}
+
+    {{- if .HealthcheckURI }}
+    uri = "{{ .HealthcheckURI }}"
+    {{ end }}
+  }
+}

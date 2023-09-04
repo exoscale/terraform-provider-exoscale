@@ -1,0 +1,8 @@
+resource "exoscale_instance_pool" "{{ .ResourceName }}" {
+  zone =          "{{ .Zone }}"
+  name =          "{{ .Name }}"
+  size =          {{ .Size }}
+  disk_size =     {{ .DiskSize }}
+  template_id =   {{ .TemplateID }}
+  instance_type = "{{ .Type }}"
+}

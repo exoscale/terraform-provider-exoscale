@@ -1,0 +1,12 @@
+resource "exoscale_nlb" "{{ .ResourceName }}" {
+  zone = "{{ .Zone }}"
+  name = "{{ .Name }}"
+
+  {{- if .Description }}
+  description = {{ .Description }}
+  {{ end }}
+
+  {{- if .Labels }}
+  labels = {{ .Labels }}
+  {{ end }}
+}
