@@ -114,26 +114,32 @@ Corresponding resource: [exoscale_nlb](../resources/nlb.md).`,
 				Computed:            true,
 			},
 			NLBServiceListAttrZone: schema.StringAttribute{
-				Required: true,
+				MarkdownDescription: "The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.",
+				Required:            true,
 				Validators: []validator.String{
 					stringvalidator.OneOf(config.Zones...),
 				},
 			},
 			NLBServiceListAttrNLBID: schema.StringAttribute{
-				Optional: true,
+				MarkdownDescription: "The NLB ID to match (conflicts with `name`).",
+				Optional:            true,
 			},
 			NLBServiceListAttrNLBName: schema.StringAttribute{
-				Optional: true,
+				MarkdownDescription: "The NLB name to match (conflicts with `id`).",
+				Optional:            true,
 			},
 			NLBServiceListAttrNLBServiceList: schema.ListNestedAttribute{
-				Computed: true,
+				MarkdownDescription: "The list of [exoscale_nlb_service](./nlb_service.md).",
+				Computed:            true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						NLBServiceAttrDescription: schema.StringAttribute{
-							Computed: true,
+							MarkdownDescription: "NLB service description.",
+							Computed:            true,
 						},
 						NLBServiceAttrID: schema.StringAttribute{
-							Computed: true,
+							MarkdownDescription: "NLB service ID.",
+							Computed:            true,
 						},
 						NLBServiceAttrHealthcheck: schema.ObjectAttribute{
 							Computed: true,
@@ -148,25 +154,32 @@ Corresponding resource: [exoscale_nlb](../resources/nlb.md).`,
 							},
 						},
 						NLBServiceAttrInstancePoolID: schema.StringAttribute{
-							Computed: true,
+							MarkdownDescription: "The [exoscale_instance_pool](./instance_pool.md) (ID) to forward traffic to.",
+							Computed:            true,
 						},
 						NLBServiceAttrName: schema.StringAttribute{
-							Computed: true,
+							MarkdownDescription: "NLB Service name.",
+							Computed:            true,
 						},
 						NLBServiceAttrPort: schema.Int64Attribute{
-							Computed: true,
+							MarkdownDescription: "Port exposed on the NLB's public IP.",
+							Computed:            true,
 						},
 						NLBServiceAttrProtocol: schema.StringAttribute{
-							Computed: true,
+							MarkdownDescription: "Network traffic protocol.",
+							Computed:            true,
 						},
 						NLBServiceAttrState: schema.StringAttribute{
-							Computed: true,
+							MarkdownDescription: "NLB Service State.",
+							Computed:            true,
 						},
 						NLBServiceAttrStrategy: schema.StringAttribute{
-							Computed: true,
+							MarkdownDescription: "The strategy (`round-robin`|`source-hash`).",
+							Computed:            true,
 						},
 						NLBServiceAttrTargetPort: schema.Int64Attribute{
-							Computed: true,
+							MarkdownDescription: "Port on which the network traffic will be forwarded to on the receiving instance.",
+							Computed:            true,
 						},
 					},
 				},

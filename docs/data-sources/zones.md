@@ -31,5 +31,3 @@ directory for complete configuration examples.
 - `zones` (List of String) List of zones
 
 
-
-* The symbol ❗ in an attribute indicates that modifying it, will force the creation of a new resource.

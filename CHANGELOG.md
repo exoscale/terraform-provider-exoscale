@@ -4,8 +4,9 @@
 
 FEATURES:
 
-- `exoscale_database` resource & `exoscale_database_uri` datasource: migrate to framework (#276).
-- `exoscale_database` resource: add Grafana (#276).
+- `exoscale_database` resource & `exoscale_database_uri` datasource: migrate to framework (#276)
+- `exoscale_database` resource: add Grafana (#276)
+- **New datasource** `exoscale_nlb_service_list` (#282)
 
 BUG FIXES:
 - `resource_exoscale_nlb_service`: unset uri and tls_sni when healthcheck mode is tcp (#295)
