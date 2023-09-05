@@ -38,19 +38,19 @@ directory for complete configuration examples.
 
 ### Optional
 
-- `anti_affinity_group_ids` (Set of String) The list of attached [exoscale_anti_affinity_group](../resources/anti_affinity_group.md) (IDs).
 - `id` (String) The compute instance ID to match (conflicts with `name`).
-- `labels` (Map of String) A map of key/value labels.
 - `name` (String) The instance name to match (conflicts with `id`).
 
 ### Read-Only
 
+- `anti_affinity_group_ids` (Set of String) The list of attached [exoscale_anti_affinity_group](../resources/anti_affinity_group.md) (IDs).
 - `created_at` (String) The compute instance creation date.
 - `deploy_target_id` (String) A deploy target ID.
 - `disk_size` (Number) The instance disk size (GiB).
 - `elastic_ip_ids` (Set of String) The list of attached [exoscale_elastic_ip](../resources/elastic_ip.md) (IDs).
 - `ipv6` (Boolean) Whether IPv6 is enabled on the instance.
 - `ipv6_address` (String) The instance (main network interface) IPv6 address (if enabled).
+- `labels` (Map of String) A map of key/value labels.
 - `manager_id` (String) The instance manager ID, if any.
 - `manager_type` (String) The instance manager type (instance pool, SKS node pool, etc.), if any.
 - `private_network_ids` (Set of String) The list of attached [exoscale_private_network](../resources/private_network.md) (IDs).
