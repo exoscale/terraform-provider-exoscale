@@ -25,7 +25,9 @@ Should you want to _create_ an SSH keypair (including *private* key) with Terraf
 resource:
 
 ```hcl
-resource "tls_private_key" "my_ssh_key" {}
+resource "tls_private_key" "my_ssh_key" {
+  algorithm = "ED25519"
+}
 
 resource "exoscale_ssh_key" "my_ssh_key" {
   name       = "my-ssh-key"
