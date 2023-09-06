@@ -23,7 +23,7 @@ func DataSourceSchema() map[string]*schema.Schema {
 		AttrAntiAffinityGroupIDs: {
 			Description: "The list of attached [exoscale_anti_affinity_group](../resources/anti_affinity_group.md) (IDs).",
 			Type:        schema.TypeSet,
-			Optional:    true,
+			Computed:    true,
 			Set:         schema.HashString,
 			Elem:        &schema.Schema{Type: schema.TypeString},
 		},
@@ -68,7 +68,7 @@ func DataSourceSchema() map[string]*schema.Schema {
 			Description: "A map of key/value labels.",
 			Type:        schema.TypeMap,
 			Elem:        &schema.Schema{Type: schema.TypeString},
-			Optional:    true,
+			Computed:    true,
 		},
 		AttrManagerID: {
 			Description: "The instance manager ID, if any.",

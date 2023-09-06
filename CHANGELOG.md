@@ -12,6 +12,7 @@ BUG FIXES:
 
 - `resource_exoscale_nlb_service`: unset uri and tls_sni when healthcheck mode is tcp (#295)
 - `resource_exoscale_nlb_service`: force service re-creation when InstancePool ID is updated (#295)
+- datasource `compute_instance`: labels and anti-affinity-groups are computed
 
 IMPROVEMENTS:
 
