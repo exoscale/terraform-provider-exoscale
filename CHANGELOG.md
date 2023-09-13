@@ -1,5 +1,11 @@
 # Changelog
 
+## UNRELEASED
+
+BUG FIXES:
+
+- add missing `vie2` zone in validator used by framework resources (#300)
+
 ## 0.52.0 (September 8, 2023)
 
 FEATURES:
