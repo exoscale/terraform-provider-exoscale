@@ -6,6 +6,7 @@ BUG FIXES:
 
 - Add missing `vie2` zone in validator used by framework resources (#300)
 - Update kafka version used in tests (#301)
+- Temporarily disable SKS cluster update test (#302)
 
 ## 0.52.0 (September 8, 2023)
 
