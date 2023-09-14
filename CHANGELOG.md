@@ -4,7 +4,8 @@
 
 BUG FIXES:
 
-- add missing `vie2` zone in validator used by framework resources (#300)
+- Add missing `vie2` zone in validator used by framework resources (#300)
+- Update kafka version used in tests (#301)
 
 ## 0.52.0 (September 8, 2023)
 
