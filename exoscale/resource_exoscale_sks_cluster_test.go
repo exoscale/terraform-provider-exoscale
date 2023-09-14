@@ -18,10 +18,10 @@ import (
 )
 
 var (
-	testAccResourceSKSClusterLabelValue             = acctest.RandomWithPrefix(testPrefix)
-	testAccResourceSKSClusterLabelValueUpdated      = testAccResourceSKSClusterLabelValue + "-updated"
-	testAccResourceSKSClusterName                   = acctest.RandomWithPrefix(testPrefix)
-	testAccResourceSKSClusterNameUpdated            = testAccResourceSKSClusterName + "-updated"
+	testAccResourceSKSClusterLabelValue = acctest.RandomWithPrefix(testPrefix)
+	//testAccResourceSKSClusterLabelValueUpdated      = testAccResourceSKSClusterLabelValue + "-updated"
+	testAccResourceSKSClusterName = acctest.RandomWithPrefix(testPrefix)
+	//testAccResourceSKSClusterNameUpdated            = testAccResourceSKSClusterName + "-updated"
 	testAccResourceSKSClusterOIDCClientID           = acctest.RandString(10)
 	testAccResourceSKSClusterOIDCGroupsClaim        = acctest.RandString(10)
 	testAccResourceSKSClusterOIDCGroupsPrefix       = acctest.RandString(10)
@@ -30,7 +30,7 @@ var (
 	testAccResourceSKSClusterOIDCUsernameClaim      = acctest.RandString(10)
 	testAccResourceSKSClusterOIDCUsernamePrefix     = acctest.RandString(10)
 	testAccResourceSKSClusterDescription            = acctest.RandString(10)
-	testAccResourceSKSClusterDescriptionUpdated     = testAccResourceSKSClusterDescription + "-updated"
+	//testAccResourceSKSClusterDescriptionUpdated     = testAccResourceSKSClusterDescription + "-updated"
 
 	testAccResourceSKSClusterConfigCreate = fmt.Sprintf(`
 locals {
@@ -89,45 +89,45 @@ resource "exoscale_sks_nodepool" "test" {
 		testAccResourceSKSClusterOIDCUsernamePrefix,
 	)
 
-	testAccResourceSKSClusterConfigUpdate = fmt.Sprintf(`
-locals {
-  zone = "%s"
-}
-
-resource "exoscale_sks_cluster" "test" {
-  zone = local.zone
-  name = "%s"
-  description = "%s"
-  exoscale_ccm = true
-  metrics_server = false
-  auto_upgrade = true
-  labels = {
-    test = "%s"
-  }
-
-  timeouts {
-    create = "10m"
-  }
-}
-
-resource "exoscale_sks_nodepool" "test" {
-  zone = local.zone
-  cluster_id = exoscale_sks_cluster.test.id
-  name = "test"
-  instance_type = "standard.small"
-  disk_size = 20
-  size = 1
-
-  timeouts {
-    create = "10m"
-  }
-}
-`,
-		testZoneName,
-		testAccResourceSKSClusterNameUpdated,
-		testAccResourceSKSClusterDescriptionUpdated,
-		testAccResourceSKSClusterLabelValueUpdated,
-	)
+	// testAccResourceSKSClusterConfigUpdate = fmt.Sprintf(`
+	// locals {
+	// zone = "%s"
+	// }
+	//
+	// resource "exoscale_sks_cluster" "test" {
+	// zone = local.zone
+	// name = "%s"
+	// description = "%s"
+	// exoscale_ccm = true
+	// metrics_server = false
+	// auto_upgrade = true
+	// labels = {
+	// test = "%s"
+	// }
+	//
+	// timeouts {
+	// create = "10m"
+	// }
+	// }
+	//
+	// resource "exoscale_sks_nodepool" "test" {
+	// zone = local.zone
+	// cluster_id = exoscale_sks_cluster.test.id
+	// name = "test"
+	// instance_type = "standard.small"
+	// disk_size = 20
+	// size = 1
+	//
+	// timeouts {
+	// create = "10m"
+	// }
+	// }
+	// `,
+	// testZoneName,
+	// testAccResourceSKSClusterNameUpdated,
+	// testAccResourceSKSClusterDescriptionUpdated,
+	// testAccResourceSKSClusterLabelValueUpdated,
+	// )
 
 	testAccResourceSKSClusterConfig2Format = `
 locals {
@@ -223,54 +223,54 @@ func TestAccResourceSKSCluster(t *testing.T) {
 					})),
 				),
 			},
-			// NOTE: Temporarily disabled Update test until upstream fix lands:
-			// https://app.shortcut.com/exoscale/story/77029/tf-provider-sks-acc-test-times-out-after-a-cluster-update
-			//{
-			//// Update
-			//Config: testAccResourceSKSClusterConfigUpdate,
-			//Check: resource.ComposeTestCheckFunc(
-			//testAccCheckResourceSKSClusterExists(r, &sksCluster),
-			//func(s *terraform.State) error {
-			//a := assert.New(t)
+			//  NOTE: Temporarily disabled Update test until upstream fix lands:
+			//  https://app.shortcut.com/exoscale/story/77029/tf-provider-sks-acc-test-times-out-after-a-cluster-update
+			// {
+			// // Update
+			// Config: testAccResourceSKSClusterConfigUpdate,
+			// Check: resource.ComposeTestCheckFunc(
+			// testAccCheckResourceSKSClusterExists(r, &sksCluster),
+			// func(s *terraform.State) error {
+			// a := assert.New(t)
 			//
-			//a.True(defaultBool(sksCluster.AutoUpgrade, false))
-			//a.Equal(testAccResourceSKSClusterDescriptionUpdated, *sksCluster.Description)
-			//a.Equal(testAccResourceSKSClusterLabelValueUpdated, (*sksCluster.Labels)["test"])
-			//a.Equal(testAccResourceSKSClusterNameUpdated, *sksCluster.Name)
+			// a.True(defaultBool(sksCluster.AutoUpgrade, false))
+			// a.Equal(testAccResourceSKSClusterDescriptionUpdated, *sksCluster.Description)
+			// a.Equal(testAccResourceSKSClusterLabelValueUpdated, (*sksCluster.Labels)["test"])
+			// a.Equal(testAccResourceSKSClusterNameUpdated, *sksCluster.Name)
 			//
-			//// Wait for the cluster to be in the Running state
-			//for i := 0; i < 60; i++ {
-			//c, err := client.GetSKSCluster(clientctx, testZoneName, *sksCluster.ID)
-			//if err != nil {
-			//return fmt.Errorf("failed to fetch sks cluster: %s", err)
-			//}
-			//if *c.State == "running" {
-			//return nil
-			//}
-			//t.Logf("waiting for cluster to be Running, current state: %s", *c.State)
-			//time.Sleep(10 * time.Second)
-			//}
+			// // Wait for the cluster to be in the Running state
+			// for i := 0; i < 60; i++ {
+			// c, err := client.GetSKSCluster(clientctx, testZoneName, *sksCluster.ID)
+			// if err != nil {
+			// return fmt.Errorf("failed to fetch sks cluster: %s", err)
+			// }
+			// if *c.State == "running" {
+			// return nil
+			// }
+			// t.Logf("waiting for cluster to be Running, current state: %s", *c.State)
+			// time.Sleep(10 * time.Second)
+			// }
 			//
-			//return fmt.Errorf("timeout waiting for the cluster to be Running: current state")
-			//},
-			//checkResourceState(r, checkResourceStateValidateAttributes(testAttrs{
-			//resSKSClusterAttrAggregationLayerCA: validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Aggregation CA must be a PEM certificate")),
-			//resSKSClusterAttrAutoUpgrade:        validateString("true"),
-			//resSKSClusterAttrCNI:                validateString(defaultSKSClusterCNI),
-			//resSKSClusterAttrControlPlaneCA:     validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Control-plane CA must be a PEM certificate")),
-			//resSKSClusterAttrCreatedAt:          validation.ToDiagFunc(validation.NoZeroValues),
-			//resSKSClusterAttrDescription:        validateString(testAccResourceSKSClusterDescriptionUpdated),
-			//resSKSClusterAttrEndpoint:           validation.ToDiagFunc(validation.IsURLWithHTTPS),
-			//resSKSClusterAttrExoscaleCCM:        validateString("true"),
-			//resSKSClusterAttrKubeletCA:          validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Kubelet CA must be a PEM certificate")),
-			//resSKSClusterAttrMetricsServer:      validateString("false"),
-			//resSKSClusterAttrLabels + ".test":   validateString(testAccResourceSKSClusterLabelValueUpdated),
-			//resSKSClusterAttrName:               validateString(testAccResourceSKSClusterNameUpdated),
-			//resSKSClusterAttrServiceLevel:       validateString(defaultSKSClusterServiceLevel),
-			//resSKSClusterAttrState:              validation.ToDiagFunc(validation.NoZeroValues),
-			//})),
-			//),
-			//},
+			// return fmt.Errorf("timeout waiting for the cluster to be Running: current state")
+			// },
+			// checkResourceState(r, checkResourceStateValidateAttributes(testAttrs{
+			// resSKSClusterAttrAggregationLayerCA: validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Aggregation CA must be a PEM certificate")),
+			// resSKSClusterAttrAutoUpgrade:        validateString("true"),
+			// resSKSClusterAttrCNI:                validateString(defaultSKSClusterCNI),
+			// resSKSClusterAttrControlPlaneCA:     validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Control-plane CA must be a PEM certificate")),
+			// resSKSClusterAttrCreatedAt:          validation.ToDiagFunc(validation.NoZeroValues),
+			// resSKSClusterAttrDescription:        validateString(testAccResourceSKSClusterDescriptionUpdated),
+			// resSKSClusterAttrEndpoint:           validation.ToDiagFunc(validation.IsURLWithHTTPS),
+			// resSKSClusterAttrExoscaleCCM:        validateString("true"),
+			// resSKSClusterAttrKubeletCA:          validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Kubelet CA must be a PEM certificate")),
+			// resSKSClusterAttrMetricsServer:      validateString("false"),
+			// resSKSClusterAttrLabels + ".test":   validateString(testAccResourceSKSClusterLabelValueUpdated),
+			// resSKSClusterAttrName:               validateString(testAccResourceSKSClusterNameUpdated),
+			// resSKSClusterAttrServiceLevel:       validateString(defaultSKSClusterServiceLevel),
+			// resSKSClusterAttrState:              validation.ToDiagFunc(validation.NoZeroValues),
+			// })),
+			// ),
+			// },
 			{
 				// Import
 				ResourceName: r,
