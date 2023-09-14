@@ -19,9 +19,9 @@ import (
 
 var (
 	testAccResourceSKSClusterLabelValue = acctest.RandomWithPrefix(testPrefix)
-	//testAccResourceSKSClusterLabelValueUpdated      = testAccResourceSKSClusterLabelValue + "-updated"
+	// testAccResourceSKSClusterLabelValueUpdated      = testAccResourceSKSClusterLabelValue + "-updated"
 	testAccResourceSKSClusterName = acctest.RandomWithPrefix(testPrefix)
-	//testAccResourceSKSClusterNameUpdated            = testAccResourceSKSClusterName + "-updated"
+	// testAccResourceSKSClusterNameUpdated            = testAccResourceSKSClusterName + "-updated"
 	testAccResourceSKSClusterOIDCClientID           = acctest.RandString(10)
 	testAccResourceSKSClusterOIDCGroupsClaim        = acctest.RandString(10)
 	testAccResourceSKSClusterOIDCGroupsPrefix       = acctest.RandString(10)
@@ -30,7 +30,7 @@ var (
 	testAccResourceSKSClusterOIDCUsernameClaim      = acctest.RandString(10)
 	testAccResourceSKSClusterOIDCUsernamePrefix     = acctest.RandString(10)
 	testAccResourceSKSClusterDescription            = acctest.RandString(10)
-	//testAccResourceSKSClusterDescriptionUpdated     = testAccResourceSKSClusterDescription + "-updated"
+	// testAccResourceSKSClusterDescriptionUpdated     = testAccResourceSKSClusterDescription + "-updated"
 
 	testAccResourceSKSClusterConfigCreate = fmt.Sprintf(`
 locals {
