@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"testing"
-	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
@@ -224,52 +223,54 @@ func TestAccResourceSKSCluster(t *testing.T) {
 					})),
 				),
 			},
-			{
-				// Update
-				Config: testAccResourceSKSClusterConfigUpdate,
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckResourceSKSClusterExists(r, &sksCluster),
-					func(s *terraform.State) error {
-						a := assert.New(t)
-
-						a.True(defaultBool(sksCluster.AutoUpgrade, false))
-						a.Equal(testAccResourceSKSClusterDescriptionUpdated, *sksCluster.Description)
-						a.Equal(testAccResourceSKSClusterLabelValueUpdated, (*sksCluster.Labels)["test"])
-						a.Equal(testAccResourceSKSClusterNameUpdated, *sksCluster.Name)
-
-						// Wait for the cluster to be in the Running state
-						for i := 0; i < 60; i++ {
-							c, err := client.GetSKSCluster(clientctx, testZoneName, *sksCluster.ID)
-							if err != nil {
-								return fmt.Errorf("failed to fetch sks cluster: %s", err)
-							}
-							if *c.State == "running" {
-								return nil
-							}
-							t.Logf("waiting for cluster to be Running, current state: %s", *c.State)
-							time.Sleep(10 * time.Second)
-						}
-
-						return fmt.Errorf("timeout waiting for the cluster to be Running: current state")
-					},
-					checkResourceState(r, checkResourceStateValidateAttributes(testAttrs{
-						resSKSClusterAttrAggregationLayerCA: validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Aggregation CA must be a PEM certificate")),
-						resSKSClusterAttrAutoUpgrade:        validateString("true"),
-						resSKSClusterAttrCNI:                validateString(defaultSKSClusterCNI),
-						resSKSClusterAttrControlPlaneCA:     validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Control-plane CA must be a PEM certificate")),
-						resSKSClusterAttrCreatedAt:          validation.ToDiagFunc(validation.NoZeroValues),
-						resSKSClusterAttrDescription:        validateString(testAccResourceSKSClusterDescriptionUpdated),
-						resSKSClusterAttrEndpoint:           validation.ToDiagFunc(validation.IsURLWithHTTPS),
-						resSKSClusterAttrExoscaleCCM:        validateString("true"),
-						resSKSClusterAttrKubeletCA:          validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Kubelet CA must be a PEM certificate")),
-						resSKSClusterAttrMetricsServer:      validateString("false"),
-						resSKSClusterAttrLabels + ".test":   validateString(testAccResourceSKSClusterLabelValueUpdated),
-						resSKSClusterAttrName:               validateString(testAccResourceSKSClusterNameUpdated),
-						resSKSClusterAttrServiceLevel:       validateString(defaultSKSClusterServiceLevel),
-						resSKSClusterAttrState:              validation.ToDiagFunc(validation.NoZeroValues),
-					})),
-				),
-			},
+			// NOTE: Temporarily disabled Update test until upstream fix lands:
+			// https://app.shortcut.com/exoscale/story/77029/tf-provider-sks-acc-test-times-out-after-a-cluster-update
+			//{
+			//// Update
+			//Config: testAccResourceSKSClusterConfigUpdate,
+			//Check: resource.ComposeTestCheckFunc(
+			//testAccCheckResourceSKSClusterExists(r, &sksCluster),
+			//func(s *terraform.State) error {
+			//a := assert.New(t)
+			//
+			//a.True(defaultBool(sksCluster.AutoUpgrade, false))
+			//a.Equal(testAccResourceSKSClusterDescriptionUpdated, *sksCluster.Description)
+			//a.Equal(testAccResourceSKSClusterLabelValueUpdated, (*sksCluster.Labels)["test"])
+			//a.Equal(testAccResourceSKSClusterNameUpdated, *sksCluster.Name)
+			//
+			//// Wait for the cluster to be in the Running state
+			//for i := 0; i < 60; i++ {
+			//c, err := client.GetSKSCluster(clientctx, testZoneName, *sksCluster.ID)
+			//if err != nil {
+			//return fmt.Errorf("failed to fetch sks cluster: %s", err)
+			//}
+			//if *c.State == "running" {
+			//return nil
+			//}
+			//t.Logf("waiting for cluster to be Running, current state: %s", *c.State)
+			//time.Sleep(10 * time.Second)
+			//}
+			//
+			//return fmt.Errorf("timeout waiting for the cluster to be Running: current state")
+			//},
+			//checkResourceState(r, checkResourceStateValidateAttributes(testAttrs{
+			//resSKSClusterAttrAggregationLayerCA: validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Aggregation CA must be a PEM certificate")),
+			//resSKSClusterAttrAutoUpgrade:        validateString("true"),
+			//resSKSClusterAttrCNI:                validateString(defaultSKSClusterCNI),
+			//resSKSClusterAttrControlPlaneCA:     validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Control-plane CA must be a PEM certificate")),
+			//resSKSClusterAttrCreatedAt:          validation.ToDiagFunc(validation.NoZeroValues),
+			//resSKSClusterAttrDescription:        validateString(testAccResourceSKSClusterDescriptionUpdated),
+			//resSKSClusterAttrEndpoint:           validation.ToDiagFunc(validation.IsURLWithHTTPS),
+			//resSKSClusterAttrExoscaleCCM:        validateString("true"),
+			//resSKSClusterAttrKubeletCA:          validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Kubelet CA must be a PEM certificate")),
+			//resSKSClusterAttrMetricsServer:      validateString("false"),
+			//resSKSClusterAttrLabels + ".test":   validateString(testAccResourceSKSClusterLabelValueUpdated),
+			//resSKSClusterAttrName:               validateString(testAccResourceSKSClusterNameUpdated),
+			//resSKSClusterAttrServiceLevel:       validateString(defaultSKSClusterServiceLevel),
+			//resSKSClusterAttrState:              validation.ToDiagFunc(validation.NoZeroValues),
+			//})),
+			//),
+			//},
 			{
 				// Import
 				ResourceName: r,
@@ -299,13 +300,13 @@ func TestAccResourceSKSCluster(t *testing.T) {
 							resSKSClusterAttrCNI:                validateString(defaultSKSClusterCNI),
 							resSKSClusterAttrControlPlaneCA:     validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Control-plane CA must be a PEM certificate")),
 							resSKSClusterAttrCreatedAt:          validation.ToDiagFunc(validation.NoZeroValues),
-							resSKSClusterAttrDescription:        validateString(testAccResourceSKSClusterDescriptionUpdated),
+							resSKSClusterAttrDescription:        validateString(testAccResourceSKSClusterDescription),
 							resSKSClusterAttrEndpoint:           validation.ToDiagFunc(validation.IsURLWithHTTPS),
 							resSKSClusterAttrExoscaleCCM:        validateString("true"),
 							resSKSClusterAttrKubeletCA:          validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Kubelet CA must be a PEM certificate")),
 							resSKSClusterAttrMetricsServer:      validateString("false"),
-							resSKSClusterAttrLabels + ".test":   validateString(testAccResourceSKSClusterLabelValueUpdated),
-							resSKSClusterAttrName:               validateString(testAccResourceSKSClusterNameUpdated),
+							resSKSClusterAttrLabels + ".test":   validateString(testAccResourceSKSClusterLabelValue),
+							resSKSClusterAttrName:               validateString(testAccResourceSKSClusterName),
 							resSKSClusterAttrServiceLevel:       validateString(defaultSKSClusterServiceLevel),
 							resSKSClusterAttrState:              validation.ToDiagFunc(validation.NoZeroValues),
 							resSKSClusterAttrVersion:            validation.ToDiagFunc(validation.NoZeroValues),
