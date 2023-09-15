@@ -1,6 +1,6 @@
 # Changelog
 
-## UNRELEASED
+## 0.52.1 (September 15, 2023)
 
 BUG FIXES:
 
