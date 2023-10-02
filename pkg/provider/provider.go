@@ -16,6 +16,7 @@ import (
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/database"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/iam"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/nlb_service"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/zones"
 )
@@ -298,6 +299,7 @@ func (p *ExoscaleProvider) DataSources(ctx context.Context) []func() datasource.
 			return &zones.ZonesDataSource{}
 		},
 		database.NewDataSourceURI,
+		iam.NewDataSourceOrgPolicy,
 		func() datasource.DataSource {
 			return &nlb_service.NLBServiceListDataSource{}
 		},
