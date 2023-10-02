@@ -309,6 +309,7 @@ func (p *ExoscaleProvider) DataSources(ctx context.Context) []func() datasource.
 func (p *ExoscaleProvider) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		database.NewResource,
+		iam.NewResourceOrgPolicy,
 	}
 }
 
