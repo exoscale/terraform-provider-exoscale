@@ -161,9 +161,6 @@ func (r *ResourceOrgPolicy) Create(ctx context.Context, req resource.CreateReque
 
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(r.env, data.Zone.ValueString()))
 
-	// Org policy is unique for organization, we can use a dummy value for ID.
-	data.ID = types.StringValue("1")
-
 	// Update policy
 	r.update(ctx, resp.Diagnostics, &data)
 	if resp.Diagnostics.HasError() {
@@ -203,8 +200,6 @@ func (r *ResourceOrgPolicy) Read(ctx context.Context, req resource.ReadRequest, 
 	defer cancel()
 
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(r.env, data.Zone.ValueString()))
-
-	data.ID = types.StringValue("1")
 
 	r.read(ctx, resp.Diagnostics, &data)
 	if resp.Diagnostics.HasError() {
@@ -253,7 +248,7 @@ func (r *ResourceOrgPolicy) Update(ctx context.Context, req resource.UpdateReque
 	}
 
 	// Save updated data into Terraform state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &planData)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &stateData)...)
 
 	tflog.Trace(ctx, "resource updated", map[string]interface{}{
 		"id": planData.ID,
@@ -302,6 +297,9 @@ func (r *ResourceOrgPolicy) read(
 		)
 		return
 	}
+
+	// Org policy is unique for organization, we can use a dummy value for ID.
+	data.ID = types.StringValue("1")
 
 	data.DefaultServiceStrategy = types.StringValue(policy.DefaultServiceStrategy)
 
