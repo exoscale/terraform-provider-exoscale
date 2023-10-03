@@ -313,6 +313,7 @@ func (p *ExoscaleProvider) Resources(ctx context.Context) []func() resource.Reso
 		database.NewResource,
 		iam.NewResourceOrgPolicy,
 		iam.NewResourceRole,
+		iam.NewResourceAPIKey,
 	}
 }
 
