@@ -1,6 +1,26 @@
 Changelog
 =========
 
+0.102.0
+-------
+
+- v2: implement IAMv3
+
+0.101.1
+-------
+
+- fix: give correct permissions to release workflow
+
+0.101.0
+-------
+
+- v2: regenerate (2023-08-31) #599
+
+0.100.3
+-------
+
+- v2: add validation for UUID
+
 0.100.2
 -------
 
