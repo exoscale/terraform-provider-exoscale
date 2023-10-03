@@ -433,7 +433,7 @@ func (r *ResourceOrgPolicy) update(
 	err := r.client.UpdateIAMOrgPolicy(ctx, data.Zone.ValueString(), policy)
 	if err != nil {
 		d.AddError(
-			"Unable to get IAM Organization Policy",
+			"Unable to update IAM Organization Policy",
 			err.Error(),
 		)
 		return
