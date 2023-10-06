@@ -1,0 +1,4 @@
+resource "exoscale_iam_api_key" "{{ .ResourceName }}" {
+  name = "{{ .Name }}"
+  role_id = {{ .RoleID }}
+}

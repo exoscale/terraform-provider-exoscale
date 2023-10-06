@@ -35,9 +35,8 @@ install-oapi-codegen:
 # OpenAPI specifications (JSON)
 .PHONY: oapigen
 oapigen: install-oapi-codegen
-	cd v2/oapi/
-	wget -q --show-progress --progress=dot https://openapi-v2.exoscale.com/source.json -O- > source.json
+	wget -q --show-progress --progress=dot https://openapi-v2.exoscale.com/source.json -O- > v2/oapi/source.json
 	@echo
-	go generate
-	@rm source.json
-	ls -l oapi.gen.go
+	cd v2/oapi/; go generate
+	@rm v2/oapi/source.json
+	ls -l v2/oapi/oapi.gen.go

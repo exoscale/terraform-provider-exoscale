@@ -2,3 +2,4 @@ dist/
 test/
 listApis.json
 public-api.json
+release

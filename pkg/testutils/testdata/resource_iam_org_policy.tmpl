@@ -1,0 +1,20 @@
+resource "exoscale_iam_org_policy" "{{ .ResourceName }}" {
+  default_service_strategy = "{{ .DefaultServiceStrategy }}"
+
+  services = {
+  {{- range $k,$v := .Services }}
+    {{ $k }} = {
+      type = "{{ $v.Type }}"
+      rules = [
+        {{- range $p,$q := $v.Rules }}
+          {
+            action = "{{ $q.Action }}"
+            expression = "{{ $q.Expression }}"
+            {{- if $q.Resources }}resources = {{ $q.Resources }}{{ end }}
+          },
+        {{- end }}
+      ]
+    }
+  {{- end }}
+  }
+}

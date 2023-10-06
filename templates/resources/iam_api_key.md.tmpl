@@ -1,0 +1,52 @@
+---
+page_title: "{{.Name}} {{.Type}} - {{.ProviderName}}"
+subcategory: ""
+description: |-
+  Manage Exoscale IAM API Keys
+---
+
+# {{.Name}} ({{.Type}})
+
+Manage Exoscale [IAM](https://community.exoscale.com/documentation/iam/) API Keys.
+
+!> **WARNING:** This resource stores sensitive information in your Terraform state. Please be sure to correctly understand implications and how to mitigate potential risks before using it.
+
+## Example Usage
+
+```hcl
+resource "exoscale_iam_role" "my_role" {
+  name = "my-role"
+  description = "Example role"
+  editable = true
+  
+  policy = {
+    default_service_strategy = "deny"
+    services = {
+      sos = {
+        type = "allow"
+      }
+    }
+  }
+
+}
+
+
+resource "exoscale_iam_api_key" "my_api_key" {
+  name = "my-api-key"
+  role_id = exoscale_iam_role.my_role.id
+}
+```
+
+Please refer to the [examples](https://github.com/exoscale/terraform-provider-exoscale/tree/master/examples/)
+directory for complete configuration examples.
+
+{{ .SchemaMarkdown | trimspace }}
+
+-> The symbol ❗ in an attribute indicates that modifying it, will force the creation of a new resource.
+
+{{ if .HasImport -}}
+## Import
+
+{{ codefile "shell" .ImportFile }}
+
+{{- end }}
