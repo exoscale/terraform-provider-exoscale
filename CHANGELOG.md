@@ -1,5 +1,11 @@
 # Changelog
 
+## UNRELEASED
+
+FEATURES:
+
+- New resources and datasources: `exoscale_iam_api_key`, `exoscale_iam_role` and `exoscale_iam_org_policy`.
+
 ## 0.52.1 (September 15, 2023)
 
 BUG FIXES:
