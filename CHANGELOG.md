@@ -1,6 +1,6 @@
 # Changelog
 
-## UNRELEASED
+## 0.53.0 (October 6, 2023)
 
 FEATURES:
 
