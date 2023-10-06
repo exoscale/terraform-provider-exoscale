@@ -11,6 +11,8 @@ Manage Exoscale [IAM](https://community.exoscale.com/documentation/iam/) Org Pol
 
 -> IAM Organization Policy is persistent resource that can only be updated, thus terraform lifecycle is different: creation of resource updates the Org Policy and deleting resource only removes it from terraform state.
 
+!> **WARNING** Org Policy applies to the whole organization including the account used by terraform.
+
 ## Example Usage
 
 ```hcl
