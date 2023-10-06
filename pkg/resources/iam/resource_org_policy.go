@@ -19,13 +19,7 @@ import (
 	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
 )
 
-const ResourceOrgPolicyDescription = `Manage Exoscale [IAM](https://community.exoscale.com/documentation/iam/) Organization Policy.
-
-IAM Organization Policy is persistent resource that can only be updated, thus terraform lifecycle is different:
-
-- create executes update and saves the result in the terraform state;
-- delete only removes resource from terraform state.
-`
+const ResourceOrgPolicyDescription = `Manage Exoscale [IAM](https://community.exoscale.com/documentation/iam/) Organization Policy.`
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &ResourceOrgPolicy{}

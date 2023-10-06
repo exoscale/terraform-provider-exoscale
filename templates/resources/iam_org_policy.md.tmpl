@@ -1,0 +1,39 @@
+---
+page_title: "{{.Name}} {{.Type}} - {{.ProviderName}}"
+subcategory: ""
+description: |-
+  Manage Exoscale IAM Org Policy
+---
+
+# {{.Name}} ({{.Type}})
+
+Manage Exoscale [IAM](https://community.exoscale.com/documentation/iam/) Org Policy.
+
+-> IAM Organization Policy is persistent resource that can only be updated, thus terraform lifecycle is different: creation of resource updates the Org Policy and deleting resource only removes it from terraform state.
+
+## Example Usage
+
+```hcl
+resource "exoscale_iam_org_policy" "org_policy" {
+  default_service_strategy = "allow"
+  services = {
+    sos = {
+      type = "deny"
+    }
+  }
+}
+```
+
+Please refer to the [examples](https://github.com/exoscale/terraform-provider-exoscale/tree/master/examples/)
+directory for complete configuration examples.
+
+{{ .SchemaMarkdown | trimspace }}
+
+-> The symbol ❗ in an attribute indicates that modifying it, will force the creation of a new resource.
+
+{{ if .HasImport -}}
+## Import
+
+{{ codefile "shell" .ImportFile }}
+
+{{- end }}

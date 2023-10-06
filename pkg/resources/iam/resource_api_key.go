@@ -62,14 +62,14 @@ func (r *ResourceAPIKey) Schema(ctx context.Context, req resource.SchemaRequest,
 				Computed:            true,
 			},
 			"name": schema.StringAttribute{
-				MarkdownDescription: "IAM API Key name.",
+				MarkdownDescription: "❗ IAM API Key name.",
 				Required:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"role_id": schema.StringAttribute{
-				MarkdownDescription: "IAM API Key role ID.",
+				MarkdownDescription: "❗ IAM API role ID.",
 				Required:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
