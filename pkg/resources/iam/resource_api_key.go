@@ -2,18 +2,14 @@ package iam
 
 import (
 	"context"
-	"fmt"
-	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
-	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
@@ -47,7 +43,6 @@ type ResourceAPIKeyModel struct {
 	Key    types.String `tfsdk:"key"`
 	Name   types.String `tfsdk:"name"`
 	Secret types.String `tfsdk:"secret"`
-	Zone   types.String `tfsdk:"zone"`
 
 	RoleID types.String `tfsdk:"role_id"`
 
@@ -78,13 +73,6 @@ func (r *ResourceAPIKey) Schema(ctx context.Context, req resource.SchemaRequest,
 				Required:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
-				},
-			},
-			"zone": schema.StringAttribute{
-				MarkdownDescription: "The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.",
-				Required:            true,
-				Validators: []validator.String{
-					stringvalidator.OneOf(config.Zones...),
 				},
 			},
 			"key": schema.StringAttribute{
@@ -132,14 +120,14 @@ func (r *ResourceAPIKey) Create(ctx context.Context, req resource.CreateRequest,
 	ctx, cancel := context.WithTimeout(ctx, t)
 	defer cancel()
 
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(r.env, data.Zone.ValueString()))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(r.env, config.DefaultZone))
 
 	key := exoscale.APIKey{
 		Name:   data.Name.ValueStringPointer(),
 		RoleID: data.RoleID.ValueStringPointer(),
 	}
 
-	newKey, secret, err := r.client.CreateAPIKey(ctx, data.Zone.ValueString(), &key)
+	newKey, secret, err := r.client.CreateAPIKey(ctx, config.DefaultZone, &key)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to create IAM API Key",
@@ -183,7 +171,7 @@ func (r *ResourceAPIKey) Read(ctx context.Context, req resource.ReadRequest, res
 	ctx, cancel := context.WithTimeout(ctx, t)
 	defer cancel()
 
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(r.env, data.Zone.ValueString()))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(r.env, config.DefaultZone))
 
 	r.read(ctx, resp.Diagnostics, &data)
 	if resp.Diagnostics.HasError() {
@@ -198,26 +186,8 @@ func (r *ResourceAPIKey) Read(ctx context.Context, req resource.ReadRequest, res
 	})
 }
 
-// Update is NOOP.
+// Update is NOOP becauses all arguments require restart..
 func (r *ResourceAPIKey) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var stateData, planData ResourceAPIKeyModel
-
-	// Read Terraform plan data into the model
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &planData)...)
-	// Read Terraform state data (for comparison) into the model
-	resp.Diagnostics.Append(req.State.Get(ctx, &stateData)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	stateData.Zone = types.StringValue(planData.Zone.ValueString())
-
-	// Save updated data into Terraform state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &stateData)...)
-
-	tflog.Trace(ctx, "resource updated", map[string]interface{}{
-		"id": planData.ID,
-	})
 }
 
 func (r *ResourceAPIKey) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
@@ -238,11 +208,11 @@ func (r *ResourceAPIKey) Delete(ctx context.Context, req resource.DeleteRequest,
 	ctx, cancel := context.WithTimeout(ctx, t)
 	defer cancel()
 
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(r.env, data.Zone.ValueString()))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(r.env, config.DefaultZone))
 
 	err := r.client.DeleteAPIKey(
 		ctx,
-		data.Zone.ValueString(),
+		config.DefaultZone,
 		&exoscale.APIKey{Key: data.ID.ValueStringPointer()},
 	)
 	if err != nil {
@@ -259,16 +229,6 @@ func (r *ResourceAPIKey) Delete(ctx context.Context, req resource.DeleteRequest,
 }
 
 func (r *ResourceAPIKey) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	idParts := strings.Split(req.ID, "@")
-
-	if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
-		resp.Diagnostics.AddError(
-			"Unexpected Import Identifier",
-			fmt.Sprintf("Expected import identifier with format: name@zone. Got: %q", req.ID),
-		)
-		return
-	}
-
 	var data ResourceAPIKeyModel
 
 	// Set timeouts (quirk https://github.com/hashicorp/terraform-plugin-framework-timeouts/issues/46)
@@ -279,8 +239,7 @@ func (r *ResourceAPIKey) ImportState(ctx context.Context, req resource.ImportSta
 	}
 	data.Timeouts = timeouts
 
-	data.ID = types.StringValue(idParts[0])
-	data.Zone = types.StringValue(idParts[1])
+	data.ID = types.StringValue(req.ID)
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -297,7 +256,7 @@ func (r *ResourceAPIKey) read(
 ) {
 	apiKey, err := r.client.GetAPIKey(
 		ctx,
-		data.Zone.ValueString(),
+		config.DefaultZone,
 		data.ID.ValueString(),
 	)
 	if err != nil {

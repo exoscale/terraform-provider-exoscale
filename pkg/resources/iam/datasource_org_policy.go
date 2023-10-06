@@ -33,8 +33,7 @@ type DataSourceOrgPolicy struct {
 }
 
 type DataSourceOrgPolicyModel struct {
-	ID   types.String `tfsdk:"id"`
-	Zone types.String `tfsdk:"zone"`
+	ID types.String `tfsdk:"id"`
 
 	DefaultServiceStrategy types.String `tfsdk:"default_service_strategy"`
 	Services               types.Map    `tfsdk:"services"`
@@ -61,13 +60,6 @@ func (d *DataSourceOrgPolicy) Schema(
 			"id": schema.StringAttribute{
 				MarkdownDescription: "The ID of this resource.",
 				Computed:            true,
-			},
-			"zone": schema.StringAttribute{
-				MarkdownDescription: "The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.",
-				Required:            true,
-				Validators: []validator.String{
-					stringvalidator.OneOf(config.Zones...),
-				},
 			},
 			"default_service_strategy": schema.StringAttribute{
 				MarkdownDescription: "Default service strategy (`allow` or `deny`).",
@@ -154,12 +146,12 @@ func (d *DataSourceOrgPolicy) Read(ctx context.Context, req datasource.ReadReque
 	ctx, cancel := context.WithTimeout(ctx, t)
 	defer cancel()
 
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(d.env, data.Zone.ValueString()))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(d.env, config.DefaultZone))
 
 	// Org policy is unique for organization, we can use a dummy value for ID.
 	data.ID = types.StringValue("1")
 
-	policy, err := d.client.GetIAMOrgPolicy(ctx, data.Zone.ValueString())
+	policy, err := d.client.GetIAMOrgPolicy(ctx, config.DefaultZone)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to get IAM Organization Policy",

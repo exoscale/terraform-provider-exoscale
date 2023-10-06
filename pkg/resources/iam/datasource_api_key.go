@@ -7,10 +7,8 @@ import (
 	exoapi "github.com/exoscale/egoscale/v2/api"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
-	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
@@ -36,7 +34,6 @@ type DataSourceAPIKeyModel struct {
 	ID   types.String `tfsdk:"id"`
 	Key  types.String `tfsdk:"key"`
 	Name types.String `tfsdk:"name"`
-	Zone types.String `tfsdk:"zone"`
 
 	RoleID types.String `tfsdk:"role_id"`
 
@@ -66,13 +63,6 @@ func (d *DataSourceAPIKey) Schema(
 			"key": schema.StringAttribute{
 				MarkdownDescription: "The IAM API Key to match.",
 				Required:            true,
-			},
-			"zone": schema.StringAttribute{
-				MarkdownDescription: "The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.",
-				Required:            true,
-				Validators: []validator.String{
-					stringvalidator.OneOf(config.Zones...),
-				},
 			},
 			"name": schema.StringAttribute{
 				MarkdownDescription: "IAM API Key name.",
@@ -121,11 +111,11 @@ func (d *DataSourceAPIKey) Read(ctx context.Context, req datasource.ReadRequest,
 	ctx, cancel := context.WithTimeout(ctx, t)
 	defer cancel()
 
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(d.env, data.Zone.ValueString()))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(d.env, config.DefaultZone))
 
 	apiKey, err := d.client.GetAPIKey(
 		ctx,
-		data.Zone.ValueString(),
+		config.DefaultZone,
 		data.Key.ValueString(),
 	)
 	if err != nil {

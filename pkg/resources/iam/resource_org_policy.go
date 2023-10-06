@@ -6,7 +6,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -30,7 +29,6 @@ IAM Organization Policy is persistent resource that can only be updated, thus te
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &ResourceOrgPolicy{}
-var _ resource.ResourceWithImportState = &ResourceOrgPolicy{}
 
 func NewResourceOrgPolicy() resource.Resource {
 	return &ResourceOrgPolicy{}
@@ -44,8 +42,7 @@ type ResourceOrgPolicy struct {
 
 // ResourceOrgPolicyModel describes the IAM Organization Policy resource data model.
 type ResourceOrgPolicyModel struct {
-	ID   types.String `tfsdk:"id"`
-	Zone types.String `tfsdk:"zone"`
+	ID types.String `tfsdk:"id"`
 
 	DefaultServiceStrategy types.String `tfsdk:"default_service_strategy"`
 	Services               types.Map    `tfsdk:"services"`
@@ -64,13 +61,6 @@ func (r *ResourceOrgPolicy) Schema(ctx context.Context, req resource.SchemaReque
 			"id": schema.StringAttribute{
 				MarkdownDescription: "The ID of this resource.",
 				Computed:            true,
-			},
-			"zone": schema.StringAttribute{
-				MarkdownDescription: "The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.",
-				Required:            true,
-				Validators: []validator.String{
-					stringvalidator.OneOf(config.Zones...),
-				},
 			},
 			"default_service_strategy": schema.StringAttribute{
 				MarkdownDescription: "Default service strategy (`allow` or `deny`).",
@@ -159,7 +149,7 @@ func (r *ResourceOrgPolicy) Create(ctx context.Context, req resource.CreateReque
 	ctx, cancel := context.WithTimeout(ctx, t)
 	defer cancel()
 
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(r.env, data.Zone.ValueString()))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(r.env, config.DefaultZone))
 
 	// Update policy
 	r.update(ctx, resp.Diagnostics, &data)
@@ -199,7 +189,7 @@ func (r *ResourceOrgPolicy) Read(ctx context.Context, req resource.ReadRequest, 
 	ctx, cancel := context.WithTimeout(ctx, t)
 	defer cancel()
 
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(r.env, data.Zone.ValueString()))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(r.env, config.DefaultZone))
 
 	r.read(ctx, resp.Diagnostics, &data)
 	if resp.Diagnostics.HasError() {
@@ -234,7 +224,7 @@ func (r *ResourceOrgPolicy) Update(ctx context.Context, req resource.UpdateReque
 	ctx, cancel := context.WithTimeout(ctx, t)
 	defer cancel()
 
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(r.env, planData.Zone.ValueString()))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(r.env, config.DefaultZone))
 	// Update policy
 	r.update(ctx, resp.Diagnostics, &planData)
 	if resp.Diagnostics.HasError() {
@@ -259,37 +249,12 @@ func (r *ResourceOrgPolicy) Update(ctx context.Context, req resource.UpdateReque
 func (r *ResourceOrgPolicy) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 }
 
-// ImportState produces the same result as Create.
-func (r *ResourceOrgPolicy) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	var data ResourceOrgPolicyModel
-
-	// Set timeouts (quirk https://github.com/hashicorp/terraform-plugin-framework-timeouts/issues/46)
-	var timeouts timeouts.Value
-	resp.Diagnostics.Append(resp.State.GetAttribute(ctx, path.Root("timeouts"), &timeouts)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-	data.Timeouts = timeouts
-
-	data.Zone = types.StringValue(req.ID)
-	data.ID = types.StringValue("1")
-	data.DefaultServiceStrategy = types.StringNull()
-	data.Services = types.MapNull(types.ObjectType{AttrTypes: PolicyServiceModel{}.Types()})
-
-	// Save data into Terraform state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
-
-	tflog.Trace(ctx, "resource imported", map[string]interface{}{
-		"id": data.ID,
-	})
-}
-
 func (r *ResourceOrgPolicy) read(
 	ctx context.Context,
 	d diag.Diagnostics,
 	data *ResourceOrgPolicyModel,
 ) {
-	policy, err := r.client.GetIAMOrgPolicy(ctx, data.Zone.ValueString())
+	policy, err := r.client.GetIAMOrgPolicy(ctx, config.DefaultZone)
 	if err != nil {
 		d.AddError(
 			"Unable to get IAM Organization Policy",
@@ -303,8 +268,8 @@ func (r *ResourceOrgPolicy) read(
 
 	data.DefaultServiceStrategy = types.StringValue(policy.DefaultServiceStrategy)
 
+	services := map[string]PolicyServiceModel{}
 	if len(policy.Services) > 0 {
-		services := map[string]PolicyServiceModel{}
 		for name, service := range policy.Services {
 			serviceModel := PolicyServiceModel{
 				Type: types.StringPointerValue(service.Type),
@@ -346,21 +311,21 @@ func (r *ResourceOrgPolicy) read(
 
 			services[name] = serviceModel
 		}
-
-		t, dg := types.MapValueFrom(
-			ctx,
-			types.ObjectType{
-				AttrTypes: PolicyServiceModel{}.Types(),
-			},
-			services,
-		)
-		if dg.HasError() {
-			d.Append(dg...)
-			return
-		}
-
-		data.Services = t
 	}
+
+	t, dg := types.MapValueFrom(
+		ctx,
+		types.ObjectType{
+			AttrTypes: PolicyServiceModel{}.Types(),
+		},
+		services,
+	)
+	if dg.HasError() {
+		d.Append(dg...)
+		return
+	}
+
+	data.Services = t
 }
 
 func (r *ResourceOrgPolicy) update(
@@ -430,7 +395,7 @@ func (r *ResourceOrgPolicy) update(
 		}
 	}
 
-	err := r.client.UpdateIAMOrgPolicy(ctx, data.Zone.ValueString(), policy)
+	err := r.client.UpdateIAMOrgPolicy(ctx, config.DefaultZone, policy)
 	if err != nil {
 		d.AddError(
 			"Unable to update IAM Organization Policy",

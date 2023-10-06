@@ -1,0 +1,47 @@
+resource "exoscale_iam_role" "{{ .ResourceName }}" {
+  name = "{{ .Name }}"
+
+  {{- if .Description }} 
+  description = "{{ .Description }}"
+  {{ end }}
+
+  {{- if .Editable }} 
+  editable = {{ .Editable }}
+  {{ end }}
+
+  {{- if .Labels }}
+  labels = {
+  {{- range $p,$q := .Labels }}
+     {{ $p }} = "{{ $q }}"
+  {{- end }}
+  }
+  {{- end }}
+
+  {{- if .Permissions }} 
+  permissions = ["{{ .Permissions }}"]
+  {{ end }}
+
+  {{- if .Policy }}
+  policy = {
+    default_service_strategy = "{{ .Policy.DefaultServiceStrategy }}"
+    services = {
+      {{- range $k,$v := .Policy.Services }}
+      {{ $k }} = {
+        type = "{{ $v.Type }}"
+        {{- if $v.Rules }}
+        rules = [
+          {{- range $p,$q := $v.Rules }}
+          {
+            action = "{{ $q.Action }}"
+            expression = "{{ $q.Expression }}"
+            {{- if $q.Resources }}resources = {{ $q.Resources }}{{ end }}
+          },
+          {{- end }}
+        ]
+        {{- end }}
+      }
+      {{- end }}
+    }
+  }
+  {{ end }}
+}

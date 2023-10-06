@@ -2,8 +2,6 @@ package iam
 
 import (
 	"context"
-	"fmt"
-	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -46,7 +44,6 @@ type ResourceRole struct {
 type ResourceRoleModel struct {
 	ID   types.String `tfsdk:"id"`
 	Name types.String `tfsdk:"name"`
-	Zone types.String `tfsdk:"zone"`
 
 	Description types.String `tfsdk:"description"`
 	Editable    types.Bool   `tfsdk:"editable"`
@@ -75,13 +72,6 @@ func (r *ResourceRole) Schema(ctx context.Context, req resource.SchemaRequest, r
 			"name": schema.StringAttribute{
 				MarkdownDescription: "Name of IAM Role.",
 				Required:            true,
-			},
-			"zone": schema.StringAttribute{
-				MarkdownDescription: "The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.",
-				Required:            true,
-				Validators: []validator.String{
-					stringvalidator.OneOf(config.Zones...),
-				},
 			},
 			"description": schema.StringAttribute{
 				MarkdownDescription: "A free-form text describing the IAM Role",
@@ -201,7 +191,7 @@ func (r *ResourceRole) Create(ctx context.Context, req resource.CreateRequest, r
 	ctx, cancel := context.WithTimeout(ctx, t)
 	defer cancel()
 
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(r.env, data.Zone.ValueString()))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(r.env, config.DefaultZone))
 
 	role := exoscale.IAMRole{
 		Name:        data.Name.ValueStringPointer(),
@@ -306,7 +296,7 @@ func (r *ResourceRole) Create(ctx context.Context, req resource.CreateRequest, r
 		role.Policy = policy
 	}
 
-	newRole, err := r.client.CreateIAMRole(ctx, data.Zone.ValueString(), &role)
+	newRole, err := r.client.CreateIAMRole(ctx, config.DefaultZone, &role)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to create IAM Role",
@@ -349,7 +339,7 @@ func (r *ResourceRole) Read(ctx context.Context, req resource.ReadRequest, resp 
 	ctx, cancel := context.WithTimeout(ctx, t)
 	defer cancel()
 
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(r.env, data.Zone.ValueString()))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(r.env, config.DefaultZone))
 
 	r.read(ctx, resp.Diagnostics, &data)
 	if resp.Diagnostics.HasError() {
@@ -384,7 +374,7 @@ func (r *ResourceRole) Update(ctx context.Context, req resource.UpdateRequest, r
 	ctx, cancel := context.WithTimeout(ctx, t)
 	defer cancel()
 
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(r.env, planData.Zone.ValueString()))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(r.env, config.DefaultZone))
 	// Update role
 	role := exoscale.IAMRole{
 		ID:          planData.ID.ValueStringPointer(),
@@ -417,7 +407,7 @@ func (r *ResourceRole) Update(ctx context.Context, req resource.UpdateRequest, r
 		role.Permissions = permissions
 	}
 
-	err := r.client.UpdateIAMRole(ctx, planData.Zone.ValueString(), &role)
+	err := r.client.UpdateIAMRole(ctx, config.DefaultZone, &role)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to create IAM Role",
@@ -426,6 +416,7 @@ func (r *ResourceRole) Update(ctx context.Context, req resource.UpdateRequest, r
 		return
 	}
 
+	// Update policy
 	if !planData.Policy.IsUnknown() && !planData.Policy.Equal(stateData.Policy) {
 		dataPolicy := PolicyModel{}
 		dg := planData.Policy.As(ctx, &dataPolicy, basetypes.ObjectAsOptions{})
@@ -498,7 +489,7 @@ func (r *ResourceRole) Update(ctx context.Context, req resource.UpdateRequest, r
 
 		role.Policy = policy
 
-		err := r.client.UpdateIAMRolePolicy(ctx, planData.Zone.ValueString(), &role)
+		err := r.client.UpdateIAMRolePolicy(ctx, config.DefaultZone, &role)
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Unable to create IAM Role",
@@ -540,11 +531,11 @@ func (r *ResourceRole) Delete(ctx context.Context, req resource.DeleteRequest, r
 	ctx, cancel := context.WithTimeout(ctx, t)
 	defer cancel()
 
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(r.env, data.Zone.ValueString()))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(r.env, config.DefaultZone))
 
 	err := r.client.DeleteIAMRole(
 		ctx,
-		data.Zone.ValueString(),
+		config.DefaultZone,
 		&exoscale.IAMRole{ID: data.ID.ValueStringPointer()},
 	)
 	if err != nil {
@@ -561,16 +552,6 @@ func (r *ResourceRole) Delete(ctx context.Context, req resource.DeleteRequest, r
 }
 
 func (r *ResourceRole) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	idParts := strings.Split(req.ID, "@")
-
-	if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
-		resp.Diagnostics.AddError(
-			"Unexpected Import Identifier",
-			fmt.Sprintf("Expected import identifier with format: name@zone. Got: %q", req.ID),
-		)
-		return
-	}
-
 	var data ResourceRoleModel
 
 	// Set timeouts (quirk https://github.com/hashicorp/terraform-plugin-framework-timeouts/issues/46)
@@ -581,8 +562,10 @@ func (r *ResourceRole) ImportState(ctx context.Context, req resource.ImportState
 	}
 	data.Timeouts = timeouts
 
-	data.ID = types.StringValue(idParts[0])
-	data.Zone = types.StringValue(idParts[1])
+	data.ID = types.StringValue(req.ID)
+	data.Labels = types.MapNull(types.StringType)
+	data.Permissions = types.ListNull(types.StringType)
+	data.Policy = types.ObjectNull(PolicyModel{}.Types())
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -598,7 +581,7 @@ func (r *ResourceRole) read(
 	data *ResourceRoleModel,
 ) {
 
-	role, err := r.client.GetIAMRole(ctx, data.Zone.ValueString(), data.ID.ValueString())
+	role, err := r.client.GetIAMRole(ctx, config.DefaultZone, data.ID.ValueString())
 	if err != nil {
 		d.AddError(
 			"Unable to get IAM Role",
@@ -607,6 +590,7 @@ func (r *ResourceRole) read(
 		return
 	}
 
+	data.Name = types.StringPointerValue(role.Name)
 	data.Description = types.StringPointerValue(role.Description)
 	data.Editable = types.BoolPointerValue(role.Editable)
 
@@ -640,19 +624,18 @@ func (r *ResourceRole) read(
 		data.Permissions = t
 	}
 
+	policy := PolicyModel{}
 	if role.Policy != nil {
-		policy := PolicyModel{}
-
 		policy.DefaultServiceStrategy = types.StringValue(role.Policy.DefaultServiceStrategy)
+		services := map[string]PolicyServiceModel{}
 		if len(role.Policy.Services) > 0 {
-			services := map[string]PolicyServiceModel{}
 			for name, service := range role.Policy.Services {
 				serviceModel := PolicyServiceModel{
 					Type: types.StringPointerValue(service.Type),
 				}
 
+				rules := []PolicyServiceRuleModel{}
 				if len(service.Rules) > 0 {
-					rules := []PolicyServiceRuleModel{}
 					for _, rule := range service.Rules {
 						ruleModel := PolicyServiceRuleModel{
 							Action:     types.StringPointerValue(rule.Action),
@@ -670,50 +653,50 @@ func (r *ResourceRole) read(
 
 						rules = append(rules, ruleModel)
 					}
-
-					t, dg := types.ListValueFrom(
-						ctx,
-						types.ObjectType{
-							AttrTypes: PolicyServiceRuleModel{}.Types(),
-						},
-						rules,
-					)
-					if dg.HasError() {
-						d.Append(dg...)
-						return
-					}
-					serviceModel.Rules = t
 				}
+
+				t, dg := types.ListValueFrom(
+					ctx,
+					types.ObjectType{
+						AttrTypes: PolicyServiceRuleModel{}.Types(),
+					},
+					rules,
+				)
+				if dg.HasError() {
+					d.Append(dg...)
+					return
+				}
+				serviceModel.Rules = t
 
 				services[name] = serviceModel
 			}
-
-			t, dg := types.MapValueFrom(
-				ctx,
-				types.ObjectType{
-					AttrTypes: PolicyServiceModel{}.Types(),
-				},
-				services,
-			)
-			if dg.HasError() {
-				d.Append(dg...)
-				return
-			}
-
-			policy.Services = t
 		}
 
-		t, dg := types.ObjectValueFrom(
+		t, dg := types.MapValueFrom(
 			ctx,
-			PolicyModel{}.Types(),
-			policy,
+			types.ObjectType{
+				AttrTypes: PolicyServiceModel{}.Types(),
+			},
+			services,
 		)
-
 		if dg.HasError() {
 			d.Append(dg...)
 			return
 		}
 
-		data.Policy = t
+		policy.Services = t
+
 	}
+
+	p, dg := types.ObjectValueFrom(
+		ctx,
+		PolicyModel{}.Types(),
+		policy,
+	)
+
+	if dg.HasError() {
+		d.Append(dg...)
+		return
+	}
+	data.Policy = p
 }

@@ -36,7 +36,6 @@ type DataSourceRole struct {
 type DataSourceRoleModel struct {
 	ID   types.String `tfsdk:"id"`
 	Name types.String `tfsdk:"name"`
-	Zone types.String `tfsdk:"zone"`
 
 	Description types.String `tfsdk:"description"`
 	Editable    types.Bool   `tfsdk:"editable"`
@@ -81,13 +80,6 @@ func (d *DataSourceRole) Schema(
 					stringvalidator.ExactlyOneOf(path.Expressions{
 						path.MatchRoot("id"),
 					}...),
-				},
-			},
-			"zone": schema.StringAttribute{
-				MarkdownDescription: "The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.",
-				Required:            true,
-				Validators: []validator.String{
-					stringvalidator.OneOf(config.Zones...),
 				},
 			},
 			"description": schema.StringAttribute{
@@ -199,10 +191,10 @@ func (d *DataSourceRole) Read(ctx context.Context, req datasource.ReadRequest, r
 	ctx, cancel := context.WithTimeout(ctx, t)
 	defer cancel()
 
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(d.env, data.Zone.ValueString()))
+	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(d.env, config.DefaultZone))
 
 	if name := data.Name.ValueStringPointer(); name != nil {
-		roles, err := d.client.ListIAMRoles(ctx, data.Zone.ValueString())
+		roles, err := d.client.ListIAMRoles(ctx, config.DefaultZone)
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Unable to get IAM Role",
@@ -221,7 +213,7 @@ func (d *DataSourceRole) Read(ctx context.Context, req datasource.ReadRequest, r
 
 	role, err := d.client.GetIAMRole(
 		ctx,
-		data.Zone.ValueString(),
+		config.DefaultZone,
 		data.ID.ValueString(),
 	)
 	if err != nil {
@@ -232,6 +224,7 @@ func (d *DataSourceRole) Read(ctx context.Context, req datasource.ReadRequest, r
 		return
 	}
 
+	data.Name = types.StringPointerValue(role.Name)
 	data.Description = types.StringPointerValue(role.Description)
 	data.Editable = types.BoolPointerValue(role.Editable)
 

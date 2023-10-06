@@ -64,3 +64,45 @@ type ResourceNLBServiceModel struct {
 	HealthcheckTLSSNI   string
 	HealthcheckURI      string
 }
+
+// ResourceIAMOrgPolicyModel maps to resource_iam_org_policy.tmpl
+type ResourceIAMOrgPolicyModel struct {
+	ResourceName string
+
+	DefaultServiceStrategy string
+	Services               map[string]ResourceIAMPolicyServicesModel
+}
+
+// ResourceIAMPolicyServicesModel defines nested structure within IAM Policy.
+type ResourceIAMPolicyServicesModel struct {
+	Type  string
+	Rules []ResourceIAMPolicyServiceRules
+}
+
+// ResourceIAMPolicyServiceRules defines nested structure within IAM Policy Service.
+type ResourceIAMPolicyServiceRules struct {
+	Action     string
+	Expression string
+	Resources  string
+}
+
+// ResourceIAMRole maps to resource_iam_role.tmpl
+type ResourceIAMRole struct {
+	ResourceName string
+
+	Name        string
+	Description string
+	Editable    bool
+	Labels      map[string]string
+	Permissions string
+
+	Policy *ResourceIAMOrgPolicyModel
+}
+
+// ResourceAPIKeyModel maps to resource_iam_api_key.tmpl
+type ResourceAPIKeyModel struct {
+	ResourceName string
+
+	Name   string
+	RoleID string
+}
