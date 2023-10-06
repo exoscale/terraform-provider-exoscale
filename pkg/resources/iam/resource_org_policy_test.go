@@ -24,7 +24,7 @@ func testResourceOrgPolicy(t *testing.T) {
 		ResourceName:           "test",
 		DefaultServiceStrategy: "allow",
 		Services: map[string]testutils.ResourceIAMPolicyServicesModel{
-			"sos": testutils.ResourceIAMPolicyServicesModel{
+			"sos": {
 				Type: "rules",
 				Rules: []testutils.ResourceIAMPolicyServiceRules{
 					{

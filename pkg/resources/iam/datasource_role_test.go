@@ -27,7 +27,7 @@ func testDataSourceRole(t *testing.T) {
 		Policy: &testutils.ResourceIAMOrgPolicyModel{
 			DefaultServiceStrategy: "allow",
 			Services: map[string]testutils.ResourceIAMPolicyServicesModel{
-				"sos": testutils.ResourceIAMPolicyServicesModel{
+				"sos": {
 					Type: "rules",
 					Rules: []testutils.ResourceIAMPolicyServiceRules{
 						{
