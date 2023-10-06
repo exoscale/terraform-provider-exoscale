@@ -21,7 +21,6 @@ Corresponding resource: [exoscale_iam_role](../resources/iam_api_key.md).
 ### Required
 
 - `key` (String) The IAM API Key to match.
-- `zone` (String) The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.
 
 ### Optional
 

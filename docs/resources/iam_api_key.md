@@ -19,7 +19,6 @@ Manage Exoscale [IAM](https://community.exoscale.com/documentation/iam/) API Key
 
 - `name` (String) IAM API Key name.
 - `role_id` (String) IAM API Key role ID.
-- `zone` (String) The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.
 
 ### Optional
 

@@ -26,7 +26,6 @@ IAM Organization Policy is persistent resource that can only be updated, thus te
 
 - `default_service_strategy` (String) Default service strategy (`allow` or `deny`).
 - `services` (Attributes Map) IAM policy services. (see [below for nested schema](#nestedatt--services))
-- `zone` (String) The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.
 
 ### Optional
 
