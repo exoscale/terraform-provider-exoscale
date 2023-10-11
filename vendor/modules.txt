@@ -71,6 +71,7 @@ github.com/exoscale/egoscale/version
 github.com/fatih/color
 # github.com/gofrs/uuid v4.4.0+incompatible
 ## explicit
+github.com/gofrs/uuid
 # github.com/golang/protobuf v1.5.3
 ## explicit; go 1.9
 github.com/golang/protobuf/jsonpb
