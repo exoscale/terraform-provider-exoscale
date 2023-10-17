@@ -39,7 +39,6 @@ func main() {
 	check(err)
 
 	newProvider := providerserver.NewProtocol6(&provider.ExoscaleProvider{})
-
 	providers := []func() tfprotov6.ProviderServer{
 		func() tfprotov6.ProviderServer {
 			return upgradedProvider
