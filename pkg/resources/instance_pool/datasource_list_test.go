@@ -18,6 +18,7 @@ var (
 	dsListDiskSize     = "10"
 	dsListInstanceType = "standard.tiny"
 	dsListName         = acctest.RandomWithPrefix(testutils.Prefix)
+	dsListZone         = "at-vie-2"
 )
 
 var dsListConfig = fmt.Sprintf(`
@@ -47,7 +48,7 @@ resource "exoscale_instance_pool" "test2" {
   disk_size = local.disk_size
   labels = { test="test"}
 }`,
-	testutils.TestZoneName,
+	dsListZone,
 	dsListInstanceType,
 	dsListDiskSize,
 	dsListName+"_1",
