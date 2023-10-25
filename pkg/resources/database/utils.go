@@ -23,6 +23,7 @@ func validateSettings(in string, schema interface{}) (map[string]interface{}, er
 		gojsonschema.NewGoLoader(schema),
 		gojsonschema.NewStringLoader(in),
 	)
+
 	if err != nil {
 		// JSON Schema is provided by API and if loading fails there is nothing a user can to to fix the issue.
 		// One example is incompatible regex engines for pattern validation that will prevent loading JSON schema.
