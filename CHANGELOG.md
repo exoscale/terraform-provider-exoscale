@@ -9,6 +9,8 @@ IMPROVEMENTS:
 BUG FIXES:
 
 - Fixed CI Badge in README.md (#306)
+- Fixed database settings schema error when regex pattern cannot be compiled #310
+- Replaced deprecated setting in database pg test #310
 
 ## 0.53.0 (October 6, 2023)
 

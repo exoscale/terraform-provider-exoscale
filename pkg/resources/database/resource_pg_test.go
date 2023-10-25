@@ -78,7 +78,7 @@ func testResourcePg(t *testing.T) {
 	dataUpdate.MaintenanceTime = "02:34:00"
 	dataUpdate.BackupSchedule = "23:45"
 	dataUpdate.IpFilter = nil
-	dataUpdate.PgSettings = strconv.Quote(`{"autovacuum_max_workers":5,"timezone":"Europe/Zurich"}`)
+	dataUpdate.PgSettings = strconv.Quote(`{"max_worker_processes":10,"timezone":"Europe/Zurich"}`)
 	dataUpdate.PgbouncerSettings = strconv.Quote(`{"autodb_pool_size":5,"min_pool_size":10}`)
 	dataUpdate.PglookoutSettings = strconv.Quote(`{"max_failover_replication_time_lag":30}`)
 	buf = &bytes.Buffer{}
