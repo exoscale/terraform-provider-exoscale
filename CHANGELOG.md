@@ -4,6 +4,7 @@
 
 IMPROVEMENTS:
 
+- Bump google.golang.org/grpc from 1.56.0 to 1.56.3 #312 
 - Bump golang.org/x/net from 0.11.0 to 0.17.0 #308 
 
 BUG FIXES:
