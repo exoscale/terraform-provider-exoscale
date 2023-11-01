@@ -1,5 +1,11 @@
 # Changelog
 
+## UNRELEASED
+
+IMPROVEMENTS:
+
+- sks_cluster: document possibility to use no CNI at all #313 
+
 ## 0.53.1 (October 26, 2023)
 
 IMPROVEMENTS:
