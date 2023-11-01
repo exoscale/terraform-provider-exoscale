@@ -81,7 +81,7 @@ func resourceSKSCluster() *schema.Resource {
 			Type:        schema.TypeString,
 			Optional:    true,
 			Default:     defaultSKSClusterCNI,
-			Description: fmt.Sprintf("The CNI plugin that is to be used. Defaults to %q.", defaultSKSClusterCNI),
+			Description: fmt.Sprintf(`The CNI plugin that is to be used. Available options are "calico" or "cilium". Defaults to %q. Setting empty string will result in a cluster with no CNI.`, defaultSKSClusterCNI),
 		},
 		resSKSClusterAttrControlPlaneCA: {
 			Type:        schema.TypeString,
