@@ -140,9 +140,9 @@ func (d *DataSourceRole) Schema(
 												Computed:            true,
 											},
 											"resources": schema.ListAttribute{
-												MarkdownDescription: "List of resources that IAM policy rule applies to.",
-												Computed:            true,
-												ElementType:         types.StringType,
+												Computed:           true,
+												ElementType:        types.StringType,
+												DeprecationMessage: "This field is no longer suported.",
 											},
 										},
 									},
@@ -275,15 +275,7 @@ func (d *DataSourceRole) Read(ctx context.Context, req datasource.ReadRequest, r
 						ruleModel := PolicyServiceRuleModel{
 							Action:     types.StringPointerValue(rule.Action),
 							Expression: types.StringPointerValue(rule.Expression),
-						}
-
-						if rule.Resources != nil {
-							t, dg := types.ListValueFrom(ctx, types.StringType, rule.Resources)
-							if dg.HasError() {
-								resp.Diagnostics.Append(dg...)
-								return
-							}
-							ruleModel.Resources = t
+							Resources:  types.ListNull(types.StringType),
 						}
 
 						rules = append(rules, ruleModel)

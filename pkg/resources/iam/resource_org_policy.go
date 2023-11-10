@@ -8,8 +8,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listdefault"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	exoscale "github.com/exoscale/egoscale/v2"
@@ -96,10 +98,11 @@ func (r *ResourceOrgPolicy) Schema(ctx context.Context, req resource.SchemaReque
 										Optional:            true,
 									},
 									"resources": schema.ListAttribute{
-										MarkdownDescription: "List of resources that IAM policy rule applies to.",
-										Computed:            true,
-										Optional:            true,
-										ElementType:         types.StringType,
+										Computed:           true,
+										Optional:           true,
+										ElementType:        types.StringType,
+										DeprecationMessage: "This field is not suported. Specify resources using CEL expressions.",
+										Default:            listdefault.StaticValue(basetypes.NewListNull(types.StringType)),
 									},
 								},
 							},
@@ -277,15 +280,6 @@ func (r *ResourceOrgPolicy) read(
 						Expression: types.StringPointerValue(rule.Expression),
 					}
 
-					if rule.Resources != nil {
-						t, dg := types.ListValueFrom(ctx, types.StringType, rule.Resources)
-						if dg.HasError() {
-							d.Append(dg...)
-							return
-						}
-						ruleModel.Resources = t
-					}
-
 					rules = append(rules, ruleModel)
 				}
 
@@ -366,19 +360,6 @@ func (r *ResourceOrgPolicy) update(
 
 					if !rule.Expression.IsUnknown() {
 						q.Expression = rule.Expression.ValueStringPointer()
-					}
-
-					if !rule.Resources.IsUnknown() && len(rule.Resources.Elements()) > 0 {
-						elements := []types.String{}
-						dg := service.Rules.ElementsAs(ctx, &elements, false)
-						if dg.HasError() {
-							d.Append(dg...)
-							return
-						}
-						q.Resources = make([]string, 0, len(elements))
-						for _, elem := range elements {
-							q.Resources = append(q.Resources, elem.ValueString())
-						}
 					}
 
 					t.Rules = append(t.Rules, q)

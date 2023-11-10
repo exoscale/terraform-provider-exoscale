@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -142,10 +143,11 @@ func (r *ResourceRole) Schema(ctx context.Context, req resource.SchemaRequest, r
 												Optional:            true,
 											},
 											"resources": schema.ListAttribute{
-												MarkdownDescription: "List of resources that IAM policy rule applies to.",
-												Computed:            true,
-												Optional:            true,
-												ElementType:         types.StringType,
+												Computed:           true,
+												Optional:           true,
+												ElementType:        types.StringType,
+												DeprecationMessage: "This field is not suported. Specify resources using CEL expressions.",
+												Default:            listdefault.StaticValue(basetypes.NewListNull(types.StringType)),
 											},
 										},
 									},
@@ -270,19 +272,6 @@ func (r *ResourceRole) Create(ctx context.Context, req resource.CreateRequest, r
 
 						if !rule.Expression.IsUnknown() {
 							q.Expression = rule.Expression.ValueStringPointer()
-						}
-
-						if !rule.Resources.IsUnknown() && len(rule.Resources.Elements()) > 0 {
-							elements := []types.String{}
-							dg := service.Rules.ElementsAs(ctx, &elements, false)
-							if dg.HasError() {
-								resp.Diagnostics.Append(dg...)
-								return
-							}
-							q.Resources = make([]string, 0, len(elements))
-							for _, elem := range elements {
-								q.Resources = append(q.Resources, elem.ValueString())
-							}
 						}
 
 						t.Rules = append(t.Rules, q)
@@ -466,19 +455,6 @@ func (r *ResourceRole) Update(ctx context.Context, req resource.UpdateRequest, r
 							q.Expression = rule.Expression.ValueStringPointer()
 						}
 
-						if !rule.Resources.IsUnknown() && len(rule.Resources.Elements()) > 0 {
-							elements := []types.String{}
-							dg := service.Rules.ElementsAs(ctx, &elements, false)
-							if dg.HasError() {
-								resp.Diagnostics.Append(dg...)
-								return
-							}
-							q.Resources = make([]string, 0, len(elements))
-							for _, elem := range elements {
-								q.Resources = append(q.Resources, elem.ValueString())
-							}
-						}
-
 						t.Rules = append(t.Rules, q)
 					}
 				}
@@ -640,15 +616,6 @@ func (r *ResourceRole) read(
 						ruleModel := PolicyServiceRuleModel{
 							Action:     types.StringPointerValue(rule.Action),
 							Expression: types.StringPointerValue(rule.Expression),
-						}
-
-						if rule.Resources != nil {
-							t, dg := types.ListValueFrom(ctx, types.StringType, rule.Resources)
-							if dg.HasError() {
-								d.Append(dg...)
-								return
-							}
-							ruleModel.Resources = t
 						}
 
 						rules = append(rules, ruleModel)
