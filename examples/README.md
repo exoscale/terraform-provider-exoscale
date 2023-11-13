@@ -87,6 +87,12 @@ This example demonstrates how to create
 [IAM API Key](https://community.exoscale.com/documentation/iam/iam-api-key-roles-policies/)
 that only allows private instances to be deployed.
 
+## [IAM API Key DBaaS](./iam-dbaas-instance)
+
+This example demonstrates how to create
+[IAM API Key](https://community.exoscale.com/documentation/iam/iam-api-key-roles-policies/)
+that only allows access to the specific instance of DBaaS service.
+
 ## [SOS as Terraform Backend](./sos-backend)
 
 This example demonstrates how to configure Terraform to use a

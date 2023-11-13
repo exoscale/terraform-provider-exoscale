@@ -13,10 +13,6 @@ resource "exoscale_iam_role" "sos_rw_role" {
         type = "rules"
         rules = [
           {
-            expression = "true"
-            action     = "allow"
-          },
-          {
             expression = "!(parameters.bucket in ['my-test-bucket', 'my-other-bucket'])"
             action     = "deny"
           },
@@ -27,6 +23,10 @@ resource "exoscale_iam_role" "sos_rw_role" {
           {
             expression = "operation in ['create-bucket', 'delete-bucket']"
             action     = "deny"
+          },
+          {
+            expression = "true"
+            action     = "allow"
           },
         ]
       }
