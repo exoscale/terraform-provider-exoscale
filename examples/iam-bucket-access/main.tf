@@ -13,12 +13,12 @@ resource "exoscale_iam_role" "sos_rw_role" {
         type = "rules"
         rules = [
           {
-            expression = "!(parameters.bucket in ['my-test-bucket', 'my-other-bucket'])"
-            action     = "deny"
-          },
-          {
             expression = "operation in ['list-sos-buckets-usage', 'list-buckets']"
             action     = "allow"
+          },
+          {
+            expression = "!(parameters.bucket in ['predrag-test-bucket', 'predrag-other-bucket'])"
+            action     = "deny"
           },
           {
             expression = "operation in ['create-bucket', 'delete-bucket']"
@@ -50,7 +50,7 @@ resource "exoscale_iam_role" "sos_ro_role" {
             action     = "allow"
           },
           {
-            expression = "!(parameters.bucket == 'my-test-bucket')"
+            expression = "!(parameters.bucket == 'predrag-test-bucket')"
             action     = "deny"
           },
           {
