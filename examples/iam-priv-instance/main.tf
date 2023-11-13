@@ -18,7 +18,7 @@ resource "exoscale_iam_role" "my_api_role" {
           },
           {
             expression = "true"
-            action = "allow"
+            action     = "allow"
           }
         ]
       }
