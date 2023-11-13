@@ -90,7 +90,7 @@ func dsListRead(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 		ids = append(ids, *item.ID)
 
-		testInstance, err := client.FindInstance(
+		testInstance, err := client.GetInstance(
 			ctx,
 			zone,
 			*item.ID,
