@@ -1,4 +1,4 @@
-# IAM API Key SOS bucket access
+# IAM API Key SOS
 
 This example demonstrates how to provision
 [IAM](https://community.exoscale.com/documentation/iam/iam-api-key-roles-policies)

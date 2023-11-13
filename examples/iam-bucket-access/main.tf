@@ -13,11 +13,11 @@ resource "exoscale_iam_role" "sos_rw_role" {
         type = "rules"
         rules = [
           {
-            expression = "true",
+            expression = "true"
             action     = "allow"
           },
           {
-            expression = "!(parameters.bucket in ['my-test-bucket', 'my-other-bucket'])",
+            expression = "!(parameters.bucket in ['my-test-bucket', 'my-other-bucket'])"
             action     = "deny"
           },
           {
@@ -25,7 +25,7 @@ resource "exoscale_iam_role" "sos_rw_role" {
             action     = "allow"
           },
           {
-            expression = "operation in ['create-bucket', 'delete-bucket']",
+            expression = "operation in ['create-bucket', 'delete-bucket']"
             action     = "deny"
           },
         ]
@@ -68,12 +68,12 @@ resource "exoscale_iam_role" "sos_ro_role" {
 }
 
 resource "exoscale_iam_api_key" "sos_rw_key" {
-  name    = "my-api-key"
+  name    = "sos_rw-api-key"
   role_id = exoscale_iam_role.sos_rw_role.id
 }
 
 resource "exoscale_iam_api_key" "sos_ro_key" {
-  name    = "my-api-key"
+  name    = "sos-ro-api-key"
   role_id = exoscale_iam_role.sos_ro_role.id
 }
 
