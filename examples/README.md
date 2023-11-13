@@ -75,6 +75,12 @@ This example demonstrates how to setup
 [Secure Shell (SSH) keys](https://community.exoscale.com/documentation/compute/ssh-keypairs/)
 to access your computes instances, using the `exoscale_ssh_key` resource.
 
+## [IAM API Key SOS bucket access](./iam-bucket-access)
+
+This example demonstrates how to create
+[IAM API Key](https://community.exoscale.com/documentation/iam/iam-api-key-roles-policies/)
+that has restricted access to an SOS bucket.
+
 ## [SOS as Terraform Backend](./sos-backend)
 
 This example demonstrates how to configure Terraform to use a
