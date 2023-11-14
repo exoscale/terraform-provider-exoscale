@@ -1,5 +1,11 @@
 # Changelog
 
+## UNRELEASED
+
+FEATURES:
+
+- Add IAMv3 examples #316
+
 ## 0.54.0 (November 23, 2023)
 
 BREAKING CHANGES:
