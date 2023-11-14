@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
+	v2 "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
@@ -49,6 +50,15 @@ Corresponding resource: [exoscale_compute_instance](../resources/compute_instanc
 	return ret
 }
 
+var instanceListFilledFields = map[string]struct{}{
+	AttrID:              {},
+	AttrName:            {},
+	AttrZone:            {},
+	AttrType:            {},
+	AttrPublicIPAddress: {},
+	AttrState:           {},
+}
+
 func dsListRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	tflog.Debug(ctx, "beginning read", map[string]interface{}{
 		"id": utils.IDString(d, NameList),
@@ -82,36 +92,67 @@ func dsListRead(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		return diag.Errorf("failed to create filter: %q", err)
 	}
 
-	for _, item := range instances {
+	onlyListFieldsAreFiltered := true
+	filteredFields := filter.GetFilteredFields(ctx, d, DataSourceSchema())
+	for fieldName := range filteredFields {
+		if _, ok := instanceListFilledFields[fieldName]; !ok {
+			onlyListFieldsAreFiltered = false
+		}
+	}
+
+	for _, listInst := range instances {
 		// we use ID to generate a resource ID, we cannot list instances without ID.
-		if item.ID == nil {
+		if listInst.ID == nil {
 			continue
 		}
 
-		ids = append(ids, *item.ID)
+		ids = append(ids, *listInst.ID)
 
-		testInstance, err := client.GetInstance(
-			ctx,
-			zone,
-			*item.ID,
-		)
+		var inst *v2.Instance
+
+		allInstanceDataFetched := false
+		if onlyListFieldsAreFiltered {
+			inst = listInst
+		} else {
+			inst, err = client.GetInstance(
+				ctx,
+				zone,
+				*listInst.ID,
+			)
+			if err != nil {
+				return diag.FromErr(err)
+			}
+
+			allInstanceDataFetched = true
+		}
+
+		instanceData, err := dsBuildData(inst)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 
-		instanceData, err := dsBuildData(testInstance)
-		if err != nil {
-			return diag.FromErr(err)
+		getInstanceReverseDNS := func() diag.Diagnostics {
+			rdns, err := client.GetInstanceReverseDNS(ctx, zone, *inst.ID)
+			if err != nil && !errors.Is(err, exoapi.ErrNotFound) {
+				return diag.Errorf("unable to retrieve instance reverse-dns: %s", err)
+			}
+			instanceData[AttrReverseDNS] = rdns
+
+			return nil
 		}
 
-		rdns, err := client.GetInstanceReverseDNS(ctx, zone, *testInstance.ID)
-		if err != nil && !errors.Is(err, exoapi.ErrNotFound) {
-			return diag.Errorf("unable to retrieve instance reverse-dns: %s", err)
+		// to save time the reverse DNS is only fetched if it's filtered
+		// if not that it isn't filtered it will be fetched later if the
+		// instance actually passes the filter
+		_, reverseDNSFiltered := filteredFields[AttrReverseDNS]
+		if reverseDNSFiltered {
+			if diagn := getInstanceReverseDNS(); diagn != nil {
+				return diagn
+			}
 		}
-		instanceData[AttrReverseDNS] = rdns
 
-		if testInstance.InstanceTypeID != nil {
-			tid := *testInstance.InstanceTypeID
+		if inst.InstanceTypeID != nil {
+			tid := *inst.InstanceTypeID
 			if _, ok := instanceTypes[tid]; !ok {
 				instanceType, err := client.GetInstanceType(
 					ctx,
@@ -133,6 +174,28 @@ func dsListRead(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 		if !filter.CheckForMatch(instanceData, filters) {
 			continue
+		}
+
+		if !allInstanceDataFetched {
+			inst, err = client.GetInstance(
+				ctx,
+				zone,
+				*listInst.ID,
+			)
+			if err != nil {
+				return diag.FromErr(err)
+			}
+
+			instanceData, err = dsBuildData(inst)
+			if err != nil {
+				return diag.FromErr(err)
+			}
+		}
+
+		if !reverseDNSFiltered {
+			if diagn := getInstanceReverseDNS(); diagn != nil {
+				return diagn
+			}
 		}
 
 		data = append(data, instanceData)

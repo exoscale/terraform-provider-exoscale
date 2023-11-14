@@ -120,6 +120,18 @@ func createStringFilter(argIdentifier, expected string) (FilterFunc, error) {
 	return createStringFilterFunc(argIdentifier, matchFn), nil
 }
 
+func GetFilteredFields(ctx context.Context, d *schema.ResourceData, s map[string]*schema.Schema) map[string]struct{} {
+	ret := make(map[string]struct{}, 0)
+
+	for argIdentifier := range s {
+		if _, ok := d.GetOk(argIdentifier); ok {
+			ret[argIdentifier] = struct{}{}
+		}
+	}
+
+	return ret
+}
+
 // CreateFilters accepts a schema for a data source and creates a filter.FilterFunc for each attribute of type bool, int, string or map[string]string. Use these filters to create aggregate data sources like lists.
 func CreateFilters(ctx context.Context, d *schema.ResourceData, s map[string]*schema.Schema) ([]FilterFunc, error) {
 	var filters []FilterFunc
