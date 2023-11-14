@@ -95,7 +95,7 @@ resource "exoscale_compute_instance" "test" {
 		dsType,
 		dsDiskSize,
 		dsUserData,
-		dsReverseDNS,
+		dsListReverseDNS,
 		dsLabelValue,
 	)
 )
@@ -142,7 +142,7 @@ data "exoscale_compute_instance" "by-name" {
 					dsCheckAttrs("data.exoscale_compute_instance.by-name", testutils.TestAttrs{
 						instance.AttrID:         validation.ToDiagFunc(validation.IsUUID),
 						instance.AttrName:       testutils.ValidateString(dsName),
-						instance.AttrReverseDNS: testutils.ValidateString(dsReverseDNS),
+						instance.AttrReverseDNS: testutils.ValidateString(dsListReverseDNS),
 					}),
 				),
 			},

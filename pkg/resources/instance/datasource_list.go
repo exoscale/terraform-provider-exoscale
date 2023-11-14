@@ -110,6 +110,9 @@ func dsListRead(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 		var inst *v2.Instance
 
+		// to save time the full instance data is only fetched if a field
+		// is filtered which is not already returned by ListInstances.
+		// If the instance passes the filter step the full data will be fetched later.
 		allInstanceDataFetched := false
 		if onlyListFieldsAreFiltered {
 			inst = listInst
@@ -151,6 +154,9 @@ func dsListRead(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 			}
 		}
 
+		// The API returns the instance type as a UUID.
+		// We lazily convert it to the <family>.<size> format.
+		instanceType := ""
 		if inst.InstanceTypeID != nil {
 			tid := *inst.InstanceTypeID
 			if _, ok := instanceTypes[tid]; !ok {
@@ -169,7 +175,9 @@ func dsListRead(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 				)
 			}
 
-			instanceData[AttrType] = instanceTypes[tid]
+			instanceType = instanceTypes[tid]
+
+			instanceData[AttrType] = instanceType
 		}
 
 		if !filter.CheckForMatch(instanceData, filters) {
@@ -190,6 +198,8 @@ func dsListRead(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 			if err != nil {
 				return diag.FromErr(err)
 			}
+
+			instanceData[AttrType] = instanceType
 		}
 
 		if !reverseDNSFiltered {
