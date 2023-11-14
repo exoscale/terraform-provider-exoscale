@@ -17,7 +17,7 @@ resource "exoscale_iam_role" "sos_rw_role" {
             action     = "allow"
           },
           {
-            expression = "!(parameters.bucket in ['predrag-test-bucket', 'predrag-other-bucket'])"
+            expression = "!(parameters.bucket in ['my-test-bucket', 'my-other-bucket'])"
             action     = "deny"
           },
           {
@@ -50,7 +50,7 @@ resource "exoscale_iam_role" "sos_ro_role" {
             action     = "allow"
           },
           {
-            expression = "!(parameters.bucket == 'predrag-test-bucket')"
+            expression = "!(parameters.bucket == 'my-test-bucket')"
             action     = "deny"
           },
           {
