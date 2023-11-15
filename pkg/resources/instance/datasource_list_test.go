@@ -19,6 +19,7 @@ var (
 	dsListDiskSize          int64 = 10
 	dsListName                    = acctest.RandomWithPrefix(testutils.Prefix)
 	dsListSSHKeyName              = acctest.RandomWithPrefix(testutils.Prefix)
+	dsListReverseDNS              = "tf-provider-rdns-test.exoscale.com"
 	dsListType                    = "standard.tiny"
 
 	dsListConfig = fmt.Sprintf(`
@@ -44,6 +45,7 @@ resource "exoscale_compute_instance" "test" {
   template_id             = data.exoscale_compute_template.ubuntu.id
   ipv6                    = true
   ssh_key                 = exoscale_ssh_key.test.name
+	reverse_dns             = "%s"
   timeouts {
     delete = "10m"
   }
@@ -55,6 +57,7 @@ resource "exoscale_compute_instance" "test" {
 		dsListName,
 		dsListType,
 		dsListDiskSize,
+		dsListReverseDNS,
 	)
 )
 
@@ -95,11 +98,61 @@ data "exoscale_compute_instance_list" "test" {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					dsCheckListAttrs("data.exoscale_compute_instance_list.test", testutils.TestAttrs{
-						"instances.#":         testutils.ValidateString("1"),
-						"instances.0.id":      validation.ToDiagFunc(validation.NoZeroValues),
-						"instances.0.name":    testutils.ValidateString(dsListName),
-						"instances.0.type":    testutils.ValidateString(dsListType),
-						"instances.0.ssh_key": testutils.ValidateString(dsListSSHKeyName),
+						"instances.#":             testutils.ValidateString("1"),
+						"instances.0.id":          validation.ToDiagFunc(validation.NoZeroValues),
+						"instances.0.name":        testutils.ValidateString(dsListName),
+						"instances.0.type":        testutils.ValidateString(dsListType),
+						"instances.0.ssh_key":     testutils.ValidateString(dsListSSHKeyName),
+						"instances.0.disk_size":   testutils.ValidateString(fmt.Sprint(dsDiskSize)),
+						"instances.0.reverse_dns": testutils.ValidateString(dsListReverseDNS + "."),
+					}),
+				),
+			},
+			{
+				Config: fmt.Sprintf(`
+			%s
+
+			data "exoscale_compute_instance_list" "test" {
+			  zone = local.zone
+			  reverse_dns = %q
+			}
+			`,
+					dsListConfig,
+					dsListReverseDNS+".",
+				),
+				Check: resource.ComposeTestCheckFunc(
+					dsCheckListAttrs("data.exoscale_compute_instance_list.test", testutils.TestAttrs{
+						"instances.#":             testutils.ValidateString("1"),
+						"instances.0.id":          validation.ToDiagFunc(validation.NoZeroValues),
+						"instances.0.name":        testutils.ValidateString(dsListName),
+						"instances.0.type":        testutils.ValidateString(dsListType),
+						"instances.0.ssh_key":     testutils.ValidateString(dsListSSHKeyName),
+						"instances.0.disk_size":   testutils.ValidateString(fmt.Sprint(dsDiskSize)),
+						"instances.0.reverse_dns": testutils.ValidateString(dsListReverseDNS + "."),
+					}),
+				),
+			},
+			{
+				Config: fmt.Sprintf(`
+			%s
+
+			data "exoscale_compute_instance_list" "test" {
+			  zone = local.zone
+			  disk_size = %d
+			}
+			`,
+					dsListConfig,
+					dsListDiskSize,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					dsCheckListAttrs("data.exoscale_compute_instance_list.test", testutils.TestAttrs{
+						"instances.#":             testutils.ValidateString("1"),
+						"instances.0.id":          validation.ToDiagFunc(validation.NoZeroValues),
+						"instances.0.name":        testutils.ValidateString(dsListName),
+						"instances.0.type":        testutils.ValidateString(dsListType),
+						"instances.0.ssh_key":     testutils.ValidateString(dsListSSHKeyName),
+						"instances.0.disk_size":   testutils.ValidateString(fmt.Sprint(dsDiskSize)),
+						"instances.0.reverse_dns": testutils.ValidateString(dsListReverseDNS + "."),
 					}),
 				),
 			},

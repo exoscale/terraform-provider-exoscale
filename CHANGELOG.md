@@ -5,6 +5,7 @@
 IMPROVEMENTS:
 
 - sks_cluster: document possibility to use no CNI at all #313 
+- optimize exoscale_compute_instance_list #317 
 
 ## 0.53.1 (October 26, 2023)
 
