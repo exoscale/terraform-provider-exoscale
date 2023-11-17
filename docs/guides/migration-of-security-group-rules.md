@@ -6,14 +6,14 @@ description: |-
 
 # Migrating from security_group_rules to security_group
 
--> This migration guide applies to Exoscale Terraform Provider **version 0.31.3 or above**.
+-> This migration guide applies to Exoscale Terraform Provider **version 0.31.3 to 0.53.2**.
 
 This page helps you migrate from an `exoscale_security_group_rules` resource (which is deprecated) to a set of `exoscale_security_group_rule`.
 
 ~> **Note:** Before migrating `exoscale_security_group_rules` resources you need to ensure you use the latest version of Terraform and have a clean configuration.
 
 Before proceeding, please:
-- Upgrade the Exoscale provider to at least v0.31.3: allow us to run [`terraform import`](https://www.terraform.io/docs/commands/import.html) on `exoscale_security_group` and `exoscale_security_group_rule` resources. 
+- Upgrade the Exoscale provider to at least v0.31.3: allow us to run [`terraform import`](https://www.terraform.io/docs/commands/import.html) on `exoscale_security_group` and `exoscale_security_group_rule` resources.
 - Ensure your configuration can be successfully applied: [`terraform plan`](https://www.terraform.io/docs/commands/plan.html) must NOT output errors, changes, or moves of resources
 - Have the [Exoscale cli](https://github.com/exoscale/cli/) to retrieve IDs of security groups and security group rules
 - Perform a backup of your state! We are going to manipulate it, and errors can always happen. Remote states can be retrieved with [`terraform state pull` and restored with `terraform state push`](https://www.terraform.io/cli/state/recover). If you keep your state as a single local file, a regular file copy can do the job.
@@ -77,7 +77,7 @@ exo compute sg list
 The Terraform state contains them as well:
 
 ```bash
-terraform state list                                                          
+terraform state list
 # [output]
 # exoscale_security_group.bastion
 # exoscale_security_group.webapp
@@ -97,7 +97,7 @@ After these resources are removed from the state, we will have to import `exosca
 
 ## Applying the migration plan
 
-### Removing the security group from the state 
+### Removing the security group from the state
 
 This step is pretty straightforward: we will have to issue a `terraform state rm` command for each resources we have to
 remove from the state. In our example, we have to remove `exoscale_security_group.webapp`, and `exoscale_security_group_rules.webapp`:
@@ -108,7 +108,7 @@ terraform state rm exoscale_security_group_rules.webapp
 # Removed exoscale_security_group_rules.webapp
 # Successfully removed 1 resource instance(s).
 
-terraform state rm exoscale_security_group.webapp      
+terraform state rm exoscale_security_group.webapp
 # [output]
 # Removed exoscale_security_group.webapp
 # Successfully removed 1 resource instance(s).
