@@ -20,6 +20,10 @@ IMPROVEMENTS:
 
 - documentation: update SOS backend configuration demo #318
 
+DEPRECATIONS:
+
+- IAM Policy rule resources field is deprecated in all resources #315
+
 ## 0.53.2 (November 15, 2023)
 
 IMPROVEMENTS:
