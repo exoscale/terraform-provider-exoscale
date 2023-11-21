@@ -46,6 +46,7 @@ func resourceIAMAccessKey() *schema.Resource {
 			resIAMAccessKeyAttrOperations: {
 				Type:     schema.TypeSet,
 				Optional: true,
+				Computed: true,
 				ForceNew: true,
 				Set:      schema.HashString,
 				Elem: &schema.Schema{
