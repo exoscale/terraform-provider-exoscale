@@ -6,14 +6,19 @@ terraform {
   }
 
   backend "s3" {
-    bucket   = "example-provisioning-bucket"
-    key      = "terraform.tfstate"
-    region   = "ch-gva-2"
-    endpoint = "https://sos-ch-gva-2.exo.io"
+    bucket = "example-provisioning-bucket"
+    key    = "terraform.tfstate"
+    region = "ch-gva-2"
+
+    endpoints = {
+      s3 = "https://sos-ch-gva-2.exo.io"
+    }
 
     # Disable AWS-specific features
     skip_credentials_validation = true
     skip_region_validation      = true
+    skip_requesting_account_id  = true
+    skip_s3_checksum            = true
   }
 }
 
