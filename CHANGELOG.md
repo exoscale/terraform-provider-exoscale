@@ -16,6 +16,10 @@ IMPROVEMENTS:
 
 - documentation: update SOS backend configuration demo #318
 
+BUG FIXES:
+
+- iam_access_key: fix unexpected changes in operations field (#319)
+
 ## 0.53.2 (November 15, 2023)
 
 IMPROVEMENTS:
