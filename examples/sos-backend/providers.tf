@@ -6,9 +6,9 @@ terraform {
   }
 
   backend "s3" {
-    bucket   = "example-provisioning-bucket"
-    key      = "terraform.tfstate"
-    region   = "ch-gva-2"
+    bucket = "example-provisioning-bucket"
+    key    = "terraform.tfstate"
+    region = "ch-gva-2"
 
     endpoints = {
       s3 = "https://sos-ch-gva-2.exo.io"
