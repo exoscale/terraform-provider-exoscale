@@ -158,7 +158,7 @@ func testAccCheckResourceDomainRecordExists(n string, domain *exo.DNSDomain, rec
 			return errors.New("resource ID not set")
 		}
 
-		client := GetComputeClient(testAccProvider.Meta())
+		client := getClient(testAccProvider.Meta())
 		r, err := client.GetDNSDomainRecord(context.TODO(), defaultZone, *domain.ID, rs.Primary.ID)
 		if err != nil {
 			return err
@@ -192,7 +192,7 @@ func testAccCheckResourceDomainRecordAttributes(n string, expected testAttrs) re
 }
 
 func testAccCheckResourceDomainRecordDestroy(s *terraform.State) error {
-	client := GetComputeClient(testAccProvider.Meta())
+	client := getClient(testAccProvider.Meta())
 
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "exoscale_domain_record" {

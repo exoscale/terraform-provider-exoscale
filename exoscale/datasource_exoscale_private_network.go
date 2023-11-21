@@ -89,7 +89,7 @@ func dataSourcePrivateNetworkRead(ctx context.Context, d *schema.ResourceData, m
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client := getClient(meta)
 
 	privateNetworkID, byPrivateNetworkID := d.GetOk(dsPrivateNetworkAttrID)
 	privateNetworkName, byPrivateNetworkName := d.GetOk(dsPrivateNetworkAttrName)

@@ -32,7 +32,7 @@ locals {
   zone = "%s"
 }
 
-data "exoscale_compute_template" "template" {
+data "exoscale_template" "template" {
   zone = local.zone
   name = "%s"
 }
@@ -40,7 +40,7 @@ data "exoscale_compute_template" "template" {
 resource "exoscale_instance_pool" "test" {
   zone             = local.zone
   name             = "%s"
-  template_id      = data.exoscale_compute_template.template.id
+  template_id      = data.exoscale_template.template.id
   service_offering = "medium"
   size             = 1
   disk_size        = 10
@@ -102,7 +102,7 @@ locals {
   zone = "%s"
 }
 
-data "exoscale_compute_template" "template" {
+data "exoscale_template" "template" {
   zone = local.zone
   name = "%s"
 }
@@ -110,7 +110,7 @@ data "exoscale_compute_template" "template" {
 resource "exoscale_instance_pool" "test" {
   zone             = local.zone
   name             = "%s"
-  template_id      = data.exoscale_compute_template.template.id
+  template_id      = data.exoscale_template.template.id
   service_offering = "medium"
   size             = 1
   disk_size        = 10
@@ -285,13 +285,13 @@ func testAccCheckResourceNLBExists(r string, nlb *egoscale.NetworkLoadBalancer) 
 			return errors.New("resource ID not set")
 		}
 
-		client := GetComputeClient(testAccProvider.Meta())
+		client := getClient(testAccProvider.Meta())
 		ctx := exoapi.WithEndpoint(
 			context.Background(),
 			exoapi.NewReqEndpoint(testEnvironment, testZoneName),
 		)
 
-		res, err := client.Client.GetNetworkLoadBalancer(ctx, testZoneName, rs.Primary.ID)
+		res, err := client.GetNetworkLoadBalancer(ctx, testZoneName, rs.Primary.ID)
 		if err != nil {
 			return err
 		}
@@ -303,7 +303,7 @@ func testAccCheckResourceNLBExists(r string, nlb *egoscale.NetworkLoadBalancer) 
 
 func testAccCheckResourceNLBDestroy(nlb *egoscale.NetworkLoadBalancer) resource.TestCheckFunc {
 	return func(_ *terraform.State) error {
-		client := GetComputeClient(testAccProvider.Meta())
+		client := getClient(testAccProvider.Meta())
 		ctx := exoapi.WithEndpoint(
 			context.Background(),
 			exoapi.NewReqEndpoint(testEnvironment, testZoneName),

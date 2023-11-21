@@ -527,7 +527,7 @@ func testAccCheckResourceElasticIPExists(r string, elasticIP *egoscale.ElasticIP
 			return errors.New("resource ID not set")
 		}
 
-		client := GetComputeClient(testAccProvider.Meta())
+		client := getClient(testAccProvider.Meta())
 
 		ctx := exoapi.WithEndpoint(context.Background(), exoapi.NewReqEndpoint(testEnvironment, testZoneName))
 		res, err := client.GetElasticIP(ctx, testZoneName, rs.Primary.ID)
@@ -542,7 +542,7 @@ func testAccCheckResourceElasticIPExists(r string, elasticIP *egoscale.ElasticIP
 
 func testAccCheckResourceElasticIPDestroy(elasticIP *egoscale.ElasticIP) resource.TestCheckFunc {
 	return func(_ *terraform.State) error {
-		client := GetComputeClient(testAccProvider.Meta())
+		client := getClient(testAccProvider.Meta())
 		ctx := exoapi.WithEndpoint(context.Background(), exoapi.NewReqEndpoint(testEnvironment, testZoneName))
 
 		_, err := client.GetElasticIP(ctx, testZoneName, *elasticIP.ID)

@@ -45,37 +45,38 @@ locals {
   zone = "%s"
 }
 
-data "exoscale_compute_template" "template" {
+data "exoscale_template" "template" {
   zone = local.zone
   name = "%s"
 }
 
-resource "exoscale_affinity" "test" {
+resource "exoscale_anti_affinity_group" "test" {
   name = "%s"
 }
 
-resource "exoscale_network" "test" {
+resource "exoscale_private_network" "test" {
   zone = local.zone
   name = "%s"
 }
 
-resource "exoscale_ssh_keypair" "test" {
+resource "exoscale_ssh_key" "test" {
   name = "%s"
+  public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB8bfA67mQWv4eGND/XVtPx1JW6RAqafub1lV1EcpB+b test"
 }
 
 resource "exoscale_instance_pool" "test" {
   zone               = local.zone
   name               = "%s"
   description        = "%s"
-  template_id        = data.exoscale_compute_template.template.id
+  template_id        = data.exoscale_template.template.id
   instance_type      = "%s"
   instance_prefix    = "%s"
   size               = %s
   disk_size          = %s
   ipv6               = false
-  key_pair           = exoscale_ssh_keypair.test.name
-  affinity_group_ids = [exoscale_affinity.test.id]
-  network_ids        = [exoscale_network.test.id]
+  key_pair           = exoscale_ssh_key.test.name
+  affinity_group_ids = [exoscale_anti_affinity_group.test.id]
+  network_ids        = [exoscale_private_network.test.id]
   user_data          = "%s"
 
   labels = {

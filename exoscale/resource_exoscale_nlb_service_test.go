@@ -53,7 +53,7 @@ locals {
   zone = "%s"
 }
 
-data "exoscale_compute_template" "template" {
+data "exoscale_template" "template" {
   zone = local.zone
   name = "%s"
 }
@@ -61,7 +61,7 @@ data "exoscale_compute_template" "template" {
 resource "exoscale_instance_pool" "test" {
   zone             = local.zone
   name             = "%s"
-  template_id      = data.exoscale_compute_template.template.id
+  template_id      = data.exoscale_template.template.id
   service_offering = "small"
   size             = 1
   disk_size        = 10
@@ -130,7 +130,7 @@ locals {
   zone = "%s"
 }
 
-data "exoscale_compute_template" "template" {
+data "exoscale_template" "template" {
   zone = local.zone
   name = "%s"
 }
@@ -138,7 +138,7 @@ data "exoscale_compute_template" "template" {
 resource "exoscale_instance_pool" "test" {
   zone             = local.zone
   name             = "%s"
-  template_id      = data.exoscale_compute_template.template.id
+  template_id      = data.exoscale_template.template.id
   service_offering = "small"
   size             = 2
   disk_size        = 10
@@ -367,13 +367,13 @@ func testAccCheckResourceNLBServiceExists(r string, nlbService *egoscale.Network
 			return fmt.Errorf("resource attribute %q not set", resNLBServiceAttrNLBID)
 		}
 
-		client := GetComputeClient(testAccProvider.Meta())
+		client := getClient(testAccProvider.Meta())
 		ctx := exoapi.WithEndpoint(
 			context.Background(),
 			exoapi.NewReqEndpoint(testEnvironment, testZoneName),
 		)
 
-		nlb, err := client.Client.GetNetworkLoadBalancer(ctx, testZoneName, nlbID)
+		nlb, err := client.GetNetworkLoadBalancer(ctx, testZoneName, nlbID)
 		if err != nil {
 			return err
 		}
@@ -405,7 +405,7 @@ func testAccCheckResourceNLBServiceDestroy(r string) resource.TestCheckFunc {
 			return fmt.Errorf("resource attribute %q not set", resNLBServiceAttrNLBID)
 		}
 
-		client := GetComputeClient(testAccProvider.Meta())
+		client := getClient(testAccProvider.Meta())
 		ctx := exoapi.WithEndpoint(
 			context.Background(),
 			exoapi.NewReqEndpoint(testEnvironment, testZoneName),

@@ -40,8 +40,7 @@ func resourceSSHKey() *schema.Resource {
 			},
 			resSSHKeyAttrPublicKey: {
 				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
+				Required:    true,
 				ForceNew:    true,
 				Description: "The SSH *public* key that will be authorized in compute instances.",
 			},
@@ -74,18 +73,13 @@ func resourceSSHKeyCreate(ctx context.Context, d *schema.ResourceData, meta inte
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
-
-	publicKey, ok := d.GetOk(resSSHKeyAttrPublicKey)
-	if !ok {
-		return diag.Errorf("a value must be provided for attribute %q", resSSHKeyAttrPublicKey)
-	}
+	client := getClient(meta)
 
 	sshKey, err := client.RegisterSSHKey(
 		ctx,
 		zone,
 		d.Get(resSSHKeyAttrName).(string),
-		publicKey.(string),
+		d.Get(resSSHKeyAttrPublicKey).(string),
 	)
 	if err != nil {
 		return diag.FromErr(err)
@@ -111,9 +105,9 @@ func resourceSSHKeyRead(ctx context.Context, d *schema.ResourceData, meta interf
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client := getClient(meta)
 
-	securityGroup, err := client.GetSSHKey(ctx, zone, d.Id())
+	sshKey, err := client.GetSSHKey(ctx, zone, d.Id())
 	if err != nil {
 		if errors.Is(err, exoapi.ErrNotFound) {
 			// Resource doesn't exist anymore, signaling the core to remove it from the state.
@@ -127,7 +121,7 @@ func resourceSSHKeyRead(ctx context.Context, d *schema.ResourceData, meta interf
 		"id": resourceSSHKeyIDString(d),
 	})
 
-	return diag.FromErr(resourceSSHKeyApply(ctx, d, securityGroup))
+	return diag.FromErr(resourceSSHKeyApply(ctx, d, sshKey))
 }
 
 func resourceSSHKeyDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -141,7 +135,7 @@ func resourceSSHKeyDelete(ctx context.Context, d *schema.ResourceData, meta inte
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client := getClient(meta)
 
 	if err := client.DeleteSSHKey(ctx, zone, &egoscale.SSHKey{Name: nonEmptyStringPtr(d.Id())}); err != nil {
 		return diag.FromErr(err)

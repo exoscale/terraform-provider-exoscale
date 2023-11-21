@@ -119,7 +119,7 @@ func resourceSKSKubeconfigCreate(ctx context.Context, d *schema.ResourceData, me
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client := getClient(meta)
 
 	cluster, err := client.GetSKSCluster(ctx, zone, d.Get(resSKSKubeconfigAttrClusterID).(string))
 	if err != nil {

@@ -17,8 +17,8 @@ import (
 var (
 	dsListDiskSize     = "10"
 	dsListInstanceType = "standard.tiny"
-	dsListKeyPair      = acctest.RandomWithPrefix(testutils.Prefix)
 	dsListName         = acctest.RandomWithPrefix(testutils.Prefix)
+	dsListZone         = "at-vie-2"
 )
 
 var dsListConfig = fmt.Sprintf(`
@@ -27,36 +27,30 @@ locals {
 	instance_type = "%s"
 	disk_size = "%s"
 }
-resource "exoscale_ssh_keypair" "test" {
-  name = "%s"
-}
-data "exoscale_compute_template" "ubuntu" {
+data "exoscale_template" "ubuntu" {
   zone = local.zone
   name = "Linux Ubuntu 20.04 LTS 64-bit"
 }
 resource "exoscale_instance_pool" "test1" {
   zone = local.zone
   name = "%s"
-  template_id = data.exoscale_compute_template.ubuntu.id
+  template_id = data.exoscale_template.ubuntu.id
   instance_type = local.instance_type
   size = 1
   disk_size = local.disk_size
-  key_pair = exoscale_ssh_keypair.test.name
 }
 resource "exoscale_instance_pool" "test2" {
   zone = local.zone
   name = "%s"
-  template_id = data.exoscale_compute_template.ubuntu.id
+  template_id = data.exoscale_template.ubuntu.id
   instance_type = local.instance_type
   size = 1
   disk_size = local.disk_size
-  key_pair = exoscale_ssh_keypair.test.name
   labels = { test="test"}
 }`,
-	testutils.TestZoneName,
+	dsListZone,
 	dsListInstanceType,
 	dsListDiskSize,
-	dsListKeyPair,
 	dsListName+"_1",
 	dsListName+"_2",
 )

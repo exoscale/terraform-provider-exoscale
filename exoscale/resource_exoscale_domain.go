@@ -96,7 +96,8 @@ func resourceDomainStateUpgradeV0(
 	rawState map[string]interface{},
 	meta interface{},
 ) (map[string]interface{}, error) {
-	client := GetComputeClient(meta)
+
+	client := getClient(meta)
 
 	name := rawState["id"].(string)
 	domains, err := client.ListDNSDomains(ctx, defaultZone)
@@ -123,7 +124,7 @@ func resourceDomainCreate(ctx context.Context, d *schema.ResourceData, meta inte
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), defaultZone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client := getClient(meta)
 
 	domainName := d.Get("name").(string)
 	domain, err := client.CreateDNSDomain(ctx, defaultZone, &exo.DNSDomain{UnicodeName: &domainName})
@@ -150,7 +151,7 @@ func resourceDomainExists(d *schema.ResourceData, meta interface{}) (bool, error
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), defaultZone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client := getClient(meta)
 
 	_, err := client.GetDNSDomain(ctx, defaultZone, d.Id())
 	if err != nil {
@@ -172,7 +173,7 @@ func resourceDomainRead(ctx context.Context, d *schema.ResourceData, meta interf
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), defaultZone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client := getClient(meta)
 
 	domain, err := client.GetDNSDomain(ctx, defaultZone, d.Id())
 	if err != nil {
@@ -200,7 +201,7 @@ func resourceDomainDelete(ctx context.Context, d *schema.ResourceData, meta inte
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), defaultZone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client := getClient(meta)
 
 	domain, err := client.GetDNSDomain(ctx, defaultZone, d.Id())
 	if err != nil {
@@ -224,7 +225,7 @@ func resourceDomainImport(ctx context.Context, d *schema.ResourceData, meta inte
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), defaultZone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client := getClient(meta)
 
 	domain, err := client.GetDNSDomain(ctx, defaultZone, d.Id())
 	if err != nil {

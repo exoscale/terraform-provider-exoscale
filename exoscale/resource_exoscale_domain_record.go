@@ -129,7 +129,7 @@ func resourceDomainRecordStateUpgradeV0(
 	rawState map[string]interface{},
 	meta interface{},
 ) (map[string]interface{}, error) {
-	client := GetComputeClient(meta)
+	client := getClient(meta)
 
 	domainName := rawState["domain"].(string)
 	domains, err := client.ListDNSDomains(ctx, defaultZone)
@@ -170,7 +170,7 @@ func resourceDomainRecordCreate(ctx context.Context, d *schema.ResourceData, met
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), defaultZone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client := getClient(meta)
 
 	name := d.Get("name").(string)
 	content := d.Get("content").(string)
@@ -208,7 +208,7 @@ func resourceDomainRecordExists(d *schema.ResourceData, meta interface{}) (bool,
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), defaultZone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client := getClient(meta)
 
 	domainID := d.Get("domain").(string)
 
@@ -264,7 +264,7 @@ func resourceDomainRecordRead(ctx context.Context, d *schema.ResourceData, meta 
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), defaultZone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client := getClient(meta)
 
 	domainID := d.Get("domain").(string)
 
@@ -340,7 +340,7 @@ func resourceDomainRecordUpdate(ctx context.Context, d *schema.ResourceData, met
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), defaultZone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client := getClient(meta)
 
 	name := d.Get("name").(string)
 	content := d.Get("content").(string)
@@ -399,7 +399,7 @@ func resourceDomainRecordDelete(ctx context.Context, d *schema.ResourceData, met
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), defaultZone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client := getClient(meta)
 
 	record, err := client.GetDNSDomainRecord(ctx, defaultZone, d.Get("domain").(string), d.Id())
 	if err != nil {

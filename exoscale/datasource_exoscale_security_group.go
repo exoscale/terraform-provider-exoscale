@@ -59,7 +59,7 @@ func dataSourceSecurityGroupRead(ctx context.Context, d *schema.ResourceData, me
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client := getClient(meta)
 
 	securityGroupID, bySecurityGroupID := d.GetOk(dsSecurityGroupAttrID)
 	securityGroupName, bySecurityGroupName := d.GetOk(dsSecurityGroupAttrName)

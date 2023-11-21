@@ -5,8 +5,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/exoscale/egoscale"
-	exov1 "github.com/exoscale/egoscale"
 	exov2 "github.com/exoscale/egoscale/v2"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
@@ -14,20 +12,15 @@ import (
 
 // BaseConfig represents the provider structure
 type BaseConfig struct {
-	Key             string
-	Secret          string
-	Timeout         time.Duration
-	ComputeEndpoint string
-	DNSEndpoint     string
-	Environment     string
-	ComputeClient   *egoscale.Client
-	DNSClient       *egoscale.Client
+	Key         string
+	Secret      string
+	Timeout     time.Duration
+	Environment string
 }
 
 type ExoscaleProviderConfig struct {
 	Config      BaseConfig
 	ClientV2    *exov2.Client
-	ClientV1    *exov1.Client
 	Environment string
 }
 

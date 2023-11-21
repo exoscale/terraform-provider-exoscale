@@ -47,7 +47,7 @@ func getClusterList(ctx context.Context, d *schema.ResourceData, meta interface{
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client := getClient(meta)
 
 	clusters, err := client.ListSKSClusters(ctx, zone)
 	if err != nil {

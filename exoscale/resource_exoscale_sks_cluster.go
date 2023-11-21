@@ -249,7 +249,7 @@ func resourceSKSClusterCreate(ctx context.Context, d *schema.ResourceData, meta 
 	defer cancel()
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 
-	client := GetComputeClient(meta)
+	client := getClient(meta)
 
 	sksCluster := new(egoscale.SKSCluster)
 
@@ -380,7 +380,7 @@ func resourceSKSClusterRead(ctx context.Context, d *schema.ResourceData, meta in
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client := getClient(meta)
 
 	sksCluster, err := client.GetSKSCluster(ctx, zone, d.Id())
 	if err != nil {
@@ -396,7 +396,7 @@ func resourceSKSClusterRead(ctx context.Context, d *schema.ResourceData, meta in
 		"id": resourceSKSClusterIDString(d),
 	})
 
-	certificates, err := readClusterCertificates(client.Client, ctx, zone, sksCluster)
+	certificates, err := readClusterCertificates(client, ctx, zone, sksCluster)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -415,7 +415,7 @@ func resourceSKSClusterUpdate(ctx context.Context, d *schema.ResourceData, meta 
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client := getClient(meta)
 
 	sksCluster, err := client.GetSKSCluster(ctx, zone, d.Id())
 	if err != nil {
@@ -483,7 +483,7 @@ func resourceSKSClusterDelete(ctx context.Context, d *schema.ResourceData, meta 
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client := getClient(meta)
 
 	clusterID := d.Id()
 	err := client.DeleteSKSCluster(ctx, zone, &egoscale.SKSCluster{ID: &clusterID})

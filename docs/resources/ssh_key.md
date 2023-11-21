@@ -43,10 +43,10 @@ Please refer to the [examples](https://github.com/exoscale/terraform-provider-ex
 ### Required
 
 - `name` (String) ❗ The SSH key name.
+- `public_key` (String) ❗ The SSH *public* key that will be authorized in compute instances.
 
 ### Optional
 
-- `public_key` (String) ❗ The SSH *public* key that will be authorized in compute instances.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only

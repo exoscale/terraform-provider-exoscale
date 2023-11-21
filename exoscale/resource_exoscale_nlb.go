@@ -111,7 +111,7 @@ func resourceNLBCreate(ctx context.Context, d *schema.ResourceData, meta interfa
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client := getClient(meta)
 
 	nlb := new(egoscale.NetworkLoadBalancer)
 
@@ -156,7 +156,7 @@ func resourceNLBRead(ctx context.Context, d *schema.ResourceData, meta interface
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client := getClient(meta)
 
 	nlb, err := client.GetNetworkLoadBalancer(ctx, zone, d.Id())
 	if err != nil {
@@ -186,7 +186,7 @@ func resourceNLBUpdate(ctx context.Context, d *schema.ResourceData, meta interfa
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client := getClient(meta)
 
 	nlb, err := client.GetNetworkLoadBalancer(ctx, zone, d.Id())
 	if err != nil {
@@ -240,7 +240,7 @@ func resourceNLBDelete(ctx context.Context, d *schema.ResourceData, meta interfa
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client := getClient(meta)
 
 	nlbID := d.Id()
 	err := client.DeleteNetworkLoadBalancer(ctx, zone, &egoscale.NetworkLoadBalancer{ID: &nlbID})

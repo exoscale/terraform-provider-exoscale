@@ -307,7 +307,7 @@ func testAccCheckResourceSecurityGroupRuleExists(
 			return fmt.Errorf("resource attribute %q not set", resSecurityGroupRuleAttrSecurityGroupID)
 		}
 
-		client := GetComputeClient(testAccProvider.Meta())
+		client := getClient(testAccProvider.Meta())
 		ctx := exoapi.WithEndpoint(context.Background(), exoapi.NewReqEndpoint(testEnvironment, testZoneName))
 
 		securityGroup, err := client.GetSecurityGroup(ctx, testZoneName, securityGroupID)
@@ -342,7 +342,7 @@ func testAccCheckResourceSecurityGroupRuleDestroy(r string) resource.TestCheckFu
 			return fmt.Errorf("resource attribute %q not set", resSecurityGroupRuleAttrUserSecurityGroupID)
 		}
 
-		client := GetComputeClient(testAccProvider.Meta())
+		client := getClient(testAccProvider.Meta())
 		ctx := exoapi.WithEndpoint(context.Background(), exoapi.NewReqEndpoint(testEnvironment, testZoneName))
 
 		securityGroup, err := client.GetSecurityGroup(ctx, testZoneName, securityGroupID)

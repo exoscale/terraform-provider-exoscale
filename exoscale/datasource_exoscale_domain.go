@@ -37,7 +37,7 @@ func dataSourceDomainRead(ctx context.Context, d *schema.ResourceData, meta inte
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), defaultZone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client := getClient(meta)
 
 	domainName := d.Get("name")
 	var domain *exo.DNSDomain

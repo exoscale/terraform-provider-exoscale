@@ -107,7 +107,7 @@ func resourcePrivateNetworkCreate(ctx context.Context, d *schema.ResourceData, m
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client := getClient(meta)
 
 	privateNetwork := &egoscale.PrivateNetwork{
 		Name: nonEmptyStringPtr(d.Get(resPrivateNetworkAttrName).(string)),
@@ -165,7 +165,7 @@ func resourcePrivateNetworkRead(ctx context.Context, d *schema.ResourceData, met
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client := getClient(meta)
 
 	privateNetwork, err := client.GetPrivateNetwork(ctx, zone, d.Id())
 	if err != nil {
@@ -195,7 +195,7 @@ func resourcePrivateNetworkUpdate(ctx context.Context, d *schema.ResourceData, m
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client := getClient(meta)
 
 	privateNetwork, err := client.GetPrivateNetwork(ctx, zone, d.Id())
 	if err != nil {
@@ -267,7 +267,7 @@ func resourcePrivateNetworkDelete(ctx context.Context, d *schema.ResourceData, m
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
-	client := GetComputeClient(meta)
+	client := getClient(meta)
 
 	privateNetworkID := d.Id()
 	if err := client.DeletePrivateNetwork(ctx, zone, &egoscale.PrivateNetwork{ID: &privateNetworkID}); err != nil {

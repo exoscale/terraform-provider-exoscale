@@ -79,7 +79,7 @@ func testAccCheckResourceIAMAccessKeyExists(r string, iamAccessKey *egoscale.IAM
 			return errors.New("resource ID not set")
 		}
 
-		client := GetComputeClient(testAccProvider.Meta())
+		client := getClient(testAccProvider.Meta())
 
 		ctx := exoapi.WithEndpoint(context.Background(), exoapi.NewReqEndpoint(testEnvironment, testZoneName))
 		res, err := client.GetIAMAccessKey(ctx, testZoneName, rs.Primary.ID)
@@ -94,7 +94,7 @@ func testAccCheckResourceIAMAccessKeyExists(r string, iamAccessKey *egoscale.IAM
 
 func testAccCheckResourceIAMAccessKeyDestroy(iamAccessKey *egoscale.IAMAccessKey) resource.TestCheckFunc {
 	return func(_ *terraform.State) error {
-		client := GetComputeClient(testAccProvider.Meta())
+		client := getClient(testAccProvider.Meta())
 		ctx := exoapi.WithEndpoint(context.Background(), exoapi.NewReqEndpoint(testEnvironment, testZoneName))
 
 		_, err := client.GetIAMAccessKey(ctx, testZoneName, *iamAccessKey.Key)

@@ -379,7 +379,7 @@ func testAccCheckResourceSKSClusterExists(r string, sksCluster *egoscale.SKSClus
 			return errors.New("resource ID not set")
 		}
 
-		client := GetComputeClient(testAccProvider.Meta())
+		client := getClient(testAccProvider.Meta())
 
 		ctx := exoapi.WithEndpoint(
 			context.Background(),
@@ -397,7 +397,7 @@ func testAccCheckResourceSKSClusterExists(r string, sksCluster *egoscale.SKSClus
 
 func testAccCheckResourceSKSClusterDestroy(sksCluster *egoscale.SKSCluster) resource.TestCheckFunc {
 	return func(_ *terraform.State) error {
-		client := GetComputeClient(testAccProvider.Meta())
+		client := getClient(testAccProvider.Meta())
 		ctx := exoapi.WithEndpoint(
 			context.Background(),
 			exoapi.NewReqEndpoint(testEnvironment, testZoneName),

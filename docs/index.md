@@ -47,17 +47,11 @@ provider "exoscale" {
 
 ### Optional
 
-- `compute_endpoint` (String) Exoscale CloudStack API endpoint (by default: https://api.exoscale.com/v1)
-- `config` (String) CloudStack ini configuration filename (by default: cloudstack.ini)
 - `delay` (Number, Deprecated)
-- `dns_endpoint` (String) Exoscale DNS API endpoint (by default: https://api.exoscale.com/dns)
 - `environment` (String)
 - `key` (String) Exoscale API key
-- `profile` (String, Deprecated)
-- `region` (String) CloudStack ini configuration section name (by default: cloudstack)
 - `secret` (String, Sensitive) Exoscale API secret
 - `timeout` (Number) Timeout in seconds for waiting on compute resources to become available (by default: 300)
-- `token` (String, Deprecated)
 
 ### Fine-tuning Timeout durations
 
