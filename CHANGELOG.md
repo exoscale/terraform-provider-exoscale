@@ -8,7 +8,7 @@ BREAKING CHANGES:
 
 IMPROVEMENTS:
 
-- documentation: generate docs from provider schemas (#248)
+- documentation: update SOS backend configuration demo #318
 
 ## 0.53.2 (November 15, 2023)
 
