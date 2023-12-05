@@ -6,6 +6,10 @@ FEATURES:
 
 - Add IAMv3 examples #316
 
+BUG FIXES:
+
+- iam_access_key: fix unexpected changes in operations field (#319)
+
 ## 0.54.0 (November 23, 2023)
 
 BREAKING CHANGES:
@@ -15,10 +19,6 @@ BREAKING CHANGES:
 IMPROVEMENTS:
 
 - documentation: update SOS backend configuration demo #318
-
-BUG FIXES:
-
-- iam_access_key: fix unexpected changes in operations field (#319)
 
 ## 0.53.2 (November 15, 2023)
 
