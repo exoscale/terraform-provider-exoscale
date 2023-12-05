@@ -61,7 +61,7 @@ resource "exoscale_private_network" "test" {
 
 resource "exoscale_ssh_key" "test" {
   name = "%s"
-  public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB8bfA67mQWv4eGND/XVtPx1JW6RAqafub1lV1EcpB+b test"
+  public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINXaeIOCEq0WN7g0N0XB7aRZpyjjTjRTVsb386ZpCa6P test"
 }
 
 resource "exoscale_instance_pool" "test" {

@@ -71,7 +71,7 @@ resource "exoscale_elastic_ip" "test" {
 
 resource "exoscale_ssh_key" "test" {
   name       = "%s"
-  public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB8bfA67mQWv4eGND/XVtPx1JW6RAqafub1lV1EcpB+b test"
+  public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ/FXzAnsaRwP74Mji68Vt6+iz4mmCkC7QpUmPT4zKvf test"
 }
 
 
@@ -153,7 +153,7 @@ resource "exoscale_elastic_ip" "test" {
 
 resource "exoscale_ssh_key" "test" {
   name       = "%s"
-  public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB8bfA67mQWv4eGND/XVtPx1JW6RAqafub1lV1EcpB+b test"
+  public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ/FXzAnsaRwP74Mji68Vt6+iz4mmCkC7QpUmPT4zKvf test"
 }
 
 
@@ -228,7 +228,7 @@ resource "exoscale_elastic_ip" "test" {
 
 resource "exoscale_ssh_key" "test" {
   name       = "%s"
-  public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB8bfA67mQWv4eGND/XVtPx1JW6RAqafub1lV1EcpB+b test"
+  public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ/FXzAnsaRwP74Mji68Vt6+iz4mmCkC7QpUmPT4zKvf test"
 }
 
 
@@ -302,7 +302,7 @@ resource "exoscale_elastic_ip" "test" {
 
 resource "exoscale_ssh_key" "test" {
   name       = "%s"
-  public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB8bfA67mQWv4eGND/XVtPx1JW6RAqafub1lV1EcpB+b test"
+  public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ/FXzAnsaRwP74Mji68Vt6+iz4mmCkC7QpUmPT4zKvf test"
 }
 
 
