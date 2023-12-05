@@ -51,6 +51,6 @@ Read-Only:
 
 - `action` (String) IAM policy rule action (`allow` or `deny`).
 - `expression` (String) IAM policy rule expression.
-- `resources` (List of String) List of resources that IAM policy rule applies to.
+- `resources` (List of String, Deprecated)
 
 

@@ -60,7 +60,7 @@ github.com/davecgh/go-spew/spew
 ## explicit; go 1.16
 github.com/deepmap/oapi-codegen/pkg/runtime
 github.com/deepmap/oapi-codegen/pkg/types
-# github.com/exoscale/egoscale v0.102.0
+# github.com/exoscale/egoscale v0.102.1
 ## explicit; go 1.17
 github.com/exoscale/egoscale/v2
 github.com/exoscale/egoscale/v2/api
@@ -199,6 +199,7 @@ github.com/hashicorp/terraform-plugin-framework/resource/schema
 github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault
 github.com/hashicorp/terraform-plugin-framework/resource/schema/defaults
 github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier
+github.com/hashicorp/terraform-plugin-framework/resource/schema/listdefault
 github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier
 github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier
 github.com/hashicorp/terraform-plugin-framework/schema/validator
