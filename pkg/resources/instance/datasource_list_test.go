@@ -35,7 +35,7 @@ resource "exoscale_security_group" "test" {
 }
 resource "exoscale_ssh_key" "test" {
   name       = "%s"
-  public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB8bfA67mQWv4eGND/XVtPx1JW6RAqafub1lV1EcpB+b test"
+  public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGhXL32fOylqUARtE6mPuQPm37B15OlH7GDshQRBPhpx test"
 }
 resource "exoscale_compute_instance" "test" {
   zone                    = local.zone
