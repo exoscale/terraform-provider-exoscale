@@ -1,5 +1,11 @@
 # Changelog
 
+## UNRELEASED
+
+IMPROVEMENTS:
+
+- Bump golang.org/x/crypto from 0.14.0 to 0.17.0 (#323)
+
 ## 0.54.1 (December 6, 2023)
 
 FEATURES:
