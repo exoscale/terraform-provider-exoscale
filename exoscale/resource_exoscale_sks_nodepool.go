@@ -153,7 +153,7 @@ func resourceSKSNodepool() *schema.Resource {
 			Type:        schema.TypeMap,
 			Elem:        &schema.Schema{Type: schema.TypeString},
 			Optional:    true,
-			Description: "A map of key/value Kubernetes [taints](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/) (`<value>:<effect>`).",
+			Description: `A map of key/value Kubernetes [taints](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/) ('taints = { <key> = "<value>:<effect>" }').`,
 		},
 		resSKSNodepoolAttrTemplateID: {
 			Type:        schema.TypeString,

@@ -37,7 +37,7 @@ description: |-
 - `size` (Number)
 - `state` (String) The current pool state.
 - `storage_lvm` (Boolean) Create nodes with non-standard partitioning for persistent storage (requires min 100G of disk space) (may only be set at creation time).
-- `taints` (Map of String) A map of key/value Kubernetes [taints](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/) (`<value>:<effect>`).
+- `taints` (Map of String) A map of key/value Kubernetes [taints](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/) ('taints = { <key> = "<value>:<effect>" }').
 - `template_id` (String) The managed instances template ID.
 - `version` (String) The managed instances version.
 
