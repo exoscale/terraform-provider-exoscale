@@ -253,7 +253,7 @@ description: |-
 {{ printf "{{tffile %q}}" .ExampleFile }}
 {{- end }}
 
-
+{{ .SchemaMarkdown | trimspace }}
 {{- if .HasImport }}
 
 ## Import
@@ -282,5 +282,5 @@ description: |-
 {{ printf "{{tffile %q}}" .ExampleFile }}
 {{- end }}
 
-
+{{ .SchemaMarkdown | trimspace }}
 `
