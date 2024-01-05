@@ -19,7 +19,7 @@ var (
 	nodepool2Name               = acctest.RandomWithPrefix(testPrefix + "-nodepool-2")
 	testAccSKSDataSourcesConfig = fmt.Sprintf(`
 locals {
-  my_zone = "ch-gva-2"
+  my_zone = %q
 }
 
 data "exoscale_security_group" "default" {
@@ -124,7 +124,7 @@ resource "exoscale_sks_nodepool" "my_sks_nodepool_2" {
     resource.exoscale_security_group.my_sks_security_group.id,
   ]
 }
-`, cluster1Name, cluster2Name, affinityGroupName, securityGroupName, nodepool1Name, nodepool2Name)
+`, testZoneName, cluster1Name, cluster2Name, affinityGroupName, securityGroupName, nodepool1Name, nodepool2Name)
 )
 
 func TestAccSKSDataSources(t *testing.T) {
@@ -135,7 +135,7 @@ func TestAccSKSDataSources(t *testing.T) {
 		Attributes           testAttrs
 	}
 
-	zone := "ch-gva-2"
+	zone := testZoneName
 	dsId := dsSKSClusterIdentifier
 	dsName := "my_cluster_ds"
 	testCases := []testCase{
