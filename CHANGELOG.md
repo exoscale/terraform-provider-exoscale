@@ -6,6 +6,7 @@ IMPROVEMENTS:
 
 - Bump golang.org/x/crypto from 0.14.0 to 0.17.0 (#323)
 - sks_nodepool: add an example for taints #324 
+- SKS tests: renable cluster update test as upstream bug is fixed (#309)
 
 ## 0.54.1 (December 6, 2023)
 
@@ -63,6 +64,7 @@ BUG FIXES:
 
 - Add missing `vie2` zone in validator used by framework resources (#300)
 - Update kafka version used in tests (#301)
+- Temporarily disable SKS cluster update test (#302)
 
 ## 0.52.0 (September 8, 2023)
 
