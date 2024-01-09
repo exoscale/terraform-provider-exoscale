@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"testing"
-	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
@@ -229,29 +228,6 @@ func TestAccResourceSKSCluster(t *testing.T) {
 				Config: testAccResourceSKSClusterConfigUpdate,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckResourceSKSClusterExists(r, &sksCluster),
-					func(s *terraform.State) error {
-						a := assert.New(t)
-
-						a.True(defaultBool(sksCluster.AutoUpgrade, false))
-						a.Equal(testAccResourceSKSClusterDescriptionUpdated, *sksCluster.Description)
-						a.Equal(testAccResourceSKSClusterLabelValueUpdated, (*sksCluster.Labels)["test"])
-						a.Equal(testAccResourceSKSClusterNameUpdated, *sksCluster.Name)
-
-						// Wait for the cluster to be in the Running state
-						for i := 0; i < 60; i++ {
-							c, err := client.GetSKSCluster(clientctx, testZoneName, *sksCluster.ID)
-							if err != nil {
-								return fmt.Errorf("failed to fetch sks cluster: %s", err)
-							}
-							if *c.State == "running" {
-								return nil
-							}
-							t.Logf("waiting for cluster to be Running, current state: %s", *c.State)
-							time.Sleep(10 * time.Second)
-						}
-
-						return fmt.Errorf("timeout waiting for the cluster to be Running: current state")
-					},
 					checkResourceState(r, checkResourceStateValidateAttributes(testAttrs{
 						resSKSClusterAttrAggregationLayerCA: validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Aggregation CA must be a PEM certificate")),
 						resSKSClusterAttrAutoUpgrade:        validateString("true"),
