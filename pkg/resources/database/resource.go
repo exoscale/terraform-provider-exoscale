@@ -158,9 +158,6 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 			"plan": schema.StringAttribute{
 				MarkdownDescription: "The plan of the database service (use the [Exoscale CLI](https://github.com/exoscale/cli/) - `exo dbaas type show <TYPE> --plans` - for reference).",
 				Required:            true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
 			},
 			"state": schema.StringAttribute{
 				MarkdownDescription: "The current state of the database service.",
