@@ -5,7 +5,8 @@
 IMPROVEMENTS:
 
 - Bump golang.org/x/crypto from 0.14.0 to 0.17.0 (#323)
-- sks_nodepool: add an example for taints #324 
+- sks_nodepool: add an example for taints #324
+- Bump dependencies
 
 ## 0.54.1 (December 6, 2023)
 

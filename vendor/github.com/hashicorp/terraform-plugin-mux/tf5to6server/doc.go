@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 // Package tf5to6server translates a provider that implements protocol version 5, into one that implements protocol version 6.
 //
 // Supported protocol version 5 provider servers include any which implement
