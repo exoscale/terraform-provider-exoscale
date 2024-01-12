@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"runtime/debug"
 
 	exov2 "github.com/exoscale/egoscale/v2"
 	"github.com/exoscale/terraform-provider-exoscale/version"
@@ -11,7 +12,6 @@ import (
 	cleanhttp "github.com/hashicorp/go-cleanhttp"
 	retryablehttp "github.com/hashicorp/go-retryablehttp"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/logging"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/meta"
 
 	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
 )
@@ -20,12 +20,25 @@ const (
 	DefaultEnvironment = "api"
 )
 
-// UserAgent represents the User Agent to advertise in outgoing HTTP requests.
-var UserAgent = fmt.Sprintf("Exoscale-Terraform-Provider/%s (%s) Terraform-SDK/%s %s",
+var UserAgent = fmt.Sprintf("Exoscale-Terraform-Provider/%s (%s) Terraform-SDK/%s Terraform-framework/%s %s",
 	version.Version,
 	version.Commit,
-	meta.SDKVersionString(),
+	getModVersion("github.com/hashicorp/terraform-plugin-sdk/v2"),
+	getModVersion("github.com/hashicorp/terraform-plugin-framework"),
 	exov2.UserAgent)
+
+func getModVersion(module string) string {
+	// Read Build info
+	bi, ok := debug.ReadBuildInfo()
+	if ok {
+		for _, mod := range bi.Deps {
+			if mod.Path == module {
+				return mod.Version
+			}
+		}
+	}
+	return "err"
+}
 
 func getConfig(meta interface{}) providerConfig.BaseConfig {
 	t := meta.(map[string]interface{})
