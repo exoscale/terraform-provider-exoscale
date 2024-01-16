@@ -278,6 +278,7 @@ func (r *ResourceOrgPolicy) read(
 					ruleModel := PolicyServiceRuleModel{
 						Action:     types.StringPointerValue(rule.Action),
 						Expression: types.StringPointerValue(rule.Expression),
+						Resources:  types.ListNull(types.StringType),
 					}
 
 					rules = append(rules, ruleModel)
