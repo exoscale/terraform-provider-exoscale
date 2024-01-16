@@ -2,8 +2,8 @@ package iam_test
 
 import (
 	"bytes"
-	"html/template"
 	"testing"
+	"text/template"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/testutils"
 
@@ -33,8 +33,8 @@ func testResourceRole(t *testing.T) {
 					Type: "rules",
 					Rules: []testutils.ResourceIAMPolicyServiceRules{
 						{
-							Action:     "deny",
-							Expression: "test",
+							Action:     "allow",
+							Expression: "operation in ['list-sos-buckets-usage', 'list-buckets']",
 						},
 					},
 				},
@@ -57,10 +57,25 @@ func testResourceRole(t *testing.T) {
 	}
 	configUpdate := buf.String()
 
-	policy := testutils.ResourceIAMPolicyServicesModel{
-		Type: "deny",
+	policy := testutils.ResourceIAMOrgPolicyModel{
+		DefaultServiceStrategy: "deny",
+		Services: map[string]testutils.ResourceIAMPolicyServicesModel{
+			"sos": {
+				Type: "rules",
+				Rules: []testutils.ResourceIAMPolicyServiceRules{
+					{
+						Action:     "allow",
+						Expression: "operation in ['list-sos-buckets-usage', 'list-buckets']",
+					},
+					{
+						Action:     "deny",
+						Expression: "operation in ['list-objects', 'get-object']",
+					},
+				},
+			},
+		},
 	}
-	data.Policy.Services["sos"] = policy
+	data.Policy = &policy
 
 	buf = &bytes.Buffer{}
 	err = tpl.Execute(buf, &data)
@@ -85,8 +100,8 @@ func testResourceRole(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "policy.services.%", "1"),
 					resource.TestCheckResourceAttr(fullResourceName, "policy.services.sos.type", "rules"),
 					resource.TestCheckResourceAttr(fullResourceName, "policy.services.sos.rules.#", "1"),
-					resource.TestCheckResourceAttr(fullResourceName, "policy.services.sos.rules.0.action", "deny"),
-					resource.TestCheckResourceAttr(fullResourceName, "policy.services.sos.rules.0.expression", "test"),
+					resource.TestCheckResourceAttr(fullResourceName, "policy.services.sos.rules.0.action", "allow"),
+					resource.TestCheckResourceAttr(fullResourceName, "policy.services.sos.rules.0.expression", "operation in ['list-sos-buckets-usage', 'list-buckets']"),
 				),
 			},
 			// Update
@@ -101,8 +116,13 @@ func testResourceRole(t *testing.T) {
 			{
 				Config: configUpdatePolicy,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(fullResourceName, "policy.services.sos.type", "deny"),
-					resource.TestCheckResourceAttr(fullResourceName, "policy.services.sos.rules.#", "0"),
+					resource.TestCheckResourceAttr(fullResourceName, "policy.default_service_strategy", "deny"),
+					resource.TestCheckResourceAttr(fullResourceName, "policy.services.sos.type", "rules"),
+					resource.TestCheckResourceAttr(fullResourceName, "policy.services.sos.rules.#", "2"),
+					resource.TestCheckResourceAttr(fullResourceName, "policy.services.sos.rules.0.action", "allow"),
+					resource.TestCheckResourceAttr(fullResourceName, "policy.services.sos.rules.0.expression", "operation in ['list-sos-buckets-usage', 'list-buckets']"),
+					resource.TestCheckResourceAttr(fullResourceName, "policy.services.sos.rules.1.action", "deny"),
+					resource.TestCheckResourceAttr(fullResourceName, "policy.services.sos.rules.1.expression", "operation in ['list-objects', 'get-object']"),
 				),
 			},
 			{
