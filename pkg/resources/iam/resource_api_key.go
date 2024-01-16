@@ -140,7 +140,7 @@ func (r *ResourceAPIKey) Create(ctx context.Context, req resource.CreateRequest,
 	data.Secret = types.StringValue(secret)
 
 	// Read created policy
-	r.read(ctx, resp.Diagnostics, &data)
+	r.read(ctx, &resp.Diagnostics, &data)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -173,7 +173,7 @@ func (r *ResourceAPIKey) Read(ctx context.Context, req resource.ReadRequest, res
 
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(r.env, config.DefaultZone))
 
-	r.read(ctx, resp.Diagnostics, &data)
+	r.read(ctx, &resp.Diagnostics, &data)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -251,7 +251,7 @@ func (r *ResourceAPIKey) ImportState(ctx context.Context, req resource.ImportSta
 
 func (r *ResourceAPIKey) read(
 	ctx context.Context,
-	d diag.Diagnostics,
+	d *diag.Diagnostics,
 	data *ResourceAPIKeyModel,
 ) {
 	apiKey, err := r.client.GetAPIKey(
