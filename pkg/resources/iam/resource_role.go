@@ -71,7 +71,7 @@ func (r *ResourceRole) Schema(ctx context.Context, req resource.SchemaRequest, r
 				},
 			},
 			"name": schema.StringAttribute{
-				MarkdownDescription: "Name of IAM Role.",
+				MarkdownDescription: "❗Name of IAM Role.",
 				Required:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
