@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 // Package tf6muxserver combines multiple provider servers that implement protocol version 6, into a single server.
 //
 // Supported protocol version 6 provider servers include any which implement

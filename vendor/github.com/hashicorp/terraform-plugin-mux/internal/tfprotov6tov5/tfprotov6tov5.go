@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package tfprotov6tov5
 
 import (
@@ -38,6 +41,34 @@ func ApplyResourceChangeResponse(in *tfprotov6.ApplyResourceChangeResponse) *tfp
 	}
 }
 
+func CallFunctionRequest(in *tfprotov6.CallFunctionRequest) *tfprotov5.CallFunctionRequest {
+	if in == nil {
+		return nil
+	}
+
+	out := &tfprotov5.CallFunctionRequest{
+		Arguments: make([]*tfprotov5.DynamicValue, 0, len(in.Arguments)),
+		Name:      in.Name,
+	}
+
+	for _, argument := range in.Arguments {
+		out.Arguments = append(out.Arguments, DynamicValue(argument))
+	}
+
+	return out
+}
+
+func CallFunctionResponse(in *tfprotov6.CallFunctionResponse) *tfprotov5.CallFunctionResponse {
+	if in == nil {
+		return nil
+	}
+
+	return &tfprotov5.CallFunctionResponse{
+		Diagnostics: Diagnostics(in.Diagnostics),
+		Result:      DynamicValue(in.Result),
+	}
+}
+
 func ConfigureProviderRequest(in *tfprotov6.ConfigureProviderRequest) *tfprotov5.ConfigureProviderRequest {
 	if in == nil {
 		return nil
@@ -56,6 +87,12 @@ func ConfigureProviderResponse(in *tfprotov6.ConfigureProviderResponse) *tfproto
 
 	return &tfprotov5.ConfigureProviderResponse{
 		Diagnostics: Diagnostics(in.Diagnostics),
+	}
+}
+
+func DataSourceMetadata(in tfprotov6.DataSourceMetadata) tfprotov5.DataSourceMetadata {
+	return tfprotov5.DataSourceMetadata{
+		TypeName: in.TypeName,
 	}
 }
 
@@ -94,6 +131,120 @@ func DynamicValue(in *tfprotov6.DynamicValue) *tfprotov5.DynamicValue {
 	}
 }
 
+func Function(in *tfprotov6.Function) *tfprotov5.Function {
+	if in == nil {
+		return nil
+	}
+
+	out := &tfprotov5.Function{
+		DeprecationMessage: in.DeprecationMessage,
+		Description:        in.Description,
+		DescriptionKind:    StringKind(in.DescriptionKind),
+		Parameters:         make([]*tfprotov5.FunctionParameter, 0, len(in.Parameters)),
+		Return:             FunctionReturn(in.Return),
+		Summary:            in.Summary,
+		VariadicParameter:  FunctionParameter(in.VariadicParameter),
+	}
+
+	for _, parameter := range in.Parameters {
+		out.Parameters = append(out.Parameters, FunctionParameter(parameter))
+	}
+
+	return out
+}
+
+func FunctionMetadata(in tfprotov6.FunctionMetadata) tfprotov5.FunctionMetadata {
+	return tfprotov5.FunctionMetadata{
+		Name: in.Name,
+	}
+}
+
+func FunctionParameter(in *tfprotov6.FunctionParameter) *tfprotov5.FunctionParameter {
+	if in == nil {
+		return nil
+	}
+
+	return &tfprotov5.FunctionParameter{
+		AllowNullValue:     in.AllowNullValue,
+		AllowUnknownValues: in.AllowUnknownValues,
+		Description:        in.Description,
+		DescriptionKind:    StringKind(in.DescriptionKind),
+		Name:               in.Name,
+		Type:               in.Type,
+	}
+}
+
+func FunctionReturn(in *tfprotov6.FunctionReturn) *tfprotov5.FunctionReturn {
+	if in == nil {
+		return nil
+	}
+
+	return &tfprotov5.FunctionReturn{
+		Type: in.Type,
+	}
+}
+
+func GetFunctionsRequest(in *tfprotov6.GetFunctionsRequest) *tfprotov5.GetFunctionsRequest {
+	if in == nil {
+		return nil
+	}
+
+	return &tfprotov5.GetFunctionsRequest{}
+}
+
+func GetFunctionsResponse(in *tfprotov6.GetFunctionsResponse) *tfprotov5.GetFunctionsResponse {
+	if in == nil {
+		return nil
+	}
+
+	functions := make(map[string]*tfprotov5.Function, len(in.Functions))
+
+	for name, function := range in.Functions {
+		functions[name] = Function(function)
+	}
+
+	return &tfprotov5.GetFunctionsResponse{
+		Diagnostics: Diagnostics(in.Diagnostics),
+		Functions:   functions,
+	}
+}
+
+func GetMetadataRequest(in *tfprotov6.GetMetadataRequest) *tfprotov5.GetMetadataRequest {
+	if in == nil {
+		return nil
+	}
+
+	return &tfprotov5.GetMetadataRequest{}
+}
+
+func GetMetadataResponse(in *tfprotov6.GetMetadataResponse) *tfprotov5.GetMetadataResponse {
+	if in == nil {
+		return nil
+	}
+
+	resp := &tfprotov5.GetMetadataResponse{
+		DataSources:        make([]tfprotov5.DataSourceMetadata, 0, len(in.DataSources)),
+		Diagnostics:        Diagnostics(in.Diagnostics),
+		Functions:          make([]tfprotov5.FunctionMetadata, 0, len(in.Functions)),
+		Resources:          make([]tfprotov5.ResourceMetadata, 0, len(in.Resources)),
+		ServerCapabilities: ServerCapabilities(in.ServerCapabilities),
+	}
+
+	for _, datasource := range in.DataSources {
+		resp.DataSources = append(resp.DataSources, DataSourceMetadata(datasource))
+	}
+
+	for _, function := range in.Functions {
+		resp.Functions = append(resp.Functions, FunctionMetadata(function))
+	}
+
+	for _, resource := range in.Resources {
+		resp.Resources = append(resp.Resources, ResourceMetadata(resource))
+	}
+
+	return resp
+}
+
 func GetProviderSchemaRequest(in *tfprotov6.GetProviderSchemaRequest) *tfprotov5.GetProviderSchemaRequest {
 	if in == nil {
 		return nil
@@ -117,6 +268,12 @@ func GetProviderSchemaResponse(in *tfprotov6.GetProviderSchemaResponse) (*tfprot
 		}
 
 		dataSourceSchemas[k] = v5Schema
+	}
+
+	functions := make(map[string]*tfprotov5.Function, len(in.Functions))
+
+	for name, function := range in.Functions {
+		functions[name] = Function(function)
 	}
 
 	provider, err := Schema(in.Provider)
@@ -146,6 +303,7 @@ func GetProviderSchemaResponse(in *tfprotov6.GetProviderSchemaResponse) (*tfprot
 	return &tfprotov5.GetProviderSchemaResponse{
 		DataSourceSchemas: dataSourceSchemas,
 		Diagnostics:       Diagnostics(in.Diagnostics),
+		Functions:         functions,
 		Provider:          provider,
 		ProviderMeta:      providerMeta,
 		ResourceSchemas:   resourceSchemas,
@@ -304,6 +462,12 @@ func ReadResourceResponse(in *tfprotov6.ReadResourceResponse) *tfprotov5.ReadRes
 	}
 }
 
+func ResourceMetadata(in tfprotov6.ResourceMetadata) tfprotov5.ResourceMetadata {
+	return tfprotov5.ResourceMetadata{
+		TypeName: in.TypeName,
+	}
+}
+
 func Schema(in *tfprotov6.Schema) (*tfprotov5.Schema, error) {
 	if in == nil {
 		return nil, nil
@@ -408,6 +572,17 @@ func SchemaNestedBlock(in *tfprotov6.SchemaNestedBlock) (*tfprotov5.SchemaNested
 		Nesting:  tfprotov5.SchemaNestedBlockNestingMode(in.Nesting),
 		TypeName: in.TypeName,
 	}, nil
+}
+
+func ServerCapabilities(in *tfprotov6.ServerCapabilities) *tfprotov5.ServerCapabilities {
+	if in == nil {
+		return nil
+	}
+
+	return &tfprotov5.ServerCapabilities{
+		GetProviderSchemaOptional: in.GetProviderSchemaOptional,
+		PlanDestroy:               in.PlanDestroy,
+	}
 }
 
 func StopProviderRequest(in *tfprotov6.StopProviderRequest) *tfprotov5.StopProviderRequest {
