@@ -8,6 +8,13 @@ IMPROVEMENTS:
 - sks_nodepool: add an example for taints #324 
 - SKS tests: renable cluster update test as upstream bug is fixed (#309)
 
+
+BUG FIXES:
+
+- instance: error when new disk_size < current one (#328)
+- Bump dependencies (#329)
+- database: change of plan should not recreate resource (#327)
+
 ## 0.54.1 (December 6, 2023)
 
 FEATURES:
