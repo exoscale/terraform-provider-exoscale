@@ -51,7 +51,7 @@ directory for complete configuration examples.
 
 - `anti_affinity_group_ids` (Set of String) ❗ A list of [exoscale_anti_affinity_group](./anti_affinity_group.md) (IDs) to attach to the instance (may only be set at creation time).
 - `deploy_target_id` (String) ❗ A deploy target ID.
-- `disk_size` (Number) The instance disk size (GiB; at least `10`). **WARNING**: updating this attribute stops/restarts the instance.
+- `disk_size` (Number) The instance disk size (GiB; at least `10`). Can not be decreased after creation. **WARNING**: updating this attribute stops/restarts the instance.
 - `elastic_ip_ids` (Set of String) A list of [exoscale_elastic_ip](./elastic_ip.md) (IDs) to attach to the instance.
 - `ipv6` (Boolean) Enable IPv6 on the instance (boolean; default: `false`).
 - `labels` (Map of String) A map of key/value labels.

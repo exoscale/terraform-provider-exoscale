@@ -41,7 +41,7 @@ func Resource() *schema.Resource {
 			ForceNew:    true,
 		},
 		AttrDiskSize: {
-			Description:  "The instance disk size (GiB; at least `10`). **WARNING**: updating this attribute stops/restarts the instance.",
+			Description:  "The instance disk size (GiB; at least `10`). Can not be decreased after creation. **WARNING**: updating this attribute stops/restarts the instance.",
 			Type:         schema.TypeInt,
 			Computed:     true,
 			Optional:     true,
@@ -589,6 +589,12 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 		AttrDiskSize,
 		AttrType,
 	) {
+		// Check if size is below current size to prevent uneeded stop as API will prevent the scale operation
+		if d.HasChange(AttrDiskSize) &&
+			*instance.DiskSize > int64(d.Get(AttrDiskSize).(int)) {
+			return diag.Errorf("unable to scale down the disk size, use size > %v", *instance.DiskSize)
+		}
+
 		// Compute instance scaling/disk resizing API operations requires the instance to be stopped.
 		if d.Get(AttrState) == "stopped" ||
 			d.HasChange(AttrDiskSize) ||
