@@ -7,6 +7,7 @@ IMPROVEMENTS:
 - Bump golang.org/x/crypto from 0.14.0 to 0.17.0 (#323)
 - sks_nodepool: add an example for taints #324 
 - SKS tests: renable cluster update test as upstream bug is fixed (#309)
+- Make `iam_role.name` attribute require replace as per API behaviour (#330)
 
 
 BUG FIXES:
@@ -14,6 +15,7 @@ BUG FIXES:
 - instance: error when new disk_size < current one (#328)
 - Bump dependencies (#329)
 - database: change of plan should not recreate resource (#327)
+- iam: fix bug in `iam_role` and `iam_org_policy` rules update (#330)
 
 ## 0.54.1 (December 6, 2023)
 
