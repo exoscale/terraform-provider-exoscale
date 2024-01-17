@@ -407,9 +407,10 @@ func resourceSKSClusterRead(ctx context.Context, d *schema.ResourceData, meta in
 }
 
 func waitForClusterUpdateToSucceed(ctx context.Context, client *exov2.Client, zone, clusterID string) error {
-	ticker := time.NewTicker(5 * time.Minute)
+	ticker := time.NewTicker(3 * time.Second)
 	defer ticker.Stop()
 
+	hasStartedUpdate := false
 	for {
 		select {
 		case <-ticker.C:
@@ -418,11 +419,11 @@ func waitForClusterUpdateToSucceed(ctx context.Context, client *exov2.Client, zo
 				return err
 			}
 
-			if *cluster.State != "updating" {
-				continue
+			if hasStartedUpdate && *cluster.State != "updating" {
+				return nil
+			} else if *cluster.State == "updating" {
+				hasStartedUpdate = true
 			}
-
-			return nil
 		case <-ctx.Done():
 			err := ctx.Err()
 			if err != nil {
@@ -501,8 +502,6 @@ func resourceSKSClusterUpdate(ctx context.Context, d *schema.ResourceData, meta 
 		}()
 
 		go func() {
-			// wait for the update to start
-			time.Sleep(10 * time.Second)
 			getErrChan <- waitForClusterUpdateToSucceed(ctx, client, zone, *sksCluster.ID)
 		}()
 
