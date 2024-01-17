@@ -17,7 +17,7 @@ Manage Exoscale [IAM](https://community.exoscale.com/documentation/iam/) Role.
 
 ### Required
 
-- `name` (String) Name of IAM Role.
+- `name` (String) ❗Name of IAM Role.
 
 ### Optional
 
