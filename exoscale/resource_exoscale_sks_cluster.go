@@ -5,12 +5,14 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	egoscale "github.com/exoscale/egoscale/v2"
+	exov2 "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/general"
@@ -404,6 +406,35 @@ func resourceSKSClusterRead(ctx context.Context, d *schema.ResourceData, meta in
 	return diag.FromErr(resourceSKSClusterApply(ctx, d, sksCluster, certificates))
 }
 
+func waitForClusterUpdateToSucceed(ctx context.Context, client *exov2.Client, zone, clusterID string) error {
+	ticker := time.NewTicker(3 * time.Second)
+	defer ticker.Stop()
+
+	hasStartedUpdate := false
+	for {
+		select {
+		case <-ticker.C:
+			cluster, err := client.GetSKSCluster(ctx, zone, clusterID)
+			if err != nil {
+				return err
+			}
+
+			if hasStartedUpdate && *cluster.State != "updating" {
+				return nil
+			} else if *cluster.State == "updating" {
+				hasStartedUpdate = true
+			}
+		case <-ctx.Done():
+			err := ctx.Err()
+			if err != nil {
+				return err
+			}
+
+			return nil
+		}
+	}
+}
+
 func resourceSKSClusterUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	tflog.Debug(ctx, "beginning update", map[string]interface{}{
 		"id": resourceSKSClusterIDString(d),
@@ -460,7 +491,28 @@ func resourceSKSClusterUpdate(ctx context.Context, d *schema.ResourceData, meta 
 	}
 
 	if updated {
-		if err = client.UpdateSKSCluster(ctx, zone, sksCluster); err != nil {
+		// due to a bug it's possible for the update operation
+		// to remain in pending state forever
+		// we work around this by checking the cluster state
+		updateErrChan := make(chan error)
+		getErrChan := make(chan error)
+
+		go func() {
+			updateErrChan <- client.UpdateSKSCluster(ctx, zone, sksCluster)
+		}()
+
+		go func() {
+			getErrChan <- waitForClusterUpdateToSucceed(ctx, client, zone, *sksCluster.ID)
+		}()
+
+		var err error
+
+		select {
+		case err = <-updateErrChan:
+		case err = <-getErrChan:
+		}
+
+		if err != nil {
 			return diag.FromErr(err)
 		}
 	}

@@ -5,7 +5,8 @@
 IMPROVEMENTS:
 
 - Bump golang.org/x/crypto from 0.14.0 to 0.17.0 (#323)
-- sks_nodepool: add an example for taints #324
+- sks_nodepool: add an example for taints #324 
+- SKS tests: renable cluster update test as upstream bug is fixed (#309)
 
 
 BUG FIXES:
