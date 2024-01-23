@@ -55,6 +55,11 @@ Corresponding data source: [exoscale_domain_record](../data-sources/domain_recor
 				Required:    true,
 				Description: "The record value.",
 			},
+			"content_normalized": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The normalized value of the record",
+			},
 			"ttl": {
 				Type:        schema.TypeInt,
 				Optional:    true,
@@ -283,6 +288,19 @@ func resourceDomainRecordRead(ctx context.Context, d *schema.ResourceData, meta 
 			"id": resourceDomainIDString(d),
 		})
 
+		if contentNormalized := d.Get("content_normalized").(string); record.Content != nil &&
+			contentNormalized != "" && // skip create
+			contentNormalized != *record.Content {
+			// If the record content has changed, we need to update the record in the remote
+			tflog.Debug(ctx, "DNSimple Zone Record content changed", map[string]interface{}{
+				"state":  contentNormalized,
+				"remote": *record.Content,
+			})
+			if err := d.Set("content", record.Content); err != nil {
+				return diag.Errorf("error setting domain content: %s", err)
+			}
+		}
+
 		err = resourceDomainRecordApply(d, *domain.UnicodeName, record)
 		if err != nil {
 			return diag.Errorf("%s", err)
@@ -317,6 +335,11 @@ func resourceDomainRecordRead(ctx context.Context, d *schema.ResourceData, meta 
 				tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
 					"id": resourceDomainIDString(d),
 				})
+
+				// For import we need to set 'content' now
+				if err := d.Set("content", record.Content); err != nil {
+					return diag.Errorf("error setting domain content: %s", err)
+				}
 
 				err = resourceDomainRecordApply(d, *domain.UnicodeName, &record)
 				if err != nil {
@@ -423,7 +446,7 @@ func resourceDomainRecordApply(d *schema.ResourceData, domainName string, record
 	if err := d.Set("name", record.Name); err != nil {
 		return err
 	}
-	if err := d.Set("content", record.Content); err != nil {
+	if err := d.Set("content_normalized", record.Content); err != nil {
 		return err
 	}
 	if err := d.Set("record_type", record.Type); err != nil {
