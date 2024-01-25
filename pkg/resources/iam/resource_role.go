@@ -71,8 +71,11 @@ func (r *ResourceRole) Schema(ctx context.Context, req resource.SchemaRequest, r
 				},
 			},
 			"name": schema.StringAttribute{
-				MarkdownDescription: "Name of IAM Role.",
+				MarkdownDescription: "❗Name of IAM Role.",
 				Required:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"description": schema.StringAttribute{
 				MarkdownDescription: "A free-form text describing the IAM Role",
@@ -81,8 +84,8 @@ func (r *ResourceRole) Schema(ctx context.Context, req resource.SchemaRequest, r
 			},
 			"editable": schema.BoolAttribute{
 				MarkdownDescription: "Defines if IAM Role Policy is editable or not.",
-				Computed:            true,
 				Optional:            true,
+				Computed:            true,
 			},
 			"labels": schema.MapAttribute{
 				MarkdownDescription: "IAM Role labels.",
@@ -193,15 +196,23 @@ func (r *ResourceRole) Create(ctx context.Context, req resource.CreateRequest, r
 	ctx, cancel := context.WithTimeout(ctx, t)
 	defer cancel()
 
+	// Setup API client environment & zone
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(r.env, config.DefaultZone))
 
+	// Build API resource struct. `Required` attributes can be set right away.
 	role := exoscale.IAMRole{
-		Name:        data.Name.ValueStringPointer(),
-		Description: data.Description.ValueStringPointer(),
-		Editable:    data.Editable.ValueBoolPointer(),
+		Name: data.Name.ValueStringPointer(),
 	}
 
-	if !data.Labels.IsUnknown() && len(data.Labels.Elements()) > 0 {
+	if !data.Editable.IsNull() {
+		role.Editable = data.Editable.ValueBoolPointer()
+	}
+
+	if !data.Description.IsUnknown() {
+		role.Description = data.Description.ValueStringPointer()
+	}
+
+	if !data.Labels.IsUnknown() {
 		labels := map[string]string{}
 
 		dg := data.Labels.ElementsAs(ctx, &labels, false)
@@ -213,7 +224,7 @@ func (r *ResourceRole) Create(ctx context.Context, req resource.CreateRequest, r
 		role.Labels = labels
 	}
 
-	if !data.Permissions.IsUnknown() && len(data.Permissions.Elements()) > 0 {
+	if !data.Permissions.IsUnknown() {
 		permissions := make([]string, 0, len(data.Permissions.Elements()))
 
 		dg := data.Permissions.ElementsAs(ctx, &permissions, false)
@@ -285,6 +296,7 @@ func (r *ResourceRole) Create(ctx context.Context, req resource.CreateRequest, r
 		role.Policy = policy
 	}
 
+	// Create resource
 	newRole, err := r.client.CreateIAMRole(ctx, config.DefaultZone, &role)
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -297,7 +309,7 @@ func (r *ResourceRole) Create(ctx context.Context, req resource.CreateRequest, r
 	data.ID = types.StringValue(*newRole.ID)
 
 	// Read created policy
-	r.read(ctx, resp.Diagnostics, &data)
+	r.read(ctx, &resp.Diagnostics, &data)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -330,7 +342,7 @@ func (r *ResourceRole) Read(ctx context.Context, req resource.ReadRequest, resp 
 
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(r.env, config.DefaultZone))
 
-	r.read(ctx, resp.Diagnostics, &data)
+	r.read(ctx, &resp.Diagnostics, &data)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -346,10 +358,10 @@ func (r *ResourceRole) Read(ctx context.Context, req resource.ReadRequest, resp 
 func (r *ResourceRole) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var stateData, planData ResourceRoleModel
 
-	// Read Terraform plan data into the model
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &planData)...)
 	// Read Terraform state data (for comparison) into the model
 	resp.Diagnostics.Append(req.State.Get(ctx, &stateData)...)
+	// Read Terraform plan data into the model
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &planData)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -364,15 +376,30 @@ func (r *ResourceRole) Update(ctx context.Context, req resource.UpdateRequest, r
 	defer cancel()
 
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(r.env, config.DefaultZone))
+
+	var updated bool
+
 	// Update role
 	role := exoscale.IAMRole{
-		ID:          planData.ID.ValueStringPointer(),
-		Name:        planData.Name.ValueStringPointer(),
-		Description: planData.Description.ValueStringPointer(),
-		Editable:    planData.Editable.ValueBoolPointer(),
+		ID:   planData.ID.ValueStringPointer(),
+		Name: planData.Name.ValueStringPointer(),
 	}
 
-	if !planData.Labels.IsUnknown() && len(planData.Labels.Elements()) > 0 {
+	if !planData.Editable.Equal(stateData.Editable) {
+		if !planData.Editable.IsNull() {
+			role.Editable = planData.Editable.ValueBoolPointer()
+		} else {
+			// For `Optional` and not `Computed` we need to set null to signal `read()` not to write data.
+			stateData.Editable = planData.Editable
+		}
+	}
+
+	if !planData.Description.Equal(stateData.Description) && !planData.Description.IsUnknown() {
+		role.Description = planData.Description.ValueStringPointer()
+		updated = true
+	}
+
+	if !planData.Labels.Equal(stateData.Labels) && !planData.Labels.IsUnknown() {
 		labels := map[string]string{}
 
 		dg := planData.Labels.ElementsAs(ctx, &labels, false)
@@ -382,9 +409,11 @@ func (r *ResourceRole) Update(ctx context.Context, req resource.UpdateRequest, r
 		}
 
 		role.Labels = labels
+		updated = true
+
 	}
 
-	if !planData.Permissions.IsUnknown() && len(planData.Permissions.Elements()) > 0 {
+	if !planData.Permissions.Equal(stateData.Permissions) && !planData.Permissions.IsUnknown() {
 		permissions := make([]string, 0, len(planData.Permissions.Elements()))
 
 		dg := planData.Permissions.ElementsAs(ctx, &permissions, false)
@@ -394,15 +423,18 @@ func (r *ResourceRole) Update(ctx context.Context, req resource.UpdateRequest, r
 		}
 
 		role.Permissions = permissions
+		updated = true
 	}
 
-	err := r.client.UpdateIAMRole(ctx, config.DefaultZone, &role)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to create IAM Role",
-			err.Error(),
-		)
-		return
+	if updated {
+		err := r.client.UpdateIAMRole(ctx, config.DefaultZone, &role)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Unable to create IAM Role",
+				err.Error(),
+			)
+			return
+		}
 	}
 
 	// Update policy
@@ -476,12 +508,12 @@ func (r *ResourceRole) Update(ctx context.Context, req resource.UpdateRequest, r
 	}
 
 	// Read updated role
-	r.read(ctx, resp.Diagnostics, &stateData)
+	r.read(ctx, &resp.Diagnostics, &stateData)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Save updated data into Terraform state
+	// Update state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &stateData)...)
 
 	tflog.Trace(ctx, "resource updated", map[string]interface{}{
@@ -553,7 +585,7 @@ func (r *ResourceRole) ImportState(ctx context.Context, req resource.ImportState
 
 func (r *ResourceRole) read(
 	ctx context.Context,
-	d diag.Diagnostics,
+	d *diag.Diagnostics,
 	data *ResourceRoleModel,
 ) {
 
@@ -566,7 +598,11 @@ func (r *ResourceRole) read(
 		return
 	}
 
-	data.Name = types.StringPointerValue(role.Name)
+	// Althogh name will not change after resource creation, it can be empty after import.
+	if data.Name.ValueString() == "" {
+		data.Name = types.StringPointerValue(role.Name)
+	}
+
 	data.Description = types.StringPointerValue(role.Description)
 	data.Editable = types.BoolPointerValue(role.Editable)
 
@@ -603,40 +639,38 @@ func (r *ResourceRole) read(
 	policy := PolicyModel{}
 	if role.Policy != nil {
 		policy.DefaultServiceStrategy = types.StringValue(role.Policy.DefaultServiceStrategy)
+
 		services := map[string]PolicyServiceModel{}
-		if len(role.Policy.Services) > 0 {
-			for name, service := range role.Policy.Services {
-				serviceModel := PolicyServiceModel{
-					Type: types.StringPointerValue(service.Type),
-				}
-
-				rules := []PolicyServiceRuleModel{}
-				if len(service.Rules) > 0 {
-					for _, rule := range service.Rules {
-						ruleModel := PolicyServiceRuleModel{
-							Action:     types.StringPointerValue(rule.Action),
-							Expression: types.StringPointerValue(rule.Expression),
-						}
-
-						rules = append(rules, ruleModel)
-					}
-				}
-
-				t, dg := types.ListValueFrom(
-					ctx,
-					types.ObjectType{
-						AttrTypes: PolicyServiceRuleModel{}.Types(),
-					},
-					rules,
-				)
-				if dg.HasError() {
-					d.Append(dg...)
-					return
-				}
-				serviceModel.Rules = t
-
-				services[name] = serviceModel
+		for name, service := range role.Policy.Services {
+			serviceModel := PolicyServiceModel{
+				Type: types.StringPointerValue(service.Type),
 			}
+
+			rules := []PolicyServiceRuleModel{}
+			for _, rule := range service.Rules {
+				ruleModel := PolicyServiceRuleModel{
+					Action:     types.StringPointerValue(rule.Action),
+					Expression: types.StringPointerValue(rule.Expression),
+					Resources:  types.ListNull(types.StringType),
+				}
+
+				rules = append(rules, ruleModel)
+			}
+
+			t, dg := types.ListValueFrom(
+				ctx,
+				types.ObjectType{
+					AttrTypes: PolicyServiceRuleModel{}.Types(),
+				},
+				rules,
+			)
+			if dg.HasError() {
+				d.Append(dg...)
+				return
+			}
+			serviceModel.Rules = t
+
+			services[name] = serviceModel
 		}
 
 		t, dg := types.MapValueFrom(
@@ -652,7 +686,6 @@ func (r *ResourceRole) read(
 		}
 
 		policy.Services = t
-
 	}
 
 	p, dg := types.ObjectValueFrom(
@@ -665,5 +698,6 @@ func (r *ResourceRole) read(
 		d.Append(dg...)
 		return
 	}
+
 	data.Policy = p
 }

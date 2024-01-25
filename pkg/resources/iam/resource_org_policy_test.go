@@ -2,8 +2,8 @@ package iam_test
 
 import (
 	"bytes"
-	"html/template"
 	"testing"
+	"text/template"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/testutils"
 
