@@ -1,6 +1,6 @@
 # Changelog
 
-## UNRELEASED
+## 0.55.0 (January 26, 2024)
 
 IMPROVEMENTS:
 
@@ -9,7 +9,6 @@ IMPROVEMENTS:
 - SKS tests: renable cluster update test as upstream bug is fixed (#309)
 - Make `iam_role.name` attribute require replace as per API behaviour (#330)
 - Handle DNS record normalization #332
-
 
 BUG FIXES:
 
