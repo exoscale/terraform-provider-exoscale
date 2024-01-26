@@ -8,6 +8,7 @@ IMPROVEMENTS:
 - sks_nodepool: add an example for taints #324 
 - SKS tests: renable cluster update test as upstream bug is fixed (#309)
 - Make `iam_role.name` attribute require replace as per API behaviour (#330)
+- Handle DNS record normalization #332
 
 
 BUG FIXES:

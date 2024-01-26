@@ -56,6 +56,7 @@ directory for complete configuration examples.
 
 ### Read-Only
 
+- `content_normalized` (String) The normalized value of the record
 - `hostname` (String) The record *Fully Qualified Domain Name* (FQDN). Useful for aliasing `A`/`AAAA` records with `CNAME`.
 - `id` (String) The ID of this resource.
 

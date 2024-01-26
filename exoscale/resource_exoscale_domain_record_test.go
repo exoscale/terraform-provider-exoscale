@@ -15,16 +15,18 @@ import (
 )
 
 var (
-	testAccResourceDomainRecordDomainName     = acctest.RandomWithPrefix(testPrefix) + ".net"
-	testAccResourceDomainRecordName           = "mail1"
-	testAccResourceDomainRecordNameUpdated    = "mail2"
-	testAccResourceDomainRecordType           = "MX"
-	testAccResourceDomainRecordContent        = "mta1." + testAccResourceDomainRecordDomainName
-	testAccResourceDomainRecordContentUpdated = "mta2." + testAccResourceDomainRecordDomainName
-	testAccResourceDomainRecordPrio           = 10
-	testAccResourceDomainRecordPrioUpdated    = 20
-	testAccResourceDomainRecordTTL            = 10
-	testAccResourceDomainRecordTTLUpdated     = 20
+	testAccResourceDomainRecordDomainName           = acctest.RandomWithPrefix(testPrefix) + ".net"
+	testAccResourceDomainRecordName                 = "mail1"
+	testAccResourceDomainRecordNameUpdated          = "mail2"
+	testAccResourceDomainRecordType                 = "MX"
+	testAccResourceDomainRecordContent              = "mta1." + testAccResourceDomainRecordDomainName
+	testAccResourceDomainRecordContentUpdated       = "mta2." + testAccResourceDomainRecordDomainName
+	testAccResourceDomainRecordTXTContent           = "test value for TXT record"
+	testAccResourceDomainRecordTXTContentNormalized = "\"test value for TXT record\""
+	testAccResourceDomainRecordPrio                 = 10
+	testAccResourceDomainRecordPrioUpdated          = 20
+	testAccResourceDomainRecordTTL                  = 10
+	testAccResourceDomainRecordTTLUpdated           = 20
 
 	testAccResourceDomainRecordConfigCreate = fmt.Sprintf(`
 resource "exoscale_domain" "exo" {
@@ -46,6 +48,13 @@ resource "exoscale_domain_record" "a" {
   record_type = "A"
   content     = "1.2.3.4"
 }
+
+resource "exoscale_domain_record" "txt" {
+  domain      = exoscale_domain.exo.id
+  name        = "test"
+  record_type = "TXT"
+  content     = "%s"
+}
 `,
 		testAccResourceDomainRecordDomainName,
 		testAccResourceDomainRecordName,
@@ -53,6 +62,7 @@ resource "exoscale_domain_record" "a" {
 		testAccResourceDomainRecordContent,
 		testAccResourceDomainRecordPrio,
 		testAccResourceDomainRecordTTL,
+		testAccResourceDomainRecordTXTContent,
 	)
 
 	testAccResourceDomainRecordConfigUpdate = fmt.Sprintf(`
@@ -74,6 +84,13 @@ resource "exoscale_domain_record" "a" {
   name        = ""
   record_type = "A"
   content     = "1.2.3.4"
+}
+
+resource "exoscale_domain_record" "txt" {
+  domain      = exoscale_domain.exo.id
+  name        = "test"
+  record_type = "TXT"
+  content     = "\"test value for TXT record\""
 }
 `,
 		testAccResourceDomainRecordDomainName,
@@ -109,6 +126,10 @@ func TestAccResourceDomainRecord(t *testing.T) {
 						"prio":        validateString(fmt.Sprint(testAccResourceDomainRecordPrio)),
 						"ttl":         validateString(fmt.Sprint(testAccResourceDomainRecordTTL)),
 					}),
+					testAccCheckResourceDomainRecordAttributes("exoscale_domain_record.txt", testAttrs{
+						"content":            validateString(testAccResourceDomainRecordTXTContent),
+						"content_normalized": validateString(testAccResourceDomainRecordTXTContentNormalized),
+					}),
 					testAccCheckResourceDomainRecordStateUpgradeV1("exoscale_domain.exo", "exoscale_domain_record.mx"),
 				),
 			},
@@ -124,6 +145,10 @@ func TestAccResourceDomainRecord(t *testing.T) {
 						"content":     validateString(testAccResourceDomainRecordContentUpdated),
 						"prio":        validateString(fmt.Sprint(testAccResourceDomainRecordPrioUpdated)),
 						"ttl":         validateString(fmt.Sprint(testAccResourceDomainRecordTTLUpdated)),
+					}),
+					testAccCheckResourceDomainRecordAttributes("exoscale_domain_record.txt", testAttrs{
+						"content":            validateString(testAccResourceDomainRecordTXTContentNormalized),
+						"content_normalized": validateString(testAccResourceDomainRecordTXTContentNormalized),
 					}),
 				),
 			},
