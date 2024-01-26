@@ -149,13 +149,13 @@ func (r *ResourceOrgPolicy) Create(ctx context.Context, req resource.CreateReque
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(r.env, config.DefaultZone))
 
 	// Update policy
-	r.update(ctx, resp.Diagnostics, &data)
+	r.update(ctx, &resp.Diagnostics, &data)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// Read updated policy
-	r.read(ctx, resp.Diagnostics, &data)
+	r.read(ctx, &resp.Diagnostics, &data)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -188,7 +188,7 @@ func (r *ResourceOrgPolicy) Read(ctx context.Context, req resource.ReadRequest, 
 
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(r.env, config.DefaultZone))
 
-	r.read(ctx, resp.Diagnostics, &data)
+	r.read(ctx, &resp.Diagnostics, &data)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -223,13 +223,13 @@ func (r *ResourceOrgPolicy) Update(ctx context.Context, req resource.UpdateReque
 
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(r.env, config.DefaultZone))
 	// Update policy
-	r.update(ctx, resp.Diagnostics, &planData)
+	r.update(ctx, &resp.Diagnostics, &planData)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// Read updated policy
-	r.read(ctx, resp.Diagnostics, &stateData)
+	r.read(ctx, &resp.Diagnostics, &stateData)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -248,7 +248,7 @@ func (r *ResourceOrgPolicy) Delete(ctx context.Context, req resource.DeleteReque
 
 func (r *ResourceOrgPolicy) read(
 	ctx context.Context,
-	d diag.Diagnostics,
+	d *diag.Diagnostics,
 	data *ResourceOrgPolicyModel,
 ) {
 	policy, err := r.client.GetIAMOrgPolicy(ctx, config.DefaultZone)
@@ -278,6 +278,7 @@ func (r *ResourceOrgPolicy) read(
 					ruleModel := PolicyServiceRuleModel{
 						Action:     types.StringPointerValue(rule.Action),
 						Expression: types.StringPointerValue(rule.Expression),
+						Resources:  types.ListNull(types.StringType),
 					}
 
 					rules = append(rules, ruleModel)
@@ -318,7 +319,7 @@ func (r *ResourceOrgPolicy) read(
 
 func (r *ResourceOrgPolicy) update(
 	ctx context.Context,
-	d diag.Diagnostics,
+	d *diag.Diagnostics,
 	data *ResourceOrgPolicyModel,
 ) {
 	policy := &exoscale.IAMPolicy{
