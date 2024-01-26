@@ -15,6 +15,7 @@ BUG FIXES:
 - instance: error when new disk_size < current one (#328)
 - Bump dependencies (#329)
 - database: change of plan should not recreate resource (#327)
+- database: UseStateForUnknown for state and maintenance (#331)
 - iam: fix bug in `iam_role` and `iam_org_policy` rules update (#330)
 
 ## 0.54.1 (December 6, 2023)

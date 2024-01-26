@@ -101,6 +101,9 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 				MarkdownDescription: "The day of week to perform the automated database service maintenance (`never`, `monday`, `tuesday`, `wednesday`, `thursday`, `friday`, `saturday`, `sunday`).",
 				Optional:            true,
 				Computed:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 				Validators: []validator.String{
 					stringvalidator.AlsoRequires(path.Expressions{
 						path.MatchRoot("maintenance_time"),
@@ -121,6 +124,9 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 				MarkdownDescription: "The time of day to perform the automated database service maintenance (`HH:MM:SS`)",
 				Optional:            true,
 				Computed:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 				Validators: []validator.String{
 					stringvalidator.AlsoRequires(path.Expressions{
 						path.MatchRoot("maintenance_dow"),
@@ -162,6 +168,9 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 			"state": schema.StringAttribute{
 				MarkdownDescription: "The current state of the database service.",
 				Computed:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"ca_certificate": schema.StringAttribute{
 				MarkdownDescription: "CA Certificate required to reach a DBaaS service through a TLS-protected connection.",
