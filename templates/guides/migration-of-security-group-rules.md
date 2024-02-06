@@ -86,6 +86,8 @@ terraform state list
 
 We want to migrate the single `exoscale_security_group_rules.webapp` to 3 different `exoscale_security_group_rule` resources, as we have 3 different ingress rules.
 
+~> **Note:** If in your `exoscale_security_group_rules` definition `ingress` and/or `egress` blocks define multiple ports or port ranges (as `ports` attribute is array), you need to define one `exoscale_security_group_rule` for each port or port range as multiple values per rule are no longer allowed.
+
 
 ## Migration plan
 
