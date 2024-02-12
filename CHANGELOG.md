@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+FEATURES:
+
+- sks: CSI addon (#335)
+
 IMPROVEMENTS:
 
 - Add note about multiple ports rules in security group migration guide #333
