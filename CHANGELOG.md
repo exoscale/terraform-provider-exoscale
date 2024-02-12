@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+FEATURES:
+
+- sks: CSI addon (#335)
+
 IMPROVEMENTS:
 
 - go.mk: remove submodule and initialize through make #338 
