@@ -29,6 +29,7 @@ description: |-
 - `description` (String) Match against this string. If you supply a string that begins and ends with a "/" it will be matched as a regex.
 - `endpoint` (String) Match against this string. If you supply a string that begins and ends with a "/" it will be matched as a regex.
 - `exoscale_ccm` (Boolean) Match against this bool
+- `exoscale_csi` (Boolean) Match against this bool
 - `id` (String) Match against this string. If you supply a string that begins and ends with a "/" it will be matched as a regex.
 - `kubelet_ca` (String) Match against this string. If you supply a string that begins and ends with a "/" it will be matched as a regex.
 - `labels` (Map of String) Match against key/values. Keys are matched exactly, while values may be matched as a regex if you supply a string that begins and ends with "/"
@@ -56,6 +57,7 @@ Read-Only:
 - `description` (String)
 - `endpoint` (String)
 - `exoscale_ccm` (Boolean)
+- `exoscale_csi` (Boolean)
 - `id` (String)
 - `kubelet_ca` (String)
 - `labels` (Map of String)
