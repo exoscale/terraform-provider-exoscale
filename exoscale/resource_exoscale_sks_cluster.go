@@ -23,6 +23,7 @@ const (
 	defaultSKSClusterServiceLevel = "pro"
 
 	sksClusterAddonExoscaleCCM = "exoscale-cloud-controller"
+	sksClusterAddonExoscaleCSI = "exoscale-container-storage-interface"
 	sksClusterAddonMS          = "metrics-server"
 
 	resSKSClusterAttrAddons             = "addons"
@@ -34,6 +35,7 @@ const (
 	resSKSClusterAttrDescription        = "description"
 	resSKSClusterAttrEndpoint           = "endpoint"
 	resSKSClusterAttrExoscaleCCM        = "exoscale_ccm"
+	resSKSClusterAttrExoscaleCSI        = "exoscale_csi"
 	resSKSClusterAttrKubeletCA          = "kubelet_ca"
 	resSKSClusterAttrLabels             = "labels"
 	resSKSClusterAttrMetricsServer      = "metrics_server"
@@ -121,6 +123,12 @@ func resourceSKSCluster() *schema.Resource {
 			Optional:    true,
 			Default:     true,
 			Description: "Deploy the [Kubernetes Metrics Server](https://github.com/kubernetes-sigs/metrics-server/) in the control plane (boolean; default: `true`; may only be set at creation time).",
+		},
+		resSKSClusterAttrExoscaleCSI: {
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Default:     false,
+			Description: "Deploy the Exoscale [Container Storage Interface](https://github.com/exoscale/exoscale-csi-driver/) on worker nodes (boolean; default: `false`; may only be set at creation time).",
 		},
 		resSKSClusterAttrLabels: {
 			Type:        schema.TypeMap,
@@ -267,6 +275,9 @@ func resourceSKSClusterCreate(ctx context.Context, d *schema.ResourceData, meta 
 	}
 	if enableMS := d.Get(resSKSClusterAttrMetricsServer).(bool); enableMS && !in(addOns, sksClusterAddonMS) {
 		addOns = append(addOns, sksClusterAddonMS)
+	}
+	if enableCSI := d.Get(resSKSClusterAttrExoscaleCSI).(bool); enableCSI && !in(addOns, sksClusterAddonExoscaleCSI) {
+		addOns = append(addOns, sksClusterAddonExoscaleCSI)
 	}
 	if len(addOns) > 0 {
 		sksCluster.AddOns = &addOns
