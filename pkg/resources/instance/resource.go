@@ -34,6 +34,12 @@ func Resource() *schema.Resource {
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
+		AttrDestroyProtected: {
+			Description: "Mark the instance as protected, the Exoscale API will refuse to delete the instance until the protection is removed (boolean; default: `false`).",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
+		},
 		AttrDeployTargetID: {
 			Description: "A deploy target ID.",
 			Type:        schema.TypeString,
@@ -296,6 +302,13 @@ func rCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 	instance, err = client.CreateInstance(ctx, zone, instance)
 	if err != nil {
 		return diag.FromErr(err)
+	}
+
+	if isDestroyProtected, ok := d.GetOk(AttrDestroyProtected); ok && isDestroyProtected.(bool) {
+		_, err := client.AddInstanceProtectionWithResponse(ctx, *instance.ID)
+		if err != nil {
+			return diag.Errorf("unable to make instance %s destroy protected: %s", *instance.ID, err)
+		}
 	}
 
 	if set, ok := d.Get(AttrElasticIPIDs).(*schema.Set); ok {
@@ -628,6 +641,22 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 		if d.Get(AttrState) == "running" {
 			if err := client.StartInstance(ctx, zone, instance); err != nil {
 				return diag.Errorf("unable to start instance: %s", err)
+			}
+		}
+	}
+
+	if d.HasChanges(AttrDestroyProtected) {
+		if isDestroyProtected, ok := d.GetOk(AttrDestroyProtected); ok {
+			if isDestroyProtected.(bool) {
+				_, err := client.AddInstanceProtectionWithResponse(ctx, *instance.ID)
+				if err != nil {
+					return diag.Errorf("unable to make instance %s destroy protected: %s", *instance.ID, err)
+				}
+			} else {
+				_, err := client.RemoveInstanceProtectionWithResponse(ctx, *instance.ID)
+				if err != nil {
+					return diag.Errorf("unable to remove destroy protection from instance %s: %s", *instance.ID, err)
+				}
 			}
 		}
 	}
