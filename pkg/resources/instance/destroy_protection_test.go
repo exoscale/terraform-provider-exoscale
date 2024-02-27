@@ -20,10 +20,18 @@ data "exoscale_template" "my_template" {
   name = "Linux Ubuntu 22.04 LTS 64-bit"
 }
 
-{{ if .DeleteInstanceResource }}
+data "exoscale_security_group" "default" {
+  name = "default"
+}
+
+{{ if not .DeleteInstanceResource }}
 resource "exoscale_compute_instance" "my_instance" {
   zone = "{{.Zone}}"
   name = "{{.Name}}"
+
+  security_group_ids      = [
+    data.exoscale_security_group.default.id,
+  ]
 
   template_id = data.exoscale_template.my_template.id
   type        = "standard.micro"
@@ -59,7 +67,7 @@ func testDestroyProtection(t *testing.T) {
 
 	checkDestroyProtection := func(expected string) func(s *terraform.State) error {
 		return func(s *terraform.State) error {
-			isDestroyProtected, err := testutils.AttrFromState(s, "resource.exoscale_compute_instance.my-instance", "destroy_protected")
+			isDestroyProtected, err := testutils.AttrFromState(s, "exoscale_compute_instance.my_instance", "destroy_protected")
 			if err != nil {
 				return err
 			}
@@ -77,6 +85,7 @@ func testDestroyProtection(t *testing.T) {
 		ProviderFactories: testutils.Providers(),
 		Steps: []resource.TestStep{
 			{
+				// test instance creation with the destroy_protected field
 				Config: buildTestConfig(TestData{
 					Zone:             testutils.TestZoneName,
 					DestroyProtected: true,
@@ -85,6 +94,7 @@ func testDestroyProtection(t *testing.T) {
 				Check: checkDestroyProtection("true"),
 			},
 			{
+				// test that the API returns an error if we try to delete the protected instance
 				Config: buildTestConfig(TestData{
 					Zone:                   testutils.TestZoneName,
 					DestroyProtected:       false,
@@ -95,6 +105,7 @@ func testDestroyProtection(t *testing.T) {
 				ExpectError: regexp.MustCompile(`invalid request: Operation delete-instance on resource .* is forbidden - reason: manual instance protection`),
 			},
 			{
+				// test that we can remove the destroy protection
 				Config: buildTestConfig(TestData{
 					Zone:             testutils.TestZoneName,
 					DestroyProtected: false,
@@ -103,6 +114,7 @@ func testDestroyProtection(t *testing.T) {
 				Check: checkDestroyProtection("false"),
 			},
 			{
+				// test that we can delete the instance after removing the destroy protection
 				Config: buildTestConfig(TestData{
 					Zone:                   testutils.TestZoneName,
 					DestroyProtected:       false,
