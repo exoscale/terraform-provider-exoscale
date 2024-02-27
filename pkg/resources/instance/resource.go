@@ -645,18 +645,22 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 		}
 	}
 
-	if d.HasChanges(AttrDestroyProtected) {
-		if isDestroyProtected, ok := d.GetOk(AttrDestroyProtected); ok {
-			if isDestroyProtected.(bool) {
-				_, err := client.AddInstanceProtectionWithResponse(ctx, *instance.ID)
-				if err != nil {
-					return diag.Errorf("unable to make instance %s destroy protected: %s", *instance.ID, err)
-				}
-			} else {
-				_, err := client.RemoveInstanceProtectionWithResponse(ctx, *instance.ID)
-				if err != nil {
-					return diag.Errorf("unable to remove destroy protection from instance %s: %s", *instance.ID, err)
-				}
+	// as we do not have a `get-instance-protection` API call,
+	// the tf state of the `destroy_protected` field cannot be reconciled
+	// and we cannot rely on d.HasChange to detect a change.
+	// Therefore we simply apply what the practitioner configured
+	// or do nothing if the field isn't set.
+	isDestroyProtected := d.Get(AttrDestroyProtected)
+	if isDestroyProtected != nil {
+		if isDestroyProtected.(bool) {
+			_, err := client.AddInstanceProtectionWithResponse(ctx, *instance.ID)
+			if err != nil {
+				return diag.Errorf("unable to make instance %s destroy protected: %s", *instance.ID, err)
+			}
+		} else {
+			_, err := client.RemoveInstanceProtectionWithResponse(ctx, *instance.ID)
+			if err != nil {
+				return diag.Errorf("unable to remove destroy protection from instance %s: %s", *instance.ID, err)
 			}
 		}
 	}
