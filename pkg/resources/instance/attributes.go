@@ -6,6 +6,7 @@ const (
 
 	AttrAntiAffinityGroupIDs = "anti_affinity_group_ids"
 	AttrCreatedAt            = "created_at"
+	AttrDestroyProtected     = "destroy_protected"
 	AttrDeployTargetID       = "deploy_target_id"
 	AttrDiskSize             = "disk_size"
 	AttrElasticIPIDs         = "elastic_ip_ids"

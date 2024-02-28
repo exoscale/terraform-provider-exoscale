@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+FEATURES:
+
+- compute_instance: add destroy_protected attr #337 
 IMPROVEMENTS:
 
 - Add note about multiple ports rules in security group migration guide #333

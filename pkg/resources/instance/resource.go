@@ -34,6 +34,11 @@ func Resource() *schema.Resource {
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
+		AttrDestroyProtected: {
+			Description: "Mark the instance as protected, the Exoscale API will refuse to delete the instance until the protection is removed (boolean; default: `false`).",
+			Type:        schema.TypeBool,
+			Optional:    true,
+		},
 		AttrDeployTargetID: {
 			Description: "A deploy target ID.",
 			Type:        schema.TypeString,
@@ -296,6 +301,13 @@ func rCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 	instance, err = client.CreateInstance(ctx, zone, instance)
 	if err != nil {
 		return diag.FromErr(err)
+	}
+
+	if isDestroyProtected, ok := d.GetOk(AttrDestroyProtected); ok && isDestroyProtected.(bool) {
+		_, err := client.AddInstanceProtectionWithResponse(ctx, *instance.ID)
+		if err != nil {
+			return diag.Errorf("unable to make instance %s destroy protected: %s", *instance.ID, err)
+		}
 	}
 
 	if set, ok := d.Get(AttrElasticIPIDs).(*schema.Set); ok {
@@ -628,6 +640,26 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 		if d.Get(AttrState) == "running" {
 			if err := client.StartInstance(ctx, zone, instance); err != nil {
 				return diag.Errorf("unable to start instance: %s", err)
+			}
+		}
+	}
+
+	// as we do not have a `get-instance-protection` API call,
+	// the tf state of the `destroy_protected` field cannot be reconciled
+	// and we cannot rely on d.HasChange to detect a change.
+	// Therefore we simply apply what the practitioner configured
+	// If the field is absent, the protection will be removed
+	isDestroyProtected := d.Get(AttrDestroyProtected)
+	if isDestroyProtected != nil {
+		if isDestroyProtected.(bool) {
+			_, err := client.AddInstanceProtectionWithResponse(ctx, *instance.ID)
+			if err != nil {
+				return diag.Errorf("unable to make instance %s destroy protected: %s", *instance.ID, err)
+			}
+		} else {
+			_, err := client.RemoveInstanceProtectionWithResponse(ctx, *instance.ID)
+			if err != nil {
+				return diag.Errorf("unable to remove destroy protection from instance %s: %s", *instance.ID, err)
 			}
 		}
 	}
