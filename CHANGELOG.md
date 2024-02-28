@@ -1,10 +1,11 @@
 # Changelog
 
-## Unreleased
+## 0.56.0 (February 28, 2024)
 
 FEATURES:
 
 - compute_instance: add destroy_protected attr #337 
+
 IMPROVEMENTS:
 
 - Add note about multiple ports rules in security group migration guide #333
