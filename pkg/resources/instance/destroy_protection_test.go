@@ -184,8 +184,8 @@ func testDefaultDestroyProtection(t *testing.T) {
 				ExpectError: destroyProtectionError,
 			},
 
-			// test that removing the `destroy_protected` field does not remove the destroy protection
-			// it won't do anything and we have to set it to false explicitly to delete the instance later
+			// test that removing the `destroy_protected` field removes the destroy protection
+			// behaving as if false were the default value.
 			{
 				Config: buildTestConfig(t, destroyProtectionTestData{
 					Zone:                testutils.TestZoneName,
@@ -200,18 +200,6 @@ func testDefaultDestroyProtection(t *testing.T) {
 					Name:                   instanceName,
 					DeleteInstanceResource: true,
 				}),
-				ExpectError: destroyProtectionError,
-			},
-
-			{
-				// remove the destroy protection for cleanup
-				Config: buildTestConfig(t, destroyProtectionTestData{
-					Zone:                testutils.TestZoneName,
-					SetDestroyProtected: true,
-					DestroyProtected:    false,
-					Name:                instanceName,
-				}),
-				Check: checkDestroyProtection("false"),
 			},
 		},
 	})

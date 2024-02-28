@@ -38,7 +38,6 @@ func Resource() *schema.Resource {
 			Description: "Mark the instance as protected, the Exoscale API will refuse to delete the instance until the protection is removed (boolean; default: `false`).",
 			Type:        schema.TypeBool,
 			Optional:    true,
-			Computed:    true,
 		},
 		AttrDeployTargetID: {
 			Description: "A deploy target ID.",
@@ -649,7 +648,7 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 	// the tf state of the `destroy_protected` field cannot be reconciled
 	// and we cannot rely on d.HasChange to detect a change.
 	// Therefore we simply apply what the practitioner configured
-	// or do nothing if the field isn't set.
+	// If the field is absent, the protection will be removed
 	isDestroyProtected := d.Get(AttrDestroyProtected)
 	if isDestroyProtected != nil {
 		if isDestroyProtected.(bool) {
