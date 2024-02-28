@@ -6,8 +6,13 @@ FEATURES:
 
 - compute_instance: add destroy_protected attr #337 
 
+FEATURES:
+
+- sks: CSI addon (#335)
+
 IMPROVEMENTS:
 
+- sks: acceptance test for CSI addon #336
 - Add note about multiple ports rules in security group migration guide #333
 
 ## 0.55.0 (January 26, 2024)

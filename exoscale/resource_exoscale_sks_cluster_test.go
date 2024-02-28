@@ -42,6 +42,7 @@ resource "exoscale_sks_cluster" "test" {
   name = "%s"
   description = "%s"
   exoscale_ccm = true
+  exoscale_csi = true
   metrics_server = false
   auto_upgrade = true
   labels = {
@@ -67,9 +68,11 @@ resource "exoscale_sks_nodepool" "test" {
   zone = local.zone
   cluster_id = exoscale_sks_cluster.test.id
   name = "test"
-  instance_type = "standard.small"
   disk_size = 20
-  size = 1
+
+  # standard.medium and a minimum size of 2 is required for the CSI
+  instance_type = "standard.medium"
+  size = 2
 
   timeouts {
     delete = "10m"
@@ -193,7 +196,7 @@ func TestAccResourceSKSCluster(t *testing.T) {
 
 						latestVersion := versions[0]
 
-						a.Equal([]string{sksClusterAddonExoscaleCCM}, *sksCluster.AddOns)
+						a.Equal([]string{sksClusterAddonExoscaleCCM, sksClusterAddonExoscaleCSI}, *sksCluster.AddOns)
 						a.True(defaultBool(sksCluster.AutoUpgrade, false))
 						a.Equal(defaultSKSClusterCNI, *sksCluster.CNI)
 						a.Equal(testAccResourceSKSClusterDescription, *sksCluster.Description)
@@ -213,6 +216,7 @@ func TestAccResourceSKSCluster(t *testing.T) {
 						resSKSClusterAttrDescription:        validateString(testAccResourceSKSClusterDescription),
 						resSKSClusterAttrEndpoint:           validation.ToDiagFunc(validation.IsURLWithHTTPS),
 						resSKSClusterAttrExoscaleCCM:        validateString("true"),
+						resSKSClusterAttrExoscaleCSI:        validateString("true"),
 						resSKSClusterAttrKubeletCA:          validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Kubelet CA must be a PEM certificate")),
 						resSKSClusterAttrMetricsServer:      validateString("false"),
 						resSKSClusterAttrLabels + ".test":   validateString(testAccResourceSKSClusterLabelValue),
@@ -237,6 +241,7 @@ func TestAccResourceSKSCluster(t *testing.T) {
 						resSKSClusterAttrDescription:        validateString(testAccResourceSKSClusterDescriptionUpdated),
 						resSKSClusterAttrEndpoint:           validation.ToDiagFunc(validation.IsURLWithHTTPS),
 						resSKSClusterAttrExoscaleCCM:        validateString("true"),
+						resSKSClusterAttrExoscaleCSI:        validateString("true"),
 						resSKSClusterAttrKubeletCA:          validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Kubelet CA must be a PEM certificate")),
 						resSKSClusterAttrMetricsServer:      validateString("false"),
 						resSKSClusterAttrLabels + ".test":   validateString(testAccResourceSKSClusterLabelValueUpdated),
