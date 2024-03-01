@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+IMPROVEMENTS:
+
+- go.mk: remove submodule and initialize through make #338 
+
 ## 0.56.0 (February 28, 2024)
 
 FEATURES:
