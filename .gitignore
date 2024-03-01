@@ -31,3 +31,5 @@ release
 /.vs
 
 /terraform-provider-exoscale
+
+/go.mk
