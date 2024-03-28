@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
@@ -11,10 +12,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	exov2 "github.com/exoscale/egoscale/v2"
+	exov3 "github.com/exoscale/egoscale/v3"
+	"github.com/exoscale/egoscale/v3/credentials"
 
 	"github.com/exoscale/terraform-provider-exoscale/exoscale"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/block_storage"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/database"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/iam"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/nlb_service"
@@ -143,15 +147,35 @@ func (p *ExoscaleProvider) Configure(ctx context.Context, req provider.Configure
 
 	_ = clv2
 
+	// Exoscale v3 client
+	creds := credentials.NewStaticCredentials(
+		key,
+		secret,
+	)
+
+	opts := []exov3.ClientOpt{}
+	if ep := os.Getenv("EXOSCALE_API_ENDPOINT"); ep != "" {
+		opts = append(opts, exov3.ClientOptWithEndpoint(exov3.Endpoint(ep)))
+	}
+
+	clv3, err := exov3.NewClient(creds, opts...)
+	if err != nil {
+		resp.Diagnostics.AddError(err.Error(), "unable to initialize Exoscale API V3 client")
+	}
+
+	exov3.UserAgent = exoscale.UserAgent
+
 	resp.DataSourceData = &providerConfig.ExoscaleProviderConfig{
 		Config:      baseConfig,
 		ClientV2:    clv2,
+		ClientV3:    clv3,
 		Environment: environment,
 	}
 
 	resp.ResourceData = &providerConfig.ExoscaleProviderConfig{
 		Config:      baseConfig,
 		ClientV2:    clv2,
+		ClientV3:    clv3,
 		Environment: environment,
 	}
 }
@@ -177,6 +201,7 @@ func (p *ExoscaleProvider) Resources(ctx context.Context) []func() resource.Reso
 		iam.NewResourceOrgPolicy,
 		iam.NewResourceRole,
 		iam.NewResourceAPIKey,
+		block_storage.NewResourceVolume,
 	}
 }
 
