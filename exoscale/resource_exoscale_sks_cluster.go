@@ -574,6 +574,10 @@ func resourceSKSClusterApply(_ context.Context, d *schema.ResourceData, sksClust
 		if err := d.Set(resSKSClusterAttrMetricsServer, in(*sksCluster.AddOns, sksClusterAddonMS)); err != nil {
 			return err
 		}
+
+		if err := d.Set(resSKSClusterAttrExoscaleCSI, in(*sksCluster.AddOns, sksClusterAddonExoscaleCSI)); err != nil {
+			return err
+		}
 	}
 
 	if err := d.Set(resSKSClusterAttrAggregationLayerCA, certificates.AggregationCA); err != nil {
