@@ -25,7 +25,9 @@ import (
 	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
 )
 
-const ResourceVolumeDescription = `Exoscale's Block Storage offers persistent externally attached volumes for your workloads.
+const ResourceVolumeDescription = `Manage [Exoscale Block Storage](https://community.exoscale.com/documentation/block-storage/) Volume.
+
+Block Storage offers persistent externally attached volumes for your workloads.
 `
 
 // Ensure provider defined types fully satisfy framework interfaces.
@@ -50,38 +52,12 @@ type ResourceVolumeModel struct {
 	Size           types.Int64  `tfsdk:"size"`
 	Blocksize      types.Int64  `tfsdk:"blocksize"`
 	CreatedAt      types.String `tfsdk:"created_at"`
-	Instance       types.Object `tfsdk:"instance"`
 	Labels         types.Map    `tfsdk:"labels"`
-	Snapshots      types.Set    `tfsdk:"snapshots"`
 	SnapshotTarget types.Object `tfsdk:"snapshot_target"`
 	State          types.String `tfsdk:"state"`
 	Zone           types.String `tfsdk:"zone"`
 
 	Timeouts timeouts.Value `tfsdk:"timeouts"`
-}
-
-// ResourceVolumeInstanceModel defines nested data model.
-type ResourceVolumeInstanceModel struct {
-	ID types.String `tfsdk:"id"`
-}
-
-// Types returns nested data model types to be used for conversion.
-func (m ResourceVolumeInstanceModel) Types() map[string]attr.Type {
-	return map[string]attr.Type{
-		"id": types.StringType,
-	}
-}
-
-// ResourceVolumeSnapshotModel defines nested data model.
-type ResourceVolumeSnapshotModel struct {
-	ID types.String `tfsdk:"id"`
-}
-
-// Types returns nested data model types to be used for conversion.
-func (m ResourceVolumeSnapshotModel) Types() map[string]attr.Type {
-	return map[string]attr.Type{
-		"id": types.StringType,
-	}
 }
 
 // ResourceVolumeSnapshotTargetModel defines nested data model.
@@ -142,32 +118,10 @@ func (r *ResourceVolume) Schema(ctx context.Context, req resource.SchemaRequest,
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
-			"instance": schema.SingleNestedAttribute{
-				MarkdownDescription: "Volume attached instance.",
-				Optional:            true,
-				Attributes: map[string]schema.Attribute{
-					"id": schema.StringAttribute{
-						MarkdownDescription: "Instance ID.",
-						Optional:            true,
-					},
-				},
-			},
 			"labels": schema.MapAttribute{
 				ElementType:         types.StringType,
 				MarkdownDescription: "Resource labels.",
 				Optional:            true,
-			},
-			"snapshots": schema.SetNestedAttribute{
-				MarkdownDescription: "Volume snapshots available.",
-				Computed:            true,
-				NestedObject: schema.NestedAttributeObject{
-					Attributes: map[string]schema.Attribute{
-						"id": schema.StringAttribute{
-							MarkdownDescription: "Snapshot ID.",
-							Computed:            true,
-						},
-					},
-				},
 			},
 			"snapshot_target": schema.SingleNestedAttribute{
 				MarkdownDescription: "Block storage snapshot to use when creating a volume. Read-only after creation.",
@@ -257,7 +211,7 @@ func (r *ResourceVolume) Create(ctx context.Context, req resource.CreateRequest,
 	}
 
 	if !plan.SnapshotTarget.IsNull() {
-		snapshot := ResourceVolumeSnapshotModel{}
+		snapshot := ResourceVolumeSnapshotTargetModel{}
 
 		dg := plan.SnapshotTarget.As(ctx, &snapshot, basetypes.ObjectAsOptions{})
 		if dg.HasError() {
@@ -309,55 +263,6 @@ func (r *ResourceVolume) Create(ctx context.Context, req resource.CreateRequest,
 		return
 	}
 
-	// If instance attribute is specified, attach instance to the volume.
-	if !plan.Instance.IsNull() {
-		instance := ResourceVolumeInstanceModel{}
-
-		dg := plan.Instance.As(ctx, &instance, basetypes.ObjectAsOptions{})
-		if dg.HasError() {
-			resp.Diagnostics.Append(dg...)
-			return
-		}
-
-		if !instance.ID.IsNull() {
-			iid, err := exoscale.ParseUUID(instance.ID.ValueString())
-			if err != nil {
-				resp.Diagnostics.AddError(
-					"unable to parse attached instance ID",
-					err.Error(),
-				)
-				return
-			}
-			request := exoscale.AttachBlockStorageVolumeToInstanceRequest{
-				Instance: &exoscale.InstanceTarget{
-					ID: iid,
-				},
-			}
-
-			op, err := client.AttachBlockStorageVolumeToInstance(
-				ctx,
-				id,
-				request,
-			)
-			if err != nil {
-				resp.Diagnostics.AddError(
-					"unable to attach volume to instance",
-					err.Error(),
-				)
-				return
-			}
-
-			op, err = client.Wait(ctx, op, exoscale.OperationStateSuccess)
-			if err != nil {
-				resp.Diagnostics.AddError(
-					"failed to create block storage",
-					err.Error(),
-				)
-				return
-			}
-		}
-	}
-
 	// Update computed attributes before saving the state.
 	// Compute attributes cannot be undefined in the state, but may be null.
 
@@ -391,29 +296,6 @@ func (r *ResourceVolume) Create(ctx context.Context, req resource.CreateRequest,
 
 		plan.Labels = t
 	}
-
-	snapshots := []ResourceVolumeSnapshotModel{}
-	for _, s := range volume.BlockStorageSnapshots {
-		snapshot := ResourceVolumeSnapshotModel{
-			ID: types.StringValue(s.ID.String()),
-		}
-
-		snapshots = append(snapshots, snapshot)
-	}
-
-	t, dg := types.SetValueFrom(
-		ctx,
-		types.ObjectType{
-			AttrTypes: ResourceVolumeSnapshotModel{}.Types(),
-		},
-		snapshots,
-	)
-	if dg.HasError() {
-		resp.Diagnostics.Append(dg...)
-		return
-	}
-
-	plan.Snapshots = t
 
 	// Save plan into Terraform state.
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
@@ -499,47 +381,6 @@ func (r *ResourceVolume) Read(ctx context.Context, req resource.ReadRequest, res
 
 		state.Labels = t
 	}
-
-	if volume.Instance != nil {
-		instance := ResourceVolumeInstanceModel{}
-		instance.ID = types.StringValue(volume.Instance.ID.String())
-
-		i, dg := types.ObjectValueFrom(
-			ctx,
-			ResourceVolumeInstanceModel{}.Types(),
-			instance,
-		)
-
-		if dg.HasError() {
-			resp.Diagnostics.Append(dg...)
-			return
-		}
-
-		state.Instance = i
-	}
-
-	snapshots := []ResourceVolumeSnapshotModel{}
-	for _, s := range volume.BlockStorageSnapshots {
-		snapshot := ResourceVolumeSnapshotModel{
-			ID: types.StringValue(s.ID.String()),
-		}
-
-		snapshots = append(snapshots, snapshot)
-	}
-
-	t, dg := types.SetValueFrom(
-		ctx,
-		types.ObjectType{
-			AttrTypes: ResourceVolumeSnapshotModel{}.Types(),
-		},
-		snapshots,
-	)
-	if dg.HasError() {
-		resp.Diagnostics.Append(dg...)
-		return
-	}
-
-	state.Snapshots = t
 
 	// Save updated state into Terraform state.
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
@@ -694,30 +535,6 @@ func (r *ResourceVolume) Delete(ctx context.Context, req resource.DeleteRequest,
 			err.Error(),
 		)
 		return
-	}
-
-	// Detach volume from instance.
-	if !state.Instance.IsNull() {
-		op, err := client.DetachBlockStorageVolume(
-			ctx,
-			id,
-		)
-		if err != nil {
-			resp.Diagnostics.AddError(
-				"unable to detach volume",
-				err.Error(),
-			)
-			return
-		}
-
-		op, err = client.Wait(ctx, op, exoscale.OperationStateSuccess)
-		if err != nil {
-			resp.Diagnostics.AddError(
-				"failed to create block storage",
-				err.Error(),
-			)
-			return
-		}
 	}
 
 	// Delete remote resource.
