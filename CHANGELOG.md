@@ -11,9 +11,6 @@ BUG FIXES:
 
 - Fix dbaas bugs causing accepteance tests to fail #346
 - docs: fix example in index.md #345 
-
-BUG FIXES:
-
 - Set labels on unmanaged eip creation #347 
 
 ## 0.57.0 (April 3, 2024)
