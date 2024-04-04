@@ -230,7 +230,7 @@ func (r *ResourceVolume) Create(ctx context.Context, req resource.CreateRequest,
 		return
 	}
 
-	op, err = client.Wait(ctx, op, exoscale.OperationStateSuccess)
+	_, err = client.Wait(ctx, op, exoscale.OperationStateSuccess)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"failed to create block storage",
@@ -444,7 +444,7 @@ func (r *ResourceVolume) Update(ctx context.Context, req resource.UpdateRequest,
 			return
 		}
 
-		op, err = client.Wait(ctx, op, exoscale.OperationStateSuccess)
+		_, err = client.Wait(ctx, op, exoscale.OperationStateSuccess)
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"failed to update block storage volume labels",
@@ -536,7 +536,7 @@ func (r *ResourceVolume) Delete(ctx context.Context, req resource.DeleteRequest,
 		return
 	}
 
-	op, err = client.Wait(ctx, op, exoscale.OperationStateSuccess)
+	_, err = client.Wait(ctx, op, exoscale.OperationStateSuccess)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"failed to delete block storage",
