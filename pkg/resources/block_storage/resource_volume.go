@@ -7,7 +7,6 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
-	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -58,18 +57,6 @@ type ResourceVolumeModel struct {
 	Zone           types.String `tfsdk:"zone"`
 
 	Timeouts timeouts.Value `tfsdk:"timeouts"`
-}
-
-// ResourceVolumeSnapshotTargetModel defines nested data model.
-type ResourceVolumeSnapshotTargetModel struct {
-	ID types.String `tfsdk:"id"`
-}
-
-// Types returns nested data model types to be used for conversion.
-func (m ResourceVolumeSnapshotTargetModel) Types() map[string]attr.Type {
-	return map[string]attr.Type{
-		"id": types.StringType,
-	}
 }
 
 // Metadata specifies resource name.
@@ -211,7 +198,7 @@ func (r *ResourceVolume) Create(ctx context.Context, req resource.CreateRequest,
 	}
 
 	if !plan.SnapshotTarget.IsNull() {
-		snapshot := ResourceVolumeSnapshotTargetModel{}
+		snapshot := VolumeSnapshotTargetModel{}
 
 		dg := plan.SnapshotTarget.As(ctx, &snapshot, basetypes.ObjectAsOptions{})
 		if dg.HasError() {

@@ -189,6 +189,7 @@ func (p *ExoscaleProvider) DataSources(ctx context.Context) []func() datasource.
 		iam.NewDataSourceOrgPolicy,
 		iam.NewDataSourceRole,
 		iam.NewDataSourceAPIKey,
+		block_storage.NewDataSourceVolume,
 		func() datasource.DataSource {
 			return &nlb_service.NLBServiceListDataSource{}
 		},
