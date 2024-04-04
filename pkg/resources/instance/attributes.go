@@ -8,6 +8,7 @@ const (
 	AttrBlockStorageVolumeIDs = "block_storage_volume_ids"
 	AttrCreatedAt             = "created_at"
 	AttrDeployTargetID        = "deploy_target_id"
+	AttrDestroyProtected      = "destroy_protected"
 	AttrDiskSize              = "disk_size"
 	AttrElasticIPIDs          = "elastic_ip_ids"
 	AttrID                    = "id"
