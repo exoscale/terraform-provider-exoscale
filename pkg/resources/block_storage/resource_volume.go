@@ -563,7 +563,7 @@ func (r *ResourceVolume) ImportState(ctx context.Context, req resource.ImportSta
 		return
 	}
 
-	var data ResourceVolumeModel
+	var state ResourceVolumeModel
 
 	// Set timeouts (quirk https://github.com/hashicorp/terraform-plugin-framework-timeouts/issues/46)
 	var timeouts timeouts.Value
@@ -571,15 +571,19 @@ func (r *ResourceVolume) ImportState(ctx context.Context, req resource.ImportSta
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	data.Timeouts = timeouts
+	state.Timeouts = timeouts
 
-	data.ID = types.StringValue(idParts[0])
-	data.Zone = types.StringValue(idParts[1])
+	state.ID = types.StringValue(idParts[0])
+	state.Zone = types.StringValue(idParts[1])
 
-	// Save data into Terraform state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	// Set null values
+	state.Labels = types.MapNull(types.StringType)
+	state.SnapshotTarget = types.ObjectNull(VolumeSnapshotTargetModel{}.Types())
+
+	// Save state into Terraform state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 
 	tflog.Trace(ctx, "resource imported", map[string]interface{}{
-		"id": data.ID,
+		"id": state.ID,
 	})
 }
