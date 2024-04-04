@@ -36,7 +36,6 @@ var _ resource.ResourceWithImportState = &ResourceVolume{}
 // ResourceVolume defines the resource implementation.
 type ResourceVolume struct {
 	client *exoscale.Client
-	env    string
 }
 
 // NewResourceVolume creates instance of ResourceVolume.

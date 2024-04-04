@@ -30,7 +30,6 @@ var _ datasource.DataSourceWithConfigure = &DataSourceVolume{}
 // DataSourceVolume defines the resource implementation.
 type DataSourceVolume struct {
 	client *exoscale.Client
-	env    string
 }
 
 // NewDataSourceVolume creates instance of ResourceVolume.

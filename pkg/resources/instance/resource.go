@@ -391,7 +391,7 @@ func rCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 				return diag.Errorf("unable to parse attached instance ID: %s", err)
 			}
 
-			op, err = clientV3.Wait(ctx, op, egoscaleV3.OperationStateSuccess)
+			_, err = clientV3.Wait(ctx, op, egoscaleV3.OperationStateSuccess)
 			if err != nil {
 				return diag.Errorf("failed to create block storage: %s", err)
 			}
@@ -572,7 +572,7 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 					return diag.Errorf("unable to parse attached instance ID: %s", err)
 				}
 
-				op, err = clientV3.Wait(ctx, op, egoscaleV3.OperationStateSuccess)
+				_, err = clientV3.Wait(ctx, op, egoscaleV3.OperationStateSuccess)
 				if err != nil {
 					return diag.Errorf("failed to attach block storage: %s", err)
 				}
@@ -594,7 +594,7 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 					return diag.Errorf("failed to detach block storage: %s", err)
 				}
 
-				op, err = clientV3.Wait(ctx, op, egoscaleV3.OperationStateSuccess)
+				_, err = clientV3.Wait(ctx, op, egoscaleV3.OperationStateSuccess)
 				if err != nil {
 					return diag.Errorf("failed to detach block storage: %s", err)
 				}
