@@ -1,0 +1,42 @@
+data "exoscale_template" "test_template" {
+  zone = "{{ .Zone }}"
+  name = "Linux Ubuntu 22.04 LTS 64-bit"
+}
+
+data "exoscale_security_group" "default" {
+  name = "default"
+}
+
+resource "exoscale_compute_instance" "test_instance" {
+  zone = "{{ .Zone }}"
+  name = "test-instance-{{ .ID }}"
+
+  template_id = data.exoscale_template.test_template.id
+  type        = "standard.small"
+  disk_size   = 10
+
+  block_storage_volume_ids = [
+    exoscale_block_storage_volume.test_volume.id,
+  ]
+
+  security_group_ids = [data.exoscale_security_group.default.id]
+}
+
+resource "exoscale_block_storage_volume" "test_volume" {
+  name = "test_volume_{{ .ID }}"
+  labels = {
+    foo1 = "bar1"
+    foo2 = "bar2"
+  }
+  size = 130
+  zone = "{{ .Zone }}"
+}
+
+data "exoscale_block_storage_volume" "test_volume" {
+  zone = "{{ .Zone }}"
+  id = exoscale_block_storage_volume.test_volume.id
+
+  # otherwise datasource will execute first and instance will be empty
+  depends_on = [exoscale_compute_instance.test_instance]
+}
+

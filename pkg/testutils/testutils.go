@@ -1,8 +1,10 @@
 package testutils
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"html/template"
 	"os"
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
@@ -33,10 +35,27 @@ const (
 	TestInstanceTypeIDMedium = "b6e9d1e8-89fc-4db3-aaa4-9b4c5b1d0844"
 )
 
-// Embeds ID/Zone into testdata templates.
+// TestdataSpec embeds ID/Zone into testdata templates.
 type TestdataSpec struct {
 	ID   int64
 	Zone string
+}
+
+// ParseTestdataConfig loads configuration template and replaces Zone and test ID placeholders.
+// To reduce some error handling boilerplate funcion panics on failure to parse the template.
+func ParseTestdataConfig(path string, spec *TestdataSpec) string {
+	tpl, err := template.ParseFiles(path)
+	if err != nil {
+		panic(err)
+	}
+
+	buf := &bytes.Buffer{}
+	err = tpl.Execute(buf, &spec)
+	if err != nil {
+		panic(err)
+	}
+
+	return buf.String()
 }
 
 // Providers returns all providers used during acceptance testing.
