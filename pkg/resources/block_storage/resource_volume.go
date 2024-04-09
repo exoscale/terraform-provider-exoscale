@@ -512,6 +512,31 @@ func (r *ResourceVolume) Delete(ctx context.Context, req resource.DeleteRequest,
 	}
 
 	// Delete remote resource.
+
+	// Detach volume first.
+	if state.State.ValueString() == "attached" {
+		op, err := client.DetachBlockStorageVolume(
+			ctx,
+			id,
+		)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Failed to detach volume",
+				err.Error(),
+			)
+			return
+		}
+
+		_, err = client.Wait(ctx, op, exoscale.OperationStateSuccess)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Failed to detach volume",
+				err.Error(),
+			)
+			return
+		}
+	}
+
 	op, err := client.DeleteBlockStorageVolume(
 		ctx,
 		id,

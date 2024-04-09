@@ -591,7 +591,11 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 					bid,
 				)
 				if err != nil {
-					return diag.Errorf("failed to detach block storage: %s", err)
+					if !errors.Is(err, egoscaleV3.ErrNotFound) {
+						return diag.Errorf("failed to detach block storage: %s", err)
+					}
+
+					continue
 				}
 
 				_, err = clientV3.Wait(ctx, op, egoscaleV3.OperationStateSuccess)
