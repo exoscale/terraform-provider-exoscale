@@ -84,6 +84,30 @@ website][tf-doc].
 make GO_TEST_EXTRA_ARGS="-v -run ^TestAccResourceCompute$" test-acc
 ```
 
+### Development Setup
+
+If you would like to use the terraform provider you have built and try
+configurations on it as you are developing, then we recommend setting up
+a `dev_override`. Create a file named `dev.tfrc` in the root directory
+of this repository:
+
+``` hcl
+provider_installation {
+  dev_overrides {
+    "exoscale/exoscale" = "/path/to/the/repository/root/directory"
+  }
+
+  direct {}
+}
+```
+
+Now `export TF_CLI_CONFIG_FILE=$PWD/dev.tfrc` in your shell and from now
+on, whenever you run a `terraform` command in this shell and the configuration
+references the `exoscale/exoscale` provider, it will use the provider you
+built locally instead of downloading an official release. For this to work
+you need to make sure you always run `go build` so that your changes are
+compiled into a provider binary in the root directory of the repository.
+
 
 [tf-doc-provider-install]: https://www.terraform.io/docs/configuration/provider-requirements.html#provider-installation
 [tf-doc]: https://www.terraform.io/docs/index.html
