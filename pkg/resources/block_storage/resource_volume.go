@@ -230,7 +230,7 @@ func (r *ResourceVolume) Create(ctx context.Context, req resource.CreateRequest,
 		return
 	}
 
-	_, err = client.Wait(ctx, op, exoscale.OperationStateSuccess)
+	op, err = client.Wait(ctx, op, exoscale.OperationStateSuccess)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"failed to create block storage",
