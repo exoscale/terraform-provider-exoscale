@@ -83,7 +83,7 @@ func (r *ResourceVolume) Schema(ctx context.Context, req resource.SchemaRequest,
 				},
 			},
 			"size": schema.Int64Attribute{
-				MarkdownDescription: "Volume size in GB. If volume is attached, instance must be stopped to update this value. Volume can only grow, cannot be shrunk.",
+				MarkdownDescription: "Volume size in GB. To resize, either detach volume or stop instance that has this volume attached. Volume can only grow, cannot be shrunk.",
 				Required:            true,
 			},
 			"zone": schema.StringAttribute{

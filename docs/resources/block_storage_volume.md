@@ -21,7 +21,7 @@ Block Storage offers persistent externally attached volumes for your workloads.
 ### Required
 
 - `name` (String) ❗ Volume name.
-- `size` (Number) Volume size in GB. If volume is attached, instance must be stopped to update this value. Volume can only grow, cannot be shrunk.
+- `size` (Number) Volume size in GB. To resize, either detach volume or stop instance that has this volume attached. Volume can only grow, cannot be shrunk.
 - `zone` (String) ❗ The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.
 
 ### Optional
