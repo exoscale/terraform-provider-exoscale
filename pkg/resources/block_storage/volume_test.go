@@ -12,8 +12,11 @@ import (
 )
 
 func testVolume(t *testing.T) {
-	resourceName := "exoscale_block_storage_volume.test_volume"
-	dataSourceName := "data." + resourceName
+	volumeResourceName := "exoscale_block_storage_volume.test_volume"
+	volumeDataSourceName := "data." + volumeResourceName
+	snapshotResourceName := "exoscale_block_storage_volume_snapshot.test_snapshot"
+	snapshotDataSourceName := "data." + snapshotResourceName
+	volumeFromSnapshotResourceName := "exoscale_block_storage_volume.test_volume_from_snapshot"
 
 	testdataSpec := testutils.TestdataSpec{
 		ID:   time.Now().UnixNano(),
@@ -29,91 +32,103 @@ func testVolume(t *testing.T) {
 				Config: testutils.ParseTestdataConfig("./testdata/001.volume_create.tf.tmpl", &testdataSpec),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(
-						resourceName,
+						volumeResourceName,
 						"name",
-						fmt.Sprintf("test_volume_%d", testdataSpec.ID),
+						fmt.Sprintf("terraform-provider-test-%d", testdataSpec.ID),
 					),
-					resource.TestCheckResourceAttr(resourceName, "size", "120"),
-					resource.TestCheckResourceAttr(resourceName, "labels.%", "1"),
-					resource.TestCheckResourceAttr(resourceName, "labels.foo", "bar"),
-					resource.TestCheckResourceAttrSet(resourceName, "created_at"),
-					resource.TestCheckResourceAttrSet(resourceName, "blocksize"),
-					resource.TestCheckResourceAttrSet(resourceName, "state"),
-					resource.TestCheckResourceAttr(dataSourceName, "size", "120"),
-					resource.TestCheckResourceAttr(dataSourceName, "labels.%", "1"),
-					resource.TestCheckResourceAttr(dataSourceName, "labels.foo", "bar"),
-					resource.TestCheckResourceAttrSet(dataSourceName, "created_at"),
-					resource.TestCheckResourceAttrSet(dataSourceName, "blocksize"),
-					resource.TestCheckResourceAttr(dataSourceName, "state", "detached"),
-					resource.TestCheckResourceAttr(dataSourceName, "snapshots.#", "0"),
-					resource.TestCheckNoResourceAttr(dataSourceName, "instance"),
+					resource.TestCheckResourceAttr(volumeResourceName, "size", "120"),
+					resource.TestCheckResourceAttr(volumeResourceName, "labels.%", "1"),
+					resource.TestCheckResourceAttr(volumeResourceName, "labels.foo", "bar"),
+					resource.TestCheckResourceAttrSet(volumeResourceName, "created_at"),
+					resource.TestCheckResourceAttrSet(volumeResourceName, "blocksize"),
+					resource.TestCheckResourceAttr(volumeResourceName, "state", "detached"),
+					resource.TestCheckResourceAttr(volumeDataSourceName, "size", "120"),
+					resource.TestCheckResourceAttr(volumeDataSourceName, "labels.%", "1"),
+					resource.TestCheckResourceAttr(volumeDataSourceName, "labels.foo", "bar"),
+					resource.TestCheckResourceAttrSet(volumeDataSourceName, "created_at"),
+					resource.TestCheckResourceAttrSet(volumeDataSourceName, "blocksize"),
+					resource.TestCheckResourceAttr(volumeDataSourceName, "state", "detached"),
+					resource.TestCheckResourceAttr(volumeDataSourceName, "snapshots.#", "0"),
+					resource.TestCheckNoResourceAttr(volumeDataSourceName, "instance"),
 				),
 			},
 			// Update volume lables
 			{
 				Config: testutils.ParseTestdataConfig("./testdata/002.volume_update.tf.tmpl", &testdataSpec),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(
-						resourceName,
-						"name",
-						fmt.Sprintf("test_volume_%d", testdataSpec.ID),
-					),
-					resource.TestCheckResourceAttr(resourceName, "labels.%", "2"),
-					resource.TestCheckResourceAttr(resourceName, "labels.foo1", "bar1"),
-					resource.TestCheckResourceAttr(resourceName, "labels.foo2", "bar2"),
-					resource.TestCheckResourceAttr(dataSourceName, "labels.%", "2"),
-					resource.TestCheckResourceAttr(dataSourceName, "labels.foo1", "bar1"),
-					resource.TestCheckResourceAttr(dataSourceName, "labels.foo2", "bar2"),
+					resource.TestCheckResourceAttr(volumeResourceName, "labels.%", "2"),
+					resource.TestCheckResourceAttr(volumeResourceName, "labels.foo1", "bar1"),
+					resource.TestCheckResourceAttr(volumeResourceName, "labels.foo2", "bar2"),
+					resource.TestCheckResourceAttr(volumeDataSourceName, "labels.%", "2"),
+					resource.TestCheckResourceAttr(volumeDataSourceName, "labels.foo1", "bar1"),
+					resource.TestCheckResourceAttr(volumeDataSourceName, "labels.foo2", "bar2"),
 				),
 			},
 			// Resize volume
 			{
 				Config: testutils.ParseTestdataConfig("./testdata/003.volume_resize.tf.tmpl", &testdataSpec),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(
-						resourceName,
-						"name",
-						fmt.Sprintf("test_volume_%d", testdataSpec.ID),
-					),
-					resource.TestCheckResourceAttr(resourceName, "size", "130"),
-					resource.TestCheckResourceAttr(dataSourceName, "size", "130"),
+					resource.TestCheckResourceAttr(volumeResourceName, "size", "130"),
+					resource.TestCheckResourceAttr(volumeDataSourceName, "size", "130"),
 				),
 			},
 			// Create instance & attach volume
 			{
 				Config: testutils.ParseTestdataConfig("./testdata/004.volume_attach.tf.tmpl", &testdataSpec),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(
-						resourceName,
-						"name",
-						fmt.Sprintf("test_volume_%d", testdataSpec.ID),
-					),
 					resource.TestCheckResourceAttr("exoscale_compute_instance.test_instance", "block_storage_volume_ids.#", "1"),
-					resource.TestCheckResourceAttr(dataSourceName, "instance.%", "1"),
-					resource.TestCheckResourceAttr(dataSourceName, "state", "attached"),
+					resource.TestCheckResourceAttr(volumeDataSourceName, "instance.%", "1"),
+					resource.TestCheckResourceAttr(volumeDataSourceName, "state", "attached"),
 				),
 			},
-
 			// Detach volume from instance
 			{
 				Config: testutils.ParseTestdataConfig("./testdata/005.volume_detach.tf.tmpl", &testdataSpec),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(
-						resourceName,
-						"name",
-						fmt.Sprintf("test_volume_%d", testdataSpec.ID),
-					),
 					resource.TestCheckResourceAttr("exoscale_compute_instance.test_instance", "block_storage_volume_ids.#", "0"),
-					resource.TestCheckResourceAttr(dataSourceName, "instance.%", "0"),
-					resource.TestCheckResourceAttr(dataSourceName, "state", "detached"),
+					resource.TestCheckResourceAttr(volumeDataSourceName, "instance.%", "0"),
+					resource.TestCheckResourceAttr(volumeDataSourceName, "state", "detached"),
+				),
+			},
+			// Create snapshot
+			{
+				Config: testutils.ParseTestdataConfig("./testdata/006.create_snapshot.tf.tmpl", &testdataSpec),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet(snapshotResourceName, "name"),
+					resource.TestCheckResourceAttrSet(snapshotResourceName, "size"),
+					resource.TestCheckResourceAttr(snapshotResourceName, "labels.%", "1"),
+					resource.TestCheckResourceAttr(snapshotResourceName, "labels.foo", "bar"),
+					resource.TestCheckResourceAttrSet(snapshotResourceName, "created_at"),
+					resource.TestCheckResourceAttrSet(snapshotResourceName, "state"),
+					resource.TestCheckResourceAttrSet(snapshotDataSourceName, "size"),
+					resource.TestCheckResourceAttr(snapshotDataSourceName, "labels.%", "1"),
+					resource.TestCheckResourceAttr(snapshotDataSourceName, "labels.foo", "bar"),
+					resource.TestCheckResourceAttrSet(snapshotDataSourceName, "created_at"),
+					resource.TestCheckResourceAttr(snapshotDataSourceName, "state", "created"),
+					resource.TestCheckResourceAttr(volumeDataSourceName, "snapshots.#", "1"),
+				),
+			},
+			// Create volume from snapshot
+			{
+				Config: testutils.ParseTestdataConfig("./testdata/007.volume_from_snapshot.tf.tmpl", &testdataSpec),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						volumeFromSnapshotResourceName,
+						"name",
+						fmt.Sprintf("terraform-provider-test-%d", testdataSpec.ID),
+					),
+					resource.TestCheckResourceAttr(volumeFromSnapshotResourceName, "labels.%", "0"),
+					resource.TestCheckResourceAttrSet(volumeFromSnapshotResourceName, "created_at"),
+					resource.TestCheckResourceAttrSet(volumeFromSnapshotResourceName, "blocksize"),
+					resource.TestCheckResourceAttr(volumeFromSnapshotResourceName, "state", "detached"),
 				),
 			},
 			// Import
 			{
-				ResourceName: resourceName,
+				ResourceName: volumeResourceName,
 				ImportStateIdFunc: func() resource.ImportStateIdFunc {
 					return func(s *terraform.State) (string, error) {
-						return fmt.Sprintf("%s@%s", s.RootModule().Resources[resourceName].Primary.ID, "ch-gva-2"), nil
+						return fmt.Sprintf("%s@%s", s.RootModule().Resources[volumeResourceName].Primary.ID, "ch-gva-2"), nil
 					}
 				}(),
 				ImportState: true,

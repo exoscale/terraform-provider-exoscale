@@ -9,7 +9,7 @@ data "exoscale_security_group" "default" {
 
 resource "exoscale_compute_instance" "test_instance" {
   zone = "{{ .Zone }}"
-  name = "test-instance-{{ .ID }}"
+  name = "terraform-provider-test-{{ .ID }}"
 
   template_id = data.exoscale_template.test_template.id
   type        = "standard.small"
@@ -21,7 +21,7 @@ resource "exoscale_compute_instance" "test_instance" {
 }
 
 resource "exoscale_block_storage_volume" "test_volume" {
-  name = "test_volume_{{ .ID }}"
+  name = "terraform-provider-test-{{ .ID }}"
   labels = {
     foo1 = "bar1"
     foo2 = "bar2"
