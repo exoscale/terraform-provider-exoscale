@@ -364,7 +364,7 @@ func rCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 		}
 	}
 
-	// Attach blocks storage volumes if set
+	// Attach block storage volumes if set
 	if bsSet, ok := d.Get(AttrBlockStorageVolumeIDs).(*schema.Set); ok {
 		for _, bs := range bsSet.List() {
 			iid, err := egoscaleV3.ParseUUID(*instance.ID)
