@@ -30,6 +30,7 @@ description: |-
 - `instance_pool_id` (String) The underlying [exoscale_instance_pool](./instance_pool.md) ID.
 - `instance_prefix` (String) The string used to prefix the managed instances name (default `pool`).
 - `instance_type` (String) The managed compute instances type (`<family>.<size>`, e.g. `standard.medium`; use the [Exoscale CLI](https://github.com/exoscale/cli/) - `exo compute instance-type list` - for the list of available types).
+- `kubelet_image_gc` (Block Set) Configuration for this nodepool's kubelet image garbage collector (see [below for nested schema](#nestedblock--kubelet_image_gc))
 - `labels` (Map of String) A map of key/value labels.
 - `name` (String)
 - `private_network_ids` (Set of String) A list of [exoscale_private_network](./private_network.md) (IDs) to be attached to the managed instances.
@@ -44,5 +45,14 @@ description: |-
 ### Read-Only
 
 - `id` (String) The ID of this resource.
+
+<a id="nestedblock--kubelet_image_gc"></a>
+### Nested Schema for `kubelet_image_gc`
+
+Optional:
+
+- `high_threshold` (Number) The percent of disk usage after which image garbage collection is always run
+- `low_threshold` (Number) The percent of disk usage before which image garbage collection is never run
+- `min_age` (String) The minimum age for an unused image before it is garbage collected
 
 

@@ -48,6 +48,7 @@ directory for complete configuration examples.
 - `description` (String) A free-form text describing the pool.
 - `disk_size` (Number) The managed instances disk size (GiB; default: `50`).
 - `instance_prefix` (String) The string used to prefix the managed instances name (default `pool`).
+- `kubelet_image_gc` (Block Set) Configuration for this nodepool's kubelet image garbage collector (see [below for nested schema](#nestedblock--kubelet_image_gc))
 - `labels` (Map of String) A map of key/value labels.
 - `private_network_ids` (Set of String) A list of [exoscale_private_network](./private_network.md) (IDs) to be attached to the managed instances.
 - `security_group_ids` (Set of String) A list of [exoscale_security_group](./security_group.md) (IDs) to be attached to the managed instances.
@@ -63,6 +64,16 @@ directory for complete configuration examples.
 - `state` (String) The current pool state.
 - `template_id` (String) The managed instances template ID.
 - `version` (String) The managed instances version.
+
+<a id="nestedblock--kubelet_image_gc"></a>
+### Nested Schema for `kubelet_image_gc`
+
+Optional:
+
+- `high_threshold` (Number) The percent of disk usage after which image garbage collection is always run
+- `low_threshold` (Number) The percent of disk usage before which image garbage collection is never run
+- `min_age` (String) The minimum age for an unused image before it is garbage collected
+
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
