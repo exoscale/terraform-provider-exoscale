@@ -5,7 +5,7 @@ subcategory: ""
 description: |-
   Fetch Exoscale Block Storage https://community.exoscale.com/documentation/block-storage/ Volume.
   Block Storage offers persistent externally attached volumes for your workloads.
-  Corresponding resource: exoscaleblockstorage_volume ../resources/block_storage_volume.md.
+  Corresponding resource: exoscale_block_storage_volume ../resources/block_storage_volume.md.
 ---
 
 # exoscale_block_storage_volume (Data Source)
