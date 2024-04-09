@@ -17,11 +17,8 @@ import (
 )
 
 const (
-	defaultSKSNodepoolDiskSize               int64 = 50
-	defaultSKSNodepoolInstancePrefix               = "pool"
-	defaultSKSNodepoolKubeletGCMinAge              = "2m"
-	defaultSKSNodepoolKubeletGCHighThreshold int64 = 85
-	defaultSKSNodepoolKubeletGCLowThreshold  int64 = 80
+	defaultSKSNodepoolDiskSize       int64 = 50
+	defaultSKSNodepoolInstancePrefix       = "pool"
 
 	sksNodepoolAddonStorageLVM = "storage-lvm"
 
@@ -120,19 +117,16 @@ func resourceSKSNodepool() *schema.Resource {
 					resSKSNodepoolAttrKubeletGCMinAge: {
 						Type:        schema.TypeString,
 						Optional:    true,
-						Default:     defaultSKSNodepoolKubeletGCMinAge,
 						Description: "The minimum age for an unused image before it is garbage collected",
 					},
 					resSKSNodepoolAttrKubeletGCHighThreshold: {
 						Type:        schema.TypeInt,
 						Optional:    true,
-						Default:     defaultSKSNodepoolKubeletGCHighThreshold,
 						Description: "The percent of disk usage after which image garbage collection is always run",
 					},
 					resSKSNodepoolAttrKubeletGCLowThreshold: {
 						Type:        schema.TypeInt,
 						Optional:    true,
-						Default:     defaultSKSNodepoolKubeletGCLowThreshold,
 						Description: "The percent of disk usage before which image garbage collection is never run",
 					},
 				},
@@ -307,21 +301,31 @@ func resourceSKSNodepoolCreate(ctx context.Context, d *schema.ResourceData, meta
 	}
 	sksNodepool.InstanceTypeID = instanceType.ID
 
-	kubeletGc := d.Get(resSKSNodepoolAttrKubeletGC).(*schema.Set).List()[0].(map[string]interface{})
-	sksNodepoolKubeletGc := new(egoscale.SKSNodepoolKubeletImageGc)
+	if k, ok := d.GetOk(resSKSNodepoolAttrKubeletGC); ok {
+		kubeletGc := k.(*schema.Set).List()[0].(map[string]interface{})
+		sksNodepoolKubeletGc := new(egoscale.SKSNodepoolKubeletImageGc)
 
-	sksNodepoolKubeletGcMinAge := kubeletGc[resSKSNodepoolAttrKubeletGCMinAge].(string)
-	sksNodepoolKubeletGc.MinAge = &sksNodepoolKubeletGcMinAge
+		if val, ok := kubeletGc[resSKSNodepoolAttrKubeletGCMinAge]; ok {
+			sksNodepoolKubeletGcMinAge := val.(string)
+			sksNodepoolKubeletGc.MinAge = &sksNodepoolKubeletGcMinAge
+		}
 
-	sksNodepoolKubeletGcLowThreshold := kubeletGc[resSKSNodepoolAttrKubeletGCLowThreshold].(int)
-	sksNodepoolKubeletGcLowThresholdInt64 := int64(sksNodepoolKubeletGcLowThreshold)
-	sksNodepoolKubeletGc.LowThreshold = &sksNodepoolKubeletGcLowThresholdInt64
+		if val, ok := kubeletGc[resSKSNodepoolAttrKubeletGCLowThreshold]; ok {
+			sksNodepoolKubeletGcLowThreshold := val.(int)
+			sksNodepoolKubeletGcLowThresholdInt64 := int64(sksNodepoolKubeletGcLowThreshold)
+			sksNodepoolKubeletGc.LowThreshold = &sksNodepoolKubeletGcLowThresholdInt64
 
-	sksNodepoolKubeletGcHighThreshold := kubeletGc[resSKSNodepoolAttrKubeletGCHighThreshold].(int)
-	sksNodepoolKubeletGcHighThresholdInt64 := int64(sksNodepoolKubeletGcHighThreshold)
-	sksNodepoolKubeletGc.HighThreshold = &sksNodepoolKubeletGcHighThresholdInt64
+		}
 
-	sksNodepool.KubeletImageGc = sksNodepoolKubeletGc
+		if val, ok := kubeletGc[resSKSNodepoolAttrKubeletGCHighThreshold]; ok {
+			sksNodepoolKubeletGcHighThreshold := val.(int)
+			sksNodepoolKubeletGcHighThresholdInt64 := int64(sksNodepoolKubeletGcHighThreshold)
+			sksNodepoolKubeletGc.HighThreshold = &sksNodepoolKubeletGcHighThresholdInt64
+
+		}
+
+		sksNodepool.KubeletImageGc = sksNodepoolKubeletGc
+	}
 
 	if l, ok := d.GetOk(resSKSNodepoolAttrLabels); ok {
 		labels := make(map[string]string)
@@ -689,11 +693,19 @@ func resourceSKSNodepoolApply(
 
 	kubeletGc := d.Get(resSKSNodepoolAttrKubeletGC).(*schema.Set)
 	if err := d.Set(resSKSNodepoolAttrKubeletGC, schema.NewSet(kubeletGc.F, []interface{}{
-		map[string]interface{}{
-			resSKSNodepoolAttrKubeletGCHighThreshold: int(defaultInt64(sksNodepool.KubeletImageGc.HighThreshold, defaultSKSNodepoolKubeletGCHighThreshold)),
-			resSKSNodepoolAttrKubeletGCLowThreshold:  int(defaultInt64(sksNodepool.KubeletImageGc.LowThreshold, defaultSKSNodepoolKubeletGCLowThreshold)),
-			resSKSNodepoolAttrKubeletGCMinAge:        defaultString(sksNodepool.KubeletImageGc.MinAge, defaultSKSNodepoolKubeletGCMinAge),
-		},
+		func() map[string]interface{} {
+			i := map[string]interface{}{}
+			if sksNodepool.KubeletImageGc.MinAge != nil {
+				i[resSKSNodepoolAttrKubeletGCMinAge] = *sksNodepool.KubeletImageGc.MinAge
+			}
+			if sksNodepool.KubeletImageGc.HighThreshold != nil {
+				i[resSKSNodepoolAttrKubeletGCHighThreshold] = int(*sksNodepool.KubeletImageGc.HighThreshold)
+			}
+			if sksNodepool.KubeletImageGc.LowThreshold != nil {
+				i[resSKSNodepoolAttrKubeletGCLowThreshold] = int(*sksNodepool.KubeletImageGc.LowThreshold)
+			}
+			return i
+		}(),
 	})); err != nil {
 		return err
 	}
