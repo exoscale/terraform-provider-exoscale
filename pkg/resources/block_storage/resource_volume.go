@@ -71,6 +71,9 @@ func (r *ResourceVolume) Schema(ctx context.Context, req resource.SchemaRequest,
 			"id": schema.StringAttribute{
 				MarkdownDescription: "The ID of this resource.",
 				Computed:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"name": schema.StringAttribute{
 				MarkdownDescription: "❗ Volume name.",
@@ -268,21 +271,6 @@ func (r *ResourceVolume) Create(ctx context.Context, req resource.CreateRequest,
 	plan.CreatedAt = types.StringValue(volume.CreatedAT.String())
 	plan.State = types.StringValue(string(volume.State))
 
-	plan.Labels = types.MapNull(types.StringType)
-	if volume.Labels != nil {
-		t, dg := types.MapValueFrom(
-			ctx,
-			types.StringType,
-			volume.Labels,
-		)
-		if dg.HasError() {
-			resp.Diagnostics.Append(dg...)
-			return
-		}
-
-		plan.Labels = t
-	}
-
 	// Save plan into Terraform state.
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 
@@ -354,7 +342,7 @@ func (r *ResourceVolume) Read(ctx context.Context, req resource.ReadRequest, res
 	state.State = types.StringValue(string(volume.State))
 
 	state.Labels = types.MapNull(types.StringType)
-	if volume.Labels != nil {
+	if len(volume.Labels) > 0 {
 		t, dg := types.MapValueFrom(
 			ctx,
 			types.StringType,
