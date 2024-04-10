@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/mapplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -96,21 +97,13 @@ func (r *ResourceVolume) Schema(ctx context.Context, req resource.SchemaRequest,
 					stringvalidator.OneOf(config.Zones...),
 				},
 			},
-			"blocksize": schema.Int64Attribute{
-				MarkdownDescription: "Volume block size.",
-				Computed:            true,
-			},
-			"created_at": schema.StringAttribute{
-				MarkdownDescription: "Volume creation date.",
-				Computed:            true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
-			},
 			"labels": schema.MapAttribute{
 				ElementType:         types.StringType,
 				MarkdownDescription: "Resource labels.",
 				Optional:            true,
+				PlanModifiers: []planmodifier.Map{
+					mapplanmodifier.RequiresReplace(),
+				},
 			},
 			"snapshot_target": schema.SingleNestedAttribute{
 				MarkdownDescription: "Block storage snapshot to use when creating a volume. Read-only after creation.",
@@ -120,6 +113,17 @@ func (r *ResourceVolume) Schema(ctx context.Context, req resource.SchemaRequest,
 						MarkdownDescription: "Snapshot ID.",
 						Optional:            true,
 					},
+				},
+			},
+			"blocksize": schema.Int64Attribute{
+				MarkdownDescription: "Volume block size.",
+				Computed:            true,
+			},
+			"created_at": schema.StringAttribute{
+				MarkdownDescription: "Volume creation date.",
+				Computed:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"state": schema.StringAttribute{
@@ -408,42 +412,7 @@ func (r *ResourceVolume) Update(ctx context.Context, req resource.UpdateRequest,
 		return
 	}
 
-	// Update labels if plan contains a new value.
-	// If labels key is completely removed from plan then we don't do anything as labels are optional.
-	if !plan.Labels.Equal(state.Labels) && !plan.Labels.IsUnknown() {
-		labels := exoscale.Labels{}
-
-		dg := plan.Labels.ElementsAs(ctx, &labels, false)
-		if dg.HasError() {
-			resp.Diagnostics.Append(dg...)
-			return
-		}
-
-		request := exoscale.UpdateBlockStorageVolumeLabelsRequest{
-			Labels: labels,
-		}
-
-		op, err := client.UpdateBlockStorageVolumeLabels(ctx, id, request)
-		if err != nil {
-			resp.Diagnostics.AddError(
-				"unable to update block storage volume labels",
-				err.Error(),
-			)
-			return
-		}
-
-		_, err = client.Wait(ctx, op, exoscale.OperationStateSuccess)
-		if err != nil {
-			resp.Diagnostics.AddError(
-				"failed to update block storage volume labels",
-				err.Error(),
-			)
-			return
-		}
-
-		state.Labels = plan.Labels
-	}
-
+	// Resize Volume
 	if !plan.Size.Equal(state.Size) {
 		request := exoscale.ResizeBlockStorageVolumeRequest{
 			Size: plan.Size.ValueInt64(),
@@ -513,7 +482,7 @@ func (r *ResourceVolume) Delete(ctx context.Context, req resource.DeleteRequest,
 
 	// Delete remote resource.
 
-	// Detach volume first.
+	// Detach volume if attached.
 	if state.State.ValueString() == "attached" {
 		op, err := client.DetachBlockStorageVolume(
 			ctx,
