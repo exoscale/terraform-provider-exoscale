@@ -371,9 +371,31 @@ func (r *Resource) readPg(ctx context.Context, data *ResourceModel, diagnostics 
 		data.Pg.Version = types.StringValue(strings.SplitN(*apiService.Version, ".", 2)[0])
 	}
 
-	data.Pg.Settings = types.StringNull()
-	if apiService.PgSettings != nil {
-		settings, err := json.Marshal(*apiService.PgSettings)
+	// For database settings, we have a special behaviour:
+	// - If not set in plan we handle it as normal computed field;
+	// - If set in plan we only read (manage) key(s) that were set!
+	//   This prevents showing drift due to Aiven setting default values for keys not specified in plan.
+	if data.Pg.Settings.IsUnknown() || apiService.PgSettings == nil {
+		data.Pg.Settings = types.StringNull()
+		if apiService.PgSettings != nil {
+			settings, err := json.Marshal(*apiService.PgSettings)
+			if err != nil {
+				diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
+				return
+			}
+
+			data.Pg.Settings = types.StringValue(string(settings))
+		}
+	} else if data.Pg.Settings.ValueString() != "" {
+		var userSettings map[string]interface{}
+
+		if err := json.Unmarshal([]byte(data.Pg.Settings.ValueString()), &userSettings); err != nil {
+			diagnostics.AddError("Validation error", fmt.Sprintf("unable to unmarshal JSON: %s", err))
+			return
+		}
+
+		PartialSettingsPatch(userSettings, *apiService.PgSettings)
+		settings, err := json.Marshal(userSettings)
 		if err != nil {
 			diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
 			return
@@ -381,9 +403,27 @@ func (r *Resource) readPg(ctx context.Context, data *ResourceModel, diagnostics 
 		data.Pg.Settings = types.StringValue(string(settings))
 	}
 
-	data.Pg.PgbouncerSettings = types.StringNull()
-	if apiService.PgbouncerSettings != nil {
-		settings, err := json.Marshal(*apiService.PgbouncerSettings)
+	if data.Pg.PgbouncerSettings.IsUnknown() || apiService.PgbouncerSettings == nil {
+		data.Pg.PgbouncerSettings = types.StringNull()
+		if apiService.PgbouncerSettings != nil {
+			settings, err := json.Marshal(*apiService.PgbouncerSettings)
+			if err != nil {
+				diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
+				return
+			}
+
+			data.Pg.PgbouncerSettings = types.StringValue(string(settings))
+		}
+	} else if data.Pg.PgbouncerSettings.ValueString() != "" {
+		var userSettings map[string]interface{}
+
+		if err := json.Unmarshal([]byte(data.Pg.PgbouncerSettings.ValueString()), &userSettings); err != nil {
+			diagnostics.AddError("Validation error", fmt.Sprintf("unable to unmarshal JSON: %s", err))
+			return
+		}
+
+		PartialSettingsPatch(userSettings, *apiService.PgbouncerSettings)
+		settings, err := json.Marshal(userSettings)
 		if err != nil {
 			diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
 			return
@@ -391,9 +431,27 @@ func (r *Resource) readPg(ctx context.Context, data *ResourceModel, diagnostics 
 		data.Pg.PgbouncerSettings = types.StringValue(string(settings))
 	}
 
-	data.Pg.PglookoutSettings = types.StringNull()
-	if apiService.PglookoutSettings != nil {
-		settings, err := json.Marshal(*apiService.PglookoutSettings)
+	if data.Pg.PglookoutSettings.IsUnknown() || apiService.PglookoutSettings == nil {
+		data.Pg.PglookoutSettings = types.StringNull()
+		if apiService.PglookoutSettings != nil {
+			settings, err := json.Marshal(*apiService.PglookoutSettings)
+			if err != nil {
+				diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
+				return
+			}
+
+			data.Pg.PglookoutSettings = types.StringValue(string(settings))
+		}
+	} else if data.Pg.PglookoutSettings.ValueString() != "" {
+		var userSettings map[string]interface{}
+
+		if err := json.Unmarshal([]byte(data.Pg.PglookoutSettings.ValueString()), &userSettings); err != nil {
+			diagnostics.AddError("Validation error", fmt.Sprintf("unable to unmarshal JSON: %s", err))
+			return
+		}
+
+		PartialSettingsPatch(userSettings, *apiService.PglookoutSettings)
+		settings, err := json.Marshal(userSettings)
 		if err != nil {
 			diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
 			return
