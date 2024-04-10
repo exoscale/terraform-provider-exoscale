@@ -202,23 +202,24 @@ func CheckExistsPg(name string, data *TemplateModelPg) error {
 		}
 	}
 
-	if data.PgbouncerSettings != "" {
-		obj := map[string]interface{}{}
-		s, err := strconv.Unquote(data.PgbouncerSettings)
-		if err != nil {
-			return err
-		}
-		err = json.Unmarshal([]byte(s), &obj)
-		if err != nil {
-			return err
-		}
-		if !cmp.Equal(
-			obj,
-			*service.PgbouncerSettings,
-		) {
-			return fmt.Errorf("pg.pgbouncer_settings: expected %q, got %q", obj, *service.PgbouncerSettings)
-		}
-	}
+	// NOTE: Due to default values setup by Aiven, we won't validate if values match.
+	//if data.PgbouncerSettings != "" {
+	//obj := map[string]interface{}{}
+	//s, err := strconv.Unquote(data.PgbouncerSettings)
+	//if err != nil {
+	//return err
+	//}
+	//err = json.Unmarshal([]byte(s), &obj)
+	//if err != nil {
+	//return err
+	//}
+	//if !cmp.Equal(
+	//obj,
+	//*service.PgbouncerSettings,
+	//) {
+	//return fmt.Errorf("pg.pgbouncer_settings: expected %q, got %q", obj, *service.PgbouncerSettings)
+	//}
+	//}
 
 	if data.PglookoutSettings != "" {
 		obj := map[string]interface{}{}
