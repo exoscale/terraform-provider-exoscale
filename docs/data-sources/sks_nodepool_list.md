@@ -58,6 +58,7 @@ Read-Only:
 - `instance_pool_id` (String)
 - `instance_prefix` (String)
 - `instance_type` (String)
+- `kubelet_image_gc` (Set of Object) (see [below for nested schema](#nestedobjatt--nodepools--kubelet_image_gc))
 - `labels` (Map of String)
 - `name` (String)
 - `private_network_ids` (Set of String)
@@ -69,5 +70,14 @@ Read-Only:
 - `template_id` (String)
 - `version` (String)
 - `zone` (String)
+
+<a id="nestedobjatt--nodepools--kubelet_image_gc"></a>
+### Nested Schema for `nodepools.kubelet_image_gc`
+
+Read-Only:
+
+- `high_threshold` (Number)
+- `low_threshold` (Number)
+- `min_age` (String)
 
 

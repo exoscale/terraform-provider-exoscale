@@ -22,27 +22,31 @@ const (
 
 	sksNodepoolAddonStorageLVM = "storage-lvm"
 
-	resSKSNodepoolAttrAntiAffinityGroupIDs = "anti_affinity_group_ids"
-	resSKSNodepoolAttrClusterID            = "cluster_id"
-	resSKSNodepoolAttrCreatedAt            = "created_at"
-	resSKSNodepoolAttrDeployTargetID       = "deploy_target_id"
-	resSKSNodepoolAttrDescription          = "description"
-	resSKSNodepoolAttrDiskSize             = "disk_size"
-	resSKSNodepoolAttrInstancePoolID       = "instance_pool_id"
-	resSKSNodepoolAttrInstancePrefix       = "instance_prefix"
-	resSKSNodepoolAttrInstanceType         = "instance_type"
-	resSKSNodepoolAttrLabels               = "labels"
-	resSKSNodepoolAttrID                   = "id"
-	resSKSNodepoolAttrName                 = "name"
-	resSKSNodepoolAttrPrivateNetworkIDs    = "private_network_ids"
-	resSKSNodepoolAttrSecurityGroupIDs     = "security_group_ids"
-	resSKSNodepoolAttrSize                 = "size"
-	resSKSNodepoolAttrState                = "state"
-	resSKSNodepoolAttrStorageLVM           = "storage_lvm"
-	resSKSNodepoolAttrTaints               = "taints"
-	resSKSNodepoolAttrTemplateID           = "template_id"
-	resSKSNodepoolAttrVersion              = "version"
-	resSKSNodepoolAttrZone                 = "zone"
+	resSKSNodepoolAttrAntiAffinityGroupIDs   = "anti_affinity_group_ids"
+	resSKSNodepoolAttrClusterID              = "cluster_id"
+	resSKSNodepoolAttrCreatedAt              = "created_at"
+	resSKSNodepoolAttrDeployTargetID         = "deploy_target_id"
+	resSKSNodepoolAttrDescription            = "description"
+	resSKSNodepoolAttrDiskSize               = "disk_size"
+	resSKSNodepoolAttrInstancePoolID         = "instance_pool_id"
+	resSKSNodepoolAttrInstancePrefix         = "instance_prefix"
+	resSKSNodepoolAttrInstanceType           = "instance_type"
+	resSKSNodepoolAttrKubeletGC              = "kubelet_image_gc"
+	resSKSNodepoolAttrKubeletGCMinAge        = "min_age"
+	resSKSNodepoolAttrKubeletGCHighThreshold = "high_threshold"
+	resSKSNodepoolAttrKubeletGCLowThreshold  = "low_threshold"
+	resSKSNodepoolAttrLabels                 = "labels"
+	resSKSNodepoolAttrID                     = "id"
+	resSKSNodepoolAttrName                   = "name"
+	resSKSNodepoolAttrPrivateNetworkIDs      = "private_network_ids"
+	resSKSNodepoolAttrSecurityGroupIDs       = "security_group_ids"
+	resSKSNodepoolAttrSize                   = "size"
+	resSKSNodepoolAttrState                  = "state"
+	resSKSNodepoolAttrStorageLVM             = "storage_lvm"
+	resSKSNodepoolAttrTaints                 = "taints"
+	resSKSNodepoolAttrTemplateID             = "template_id"
+	resSKSNodepoolAttrVersion                = "version"
+	resSKSNodepoolAttrZone                   = "zone"
 )
 
 func resourceSKSNodepoolIDString(d general.ResourceIDStringer) string {
@@ -103,6 +107,30 @@ func resourceSKSNodepool() *schema.Resource {
 			// Ignore case differences
 			DiffSuppressFunc: suppressCaseDiff,
 			Description:      "The managed compute instances type (`<family>.<size>`, e.g. `standard.medium`; use the [Exoscale CLI](https://github.com/exoscale/cli/) - `exo compute instance-type list` - for the list of available types).",
+		},
+		resSKSNodepoolAttrKubeletGC: {
+			Type:        schema.TypeSet,
+			Optional:    true,
+			Description: "Configuration for this nodepool's kubelet image garbage collector",
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					resSKSNodepoolAttrKubeletGCMinAge: {
+						Type:        schema.TypeString,
+						Optional:    true,
+						Description: "The minimum age for an unused image before it is garbage collected",
+					},
+					resSKSNodepoolAttrKubeletGCHighThreshold: {
+						Type:        schema.TypeInt,
+						Optional:    true,
+						Description: "The percent of disk usage after which image garbage collection is always run",
+					},
+					resSKSNodepoolAttrKubeletGCLowThreshold: {
+						Type:        schema.TypeInt,
+						Optional:    true,
+						Description: "The percent of disk usage before which image garbage collection is never run",
+					},
+				},
+			},
 		},
 		resSKSNodepoolAttrLabels: {
 			Type:        schema.TypeMap,
@@ -272,6 +300,32 @@ func resourceSKSNodepoolCreate(ctx context.Context, d *schema.ResourceData, meta
 		return diag.Errorf("error retrieving instance type: %s", err)
 	}
 	sksNodepool.InstanceTypeID = instanceType.ID
+
+	if k, ok := d.GetOk(resSKSNodepoolAttrKubeletGC); ok {
+		kubeletGc := k.(*schema.Set).List()[0].(map[string]interface{})
+		sksNodepoolKubeletGc := new(egoscale.SKSNodepoolKubeletImageGc)
+
+		if val, ok := kubeletGc[resSKSNodepoolAttrKubeletGCMinAge]; ok {
+			sksNodepoolKubeletGcMinAge := val.(string)
+			sksNodepoolKubeletGc.MinAge = &sksNodepoolKubeletGcMinAge
+		}
+
+		if val, ok := kubeletGc[resSKSNodepoolAttrKubeletGCLowThreshold]; ok {
+			sksNodepoolKubeletGcLowThreshold := val.(int)
+			sksNodepoolKubeletGcLowThresholdInt64 := int64(sksNodepoolKubeletGcLowThreshold)
+			sksNodepoolKubeletGc.LowThreshold = &sksNodepoolKubeletGcLowThresholdInt64
+
+		}
+
+		if val, ok := kubeletGc[resSKSNodepoolAttrKubeletGCHighThreshold]; ok {
+			sksNodepoolKubeletGcHighThreshold := val.(int)
+			sksNodepoolKubeletGcHighThresholdInt64 := int64(sksNodepoolKubeletGcHighThreshold)
+			sksNodepoolKubeletGc.HighThreshold = &sksNodepoolKubeletGcHighThresholdInt64
+
+		}
+
+		sksNodepool.KubeletImageGc = sksNodepoolKubeletGc
+	}
 
 	if l, ok := d.GetOk(resSKSNodepoolAttrLabels); ok {
 		labels := make(map[string]string)
@@ -634,6 +688,25 @@ func resourceSKSNodepoolApply(
 		strings.ToLower(*instanceType.Family),
 		strings.ToLower(*instanceType.Size),
 	)); err != nil {
+		return err
+	}
+
+	kubeletGc := d.Get(resSKSNodepoolAttrKubeletGC).(*schema.Set)
+	if err := d.Set(resSKSNodepoolAttrKubeletGC, schema.NewSet(kubeletGc.F, []interface{}{
+		func() map[string]interface{} {
+			i := map[string]interface{}{}
+			if sksNodepool.KubeletImageGc.MinAge != nil {
+				i[resSKSNodepoolAttrKubeletGCMinAge] = *sksNodepool.KubeletImageGc.MinAge
+			}
+			if sksNodepool.KubeletImageGc.HighThreshold != nil {
+				i[resSKSNodepoolAttrKubeletGCHighThreshold] = int(*sksNodepool.KubeletImageGc.HighThreshold)
+			}
+			if sksNodepool.KubeletImageGc.LowThreshold != nil {
+				i[resSKSNodepoolAttrKubeletGCLowThreshold] = int(*sksNodepool.KubeletImageGc.LowThreshold)
+			}
+			return i
+		}(),
+	})); err != nil {
 		return err
 	}
 
