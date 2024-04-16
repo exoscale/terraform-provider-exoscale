@@ -40,7 +40,7 @@ type TemplateModelOpensearch struct {
 	IndexTemplate            *TemplateModelOpensearchIndexTemplate
 	Dashboards               *TemplateModelOpensearchDashboards
 	KeepIndexRefreshInterval bool
-	MaxIndexCount            int64
+	MaxIndexCount            string
 	OpensearchSettings       string
 	Version                  string
 }
@@ -90,6 +90,7 @@ func testResourceOpensearch(t *testing.T) {
 	dataCreate.Dashboards = &TemplateModelOpensearchDashboards{true, 129, 30001}
 	dataCreate.KeepIndexRefreshInterval = true
 	dataCreate.IpFilter = []string{"0.0.0.0/0"}
+	dataCreate.MaxIndexCount = "4"
 	buf := &bytes.Buffer{}
 	err = tpl.Execute(buf, &dataCreate)
 	if err != nil {
@@ -107,7 +108,7 @@ func testResourceOpensearch(t *testing.T) {
 	dataUpdate.IndexTemplate = &TemplateModelOpensearchIndexTemplate{5, 4, 3}
 	dataUpdate.Dashboards = &TemplateModelOpensearchDashboards{true, 132, 30006}
 	dataUpdate.KeepIndexRefreshInterval = true
-	dataUpdate.MaxIndexCount = 4
+	dataUpdate.MaxIndexCount = "0"
 	dataUpdate.IpFilter = []string{"1.1.1.1/32"}
 	dataUpdate.IpFilter = nil
 	buf = &bytes.Buffer{}
@@ -213,7 +214,7 @@ func CheckExistsOpensearch(name string, data *TemplateModelOpensearch) error {
 		return fmt.Errorf("keep_index_refresh_interval: expected %v, got %v", data.KeepIndexRefreshInterval, *service.KeepIndexRefreshInterval)
 	}
 
-	if data.MaxIndexCount != *service.MaxIndexCount {
+	if data.MaxIndexCount != strconv.FormatInt(*service.MaxIndexCount, 10) {
 		return fmt.Errorf("max_index_count: expected %v, got %v", data.MaxIndexCount, *service.MaxIndexCount)
 	}
 

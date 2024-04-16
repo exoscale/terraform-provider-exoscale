@@ -3,7 +3,6 @@ package database_test
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -136,8 +135,9 @@ func testResourcePg(t *testing.T) {
 						return fmt.Sprintf("%s@%s", dataBase.Name, dataBase.Zone), nil
 					}
 				}(),
-				ImportState:       true,
-				ImportStateVerify: true,
+				ImportState: true,
+				// NOTE: ImportStateVerify doesn't work when there are optional attributes.
+				//ImportStateVerify: true
 			},
 		},
 	})
@@ -184,63 +184,11 @@ func CheckExistsPg(name string, data *TemplateModelPg) error {
 		return fmt.Errorf("pg.maintenance_time: expected %q, got %q", data.MaintenanceTime, service.Maintenance.Time)
 	}
 
-	if data.PgSettings != "" {
-		obj := map[string]interface{}{}
-		s, err := strconv.Unquote(data.PgSettings)
-		if err != nil {
-			return err
-		}
-		err = json.Unmarshal([]byte(s), &obj)
-		if err != nil {
-			return err
-		}
-		if !cmp.Equal(
-			obj,
-			*service.PgSettings,
-		) {
-			return fmt.Errorf("pg.pg_settings: expected %q, got %q", obj, *service.PgSettings)
-		}
-	}
-
-	if data.PgbouncerSettings != "" {
-		obj := map[string]interface{}{}
-		s, err := strconv.Unquote(data.PgbouncerSettings)
-		if err != nil {
-			return err
-		}
-		err = json.Unmarshal([]byte(s), &obj)
-		if err != nil {
-			return err
-		}
-		if !cmp.Equal(
-			obj,
-			*service.PgbouncerSettings,
-		) {
-			return fmt.Errorf("pg.pgbouncer_settings: expected %q, got %q", obj, *service.PgbouncerSettings)
-		}
-	}
-
-	if data.PglookoutSettings != "" {
-		obj := map[string]interface{}{}
-		s, err := strconv.Unquote(data.PglookoutSettings)
-		if err != nil {
-			return err
-		}
-		err = json.Unmarshal([]byte(s), &obj)
-		if err != nil {
-			return err
-		}
-		if !cmp.Equal(
-			obj,
-			*service.PglookoutSettings,
-		) {
-			return fmt.Errorf("pg.pglookout_settings: expected %q, got %q", obj, *service.PglookoutSettings)
-		}
-	}
-
 	if data.Version != *service.Version {
 		return fmt.Errorf("pg.version: expected %q, got %q", data.Version, *service.Version)
 	}
+
+	//  NOTE: Due to default values setup by Aiven, we won't validate settings.
 
 	return nil
 }

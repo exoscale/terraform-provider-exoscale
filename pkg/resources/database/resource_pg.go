@@ -175,7 +175,7 @@ func (r *Resource) createPg(ctx context.Context, data *ResourceModel, diagnostic
 		}
 	}
 
-	res, err := r.client.CreateDbaasServicePgWithResponse(
+	resp, err := r.client.CreateDbaasServicePgWithResponse(
 		ctx,
 		oapi.DbaasServiceName(data.Name.ValueString()),
 		service,
@@ -184,12 +184,120 @@ func (r *Resource) createPg(ctx context.Context, data *ResourceModel, diagnostic
 		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create database service pg, got error: %s", err))
 		return
 	}
-	if res.StatusCode() != http.StatusOK {
-		diagnostics.AddError("Client Error", fmt.Sprintf("Unable create database service pg, unexpected status: %s", res.Status()))
+	if resp.StatusCode() != http.StatusOK {
+		diagnostics.AddError("Client Error", fmt.Sprintf("Unable create database service pg, unexpected status: %s", resp.Status()))
 		return
 	}
 
-	r.readPg(ctx, data, diagnostics)
+	res, err := r.client.GetDbaasServicePgWithResponse(ctx, oapi.DbaasServiceName(data.Id.ValueString()))
+	if err != nil {
+		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database service pg, got error: %s", err))
+		return
+	}
+	if res.StatusCode() != http.StatusOK {
+		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database service pg, unexpected status: %s", res.Status()))
+		return
+	}
+
+	apiService := res.JSON200
+
+	// Set computed attributes.
+	caCert, err := r.client.GetDatabaseCACertificate(ctx, data.Zone.ValueString())
+	if err != nil {
+		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to get CA Certificate: %s", err))
+		return
+	}
+	data.CA = types.StringValue(caCert)
+
+	data.CreatedAt = types.StringValue(apiService.CreatedAt.String())
+	data.DiskSize = types.Int64PointerValue(apiService.DiskSize)
+	data.NodeCPUs = types.Int64PointerValue(apiService.NodeCpuCount)
+	data.NodeMemory = types.Int64PointerValue(apiService.NodeMemory)
+	data.Nodes = types.Int64PointerValue(apiService.NodeCount)
+	data.State = types.StringPointerValue((*string)(apiService.State))
+	data.UpdatedAt = types.StringValue(apiService.UpdatedAt.String())
+
+	if data.TerminationProtection.IsUnknown() {
+		data.TerminationProtection = types.BoolPointerValue(apiService.TerminationProtection)
+	}
+
+	if data.MaintenanceDOW.IsUnknown() && data.MaintenanceTime.IsUnknown() {
+		data.MaintenanceDOW = types.StringNull()
+		data.MaintenanceTime = types.StringNull()
+		if apiService.Maintenance != nil {
+			data.MaintenanceDOW = types.StringValue(string(apiService.Maintenance.Dow))
+			data.MaintenanceTime = types.StringValue(apiService.Maintenance.Time)
+		}
+	}
+
+	if data.Pg.BackupSchedule.IsUnknown() {
+		data.Pg.BackupSchedule = types.StringNull()
+		if apiService.BackupSchedule != nil {
+			backupHour := types.Int64PointerValue(apiService.BackupSchedule.BackupHour)
+			backupMinute := types.Int64PointerValue(apiService.BackupSchedule.BackupMinute)
+			data.Pg.BackupSchedule = types.StringValue(fmt.Sprintf(
+				"%02d:%02d",
+				backupHour.ValueInt64(),
+				backupMinute.ValueInt64(),
+			))
+		}
+	}
+
+	if data.Pg.IpFilter.IsUnknown() {
+		data.Pg.IpFilter = types.SetNull(types.StringType)
+		if apiService.IpFilter != nil {
+			v, dg := types.SetValueFrom(ctx, types.StringType, *apiService.IpFilter)
+			if dg.HasError() {
+				diagnostics.Append(dg...)
+				return
+			}
+
+			data.Pg.IpFilter = v
+		}
+	}
+
+	if data.Pg.Version.IsUnknown() {
+		data.Pg.Version = types.StringNull()
+		if apiService.Version != nil {
+			data.Pg.Version = types.StringValue(strings.SplitN(*apiService.Version, ".", 2)[0])
+		}
+	}
+
+	if data.Pg.Settings.IsUnknown() {
+		data.Pg.Settings = types.StringNull()
+		if apiService.PgSettings != nil {
+			settings, err := json.Marshal(*apiService.PgSettings)
+			if err != nil {
+				diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
+				return
+			}
+			data.Pg.Settings = types.StringValue(string(settings))
+		}
+	}
+
+	if data.Pg.PgbouncerSettings.IsUnknown() {
+		data.Pg.PgbouncerSettings = types.StringNull()
+		if apiService.PgbouncerSettings != nil {
+			settings, err := json.Marshal(*apiService.PgbouncerSettings)
+			if err != nil {
+				diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
+				return
+			}
+			data.Pg.PgbouncerSettings = types.StringValue(string(settings))
+		}
+	}
+
+	if data.Pg.PglookoutSettings.IsUnknown() {
+		data.Pg.PglookoutSettings = types.StringNull()
+		if apiService.PglookoutSettings != nil {
+			settings, err := json.Marshal(*apiService.PglookoutSettings)
+			if err != nil {
+				diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
+				return
+			}
+			data.Pg.PglookoutSettings = types.StringValue(string(settings))
+		}
+	}
 }
 
 // readPg function handles PostgreSQL specific part of database resource Read logic.
@@ -263,9 +371,31 @@ func (r *Resource) readPg(ctx context.Context, data *ResourceModel, diagnostics 
 		data.Pg.Version = types.StringValue(strings.SplitN(*apiService.Version, ".", 2)[0])
 	}
 
-	data.Pg.Settings = types.StringNull()
-	if apiService.PgSettings != nil {
-		settings, err := json.Marshal(*apiService.PgSettings)
+	// For database settings, we have a special behaviour:
+	// - If not set in plan we handle it as normal computed field;
+	// - If set in plan we only read (manage) key(s) that were set!
+	//   This prevents showing drift due to Aiven setting default values for keys not specified in plan.
+	if data.Pg.Settings.IsUnknown() || apiService.PgSettings == nil {
+		data.Pg.Settings = types.StringNull()
+		if apiService.PgSettings != nil {
+			settings, err := json.Marshal(*apiService.PgSettings)
+			if err != nil {
+				diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
+				return
+			}
+
+			data.Pg.Settings = types.StringValue(string(settings))
+		}
+	} else if data.Pg.Settings.ValueString() != "" {
+		var userSettings map[string]interface{}
+
+		if err := json.Unmarshal([]byte(data.Pg.Settings.ValueString()), &userSettings); err != nil {
+			diagnostics.AddError("Validation error", fmt.Sprintf("unable to unmarshal JSON: %s", err))
+			return
+		}
+
+		PartialSettingsPatch(userSettings, *apiService.PgSettings)
+		settings, err := json.Marshal(userSettings)
 		if err != nil {
 			diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
 			return
@@ -273,9 +403,27 @@ func (r *Resource) readPg(ctx context.Context, data *ResourceModel, diagnostics 
 		data.Pg.Settings = types.StringValue(string(settings))
 	}
 
-	data.Pg.PgbouncerSettings = types.StringNull()
-	if apiService.PgbouncerSettings != nil {
-		settings, err := json.Marshal(*apiService.PgbouncerSettings)
+	if data.Pg.PgbouncerSettings.IsUnknown() || apiService.PgbouncerSettings == nil {
+		data.Pg.PgbouncerSettings = types.StringNull()
+		if apiService.PgbouncerSettings != nil {
+			settings, err := json.Marshal(*apiService.PgbouncerSettings)
+			if err != nil {
+				diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
+				return
+			}
+
+			data.Pg.PgbouncerSettings = types.StringValue(string(settings))
+		}
+	} else if data.Pg.PgbouncerSettings.ValueString() != "" {
+		var userSettings map[string]interface{}
+
+		if err := json.Unmarshal([]byte(data.Pg.PgbouncerSettings.ValueString()), &userSettings); err != nil {
+			diagnostics.AddError("Validation error", fmt.Sprintf("unable to unmarshal JSON: %s", err))
+			return
+		}
+
+		PartialSettingsPatch(userSettings, *apiService.PgbouncerSettings)
+		settings, err := json.Marshal(userSettings)
 		if err != nil {
 			diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
 			return
@@ -283,9 +431,27 @@ func (r *Resource) readPg(ctx context.Context, data *ResourceModel, diagnostics 
 		data.Pg.PgbouncerSettings = types.StringValue(string(settings))
 	}
 
-	data.Pg.PglookoutSettings = types.StringNull()
-	if apiService.PglookoutSettings != nil {
-		settings, err := json.Marshal(*apiService.PglookoutSettings)
+	if data.Pg.PglookoutSettings.IsUnknown() || apiService.PglookoutSettings == nil {
+		data.Pg.PglookoutSettings = types.StringNull()
+		if apiService.PglookoutSettings != nil {
+			settings, err := json.Marshal(*apiService.PglookoutSettings)
+			if err != nil {
+				diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
+				return
+			}
+
+			data.Pg.PglookoutSettings = types.StringValue(string(settings))
+		}
+	} else if data.Pg.PglookoutSettings.ValueString() != "" {
+		var userSettings map[string]interface{}
+
+		if err := json.Unmarshal([]byte(data.Pg.PglookoutSettings.ValueString()), &userSettings); err != nil {
+			diagnostics.AddError("Validation error", fmt.Sprintf("unable to unmarshal JSON: %s", err))
+			return
+		}
+
+		PartialSettingsPatch(userSettings, *apiService.PglookoutSettings)
+		settings, err := json.Marshal(userSettings)
 		if err != nil {
 			diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
 			return

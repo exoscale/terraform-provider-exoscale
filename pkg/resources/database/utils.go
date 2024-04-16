@@ -68,3 +68,15 @@ func parseBackupSchedule(v string) (int64, int64, error) {
 
 	return int64(backupHour), int64(backupMinute), nil
 }
+
+// PartialSettingsPatch updates all keys in `data` that exist in `patch`.
+// If key from `data` is not present in `patch` then removes the key from `data`.
+func PartialSettingsPatch(data, patch map[string]interface{}) {
+	for key := range data {
+		if v, found := patch[key]; found {
+			data[key] = v
+		} else {
+			delete(data, key)
+		}
+	}
+}
