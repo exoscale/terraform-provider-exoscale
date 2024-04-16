@@ -10,6 +10,7 @@ FEATURES:
 BUG FIXES:
 
 - Fix dbaas bugs causing accepteance tests to fail #346
+- docs: fix example in index.md #345 
 
 ## 0.57.0 (April 3, 2024)
 
