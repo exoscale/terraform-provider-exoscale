@@ -201,6 +201,14 @@ func resourceElasticIPCreate(ctx context.Context, d *schema.ResourceData, meta i
 		elasticIP.Description = &s
 	}
 
+	if l, ok := d.GetOk(resElasticIPAttrLabels); ok {
+		labels := make(map[string]string)
+		for k, v := range l.(map[string]interface{}) {
+			labels[k] = v.(string)
+		}
+		elasticIP.Labels = &labels
+	}
+
 	if healthcheckMode, ok := d.GetOk(resElasticIPAttrHealthcheck(resElasticIPAttrHealthcheckMode)); ok {
 		elasticIPHealthcheck := egoscale.ElasticIPHealthcheck{
 			Mode: nonEmptyStringPtr(healthcheckMode.(string)),
@@ -244,14 +252,6 @@ func resourceElasticIPCreate(ctx context.Context, d *schema.ResourceData, meta i
 		}
 
 		elasticIP.Healthcheck = &elasticIPHealthcheck
-
-		if l, ok := d.GetOk(resElasticIPAttrLabels); ok {
-			labels := make(map[string]string)
-			for k, v := range l.(map[string]interface{}) {
-				labels[k] = v.(string)
-			}
-			elasticIP.Labels = &labels
-		}
 	}
 
 	elasticIP, err := client.CreateElasticIP(ctx, zone, elasticIP)
