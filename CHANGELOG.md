@@ -6,6 +6,10 @@ FEATURES:
 
 - Add Kubelet Image GC support for SKS nodepools
 
+BUG FIXES:
+
+- Set labels on unmanaged eip creation #347 
+
 ## 0.57.0 (April 3, 2024)
 
 FEATURES:
