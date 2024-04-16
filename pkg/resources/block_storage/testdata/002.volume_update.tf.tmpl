@@ -1,0 +1,15 @@
+resource "exoscale_block_storage_volume" "test_volume" {
+  name = "test_volume_{{ .ID }}"
+  labels = {
+    foo1 = "bar1"
+    foo2 = "bar2"
+  }
+  size = 120
+  zone = "{{ .Zone }}"
+}
+
+data "exoscale_block_storage_volume" "test_volume" {
+  zone = "{{ .Zone }}"
+  id = exoscale_block_storage_volume.test_volume.id
+}
+

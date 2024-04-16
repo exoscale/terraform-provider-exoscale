@@ -6,6 +6,7 @@ import (
 	"time"
 
 	exov2 "github.com/exoscale/egoscale/v2"
+	exov3 "github.com/exoscale/egoscale/v3"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 )
@@ -21,6 +22,7 @@ type BaseConfig struct {
 type ExoscaleProviderConfig struct {
 	Config      BaseConfig
 	ClientV2    *exov2.Client
+	ClientV3    *exov3.Client
 	Environment string
 }
 

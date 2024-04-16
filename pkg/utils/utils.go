@@ -16,7 +16,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
-	egoscale "github.com/exoscale/egoscale/v2"
+	exov2 "github.com/exoscale/egoscale/v2"
+	exov3 "github.com/exoscale/egoscale/v3"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 )
@@ -188,8 +189,8 @@ func DecodeUserData(data string) (string, error) {
 }
 
 // ParseIAMAccessKeyResource parses IAM key format
-func ParseIAMAccessKeyResource(v string) (*egoscale.IAMAccessKeyResource, error) {
-	var iamAccessKeyResource egoscale.IAMAccessKeyResource
+func ParseIAMAccessKeyResource(v string) (*exov2.IAMAccessKeyResource, error) {
+	var iamAccessKeyResource exov2.IAMAccessKeyResource
 
 	parts := strings.SplitN(v, ":", 2)
 	if len(parts) != 2 {
@@ -254,4 +255,17 @@ func ValidateLowercaseString(val interface{}, key string) (warns []string, errs 
 		errs = append(errs, fmt.Errorf("%q must be lowercase, got: %q", key, v))
 	}
 	return
+}
+
+// SwitchClientZone clones the existing exoscale Client in the new zone.
+func SwitchClientZone(ctx context.Context, client *exov3.Client, zone exov3.ZoneName) (*exov3.Client, error) {
+	if zone == "" {
+		return client, nil
+	}
+	endpoint, err := client.GetZoneAPIEndpoint(ctx, zone)
+	if err != nil {
+		return nil, fmt.Errorf("switch client zone v3: %w", err)
+	}
+
+	return client.WithEndpoint(endpoint), nil
 }

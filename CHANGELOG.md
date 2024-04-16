@@ -1,10 +1,11 @@
 # Changelog
 
-## UNRELEASED
+## Unreleased
 
 FEATURES:
 
 - Add Kubelet Image GC support for SKS nodepools
+- Block storage volume resource & data source #341
 
 BUG FIXES:
 

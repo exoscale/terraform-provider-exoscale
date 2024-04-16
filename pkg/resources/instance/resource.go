@@ -14,6 +14,7 @@ import (
 
 	egoscale "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
+	egoscaleV3 "github.com/exoscale/egoscale/v3"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
@@ -109,6 +110,13 @@ func Resource() *schema.Resource {
 					},
 				},
 			},
+		},
+		AttrBlockStorageVolumeIDs: {
+			Description: "A list of [exoscale_block_storage_volume](./block_storage_volume.md) (ID) to attach to the instance.",
+			Type:        schema.TypeSet,
+			Optional:    true,
+			Set:         schema.HashString,
+			Elem:        &schema.Schema{Type: schema.TypeString},
 		},
 		AttrPublicIPAddress: {
 			Description: "The instance (main network interface) IPv4 address.",
@@ -211,6 +219,13 @@ func rCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 	defer cancel()
 
 	client, err := config.GetClient(meta)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	// Use egoscale V3 for BlockStorage API.
+	// This is a temporary workaround until this resource is migrate to tf framework.
+	clientV3, err := config.GetClientV3(meta)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -349,6 +364,40 @@ func rCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 		}
 	}
 
+	// Attach block storage volumes if set
+	if bsSet, ok := d.Get(AttrBlockStorageVolumeIDs).(*schema.Set); ok {
+		for _, bs := range bsSet.List() {
+			iid, err := egoscaleV3.ParseUUID(*instance.ID)
+			if err != nil {
+				return diag.Errorf("unable to parse instance ID: %s", err)
+			}
+			bid, err := egoscaleV3.ParseUUID(bs.(string))
+			if err != nil {
+				return diag.Errorf("unable to parse block storage ID: %s", err)
+			}
+
+			request := egoscaleV3.AttachBlockStorageVolumeToInstanceRequest{
+				Instance: &egoscaleV3.InstanceTarget{
+					ID: iid,
+				},
+			}
+
+			op, err := clientV3.AttachBlockStorageVolumeToInstance(
+				ctx,
+				bid,
+				request,
+			)
+			if err != nil {
+				return diag.Errorf("unable to parse attached instance ID: %s", err)
+			}
+
+			_, err = clientV3.Wait(ctx, op, egoscaleV3.OperationStateSuccess)
+			if err != nil {
+				return diag.Errorf("failed to create block storage: %s", err)
+			}
+		}
+	}
+
 	if v, ok := d.GetOk(AttrReverseDNS); ok {
 		rdns := v.(string)
 		err := client.UpdateInstanceReverseDNS(
@@ -426,6 +475,13 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 		return diag.FromErr(err)
 	}
 
+	// Use egoscale V3 for BlockStorage API.
+	// This is a temporary workaround until this resource is migrate to tf framework.
+	clientV3, err := config.GetClientV3(meta)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
 	instance, err := client.GetInstance(ctx, zone, d.Id())
 	if err != nil {
 		return diag.FromErr(err)
@@ -481,6 +537,72 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 		}
 		if err != nil {
 			return diag.FromErr(err)
+		}
+	}
+
+	// Attach/detach Block Storage Volumes
+	if d.HasChange(AttrBlockStorageVolumeIDs) {
+		o, n := d.GetChange(AttrBlockStorageVolumeIDs)
+		old := o.(*schema.Set)
+		cur := n.(*schema.Set)
+
+		if added := cur.Difference(old); added.Len() > 0 {
+			for _, id := range added.List() {
+				iid, err := egoscaleV3.ParseUUID(*instance.ID)
+				if err != nil {
+					return diag.Errorf("unable to parse instance ID: %s", err)
+				}
+				bid, err := egoscaleV3.ParseUUID(id.(string))
+				if err != nil {
+					return diag.Errorf("unable to parse block storage ID: %s", err)
+				}
+
+				request := egoscaleV3.AttachBlockStorageVolumeToInstanceRequest{
+					Instance: &egoscaleV3.InstanceTarget{
+						ID: iid,
+					},
+				}
+
+				op, err := clientV3.AttachBlockStorageVolumeToInstance(
+					ctx,
+					bid,
+					request,
+				)
+				if err != nil {
+					return diag.Errorf("unable to parse attached instance ID: %s", err)
+				}
+
+				_, err = clientV3.Wait(ctx, op, egoscaleV3.OperationStateSuccess)
+				if err != nil {
+					return diag.Errorf("failed to attach block storage: %s", err)
+				}
+			}
+		}
+
+		if removed := old.Difference(cur); removed.Len() > 0 {
+			for _, id := range removed.List() {
+				bid, err := egoscaleV3.ParseUUID(id.(string))
+				if err != nil {
+					return diag.Errorf("unable to parse block storage ID: %s", err)
+				}
+
+				op, err := clientV3.DetachBlockStorageVolume(
+					ctx,
+					bid,
+				)
+				if err != nil {
+					if !errors.Is(err, egoscaleV3.ErrNotFound) {
+						return diag.Errorf("failed to detach block storage: %s", err)
+					}
+
+					continue
+				}
+
+				_, err = clientV3.Wait(ctx, op, egoscaleV3.OperationStateSuccess)
+				if err != nil {
+					return diag.Errorf("failed to detach block storage: %s", err)
+				}
+			}
 		}
 	}
 
