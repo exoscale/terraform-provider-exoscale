@@ -20,7 +20,7 @@ Block Storage offers persistent externally attached volumes for your workloads.
 
 ### Required
 
-- `name_prefix` (String) ❗ Volume name prefix. Name will have timestamp appended to the prefix.
+- `name` (String) ❗ Volume name prefix. Name will have timestamp appended to the prefix.
 - `volume` (Attributes) Block storage volume to create snapshot for. (see [below for nested schema](#nestedatt--volume))
 - `zone` (String) ❗ The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.
 
@@ -33,7 +33,6 @@ Block Storage offers persistent externally attached volumes for your workloads.
 
 - `created_at` (String) Snapshot creation date.
 - `id` (String) The ID of this resource.
-- `name` (String) Volume name.
 - `size` (Number) Snapshot size in GB.
 - `state` (String) Snapshot state.
 
