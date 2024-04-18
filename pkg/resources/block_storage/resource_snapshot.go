@@ -325,10 +325,6 @@ func (r *ResourceSnapshot) Read(ctx context.Context, req resource.ReadRequest, r
 		return
 	}
 
-	tflog.Info(ctx, "------------snapshot---------", map[string]interface{}{
-		"snapshot": snapshot,
-	})
-
 	// Update state model.
 	state.Name = types.StringValue(snapshot.Name)
 	state.Size = types.Int64Value(snapshot.Size)
