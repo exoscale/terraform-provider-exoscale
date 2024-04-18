@@ -6,6 +6,7 @@ FEATURES:
 
 - Add Kubelet Image GC support for SKS nodepools
 - Block storage volume resource & data source #341
+- Block storage volume snapshot resource & data source #344
 
 BUG FIXES:
 
