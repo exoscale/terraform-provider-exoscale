@@ -46,15 +46,14 @@ func NewResourceSnapshot() resource.Resource {
 
 // ResourceSnapshotModel defines the resource data model.
 type ResourceSnapshotModel struct {
-	ID         types.String `tfsdk:"id"`
-	NamePrefix types.String `tfsdk:"name_prefix"`
-	Name       types.String `tfsdk:"name"`
-	Size       types.Int64  `tfsdk:"size"`
-	CreatedAt  types.String `tfsdk:"created_at"`
-	Labels     types.Map    `tfsdk:"labels"`
-	State      types.String `tfsdk:"state"`
-	Volume     types.Object `tfsdk:"volume"`
-	Zone       types.String `tfsdk:"zone"`
+	ID        types.String `tfsdk:"id"`
+	Name      types.String `tfsdk:"name"`
+	Size      types.Int64  `tfsdk:"size"`
+	CreatedAt types.String `tfsdk:"created_at"`
+	Labels    types.Map    `tfsdk:"labels"`
+	State     types.String `tfsdk:"state"`
+	Volume    types.Object `tfsdk:"volume"`
+	Zone      types.String `tfsdk:"zone"`
 
 	Timeouts timeouts.Value `tfsdk:"timeouts"`
 }
@@ -73,16 +72,12 @@ func (r *ResourceSnapshot) Schema(ctx context.Context, req resource.SchemaReques
 				MarkdownDescription: "The ID of this resource.",
 				Computed:            true,
 			},
-			"name_prefix": schema.StringAttribute{
+			"name": schema.StringAttribute{
 				MarkdownDescription: "❗ Volume name prefix. Name will have timestamp appended to the prefix.",
 				Required:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
-			},
-			"name": schema.StringAttribute{
-				MarkdownDescription: "Volume name.",
-				Computed:            true,
 			},
 			"volume": schema.SingleNestedAttribute{
 				MarkdownDescription: "Block storage volume to create snapshot for.",
@@ -187,7 +182,7 @@ func (r *ResourceSnapshot) Create(ctx context.Context, req resource.CreateReques
 	// for egoscale to interpret it as unset value and handle it accordingly.
 
 	request := exoscale.CreateBlockStorageSnapshotRequest{
-		Name: plan.NamePrefix.ValueString(),
+		Name: plan.Name.ValueString(),
 	}
 
 	volume := SnapshotVolumeModel{}
