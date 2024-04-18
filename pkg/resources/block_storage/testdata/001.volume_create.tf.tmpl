@@ -3,7 +3,7 @@ resource "exoscale_block_storage_volume" "test_volume" {
   labels = {
     foo = "bar"
   }
-  size = 120
+  size = 10
   zone = "{{ .Zone }}"
 }
 

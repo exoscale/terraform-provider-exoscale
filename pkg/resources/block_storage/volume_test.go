@@ -36,13 +36,13 @@ func testVolume(t *testing.T) {
 						"name",
 						fmt.Sprintf("terraform-provider-test-%d", testdataSpec.ID),
 					),
-					resource.TestCheckResourceAttr(volumeResourceName, "size", "120"),
+					resource.TestCheckResourceAttr(volumeResourceName, "size", "10"),
 					resource.TestCheckResourceAttr(volumeResourceName, "labels.%", "1"),
 					resource.TestCheckResourceAttr(volumeResourceName, "labels.foo", "bar"),
 					resource.TestCheckResourceAttrSet(volumeResourceName, "created_at"),
 					resource.TestCheckResourceAttrSet(volumeResourceName, "blocksize"),
 					resource.TestCheckResourceAttr(volumeResourceName, "state", "detached"),
-					resource.TestCheckResourceAttr(volumeDataSourceName, "size", "120"),
+					resource.TestCheckResourceAttr(volumeDataSourceName, "size", "10"),
 					resource.TestCheckResourceAttr(volumeDataSourceName, "labels.%", "1"),
 					resource.TestCheckResourceAttr(volumeDataSourceName, "labels.foo", "bar"),
 					resource.TestCheckResourceAttrSet(volumeDataSourceName, "created_at"),
@@ -68,8 +68,8 @@ func testVolume(t *testing.T) {
 			{
 				Config: testutils.ParseTestdataConfig("./testdata/003.volume_resize.tf.tmpl", &testdataSpec),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(volumeResourceName, "size", "130"),
-					resource.TestCheckResourceAttr(volumeDataSourceName, "size", "130"),
+					resource.TestCheckResourceAttr(volumeResourceName, "size", "20"),
+					resource.TestCheckResourceAttr(volumeDataSourceName, "size", "20"),
 				),
 			},
 			// Create instance & attach volume
