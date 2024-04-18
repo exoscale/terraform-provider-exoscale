@@ -100,7 +100,7 @@ func (r *ResourceVolume) Schema(ctx context.Context, req resource.SchemaRequest,
 			},
 			"labels": schema.MapAttribute{
 				ElementType:         types.StringType,
-				MarkdownDescription: "Resource labels.",
+				MarkdownDescription: "❗ Resource labels.",
 				Optional:            true,
 				PlanModifiers: []planmodifier.Map{
 					mapplanmodifier.RequiresReplace(),

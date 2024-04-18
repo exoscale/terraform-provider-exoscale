@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/mapplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -73,14 +74,14 @@ func (r *ResourceSnapshot) Schema(ctx context.Context, req resource.SchemaReques
 				Computed:            true,
 			},
 			"name": schema.StringAttribute{
-				MarkdownDescription: "❗ Volume name prefix. Name will have timestamp appended to the prefix.",
+				MarkdownDescription: "❗ Volume snapshot name.",
 				Required:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"volume": schema.SingleNestedAttribute{
-				MarkdownDescription: "Block storage volume to create snapshot for.",
+				MarkdownDescription: "Volume from which to create a snapshot.",
 				Required:            true,
 				Attributes: map[string]schema.Attribute{
 					"id": schema.StringAttribute{
@@ -104,8 +105,11 @@ func (r *ResourceSnapshot) Schema(ctx context.Context, req resource.SchemaReques
 			},
 			"labels": schema.MapAttribute{
 				ElementType:         types.StringType,
-				MarkdownDescription: "Resource labels. Not updateble after creation.",
+				MarkdownDescription: "❗ Resource labels. Not updateble after creation.",
 				Optional:            true,
+				PlanModifiers: []planmodifier.Map{
+					mapplanmodifier.RequiresReplace(),
+				},
 			},
 			"size": schema.Int64Attribute{
 				MarkdownDescription: "Snapshot size in GB.",

@@ -25,7 +25,7 @@ Block Storage offers persistent externally attached volumes for your workloads.
 
 ### Optional
 
-- `labels` (Map of String) Resource labels.
+- `labels` (Map of String) ❗ Resource labels.
 - `size` (Number) Volume size in GB (default 10). If volume is attached, instance must be stopped to update this value. Volume can only grow, cannot be shrunk.
 - `snapshot_target` (Attributes) Block storage snapshot to use when creating a volume. Read-only after creation. (see [below for nested schema](#nestedatt--snapshot_target))
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
