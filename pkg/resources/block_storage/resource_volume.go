@@ -83,10 +83,6 @@ func (r *ResourceVolume) Schema(ctx context.Context, req resource.SchemaRequest,
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
-			"size": schema.Int64Attribute{
-				MarkdownDescription: "Volume size in GB. To resize, either detach volume or stop instance that has this volume attached. Volume can only grow, cannot be shrunk.",
-				Required:            true,
-			},
 			"zone": schema.StringAttribute{
 				MarkdownDescription: "❗ The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.",
 				Required:            true,
@@ -96,6 +92,10 @@ func (r *ResourceVolume) Schema(ctx context.Context, req resource.SchemaRequest,
 				Validators: []validator.String{
 					stringvalidator.OneOf(config.Zones...),
 				},
+			},
+			"size": schema.Int64Attribute{
+				MarkdownDescription: "Volume size in GB (default 10). If volume is attached, instance must be stopped to update this value. Volume can only grow, cannot be shrunk.",
+				Optional:            true,
 			},
 			"labels": schema.MapAttribute{
 				ElementType:         types.StringType,
