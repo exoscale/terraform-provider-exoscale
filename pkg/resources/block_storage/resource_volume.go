@@ -358,7 +358,7 @@ func (r *ResourceVolume) Read(ctx context.Context, req resource.ReadRequest, res
 	}
 
 	state.Labels = types.MapNull(types.StringType)
-	if len(volume.Labels) > 0 {
+	if volume.Labels != nil {
 		t, dg := types.MapValueFrom(
 			ctx,
 			types.StringType,
