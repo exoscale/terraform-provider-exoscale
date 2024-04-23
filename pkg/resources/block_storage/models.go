@@ -28,3 +28,27 @@ func (m VolumeInstanceModel) Types() map[string]attr.Type {
 		"id": types.StringType,
 	}
 }
+
+// VolumeSnapshotModel defines nested data model.
+type VolumeSnapshotModel struct {
+	ID types.String `tfsdk:"id"`
+}
+
+// Types returns nested data model types to be used for conversion.
+func (m VolumeSnapshotModel) Types() map[string]attr.Type {
+	return map[string]attr.Type{
+		"id": types.StringType,
+	}
+}
+
+// SnapshotVolumeModel defines nested data model.
+type SnapshotVolumeModel struct {
+	ID types.String `tfsdk:"id"`
+}
+
+// Types returns nested data model types to be used for conversion.
+func (m SnapshotVolumeModel) Types() map[string]attr.Type {
+	return map[string]attr.Type{
+		"id": types.StringType,
+	}
+}

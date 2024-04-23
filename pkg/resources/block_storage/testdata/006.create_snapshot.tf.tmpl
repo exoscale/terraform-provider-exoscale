@@ -15,9 +15,7 @@ resource "exoscale_compute_instance" "test_instance" {
   type        = "standard.small"
   disk_size   = 10
 
-  block_storage_volume_ids = [
-    exoscale_block_storage_volume.test_volume.id,
-  ]
+  block_storage_volume_ids = []
 
   security_group_ids = [data.exoscale_security_group.default.id]
 }
@@ -36,7 +34,22 @@ data "exoscale_block_storage_volume" "test_volume" {
   zone = "{{ .Zone }}"
   id = exoscale_block_storage_volume.test_volume.id
 
-  # otherwise datasource will execute first and instance will be empty
-  depends_on = [exoscale_compute_instance.test_instance]
+  # otherwise datasource will execute first and instance/snapshots will be empty
+  depends_on = [exoscale_compute_instance.test_instance,exoscale_block_storage_volume_snapshot.test_snapshot]
 }
 
+resource "exoscale_block_storage_volume_snapshot" "test_snapshot" {
+  name = "terraform-provider-test-{{ .ID }}"
+  volume = {
+    id = exoscale_block_storage_volume.test_volume.id
+  }
+  labels = {
+    foo = "bar"
+  }
+  zone = "{{ .Zone }}"
+}
+
+data "exoscale_block_storage_volume_snapshot" "test_snapshot" {
+  zone = "{{ .Zone }}"
+  id = exoscale_block_storage_volume_snapshot.test_snapshot.id
+}

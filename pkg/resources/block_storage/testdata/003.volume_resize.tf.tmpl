@@ -1,10 +1,10 @@
 resource "exoscale_block_storage_volume" "test_volume" {
-  name = "test_volume_{{ .ID }}"
+  name = "terraform-provider-test-{{ .ID }}"
   labels = {
     foo1 = "bar1"
     foo2 = "bar2"
   }
-  size = 130
+  size = 20
   zone = "{{ .Zone }}"
 }
 

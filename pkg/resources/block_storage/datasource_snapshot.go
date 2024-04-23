@@ -18,69 +18,67 @@ import (
 	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
 )
 
-const DataSourceVolumeDescription = `Fetch [Exoscale Block Storage](https://community.exoscale.com/documentation/block-storage/) Volume.
+const DataSourceSnapshotDescription = `Fetch [Exoscale Block Storage](https://community.exoscale.com/documentation/block-storage/) Snapshot.
 
 Block Storage offers persistent externally attached volumes for your workloads.
 
-Corresponding resource: [exoscale_block_storage_volume](../resources/block_storage_volume.md).`
+Corresponding resource: [exoscale_block_storage_snapshot](../resources/block_storage_snapshot.md).`
 
 // Ensure provider defined types fully satisfy framework interfaces.
-var _ datasource.DataSourceWithConfigure = &DataSourceVolume{}
+var _ datasource.DataSourceWithConfigure = &DataSourceSnapshot{}
 
-// DataSourceVolume defines the resource implementation.
-type DataSourceVolume struct {
+// DataSourceSnapshot defines the resource implementation.
+type DataSourceSnapshot struct {
 	client *exoscale.Client
 }
 
-// NewDataSourceVolume creates instance of ResourceVolume.
-func NewDataSourceVolume() datasource.DataSource {
-	return &DataSourceVolume{}
+// NewDataSourceSnapshot creates instance of DataSourceSnapshot.
+func NewDataSourceSnapshot() datasource.DataSource {
+	return &DataSourceSnapshot{}
 }
 
-// DataSourceVolumeModel defines the resource data model.
-type DataSourceVolumeModel struct {
+// DataSourceSnapshotModel defines the resource data model.
+type DataSourceSnapshotModel struct {
 	ID        types.String `tfsdk:"id"`
 	Name      types.String `tfsdk:"name"`
 	Size      types.Int64  `tfsdk:"size"`
-	Blocksize types.Int64  `tfsdk:"blocksize"`
 	CreatedAt types.String `tfsdk:"created_at"`
-	Instance  types.Object `tfsdk:"instance"`
 	Labels    types.Map    `tfsdk:"labels"`
-	Snapshots types.Set    `tfsdk:"snapshots"`
 	State     types.String `tfsdk:"state"`
+	Volume    types.Object `tfsdk:"volume"`
 	Zone      types.String `tfsdk:"zone"`
 
 	Timeouts timeouts.Value `tfsdk:"timeouts"`
 }
 
 // Metadata specifies resource name.
-func (d *DataSourceVolume) Metadata(
+func (d *DataSourceSnapshot) Metadata(
 	ctx context.Context,
 	req datasource.MetadataRequest,
 	resp *datasource.MetadataResponse,
 ) {
-	resp.TypeName = req.ProviderTypeName + "_block_storage_volume"
+	resp.TypeName = req.ProviderTypeName + "_block_storage_volume_snapshot"
 }
 
 // Schema defines resource attributes.
-func (d *DataSourceVolume) Schema(
+func (d *DataSourceSnapshot) Schema(
 	ctx context.Context,
 	req datasource.SchemaRequest,
 	resp *datasource.SchemaResponse,
 ) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: DataSourceVolumeDescription,
+		MarkdownDescription: DataSourceSnapshotDescription,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				MarkdownDescription: "Volume ID to match.",
+				MarkdownDescription: "Snapshot ID to match.",
 				Required:            true,
 			},
 			"name": schema.StringAttribute{
-				MarkdownDescription: "Volume name.",
+				MarkdownDescription: "Snapshot name.",
 				Computed:            true,
 			},
 			"size": schema.Int64Attribute{
-				MarkdownDescription: "Volume size in GB.",
+				MarkdownDescription: "Snapshot size in GB.",
 				Computed:            true,
 			},
 			"zone": schema.StringAttribute{
@@ -90,43 +88,27 @@ func (d *DataSourceVolume) Schema(
 					stringvalidator.OneOf(config.Zones...),
 				},
 			},
-			"blocksize": schema.Int64Attribute{
-				MarkdownDescription: "Volume block size.",
-				Computed:            true,
-			},
 			"created_at": schema.StringAttribute{
-				MarkdownDescription: "Volume creation date.",
+				MarkdownDescription: "Snapshot creation date.",
 				Computed:            true,
 			},
-			"instance": schema.SingleNestedAttribute{
-				MarkdownDescription: "Volume attached instance.",
+			"volume": schema.SingleNestedAttribute{
+				MarkdownDescription: "Block Storage Volume.",
 				Computed:            true,
 				Attributes: map[string]schema.Attribute{
 					"id": schema.StringAttribute{
-						MarkdownDescription: "Instance ID.",
+						MarkdownDescription: "Volume ID.",
 						Computed:            true,
 					},
 				},
 			},
 			"labels": schema.MapAttribute{
 				ElementType:         types.StringType,
-				MarkdownDescription: "Resource labels.",
+				MarkdownDescription: "Labels.",
 				Computed:            true,
-			},
-			"snapshots": schema.SetNestedAttribute{
-				MarkdownDescription: "Volume snapshots.",
-				Computed:            true,
-				NestedObject: schema.NestedAttributeObject{
-					Attributes: map[string]schema.Attribute{
-						"id": schema.StringAttribute{
-							MarkdownDescription: "Snapshot ID.",
-							Computed:            true,
-						},
-					},
-				},
 			},
 			"state": schema.StringAttribute{
-				MarkdownDescription: "Volume state.",
+				MarkdownDescription: "Snapshot state.",
 				Computed:            true,
 			},
 		},
@@ -139,7 +121,7 @@ func (d *DataSourceVolume) Schema(
 }
 
 // Configure sets up datasource dependencies.
-func (d *DataSourceVolume) Configure(
+func (d *DataSourceSnapshot) Configure(
 	ctx context.Context,
 	r datasource.ConfigureRequest,
 	resp *datasource.ConfigureResponse,
@@ -152,8 +134,8 @@ func (d *DataSourceVolume) Configure(
 }
 
 // Read defines how the data source updates Terraform's state to reflect the retrieved data.
-func (d *DataSourceVolume) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var plan DataSourceVolumeModel
+func (d *DataSourceSnapshot) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+	var plan DataSourceSnapshotModel
 
 	// Load Terraform plan into the model.
 	resp.Diagnostics.Append(req.Config.Get(ctx, &plan)...)
@@ -194,31 +176,30 @@ func (d *DataSourceVolume) Read(ctx context.Context, req datasource.ReadRequest,
 		return
 	}
 
-	volume, err := client.GetBlockStorageVolume(
+	snapshot, err := client.GetBlockStorageSnapshot(
 		ctx,
 		id,
 	)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"unable to get storage volume",
+			"unable to get volume snapshot",
 			err.Error(),
 		)
 		return
 	}
 
 	// Update state model.
-	plan.Name = types.StringValue(volume.Name)
-	plan.Size = types.Int64Value(volume.Size)
-	plan.Blocksize = types.Int64Value(volume.Blocksize)
-	plan.CreatedAt = types.StringValue(volume.CreatedAT.String())
-	plan.State = types.StringValue(string(volume.State))
+	plan.Name = types.StringValue(snapshot.Name)
+	plan.Size = types.Int64Value(snapshot.Size)
+	plan.CreatedAt = types.StringValue(snapshot.CreatedAT.String())
+	plan.State = types.StringValue(string(snapshot.State))
 
 	plan.Labels = types.MapNull(types.StringType)
-	if volume.Labels != nil {
+	if snapshot.Labels != nil {
 		t, dg := types.MapValueFrom(
 			ctx,
 			types.StringType,
-			volume.Labels,
+			snapshot.Labels,
 		)
 		if dg.HasError() {
 			resp.Diagnostics.Append(dg...)
@@ -228,15 +209,15 @@ func (d *DataSourceVolume) Read(ctx context.Context, req datasource.ReadRequest,
 		plan.Labels = t
 	}
 
-	plan.Instance = types.ObjectNull(VolumeInstanceModel{}.Types())
-	if volume.Instance != nil {
-		instance := VolumeInstanceModel{}
-		instance.ID = types.StringValue(volume.Instance.ID.String())
+	plan.Volume = types.ObjectNull(SnapshotVolumeModel{}.Types())
+	if snapshot.BlockStorageVolume != nil {
+		volume := SnapshotVolumeModel{}
+		volume.ID = types.StringValue(snapshot.BlockStorageVolume.ID.String())
 
-		i, dg := types.ObjectValueFrom(
+		t, dg := types.ObjectValueFrom(
 			ctx,
-			VolumeInstanceModel{}.Types(),
-			instance,
+			SnapshotVolumeModel{}.Types(),
+			volume,
 		)
 
 		if dg.HasError() {
@@ -244,30 +225,7 @@ func (d *DataSourceVolume) Read(ctx context.Context, req datasource.ReadRequest,
 			return
 		}
 
-		plan.Instance = i
-	}
-
-	plan.Snapshots = types.SetNull(types.ObjectType{AttrTypes: VolumeSnapshotModel{}.Types()})
-	if volume.BlockStorageSnapshots != nil {
-		snapshots := []VolumeSnapshotModel{}
-		for _, s := range volume.BlockStorageSnapshots {
-			snapshots = append(snapshots, VolumeSnapshotModel{
-				ID: types.StringValue(s.ID.String()),
-			})
-		}
-
-		t, dg := types.SetValueFrom(
-			ctx,
-			types.ObjectType{AttrTypes: VolumeSnapshotModel{}.Types()},
-			snapshots,
-		)
-
-		if dg.HasError() {
-			resp.Diagnostics.Append(dg...)
-			return
-		}
-
-		plan.Snapshots = t
+		plan.Volume = t
 	}
 
 	// Save updated state into Terraform state.
