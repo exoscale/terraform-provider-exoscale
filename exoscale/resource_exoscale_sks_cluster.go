@@ -519,6 +519,23 @@ func resourceSKSClusterUpdate(ctx context.Context, d *schema.ResourceData, meta 
 		updated = true
 	}
 
+	if d.HasChange(resSKSClusterAttrExoscaleCSI) {
+		enableCSI := d.Get(resSKSClusterAttrExoscaleCSI).(bool)
+		if !enableCSI {
+			return diag.Errorf("disabling the CSI addon is not supported")
+		}
+
+		addons := d.Get(resSKSClusterAttrAddons).(*schema.Set)
+		if enableCSI && !addons.Contains(sksClusterAddonExoscaleCSI) {
+			addonStrings := make([]string, 0, addons.Len())
+			for _, v := range addons.List() {
+				addonStrings = append(addonStrings, v.(string))
+			}
+			updateReq.Addons = append(addonStrings, sksClusterAddonExoscaleCSI)
+			updated = true
+		}
+	}
+
 	if updated {
 		// due to a bug it's possible for the update operation
 		// to remain in pending state forever

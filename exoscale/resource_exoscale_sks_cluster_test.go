@@ -99,6 +99,7 @@ resource "exoscale_sks_cluster" "test" {
   name = "%s"
   description = "%s"
   exoscale_ccm = true
+  exoscale_csi = true
   metrics_server = false
   auto_upgrade = true
   labels = {
@@ -240,7 +241,7 @@ func TestAccResourceSKSCluster(t *testing.T) {
 						resSKSClusterAttrExoscaleCCM:        validateString("true"),
 						resSKSClusterAttrKubeletCA:          validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Kubelet CA must be a PEM certificate")),
 						resSKSClusterAttrMetricsServer:      validateString("false"),
-						resSKSClusterAttrExoscaleCSI:        validateString("false"),
+						resSKSClusterAttrExoscaleCSI:        validateString("true"),
 						resSKSClusterAttrLabels + ".test":   validateString(testAccResourceSKSClusterLabelValueUpdated),
 						resSKSClusterAttrName:               validateString(testAccResourceSKSClusterNameUpdated),
 						resSKSClusterAttrServiceLevel:       validateString(defaultSKSClusterServiceLevel),
