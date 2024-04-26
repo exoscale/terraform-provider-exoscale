@@ -14,6 +14,7 @@ import (
 	egoscale "github.com/exoscale/egoscale/v2"
 	exov2 "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
+	v3 "github.com/exoscale/egoscale/v3"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/general"
 )
@@ -446,6 +447,26 @@ func waitForClusterUpdateToSucceed(ctx context.Context, client *exov2.Client, zo
 	}
 }
 
+func deriveClientWithZone(meta interface{}, zone string) (*v3.Client, error) {
+	providerClient, err := config.GetClientV3(meta)
+	if err != nil {
+		return nil, err
+	}
+
+	endpoint, err := providerClient.GetZoneAPIEndpoint()
+	if err != nil {
+		return nil, err
+	}
+
+	// we don't want to change the zone of the provider client
+	// hence we make a copy
+	clientCopy := providerClient
+
+	v3.ClientOptWithEndpoint(endpoint)(clientCopy)
+
+	return clientCopy, nil
+}
+
 func resourceSKSClusterUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	tflog.Debug(ctx, "beginning update", map[string]interface{}{
 		"id": resourceSKSClusterIDString(d),
@@ -454,12 +475,14 @@ func resourceSKSClusterUpdate(ctx context.Context, d *schema.ResourceData, meta 
 	zone := d.Get(resSKSClusterAttrZone).(string)
 
 	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutUpdate))
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
-	client := getClient(meta)
+	client, err := deriveClientWithZone(meta, zone)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
-	sksCluster, err := client.GetSKSCluster(ctx, zone, d.Id())
+	sksCluster, err := client.GetSKSCluster(ctx, v3.UUID(d.Id()))
 	if err != nil {
 		return diag.FromErr(err)
 	}
