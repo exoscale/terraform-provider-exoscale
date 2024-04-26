@@ -11,9 +11,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	egoscale "github.com/exoscale/egoscale/v2"
-	exov2 "github.com/exoscale/egoscale/v2"
-	exoapi "github.com/exoscale/egoscale/v2/api"
 	v3 "github.com/exoscale/egoscale/v3"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/general"
@@ -258,11 +255,13 @@ func resourceSKSClusterCreate(ctx context.Context, d *schema.ResourceData, meta 
 
 	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutCreate))
 	defer cancel()
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 
-	client := getClient(meta)
+	client, err := config.GetClientV3WithZone(ctx, meta, zone)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
-	sksCluster := new(egoscale.SKSCluster)
+	createReq := v3.CreateSKSClusterRequest{}
 
 	var addOns []string
 	if addonsSet, ok := d.Get(resSKSClusterAttrAddons).(*schema.Set); ok && addonsSet.Len() > 0 {
@@ -281,21 +280,19 @@ func resourceSKSClusterCreate(ctx context.Context, d *schema.ResourceData, meta 
 		addOns = append(addOns, sksClusterAddonExoscaleCSI)
 	}
 	if len(addOns) > 0 {
-		sksCluster.AddOns = &addOns
+		createReq.Addons = addOns
 	}
 
 	if autoUpgrade := d.Get(resSKSClusterAttrAutoUpgrade).(bool); autoUpgrade {
-		sksCluster.AutoUpgrade = &autoUpgrade
+		createReq.AutoUpgrade = &autoUpgrade
 	}
 
 	if v, ok := d.GetOk(resSKSClusterAttrCNI); ok {
-		s := v.(string)
-		sksCluster.CNI = &s
+		createReq.Cni = v3.CreateSKSClusterRequestCni(v.(string))
 	}
 
 	if v, ok := d.GetOk(resSKSClusterAttrDescription); ok {
-		s := v.(string)
-		sksCluster.Description = &s
+		createReq.Description = v.(string)
 	}
 
 	if l, ok := d.GetOk(resSKSClusterAttrLabels); ok {
@@ -303,51 +300,49 @@ func resourceSKSClusterCreate(ctx context.Context, d *schema.ResourceData, meta 
 		for k, v := range l.(map[string]interface{}) {
 			labels[k] = v.(string)
 		}
-		sksCluster.Labels = &labels
+		createReq.Labels = labels
 	}
 
 	if v, ok := d.GetOk(resSKSClusterAttrName); ok {
-		s := v.(string)
-		sksCluster.Name = &s
+		createReq.Name = v.(string)
 	}
 
 	if v, ok := d.GetOk(resSKSClusterAttrServiceLevel); ok {
-		s := v.(string)
-		sksCluster.ServiceLevel = &s
+		createReq.Level = v3.CreateSKSClusterRequestLevel(v.(string))
 	}
 
 	version := d.Get(resSKSClusterAttrVersion).(string)
 	if version == "" {
 		versions, err := client.ListSKSClusterVersions(ctx)
-		if err != nil || len(versions) == 0 {
-			if len(versions) == 0 {
+		if err != nil || len(versions.SKSClusterVersions) == 0 {
+			if len(versions.SKSClusterVersions) == 0 {
 				err = errors.New("no version returned by the API")
 			}
 			return diag.Errorf("error retrieving SKS versions: %s", err)
 		}
-		version = versions[0]
+		version = versions.SKSClusterVersions[0]
 	}
-	sksCluster.Version = &version
-
-	var opts []egoscale.CreateSKSClusterOpt
+	createReq.Version = version
 
 	if v, ok := d.GetOk(resSKSClusterAttrOIDC(resSKSClusterAttrOIDCClientID)); ok {
-		sksClusterOIDCConfig := egoscale.SKSClusterOIDCConfig{ClientID: nonEmptyStringPtr(v.(string))}
+		createReq.Oidc = &v3.SKSOidc{
+			ClientID: v.(string),
+		}
 
 		if v, ok := d.GetOk(resSKSClusterAttrOIDC(resSKSClusterAttrOIDCGroupsClaim)); ok {
-			sksClusterOIDCConfig.GroupsClaim = nonEmptyStringPtr(v.(string))
+			createReq.Oidc.GroupsClaim = v.(string)
 		}
 
 		if v, ok := d.GetOk(resSKSClusterAttrOIDC(resSKSClusterAttrOIDCIssuerURL)); ok {
-			sksClusterOIDCConfig.IssuerURL = nonEmptyStringPtr(v.(string))
+			createReq.Oidc.IssuerURL = v.(string)
 		}
 
 		if v, ok := d.GetOk(resSKSClusterAttrOIDC(resSKSClusterAttrOIDCGroupsPrefix)); ok {
-			sksClusterOIDCConfig.GroupsPrefix = nonEmptyStringPtr(v.(string))
+			createReq.Oidc.GroupsPrefix = v.(string)
 		}
 
 		if v, ok := d.GetOk(resSKSClusterAttrOIDC(resSKSClusterAttrOIDCIssuerURL)); ok {
-			sksClusterOIDCConfig.IssuerURL = nonEmptyStringPtr(v.(string))
+			createReq.Oidc.IssuerURL = v.(string)
 		}
 
 		if c, ok := d.GetOk(resSKSClusterAttrOIDC(resSKSClusterAttrOIDCRequiredClaim)); ok {
@@ -355,26 +350,29 @@ func resourceSKSClusterCreate(ctx context.Context, d *schema.ResourceData, meta 
 			for k, v := range c.(map[string]interface{}) {
 				claims[k] = v.(string)
 			}
-			sksClusterOIDCConfig.RequiredClaim = &claims
+			createReq.Oidc.RequiredClaim = claims
 		}
 
 		if v, ok := d.GetOk(resSKSClusterAttrOIDC(resSKSClusterAttrOIDCUsernameClaim)); ok {
-			sksClusterOIDCConfig.UsernameClaim = nonEmptyStringPtr(v.(string))
+			createReq.Oidc.UsernameClaim = v.(string)
 		}
 
 		if v, ok := d.GetOk(resSKSClusterAttrOIDC(resSKSClusterAttrOIDCUsernamePrefix)); ok {
-			sksClusterOIDCConfig.UsernamePrefix = nonEmptyStringPtr(v.(string))
+			createReq.Oidc.UsernamePrefix = v.(string)
 		}
-
-		opts = append(opts, egoscale.CreateSKSClusterWithOIDC(&sksClusterOIDCConfig))
 	}
 
-	sksCluster, err := client.CreateSKSCluster(ctx, zone, sksCluster, opts...)
+	op, err := client.CreateSKSCluster(ctx, createReq)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	d.SetId(*sksCluster.ID)
+	op, err = client.Wait(ctx, op, v3.OperationStateSuccess)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	d.SetId(string(op.Reference.ID))
 
 	tflog.Debug(ctx, "create finished successfully", map[string]interface{}{
 		"id": resourceSKSClusterIDString(d),
@@ -391,14 +389,16 @@ func resourceSKSClusterRead(ctx context.Context, d *schema.ResourceData, meta in
 	zone := d.Get(resSKSClusterAttrZone).(string)
 
 	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
-	client := getClient(meta)
-
-	sksCluster, err := client.GetSKSCluster(ctx, zone, d.Id())
+	client, err := config.GetClientV3WithZone(ctx, meta, zone)
 	if err != nil {
-		if errors.Is(err, exoapi.ErrNotFound) {
+		return diag.FromErr(err)
+	}
+
+	sksCluster, err := client.GetSKSCluster(ctx, v3.UUID(d.Id()))
+	if err != nil {
+		if errors.Is(err, v3.ErrNotFound) {
 			// Resource doesn't exist anymore, signaling the core to remove it from the state.
 			d.SetId("")
 			return nil
@@ -410,7 +410,7 @@ func resourceSKSClusterRead(ctx context.Context, d *schema.ResourceData, meta in
 		"id": resourceSKSClusterIDString(d),
 	})
 
-	certificates, err := readClusterCertificates(client, ctx, zone, sksCluster)
+	certificates, err := readClusterCertificates(ctx, client, sksCluster.ID)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -418,7 +418,7 @@ func resourceSKSClusterRead(ctx context.Context, d *schema.ResourceData, meta in
 	return diag.FromErr(resourceSKSClusterApply(ctx, d, sksCluster, certificates))
 }
 
-func waitForClusterUpdateToSucceed(ctx context.Context, client *exov2.Client, zone, clusterID string) error {
+func waitForClusterUpdateToSucceed(ctx context.Context, client *v3.Client, clusterID v3.UUID) error {
 	ticker := time.NewTicker(3 * time.Second)
 	defer ticker.Stop()
 
@@ -426,14 +426,14 @@ func waitForClusterUpdateToSucceed(ctx context.Context, client *exov2.Client, zo
 	for {
 		select {
 		case <-ticker.C:
-			cluster, err := client.GetSKSCluster(ctx, zone, clusterID)
+			cluster, err := client.GetSKSCluster(ctx, clusterID)
 			if err != nil {
 				return err
 			}
 
-			if hasStartedUpdate && *cluster.State != "updating" {
+			if hasStartedUpdate && cluster.State != "updating" {
 				return nil
-			} else if *cluster.State == "updating" {
+			} else if cluster.State == "updating" {
 				hasStartedUpdate = true
 			}
 		case <-ctx.Done():
@@ -447,24 +447,19 @@ func waitForClusterUpdateToSucceed(ctx context.Context, client *exov2.Client, zo
 	}
 }
 
-func deriveClientWithZone(meta interface{}, zone string) (*v3.Client, error) {
-	providerClient, err := config.GetClientV3(meta)
-	if err != nil {
-		return nil, err
+func await(ctx context.Context, client *v3.Client) func(op *v3.Operation, err error) error {
+	return func(op *v3.Operation, err error) error {
+		if err != nil {
+			return err
+		}
+
+		_, err = client.Wait(ctx, op, v3.OperationStateSuccess)
+		if err != nil {
+			return err
+		}
+
+		return nil
 	}
-
-	endpoint, err := providerClient.GetZoneAPIEndpoint()
-	if err != nil {
-		return nil, err
-	}
-
-	// we don't want to change the zone of the provider client
-	// hence we make a copy
-	clientCopy := providerClient
-
-	v3.ClientOptWithEndpoint(endpoint)(clientCopy)
-
-	return clientCopy, nil
 }
 
 func resourceSKSClusterUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -477,29 +472,29 @@ func resourceSKSClusterUpdate(ctx context.Context, d *schema.ResourceData, meta 
 	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutUpdate))
 	defer cancel()
 
-	client, err := deriveClientWithZone(meta, zone)
+	client, err := config.GetClientV3WithZone(ctx, meta, zone)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	sksCluster, err := client.GetSKSCluster(ctx, v3.UUID(d.Id()))
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	var updated bool
+	clusterID := v3.UUID(d.Id())
 
 	// First check if we need to upgrade cluster
 	if d.HasChange(resSKSClusterAttrVersion) {
 		v := d.Get(resSKSClusterAttrVersion).(string)
-		if err = client.UpgradeSKSCluster(ctx, zone, sksCluster, v); err != nil {
+		if err := await(ctx, client)(client.UpgradeSKSCluster(ctx, clusterID, v3.UpgradeSKSClusterRequest{
+			Version: v,
+		})); err != nil {
 			return diag.FromErr(err)
 		}
 	}
 
+	var updated bool
+	updateReq := v3.UpdateSKSClusterRequest{}
+
 	if d.HasChange(resSKSClusterAttrAutoUpgrade) {
-		v := d.Get(resSKSClusterAttrAutoUpgrade).(bool)
-		sksCluster.AutoUpgrade = &v
+		autoUpgrade := d.Get(resSKSClusterAttrAutoUpgrade).(bool)
+		updateReq.AutoUpgrade = &autoUpgrade
 		updated = true
 	}
 
@@ -508,19 +503,19 @@ func resourceSKSClusterUpdate(ctx context.Context, d *schema.ResourceData, meta 
 		for k, v := range d.Get(resSKSClusterAttrLabels).(map[string]interface{}) {
 			labels[k] = v.(string)
 		}
-		sksCluster.Labels = &labels
+		updateReq.Labels = labels
 		updated = true
 	}
 
 	if d.HasChange(resSKSClusterAttrName) {
-		v := d.Get(resSKSClusterAttrName).(string)
-		sksCluster.Name = &v
+		name := d.Get(resSKSClusterAttrName).(string)
+		updateReq.Name = name
 		updated = true
 	}
 
 	if d.HasChange(resSKSClusterAttrDescription) {
-		v := d.Get(resSKSClusterAttrDescription).(string)
-		sksCluster.Description = &v
+		description := d.Get(resSKSClusterAttrDescription).(string)
+		updateReq.Description = description
 		updated = true
 	}
 
@@ -532,11 +527,11 @@ func resourceSKSClusterUpdate(ctx context.Context, d *schema.ResourceData, meta 
 		getErrChan := make(chan error)
 
 		go func() {
-			updateErrChan <- client.UpdateSKSCluster(ctx, zone, sksCluster)
+			updateErrChan <- await(ctx, client)(client.UpdateSKSCluster(ctx, clusterID, updateReq))
 		}()
 
 		go func() {
-			getErrChan <- waitForClusterUpdateToSucceed(ctx, client, zone, *sksCluster.ID)
+			getErrChan <- waitForClusterUpdateToSucceed(ctx, client, clusterID)
 		}()
 
 		var err error
@@ -566,14 +561,15 @@ func resourceSKSClusterDelete(ctx context.Context, d *schema.ResourceData, meta 
 	zone := d.Get(resSKSClusterAttrZone).(string)
 
 	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutDelete))
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
-	client := getClient(meta)
-
-	clusterID := d.Id()
-	err := client.DeleteSKSCluster(ctx, zone, &egoscale.SKSCluster{ID: &clusterID})
+	client, err := config.GetClientV3WithZone(ctx, meta, zone)
 	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	clusterID := v3.UUID(d.Id())
+	if err := await(ctx, client)(client.DeleteSKSCluster(ctx, clusterID)); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -584,21 +580,21 @@ func resourceSKSClusterDelete(ctx context.Context, d *schema.ResourceData, meta 
 	return nil
 }
 
-func resourceSKSClusterApply(_ context.Context, d *schema.ResourceData, sksCluster *egoscale.SKSCluster, certificates *SKSClusterCertificates) error {
-	if sksCluster.AddOns != nil {
-		if err := d.Set(resSKSClusterAttrAddons, *sksCluster.AddOns); err != nil {
+func resourceSKSClusterApply(_ context.Context, d *schema.ResourceData, sksCluster *v3.SKSCluster, certificates *SKSClusterCertificates) error {
+	if len(sksCluster.Addons) > 0 {
+		if err := d.Set(resSKSClusterAttrAddons, sksCluster.Addons); err != nil {
 			return err
 		}
 
-		if err := d.Set(resSKSClusterAttrExoscaleCCM, in(*sksCluster.AddOns, sksClusterAddonExoscaleCCM)); err != nil {
+		if err := d.Set(resSKSClusterAttrExoscaleCCM, in(sksCluster.Addons, sksClusterAddonExoscaleCCM)); err != nil {
 			return err
 		}
 
-		if err := d.Set(resSKSClusterAttrMetricsServer, in(*sksCluster.AddOns, sksClusterAddonMS)); err != nil {
+		if err := d.Set(resSKSClusterAttrMetricsServer, in(sksCluster.Addons, sksClusterAddonMS)); err != nil {
 			return err
 		}
 
-		if err := d.Set(resSKSClusterAttrExoscaleCSI, in(*sksCluster.AddOns, sksClusterAddonExoscaleCSI)); err != nil {
+		if err := d.Set(resSKSClusterAttrExoscaleCSI, in(sksCluster.Addons, sksClusterAddonExoscaleCSI)); err != nil {
 			return err
 		}
 	}
@@ -611,7 +607,7 @@ func resourceSKSClusterApply(_ context.Context, d *schema.ResourceData, sksClust
 		return err
 	}
 
-	if err := d.Set(resSKSClusterAttrCNI, defaultString(sksCluster.CNI, "")); err != nil {
+	if err := d.Set(resSKSClusterAttrCNI, sksCluster.Cni); err != nil {
 		return err
 	}
 
@@ -619,15 +615,15 @@ func resourceSKSClusterApply(_ context.Context, d *schema.ResourceData, sksClust
 		return err
 	}
 
-	if err := d.Set(resSKSClusterAttrCreatedAt, sksCluster.CreatedAt.String()); err != nil {
+	if err := d.Set(resSKSClusterAttrCreatedAt, sksCluster.CreatedAT.String()); err != nil {
 		return err
 	}
 
-	if err := d.Set(resSKSClusterAttrDescription, defaultString(sksCluster.Description, "")); err != nil {
+	if err := d.Set(resSKSClusterAttrDescription, sksCluster.Description); err != nil {
 		return err
 	}
 
-	if err := d.Set(resSKSClusterAttrEndpoint, *sksCluster.Endpoint); err != nil {
+	if err := d.Set(resSKSClusterAttrEndpoint, sksCluster.Endpoint); err != nil {
 		return err
 	}
 
@@ -639,27 +635,27 @@ func resourceSKSClusterApply(_ context.Context, d *schema.ResourceData, sksClust
 		return err
 	}
 
-	if err := d.Set(resSKSClusterAttrName, *sksCluster.Name); err != nil {
+	if err := d.Set(resSKSClusterAttrName, sksCluster.Name); err != nil {
 		return err
 	}
 
 	nodepools := make([]string, len(sksCluster.Nodepools))
 	for i, nodepool := range sksCluster.Nodepools {
-		nodepools[i] = *nodepool.ID
+		nodepools[i] = nodepool.ID.String()
 	}
 	if err := d.Set(resSKSClusterAttrNodepools, nodepools); err != nil {
 		return err
 	}
 
-	if err := d.Set(resSKSClusterAttrServiceLevel, *sksCluster.ServiceLevel); err != nil {
+	if err := d.Set(resSKSClusterAttrServiceLevel, sksCluster.Level); err != nil {
 		return err
 	}
 
-	if err := d.Set(resSKSClusterAttrState, *sksCluster.State); err != nil {
+	if err := d.Set(resSKSClusterAttrState, sksCluster.State); err != nil {
 		return err
 	}
 
-	if err := d.Set(resSKSClusterAttrVersion, *sksCluster.Version); err != nil {
+	if err := d.Set(resSKSClusterAttrVersion, sksCluster.Version); err != nil {
 		return err
 	}
 
@@ -678,33 +674,33 @@ type SKSClusterCertificates struct {
 }
 
 // readClusterCertificates returns an SKS Cluster related CA certificates
-func readClusterCertificates(client *egoscale.Client, ctx context.Context, zone string, cluster *egoscale.SKSCluster) (*SKSClusterCertificates, error) {
-	encodedAggregationCertificate, err := client.GetSKSClusterAuthorityCert(ctx, zone, cluster, "aggregation")
+func readClusterCertificates(ctx context.Context, client *v3.Client, clusterID v3.UUID) (*SKSClusterCertificates, error) {
+	encodedAggregationCertificate, err := client.GetSKSClusterAuthorityCert(ctx, clusterID, "aggregation")
 	if err != nil {
 		return nil, err
 	}
 
-	encodedControlPlaneCertificate, err := client.GetSKSClusterAuthorityCert(ctx, zone, cluster, "control-plane")
+	encodedControlPlaneCertificate, err := client.GetSKSClusterAuthorityCert(ctx, clusterID, "control-plane")
 	if err != nil {
 		return nil, err
 	}
 
-	encodedKubeletCertificate, err := client.GetSKSClusterAuthorityCert(ctx, zone, cluster, "kubelet")
+	encodedKubeletCertificate, err := client.GetSKSClusterAuthorityCert(ctx, clusterID, "kubelet")
 	if err != nil {
 		return nil, err
 	}
 
-	aggregationCertificate, err := base64.StdEncoding.DecodeString(encodedAggregationCertificate)
+	aggregationCertificate, err := base64.StdEncoding.DecodeString(encodedAggregationCertificate.Cacert)
 	if err != nil {
 		return nil, err
 	}
 
-	controlPlaneCertificate, err := base64.StdEncoding.DecodeString(encodedControlPlaneCertificate)
+	controlPlaneCertificate, err := base64.StdEncoding.DecodeString(encodedControlPlaneCertificate.Cacert)
 	if err != nil {
 		return nil, err
 	}
 
-	kubeletCertificate, err := base64.StdEncoding.DecodeString(encodedKubeletCertificate)
+	kubeletCertificate, err := base64.StdEncoding.DecodeString(encodedKubeletCertificate.Cacert)
 	if err != nil {
 		return nil, err
 	}
