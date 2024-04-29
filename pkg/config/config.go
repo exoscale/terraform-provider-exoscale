@@ -1,11 +1,13 @@
 package config
 
 import (
+	"context"
 	"errors"
 	"time"
 
 	egoscale "github.com/exoscale/egoscale/v2"
 	exov3 "github.com/exoscale/egoscale/v3"
+	v3 "github.com/exoscale/egoscale/v3"
 )
 
 const (
@@ -48,6 +50,20 @@ func GetClientV3(meta interface{}) (*exov3.Client, error) {
 		return client.(*exov3.Client), nil
 	}
 	return nil, errors.New("API client not found")
+}
+
+func GetClientV3WithZone(ctx context.Context, meta interface{}, zone string) (*v3.Client, error) {
+	client, err := GetClientV3(meta)
+	if err != nil {
+		return nil, err
+	}
+
+	endpoint, err := client.GetZoneAPIEndpoint(ctx, v3.ZoneName(zone))
+	if err != nil {
+		return nil, err
+	}
+
+	return client.WithEndpoint(endpoint), nil
 }
 
 // GetEnvironment returns current environment
