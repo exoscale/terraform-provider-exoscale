@@ -283,7 +283,7 @@ func TestAccResourceSKSCluster(t *testing.T) {
 							resSKSClusterAttrExoscaleCCM:        validateString("true"),
 							resSKSClusterAttrKubeletCA:          validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Kubelet CA must be a PEM certificate")),
 							resSKSClusterAttrMetricsServer:      validateString("false"),
-							resSKSClusterAttrExoscaleCSI:        validateString("false"),
+							resSKSClusterAttrExoscaleCSI:        validateString("true"),
 							resSKSClusterAttrLabels + ".test":   validateString(testAccResourceSKSClusterLabelValueUpdated),
 							resSKSClusterAttrName:               validateString(testAccResourceSKSClusterNameUpdated),
 							resSKSClusterAttrServiceLevel:       validateString(defaultSKSClusterServiceLevel),
