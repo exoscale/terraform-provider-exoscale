@@ -531,6 +531,7 @@ func resourceSKSClusterUpdate(ctx context.Context, d *schema.ResourceData, meta 
 			for _, v := range addons.List() {
 				addonStrings = append(addonStrings, v.(string))
 			}
+			//nolint:gocritic
 			updateReq.Addons = append(addonStrings, sksClusterAddonExoscaleCSI)
 			updated = true
 		}
