@@ -1,0 +1,14 @@
+resource "exoscale_block_storage_volume" "test_volume" {
+  name = "terraform-provider-test-{{ .ID }}-renamed"
+  labels = {
+    foo = "bar"
+  }
+  size = 10
+  zone = "{{ .Zone }}"
+}
+
+data "exoscale_block_storage_volume" "test_volume" {
+  zone = "{{ .Zone }}"
+  id = exoscale_block_storage_volume.test_volume.id
+}
+

@@ -1,0 +1,61 @@
+data "exoscale_template" "test_template" {
+  zone = "{{ .Zone }}"
+  name = "Linux Ubuntu 22.04 LTS 64-bit"
+}
+
+data "exoscale_security_group" "default" {
+  name = "default"
+}
+
+resource "exoscale_compute_instance" "test_instance" {
+  zone = "{{ .Zone }}"
+  name = "terraform-provider-test-{{ .ID }}"
+
+  template_id = data.exoscale_template.test_template.id
+  type        = "standard.small"
+  disk_size   = 10
+
+  block_storage_volume_ids = []
+
+  security_group_ids = [data.exoscale_security_group.default.id]
+}
+
+resource "exoscale_block_storage_volume" "test_volume" {
+  name = "terraform-provider-test-{{ .ID }}"
+  labels = {
+    foo1 = "bar1"
+    foo2 = "bar2"
+  }
+  size = 20
+  zone = "{{ .Zone }}"
+}
+
+data "exoscale_block_storage_volume" "test_volume" {
+  zone = "{{ .Zone }}"
+  id = exoscale_block_storage_volume.test_volume.id
+
+  # otherwise datasource will execute first and instance/snapshots will be empty
+  depends_on = [exoscale_compute_instance.test_instance,exoscale_block_storage_volume_snapshot.test_snapshot]
+}
+
+resource "exoscale_block_storage_volume_snapshot" "test_snapshot" {
+  name = "terraform-provider-test-{{ .ID }}"
+  volume = {
+    id = exoscale_block_storage_volume.test_volume.id
+  }
+  zone = "{{ .Zone }}"
+}
+
+data "exoscale_block_storage_volume_snapshot" "test_snapshot" {
+  zone = "{{ .Zone }}"
+  id = exoscale_block_storage_volume_snapshot.test_snapshot.id
+}
+
+resource "exoscale_block_storage_volume" "test_volume_from_snapshot" {
+  name = "terraform-provider-test-{{ .ID }}"
+  labels = {}
+  snapshot_target = {
+    id = exoscale_block_storage_volume_snapshot.test_snapshot.id
+  }
+  zone = "{{ .Zone }}"
+}

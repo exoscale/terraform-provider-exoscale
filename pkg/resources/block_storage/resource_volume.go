@@ -7,11 +7,12 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/mapplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/mapdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -78,11 +79,8 @@ func (r *ResourceVolume) Schema(ctx context.Context, req resource.SchemaRequest,
 				},
 			},
 			"name": schema.StringAttribute{
-				MarkdownDescription: "❗ Volume name.",
+				MarkdownDescription: "Volume name.",
 				Required:            true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
 			},
 			"zone": schema.StringAttribute{
 				MarkdownDescription: "❗ The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.",
@@ -100,11 +98,13 @@ func (r *ResourceVolume) Schema(ctx context.Context, req resource.SchemaRequest,
 			},
 			"labels": schema.MapAttribute{
 				ElementType:         types.StringType,
-				MarkdownDescription: "❗ Resource labels.",
+				MarkdownDescription: "Resource labels.",
+				Computed:            true,
 				Optional:            true,
-				PlanModifiers: []planmodifier.Map{
-					mapplanmodifier.RequiresReplace(),
-				},
+				// default to empty labels
+				Default: mapdefault.StaticValue(
+					types.MapValueMust(types.StringType, make(map[string]attr.Value)),
+				),
 			},
 			"snapshot_target": schema.SingleNestedAttribute{
 				MarkdownDescription: "Block storage snapshot to use when creating a volume. Read-only after creation.",
@@ -440,6 +440,64 @@ func (r *ResourceVolume) Update(ctx context.Context, req resource.UpdateRequest,
 		}
 
 		state.Size = types.Int64Value(volume.Size)
+	}
+
+	update := false
+	updateReq := exoscale.UpdateBlockStorageVolumeRequest{}
+
+	if !plan.Name.Equal(state.Name) {
+		update = true
+
+		updateReq.Name = plan.Name.ValueStringPointer()
+	}
+
+	if !plan.Labels.Equal(state.Labels) {
+		update = true
+
+		if plan.Labels.IsNull() {
+			// clear the labels by sending an empty map
+			updateReq.Labels = exoscale.Labels{}
+		} else {
+			resp.Diagnostics.Append(plan.Labels.ElementsAs(ctx, &updateReq.Labels, false)...)
+		}
+	}
+
+	if update {
+		op, err := client.UpdateBlockStorageVolume(ctx, id, updateReq)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"unable to update block storage volume",
+				err.Error(),
+			)
+			return
+		}
+
+		_, err = client.Wait(ctx, op, exoscale.OperationStateSuccess)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"unable to update block storage volume",
+				err.Error(),
+			)
+			return
+		}
+
+		volume, err := client.GetBlockStorageVolume(ctx, id)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"unable to fetch block storage volume",
+				err.Error(),
+			)
+			return
+		}
+
+		newLabels, d := types.MapValueFrom(ctx, types.StringType, volume.Labels)
+		resp.Diagnostics.Append(d...)
+		if d.HasError() {
+			return
+		}
+
+		state.Labels = newLabels
+		state.Name = types.StringValue(volume.Name)
 	}
 
 	// Save updated state into Terraform state.
