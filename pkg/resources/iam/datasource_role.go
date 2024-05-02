@@ -258,10 +258,17 @@ func (d *DataSourceRole) Read(ctx context.Context, req datasource.ReadRequest, r
 		data.Permissions = t
 	}
 
+	data.Policy = types.ObjectNull(PolicyModel{}.Types())
 	if role.Policy != nil {
 		policy := PolicyModel{}
 
 		policy.DefaultServiceStrategy = types.StringValue(role.Policy.DefaultServiceStrategy)
+
+		policy.Services = types.MapNull(
+			types.ObjectType{
+				AttrTypes: PolicyServiceModel{}.Types(),
+			},
+		)
 		if len(role.Policy.Services) > 0 {
 			services := map[string]PolicyServiceModel{}
 			for name, service := range role.Policy.Services {
@@ -269,6 +276,11 @@ func (d *DataSourceRole) Read(ctx context.Context, req datasource.ReadRequest, r
 					Type: types.StringPointerValue(service.Type),
 				}
 
+				serviceModel.Rules = types.ListNull(
+					types.ObjectType{
+						PolicyServiceRuleModel{}.Types(),
+					},
+				)
 				if len(service.Rules) > 0 {
 					rules := []PolicyServiceRuleModel{}
 					for _, rule := range service.Rules {

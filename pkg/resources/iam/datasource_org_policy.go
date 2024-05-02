@@ -161,6 +161,12 @@ func (d *DataSourceOrgPolicy) Read(ctx context.Context, req datasource.ReadReque
 	}
 
 	data.DefaultServiceStrategy = types.StringValue(policy.DefaultServiceStrategy)
+
+	data.Services = types.MapNull(
+		types.ObjectType{
+			AttrTypes: PolicyServiceModel{}.Types(),
+		},
+	)
 	if len(policy.Services) > 0 {
 		services := map[string]PolicyServiceModel{}
 		for name, service := range policy.Services {
@@ -168,6 +174,11 @@ func (d *DataSourceOrgPolicy) Read(ctx context.Context, req datasource.ReadReque
 				Type: types.StringPointerValue(service.Type),
 			}
 
+			serviceModel.Rules = types.ListNull(
+				types.ObjectType{
+					PolicyServiceRuleModel{}.Types(),
+				},
+			)
 			if len(service.Rules) > 0 {
 				rules := []PolicyServiceRuleModel{}
 				for _, rule := range service.Rules {
