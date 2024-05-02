@@ -176,7 +176,7 @@ func (d *DataSourceOrgPolicy) Read(ctx context.Context, req datasource.ReadReque
 
 			serviceModel.Rules = types.ListNull(
 				types.ObjectType{
-					PolicyServiceRuleModel{}.Types(),
+					AttrTypes: PolicyServiceRuleModel{}.Types(),
 				},
 			)
 			if len(service.Rules) > 0 {
