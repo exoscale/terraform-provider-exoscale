@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+BUG FIXES:
+
+- IAM: fix bug in datasouces by always init null values #353
+
 ## 0.58.0 (April 29, 2024)
 
 FEATURES:
