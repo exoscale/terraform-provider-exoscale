@@ -45,13 +45,6 @@ import (
 // addresses from SRV records.  Must not be changed after init time.
 var EnableSRVLookups = false
 
-// ResolvingTimeout specifies the maximum duration for a DNS resolution request.
-// If the timeout expires before a response is received, the request will be canceled.
-//
-// It is recommended to set this value at application startup. Avoid modifying this variable
-// after initialization as it's not thread-safe for concurrent modification.
-var ResolvingTimeout = 30 * time.Second
-
 var logger = grpclog.Component("dns")
 
 func init() {
@@ -228,18 +221,18 @@ func (d *dnsResolver) watcher() {
 	}
 }
 
-func (d *dnsResolver) lookupSRV(ctx context.Context) ([]resolver.Address, error) {
+func (d *dnsResolver) lookupSRV() ([]resolver.Address, error) {
 	if !EnableSRVLookups {
 		return nil, nil
 	}
 	var newAddrs []resolver.Address
-	_, srvs, err := d.resolver.LookupSRV(ctx, "grpclb", "tcp", d.host)
+	_, srvs, err := d.resolver.LookupSRV(d.ctx, "grpclb", "tcp", d.host)
 	if err != nil {
 		err = handleDNSError(err, "SRV") // may become nil
 		return nil, err
 	}
 	for _, s := range srvs {
-		lbAddrs, err := d.resolver.LookupHost(ctx, s.Target)
+		lbAddrs, err := d.resolver.LookupHost(d.ctx, s.Target)
 		if err != nil {
 			err = handleDNSError(err, "A") // may become nil
 			if err == nil {
@@ -276,8 +269,8 @@ func handleDNSError(err error, lookupType string) error {
 	return err
 }
 
-func (d *dnsResolver) lookupTXT(ctx context.Context) *serviceconfig.ParseResult {
-	ss, err := d.resolver.LookupTXT(ctx, txtPrefix+d.host)
+func (d *dnsResolver) lookupTXT() *serviceconfig.ParseResult {
+	ss, err := d.resolver.LookupTXT(d.ctx, txtPrefix+d.host)
 	if err != nil {
 		if envconfig.TXTErrIgnore {
 			return nil
@@ -304,8 +297,8 @@ func (d *dnsResolver) lookupTXT(ctx context.Context) *serviceconfig.ParseResult 
 	return d.cc.ParseServiceConfig(sc)
 }
 
-func (d *dnsResolver) lookupHost(ctx context.Context) ([]resolver.Address, error) {
-	addrs, err := d.resolver.LookupHost(ctx, d.host)
+func (d *dnsResolver) lookupHost() ([]resolver.Address, error) {
+	addrs, err := d.resolver.LookupHost(d.ctx, d.host)
 	if err != nil {
 		err = handleDNSError(err, "A")
 		return nil, err
@@ -323,10 +316,8 @@ func (d *dnsResolver) lookupHost(ctx context.Context) ([]resolver.Address, error
 }
 
 func (d *dnsResolver) lookup() (*resolver.State, error) {
-	ctx, cancel := context.WithTimeout(d.ctx, ResolvingTimeout)
-	defer cancel()
-	srv, srvErr := d.lookupSRV(ctx)
-	addrs, hostErr := d.lookupHost(ctx)
+	srv, srvErr := d.lookupSRV()
+	addrs, hostErr := d.lookupHost()
 	if hostErr != nil && (srvErr != nil || len(srv) == 0) {
 		return nil, hostErr
 	}
@@ -336,7 +327,7 @@ func (d *dnsResolver) lookup() (*resolver.State, error) {
 		state = grpclbstate.Set(state, &grpclbstate.State{BalancerAddresses: srv})
 	}
 	if !d.disableServiceConfig {
-		state.ServiceConfig = d.lookupTXT(ctx)
+		state.ServiceConfig = d.lookupTXT()
 	}
 	return &state, nil
 }

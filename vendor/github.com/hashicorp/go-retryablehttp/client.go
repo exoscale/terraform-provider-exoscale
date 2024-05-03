@@ -1,6 +1,3 @@
-// Copyright (c) HashiCorp, Inc.
-// SPDX-License-Identifier: MPL-2.0
-
 // Package retryablehttp provides a familiar HTTP client interface with
 // automatic retries and exponential backoff. It is a thin wrapper over the
 // standard net/http client library and exposes nearly the same public API.
@@ -83,15 +80,8 @@ var (
 type ReaderFunc func() (io.Reader, error)
 
 // ResponseHandlerFunc is a type of function that takes in a Response, and does something with it.
-// The ResponseHandlerFunc is called when the HTTP client successfully receives a response and the
-// CheckRetry function indicates that a retry of the base request is not necessary.
-// If an error is returned from this function, the CheckRetry policy will be used to determine
-// whether to retry the whole request (including this handler).
-//
-// Make sure to check status codes! Even if the request was completed it may have a non-2xx status code.
-//
-// The response body is not automatically closed. It must be closed either by the ResponseHandlerFunc or
-// by the caller out-of-band. Failure to do so will result in a memory leak.
+// It only runs if the initial part of the request was successful.
+// If an error is returned, the client's retry policy will be used to determine whether to retry the whole request.
 type ResponseHandlerFunc func(*http.Response) error
 
 // LenReader is an interface implemented by many in-memory io.Reader's. Used
@@ -160,20 +150,6 @@ func (r *Request) SetBody(rawBody interface{}) error {
 	}
 	r.body = bodyReader
 	r.ContentLength = contentLength
-	if bodyReader != nil {
-		r.GetBody = func() (io.ReadCloser, error) {
-			body, err := bodyReader()
-			if err != nil {
-				return nil, err
-			}
-			if rc, ok := body.(io.ReadCloser); ok {
-				return rc, nil
-			}
-			return io.NopCloser(body), nil
-		}
-	} else {
-		r.GetBody = func() (io.ReadCloser, error) { return http.NoBody, nil }
-	}
 	return nil
 }
 
@@ -274,17 +250,10 @@ func getBodyReaderAndContentLength(rawBody interface{}) (ReaderFunc, int64, erro
 		if err != nil {
 			return nil, 0, err
 		}
-		if len(buf) == 0 {
-			bodyReader = func() (io.Reader, error) {
-				return http.NoBody, nil
-			}
-			contentLength = 0
-		} else {
-			bodyReader = func() (io.Reader, error) {
-				return bytes.NewReader(buf), nil
-			}
-			contentLength = int64(len(buf))
+		bodyReader = func() (io.Reader, error) {
+			return bytes.NewReader(buf), nil
 		}
+		contentLength = int64(len(buf))
 
 	// No body provided, nothing to do
 	case nil:
@@ -316,19 +285,18 @@ func NewRequest(method, url string, rawBody interface{}) (*Request, error) {
 // The context controls the entire lifetime of a request and its response:
 // obtaining a connection, sending the request, and reading the response headers and body.
 func NewRequestWithContext(ctx context.Context, method, url string, rawBody interface{}) (*Request, error) {
-	httpReq, err := http.NewRequestWithContext(ctx, method, url, nil)
+	bodyReader, contentLength, err := getBodyReaderAndContentLength(rawBody)
 	if err != nil {
 		return nil, err
 	}
 
-	req := &Request{
-		Request: httpReq,
-	}
-	if err := req.SetBody(rawBody); err != nil {
+	httpReq, err := http.NewRequestWithContext(ctx, method, url, nil)
+	if err != nil {
 		return nil, err
 	}
+	httpReq.ContentLength = contentLength
 
-	return req, nil
+	return &Request{body: bodyReader, Request: httpReq}, nil
 }
 
 // Logger interface allows to use other loggers than
