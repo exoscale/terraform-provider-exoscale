@@ -39,9 +39,8 @@ data "exoscale_block_storage_volume" "test_volume" {
 }
 
 resource "exoscale_block_storage_volume_snapshot" "test_snapshot" {
-  name = "terraform-provider-test-{{ .ID }}-renamed"
+  name = "terraform-provider-test-{{ .ID }}-renamed-again"
   labels = {
-    l1 = "v1"
     l2 = "v2"
   }
   volume = {

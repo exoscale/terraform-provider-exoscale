@@ -379,7 +379,7 @@ func (r *ResourceSnapshot) Read(ctx context.Context, req resource.ReadRequest, r
 
 // Update resources in-place by receiving Terraform prior state, configuration, and plan data, performing update logic, and saving updated Terraform state data.
 func (r *ResourceSnapshot) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var state, plan ResourceVolumeModel
+	var state, plan ResourceSnapshotModel
 
 	// Read Terraform prior state data (for comparison) into the model
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)

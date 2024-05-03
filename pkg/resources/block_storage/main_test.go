@@ -230,38 +230,116 @@ func TestBlockStorage(t *testing.T) {
 					resource.TestCheckResourceAttr(volumeDataSourceName, "snapshots.#", "1"),
 				),
 			},
-			// // 13 Update snapshot name and labels
-			// {
-			// 	Config: testutils.ParseTestdataConfig("./testdata/009.snapshot_update_name_and_labels.tf.tmpl", &testdataSpec),
-			// 	Check: resource.ComposeAggregateTestCheckFunc(
-			// 		resource.TestCheckResourceAttr(
-			// 			snapshotResourceName,
-			// 			"name",
-			// 			fmt.Sprintf("terraform-provider-test-%d-renamed", testdataSpec.ID),
-			// 		),
-			// 		resource.TestCheckResourceAttrSet(snapshotResourceName, "size"),
-			// 		resource.TestCheckResourceAttr(snapshotResourceName, "labels.%", "2"),
-			// 		resource.TestCheckResourceAttr(snapshotResourceName, "labels.l1", "v1"),
-			// 		resource.TestCheckResourceAttr(snapshotResourceName, "labels.l2", "v2"),
-			// 		resource.TestCheckResourceAttrSet(snapshotResourceName, "created_at"),
-			// 		resource.TestCheckResourceAttrSet(snapshotResourceName, "state"),
-			// 		resource.TestCheckResourceAttr(
-			// 			snapshotDataSourceName,
-			// 			"name",
-			// 			fmt.Sprintf("terraform-provider-test-%d-renamed", testdataSpec.ID),
-			// 		),
-			// 		resource.TestCheckResourceAttrSet(snapshotDataSourceName, "size"),
-			// 		resource.TestCheckResourceAttr(snapshotDataSourceName, "labels.%", "2"),
-			// 		resource.TestCheckResourceAttr(snapshotDataSourceName, "labels.l1", "v1"),
-			// 		resource.TestCheckResourceAttr(snapshotDataSourceName, "labels.l2", "v2"),
-			// 		resource.TestCheckResourceAttrSet(snapshotDataSourceName, "created_at"),
-			// 		resource.TestCheckResourceAttr(snapshotDataSourceName, "state", "created"),
-			// 		resource.TestCheckResourceAttr(volumeDataSourceName, "snapshots.#", "1"),
-			// 	),
-			// },
-			// TODO Update snapshot name
-			// TODO Update snapshot label
-			// TODO Clear snapshot labels by setting empty labels attribute
+			// 13 Update snapshot name and labels
+			{
+				Config: testutils.ParseTestdataConfig("./testdata/009.snapshot_update_name_and_labels.tf.tmpl", &testdataSpec),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						snapshotResourceName,
+						"name",
+						fmt.Sprintf("terraform-provider-test-%d-renamed", testdataSpec.ID),
+					),
+					resource.TestCheckResourceAttrSet(snapshotResourceName, "size"),
+					resource.TestCheckResourceAttr(snapshotResourceName, "labels.%", "2"),
+					resource.TestCheckResourceAttr(snapshotResourceName, "labels.l1", "v1"),
+					resource.TestCheckResourceAttr(snapshotResourceName, "labels.l2", "v2"),
+					resource.TestCheckResourceAttrSet(snapshotResourceName, "created_at"),
+					resource.TestCheckResourceAttrSet(snapshotResourceName, "state"),
+					resource.TestCheckResourceAttr(
+						snapshotDataSourceName,
+						"name",
+						fmt.Sprintf("terraform-provider-test-%d-renamed", testdataSpec.ID),
+					),
+					resource.TestCheckResourceAttrSet(snapshotDataSourceName, "size"),
+					resource.TestCheckResourceAttr(snapshotDataSourceName, "labels.%", "2"),
+					resource.TestCheckResourceAttr(snapshotDataSourceName, "labels.l1", "v1"),
+					resource.TestCheckResourceAttr(snapshotDataSourceName, "labels.l2", "v2"),
+					resource.TestCheckResourceAttrSet(snapshotDataSourceName, "created_at"),
+					resource.TestCheckResourceAttr(snapshotDataSourceName, "state", "created"),
+					resource.TestCheckResourceAttr(volumeDataSourceName, "snapshots.#", "1"),
+				),
+			},
+			// 14 Update snapshot name only
+			{
+				Config: testutils.ParseTestdataConfig("./testdata/010.snapshot_update_name.tf.tmpl", &testdataSpec),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						snapshotResourceName,
+						"name",
+						fmt.Sprintf("terraform-provider-test-%d-renamed-again", testdataSpec.ID),
+					),
+					resource.TestCheckResourceAttrSet(snapshotResourceName, "size"),
+					resource.TestCheckResourceAttr(snapshotResourceName, "labels.%", "2"),
+					resource.TestCheckResourceAttr(snapshotResourceName, "labels.l1", "v1"),
+					resource.TestCheckResourceAttr(snapshotResourceName, "labels.l2", "v2"),
+					resource.TestCheckResourceAttrSet(snapshotResourceName, "created_at"),
+					resource.TestCheckResourceAttrSet(snapshotResourceName, "state"),
+					resource.TestCheckResourceAttr(
+						snapshotDataSourceName,
+						"name",
+						fmt.Sprintf("terraform-provider-test-%d-renamed-again", testdataSpec.ID),
+					),
+					resource.TestCheckResourceAttrSet(snapshotDataSourceName, "size"),
+					resource.TestCheckResourceAttr(snapshotDataSourceName, "labels.%", "2"),
+					resource.TestCheckResourceAttr(snapshotDataSourceName, "labels.l1", "v1"),
+					resource.TestCheckResourceAttr(snapshotDataSourceName, "labels.l2", "v2"),
+					resource.TestCheckResourceAttrSet(snapshotDataSourceName, "created_at"),
+					resource.TestCheckResourceAttr(snapshotDataSourceName, "state", "created"),
+					resource.TestCheckResourceAttr(volumeDataSourceName, "snapshots.#", "1"),
+				),
+			},
+			// 15 Update snapshot labels only
+			{
+				Config: testutils.ParseTestdataConfig("./testdata/011.snapshot_update_labels.tf.tmpl", &testdataSpec),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						snapshotResourceName,
+						"name",
+						fmt.Sprintf("terraform-provider-test-%d-renamed-again", testdataSpec.ID),
+					),
+					resource.TestCheckResourceAttrSet(snapshotResourceName, "size"),
+					resource.TestCheckResourceAttr(snapshotResourceName, "labels.%", "1"),
+					resource.TestCheckResourceAttr(snapshotResourceName, "labels.l2", "v2"),
+					resource.TestCheckResourceAttrSet(snapshotResourceName, "created_at"),
+					resource.TestCheckResourceAttrSet(snapshotResourceName, "state"),
+					resource.TestCheckResourceAttr(
+						snapshotDataSourceName,
+						"name",
+						fmt.Sprintf("terraform-provider-test-%d-renamed-again", testdataSpec.ID),
+					),
+					resource.TestCheckResourceAttrSet(snapshotDataSourceName, "size"),
+					resource.TestCheckResourceAttr(snapshotDataSourceName, "labels.%", "1"),
+					resource.TestCheckResourceAttr(snapshotDataSourceName, "labels.l2", "v2"),
+					resource.TestCheckResourceAttrSet(snapshotDataSourceName, "created_at"),
+					resource.TestCheckResourceAttr(snapshotDataSourceName, "state", "created"),
+					resource.TestCheckResourceAttr(volumeDataSourceName, "snapshots.#", "1"),
+				),
+			},
+			// 16 Clear snapshot labels by setting empty labels attribute
+			{
+				Config: testutils.ParseTestdataConfig("./testdata/012.snapshot_empty_labels.tf.tmpl", &testdataSpec),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						snapshotResourceName,
+						"name",
+						fmt.Sprintf("terraform-provider-test-%d-renamed-again", testdataSpec.ID),
+					),
+					resource.TestCheckResourceAttrSet(snapshotResourceName, "size"),
+					resource.TestCheckResourceAttr(snapshotResourceName, "labels.%", "0"),
+					resource.TestCheckResourceAttrSet(snapshotResourceName, "created_at"),
+					resource.TestCheckResourceAttrSet(snapshotResourceName, "state"),
+					resource.TestCheckResourceAttr(
+						snapshotDataSourceName,
+						"name",
+						fmt.Sprintf("terraform-provider-test-%d-renamed-again", testdataSpec.ID),
+					),
+					resource.TestCheckResourceAttrSet(snapshotDataSourceName, "size"),
+					resource.TestCheckResourceAttr(snapshotDataSourceName, "labels.%", "0"),
+					resource.TestCheckResourceAttrSet(snapshotDataSourceName, "created_at"),
+					resource.TestCheckResourceAttr(snapshotDataSourceName, "state", "created"),
+					resource.TestCheckResourceAttr(volumeDataSourceName, "snapshots.#", "1"),
+				),
+			},
 			// Import
 			{
 				ResourceName: volumeResourceName,
