@@ -20,13 +20,13 @@ Block Storage offers persistent externally attached volumes for your workloads.
 
 ### Required
 
-- `name` (String) ❗ Volume snapshot name.
+- `name` (String) Volume snapshot name.
 - `volume` (Attributes) Volume from which to create a snapshot. (see [below for nested schema](#nestedatt--volume))
 - `zone` (String) ❗ The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.
 
 ### Optional
 
-- `labels` (Map of String) ❗ Resource labels. Not updateble after creation.
+- `labels` (Map of String) Resource labels. Not updateble after creation.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
