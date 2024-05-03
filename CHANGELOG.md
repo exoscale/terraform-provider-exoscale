@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+FEATURES:
+
+- block-storage: update names and labels of volumes and snapshots #354 
+
 BUG FIXES:
 
 - IAM: fix bug in datasouces by always init null values #353
