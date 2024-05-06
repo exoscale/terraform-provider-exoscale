@@ -41,8 +41,6 @@ github.com/deepmap/oapi-codegen v1.9.1 h1:yHmEnA7jSTUMQgV+uN02WpZtwHnz2CBW3mZRIx
 github.com/deepmap/oapi-codegen v1.9.1/go.mod h1:PLqNAhdedP8ttRpBBkzLKU3bp+Fpy+tTgeAMlztR2cw=
 github.com/emirpasic/gods v1.18.1 h1:FXtiHYKDGKCW2KzwZKx0iC0PQmdlorYgdFG9jPXJ1Bc=
 github.com/emirpasic/gods v1.18.1/go.mod h1:8tpGGwCnJ5H4r6BWwaV6OrWmMoPhUl5jm/FMNAnJvWQ=
-github.com/exoscale/egoscale v0.102.4-0.20240503151959-235342e11084 h1:H3A1afzjJApeUdUBmj6yUf/oYZWks/wTrN4L0S/DfZI=
-github.com/exoscale/egoscale v0.102.4-0.20240503151959-235342e11084/go.mod h1:20KZJQlNJktQon39FWSKXET1h+OicXsyLzNdjc7bNuY=
 github.com/exoscale/egoscale v0.102.4-0.20240506093113-3ae83713b097 h1:nr8gLscG7DHFUIPuyLebhrtGcd6OM+LUjcAX3erF7Y4=
 github.com/exoscale/egoscale v0.102.4-0.20240506093113-3ae83713b097/go.mod h1:20KZJQlNJktQon39FWSKXET1h+OicXsyLzNdjc7bNuY=
 github.com/fatih/color v1.7.0/go.mod h1:Zm6kSWBoL9eyXnKyktHP6abPY2pDugNf5KwzbycvMj4=

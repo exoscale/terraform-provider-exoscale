@@ -8334,7 +8334,7 @@ type CreateInstanceRequest struct {
 	SSHKeys []SSHKey `json:"ssh-keys,omitempty"`
 	// Instance template
 	Template *Template `json:"template" validate:"required"`
-	// Instance Cloud-init user-data
+	// Instance Cloud-init user-data (base64 encoded)
 	UserData string `json:"user-data,omitempty" validate:"omitempty,gte=1,lte=32768"`
 }
 
@@ -9056,7 +9056,7 @@ type UpdateInstanceRequest struct {
 	// Instance name
 	Name               string             `json:"name,omitempty" validate:"omitempty,gte=1,lte=255"`
 	PublicIPAssignment PublicIPAssignment `json:"public-ip-assignment,omitempty"`
-	// Instance Cloud-init user-data
+	// Instance Cloud-init user-data (base64 encoded)
 	UserData string `json:"user-data,omitempty" validate:"omitempty,gte=1,lte=32768"`
 }
 
