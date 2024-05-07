@@ -107,7 +107,7 @@ func TestBlockStorage(t *testing.T) {
 			},
 			// 5 Unsetting volume labels should make the labels unmanaged.
 			{
-				Config: testutils.ParseTestdataConfig("./testdata/005.volume_clear_labels.tf.tmpl", &testdataSpec),
+				Config: testutils.ParseTestdataConfig("./testdata/005.volume_unmanaged_labels.tf.tmpl", &testdataSpec),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckNoResourceAttr(volumeResourceName, "labels"),
 					resource.TestCheckResourceAttrSet(volumeResourceName, "created_at"),
@@ -218,7 +218,7 @@ func TestBlockStorage(t *testing.T) {
 			},
 			// 12 Unsetting snapshot labels should make the labels unmanaged.
 			{
-				Config: testutils.ParseTestdataConfig("./testdata/012.snapshot_clear_labels.tf.tmpl", &testdataSpec),
+				Config: testutils.ParseTestdataConfig("./testdata/012.snapshot_unmanaged_labels.tf.tmpl", &testdataSpec),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(snapshotResourceName, "name"),
 					resource.TestCheckResourceAttrSet(snapshotResourceName, "size"),
