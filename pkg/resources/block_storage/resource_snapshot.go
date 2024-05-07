@@ -7,12 +7,10 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
-	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/mapdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -104,12 +102,7 @@ func (r *ResourceSnapshot) Schema(ctx context.Context, req resource.SchemaReques
 			"labels": schema.MapAttribute{
 				ElementType:         types.StringType,
 				MarkdownDescription: "Resource labels. Not updateble after creation.",
-				Computed:            true,
 				Optional:            true,
-				// default to empty labels
-				Default: mapdefault.StaticValue(
-					types.MapValueMust(types.StringType, make(map[string]attr.Value)),
-				),
 			},
 			"size": schema.Int64Attribute{
 				MarkdownDescription: "Snapshot size in GB.",
@@ -354,19 +347,22 @@ func (r *ResourceSnapshot) Read(ctx context.Context, req resource.ReadRequest, r
 		state.Volume = t
 	}
 
-	state.Labels = types.MapNull(types.StringType)
-	if snapshot.Labels != nil {
-		t, dg := types.MapValueFrom(
-			ctx,
-			types.StringType,
-			snapshot.Labels,
-		)
-		if dg.HasError() {
-			resp.Diagnostics.Append(dg...)
-			return
-		}
+	if !state.Labels.IsNull() {
+		state.Labels = types.MapNull(types.StringType)
 
-		state.Labels = t
+		if snapshot.Labels != nil {
+			t, dg := types.MapValueFrom(
+				ctx,
+				types.StringType,
+				snapshot.Labels,
+			)
+			if dg.HasError() {
+				resp.Diagnostics.Append(dg...)
+				return
+			}
+
+			state.Labels = t
+		}
 	}
 
 	// Save updated state into Terraform state.
@@ -433,10 +429,7 @@ func (r *ResourceSnapshot) Update(ctx context.Context, req resource.UpdateReques
 	if !plan.Labels.Equal(state.Labels) {
 		update = true
 
-		if plan.Labels.IsNull() {
-			// clear the labels by sending an empty map
-			updateReq.Labels = exoscale.Labels{}
-		} else {
+		if !plan.Labels.IsNull() {
 			resp.Diagnostics.Append(plan.Labels.ElementsAs(ctx, &updateReq.Labels, false)...)
 		}
 	}
@@ -459,25 +452,10 @@ func (r *ResourceSnapshot) Update(ctx context.Context, req resource.UpdateReques
 			)
 			return
 		}
-
-		snapshot, err := client.GetBlockStorageSnapshot(ctx, id)
-		if err != nil {
-			resp.Diagnostics.AddError(
-				"unable to fetch block storage snapshot",
-				err.Error(),
-			)
-			return
-		}
-
-		newLabels, d := types.MapValueFrom(ctx, types.StringType, snapshot.Labels)
-		resp.Diagnostics.Append(d...)
-		if d.HasError() {
-			return
-		}
-
-		state.Labels = newLabels
-		state.Name = types.StringValue(snapshot.Name)
 	}
+
+	state.Labels = plan.Labels
+	state.Name = plan.Name
 
 	// Save updated state into Terraform state.
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)

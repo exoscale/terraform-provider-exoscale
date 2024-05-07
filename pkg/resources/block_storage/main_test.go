@@ -105,16 +105,18 @@ func TestBlockStorage(t *testing.T) {
 					resource.TestCheckResourceAttr(volumeDataSourceName, "labels.foo2", "bar2"),
 				),
 			},
-			// 5 Clear volume labels by unsetting labels attribute
+			// 5 Unsetting volume labels should make the labels unmanaged.
 			{
 				Config: testutils.ParseTestdataConfig("./testdata/005.volume_clear_labels.tf.tmpl", &testdataSpec),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(volumeResourceName, "labels.%", "0"),
+					resource.TestCheckNoResourceAttr(volumeResourceName, "labels"),
 					resource.TestCheckResourceAttrSet(volumeResourceName, "created_at"),
 					resource.TestCheckResourceAttrSet(volumeResourceName, "blocksize"),
 					resource.TestCheckResourceAttr(volumeResourceName, "state", "detached"),
 					resource.TestCheckResourceAttr(volumeDataSourceName, "size", "10"),
-					resource.TestCheckResourceAttr(volumeDataSourceName, "labels.%", "0"),
+					resource.TestCheckResourceAttr(volumeDataSourceName, "labels.%", "2"),
+					resource.TestCheckResourceAttr(volumeDataSourceName, "labels.foo1", "bar1"),
+					resource.TestCheckResourceAttr(volumeDataSourceName, "labels.foo2", "bar2"),
 					resource.TestCheckResourceAttrSet(volumeDataSourceName, "created_at"),
 					resource.TestCheckResourceAttrSet(volumeDataSourceName, "blocksize"),
 					resource.TestCheckResourceAttr(volumeDataSourceName, "state", "detached"),
@@ -214,17 +216,18 @@ func TestBlockStorage(t *testing.T) {
 					resource.TestCheckResourceAttr(volumeFromSnapshotResourceName, "state", "detached"),
 				),
 			},
-			// 12 Clear snapshot labels by not setting labels attribute
+			// 12 Unsetting snapshot labels should make the labels unmanaged.
 			{
 				Config: testutils.ParseTestdataConfig("./testdata/012.snapshot_clear_labels.tf.tmpl", &testdataSpec),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(snapshotResourceName, "name"),
 					resource.TestCheckResourceAttrSet(snapshotResourceName, "size"),
-					resource.TestCheckResourceAttr(snapshotResourceName, "labels.%", "0"),
+					resource.TestCheckNoResourceAttr(snapshotResourceName, "labels"),
 					resource.TestCheckResourceAttrSet(snapshotResourceName, "created_at"),
 					resource.TestCheckResourceAttrSet(snapshotResourceName, "state"),
 					resource.TestCheckResourceAttrSet(snapshotDataSourceName, "size"),
-					resource.TestCheckResourceAttr(snapshotDataSourceName, "labels.%", "0"),
+					resource.TestCheckResourceAttr(snapshotDataSourceName, "labels.%", "1"),
+					resource.TestCheckResourceAttr(snapshotDataSourceName, "labels.foo", "bar"),
 					resource.TestCheckResourceAttrSet(snapshotDataSourceName, "created_at"),
 					resource.TestCheckResourceAttr(snapshotDataSourceName, "state", "created"),
 					resource.TestCheckResourceAttr(volumeDataSourceName, "snapshots.#", "1"),
