@@ -26,7 +26,7 @@ Block Storage offers persistent externally attached volumes for your workloads.
 
 ### Optional
 
-- `labels` (Map of String) Resource labels. Not updateble after creation.
+- `labels` (Map of String) Resource labels.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
