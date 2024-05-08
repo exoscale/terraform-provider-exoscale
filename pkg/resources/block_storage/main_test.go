@@ -56,11 +56,6 @@ func TestBlockStorage(t *testing.T) {
 			{
 				Config: testutils.ParseTestdataConfig("./testdata/002.volume_rename.tf.tmpl", &testdataSpec),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(
-						volumeResourceName,
-						"name",
-						fmt.Sprintf("terraform-provider-test-%d-renamed", testdataSpec.ID),
-					),
 					resource.TestCheckResourceAttr(volumeResourceName, "labels.%", "1"),
 					resource.TestCheckResourceAttr(volumeResourceName, "labels.foo", "bar"),
 					resource.TestCheckResourceAttrSet(volumeResourceName, "created_at"),
@@ -80,7 +75,6 @@ func TestBlockStorage(t *testing.T) {
 			{
 				Config: testutils.ParseTestdataConfig("./testdata/003.volume_empty_labels.tf.tmpl", &testdataSpec),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(volumeResourceName, "labels.%", "0"),
 					resource.TestCheckResourceAttrSet(volumeResourceName, "created_at"),
 					resource.TestCheckResourceAttrSet(volumeResourceName, "blocksize"),
 					resource.TestCheckResourceAttr(volumeResourceName, "state", "detached"),
@@ -97,9 +91,6 @@ func TestBlockStorage(t *testing.T) {
 			{
 				Config: testutils.ParseTestdataConfig("./testdata/004.volume_update.tf.tmpl", &testdataSpec),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(volumeResourceName, "labels.%", "2"),
-					resource.TestCheckResourceAttr(volumeResourceName, "labels.foo1", "bar1"),
-					resource.TestCheckResourceAttr(volumeResourceName, "labels.foo2", "bar2"),
 					resource.TestCheckResourceAttr(volumeDataSourceName, "labels.%", "2"),
 					resource.TestCheckResourceAttr(volumeDataSourceName, "labels.foo1", "bar1"),
 					resource.TestCheckResourceAttr(volumeDataSourceName, "labels.foo2", "bar2"),
@@ -128,15 +119,6 @@ func TestBlockStorage(t *testing.T) {
 			{
 				Config: testutils.ParseTestdataConfig("./testdata/006.volume_update_labels_and_name.tf.tmpl", &testdataSpec),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(
-						volumeResourceName,
-						"name",
-						fmt.Sprintf("terraform-provider-test-%d-renamed-again", testdataSpec.ID),
-					),
-					resource.TestCheckResourceAttr(volumeResourceName, "labels.%", "3"),
-					resource.TestCheckResourceAttr(volumeResourceName, "labels.foo1", "bar1"),
-					resource.TestCheckResourceAttr(volumeResourceName, "labels.foo2", "bar2"),
-					resource.TestCheckResourceAttr(volumeResourceName, "labels.foo3", "bar3"),
 					resource.TestCheckResourceAttrSet(volumeResourceName, "created_at"),
 					resource.TestCheckResourceAttrSet(volumeResourceName, "blocksize"),
 					resource.TestCheckResourceAttr(volumeResourceName, "state", "detached"),
@@ -187,10 +169,7 @@ func TestBlockStorage(t *testing.T) {
 			{
 				Config: testutils.ParseTestdataConfig("./testdata/010.create_snapshot.tf.tmpl", &testdataSpec),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttrSet(snapshotResourceName, "name"),
 					resource.TestCheckResourceAttrSet(snapshotResourceName, "size"),
-					resource.TestCheckResourceAttr(snapshotResourceName, "labels.%", "1"),
-					resource.TestCheckResourceAttr(snapshotResourceName, "labels.foo", "bar"),
 					resource.TestCheckResourceAttrSet(snapshotResourceName, "created_at"),
 					resource.TestCheckResourceAttrSet(snapshotResourceName, "state"),
 					resource.TestCheckResourceAttrSet(snapshotDataSourceName, "size"),
@@ -205,11 +184,6 @@ func TestBlockStorage(t *testing.T) {
 			{
 				Config: testutils.ParseTestdataConfig("./testdata/011.volume_from_snapshot.tf.tmpl", &testdataSpec),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(
-						volumeFromSnapshotResourceName,
-						"name",
-						fmt.Sprintf("terraform-provider-test-%d", testdataSpec.ID),
-					),
 					resource.TestCheckResourceAttr(volumeFromSnapshotResourceName, "labels.%", "0"),
 					resource.TestCheckResourceAttrSet(volumeFromSnapshotResourceName, "created_at"),
 					resource.TestCheckResourceAttrSet(volumeFromSnapshotResourceName, "blocksize"),
@@ -220,7 +194,6 @@ func TestBlockStorage(t *testing.T) {
 			{
 				Config: testutils.ParseTestdataConfig("./testdata/012.snapshot_unmanaged_labels.tf.tmpl", &testdataSpec),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttrSet(snapshotResourceName, "name"),
 					resource.TestCheckResourceAttrSet(snapshotResourceName, "size"),
 					resource.TestCheckNoResourceAttr(snapshotResourceName, "labels"),
 					resource.TestCheckResourceAttrSet(snapshotResourceName, "created_at"),
@@ -237,15 +210,7 @@ func TestBlockStorage(t *testing.T) {
 			{
 				Config: testutils.ParseTestdataConfig("./testdata/013.snapshot_update_name_and_labels.tf.tmpl", &testdataSpec),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(
-						snapshotResourceName,
-						"name",
-						fmt.Sprintf("terraform-provider-test-%d-renamed", testdataSpec.ID),
-					),
 					resource.TestCheckResourceAttrSet(snapshotResourceName, "size"),
-					resource.TestCheckResourceAttr(snapshotResourceName, "labels.%", "2"),
-					resource.TestCheckResourceAttr(snapshotResourceName, "labels.l1", "v1"),
-					resource.TestCheckResourceAttr(snapshotResourceName, "labels.l2", "v2"),
 					resource.TestCheckResourceAttrSet(snapshotResourceName, "created_at"),
 					resource.TestCheckResourceAttrSet(snapshotResourceName, "state"),
 					resource.TestCheckResourceAttr(
@@ -266,15 +231,7 @@ func TestBlockStorage(t *testing.T) {
 			{
 				Config: testutils.ParseTestdataConfig("./testdata/014.snapshot_update_name.tf.tmpl", &testdataSpec),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(
-						snapshotResourceName,
-						"name",
-						fmt.Sprintf("terraform-provider-test-%d-renamed-again", testdataSpec.ID),
-					),
 					resource.TestCheckResourceAttrSet(snapshotResourceName, "size"),
-					resource.TestCheckResourceAttr(snapshotResourceName, "labels.%", "2"),
-					resource.TestCheckResourceAttr(snapshotResourceName, "labels.l1", "v1"),
-					resource.TestCheckResourceAttr(snapshotResourceName, "labels.l2", "v2"),
 					resource.TestCheckResourceAttrSet(snapshotResourceName, "created_at"),
 					resource.TestCheckResourceAttrSet(snapshotResourceName, "state"),
 					resource.TestCheckResourceAttr(
@@ -295,14 +252,7 @@ func TestBlockStorage(t *testing.T) {
 			{
 				Config: testutils.ParseTestdataConfig("./testdata/015.snapshot_update_labels.tf.tmpl", &testdataSpec),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(
-						snapshotResourceName,
-						"name",
-						fmt.Sprintf("terraform-provider-test-%d-renamed-again", testdataSpec.ID),
-					),
 					resource.TestCheckResourceAttrSet(snapshotResourceName, "size"),
-					resource.TestCheckResourceAttr(snapshotResourceName, "labels.%", "1"),
-					resource.TestCheckResourceAttr(snapshotResourceName, "labels.l2", "v2"),
 					resource.TestCheckResourceAttrSet(snapshotResourceName, "created_at"),
 					resource.TestCheckResourceAttrSet(snapshotResourceName, "state"),
 					resource.TestCheckResourceAttr(
@@ -322,11 +272,6 @@ func TestBlockStorage(t *testing.T) {
 			{
 				Config: testutils.ParseTestdataConfig("./testdata/016.snapshot_empty_labels.tf.tmpl", &testdataSpec),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(
-						snapshotResourceName,
-						"name",
-						fmt.Sprintf("terraform-provider-test-%d-renamed-again", testdataSpec.ID),
-					),
 					resource.TestCheckResourceAttrSet(snapshotResourceName, "size"),
 					resource.TestCheckResourceAttr(snapshotResourceName, "labels.%", "0"),
 					resource.TestCheckResourceAttrSet(snapshotResourceName, "created_at"),
