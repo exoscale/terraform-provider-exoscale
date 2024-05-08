@@ -101,7 +101,7 @@ func (r *ResourceSnapshot) Schema(ctx context.Context, req resource.SchemaReques
 			},
 			"labels": schema.MapAttribute{
 				ElementType:         types.StringType,
-				MarkdownDescription: "Resource labels. Not updateble after creation.",
+				MarkdownDescription: "Resource labels.",
 				Optional:            true,
 			},
 			"size": schema.Int64Attribute{
