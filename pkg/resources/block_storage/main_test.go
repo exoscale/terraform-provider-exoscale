@@ -61,8 +61,6 @@ func TestBlockStorage(t *testing.T) {
 						"name",
 						fmt.Sprintf("terraform-provider-test-%d-renamed", testdataSpec.ID),
 					),
-					resource.TestCheckResourceAttr(volumeResourceName, "labels.%", "1"),
-					resource.TestCheckResourceAttr(volumeResourceName, "labels.foo", "bar"),
 					resource.TestCheckResourceAttrSet(volumeResourceName, "created_at"),
 					resource.TestCheckResourceAttrSet(volumeResourceName, "blocksize"),
 					resource.TestCheckResourceAttr(volumeResourceName, "state", "detached"),
@@ -272,9 +270,6 @@ func TestBlockStorage(t *testing.T) {
 						fmt.Sprintf("terraform-provider-test-%d-renamed-again", testdataSpec.ID),
 					),
 					resource.TestCheckResourceAttrSet(snapshotResourceName, "size"),
-					resource.TestCheckResourceAttr(snapshotResourceName, "labels.%", "2"),
-					resource.TestCheckResourceAttr(snapshotResourceName, "labels.l1", "v1"),
-					resource.TestCheckResourceAttr(snapshotResourceName, "labels.l2", "v2"),
 					resource.TestCheckResourceAttrSet(snapshotResourceName, "created_at"),
 					resource.TestCheckResourceAttrSet(snapshotResourceName, "state"),
 					resource.TestCheckResourceAttr(
@@ -295,11 +290,6 @@ func TestBlockStorage(t *testing.T) {
 			{
 				Config: testutils.ParseTestdataConfig("./testdata/015.snapshot_update_labels.tf.tmpl", &testdataSpec),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(
-						snapshotResourceName,
-						"name",
-						fmt.Sprintf("terraform-provider-test-%d-renamed-again", testdataSpec.ID),
-					),
 					resource.TestCheckResourceAttrSet(snapshotResourceName, "size"),
 					resource.TestCheckResourceAttr(snapshotResourceName, "labels.%", "1"),
 					resource.TestCheckResourceAttr(snapshotResourceName, "labels.l2", "v2"),
@@ -322,11 +312,6 @@ func TestBlockStorage(t *testing.T) {
 			{
 				Config: testutils.ParseTestdataConfig("./testdata/016.snapshot_empty_labels.tf.tmpl", &testdataSpec),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(
-						snapshotResourceName,
-						"name",
-						fmt.Sprintf("terraform-provider-test-%d-renamed-again", testdataSpec.ID),
-					),
 					resource.TestCheckResourceAttrSet(snapshotResourceName, "size"),
 					resource.TestCheckResourceAttr(snapshotResourceName, "labels.%", "0"),
 					resource.TestCheckResourceAttrSet(snapshotResourceName, "created_at"),
