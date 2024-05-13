@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.59.0 (May 13, 2024)
 
 FEATURES:
 
