@@ -11,7 +11,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/mapplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -78,11 +77,8 @@ func (r *ResourceVolume) Schema(ctx context.Context, req resource.SchemaRequest,
 				},
 			},
 			"name": schema.StringAttribute{
-				MarkdownDescription: "❗ Volume name.",
+				MarkdownDescription: "Volume name.",
 				Required:            true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
 			},
 			"zone": schema.StringAttribute{
 				MarkdownDescription: "❗ The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.",
@@ -100,11 +96,8 @@ func (r *ResourceVolume) Schema(ctx context.Context, req resource.SchemaRequest,
 			},
 			"labels": schema.MapAttribute{
 				ElementType:         types.StringType,
-				MarkdownDescription: "❗ Resource labels.",
+				MarkdownDescription: "Resource labels.",
 				Optional:            true,
-				PlanModifiers: []planmodifier.Map{
-					mapplanmodifier.RequiresReplace(),
-				},
 			},
 			"snapshot_target": schema.SingleNestedAttribute{
 				MarkdownDescription: "Block storage snapshot to use when creating a volume. Read-only after creation.",
@@ -357,19 +350,21 @@ func (r *ResourceVolume) Read(ctx context.Context, req resource.ReadRequest, res
 		state.Size = types.Int64Value(volume.Size)
 	}
 
-	state.Labels = types.MapNull(types.StringType)
-	if volume.Labels != nil {
-		t, dg := types.MapValueFrom(
-			ctx,
-			types.StringType,
-			volume.Labels,
-		)
-		if dg.HasError() {
-			resp.Diagnostics.Append(dg...)
-			return
-		}
+	if !state.Labels.IsNull() {
+		state.Labels = types.MapNull(types.StringType)
 
-		state.Labels = t
+		if volume.Labels != nil {
+			t, dg := types.MapValueFrom(
+				ctx,
+				types.StringType,
+				volume.Labels,
+			)
+			if dg.HasError() {
+				resp.Diagnostics.Append(dg...)
+				return
+			}
+			state.Labels = t
+		}
 	}
 
 	// Save updated state into Terraform state.
@@ -441,6 +436,46 @@ func (r *ResourceVolume) Update(ctx context.Context, req resource.UpdateRequest,
 
 		state.Size = types.Int64Value(volume.Size)
 	}
+
+	update := false
+	updateReq := exoscale.UpdateBlockStorageVolumeRequest{}
+
+	if !plan.Name.Equal(state.Name) {
+		update = true
+
+		updateReq.Name = plan.Name.ValueStringPointer()
+	}
+
+	if !plan.Labels.Equal(state.Labels) {
+		update = true
+
+		if !plan.Labels.IsNull() {
+			resp.Diagnostics.Append(plan.Labels.ElementsAs(ctx, &updateReq.Labels, false)...)
+		}
+	}
+
+	if update {
+		op, err := client.UpdateBlockStorageVolume(ctx, id, updateReq)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"unable to update block storage volume",
+				err.Error(),
+			)
+			return
+		}
+
+		_, err = client.Wait(ctx, op, exoscale.OperationStateSuccess)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"unable to update block storage volume",
+				err.Error(),
+			)
+			return
+		}
+	}
+
+	state.Labels = plan.Labels
+	state.Name = plan.Name
 
 	// Save updated state into Terraform state.
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)

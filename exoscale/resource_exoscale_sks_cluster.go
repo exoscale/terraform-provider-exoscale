@@ -292,7 +292,8 @@ func resourceSKSClusterCreate(ctx context.Context, d *schema.ResourceData, meta 
 	}
 
 	if v, ok := d.GetOk(resSKSClusterAttrDescription); ok {
-		createReq.Description = v.(string)
+		description := v.(string)
+		createReq.Description = &description
 	}
 
 	if l, ok := d.GetOk(resSKSClusterAttrLabels); ok {
@@ -515,7 +516,7 @@ func resourceSKSClusterUpdate(ctx context.Context, d *schema.ResourceData, meta 
 
 	if d.HasChange(resSKSClusterAttrDescription) {
 		description := d.Get(resSKSClusterAttrDescription).(string)
-		updateReq.Description = description
+		updateReq.Description = &description
 		updated = true
 	}
 

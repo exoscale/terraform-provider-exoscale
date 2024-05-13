@@ -11,7 +11,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/mapplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -74,11 +73,8 @@ func (r *ResourceSnapshot) Schema(ctx context.Context, req resource.SchemaReques
 				Computed:            true,
 			},
 			"name": schema.StringAttribute{
-				MarkdownDescription: "❗ Volume snapshot name.",
+				MarkdownDescription: "Volume snapshot name.",
 				Required:            true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
 			},
 			"volume": schema.SingleNestedAttribute{
 				MarkdownDescription: "Volume from which to create a snapshot.",
@@ -105,11 +101,8 @@ func (r *ResourceSnapshot) Schema(ctx context.Context, req resource.SchemaReques
 			},
 			"labels": schema.MapAttribute{
 				ElementType:         types.StringType,
-				MarkdownDescription: "❗ Resource labels. Not updateble after creation.",
+				MarkdownDescription: "Resource labels.",
 				Optional:            true,
-				PlanModifiers: []planmodifier.Map{
-					mapplanmodifier.RequiresReplace(),
-				},
 			},
 			"size": schema.Int64Attribute{
 				MarkdownDescription: "Snapshot size in GB.",
@@ -354,19 +347,22 @@ func (r *ResourceSnapshot) Read(ctx context.Context, req resource.ReadRequest, r
 		state.Volume = t
 	}
 
-	state.Labels = types.MapNull(types.StringType)
-	if snapshot.Labels != nil {
-		t, dg := types.MapValueFrom(
-			ctx,
-			types.StringType,
-			snapshot.Labels,
-		)
-		if dg.HasError() {
-			resp.Diagnostics.Append(dg...)
-			return
-		}
+	if !state.Labels.IsNull() {
+		state.Labels = types.MapNull(types.StringType)
 
-		state.Labels = t
+		if snapshot.Labels != nil {
+			t, dg := types.MapValueFrom(
+				ctx,
+				types.StringType,
+				snapshot.Labels,
+			)
+			if dg.HasError() {
+				resp.Diagnostics.Append(dg...)
+				return
+			}
+
+			state.Labels = t
+		}
 	}
 
 	// Save updated state into Terraform state.
@@ -379,7 +375,94 @@ func (r *ResourceSnapshot) Read(ctx context.Context, req resource.ReadRequest, r
 
 // Update resources in-place by receiving Terraform prior state, configuration, and plan data, performing update logic, and saving updated Terraform state data.
 func (r *ResourceSnapshot) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	// No-op as all managed attributes are marked require-replace.
+	var state, plan ResourceSnapshotModel
+
+	// Read Terraform prior state data (for comparison) into the model
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	// Read Terraform plan data into the model
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Set timeout.
+	timeout, diags := plan.Timeouts.Create(ctx, config.DefaultTimeout)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	// Use API endpoint in selected zone.
+	client, err := utils.SwitchClientZone(
+		ctx,
+		r.client,
+		exoscale.ZoneName(plan.Zone.ValueString()),
+	)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"unable to change exoscale client zone",
+			err.Error(),
+		)
+		return
+	}
+
+	id, err := exoscale.ParseUUID(state.ID.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"unable to parse volume ID",
+			err.Error(),
+		)
+		return
+	}
+
+	update := false
+	updateReq := exoscale.UpdateBlockStorageSnapshotRequest{}
+
+	if !plan.Name.Equal(state.Name) {
+		update = true
+
+		updateReq.Name = plan.Name.ValueStringPointer()
+	}
+
+	if !plan.Labels.Equal(state.Labels) {
+		update = true
+
+		if !plan.Labels.IsNull() {
+			resp.Diagnostics.Append(plan.Labels.ElementsAs(ctx, &updateReq.Labels, false)...)
+		}
+	}
+
+	if update {
+		op, err := client.UpdateBlockStorageSnapshot(ctx, id, updateReq)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"unable to update block storage snapshot",
+				err.Error(),
+			)
+			return
+		}
+
+		_, err = client.Wait(ctx, op, exoscale.OperationStateSuccess)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"unable to update block storage snapshot",
+				err.Error(),
+			)
+			return
+		}
+	}
+
+	state.Labels = plan.Labels
+	state.Name = plan.Name
+
+	// Save updated state into Terraform state.
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+
+	tflog.Trace(ctx, "resource update done", map[string]interface{}{
+		"id": state.ID,
+	})
 }
 
 // Delete resources by receiving Terraform prior state data and performing deletion logic.

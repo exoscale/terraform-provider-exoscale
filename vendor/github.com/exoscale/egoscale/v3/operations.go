@@ -24,17 +24,18 @@ func (c Client) ListAccessKeys(ctx context.Context) (*ListAccessKeysResponse, er
 	if err != nil {
 		return nil, fmt.Errorf("ListAccessKeys: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ListAccessKeys: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-access-keys")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("ListAccessKeys: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "list-access-keys")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -83,6 +84,7 @@ func (c Client) CreateAccessKey(ctx context.Context, req CreateAccessKeyRequest)
 	if err != nil {
 		return nil, fmt.Errorf("CreateAccessKey: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -90,12 +92,12 @@ func (c Client) CreateAccessKey(ctx context.Context, req CreateAccessKeyRequest)
 		return nil, fmt.Errorf("CreateAccessKey: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-access-key")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("CreateAccessKey: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "create-access-key")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -131,17 +133,18 @@ func (c Client) ListAccessKeyKnownOperations(ctx context.Context) (*ListAccessKe
 	if err != nil {
 		return nil, fmt.Errorf("ListAccessKeyKnownOperations: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ListAccessKeyKnownOperations: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-access-key-known-operations")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("ListAccessKeyKnownOperations: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "list-access-key-known-operations")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -177,17 +180,18 @@ func (c Client) ListAccessKeyOperations(ctx context.Context) (*ListAccessKeyOper
 	if err != nil {
 		return nil, fmt.Errorf("ListAccessKeyOperations: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ListAccessKeyOperations: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-access-key-operations")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("ListAccessKeyOperations: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "list-access-key-operations")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -219,17 +223,18 @@ func (c Client) RevokeAccessKey(ctx context.Context, key string) (*Operation, er
 	if err != nil {
 		return nil, fmt.Errorf("RevokeAccessKey: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("RevokeAccessKey: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "revoke-access-key")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("RevokeAccessKey: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "revoke-access-key")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -261,17 +266,18 @@ func (c Client) GetAccessKey(ctx context.Context, key string) (*AccessKey, error
 	if err != nil {
 		return nil, fmt.Errorf("GetAccessKey: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetAccessKey: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-access-key")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("GetAccessKey: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-access-key")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -318,17 +324,18 @@ func (c Client) ListAntiAffinityGroups(ctx context.Context) (*ListAntiAffinityGr
 	if err != nil {
 		return nil, fmt.Errorf("ListAntiAffinityGroups: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ListAntiAffinityGroups: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-anti-affinity-groups")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("ListAntiAffinityGroups: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "list-anti-affinity-groups")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -372,6 +379,7 @@ func (c Client) CreateAntiAffinityGroup(ctx context.Context, req CreateAntiAffin
 	if err != nil {
 		return nil, fmt.Errorf("CreateAntiAffinityGroup: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -379,12 +387,12 @@ func (c Client) CreateAntiAffinityGroup(ctx context.Context, req CreateAntiAffin
 		return nil, fmt.Errorf("CreateAntiAffinityGroup: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-anti-affinity-group")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("CreateAntiAffinityGroup: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "create-anti-affinity-group")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -416,17 +424,18 @@ func (c Client) DeleteAntiAffinityGroup(ctx context.Context, id UUID) (*Operatio
 	if err != nil {
 		return nil, fmt.Errorf("DeleteAntiAffinityGroup: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteAntiAffinityGroup: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-anti-affinity-group")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("DeleteAntiAffinityGroup: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "delete-anti-affinity-group")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -458,17 +467,18 @@ func (c Client) GetAntiAffinityGroup(ctx context.Context, id UUID) (*AntiAffinit
 	if err != nil {
 		return nil, fmt.Errorf("GetAntiAffinityGroup: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetAntiAffinityGroup: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-anti-affinity-group")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("GetAntiAffinityGroup: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-anti-affinity-group")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -504,17 +514,18 @@ func (c Client) ListAPIKeys(ctx context.Context) (*ListAPIKeysResponse, error) {
 	if err != nil {
 		return nil, fmt.Errorf("ListAPIKeys: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ListAPIKeys: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-api-keys")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("ListAPIKeys: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "list-api-keys")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -558,6 +569,7 @@ func (c Client) CreateAPIKey(ctx context.Context, req CreateAPIKeyRequest) (*IAM
 	if err != nil {
 		return nil, fmt.Errorf("CreateAPIKey: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -565,12 +577,12 @@ func (c Client) CreateAPIKey(ctx context.Context, req CreateAPIKeyRequest) (*IAM
 		return nil, fmt.Errorf("CreateAPIKey: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-api-key")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("CreateAPIKey: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "create-api-key")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -602,17 +614,18 @@ func (c Client) DeleteAPIKey(ctx context.Context, id string) (*Operation, error)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteAPIKey: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteAPIKey: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-api-key")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("DeleteAPIKey: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "delete-api-key")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -644,17 +657,18 @@ func (c Client) GetAPIKey(ctx context.Context, id string) (*IAMAPIKey, error) {
 	if err != nil {
 		return nil, fmt.Errorf("GetAPIKey: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetAPIKey: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-api-key")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("GetAPIKey: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-api-key")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -709,6 +723,7 @@ func (c Client) ListBlockStorageVolumes(ctx context.Context, opts ...ListBlockSt
 	if err != nil {
 		return nil, fmt.Errorf("ListBlockStorageVolumes: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if len(opts) > 0 {
 		q := request.URL.Query()
@@ -722,12 +737,12 @@ func (c Client) ListBlockStorageVolumes(ctx context.Context, opts ...ListBlockSt
 		return nil, fmt.Errorf("ListBlockStorageVolumes: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-block-storage-volumes")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("ListBlockStorageVolumes: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "list-block-storage-volumes")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -759,7 +774,7 @@ type CreateBlockStorageVolumeRequest struct {
 	Name string `json:"name,omitempty" validate:"omitempty,lte=255"`
 	// Volume size in GB.
 	// When a snapshot ID is supplied, this defaults to the size of the source volume, but can be set to a larger value.
-	Size int64 `json:"size,omitempty" validate:"omitempty,gte=10,lte=10240"`
+	Size int64 `json:"size,omitempty" validate:"omitempty,gte=10"`
 }
 
 // Create a block storage volume
@@ -775,6 +790,7 @@ func (c Client) CreateBlockStorageVolume(ctx context.Context, req CreateBlockSto
 	if err != nil {
 		return nil, fmt.Errorf("CreateBlockStorageVolume: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -782,12 +798,12 @@ func (c Client) CreateBlockStorageVolume(ctx context.Context, req CreateBlockSto
 		return nil, fmt.Errorf("CreateBlockStorageVolume: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-block-storage-volume")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("CreateBlockStorageVolume: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "create-block-storage-volume")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -834,17 +850,18 @@ func (c Client) ListBlockStorageSnapshots(ctx context.Context) (*ListBlockStorag
 	if err != nil {
 		return nil, fmt.Errorf("ListBlockStorageSnapshots: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ListBlockStorageSnapshots: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-block-storage-snapshots")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("ListBlockStorageSnapshots: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "list-block-storage-snapshots")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -876,17 +893,18 @@ func (c Client) DeleteBlockStorageSnapshot(ctx context.Context, id UUID) (*Opera
 	if err != nil {
 		return nil, fmt.Errorf("DeleteBlockStorageSnapshot: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteBlockStorageSnapshot: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-block-storage-snapshot")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("DeleteBlockStorageSnapshot: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "delete-block-storage-snapshot")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -918,17 +936,18 @@ func (c Client) GetBlockStorageSnapshot(ctx context.Context, id UUID) (*BlockSto
 	if err != nil {
 		return nil, fmt.Errorf("GetBlockStorageSnapshot: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetBlockStorageSnapshot: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-block-storage-snapshot")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("GetBlockStorageSnapshot: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-block-storage-snapshot")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -952,6 +971,62 @@ func (c Client) GetBlockStorageSnapshot(ctx context.Context, id UUID) (*BlockSto
 	return bodyresp, nil
 }
 
+type UpdateBlockStorageSnapshotRequest struct {
+	Labels Labels `json:"labels"`
+	// Snapshot name
+	Name *string `json:"name,omitempty" validate:"omitempty,lte=255"`
+}
+
+// Update block storage volume snapshot
+func (c Client) UpdateBlockStorageSnapshot(ctx context.Context, id UUID, req UpdateBlockStorageSnapshotRequest) (*Operation, error) {
+	path := fmt.Sprintf("/block-storage-snapshot/%v", id)
+
+	body, err := prepareJSONBody(req)
+	if err != nil {
+		return nil, fmt.Errorf("UpdateBlockStorageSnapshot: prepare Json body: %w", err)
+	}
+
+	request, err := http.NewRequestWithContext(ctx, "PUT", c.serverEndpoint+path, body)
+	if err != nil {
+		return nil, fmt.Errorf("UpdateBlockStorageSnapshot: new request: %w", err)
+	}
+	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("Content-Type", "application/json")
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("UpdateBlockStorageSnapshot: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("UpdateBlockStorageSnapshot: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "update-block-storage-snapshot")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("UpdateBlockStorageSnapshot: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("UpdateBlockStorageSnapshot: http response: %w", err)
+	}
+
+	bodyresp := &Operation{}
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("UpdateBlockStorageSnapshot: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
 // Delete a block storage volume, data will be unrecoverable
 func (c Client) DeleteBlockStorageVolume(ctx context.Context, id UUID) (*Operation, error) {
 	path := fmt.Sprintf("/block-storage/%v", id)
@@ -960,17 +1035,18 @@ func (c Client) DeleteBlockStorageVolume(ctx context.Context, id UUID) (*Operati
 	if err != nil {
 		return nil, fmt.Errorf("DeleteBlockStorageVolume: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteBlockStorageVolume: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-block-storage-volume")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("DeleteBlockStorageVolume: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "delete-block-storage-volume")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -1002,17 +1078,18 @@ func (c Client) GetBlockStorageVolume(ctx context.Context, id UUID) (*BlockStora
 	if err != nil {
 		return nil, fmt.Errorf("GetBlockStorageVolume: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetBlockStorageVolume: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-block-storage-volume")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("GetBlockStorageVolume: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-block-storage-volume")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -1036,41 +1113,44 @@ func (c Client) GetBlockStorageVolume(ctx context.Context, id UUID) (*BlockStora
 	return bodyresp, nil
 }
 
-type UpdateBlockStorageVolumeLabelsRequest struct {
-	Labels Labels `json:"labels,omitempty"`
+type UpdateBlockStorageVolumeRequest struct {
+	Labels Labels `json:"labels"`
+	// Volume name
+	Name *string `json:"name,omitempty" validate:"omitempty,lte=255"`
 }
 
-// Set block storage volume labels
-func (c Client) UpdateBlockStorageVolumeLabels(ctx context.Context, id UUID, req UpdateBlockStorageVolumeLabelsRequest) (*Operation, error) {
+// Update block storage volume
+func (c Client) UpdateBlockStorageVolume(ctx context.Context, id UUID, req UpdateBlockStorageVolumeRequest) (*Operation, error) {
 	path := fmt.Sprintf("/block-storage/%v", id)
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("UpdateBlockStorageVolumeLabels: prepare Json body: %w", err)
+		return nil, fmt.Errorf("UpdateBlockStorageVolume: prepare Json body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "PUT", c.serverEndpoint+path, body)
 	if err != nil {
-		return nil, fmt.Errorf("UpdateBlockStorageVolumeLabels: new request: %w", err)
+		return nil, fmt.Errorf("UpdateBlockStorageVolume: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
-		return nil, fmt.Errorf("UpdateBlockStorageVolumeLabels: execute request editors: %w", err)
-	}
-
-	if c.trace {
-		dumpRequest(request, "update-block-storage-volume-labels")
+		return nil, fmt.Errorf("UpdateBlockStorageVolume: execute request editors: %w", err)
 	}
 
 	if err := c.signRequest(request); err != nil {
-		return nil, fmt.Errorf("UpdateBlockStorageVolumeLabels: sign request: %w", err)
+		return nil, fmt.Errorf("UpdateBlockStorageVolume: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "update-block-storage-volume")
 	}
 
 	response, err := c.httpClient.Do(request)
 	if err != nil {
-		return nil, fmt.Errorf("UpdateBlockStorageVolumeLabels: http client do: %w", err)
+		return nil, fmt.Errorf("UpdateBlockStorageVolume: http client do: %w", err)
 	}
 
 	if c.trace {
@@ -1078,12 +1158,12 @@ func (c Client) UpdateBlockStorageVolumeLabels(ctx context.Context, id UUID, req
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
-		return nil, fmt.Errorf("UpdateBlockStorageVolumeLabels: http response: %w", err)
+		return nil, fmt.Errorf("UpdateBlockStorageVolume: http response: %w", err)
 	}
 
 	bodyresp := &Operation{}
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("UpdateBlockStorageVolumeLabels: prepare Json response: %w", err)
+		return nil, fmt.Errorf("UpdateBlockStorageVolume: prepare Json response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -1107,6 +1187,7 @@ func (c Client) AttachBlockStorageVolumeToInstance(ctx context.Context, id UUID,
 	if err != nil {
 		return nil, fmt.Errorf("AttachBlockStorageVolumeToInstance: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -1114,12 +1195,12 @@ func (c Client) AttachBlockStorageVolumeToInstance(ctx context.Context, id UUID,
 		return nil, fmt.Errorf("AttachBlockStorageVolumeToInstance: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "attach-block-storage-volume-to-instance")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("AttachBlockStorageVolumeToInstance: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "attach-block-storage-volume-to-instance")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -1162,6 +1243,7 @@ func (c Client) CreateBlockStorageSnapshot(ctx context.Context, id UUID, req Cre
 	if err != nil {
 		return nil, fmt.Errorf("CreateBlockStorageSnapshot: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -1169,12 +1251,12 @@ func (c Client) CreateBlockStorageSnapshot(ctx context.Context, id UUID, req Cre
 		return nil, fmt.Errorf("CreateBlockStorageSnapshot: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-block-storage-snapshot")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("CreateBlockStorageSnapshot: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "create-block-storage-snapshot")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -1206,17 +1288,18 @@ func (c Client) DetachBlockStorageVolume(ctx context.Context, id UUID) (*Operati
 	if err != nil {
 		return nil, fmt.Errorf("DetachBlockStorageVolume: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DetachBlockStorageVolume: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "detach-block-storage-volume")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("DetachBlockStorageVolume: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "detach-block-storage-volume")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -1242,7 +1325,7 @@ func (c Client) DetachBlockStorageVolume(ctx context.Context, id UUID) (*Operati
 
 type ResizeBlockStorageVolumeRequest struct {
 	// Volume size in GB
-	Size int64 `json:"size" validate:"required,gte=11,lte=10240"`
+	Size int64 `json:"size" validate:"required,gte=11"`
 }
 
 // This operation resizes a Block storage volume. Note: the volume can only grow, cannot be shrunk.
@@ -1258,6 +1341,7 @@ func (c Client) ResizeBlockStorageVolume(ctx context.Context, id UUID, req Resiz
 	if err != nil {
 		return nil, fmt.Errorf("ResizeBlockStorageVolume: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -1265,12 +1349,12 @@ func (c Client) ResizeBlockStorageVolume(ctx context.Context, id UUID, req Resiz
 		return nil, fmt.Errorf("ResizeBlockStorageVolume: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "resize-block-storage-volume")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("ResizeBlockStorageVolume: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "resize-block-storage-volume")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -1306,17 +1390,18 @@ func (c Client) GetDBAASCACertificate(ctx context.Context) (*GetDBAASCACertifica
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASCACertificate: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetDBAASCACertificate: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dbaas-ca-certificate")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("GetDBAASCACertificate: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-dbaas-ca-certificate")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -1348,17 +1433,18 @@ func (c Client) DeleteDBAASServiceGrafana(ctx context.Context, name string) (*Op
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASServiceGrafana: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASServiceGrafana: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-dbaas-service-grafana")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASServiceGrafana: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "delete-dbaas-service-grafana")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -1390,17 +1476,18 @@ func (c Client) GetDBAASServiceGrafana(ctx context.Context, name string) (*DBAAS
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASServiceGrafana: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetDBAASServiceGrafana: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dbaas-service-grafana")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("GetDBAASServiceGrafana: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-dbaas-service-grafana")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -1472,6 +1559,7 @@ func (c Client) CreateDBAASServiceGrafana(ctx context.Context, name string, req 
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASServiceGrafana: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -1479,12 +1567,12 @@ func (c Client) CreateDBAASServiceGrafana(ctx context.Context, name string, req 
 		return nil, fmt.Errorf("CreateDBAASServiceGrafana: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-dbaas-service-grafana")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("CreateDBAASServiceGrafana: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "create-dbaas-service-grafana")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -1555,6 +1643,7 @@ func (c Client) UpdateDBAASServiceGrafana(ctx context.Context, name string, req 
 	if err != nil {
 		return nil, fmt.Errorf("UpdateDBAASServiceGrafana: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -1562,12 +1651,12 @@ func (c Client) UpdateDBAASServiceGrafana(ctx context.Context, name string, req 
 		return nil, fmt.Errorf("UpdateDBAASServiceGrafana: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-dbaas-service-grafana")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("UpdateDBAASServiceGrafana: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "update-dbaas-service-grafana")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -1599,17 +1688,18 @@ func (c Client) StartDBAASGrafanaMaintenance(ctx context.Context, name string) (
 	if err != nil {
 		return nil, fmt.Errorf("StartDBAASGrafanaMaintenance: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("StartDBAASGrafanaMaintenance: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "start-dbaas-grafana-maintenance")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("StartDBAASGrafanaMaintenance: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "start-dbaas-grafana-maintenance")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -1654,6 +1744,7 @@ func (c Client) CreateDBAASIntegration(ctx context.Context, req CreateDBAASInteg
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASIntegration: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -1661,12 +1752,12 @@ func (c Client) CreateDBAASIntegration(ctx context.Context, req CreateDBAASInteg
 		return nil, fmt.Errorf("CreateDBAASIntegration: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-dbaas-integration")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("CreateDBAASIntegration: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "create-dbaas-integration")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -1711,17 +1802,18 @@ func (c Client) ListDBAASIntegrationSettings(ctx context.Context, integrationTyp
 	if err != nil {
 		return nil, fmt.Errorf("ListDBAASIntegrationSettings: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ListDBAASIntegrationSettings: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-dbaas-integration-settings")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("ListDBAASIntegrationSettings: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "list-dbaas-integration-settings")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -1757,17 +1849,18 @@ func (c Client) ListDBAASIntegrationTypes(ctx context.Context) (*ListDBAASIntegr
 	if err != nil {
 		return nil, fmt.Errorf("ListDBAASIntegrationTypes: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ListDBAASIntegrationTypes: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-dbaas-integration-types")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("ListDBAASIntegrationTypes: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "list-dbaas-integration-types")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -1799,17 +1892,18 @@ func (c Client) DeleteDBAASIntegration(ctx context.Context, id UUID) (*Operation
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASIntegration: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASIntegration: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-dbaas-integration")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASIntegration: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "delete-dbaas-integration")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -1841,17 +1935,18 @@ func (c Client) GetDBAASIntegration(ctx context.Context, id UUID) (*DBAASIntegra
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASIntegration: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetDBAASIntegration: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dbaas-integration")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("GetDBAASIntegration: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-dbaas-integration")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -1893,6 +1988,7 @@ func (c Client) UpdateDBAASIntegration(ctx context.Context, id UUID, req UpdateD
 	if err != nil {
 		return nil, fmt.Errorf("UpdateDBAASIntegration: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -1900,12 +1996,12 @@ func (c Client) UpdateDBAASIntegration(ctx context.Context, id UUID, req UpdateD
 		return nil, fmt.Errorf("UpdateDBAASIntegration: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-dbaas-integration")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("UpdateDBAASIntegration: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "update-dbaas-integration")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -1937,17 +2033,18 @@ func (c Client) DeleteDBAASServiceKafka(ctx context.Context, name string) (*Oper
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASServiceKafka: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASServiceKafka: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-dbaas-service-kafka")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASServiceKafka: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "delete-dbaas-service-kafka")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -1979,17 +2076,18 @@ func (c Client) GetDBAASServiceKafka(ctx context.Context, name string) (*DBAASSe
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASServiceKafka: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetDBAASServiceKafka: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dbaas-service-kafka")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("GetDBAASServiceKafka: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-dbaas-service-kafka")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -2084,6 +2182,7 @@ func (c Client) CreateDBAASServiceKafka(ctx context.Context, name string, req Cr
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASServiceKafka: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -2091,12 +2190,12 @@ func (c Client) CreateDBAASServiceKafka(ctx context.Context, name string, req Cr
 		return nil, fmt.Errorf("CreateDBAASServiceKafka: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-dbaas-service-kafka")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("CreateDBAASServiceKafka: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "create-dbaas-service-kafka")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -2191,6 +2290,7 @@ func (c Client) UpdateDBAASServiceKafka(ctx context.Context, name string, req Up
 	if err != nil {
 		return nil, fmt.Errorf("UpdateDBAASServiceKafka: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -2198,12 +2298,12 @@ func (c Client) UpdateDBAASServiceKafka(ctx context.Context, name string, req Up
 		return nil, fmt.Errorf("UpdateDBAASServiceKafka: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-dbaas-service-kafka")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("UpdateDBAASServiceKafka: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "update-dbaas-service-kafka")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -2235,17 +2335,18 @@ func (c Client) GetDBAASKafkaAclConfig(ctx context.Context, name string) (*DBAAS
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASKafkaAclConfig: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetDBAASKafkaAclConfig: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dbaas-kafka-acl-config")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("GetDBAASKafkaAclConfig: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-dbaas-kafka-acl-config")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -2277,17 +2378,18 @@ func (c Client) StartDBAASKafkaMaintenance(ctx context.Context, name string) (*O
 	if err != nil {
 		return nil, fmt.Errorf("StartDBAASKafkaMaintenance: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("StartDBAASKafkaMaintenance: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "start-dbaas-kafka-maintenance")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("StartDBAASKafkaMaintenance: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "start-dbaas-kafka-maintenance")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -2324,6 +2426,7 @@ func (c Client) CreateDBAASKafkaSchemaRegistryAclConfig(ctx context.Context, nam
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASKafkaSchemaRegistryAclConfig: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -2331,12 +2434,12 @@ func (c Client) CreateDBAASKafkaSchemaRegistryAclConfig(ctx context.Context, nam
 		return nil, fmt.Errorf("CreateDBAASKafkaSchemaRegistryAclConfig: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-dbaas-kafka-schema-registry-acl-config")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("CreateDBAASKafkaSchemaRegistryAclConfig: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "create-dbaas-kafka-schema-registry-acl-config")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -2368,17 +2471,18 @@ func (c Client) DeleteDBAASKafkaSchemaRegistryAclConfig(ctx context.Context, nam
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASKafkaSchemaRegistryAclConfig: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASKafkaSchemaRegistryAclConfig: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-dbaas-kafka-schema-registry-acl-config")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASKafkaSchemaRegistryAclConfig: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "delete-dbaas-kafka-schema-registry-acl-config")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -2415,6 +2519,7 @@ func (c Client) CreateDBAASKafkaTopicAclConfig(ctx context.Context, name string,
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASKafkaTopicAclConfig: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -2422,12 +2527,12 @@ func (c Client) CreateDBAASKafkaTopicAclConfig(ctx context.Context, name string,
 		return nil, fmt.Errorf("CreateDBAASKafkaTopicAclConfig: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-dbaas-kafka-topic-acl-config")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("CreateDBAASKafkaTopicAclConfig: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "create-dbaas-kafka-topic-acl-config")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -2459,17 +2564,18 @@ func (c Client) DeleteDBAASKafkaTopicAclConfig(ctx context.Context, name string,
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASKafkaTopicAclConfig: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASKafkaTopicAclConfig: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-dbaas-kafka-topic-acl-config")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASKafkaTopicAclConfig: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "delete-dbaas-kafka-topic-acl-config")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -2510,6 +2616,7 @@ func (c Client) CreateDBAASKafkaUser(ctx context.Context, serviceName string, re
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASKafkaUser: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -2517,12 +2624,12 @@ func (c Client) CreateDBAASKafkaUser(ctx context.Context, serviceName string, re
 		return nil, fmt.Errorf("CreateDBAASKafkaUser: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-dbaas-kafka-user")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("CreateDBAASKafkaUser: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "create-dbaas-kafka-user")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -2554,17 +2661,18 @@ func (c Client) DeleteDBAASKafkaUser(ctx context.Context, serviceName string, us
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASKafkaUser: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASKafkaUser: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-dbaas-kafka-user")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASKafkaUser: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "delete-dbaas-kafka-user")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -2605,6 +2713,7 @@ func (c Client) ResetDBAASKafkaUserPassword(ctx context.Context, serviceName str
 	if err != nil {
 		return nil, fmt.Errorf("ResetDBAASKafkaUserPassword: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -2612,12 +2721,12 @@ func (c Client) ResetDBAASKafkaUserPassword(ctx context.Context, serviceName str
 		return nil, fmt.Errorf("ResetDBAASKafkaUserPassword: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "reset-dbaas-kafka-user-password")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("ResetDBAASKafkaUserPassword: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "reset-dbaas-kafka-user-password")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -2649,17 +2758,18 @@ func (c Client) RevealDBAASKafkaUserPassword(ctx context.Context, serviceName st
 	if err != nil {
 		return nil, fmt.Errorf("RevealDBAASKafkaUserPassword: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("RevealDBAASKafkaUserPassword: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "reveal-dbaas-kafka-user-password")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("RevealDBAASKafkaUserPassword: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "reveal-dbaas-kafka-user-password")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -2691,17 +2801,18 @@ func (c Client) GetDBAASMigrationStatus(ctx context.Context, name string) (*DBAA
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASMigrationStatus: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetDBAASMigrationStatus: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dbaas-migration-status")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("GetDBAASMigrationStatus: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-dbaas-migration-status")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -2733,17 +2844,18 @@ func (c Client) DeleteDBAASServiceMysql(ctx context.Context, name string) (*Oper
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASServiceMysql: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASServiceMysql: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-dbaas-service-mysql")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASServiceMysql: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "delete-dbaas-service-mysql")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -2775,17 +2887,18 @@ func (c Client) GetDBAASServiceMysql(ctx context.Context, name string) (*DBAASSe
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASServiceMysql: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetDBAASServiceMysql: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dbaas-service-mysql")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("GetDBAASServiceMysql: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-dbaas-service-mysql")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -2913,6 +3026,7 @@ func (c Client) CreateDBAASServiceMysql(ctx context.Context, name string, req Cr
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASServiceMysql: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -2920,12 +3034,12 @@ func (c Client) CreateDBAASServiceMysql(ctx context.Context, name string, req Cr
 		return nil, fmt.Errorf("CreateDBAASServiceMysql: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-dbaas-service-mysql")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("CreateDBAASServiceMysql: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "create-dbaas-service-mysql")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -3027,6 +3141,7 @@ func (c Client) UpdateDBAASServiceMysql(ctx context.Context, name string, req Up
 	if err != nil {
 		return nil, fmt.Errorf("UpdateDBAASServiceMysql: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -3034,12 +3149,12 @@ func (c Client) UpdateDBAASServiceMysql(ctx context.Context, name string, req Up
 		return nil, fmt.Errorf("UpdateDBAASServiceMysql: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-dbaas-service-mysql")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("UpdateDBAASServiceMysql: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "update-dbaas-service-mysql")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -3071,17 +3186,18 @@ func (c Client) StartDBAASMysqlMaintenance(ctx context.Context, name string) (*O
 	if err != nil {
 		return nil, fmt.Errorf("StartDBAASMysqlMaintenance: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("StartDBAASMysqlMaintenance: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "start-dbaas-mysql-maintenance")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("StartDBAASMysqlMaintenance: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "start-dbaas-mysql-maintenance")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -3113,17 +3229,18 @@ func (c Client) StopDBAASMysqlMigration(ctx context.Context, name string) (*Oper
 	if err != nil {
 		return nil, fmt.Errorf("StopDBAASMysqlMigration: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("StopDBAASMysqlMigration: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "stop-dbaas-mysql-migration")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("StopDBAASMysqlMigration: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "stop-dbaas-mysql-migration")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -3164,6 +3281,7 @@ func (c Client) CreateDBAASMysqlDatabase(ctx context.Context, serviceName string
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASMysqlDatabase: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -3171,12 +3289,12 @@ func (c Client) CreateDBAASMysqlDatabase(ctx context.Context, serviceName string
 		return nil, fmt.Errorf("CreateDBAASMysqlDatabase: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-dbaas-mysql-database")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("CreateDBAASMysqlDatabase: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "create-dbaas-mysql-database")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -3208,17 +3326,18 @@ func (c Client) DeleteDBAASMysqlDatabase(ctx context.Context, serviceName string
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASMysqlDatabase: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASMysqlDatabase: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-dbaas-mysql-database")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASMysqlDatabase: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "delete-dbaas-mysql-database")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -3260,6 +3379,7 @@ func (c Client) CreateDBAASMysqlUser(ctx context.Context, serviceName string, re
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASMysqlUser: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -3267,12 +3387,12 @@ func (c Client) CreateDBAASMysqlUser(ctx context.Context, serviceName string, re
 		return nil, fmt.Errorf("CreateDBAASMysqlUser: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-dbaas-mysql-user")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("CreateDBAASMysqlUser: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "create-dbaas-mysql-user")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -3304,17 +3424,18 @@ func (c Client) DeleteDBAASMysqlUser(ctx context.Context, serviceName string, us
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASMysqlUser: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASMysqlUser: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-dbaas-mysql-user")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASMysqlUser: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "delete-dbaas-mysql-user")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -3356,6 +3477,7 @@ func (c Client) ResetDBAASMysqlUserPassword(ctx context.Context, serviceName str
 	if err != nil {
 		return nil, fmt.Errorf("ResetDBAASMysqlUserPassword: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -3363,12 +3485,12 @@ func (c Client) ResetDBAASMysqlUserPassword(ctx context.Context, serviceName str
 		return nil, fmt.Errorf("ResetDBAASMysqlUserPassword: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "reset-dbaas-mysql-user-password")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("ResetDBAASMysqlUserPassword: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "reset-dbaas-mysql-user-password")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -3400,17 +3522,18 @@ func (c Client) RevealDBAASMysqlUserPassword(ctx context.Context, serviceName st
 	if err != nil {
 		return nil, fmt.Errorf("RevealDBAASMysqlUserPassword: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("RevealDBAASMysqlUserPassword: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "reveal-dbaas-mysql-user-password")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("RevealDBAASMysqlUserPassword: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "reveal-dbaas-mysql-user-password")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -3442,17 +3565,18 @@ func (c Client) DeleteDBAASServiceOpensearch(ctx context.Context, name string) (
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASServiceOpensearch: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASServiceOpensearch: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-dbaas-service-opensearch")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASServiceOpensearch: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "delete-dbaas-service-opensearch")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -3484,17 +3608,18 @@ func (c Client) GetDBAASServiceOpensearch(ctx context.Context, name string) (*DB
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASServiceOpensearch: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetDBAASServiceOpensearch: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dbaas-service-opensearch")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("GetDBAASServiceOpensearch: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-dbaas-service-opensearch")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -3616,6 +3741,7 @@ func (c Client) CreateDBAASServiceOpensearch(ctx context.Context, name string, r
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASServiceOpensearch: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -3623,12 +3749,12 @@ func (c Client) CreateDBAASServiceOpensearch(ctx context.Context, name string, r
 		return nil, fmt.Errorf("CreateDBAASServiceOpensearch: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-dbaas-service-opensearch")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("CreateDBAASServiceOpensearch: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "create-dbaas-service-opensearch")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -3747,6 +3873,7 @@ func (c Client) UpdateDBAASServiceOpensearch(ctx context.Context, name string, r
 	if err != nil {
 		return nil, fmt.Errorf("UpdateDBAASServiceOpensearch: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -3754,12 +3881,12 @@ func (c Client) UpdateDBAASServiceOpensearch(ctx context.Context, name string, r
 		return nil, fmt.Errorf("UpdateDBAASServiceOpensearch: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-dbaas-service-opensearch")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("UpdateDBAASServiceOpensearch: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "update-dbaas-service-opensearch")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -3791,17 +3918,18 @@ func (c Client) GetDBAASOpensearchAclConfig(ctx context.Context, name string) (*
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASOpensearchAclConfig: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetDBAASOpensearchAclConfig: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dbaas-opensearch-acl-config")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("GetDBAASOpensearchAclConfig: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-dbaas-opensearch-acl-config")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -3838,6 +3966,7 @@ func (c Client) UpdateDBAASOpensearchAclConfig(ctx context.Context, name string,
 	if err != nil {
 		return nil, fmt.Errorf("UpdateDBAASOpensearchAclConfig: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -3845,12 +3974,12 @@ func (c Client) UpdateDBAASOpensearchAclConfig(ctx context.Context, name string,
 		return nil, fmt.Errorf("UpdateDBAASOpensearchAclConfig: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-dbaas-opensearch-acl-config")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("UpdateDBAASOpensearchAclConfig: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "update-dbaas-opensearch-acl-config")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -3882,17 +4011,18 @@ func (c Client) StartDBAASOpensearchMaintenance(ctx context.Context, name string
 	if err != nil {
 		return nil, fmt.Errorf("StartDBAASOpensearchMaintenance: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("StartDBAASOpensearchMaintenance: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "start-dbaas-opensearch-maintenance")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("StartDBAASOpensearchMaintenance: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "start-dbaas-opensearch-maintenance")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -3933,6 +4063,7 @@ func (c Client) CreateDBAASOpensearchUser(ctx context.Context, serviceName strin
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASOpensearchUser: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -3940,12 +4071,12 @@ func (c Client) CreateDBAASOpensearchUser(ctx context.Context, serviceName strin
 		return nil, fmt.Errorf("CreateDBAASOpensearchUser: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-dbaas-opensearch-user")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("CreateDBAASOpensearchUser: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "create-dbaas-opensearch-user")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -3977,17 +4108,18 @@ func (c Client) DeleteDBAASOpensearchUser(ctx context.Context, serviceName strin
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASOpensearchUser: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASOpensearchUser: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-dbaas-opensearch-user")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASOpensearchUser: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "delete-dbaas-opensearch-user")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -4028,6 +4160,7 @@ func (c Client) ResetDBAASOpensearchUserPassword(ctx context.Context, serviceNam
 	if err != nil {
 		return nil, fmt.Errorf("ResetDBAASOpensearchUserPassword: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -4035,12 +4168,12 @@ func (c Client) ResetDBAASOpensearchUserPassword(ctx context.Context, serviceNam
 		return nil, fmt.Errorf("ResetDBAASOpensearchUserPassword: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "reset-dbaas-opensearch-user-password")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("ResetDBAASOpensearchUserPassword: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "reset-dbaas-opensearch-user-password")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -4072,17 +4205,18 @@ func (c Client) RevealDBAASOpensearchUserPassword(ctx context.Context, serviceNa
 	if err != nil {
 		return nil, fmt.Errorf("RevealDBAASOpensearchUserPassword: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("RevealDBAASOpensearchUserPassword: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "reveal-dbaas-opensearch-user-password")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("RevealDBAASOpensearchUserPassword: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "reveal-dbaas-opensearch-user-password")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -4114,17 +4248,18 @@ func (c Client) DeleteDBAASServicePG(ctx context.Context, name string) (*Operati
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASServicePG: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASServicePG: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-dbaas-service-pg")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASServicePG: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "delete-dbaas-service-pg")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -4156,17 +4291,18 @@ func (c Client) GetDBAASServicePG(ctx context.Context, name string) (*DBAASServi
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASServicePG: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetDBAASServicePG: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dbaas-service-pg")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("GetDBAASServicePG: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-dbaas-service-pg")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -4303,6 +4439,7 @@ func (c Client) CreateDBAASServicePG(ctx context.Context, name string, req Creat
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASServicePG: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -4310,12 +4447,12 @@ func (c Client) CreateDBAASServicePG(ctx context.Context, name string, req Creat
 		return nil, fmt.Errorf("CreateDBAASServicePG: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-dbaas-service-pg")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("CreateDBAASServicePG: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "create-dbaas-service-pg")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -4429,6 +4566,7 @@ func (c Client) UpdateDBAASServicePG(ctx context.Context, name string, req Updat
 	if err != nil {
 		return nil, fmt.Errorf("UpdateDBAASServicePG: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -4436,12 +4574,12 @@ func (c Client) UpdateDBAASServicePG(ctx context.Context, name string, req Updat
 		return nil, fmt.Errorf("UpdateDBAASServicePG: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-dbaas-service-pg")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("UpdateDBAASServicePG: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "update-dbaas-service-pg")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -4473,17 +4611,18 @@ func (c Client) StartDBAASPGMaintenance(ctx context.Context, name string) (*Oper
 	if err != nil {
 		return nil, fmt.Errorf("StartDBAASPGMaintenance: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("StartDBAASPGMaintenance: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "start-dbaas-pg-maintenance")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("StartDBAASPGMaintenance: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "start-dbaas-pg-maintenance")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -4515,17 +4654,18 @@ func (c Client) StopDBAASPGMigration(ctx context.Context, name string) (*Operati
 	if err != nil {
 		return nil, fmt.Errorf("StopDBAASPGMigration: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("StopDBAASPGMigration: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "stop-dbaas-pg-migration")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("StopDBAASPGMigration: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "stop-dbaas-pg-migration")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -4570,6 +4710,7 @@ func (c Client) CreateDBAASPGConnectionPool(ctx context.Context, serviceName str
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASPGConnectionPool: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -4577,12 +4718,12 @@ func (c Client) CreateDBAASPGConnectionPool(ctx context.Context, serviceName str
 		return nil, fmt.Errorf("CreateDBAASPGConnectionPool: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-dbaas-pg-connection-pool")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("CreateDBAASPGConnectionPool: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "create-dbaas-pg-connection-pool")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -4614,17 +4755,18 @@ func (c Client) DeleteDBAASPGConnectionPool(ctx context.Context, serviceName str
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASPGConnectionPool: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASPGConnectionPool: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-dbaas-pg-connection-pool")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASPGConnectionPool: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "delete-dbaas-pg-connection-pool")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -4668,6 +4810,7 @@ func (c Client) UpdateDBAASPGConnectionPool(ctx context.Context, serviceName str
 	if err != nil {
 		return nil, fmt.Errorf("UpdateDBAASPGConnectionPool: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -4675,12 +4818,12 @@ func (c Client) UpdateDBAASPGConnectionPool(ctx context.Context, serviceName str
 		return nil, fmt.Errorf("UpdateDBAASPGConnectionPool: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-dbaas-pg-connection-pool")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("UpdateDBAASPGConnectionPool: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "update-dbaas-pg-connection-pool")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -4725,6 +4868,7 @@ func (c Client) CreateDBAASPGDatabase(ctx context.Context, serviceName string, r
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASPGDatabase: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -4732,12 +4876,12 @@ func (c Client) CreateDBAASPGDatabase(ctx context.Context, serviceName string, r
 		return nil, fmt.Errorf("CreateDBAASPGDatabase: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-dbaas-pg-database")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("CreateDBAASPGDatabase: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "create-dbaas-pg-database")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -4769,17 +4913,18 @@ func (c Client) DeleteDBAASPGDatabase(ctx context.Context, serviceName string, d
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASPGDatabase: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASPGDatabase: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-dbaas-pg-database")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASPGDatabase: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "delete-dbaas-pg-database")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -4821,6 +4966,7 @@ func (c Client) CreateDBAASPostgresUser(ctx context.Context, serviceName string,
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASPostgresUser: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -4828,12 +4974,12 @@ func (c Client) CreateDBAASPostgresUser(ctx context.Context, serviceName string,
 		return nil, fmt.Errorf("CreateDBAASPostgresUser: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-dbaas-postgres-user")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("CreateDBAASPostgresUser: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "create-dbaas-postgres-user")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -4865,17 +5011,18 @@ func (c Client) DeleteDBAASPostgresUser(ctx context.Context, serviceName string,
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASPostgresUser: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASPostgresUser: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-dbaas-postgres-user")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASPostgresUser: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "delete-dbaas-postgres-user")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -4916,6 +5063,7 @@ func (c Client) UpdateDBAASPostgresAllowReplication(ctx context.Context, service
 	if err != nil {
 		return nil, fmt.Errorf("UpdateDBAASPostgresAllowReplication: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -4923,12 +5071,12 @@ func (c Client) UpdateDBAASPostgresAllowReplication(ctx context.Context, service
 		return nil, fmt.Errorf("UpdateDBAASPostgresAllowReplication: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-dbaas-postgres-allow-replication")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("UpdateDBAASPostgresAllowReplication: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "update-dbaas-postgres-allow-replication")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -4969,6 +5117,7 @@ func (c Client) ResetDBAASPostgresUserPassword(ctx context.Context, serviceName 
 	if err != nil {
 		return nil, fmt.Errorf("ResetDBAASPostgresUserPassword: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -4976,12 +5125,12 @@ func (c Client) ResetDBAASPostgresUserPassword(ctx context.Context, serviceName 
 		return nil, fmt.Errorf("ResetDBAASPostgresUserPassword: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "reset-dbaas-postgres-user-password")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("ResetDBAASPostgresUserPassword: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "reset-dbaas-postgres-user-password")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -5013,17 +5162,18 @@ func (c Client) RevealDBAASPostgresUserPassword(ctx context.Context, serviceName
 	if err != nil {
 		return nil, fmt.Errorf("RevealDBAASPostgresUserPassword: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("RevealDBAASPostgresUserPassword: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "reveal-dbaas-postgres-user-password")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("RevealDBAASPostgresUserPassword: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "reveal-dbaas-postgres-user-password")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -5064,6 +5214,7 @@ func (c Client) CreateDBAASPGUpgradeCheck(ctx context.Context, service string, r
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASPGUpgradeCheck: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -5071,12 +5222,12 @@ func (c Client) CreateDBAASPGUpgradeCheck(ctx context.Context, service string, r
 		return nil, fmt.Errorf("CreateDBAASPGUpgradeCheck: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-dbaas-pg-upgrade-check")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("CreateDBAASPGUpgradeCheck: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "create-dbaas-pg-upgrade-check")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -5108,17 +5259,18 @@ func (c Client) DeleteDBAASServiceRedis(ctx context.Context, name string) (*Oper
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASServiceRedis: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASServiceRedis: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-dbaas-service-redis")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASServiceRedis: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "delete-dbaas-service-redis")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -5150,17 +5302,18 @@ func (c Client) GetDBAASServiceRedis(ctx context.Context, name string) (*DBAASSe
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASServiceRedis: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetDBAASServiceRedis: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dbaas-service-redis")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("GetDBAASServiceRedis: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-dbaas-service-redis")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -5255,6 +5408,7 @@ func (c Client) CreateDBAASServiceRedis(ctx context.Context, name string, req Cr
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASServiceRedis: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -5262,12 +5416,12 @@ func (c Client) CreateDBAASServiceRedis(ctx context.Context, name string, req Cr
 		return nil, fmt.Errorf("CreateDBAASServiceRedis: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-dbaas-service-redis")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("CreateDBAASServiceRedis: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "create-dbaas-service-redis")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -5359,6 +5513,7 @@ func (c Client) UpdateDBAASServiceRedis(ctx context.Context, name string, req Up
 	if err != nil {
 		return nil, fmt.Errorf("UpdateDBAASServiceRedis: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -5366,12 +5521,12 @@ func (c Client) UpdateDBAASServiceRedis(ctx context.Context, name string, req Up
 		return nil, fmt.Errorf("UpdateDBAASServiceRedis: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-dbaas-service-redis")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("UpdateDBAASServiceRedis: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "update-dbaas-service-redis")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -5403,17 +5558,18 @@ func (c Client) StartDBAASRedisMaintenance(ctx context.Context, name string) (*O
 	if err != nil {
 		return nil, fmt.Errorf("StartDBAASRedisMaintenance: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("StartDBAASRedisMaintenance: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "start-dbaas-redis-maintenance")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("StartDBAASRedisMaintenance: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "start-dbaas-redis-maintenance")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -5445,17 +5601,18 @@ func (c Client) StopDBAASRedisMigration(ctx context.Context, name string) (*Oper
 	if err != nil {
 		return nil, fmt.Errorf("StopDBAASRedisMigration: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("StopDBAASRedisMigration: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "stop-dbaas-redis-migration")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("StopDBAASRedisMigration: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "stop-dbaas-redis-migration")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -5496,6 +5653,7 @@ func (c Client) CreateDBAASRedisUser(ctx context.Context, serviceName string, re
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASRedisUser: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -5503,12 +5661,12 @@ func (c Client) CreateDBAASRedisUser(ctx context.Context, serviceName string, re
 		return nil, fmt.Errorf("CreateDBAASRedisUser: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-dbaas-redis-user")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("CreateDBAASRedisUser: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "create-dbaas-redis-user")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -5540,17 +5698,18 @@ func (c Client) DeleteDBAASRedisUser(ctx context.Context, serviceName string, us
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASRedisUser: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASRedisUser: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-dbaas-redis-user")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASRedisUser: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "delete-dbaas-redis-user")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -5591,6 +5750,7 @@ func (c Client) ResetDBAASRedisUserPassword(ctx context.Context, serviceName str
 	if err != nil {
 		return nil, fmt.Errorf("ResetDBAASRedisUserPassword: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -5598,12 +5758,12 @@ func (c Client) ResetDBAASRedisUserPassword(ctx context.Context, serviceName str
 		return nil, fmt.Errorf("ResetDBAASRedisUserPassword: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "reset-dbaas-redis-user-password")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("ResetDBAASRedisUserPassword: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "reset-dbaas-redis-user-password")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -5635,17 +5795,18 @@ func (c Client) RevealDBAASRedisUserPassword(ctx context.Context, serviceName st
 	if err != nil {
 		return nil, fmt.Errorf("RevealDBAASRedisUserPassword: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("RevealDBAASRedisUserPassword: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "reveal-dbaas-redis-user-password")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("RevealDBAASRedisUserPassword: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "reveal-dbaas-redis-user-password")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -5681,17 +5842,18 @@ func (c Client) ListDBAASServices(ctx context.Context) (*ListDBAASServicesRespon
 	if err != nil {
 		return nil, fmt.Errorf("ListDBAASServices: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ListDBAASServices: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-dbaas-services")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("ListDBAASServices: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "list-dbaas-services")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -5736,6 +5898,7 @@ func (c Client) GetDBAASServiceLogs(ctx context.Context, serviceName string, req
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASServiceLogs: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -5743,12 +5906,12 @@ func (c Client) GetDBAASServiceLogs(ctx context.Context, serviceName string, req
 		return nil, fmt.Errorf("GetDBAASServiceLogs: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dbaas-service-logs")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("GetDBAASServiceLogs: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-dbaas-service-logs")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -5804,6 +5967,7 @@ func (c Client) GetDBAASServiceMetrics(ctx context.Context, serviceName string, 
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASServiceMetrics: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -5811,12 +5975,12 @@ func (c Client) GetDBAASServiceMetrics(ctx context.Context, serviceName string, 
 		return nil, fmt.Errorf("GetDBAASServiceMetrics: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dbaas-service-metrics")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("GetDBAASServiceMetrics: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-dbaas-service-metrics")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -5852,17 +6016,18 @@ func (c Client) ListDBAASServiceTypes(ctx context.Context) (*ListDBAASServiceTyp
 	if err != nil {
 		return nil, fmt.Errorf("ListDBAASServiceTypes: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ListDBAASServiceTypes: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-dbaas-service-types")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("ListDBAASServiceTypes: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "list-dbaas-service-types")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -5894,17 +6059,18 @@ func (c Client) GetDBAASServiceType(ctx context.Context, serviceTypeName string)
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASServiceType: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetDBAASServiceType: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dbaas-service-type")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("GetDBAASServiceType: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-dbaas-service-type")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -5936,17 +6102,18 @@ func (c Client) DeleteDBAASService(ctx context.Context, name string) (*Operation
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASService: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASService: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-dbaas-service")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASService: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "delete-dbaas-service")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -5995,17 +6162,18 @@ func (c Client) GetDBAASSettingsGrafana(ctx context.Context) (*GetDBAASSettingsG
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASSettingsGrafana: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetDBAASSettingsGrafana: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dbaas-settings-grafana")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("GetDBAASSettingsGrafana: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-dbaas-settings-grafana")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -6084,17 +6252,18 @@ func (c Client) GetDBAASSettingsKafka(ctx context.Context) (*GetDBAASSettingsKaf
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASSettingsKafka: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetDBAASSettingsKafka: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dbaas-settings-kafka")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("GetDBAASSettingsKafka: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-dbaas-settings-kafka")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -6143,17 +6312,18 @@ func (c Client) GetDBAASSettingsMysql(ctx context.Context) (*GetDBAASSettingsMys
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASSettingsMysql: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetDBAASSettingsMysql: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dbaas-settings-mysql")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("GetDBAASSettingsMysql: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-dbaas-settings-mysql")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -6202,17 +6372,18 @@ func (c Client) GetDBAASSettingsOpensearch(ctx context.Context) (*GetDBAASSettin
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASSettingsOpensearch: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetDBAASSettingsOpensearch: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dbaas-settings-opensearch")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("GetDBAASSettingsOpensearch: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-dbaas-settings-opensearch")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -6291,17 +6462,18 @@ func (c Client) GetDBAASSettingsPG(ctx context.Context) (*GetDBAASSettingsPGResp
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASSettingsPG: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetDBAASSettingsPG: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dbaas-settings-pg")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("GetDBAASSettingsPG: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-dbaas-settings-pg")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -6350,17 +6522,18 @@ func (c Client) GetDBAASSettingsRedis(ctx context.Context) (*GetDBAASSettingsRed
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASSettingsRedis: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetDBAASSettingsRedis: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dbaas-settings-redis")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("GetDBAASSettingsRedis: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-dbaas-settings-redis")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -6405,6 +6578,7 @@ func (c Client) CreateDBAASTaskMigrationCheck(ctx context.Context, service strin
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASTaskMigrationCheck: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -6412,12 +6586,12 @@ func (c Client) CreateDBAASTaskMigrationCheck(ctx context.Context, service strin
 		return nil, fmt.Errorf("CreateDBAASTaskMigrationCheck: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-dbaas-task-migration-check")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("CreateDBAASTaskMigrationCheck: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "create-dbaas-task-migration-check")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -6449,17 +6623,18 @@ func (c Client) GetDBAASTask(ctx context.Context, service string, id UUID) (*DBA
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASTask: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetDBAASTask: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dbaas-task")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("GetDBAASTask: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-dbaas-task")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -6506,17 +6681,18 @@ func (c Client) ListDeployTargets(ctx context.Context) (*ListDeployTargetsRespon
 	if err != nil {
 		return nil, fmt.Errorf("ListDeployTargets: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ListDeployTargets: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-deploy-targets")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("ListDeployTargets: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "list-deploy-targets")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -6548,17 +6724,18 @@ func (c Client) GetDeployTarget(ctx context.Context, id UUID) (*DeployTarget, er
 	if err != nil {
 		return nil, fmt.Errorf("GetDeployTarget: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetDeployTarget: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-deploy-target")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("GetDeployTarget: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-deploy-target")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -6594,17 +6771,18 @@ func (c Client) ListDNSDomains(ctx context.Context) (*ListDNSDomainsResponse, er
 	if err != nil {
 		return nil, fmt.Errorf("ListDNSDomains: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ListDNSDomains: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-dns-domains")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("ListDNSDomains: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "list-dns-domains")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -6647,6 +6825,7 @@ func (c Client) CreateDNSDomain(ctx context.Context, req CreateDNSDomainRequest)
 	if err != nil {
 		return nil, fmt.Errorf("CreateDNSDomain: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -6654,12 +6833,12 @@ func (c Client) CreateDNSDomain(ctx context.Context, req CreateDNSDomainRequest)
 		return nil, fmt.Errorf("CreateDNSDomain: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-dns-domain")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("CreateDNSDomain: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "create-dns-domain")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -6706,17 +6885,18 @@ func (c Client) ListDNSDomainRecords(ctx context.Context, domainID UUID) (*ListD
 	if err != nil {
 		return nil, fmt.Errorf("ListDNSDomainRecords: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ListDNSDomainRecords: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-dns-domain-records")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("ListDNSDomainRecords: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "list-dns-domain-records")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -6786,6 +6966,7 @@ func (c Client) CreateDNSDomainRecord(ctx context.Context, domainID UUID, req Cr
 	if err != nil {
 		return nil, fmt.Errorf("CreateDNSDomainRecord: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -6793,12 +6974,12 @@ func (c Client) CreateDNSDomainRecord(ctx context.Context, domainID UUID, req Cr
 		return nil, fmt.Errorf("CreateDNSDomainRecord: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-dns-domain-record")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("CreateDNSDomainRecord: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "create-dns-domain-record")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -6830,17 +7011,18 @@ func (c Client) DeleteDNSDomainRecord(ctx context.Context, domainID UUID, record
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDNSDomainRecord: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteDNSDomainRecord: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-dns-domain-record")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("DeleteDNSDomainRecord: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "delete-dns-domain-record")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -6872,17 +7054,18 @@ func (c Client) GetDNSDomainRecord(ctx context.Context, domainID UUID, recordID 
 	if err != nil {
 		return nil, fmt.Errorf("GetDNSDomainRecord: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetDNSDomainRecord: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dns-domain-record")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("GetDNSDomainRecord: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-dns-domain-record")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -6930,6 +7113,7 @@ func (c Client) UpdateDNSDomainRecord(ctx context.Context, domainID UUID, record
 	if err != nil {
 		return nil, fmt.Errorf("UpdateDNSDomainRecord: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -6937,12 +7121,12 @@ func (c Client) UpdateDNSDomainRecord(ctx context.Context, domainID UUID, record
 		return nil, fmt.Errorf("UpdateDNSDomainRecord: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-dns-domain-record")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("UpdateDNSDomainRecord: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "update-dns-domain-record")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -6974,17 +7158,18 @@ func (c Client) DeleteDNSDomain(ctx context.Context, id UUID) (*Operation, error
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDNSDomain: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteDNSDomain: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-dns-domain")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("DeleteDNSDomain: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "delete-dns-domain")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -7016,17 +7201,18 @@ func (c Client) GetDNSDomain(ctx context.Context, id UUID) (*DNSDomain, error) {
 	if err != nil {
 		return nil, fmt.Errorf("GetDNSDomain: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetDNSDomain: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dns-domain")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("GetDNSDomain: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-dns-domain")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -7062,17 +7248,18 @@ func (c Client) GetDNSDomainZoneFile(ctx context.Context, id UUID) (*GetDNSDomai
 	if err != nil {
 		return nil, fmt.Errorf("GetDNSDomainZoneFile: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetDNSDomainZoneFile: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dns-domain-zone-file")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("GetDNSDomainZoneFile: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-dns-domain-zone-file")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -7108,17 +7295,18 @@ func (c Client) ListElasticIPS(ctx context.Context) (*ListElasticIPSResponse, er
 	if err != nil {
 		return nil, fmt.Errorf("ListElasticIPS: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ListElasticIPS: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-elastic-ips")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("ListElasticIPS: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "list-elastic-ips")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -7172,6 +7360,7 @@ func (c Client) CreateElasticIP(ctx context.Context, req CreateElasticIPRequest)
 	if err != nil {
 		return nil, fmt.Errorf("CreateElasticIP: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -7179,12 +7368,12 @@ func (c Client) CreateElasticIP(ctx context.Context, req CreateElasticIPRequest)
 		return nil, fmt.Errorf("CreateElasticIP: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-elastic-ip")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("CreateElasticIP: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "create-elastic-ip")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -7216,17 +7405,18 @@ func (c Client) DeleteElasticIP(ctx context.Context, id UUID) (*Operation, error
 	if err != nil {
 		return nil, fmt.Errorf("DeleteElasticIP: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteElasticIP: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-elastic-ip")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("DeleteElasticIP: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "delete-elastic-ip")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -7258,17 +7448,18 @@ func (c Client) GetElasticIP(ctx context.Context, id UUID) (*ElasticIP, error) {
 	if err != nil {
 		return nil, fmt.Errorf("GetElasticIP: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetElasticIP: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-elastic-ip")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("GetElasticIP: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-elastic-ip")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -7313,6 +7504,7 @@ func (c Client) UpdateElasticIP(ctx context.Context, id UUID, req UpdateElasticI
 	if err != nil {
 		return nil, fmt.Errorf("UpdateElasticIP: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -7320,12 +7512,12 @@ func (c Client) UpdateElasticIP(ctx context.Context, id UUID, req UpdateElasticI
 		return nil, fmt.Errorf("UpdateElasticIP: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-elastic-ip")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("UpdateElasticIP: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "update-elastic-ip")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -7363,17 +7555,18 @@ func (c Client) ResetElasticIPField(ctx context.Context, id UUID, field ResetEla
 	if err != nil {
 		return nil, fmt.Errorf("ResetElasticIPField: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ResetElasticIPField: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "reset-elastic-ip-field")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("ResetElasticIPField: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "reset-elastic-ip-field")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -7415,6 +7608,7 @@ func (c Client) AttachInstanceToElasticIP(ctx context.Context, id UUID, req Atta
 	if err != nil {
 		return nil, fmt.Errorf("AttachInstanceToElasticIP: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -7422,12 +7616,12 @@ func (c Client) AttachInstanceToElasticIP(ctx context.Context, id UUID, req Atta
 		return nil, fmt.Errorf("AttachInstanceToElasticIP: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "attach-instance-to-elastic-ip")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("AttachInstanceToElasticIP: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "attach-instance-to-elastic-ip")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -7469,6 +7663,7 @@ func (c Client) DetachInstanceFromElasticIP(ctx context.Context, id UUID, req De
 	if err != nil {
 		return nil, fmt.Errorf("DetachInstanceFromElasticIP: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -7476,12 +7671,12 @@ func (c Client) DetachInstanceFromElasticIP(ctx context.Context, id UUID, req De
 		return nil, fmt.Errorf("DetachInstanceFromElasticIP: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "detach-instance-from-elastic-ip")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("DetachInstanceFromElasticIP: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "detach-instance-from-elastic-ip")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -7529,6 +7724,7 @@ func (c Client) ListEvents(ctx context.Context, opts ...ListEventsOpt) ([]Event,
 	if err != nil {
 		return nil, fmt.Errorf("ListEvents: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if len(opts) > 0 {
 		q := request.URL.Query()
@@ -7542,12 +7738,12 @@ func (c Client) ListEvents(ctx context.Context, opts ...ListEventsOpt) ([]Event,
 		return nil, fmt.Errorf("ListEvents: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-events")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("ListEvents: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "list-events")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -7579,17 +7775,18 @@ func (c Client) GetIAMOrganizationPolicy(ctx context.Context) (*IAMPolicy, error
 	if err != nil {
 		return nil, fmt.Errorf("GetIAMOrganizationPolicy: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetIAMOrganizationPolicy: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-iam-organization-policy")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("GetIAMOrganizationPolicy: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-iam-organization-policy")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -7626,6 +7823,7 @@ func (c Client) UpdateIAMOrganizationPolicy(ctx context.Context, req IAMPolicy) 
 	if err != nil {
 		return nil, fmt.Errorf("UpdateIAMOrganizationPolicy: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -7633,12 +7831,12 @@ func (c Client) UpdateIAMOrganizationPolicy(ctx context.Context, req IAMPolicy) 
 		return nil, fmt.Errorf("UpdateIAMOrganizationPolicy: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-iam-organization-policy")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("UpdateIAMOrganizationPolicy: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "update-iam-organization-policy")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -7685,17 +7883,18 @@ func (c Client) ListIAMRoles(ctx context.Context) (*ListIAMRolesResponse, error)
 	if err != nil {
 		return nil, fmt.Errorf("ListIAMRoles: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ListIAMRoles: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-iam-roles")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("ListIAMRoles: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "list-iam-roles")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -7746,6 +7945,7 @@ func (c Client) CreateIAMRole(ctx context.Context, req CreateIAMRoleRequest) (*O
 	if err != nil {
 		return nil, fmt.Errorf("CreateIAMRole: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -7753,12 +7953,12 @@ func (c Client) CreateIAMRole(ctx context.Context, req CreateIAMRoleRequest) (*O
 		return nil, fmt.Errorf("CreateIAMRole: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-iam-role")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("CreateIAMRole: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "create-iam-role")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -7790,17 +7990,18 @@ func (c Client) DeleteIAMRole(ctx context.Context, id UUID) (*Operation, error) 
 	if err != nil {
 		return nil, fmt.Errorf("DeleteIAMRole: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteIAMRole: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-iam-role")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("DeleteIAMRole: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "delete-iam-role")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -7832,17 +8033,18 @@ func (c Client) GetIAMRole(ctx context.Context, id UUID) (*IAMRole, error) {
 	if err != nil {
 		return nil, fmt.Errorf("GetIAMRole: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetIAMRole: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-iam-role")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("GetIAMRole: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-iam-role")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -7887,6 +8089,7 @@ func (c Client) UpdateIAMRole(ctx context.Context, id UUID, req UpdateIAMRoleReq
 	if err != nil {
 		return nil, fmt.Errorf("UpdateIAMRole: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -7894,12 +8097,12 @@ func (c Client) UpdateIAMRole(ctx context.Context, id UUID, req UpdateIAMRoleReq
 		return nil, fmt.Errorf("UpdateIAMRole: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-iam-role")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("UpdateIAMRole: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "update-iam-role")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -7936,6 +8139,7 @@ func (c Client) UpdateIAMRolePolicy(ctx context.Context, id UUID, req IAMPolicy)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateIAMRolePolicy: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -7943,12 +8147,12 @@ func (c Client) UpdateIAMRolePolicy(ctx context.Context, id UUID, req IAMPolicy)
 		return nil, fmt.Errorf("UpdateIAMRolePolicy: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-iam-role-policy")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("UpdateIAMRolePolicy: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "update-iam-role-policy")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -8062,6 +8266,7 @@ func (c Client) ListInstances(ctx context.Context, opts ...ListInstancesOpt) (*L
 	if err != nil {
 		return nil, fmt.Errorf("ListInstances: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if len(opts) > 0 {
 		q := request.URL.Query()
@@ -8075,12 +8280,12 @@ func (c Client) ListInstances(ctx context.Context, opts ...ListInstancesOpt) (*L
 		return nil, fmt.Errorf("ListInstances: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-instances")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("ListInstances: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "list-instances")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -8129,7 +8334,7 @@ type CreateInstanceRequest struct {
 	SSHKeys []SSHKey `json:"ssh-keys,omitempty"`
 	// Instance template
 	Template *Template `json:"template" validate:"required"`
-	// Instance Cloud-init user-data
+	// Instance Cloud-init user-data (base64 encoded)
 	UserData string `json:"user-data,omitempty" validate:"omitempty,gte=1,lte=32768"`
 }
 
@@ -8146,6 +8351,7 @@ func (c Client) CreateInstance(ctx context.Context, req CreateInstanceRequest) (
 	if err != nil {
 		return nil, fmt.Errorf("CreateInstance: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -8153,12 +8359,12 @@ func (c Client) CreateInstance(ctx context.Context, req CreateInstanceRequest) (
 		return nil, fmt.Errorf("CreateInstance: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-instance")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("CreateInstance: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "create-instance")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -8205,17 +8411,18 @@ func (c Client) ListInstancePools(ctx context.Context) (*ListInstancePoolsRespon
 	if err != nil {
 		return nil, fmt.Errorf("ListInstancePools: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ListInstancePools: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-instance-pools")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("ListInstancePools: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "list-instance-pools")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -8291,6 +8498,7 @@ func (c Client) CreateInstancePool(ctx context.Context, req CreateInstancePoolRe
 	if err != nil {
 		return nil, fmt.Errorf("CreateInstancePool: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -8298,12 +8506,12 @@ func (c Client) CreateInstancePool(ctx context.Context, req CreateInstancePoolRe
 		return nil, fmt.Errorf("CreateInstancePool: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-instance-pool")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("CreateInstancePool: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "create-instance-pool")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -8335,17 +8543,18 @@ func (c Client) DeleteInstancePool(ctx context.Context, id UUID) (*Operation, er
 	if err != nil {
 		return nil, fmt.Errorf("DeleteInstancePool: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteInstancePool: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-instance-pool")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("DeleteInstancePool: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "delete-instance-pool")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -8377,17 +8586,18 @@ func (c Client) GetInstancePool(ctx context.Context, id UUID) (*InstancePool, er
 	if err != nil {
 		return nil, fmt.Errorf("GetInstancePool: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetInstancePool: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-instance-pool")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("GetInstancePool: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-instance-pool")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -8413,15 +8623,15 @@ func (c Client) GetInstancePool(ctx context.Context, id UUID) (*InstancePool, er
 
 type UpdateInstancePoolRequest struct {
 	// Instance Pool Anti-affinity Groups
-	AntiAffinityGroups []AntiAffinityGroup `json:"anti-affinity-groups,omitempty"`
+	AntiAffinityGroups []AntiAffinityGroup `json:"anti-affinity-groups"`
 	// Deploy target
-	DeployTarget *DeployTarget `json:"deploy-target,omitempty"`
+	DeployTarget *DeployTarget `json:"deploy-target"`
 	// Instance Pool description
 	Description string `json:"description,omitempty" validate:"omitempty,lte=255"`
 	// Instances disk size in GB
 	DiskSize int64 `json:"disk-size,omitempty" validate:"omitempty,gte=10,lte=50000"`
 	// Instances Elastic IPs
-	ElasticIPS []ElasticIP `json:"elastic-ips,omitempty"`
+	ElasticIPS []ElasticIP `json:"elastic-ips"`
 	// Prefix to apply to Instances names (default: pool)
 	InstancePrefix *string `json:"instance-prefix,omitempty"`
 	// Compute instance type
@@ -8434,14 +8644,14 @@ type UpdateInstancePoolRequest struct {
 	// Instance Pool name
 	Name string `json:"name,omitempty" validate:"omitempty,gte=1,lte=255"`
 	// Instance Pool Private Networks
-	PrivateNetworks    []PrivateNetwork   `json:"private-networks,omitempty"`
+	PrivateNetworks    []PrivateNetwork   `json:"private-networks"`
 	PublicIPAssignment PublicIPAssignment `json:"public-ip-assignment,omitempty"`
 	// Instance Pool Security Groups
-	SecurityGroups []SecurityGroup `json:"security-groups,omitempty"`
+	SecurityGroups []SecurityGroup `json:"security-groups"`
 	// SSH key
-	SSHKey *SSHKey `json:"ssh-key,omitempty"`
+	SSHKey *SSHKey `json:"ssh-key"`
 	// Instances SSH keys
-	SSHKeys []SSHKey `json:"ssh-keys,omitempty"`
+	SSHKeys []SSHKey `json:"ssh-keys"`
 	// Instance template
 	Template *Template `json:"template,omitempty"`
 	// Instances Cloud-init user-data
@@ -8461,6 +8671,7 @@ func (c Client) UpdateInstancePool(ctx context.Context, id UUID, req UpdateInsta
 	if err != nil {
 		return nil, fmt.Errorf("UpdateInstancePool: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -8468,12 +8679,12 @@ func (c Client) UpdateInstancePool(ctx context.Context, id UUID, req UpdateInsta
 		return nil, fmt.Errorf("UpdateInstancePool: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-instance-pool")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("UpdateInstancePool: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "update-instance-pool")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -8520,17 +8731,18 @@ func (c Client) ResetInstancePoolField(ctx context.Context, id UUID, field Reset
 	if err != nil {
 		return nil, fmt.Errorf("ResetInstancePoolField: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ResetInstancePoolField: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "reset-instance-pool-field")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("ResetInstancePoolField: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "reset-instance-pool-field")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -8571,6 +8783,7 @@ func (c Client) EvictInstancePoolMembers(ctx context.Context, id UUID, req Evict
 	if err != nil {
 		return nil, fmt.Errorf("EvictInstancePoolMembers: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -8578,12 +8791,12 @@ func (c Client) EvictInstancePoolMembers(ctx context.Context, id UUID, req Evict
 		return nil, fmt.Errorf("EvictInstancePoolMembers: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "evict-instance-pool-members")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("EvictInstancePoolMembers: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "evict-instance-pool-members")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -8625,6 +8838,7 @@ func (c Client) ScaleInstancePool(ctx context.Context, id UUID, req ScaleInstanc
 	if err != nil {
 		return nil, fmt.Errorf("ScaleInstancePool: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -8632,12 +8846,12 @@ func (c Client) ScaleInstancePool(ctx context.Context, id UUID, req ScaleInstanc
 		return nil, fmt.Errorf("ScaleInstancePool: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "scale-instance-pool")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("ScaleInstancePool: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "scale-instance-pool")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -8673,17 +8887,18 @@ func (c Client) ListInstanceTypes(ctx context.Context) (*ListInstanceTypesRespon
 	if err != nil {
 		return nil, fmt.Errorf("ListInstanceTypes: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ListInstanceTypes: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-instance-types")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("ListInstanceTypes: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "list-instance-types")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -8715,17 +8930,18 @@ func (c Client) GetInstanceType(ctx context.Context, id UUID) (*InstanceType, er
 	if err != nil {
 		return nil, fmt.Errorf("GetInstanceType: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetInstanceType: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-instance-type")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("GetInstanceType: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-instance-type")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -8757,17 +8973,18 @@ func (c Client) DeleteInstance(ctx context.Context, id UUID) (*Operation, error)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteInstance: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteInstance: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-instance")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("DeleteInstance: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "delete-instance")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -8799,17 +9016,18 @@ func (c Client) GetInstance(ctx context.Context, id UUID) (*Instance, error) {
 	if err != nil {
 		return nil, fmt.Errorf("GetInstance: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetInstance: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-instance")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("GetInstance: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-instance")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -8838,7 +9056,7 @@ type UpdateInstanceRequest struct {
 	// Instance name
 	Name               string             `json:"name,omitempty" validate:"omitempty,gte=1,lte=255"`
 	PublicIPAssignment PublicIPAssignment `json:"public-ip-assignment,omitempty"`
-	// Instance Cloud-init user-data
+	// Instance Cloud-init user-data (base64 encoded)
 	UserData string `json:"user-data,omitempty" validate:"omitempty,gte=1,lte=32768"`
 }
 
@@ -8855,6 +9073,7 @@ func (c Client) UpdateInstance(ctx context.Context, id UUID, req UpdateInstanceR
 	if err != nil {
 		return nil, fmt.Errorf("UpdateInstance: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -8862,12 +9081,12 @@ func (c Client) UpdateInstance(ctx context.Context, id UUID, req UpdateInstanceR
 		return nil, fmt.Errorf("UpdateInstance: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-instance")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("UpdateInstance: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "update-instance")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -8905,17 +9124,18 @@ func (c Client) ResetInstanceField(ctx context.Context, id UUID, field ResetInst
 	if err != nil {
 		return nil, fmt.Errorf("ResetInstanceField: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ResetInstanceField: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "reset-instance-field")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("ResetInstanceField: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "reset-instance-field")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -8947,17 +9167,18 @@ func (c Client) AddInstanceProtection(ctx context.Context, id UUID) (*Operation,
 	if err != nil {
 		return nil, fmt.Errorf("AddInstanceProtection: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("AddInstanceProtection: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "add-instance-protection")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("AddInstanceProtection: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "add-instance-protection")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -8989,17 +9210,18 @@ func (c Client) CreateSnapshot(ctx context.Context, id UUID) (*Operation, error)
 	if err != nil {
 		return nil, fmt.Errorf("CreateSnapshot: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("CreateSnapshot: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-snapshot")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("CreateSnapshot: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "create-snapshot")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -9035,17 +9257,18 @@ func (c Client) RevealInstancePassword(ctx context.Context, id UUID) (*InstanceP
 	if err != nil {
 		return nil, fmt.Errorf("RevealInstancePassword: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("RevealInstancePassword: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "reveal-instance-password")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("RevealInstancePassword: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "reveal-instance-password")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -9077,17 +9300,18 @@ func (c Client) RebootInstance(ctx context.Context, id UUID) (*Operation, error)
 	if err != nil {
 		return nil, fmt.Errorf("RebootInstance: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("RebootInstance: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "reboot-instance")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("RebootInstance: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "reboot-instance")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -9119,17 +9343,18 @@ func (c Client) RemoveInstanceProtection(ctx context.Context, id UUID) (*Operati
 	if err != nil {
 		return nil, fmt.Errorf("RemoveInstanceProtection: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("RemoveInstanceProtection: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "remove-instance-protection")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("RemoveInstanceProtection: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "remove-instance-protection")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -9173,6 +9398,7 @@ func (c Client) ResetInstance(ctx context.Context, id UUID, req ResetInstanceReq
 	if err != nil {
 		return nil, fmt.Errorf("ResetInstance: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -9180,12 +9406,12 @@ func (c Client) ResetInstance(ctx context.Context, id UUID, req ResetInstanceReq
 		return nil, fmt.Errorf("ResetInstance: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "reset-instance")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("ResetInstance: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "reset-instance")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -9217,17 +9443,18 @@ func (c Client) ResetInstancePassword(ctx context.Context, id UUID) (*Operation,
 	if err != nil {
 		return nil, fmt.Errorf("ResetInstancePassword: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ResetInstancePassword: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "reset-instance-password")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("ResetInstancePassword: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "reset-instance-password")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -9269,6 +9496,7 @@ func (c Client) ResizeInstanceDisk(ctx context.Context, id UUID, req ResizeInsta
 	if err != nil {
 		return nil, fmt.Errorf("ResizeInstanceDisk: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -9276,12 +9504,12 @@ func (c Client) ResizeInstanceDisk(ctx context.Context, id UUID, req ResizeInsta
 		return nil, fmt.Errorf("ResizeInstanceDisk: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "resize-instance-disk")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("ResizeInstanceDisk: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "resize-instance-disk")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -9323,6 +9551,7 @@ func (c Client) ScaleInstance(ctx context.Context, id UUID, req ScaleInstanceReq
 	if err != nil {
 		return nil, fmt.Errorf("ScaleInstance: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -9330,12 +9559,12 @@ func (c Client) ScaleInstance(ctx context.Context, id UUID, req ScaleInstanceReq
 		return nil, fmt.Errorf("ScaleInstance: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "scale-instance")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("ScaleInstance: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "scale-instance")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -9384,6 +9613,7 @@ func (c Client) StartInstance(ctx context.Context, id UUID, req StartInstanceReq
 	if err != nil {
 		return nil, fmt.Errorf("StartInstance: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -9391,12 +9621,12 @@ func (c Client) StartInstance(ctx context.Context, id UUID, req StartInstanceReq
 		return nil, fmt.Errorf("StartInstance: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "start-instance")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("StartInstance: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "start-instance")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -9428,17 +9658,18 @@ func (c Client) StopInstance(ctx context.Context, id UUID) (*Operation, error) {
 	if err != nil {
 		return nil, fmt.Errorf("StopInstance: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("StopInstance: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "stop-instance")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("StopInstance: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "stop-instance")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -9481,6 +9712,7 @@ func (c Client) RevertInstanceToSnapshot(ctx context.Context, instanceID UUID, r
 	if err != nil {
 		return nil, fmt.Errorf("RevertInstanceToSnapshot: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -9488,12 +9720,12 @@ func (c Client) RevertInstanceToSnapshot(ctx context.Context, instanceID UUID, r
 		return nil, fmt.Errorf("RevertInstanceToSnapshot: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "revert-instance-to-snapshot")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("RevertInstanceToSnapshot: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "revert-instance-to-snapshot")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -9540,17 +9772,18 @@ func (c Client) ListLoadBalancers(ctx context.Context) (*ListLoadBalancersRespon
 	if err != nil {
 		return nil, fmt.Errorf("ListLoadBalancers: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ListLoadBalancers: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-load-balancers")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("ListLoadBalancers: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "list-load-balancers")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -9595,6 +9828,7 @@ func (c Client) CreateLoadBalancer(ctx context.Context, req CreateLoadBalancerRe
 	if err != nil {
 		return nil, fmt.Errorf("CreateLoadBalancer: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -9602,12 +9836,12 @@ func (c Client) CreateLoadBalancer(ctx context.Context, req CreateLoadBalancerRe
 		return nil, fmt.Errorf("CreateLoadBalancer: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-load-balancer")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("CreateLoadBalancer: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "create-load-balancer")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -9639,17 +9873,18 @@ func (c Client) DeleteLoadBalancer(ctx context.Context, id UUID) (*Operation, er
 	if err != nil {
 		return nil, fmt.Errorf("DeleteLoadBalancer: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteLoadBalancer: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-load-balancer")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("DeleteLoadBalancer: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "delete-load-balancer")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -9681,17 +9916,18 @@ func (c Client) GetLoadBalancer(ctx context.Context, id UUID) (*LoadBalancer, er
 	if err != nil {
 		return nil, fmt.Errorf("GetLoadBalancer: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetLoadBalancer: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-load-balancer")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("GetLoadBalancer: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-load-balancer")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -9736,6 +9972,7 @@ func (c Client) UpdateLoadBalancer(ctx context.Context, id UUID, req UpdateLoadB
 	if err != nil {
 		return nil, fmt.Errorf("UpdateLoadBalancer: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -9743,12 +9980,12 @@ func (c Client) UpdateLoadBalancer(ctx context.Context, id UUID, req UpdateLoadB
 		return nil, fmt.Errorf("UpdateLoadBalancer: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-load-balancer")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("UpdateLoadBalancer: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "update-load-balancer")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -9818,6 +10055,7 @@ func (c Client) AddServiceToLoadBalancer(ctx context.Context, id UUID, req AddSe
 	if err != nil {
 		return nil, fmt.Errorf("AddServiceToLoadBalancer: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -9825,12 +10063,12 @@ func (c Client) AddServiceToLoadBalancer(ctx context.Context, id UUID, req AddSe
 		return nil, fmt.Errorf("AddServiceToLoadBalancer: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "add-service-to-load-balancer")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("AddServiceToLoadBalancer: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "add-service-to-load-balancer")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -9862,17 +10100,18 @@ func (c Client) DeleteLoadBalancerService(ctx context.Context, id UUID, serviceI
 	if err != nil {
 		return nil, fmt.Errorf("DeleteLoadBalancerService: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteLoadBalancerService: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-load-balancer-service")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("DeleteLoadBalancerService: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "delete-load-balancer-service")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -9904,17 +10143,18 @@ func (c Client) GetLoadBalancerService(ctx context.Context, id UUID, serviceID U
 	if err != nil {
 		return nil, fmt.Errorf("GetLoadBalancerService: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetLoadBalancerService: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-load-balancer-service")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("GetLoadBalancerService: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-load-balancer-service")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -9982,6 +10222,7 @@ func (c Client) UpdateLoadBalancerService(ctx context.Context, id UUID, serviceI
 	if err != nil {
 		return nil, fmt.Errorf("UpdateLoadBalancerService: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -9989,12 +10230,12 @@ func (c Client) UpdateLoadBalancerService(ctx context.Context, id UUID, serviceI
 		return nil, fmt.Errorf("UpdateLoadBalancerService: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-load-balancer-service")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("UpdateLoadBalancerService: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "update-load-balancer-service")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -10032,17 +10273,18 @@ func (c Client) ResetLoadBalancerServiceField(ctx context.Context, id UUID, serv
 	if err != nil {
 		return nil, fmt.Errorf("ResetLoadBalancerServiceField: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ResetLoadBalancerServiceField: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "reset-load-balancer-service-field")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("ResetLoadBalancerServiceField: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "reset-load-balancer-service-field")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -10081,17 +10323,18 @@ func (c Client) ResetLoadBalancerField(ctx context.Context, id UUID, field Reset
 	if err != nil {
 		return nil, fmt.Errorf("ResetLoadBalancerField: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ResetLoadBalancerField: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "reset-load-balancer-field")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("ResetLoadBalancerField: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "reset-load-balancer-field")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -10123,17 +10366,18 @@ func (c Client) GetOperation(ctx context.Context, id UUID) (*Operation, error) {
 	if err != nil {
 		return nil, fmt.Errorf("GetOperation: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetOperation: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-operation")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("GetOperation: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-operation")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -10180,17 +10424,18 @@ func (c Client) ListPrivateNetworks(ctx context.Context) (*ListPrivateNetworksRe
 	if err != nil {
 		return nil, fmt.Errorf("ListPrivateNetworks: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ListPrivateNetworks: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-private-networks")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("ListPrivateNetworks: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "list-private-networks")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -10241,6 +10486,7 @@ func (c Client) CreatePrivateNetwork(ctx context.Context, req CreatePrivateNetwo
 	if err != nil {
 		return nil, fmt.Errorf("CreatePrivateNetwork: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -10248,12 +10494,12 @@ func (c Client) CreatePrivateNetwork(ctx context.Context, req CreatePrivateNetwo
 		return nil, fmt.Errorf("CreatePrivateNetwork: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-private-network")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("CreatePrivateNetwork: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "create-private-network")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -10285,17 +10531,18 @@ func (c Client) DeletePrivateNetwork(ctx context.Context, id UUID) (*Operation, 
 	if err != nil {
 		return nil, fmt.Errorf("DeletePrivateNetwork: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeletePrivateNetwork: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-private-network")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("DeletePrivateNetwork: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "delete-private-network")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -10327,17 +10574,18 @@ func (c Client) GetPrivateNetwork(ctx context.Context, id UUID) (*PrivateNetwork
 	if err != nil {
 		return nil, fmt.Errorf("GetPrivateNetwork: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetPrivateNetwork: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-private-network")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("GetPrivateNetwork: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-private-network")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -10388,6 +10636,7 @@ func (c Client) UpdatePrivateNetwork(ctx context.Context, id UUID, req UpdatePri
 	if err != nil {
 		return nil, fmt.Errorf("UpdatePrivateNetwork: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -10395,12 +10644,12 @@ func (c Client) UpdatePrivateNetwork(ctx context.Context, id UUID, req UpdatePri
 		return nil, fmt.Errorf("UpdatePrivateNetwork: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-private-network")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("UpdatePrivateNetwork: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "update-private-network")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -10438,17 +10687,18 @@ func (c Client) ResetPrivateNetworkField(ctx context.Context, id UUID, field Res
 	if err != nil {
 		return nil, fmt.Errorf("ResetPrivateNetworkField: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ResetPrivateNetworkField: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "reset-private-network-field")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("ResetPrivateNetworkField: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "reset-private-network-field")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -10498,6 +10748,7 @@ func (c Client) AttachInstanceToPrivateNetwork(ctx context.Context, id UUID, req
 	if err != nil {
 		return nil, fmt.Errorf("AttachInstanceToPrivateNetwork: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -10505,12 +10756,12 @@ func (c Client) AttachInstanceToPrivateNetwork(ctx context.Context, id UUID, req
 		return nil, fmt.Errorf("AttachInstanceToPrivateNetwork: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "attach-instance-to-private-network")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("AttachInstanceToPrivateNetwork: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "attach-instance-to-private-network")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -10552,6 +10803,7 @@ func (c Client) DetachInstanceFromPrivateNetwork(ctx context.Context, id UUID, r
 	if err != nil {
 		return nil, fmt.Errorf("DetachInstanceFromPrivateNetwork: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -10559,12 +10811,12 @@ func (c Client) DetachInstanceFromPrivateNetwork(ctx context.Context, id UUID, r
 		return nil, fmt.Errorf("DetachInstanceFromPrivateNetwork: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "detach-instance-from-private-network")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("DetachInstanceFromPrivateNetwork: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "detach-instance-from-private-network")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -10612,6 +10864,7 @@ func (c Client) UpdatePrivateNetworkInstanceIP(ctx context.Context, id UUID, req
 	if err != nil {
 		return nil, fmt.Errorf("UpdatePrivateNetworkInstanceIP: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -10619,12 +10872,12 @@ func (c Client) UpdatePrivateNetworkInstanceIP(ctx context.Context, id UUID, req
 		return nil, fmt.Errorf("UpdatePrivateNetworkInstanceIP: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-private-network-instance-ip")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("UpdatePrivateNetworkInstanceIP: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "update-private-network-instance-ip")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -10660,17 +10913,18 @@ func (c Client) ListQuotas(ctx context.Context) (*ListQuotasResponse, error) {
 	if err != nil {
 		return nil, fmt.Errorf("ListQuotas: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ListQuotas: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-quotas")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("ListQuotas: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "list-quotas")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -10702,17 +10956,18 @@ func (c Client) GetQuota(ctx context.Context, entity string) (*Quota, error) {
 	if err != nil {
 		return nil, fmt.Errorf("GetQuota: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetQuota: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-quota")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("GetQuota: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-quota")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -10744,17 +10999,18 @@ func (c Client) DeleteReverseDNSElasticIP(ctx context.Context, id UUID) (*Operat
 	if err != nil {
 		return nil, fmt.Errorf("DeleteReverseDNSElasticIP: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteReverseDNSElasticIP: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-reverse-dns-elastic-ip")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("DeleteReverseDNSElasticIP: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "delete-reverse-dns-elastic-ip")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -10786,17 +11042,18 @@ func (c Client) GetReverseDNSElasticIP(ctx context.Context, id UUID) (*ReverseDN
 	if err != nil {
 		return nil, fmt.Errorf("GetReverseDNSElasticIP: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetReverseDNSElasticIP: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-reverse-dns-elastic-ip")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("GetReverseDNSElasticIP: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-reverse-dns-elastic-ip")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -10837,6 +11094,7 @@ func (c Client) UpdateReverseDNSElasticIP(ctx context.Context, id UUID, req Upda
 	if err != nil {
 		return nil, fmt.Errorf("UpdateReverseDNSElasticIP: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -10844,12 +11102,12 @@ func (c Client) UpdateReverseDNSElasticIP(ctx context.Context, id UUID, req Upda
 		return nil, fmt.Errorf("UpdateReverseDNSElasticIP: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-reverse-dns-elastic-ip")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("UpdateReverseDNSElasticIP: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "update-reverse-dns-elastic-ip")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -10881,17 +11139,18 @@ func (c Client) DeleteReverseDNSInstance(ctx context.Context, id UUID) (*Operati
 	if err != nil {
 		return nil, fmt.Errorf("DeleteReverseDNSInstance: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteReverseDNSInstance: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-reverse-dns-instance")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("DeleteReverseDNSInstance: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "delete-reverse-dns-instance")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -10923,17 +11182,18 @@ func (c Client) GetReverseDNSInstance(ctx context.Context, id UUID) (*ReverseDNS
 	if err != nil {
 		return nil, fmt.Errorf("GetReverseDNSInstance: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetReverseDNSInstance: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-reverse-dns-instance")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("GetReverseDNSInstance: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-reverse-dns-instance")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -10974,6 +11234,7 @@ func (c Client) UpdateReverseDNSInstance(ctx context.Context, id UUID, req Updat
 	if err != nil {
 		return nil, fmt.Errorf("UpdateReverseDNSInstance: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -10981,12 +11242,12 @@ func (c Client) UpdateReverseDNSInstance(ctx context.Context, id UUID, req Updat
 		return nil, fmt.Errorf("UpdateReverseDNSInstance: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-reverse-dns-instance")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("UpdateReverseDNSInstance: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "update-reverse-dns-instance")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -11051,6 +11312,7 @@ func (c Client) ListSecurityGroups(ctx context.Context, opts ...ListSecurityGrou
 	if err != nil {
 		return nil, fmt.Errorf("ListSecurityGroups: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if len(opts) > 0 {
 		q := request.URL.Query()
@@ -11064,12 +11326,12 @@ func (c Client) ListSecurityGroups(ctx context.Context, opts ...ListSecurityGrou
 		return nil, fmt.Errorf("ListSecurityGroups: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-security-groups")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("ListSecurityGroups: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "list-security-groups")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -11113,6 +11375,7 @@ func (c Client) CreateSecurityGroup(ctx context.Context, req CreateSecurityGroup
 	if err != nil {
 		return nil, fmt.Errorf("CreateSecurityGroup: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -11120,12 +11383,12 @@ func (c Client) CreateSecurityGroup(ctx context.Context, req CreateSecurityGroup
 		return nil, fmt.Errorf("CreateSecurityGroup: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-security-group")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("CreateSecurityGroup: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "create-security-group")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -11157,17 +11420,18 @@ func (c Client) DeleteSecurityGroup(ctx context.Context, id UUID) (*Operation, e
 	if err != nil {
 		return nil, fmt.Errorf("DeleteSecurityGroup: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteSecurityGroup: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-security-group")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("DeleteSecurityGroup: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "delete-security-group")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -11199,17 +11463,18 @@ func (c Client) GetSecurityGroup(ctx context.Context, id UUID) (*SecurityGroup, 
 	if err != nil {
 		return nil, fmt.Errorf("GetSecurityGroup: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetSecurityGroup: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-security-group")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("GetSecurityGroup: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-security-group")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -11291,6 +11556,7 @@ func (c Client) AddRuleToSecurityGroup(ctx context.Context, id UUID, req AddRule
 	if err != nil {
 		return nil, fmt.Errorf("AddRuleToSecurityGroup: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -11298,12 +11564,12 @@ func (c Client) AddRuleToSecurityGroup(ctx context.Context, id UUID, req AddRule
 		return nil, fmt.Errorf("AddRuleToSecurityGroup: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "add-rule-to-security-group")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("AddRuleToSecurityGroup: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "add-rule-to-security-group")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -11335,17 +11601,18 @@ func (c Client) DeleteRuleFromSecurityGroup(ctx context.Context, id UUID, ruleID
 	if err != nil {
 		return nil, fmt.Errorf("DeleteRuleFromSecurityGroup: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteRuleFromSecurityGroup: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-rule-from-security-group")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("DeleteRuleFromSecurityGroup: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "delete-rule-from-security-group")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -11387,6 +11654,7 @@ func (c Client) AddExternalSourceToSecurityGroup(ctx context.Context, id UUID, r
 	if err != nil {
 		return nil, fmt.Errorf("AddExternalSourceToSecurityGroup: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -11394,12 +11662,12 @@ func (c Client) AddExternalSourceToSecurityGroup(ctx context.Context, id UUID, r
 		return nil, fmt.Errorf("AddExternalSourceToSecurityGroup: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "add-external-source-to-security-group")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("AddExternalSourceToSecurityGroup: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "add-external-source-to-security-group")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -11441,6 +11709,7 @@ func (c Client) AttachInstanceToSecurityGroup(ctx context.Context, id UUID, req 
 	if err != nil {
 		return nil, fmt.Errorf("AttachInstanceToSecurityGroup: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -11448,12 +11717,12 @@ func (c Client) AttachInstanceToSecurityGroup(ctx context.Context, id UUID, req 
 		return nil, fmt.Errorf("AttachInstanceToSecurityGroup: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "attach-instance-to-security-group")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("AttachInstanceToSecurityGroup: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "attach-instance-to-security-group")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -11495,6 +11764,7 @@ func (c Client) DetachInstanceFromSecurityGroup(ctx context.Context, id UUID, re
 	if err != nil {
 		return nil, fmt.Errorf("DetachInstanceFromSecurityGroup: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -11502,12 +11772,12 @@ func (c Client) DetachInstanceFromSecurityGroup(ctx context.Context, id UUID, re
 		return nil, fmt.Errorf("DetachInstanceFromSecurityGroup: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "detach-instance-from-security-group")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("DetachInstanceFromSecurityGroup: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "detach-instance-from-security-group")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -11549,6 +11819,7 @@ func (c Client) RemoveExternalSourceFromSecurityGroup(ctx context.Context, id UU
 	if err != nil {
 		return nil, fmt.Errorf("RemoveExternalSourceFromSecurityGroup: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -11556,12 +11827,12 @@ func (c Client) RemoveExternalSourceFromSecurityGroup(ctx context.Context, id UU
 		return nil, fmt.Errorf("RemoveExternalSourceFromSecurityGroup: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "remove-external-source-from-security-group")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("RemoveExternalSourceFromSecurityGroup: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "remove-external-source-from-security-group")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -11608,17 +11879,18 @@ func (c Client) ListSKSClusters(ctx context.Context) (*ListSKSClustersResponse, 
 	if err != nil {
 		return nil, fmt.Errorf("ListSKSClusters: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ListSKSClusters: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-sks-clusters")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("ListSKSClusters: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "list-sks-clusters")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -11664,8 +11936,8 @@ type CreateSKSClusterRequest struct {
 	// Cluster CNI
 	Cni CreateSKSClusterRequestCni `json:"cni,omitempty"`
 	// Cluster description
-	Description string `json:"description,omitempty" validate:"omitempty,lte=255"`
-	Labels      Labels `json:"labels,omitempty"`
+	Description *string `json:"description,omitempty" validate:"omitempty,lte=255"`
+	Labels      Labels  `json:"labels,omitempty"`
 	// Cluster service level
 	Level CreateSKSClusterRequestLevel `json:"level" validate:"required"`
 	// Cluster name
@@ -11689,6 +11961,7 @@ func (c Client) CreateSKSCluster(ctx context.Context, req CreateSKSClusterReques
 	if err != nil {
 		return nil, fmt.Errorf("CreateSKSCluster: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -11696,12 +11969,12 @@ func (c Client) CreateSKSCluster(ctx context.Context, req CreateSKSClusterReques
 		return nil, fmt.Errorf("CreateSKSCluster: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-sks-cluster")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("CreateSKSCluster: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "create-sks-cluster")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -11733,17 +12006,18 @@ func (c Client) ListSKSClusterDeprecatedResources(ctx context.Context, id UUID) 
 	if err != nil {
 		return nil, fmt.Errorf("ListSKSClusterDeprecatedResources: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ListSKSClusterDeprecatedResources: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-sks-cluster-deprecated-resources")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("ListSKSClusterDeprecatedResources: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "list-sks-cluster-deprecated-resources")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -11784,6 +12058,7 @@ func (c Client) GenerateSKSClusterKubeconfig(ctx context.Context, id UUID, req S
 	if err != nil {
 		return nil, fmt.Errorf("GenerateSKSClusterKubeconfig: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -11791,12 +12066,12 @@ func (c Client) GenerateSKSClusterKubeconfig(ctx context.Context, id UUID, req S
 		return nil, fmt.Errorf("GenerateSKSClusterKubeconfig: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "generate-sks-cluster-kubeconfig")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("GenerateSKSClusterKubeconfig: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "generate-sks-cluster-kubeconfig")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -11840,6 +12115,7 @@ func (c Client) ListSKSClusterVersions(ctx context.Context, opts ...ListSKSClust
 	if err != nil {
 		return nil, fmt.Errorf("ListSKSClusterVersions: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if len(opts) > 0 {
 		q := request.URL.Query()
@@ -11853,12 +12129,12 @@ func (c Client) ListSKSClusterVersions(ctx context.Context, opts ...ListSKSClust
 		return nil, fmt.Errorf("ListSKSClusterVersions: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-sks-cluster-versions")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("ListSKSClusterVersions: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "list-sks-cluster-versions")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -11890,17 +12166,18 @@ func (c Client) DeleteSKSCluster(ctx context.Context, id UUID) (*Operation, erro
 	if err != nil {
 		return nil, fmt.Errorf("DeleteSKSCluster: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteSKSCluster: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-sks-cluster")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("DeleteSKSCluster: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "delete-sks-cluster")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -11932,17 +12209,18 @@ func (c Client) GetSKSCluster(ctx context.Context, id UUID) (*SKSCluster, error)
 	if err != nil {
 		return nil, fmt.Errorf("GetSKSCluster: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetSKSCluster: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-sks-cluster")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("GetSKSCluster: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-sks-cluster")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -11972,12 +12250,12 @@ type UpdateSKSClusterRequest struct {
 	// Enable auto upgrade of the control plane to the latest patch version available
 	AutoUpgrade *bool `json:"auto-upgrade,omitempty"`
 	// Cluster description
-	Description string `json:"description,omitempty" validate:"omitempty,lte=255"`
-	Labels      Labels `json:"labels,omitempty"`
+	Description *string `json:"description,omitempty" validate:"omitempty,lte=255"`
+	Labels      Labels  `json:"labels,omitempty"`
 	// Cluster name
 	Name string `json:"name,omitempty" validate:"omitempty,gte=1,lte=255"`
 	// SKS Cluster OpenID config map
-	Oidc *SKSOidc `json:"oidc,omitempty"`
+	Oidc *SKSOidc `json:"oidc"`
 }
 
 // Update an SKS cluster
@@ -11993,6 +12271,7 @@ func (c Client) UpdateSKSCluster(ctx context.Context, id UUID, req UpdateSKSClus
 	if err != nil {
 		return nil, fmt.Errorf("UpdateSKSCluster: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -12000,12 +12279,12 @@ func (c Client) UpdateSKSCluster(ctx context.Context, id UUID, req UpdateSKSClus
 		return nil, fmt.Errorf("UpdateSKSCluster: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-sks-cluster")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("UpdateSKSCluster: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "update-sks-cluster")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -12049,17 +12328,18 @@ func (c Client) GetSKSClusterAuthorityCert(ctx context.Context, id UUID, authori
 	if err != nil {
 		return nil, fmt.Errorf("GetSKSClusterAuthorityCert: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetSKSClusterAuthorityCert: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-sks-cluster-authority-cert")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("GetSKSClusterAuthorityCert: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-sks-cluster-authority-cert")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -12093,17 +12373,18 @@ func (c Client) GetSKSClusterInspection(ctx context.Context, id UUID) (*GetSKSCl
 	if err != nil {
 		return nil, fmt.Errorf("GetSKSClusterInspection: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetSKSClusterInspection: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-sks-cluster-inspection")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("GetSKSClusterInspection: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-sks-cluster-inspection")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -12169,6 +12450,7 @@ func (c Client) CreateSKSNodepool(ctx context.Context, id UUID, req CreateSKSNod
 	if err != nil {
 		return nil, fmt.Errorf("CreateSKSNodepool: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -12176,12 +12458,12 @@ func (c Client) CreateSKSNodepool(ctx context.Context, id UUID, req CreateSKSNod
 		return nil, fmt.Errorf("CreateSKSNodepool: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-sks-nodepool")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("CreateSKSNodepool: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "create-sks-nodepool")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -12213,17 +12495,18 @@ func (c Client) DeleteSKSNodepool(ctx context.Context, id UUID, sksNodepoolID UU
 	if err != nil {
 		return nil, fmt.Errorf("DeleteSKSNodepool: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteSKSNodepool: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-sks-nodepool")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("DeleteSKSNodepool: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "delete-sks-nodepool")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -12255,17 +12538,18 @@ func (c Client) GetSKSNodepool(ctx context.Context, id UUID, sksNodepoolID UUID)
 	if err != nil {
 		return nil, fmt.Errorf("GetSKSNodepool: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetSKSNodepool: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-sks-nodepool")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("GetSKSNodepool: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-sks-nodepool")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -12293,7 +12577,7 @@ type UpdateSKSNodepoolRequest struct {
 	// Nodepool Anti-affinity Groups
 	AntiAffinityGroups []AntiAffinityGroup `json:"anti-affinity-groups,omitempty"`
 	// Deploy target
-	DeployTarget *DeployTarget `json:"deploy-target,omitempty"`
+	DeployTarget *DeployTarget `json:"deploy-target"`
 	// Nodepool description
 	Description string `json:"description,omitempty" validate:"omitempty,lte=255"`
 	// Nodepool instances disk size in GB
@@ -12325,6 +12609,7 @@ func (c Client) UpdateSKSNodepool(ctx context.Context, id UUID, sksNodepoolID UU
 	if err != nil {
 		return nil, fmt.Errorf("UpdateSKSNodepool: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -12332,12 +12617,12 @@ func (c Client) UpdateSKSNodepool(ctx context.Context, id UUID, sksNodepoolID UU
 		return nil, fmt.Errorf("UpdateSKSNodepool: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-sks-nodepool")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("UpdateSKSNodepool: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "update-sks-nodepool")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -12380,17 +12665,18 @@ func (c Client) ResetSKSNodepoolField(ctx context.Context, id UUID, sksNodepoolI
 	if err != nil {
 		return nil, fmt.Errorf("ResetSKSNodepoolField: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ResetSKSNodepoolField: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "reset-sks-nodepool-field")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("ResetSKSNodepoolField: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "reset-sks-nodepool-field")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -12431,6 +12717,7 @@ func (c Client) EvictSKSNodepoolMembers(ctx context.Context, id UUID, sksNodepoo
 	if err != nil {
 		return nil, fmt.Errorf("EvictSKSNodepoolMembers: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -12438,12 +12725,12 @@ func (c Client) EvictSKSNodepoolMembers(ctx context.Context, id UUID, sksNodepoo
 		return nil, fmt.Errorf("EvictSKSNodepoolMembers: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "evict-sks-nodepool-members")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("EvictSKSNodepoolMembers: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "evict-sks-nodepool-members")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -12485,6 +12772,7 @@ func (c Client) ScaleSKSNodepool(ctx context.Context, id UUID, sksNodepoolID UUI
 	if err != nil {
 		return nil, fmt.Errorf("ScaleSKSNodepool: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -12492,12 +12780,12 @@ func (c Client) ScaleSKSNodepool(ctx context.Context, id UUID, sksNodepoolID UUI
 		return nil, fmt.Errorf("ScaleSKSNodepool: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "scale-sks-nodepool")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("ScaleSKSNodepool: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "scale-sks-nodepool")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -12529,17 +12817,18 @@ func (c Client) RotateSKSCcmCredentials(ctx context.Context, id UUID) (*Operatio
 	if err != nil {
 		return nil, fmt.Errorf("RotateSKSCcmCredentials: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("RotateSKSCcmCredentials: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "rotate-sks-ccm-credentials")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("RotateSKSCcmCredentials: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "rotate-sks-ccm-credentials")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -12571,17 +12860,18 @@ func (c Client) RotateSKSOperatorsCA(ctx context.Context, id UUID) (*Operation, 
 	if err != nil {
 		return nil, fmt.Errorf("RotateSKSOperatorsCA: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("RotateSKSOperatorsCA: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "rotate-sks-operators-ca")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("RotateSKSOperatorsCA: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "rotate-sks-operators-ca")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -12623,6 +12913,7 @@ func (c Client) UpgradeSKSCluster(ctx context.Context, id UUID, req UpgradeSKSCl
 	if err != nil {
 		return nil, fmt.Errorf("UpgradeSKSCluster: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -12630,12 +12921,12 @@ func (c Client) UpgradeSKSCluster(ctx context.Context, id UUID, req UpgradeSKSCl
 		return nil, fmt.Errorf("UpgradeSKSCluster: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "upgrade-sks-cluster")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("UpgradeSKSCluster: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "upgrade-sks-cluster")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -12667,17 +12958,18 @@ func (c Client) UpgradeSKSClusterServiceLevel(ctx context.Context, id UUID) (*Op
 	if err != nil {
 		return nil, fmt.Errorf("UpgradeSKSClusterServiceLevel: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("UpgradeSKSClusterServiceLevel: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "upgrade-sks-cluster-service-level")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("UpgradeSKSClusterServiceLevel: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "upgrade-sks-cluster-service-level")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -12716,17 +13008,18 @@ func (c Client) ResetSKSClusterField(ctx context.Context, id UUID, field ResetSK
 	if err != nil {
 		return nil, fmt.Errorf("ResetSKSClusterField: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ResetSKSClusterField: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "reset-sks-cluster-field")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("ResetSKSClusterField: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "reset-sks-cluster-field")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -12773,17 +13066,18 @@ func (c Client) ListSnapshots(ctx context.Context) (*ListSnapshotsResponse, erro
 	if err != nil {
 		return nil, fmt.Errorf("ListSnapshots: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ListSnapshots: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-snapshots")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("ListSnapshots: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "list-snapshots")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -12815,17 +13109,18 @@ func (c Client) DeleteSnapshot(ctx context.Context, id UUID) (*Operation, error)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteSnapshot: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteSnapshot: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-snapshot")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("DeleteSnapshot: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "delete-snapshot")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -12857,17 +13152,18 @@ func (c Client) GetSnapshot(ctx context.Context, id UUID) (*Snapshot, error) {
 	if err != nil {
 		return nil, fmt.Errorf("GetSnapshot: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetSnapshot: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-snapshot")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("GetSnapshot: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-snapshot")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -12899,17 +13195,18 @@ func (c Client) ExportSnapshot(ctx context.Context, id UUID) (*Operation, error)
 	if err != nil {
 		return nil, fmt.Errorf("ExportSnapshot: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ExportSnapshot: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "export-snapshot")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("ExportSnapshot: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "export-snapshot")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -12959,6 +13256,7 @@ func (c Client) PromoteSnapshotToTemplate(ctx context.Context, id UUID, req Prom
 	if err != nil {
 		return nil, fmt.Errorf("PromoteSnapshotToTemplate: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -12966,12 +13264,12 @@ func (c Client) PromoteSnapshotToTemplate(ctx context.Context, id UUID, req Prom
 		return nil, fmt.Errorf("PromoteSnapshotToTemplate: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "promote-snapshot-to-template")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("PromoteSnapshotToTemplate: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "promote-snapshot-to-template")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -13007,17 +13305,18 @@ func (c Client) ListSOSBucketsUsage(ctx context.Context) (*ListSOSBucketsUsageRe
 	if err != nil {
 		return nil, fmt.Errorf("ListSOSBucketsUsage: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ListSOSBucketsUsage: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-sos-buckets-usage")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("ListSOSBucketsUsage: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "list-sos-buckets-usage")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -13061,6 +13360,7 @@ func (c Client) GetSOSPresignedURL(ctx context.Context, bucket string, opts ...G
 	if err != nil {
 		return nil, fmt.Errorf("GetSOSPresignedURL: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if len(opts) > 0 {
 		q := request.URL.Query()
@@ -13074,12 +13374,12 @@ func (c Client) GetSOSPresignedURL(ctx context.Context, bucket string, opts ...G
 		return nil, fmt.Errorf("GetSOSPresignedURL: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-sos-presigned-url")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("GetSOSPresignedURL: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-sos-presigned-url")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -13115,17 +13415,18 @@ func (c Client) ListSSHKeys(ctx context.Context) (*ListSSHKeysResponse, error) {
 	if err != nil {
 		return nil, fmt.Errorf("ListSSHKeys: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ListSSHKeys: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-ssh-keys")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("ListSSHKeys: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "list-ssh-keys")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -13169,6 +13470,7 @@ func (c Client) RegisterSSHKey(ctx context.Context, req RegisterSSHKeyRequest) (
 	if err != nil {
 		return nil, fmt.Errorf("RegisterSSHKey: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -13176,12 +13478,12 @@ func (c Client) RegisterSSHKey(ctx context.Context, req RegisterSSHKeyRequest) (
 		return nil, fmt.Errorf("RegisterSSHKey: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "register-ssh-key")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("RegisterSSHKey: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "register-ssh-key")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -13213,17 +13515,18 @@ func (c Client) DeleteSSHKey(ctx context.Context, name string) (*Operation, erro
 	if err != nil {
 		return nil, fmt.Errorf("DeleteSSHKey: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteSSHKey: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-ssh-key")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("DeleteSSHKey: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "delete-ssh-key")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -13255,17 +13558,18 @@ func (c Client) GetSSHKey(ctx context.Context, name string) (*SSHKey, error) {
 	if err != nil {
 		return nil, fmt.Errorf("GetSSHKey: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetSSHKey: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-ssh-key")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("GetSSHKey: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-ssh-key")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -13333,6 +13637,7 @@ func (c Client) ListTemplates(ctx context.Context, opts ...ListTemplatesOpt) (*L
 	if err != nil {
 		return nil, fmt.Errorf("ListTemplates: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if len(opts) > 0 {
 		q := request.URL.Query()
@@ -13346,12 +13651,12 @@ func (c Client) ListTemplates(ctx context.Context, opts ...ListTemplatesOpt) (*L
 		return nil, fmt.Errorf("ListTemplates: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-templates")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("ListTemplates: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "list-templates")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -13422,6 +13727,7 @@ func (c Client) RegisterTemplate(ctx context.Context, req RegisterTemplateReques
 	if err != nil {
 		return nil, fmt.Errorf("RegisterTemplate: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -13429,12 +13735,12 @@ func (c Client) RegisterTemplate(ctx context.Context, req RegisterTemplateReques
 		return nil, fmt.Errorf("RegisterTemplate: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "register-template")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("RegisterTemplate: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "register-template")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -13466,17 +13772,18 @@ func (c Client) DeleteTemplate(ctx context.Context, id UUID) (*Operation, error)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteTemplate: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteTemplate: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-template")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("DeleteTemplate: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "delete-template")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -13508,17 +13815,18 @@ func (c Client) GetTemplate(ctx context.Context, id UUID) (*Template, error) {
 	if err != nil {
 		return nil, fmt.Errorf("GetTemplate: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetTemplate: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-template")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("GetTemplate: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-template")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -13560,6 +13868,7 @@ func (c Client) CopyTemplate(ctx context.Context, id UUID, req CopyTemplateReque
 	if err != nil {
 		return nil, fmt.Errorf("CopyTemplate: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -13567,12 +13876,12 @@ func (c Client) CopyTemplate(ctx context.Context, id UUID, req CopyTemplateReque
 		return nil, fmt.Errorf("CopyTemplate: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "copy-template")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("CopyTemplate: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "copy-template")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -13616,6 +13925,7 @@ func (c Client) UpdateTemplate(ctx context.Context, id UUID, req UpdateTemplateR
 	if err != nil {
 		return nil, fmt.Errorf("UpdateTemplate: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -13623,12 +13933,12 @@ func (c Client) UpdateTemplate(ctx context.Context, id UUID, req UpdateTemplateR
 		return nil, fmt.Errorf("UpdateTemplate: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-template")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("UpdateTemplate: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "update-template")
 	}
 
 	response, err := c.httpClient.Do(request)
@@ -13664,17 +13974,18 @@ func (c Client) ListZones(ctx context.Context) (*ListZonesResponse, error) {
 	if err != nil {
 		return nil, fmt.Errorf("ListZones: new request: %w", err)
 	}
+	request.Header.Add("User-Agent", UserAgent)
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ListZones: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-zones")
-	}
-
 	if err := c.signRequest(request); err != nil {
 		return nil, fmt.Errorf("ListZones: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "list-zones")
 	}
 
 	response, err := c.httpClient.Do(request)
