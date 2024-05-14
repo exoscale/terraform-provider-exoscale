@@ -59,7 +59,7 @@ func testResourceKafka(t *testing.T) {
 		Plan:                  "business-4",
 		Zone:                  testutils.TestZoneName,
 		TerminationProtection: false,
-		Version:               "3.5",
+		Version:               "3.6",
 	}
 
 	dataCreate := dataBase
