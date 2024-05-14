@@ -273,14 +273,14 @@ func testResource(t *testing.T) {
 				ImportState: true,
 				// We will not verify state as we are unable to set AAG while both AffinityGroup & AntiAffinityGroup exist.
 				// Once AffinityGroup is completely removed we can reenable this check.
-				//ImportStateVerify: true,
+				// ImportStateVerify: true,
 				ImportStateCheck: func(s []*terraform.InstanceState) error {
 					return testutils.CheckResourceAttributes(
 						testutils.TestAttrs{
 							// AAG is unset because SDK provides no way to determine if AffinityGroup or AntiAffinityGroup
 							// are set in config during import.
 							// Once AffinityGroup is completely removed we can reenable this check.
-							//instance_pool.AttrAntiAffinityGroupIDs + ".#": testutils.ValidateString("1"),
+							// instance_pool.AttrAntiAffinityGroupIDs + ".#": testutils.ValidateString("1"),
 							instance_pool.AttrDescription:       testutils.ValidateString(rDescriptionUpdated),
 							instance_pool.AttrDiskSize:          testutils.ValidateString(fmt.Sprint(rDiskSizeUpdated)),
 							instance_pool.AttrInstancePrefix:    testutils.ValidateString(instance_pool.DefaultInstancePrefix),
