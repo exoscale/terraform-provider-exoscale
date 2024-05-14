@@ -6,6 +6,10 @@ BUG FIXES:
 
 - Fix panic when ListSKSClusterVersions returns error #357
 
+IMPROVEMENTS:
+
+- `exoscale_instance_pool`: add `anti-affinity-group` & deprecate `affinity-group` #355
+
 ## 0.59.1 (June 3, 2024)
 
 IMPROVEMENTS
@@ -38,7 +42,7 @@ FEATURES:
 
 BUG FIXES:
 
-- Fix dbaas bugs causing accepteance tests to fail #346
+- Fix dbaas bugs causing acceptance tests to fail #346
 - docs: fix example in index.md #345 
 - Set labels on unmanaged eip creation #347 
 
@@ -69,7 +73,7 @@ IMPROVEMENTS:
 - Bump golang.org/x/crypto from 0.14.0 to 0.17.0 (#323)
 - sks_nodepool: add an example for taints #324 
 - SKS tests: renable cluster update test as upstream bug is fixed (#309)
-- Make `iam_role.name` attribute require replace as per API behaviour (#330)
+- Make `iam_role.name` attribute require replace as per API behavior (#330)
 - Handle DNS record normalization #332
 
 BUG FIXES:
