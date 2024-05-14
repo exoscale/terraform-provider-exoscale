@@ -24,12 +24,22 @@ const (
 
 func Resource() *schema.Resource {
 	s := map[string]*schema.Schema{
+		AttrAntiAffinityGroupIDs: {
+			Description:   "A list of [exoscale_anti_affinity_group](./anti_affinity_group.md) (IDs; may only be set at creation time).",
+			Type:          schema.TypeSet,
+			Optional:      true,
+			Set:           schema.HashString,
+			Elem:          &schema.Schema{Type: schema.TypeString},
+			ConflictsWith: []string{AttrAffinityGroupIDs},
+		},
 		AttrAffinityGroupIDs: {
-			Description: "A list of [exoscale_anti_affinity_group](./anti_affinity_group.md) (IDs; may only be set at creation time).",
-			Type:        schema.TypeSet,
-			Optional:    true,
-			Set:         schema.HashString,
-			Elem:        &schema.Schema{Type: schema.TypeString},
+			Description:   "A list of [exoscale_anti_affinity_group](./anti_affinity_group.md) (IDs; may only be set at creation time).",
+			Type:          schema.TypeSet,
+			Optional:      true,
+			Set:           schema.HashString,
+			Elem:          &schema.Schema{Type: schema.TypeString},
+			Deprecated:    "Use anti_affinity_group_ids instead.",
+			ConflictsWith: []string{AttrAntiAffinityGroupIDs},
 		},
 		AttrDeployTargetID: {
 			Description: "A deploy target ID.",
@@ -297,17 +307,34 @@ func rCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 	}
 	pool.InstanceTypeID = instanceType.ID
 
-	if set, ok := d.Get(AttrAffinityGroupIDs).(*schema.Set); ok {
-		pool.AntiAffinityGroupIDs = func() (v *[]string) {
-			if l := set.Len(); l > 0 {
-				list := make([]string, l)
-				for i, v := range set.List() {
-					list[i] = v.(string)
+	if v, ok := d.GetOk(AttrAffinityGroupIDs); ok {
+		if set, ok := v.(*schema.Set); ok {
+			pool.AntiAffinityGroupIDs = func() (v *[]string) {
+				if l := set.Len(); l > 0 {
+					list := make([]string, l)
+					for i, v := range set.List() {
+						list[i] = v.(string)
+					}
+					v = &list
 				}
-				v = &list
-			}
-			return
-		}()
+				return
+			}()
+		}
+	}
+
+	if v, ok := d.GetOk(AttrAntiAffinityGroupIDs); ok {
+		if set, ok := v.(*schema.Set); ok {
+			pool.AntiAffinityGroupIDs = func() (v *[]string) {
+				if l := set.Len(); l > 0 {
+					list := make([]string, l)
+					for i, v := range set.List() {
+						list[i] = v.(string)
+					}
+					v = &list
+				}
+				return
+			}()
+		}
 	}
 
 	if set, ok := d.Get(AttrSecurityGroupIDs).(*schema.Set); ok {
@@ -437,8 +464,18 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 
 	var updated bool
 
-	if d.HasChange(AttrAffinityGroupIDs) {
-		set := d.Get(AttrAffinityGroupIDs).(*schema.Set)
+	if set := d.Get(AttrAffinityGroupIDs).(*schema.Set); d.HasChange(AttrAffinityGroupIDs) {
+		pool.AntiAffinityGroupIDs = func() *[]string {
+			list := make([]string, set.Len())
+			for i, v := range set.List() {
+				list[i] = v.(string)
+			}
+			return &list
+		}()
+		updated = true
+	}
+
+	if set := d.Get(AttrAntiAffinityGroupIDs).(*schema.Set); d.HasChange(AttrAntiAffinityGroupIDs) {
 		pool.AntiAffinityGroupIDs = func() *[]string {
 			list := make([]string, set.Len())
 			for i, v := range set.List() {
@@ -624,8 +661,16 @@ func rApply(ctx context.Context, client *egoscale.Client, d *schema.ResourceData
 		antiAffinityGroupIDs := make([]string, len(*pool.AntiAffinityGroupIDs))
 		copy(antiAffinityGroupIDs, *pool.AntiAffinityGroupIDs)
 
-		if err := d.Set(AttrAffinityGroupIDs, antiAffinityGroupIDs); err != nil {
-			return diag.FromErr(err)
+		if _, ok := d.GetOk(AttrAffinityGroupIDs); ok {
+			if err := d.Set(AttrAffinityGroupIDs, antiAffinityGroupIDs); err != nil {
+				return diag.FromErr(err)
+			}
+		}
+
+		if _, ok := d.GetOk(AttrAntiAffinityGroupIDs); ok {
+			if err := d.Set(AttrAntiAffinityGroupIDs, antiAffinityGroupIDs); err != nil {
+				return diag.FromErr(err)
+			}
 		}
 	}
 

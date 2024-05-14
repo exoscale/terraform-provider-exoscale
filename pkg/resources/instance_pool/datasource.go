@@ -18,12 +18,20 @@ import (
 // DataSourceSchema returns a schema for a single instance pool data source.
 func DataSourceSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
-		AttrAffinityGroupIDs: {
+		AttrAntiAffinityGroupIDs: {
 			Description: "The list of attached [exoscale_anti_affinity_group](../resources/anti_affinity_group.md) (IDs).",
 			Type:        schema.TypeSet,
 			Computed:    true,
 			Set:         schema.HashString,
 			Elem:        &schema.Schema{Type: schema.TypeString},
+		},
+		AttrAffinityGroupIDs: {
+			Description: "The list of attached [exoscale_anti_affinity_group](../resources/anti_affinity_group.md) (IDs). Use anti_affinity_group_ids instead.",
+			Type:        schema.TypeSet,
+			Computed:    true,
+			Set:         schema.HashString,
+			Elem:        &schema.Schema{Type: schema.TypeString},
+			Deprecated:  "Use anti_affinity_group_ids instead.",
 		},
 		AttrDeployTargetID: {
 			Description: "The deploy target ID.",
@@ -291,7 +299,8 @@ func dsBuildData(pool *exo.InstancePool) (map[string]interface{}, error) {
 	data[AttrZone] = pool.Zone
 
 	if pool.AntiAffinityGroupIDs != nil {
-		data[AttrAffinityGroupIDs] = *pool.AntiAffinityGroupIDs
+		data[AttrAntiAffinityGroupIDs] = *pool.AntiAffinityGroupIDs
+		data[AttrAffinityGroupIDs] = *pool.AntiAffinityGroupIDs // deprecated
 	}
 
 	if pool.Labels != nil {

@@ -48,6 +48,7 @@ directory for complete configuration examples.
 Read-Only:
 
 - `affinity_group_ids` (Set of String)
+- `anti_affinity_group_ids` (Set of String)
 - `deploy_target_id` (String)
 - `description` (String)
 - `disk_size` (Number)

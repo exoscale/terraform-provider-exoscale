@@ -47,7 +47,8 @@ directory for complete configuration examples.
 
 ### Optional
 
-- `affinity_group_ids` (Set of String) A list of [exoscale_anti_affinity_group](./anti_affinity_group.md) (IDs; may only be set at creation time).
+- `affinity_group_ids` (Set of String, Deprecated) A list of [exoscale_anti_affinity_group](./anti_affinity_group.md) (IDs; may only be set at creation time).
+- `anti_affinity_group_ids` (Set of String) A list of [exoscale_anti_affinity_group](./anti_affinity_group.md) (IDs; may only be set at creation time).
 - `deploy_target_id` (String) A deploy target ID.
 - `description` (String) A free-form text describing the pool.
 - `disk_size` (Number) The managed instances disk size (GiB).

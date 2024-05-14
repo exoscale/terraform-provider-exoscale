@@ -64,7 +64,7 @@ resource "exoscale_instance_pool" "test" {
   size = %d
   disk_size = %d
   ipv6 = true
-  affinity_group_ids = [exoscale_anti_affinity_group.test.id]
+  anti_affinity_group_ids = [exoscale_anti_affinity_group.test.id]
   security_group_ids = [data.exoscale_security_group.default.id]
   instance_prefix = "%s"
   user_data = "%s"
@@ -123,7 +123,7 @@ resource "exoscale_instance_pool" "test" {
   disk_size = %d
   ipv6 = false
   key_pair = exoscale_ssh_key.test.name
-  affinity_group_ids = [exoscale_anti_affinity_group.test.id]
+  anti_affinity_group_ids = [exoscale_anti_affinity_group.test.id]
   network_ids = [exoscale_private_network.test.id]
   user_data = "%s"
   labels = {
@@ -192,22 +192,22 @@ func testResource(t *testing.T) {
 						return nil
 					},
 					testutils.CheckResourceState(r, testutils.CheckResourceStateValidateAttributes(testutils.TestAttrs{
-						instance_pool.AttrAffinityGroupIDs + ".#": testutils.ValidateString("1"),
-						instance_pool.AttrDescription:             testutils.ValidateString(rDescription),
-						instance_pool.AttrDiskSize:                testutils.ValidateString(fmt.Sprint(rDiskSize)),
-						instance_pool.AttrIPv6:                    testutils.ValidateString("true"),
-						instance_pool.AttrInstancePrefix:          testutils.ValidateString(rInstancePrefix),
-						instance_pool.AttrInstanceType:            testutils.ValidateString(rInstanceType),
-						instance_pool.AttrLabels + ".test":        testutils.ValidateString(rLabelValue),
-						instance_pool.AttrName:                    testutils.ValidateString(rName),
-						instance_pool.AttrSecurityGroupIDs + ".#": testutils.ValidateString("1"),
-						instance_pool.AttrSize:                    testutils.ValidateString(fmt.Sprint(rSize)),
-						instance_pool.AttrState:                   validation.ToDiagFunc(validation.NoZeroValues),
-						instance_pool.AttrTemplateID:              validation.ToDiagFunc(validation.IsUUID),
-						instance_pool.AttrUserData:                testutils.ValidateString(rUserData),
-						instance_pool.AttrVirtualMachines + ".#":  testutils.ValidateString(fmt.Sprint(rSize)),
-						instance_pool.AttrInstances + ".#":        testutils.ValidateString(fmt.Sprint(rSize)),
-						instance_pool.AttrZone:                    testutils.ValidateString(testutils.TestZoneName),
+						instance_pool.AttrAntiAffinityGroupIDs + ".#": testutils.ValidateString("1"),
+						instance_pool.AttrDescription:                 testutils.ValidateString(rDescription),
+						instance_pool.AttrDiskSize:                    testutils.ValidateString(fmt.Sprint(rDiskSize)),
+						instance_pool.AttrIPv6:                        testutils.ValidateString("true"),
+						instance_pool.AttrInstancePrefix:              testutils.ValidateString(rInstancePrefix),
+						instance_pool.AttrInstanceType:                testutils.ValidateString(rInstanceType),
+						instance_pool.AttrLabels + ".test":            testutils.ValidateString(rLabelValue),
+						instance_pool.AttrName:                        testutils.ValidateString(rName),
+						instance_pool.AttrSecurityGroupIDs + ".#":     testutils.ValidateString("1"),
+						instance_pool.AttrSize:                        testutils.ValidateString(fmt.Sprint(rSize)),
+						instance_pool.AttrState:                       validation.ToDiagFunc(validation.NoZeroValues),
+						instance_pool.AttrTemplateID:                  validation.ToDiagFunc(validation.IsUUID),
+						instance_pool.AttrUserData:                    testutils.ValidateString(rUserData),
+						instance_pool.AttrVirtualMachines + ".#":      testutils.ValidateString(fmt.Sprint(rSize)),
+						instance_pool.AttrInstances + ".#":            testutils.ValidateString(fmt.Sprint(rSize)),
+						instance_pool.AttrZone:                        testutils.ValidateString(testutils.TestZoneName),
 					})),
 				),
 			},
@@ -245,19 +245,19 @@ func testResource(t *testing.T) {
 						return nil
 					},
 					testutils.CheckResourceState(r, testutils.CheckResourceStateValidateAttributes(testutils.TestAttrs{
-						instance_pool.AttrAffinityGroupIDs + ".#": testutils.ValidateString("1"),
-						instance_pool.AttrDescription:             testutils.ValidateString(rDescriptionUpdated),
-						instance_pool.AttrDiskSize:                testutils.ValidateString(fmt.Sprint(rDiskSizeUpdated)),
-						instance_pool.AttrInstancePrefix:          testutils.ValidateString(instance_pool.DefaultInstancePrefix),
-						instance_pool.AttrInstanceType:            testutils.ValidateString(rInstanceTypeUpdated),
-						instance_pool.AttrIPv6:                    testutils.ValidateString("false"),
-						instance_pool.AttrKeyPair:                 testutils.ValidateString(rKeyPair),
-						instance_pool.AttrLabels + ".test":        testutils.ValidateString(rLabelValueUpdated),
-						instance_pool.AttrName:                    testutils.ValidateString(rNameUpdated),
-						instance_pool.AttrNetworkIDs + ".#":       testutils.ValidateString("1"),
-						instance_pool.AttrSize:                    testutils.ValidateString(fmt.Sprint(rSizeUpdated)),
-						instance_pool.AttrState:                   validation.ToDiagFunc(validation.NoZeroValues),
-						instance_pool.AttrUserData:                testutils.ValidateString(rUserDataUpdated),
+						instance_pool.AttrAntiAffinityGroupIDs + ".#": testutils.ValidateString("1"),
+						instance_pool.AttrDescription:                 testutils.ValidateString(rDescriptionUpdated),
+						instance_pool.AttrDiskSize:                    testutils.ValidateString(fmt.Sprint(rDiskSizeUpdated)),
+						instance_pool.AttrInstancePrefix:              testutils.ValidateString(instance_pool.DefaultInstancePrefix),
+						instance_pool.AttrInstanceType:                testutils.ValidateString(rInstanceTypeUpdated),
+						instance_pool.AttrIPv6:                        testutils.ValidateString("false"),
+						instance_pool.AttrKeyPair:                     testutils.ValidateString(rKeyPair),
+						instance_pool.AttrLabels + ".test":            testutils.ValidateString(rLabelValueUpdated),
+						instance_pool.AttrName:                        testutils.ValidateString(rNameUpdated),
+						instance_pool.AttrNetworkIDs + ".#":           testutils.ValidateString("1"),
+						instance_pool.AttrSize:                        testutils.ValidateString(fmt.Sprint(rSizeUpdated)),
+						instance_pool.AttrState:                       validation.ToDiagFunc(validation.NoZeroValues),
+						instance_pool.AttrUserData:                    testutils.ValidateString(rUserDataUpdated),
 					})),
 					resource.TestCheckNoResourceAttr(r, instance_pool.AttrSecurityGroupIDs+".#"),
 				),
@@ -270,24 +270,29 @@ func testResource(t *testing.T) {
 						return fmt.Sprintf("%s@%s", *instancePool.ID, testutils.TestZoneName), nil
 					}
 				}(&instancePool),
-				ImportState:       true,
-				ImportStateVerify: true,
+				ImportState: true,
+				// We will not verify state as we are unable to set AAG while both AffinityGroup & AntiAffinityGroup exist.
+				// Once AffinityGroup is completely removed we can reenable this check.
+				//ImportStateVerify: true,
 				ImportStateCheck: func(s []*terraform.InstanceState) error {
 					return testutils.CheckResourceAttributes(
 						testutils.TestAttrs{
-							instance_pool.AttrAffinityGroupIDs + ".#": testutils.ValidateString("1"),
-							instance_pool.AttrDescription:             testutils.ValidateString(rDescriptionUpdated),
-							instance_pool.AttrDiskSize:                testutils.ValidateString(fmt.Sprint(rDiskSizeUpdated)),
-							instance_pool.AttrInstancePrefix:          testutils.ValidateString(instance_pool.DefaultInstancePrefix),
-							instance_pool.AttrInstanceType:            testutils.ValidateString(rInstanceTypeUpdated),
-							instance_pool.AttrIPv6:                    testutils.ValidateString("false"),
-							instance_pool.AttrKeyPair:                 testutils.ValidateString(rKeyPair),
-							instance_pool.AttrLabels + ".test":        testutils.ValidateString(rLabelValueUpdated),
-							instance_pool.AttrName:                    testutils.ValidateString(rNameUpdated),
-							instance_pool.AttrNetworkIDs + ".#":       testutils.ValidateString("1"),
-							instance_pool.AttrSize:                    testutils.ValidateString(fmt.Sprint(rSizeUpdated)),
-							instance_pool.AttrState:                   validation.ToDiagFunc(validation.NoZeroValues),
-							instance_pool.AttrUserData:                testutils.ValidateString(rUserDataUpdated),
+							// AAG is unset because SDK provides no way to determine if AffinityGroup or AntiAffinityGroup
+							// are set in config during import.
+							// Once AffinityGroup is completely removed we can reenable this check.
+							//instance_pool.AttrAntiAffinityGroupIDs + ".#": testutils.ValidateString("1"),
+							instance_pool.AttrDescription:       testutils.ValidateString(rDescriptionUpdated),
+							instance_pool.AttrDiskSize:          testutils.ValidateString(fmt.Sprint(rDiskSizeUpdated)),
+							instance_pool.AttrInstancePrefix:    testutils.ValidateString(instance_pool.DefaultInstancePrefix),
+							instance_pool.AttrInstanceType:      testutils.ValidateString(rInstanceTypeUpdated),
+							instance_pool.AttrIPv6:              testutils.ValidateString("false"),
+							instance_pool.AttrKeyPair:           testutils.ValidateString(rKeyPair),
+							instance_pool.AttrLabels + ".test":  testutils.ValidateString(rLabelValueUpdated),
+							instance_pool.AttrName:              testutils.ValidateString(rNameUpdated),
+							instance_pool.AttrNetworkIDs + ".#": testutils.ValidateString("1"),
+							instance_pool.AttrSize:              testutils.ValidateString(fmt.Sprint(rSizeUpdated)),
+							instance_pool.AttrState:             validation.ToDiagFunc(validation.NoZeroValues),
+							instance_pool.AttrUserData:          testutils.ValidateString(rUserDataUpdated),
 						},
 						func(s []*terraform.InstanceState) map[string]string {
 							for _, state := range s {

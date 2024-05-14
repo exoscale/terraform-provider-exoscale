@@ -5,6 +5,7 @@ const (
 	NameList = "exoscale_instance_pool_list"
 
 	AttrAffinityGroupIDs        = "affinity_group_ids"
+	AttrAntiAffinityGroupIDs    = "anti_affinity_group_ids"
 	AttrDeployTargetID          = "deploy_target_id"
 	AttrDescription             = "description"
 	AttrDiskSize                = "disk_size"
