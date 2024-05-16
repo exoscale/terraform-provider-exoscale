@@ -319,7 +319,7 @@ func resourceSKSClusterCreate(ctx context.Context, d *schema.ResourceData, meta 
 			return diag.Errorf("error retrieving SKS versions: %s", err)
 		}
 		if len(versions.SKSClusterVersions) == 0 {
-			return errors.New("ListSKSClusterVersions: API returned empty list")
+			return diag.Errorf("ListSKSClusterVersions: API returned empty list")
 		}
 
 		version = versions.SKSClusterVersions[0]
