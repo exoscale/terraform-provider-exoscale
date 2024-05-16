@@ -315,12 +315,13 @@ func resourceSKSClusterCreate(ctx context.Context, d *schema.ResourceData, meta 
 	version := d.Get(resSKSClusterAttrVersion).(string)
 	if version == "" {
 		versions, err := client.ListSKSClusterVersions(ctx)
-		if err != nil || len(versions.SKSClusterVersions) == 0 {
-			if len(versions.SKSClusterVersions) == 0 {
-				err = errors.New("no version returned by the API")
-			}
+		if err != nil {
 			return diag.Errorf("error retrieving SKS versions: %s", err)
 		}
+		if len(versions.SKSClusterVersions) == 0 {
+			err = errors.New("no version returned by the API")
+		}
+
 		version = versions.SKSClusterVersions[0]
 	}
 	createReq.Version = version
