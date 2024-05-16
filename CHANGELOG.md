@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+BUG FIXES:
+
+- Fix panic when ListSKSClusterVersions returns error #357
+
 ## 0.59.1 (June 3, 2024)
 
 IMPROVEMENTS
