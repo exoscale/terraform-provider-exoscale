@@ -42,7 +42,7 @@ directory for complete configuration examples.
 - `cni` (String) The CNI plugin that is to be used. Available options are "calico" or "cilium". Defaults to "calico". Setting empty string will result in a cluster with no CNI.
 - `description` (String) A free-form text describing the cluster.
 - `exoscale_ccm` (Boolean) Deploy the Exoscale [Cloud Controller Manager](https://github.com/exoscale/exoscale-cloud-controller-manager/) in the control plane (boolean; default: `true`; may only be set at creation time).
-- `exoscale_csi` (Boolean) Deploy the Exoscale [Container Storage Interface](https://github.com/exoscale/exoscale-csi-driver/) on worker nodes (boolean; default: `false`; may only be set at creation time).
+- `exoscale_csi` (Boolean) Deploy the Exoscale [Container Storage Interface](https://github.com/exoscale/exoscale-csi-driver/) on worker nodes (boolean; default: `false`; requires the CCM to be enabled).
 - `labels` (Map of String) A map of key/value labels.
 - `metrics_server` (Boolean) Deploy the [Kubernetes Metrics Server](https://github.com/kubernetes-sigs/metrics-server/) in the control plane (boolean; default: `true`; may only be set at creation time).
 - `oidc` (Block List, Max: 1) An OpenID Connect configuration to provide to the Kubernetes API server (may only be set at creation time). Structure is documented below. (see [below for nested schema](#nestedblock--oidc))
