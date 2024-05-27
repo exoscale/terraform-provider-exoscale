@@ -126,7 +126,7 @@ func resourceSKSCluster() *schema.Resource {
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Default:     false,
-			Description: "Deploy the Exoscale [Container Storage Interface](https://github.com/exoscale/exoscale-csi-driver/) on worker nodes (boolean; default: `false`; may only be set at creation time).",
+			Description: "Deploy the Exoscale [Container Storage Interface](https://github.com/exoscale/exoscale-csi-driver/) on worker nodes (boolean; default: `false`; requires the CCM to be enabled).",
 		},
 		resSKSClusterAttrLabels: {
 			Type:        schema.TypeMap,
