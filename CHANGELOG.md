@@ -6,6 +6,10 @@ IMPROVEMENTS
 
 - SKS: document dependency of CSI on CCM #359 
 
+BUG FIXES
+
+- Set zone when attaching blockstorage volume #362
+
 ## 0.59.0 (May 13, 2024)
 
 FEATURES:
