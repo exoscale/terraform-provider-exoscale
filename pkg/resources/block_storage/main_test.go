@@ -20,7 +20,7 @@ func TestBlockStorage(t *testing.T) {
 
 	testdataSpec := testutils.TestdataSpec{
 		ID:   time.Now().UnixNano(),
-		Zone: "ch-gva-2", // to be replaced by global testutils.TestZoneName when BS reaches GA.
+		Zone: "at-vie-1", // to be replaced by global testutils.TestZoneName when BS reaches GA.
 	}
 
 	resource.Test(t, resource.TestCase{
@@ -333,7 +333,7 @@ func TestBlockStorage(t *testing.T) {
 				ResourceName: volumeResourceName,
 				ImportStateIdFunc: func() resource.ImportStateIdFunc {
 					return func(s *terraform.State) (string, error) {
-						return fmt.Sprintf("%s@%s", s.RootModule().Resources[volumeResourceName].Primary.ID, "ch-gva-2"), nil
+						return fmt.Sprintf("%s@%s", s.RootModule().Resources[volumeResourceName].Primary.ID, testdataSpec.Zone), nil
 					}
 				}(),
 				ImportState: true,
