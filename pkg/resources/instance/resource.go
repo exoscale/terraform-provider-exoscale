@@ -225,7 +225,15 @@ func rCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 
 	// Use egoscale V3 for BlockStorage API.
 	// This is a temporary workaround until this resource is migrate to tf framework.
-	clientV3, err := config.GetClientV3(meta)
+	defaultClientV3, err := config.GetClientV3(meta)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	clientV3, err := utils.SwitchClientZone(
+		ctx,
+		defaultClientV3,
+		egoscaleV3.ZoneName(zone),
+	)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -477,7 +485,15 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 
 	// Use egoscale V3 for BlockStorage API.
 	// This is a temporary workaround until this resource is migrate to tf framework.
-	clientV3, err := config.GetClientV3(meta)
+	defaultClientV3, err := config.GetClientV3(meta)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	clientV3, err := utils.SwitchClientZone(
+		ctx,
+		defaultClientV3,
+		egoscaleV3.ZoneName(zone),
+	)
 	if err != nil {
 		return diag.FromErr(err)
 	}
