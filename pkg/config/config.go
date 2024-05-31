@@ -6,7 +6,6 @@ import (
 	"time"
 
 	egoscale "github.com/exoscale/egoscale/v2"
-	exov3 "github.com/exoscale/egoscale/v3"
 	v3 "github.com/exoscale/egoscale/v3"
 )
 
@@ -44,10 +43,10 @@ func GetClient(meta interface{}) (*egoscale.Client, error) {
 }
 
 // GetClientV3 builds egoscale v3 client from configuration parameters in meta field
-func GetClientV3(meta interface{}) (*exov3.Client, error) {
+func GetClientV3(meta interface{}) (*v3.Client, error) {
 	c := meta.(map[string]interface{})
 	if client, ok := c["clientV3"]; ok {
-		return client.(*exov3.Client), nil
+		return client.(*v3.Client), nil
 	}
 	return nil, errors.New("API client not found")
 }
