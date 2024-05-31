@@ -9,6 +9,7 @@ IMPROVEMENTS
 BUG FIXES
 
 - Set zone when attaching blockstorage volume #362
+- Fixes for acceptance tests issues #363
 
 ## 0.59.0 (May 13, 2024)
 

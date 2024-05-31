@@ -79,7 +79,7 @@ resource "exoscale_sks_nodepool" "test" {
   }
 }
 `,
-		testZoneName,
+		testAccResourceSKSClusterLocalZone,
 		testAccResourceSKSClusterName,
 		testAccResourceSKSNodepoolName,
 		testAccResourceSKSNodepoolDescription,
@@ -153,7 +153,7 @@ resource "exoscale_sks_nodepool" "test" {
   }
 }
 	  `,
-		testZoneName,
+		testAccResourceSKSClusterLocalZone,
 		testAccResourceSKSNodepoolAntiAffinityGroupName,
 		testAccResourceSKSNodepoolPrivateNetworkName,
 		testAccResourceSKSClusterName,
@@ -303,7 +303,7 @@ func TestAccResourceSKSNodepool(t *testing.T) {
 					sksNodepool *egoscale.SKSNodepool,
 				) resource.ImportStateIdFunc {
 					return func(*terraform.State) (string, error) {
-						return fmt.Sprintf("%s/%s@%s", *sksCluster.ID, *sksNodepool.ID, testZoneName), nil
+						return fmt.Sprintf("%s/%s@%s", *sksCluster.ID, *sksNodepool.ID, testAccResourceSKSClusterLocalZone), nil
 					}
 				}(&sksCluster, &sksNodepool),
 				ImportState:       true,
@@ -371,10 +371,10 @@ func testAccCheckResourceSKSNodepoolExists(r string, sksNodepool *egoscale.SKSNo
 		client := getClient(testAccProvider.Meta())
 		ctx := exoapi.WithEndpoint(
 			context.Background(),
-			exoapi.NewReqEndpoint(testEnvironment, testZoneName),
+			exoapi.NewReqEndpoint(testEnvironment, testAccResourceSKSClusterLocalZone),
 		)
 
-		cluster, err := client.GetSKSCluster(ctx, testZoneName, clusterID)
+		cluster, err := client.GetSKSCluster(ctx, testAccResourceSKSClusterLocalZone, clusterID)
 		if err != nil {
 			return err
 		}
@@ -427,10 +427,10 @@ func testAccCheckResourceSKSNodepoolDestroy(r string) resource.TestCheckFunc {
 		client := getClient(testAccProvider.Meta())
 		ctx := exoapi.WithEndpoint(
 			context.Background(),
-			exoapi.NewReqEndpoint(testEnvironment, testZoneName),
+			exoapi.NewReqEndpoint(testEnvironment, testAccResourceSKSClusterLocalZone),
 		)
 
-		sksCluster, err := client.GetSKSCluster(ctx, testZoneName, clusterID)
+		sksCluster, err := client.GetSKSCluster(ctx, testAccResourceSKSClusterLocalZone, clusterID)
 		if err != nil {
 			if errors.Is(err, exoapi.ErrNotFound) {
 				return nil
