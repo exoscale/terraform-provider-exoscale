@@ -16,18 +16,18 @@ import (
 )
 
 var (
-	dsAffinityGroupName = acctest.RandomWithPrefix(testutils.Prefix)
-	dsDescription       = acctest.RandString(10)
-	dsDiskSize          = "10"
-	dsInstancePrefix    = "test"
-	dsInstanceType      = "standard.tiny"
-	dsKeyPair           = acctest.RandomWithPrefix(testutils.Prefix)
-	dsLabelValue        = acctest.RandomWithPrefix(testutils.Prefix)
-	dsNetwork           = acctest.RandomWithPrefix(testutils.Prefix)
-	dsName              = acctest.RandomWithPrefix(testutils.Prefix)
-	dsSize              = "2"
-	dsTemplateName      = testutils.TestInstanceTemplateName
-	dsUserData          = acctest.RandString(10)
+	dsAntiAffinityGroupName = acctest.RandomWithPrefix(testutils.Prefix)
+	dsDescription           = acctest.RandString(10)
+	dsDiskSize              = "10"
+	dsInstancePrefix        = "test"
+	dsInstanceType          = "standard.tiny"
+	dsKeyPair               = acctest.RandomWithPrefix(testutils.Prefix)
+	dsLabelValue            = acctest.RandomWithPrefix(testutils.Prefix)
+	dsNetwork               = acctest.RandomWithPrefix(testutils.Prefix)
+	dsName                  = acctest.RandomWithPrefix(testutils.Prefix)
+	dsSize                  = "2"
+	dsTemplateName          = testutils.TestInstanceTemplateName
+	dsUserData              = acctest.RandString(10)
 )
 
 func testDataSource(t *testing.T) {
@@ -75,7 +75,7 @@ resource "exoscale_instance_pool" "test" {
   disk_size          = %s
   ipv6               = false
   key_pair           = exoscale_ssh_key.test.name
-  affinity_group_ids = [exoscale_anti_affinity_group.test.id]
+  anti_affinity_group_ids = [exoscale_anti_affinity_group.test.id]
   network_ids        = [exoscale_private_network.test.id]
   user_data          = "%s"
 
@@ -90,7 +90,7 @@ data "exoscale_instance_pool" "by-id" {
 }`,
 					testutils.TestZoneName,
 					dsTemplateName,
-					dsAffinityGroupName,
+					dsAntiAffinityGroupName,
 					dsNetwork,
 					dsKeyPair,
 					dsName,
@@ -104,19 +104,19 @@ data "exoscale_instance_pool" "by-id" {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					dsCheckAttrs("data.exoscale_instance_pool.by-id", testutils.TestAttrs{
-						"affinity_group_ids.#": testutils.ValidateString("1"),
-						"affinity_group_ids.0": validation.ToDiagFunc(validation.IsUUID),
-						"description":          testutils.ValidateString(dsDescription),
-						"disk_size":            testutils.ValidateString(dsDiskSize),
-						"instance_type":        utils.ValidateComputeInstanceType,
-						"instance_prefix":      testutils.ValidateString(dsInstancePrefix),
-						"key_pair":             testutils.ValidateString(dsKeyPair),
-						"labels.test":          testutils.ValidateString(dsLabelValue),
-						"id":                   validation.ToDiagFunc(validation.IsUUID),
-						"name":                 testutils.ValidateString(dsName),
-						"network_ids.#":        testutils.ValidateString("1"),
-						"network_ids.0":        validation.ToDiagFunc(validation.IsUUID),
-						"size":                 testutils.ValidateString(dsSize),
+						"anti_affinity_group_ids.#": testutils.ValidateString("1"),
+						"anti_affinity_group_ids.0": validation.ToDiagFunc(validation.IsUUID),
+						"description":               testutils.ValidateString(dsDescription),
+						"disk_size":                 testutils.ValidateString(dsDiskSize),
+						"instance_type":             utils.ValidateComputeInstanceType,
+						"instance_prefix":           testutils.ValidateString(dsInstancePrefix),
+						"key_pair":                  testutils.ValidateString(dsKeyPair),
+						"labels.test":               testutils.ValidateString(dsLabelValue),
+						"id":                        validation.ToDiagFunc(validation.IsUUID),
+						"name":                      testutils.ValidateString(dsName),
+						"network_ids.#":             testutils.ValidateString("1"),
+						"network_ids.0":             validation.ToDiagFunc(validation.IsUUID),
+						"size":                      testutils.ValidateString(dsSize),
 						// NOTE: state is unreliable atm, improvement suggested in 54808
 						// "state":                testutils.ValidateString("running"),
 						"template_id":    validation.ToDiagFunc(validation.IsUUID),

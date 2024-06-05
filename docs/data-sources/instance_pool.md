@@ -44,7 +44,8 @@ directory for complete configuration examples.
 
 ### Read-Only
 
-- `affinity_group_ids` (Set of String) The list of attached [exoscale_anti_affinity_group](../resources/anti_affinity_group.md) (IDs).
+- `affinity_group_ids` (Set of String, Deprecated) The list of attached [exoscale_anti_affinity_group](../resources/anti_affinity_group.md) (IDs). Use anti_affinity_group_ids instead.
+- `anti_affinity_group_ids` (Set of String) The list of attached [exoscale_anti_affinity_group](../resources/anti_affinity_group.md) (IDs).
 - `deploy_target_id` (String) The deploy target ID.
 - `description` (String) The instance pool description.
 - `disk_size` (Number) The managed instances disk size.
