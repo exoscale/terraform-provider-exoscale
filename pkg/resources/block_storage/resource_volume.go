@@ -527,22 +527,24 @@ func (r *ResourceVolume) Delete(ctx context.Context, req resource.DeleteRequest,
 		return
 	}
 
-	// Delete remote resource.
-
 	// Detach volume if attached.
-	if state.State.ValueString() == "attached" {
-		op, err := client.DetachBlockStorageVolume(
-			ctx,
-			id,
-		)
-		if err != nil {
+	op, err := client.DetachBlockStorageVolume(
+		ctx,
+		id,
+	)
+	if err != nil {
+		// Ideally we would have a custom error defined in OpenAPI spec & egoscale.
+		// For now we just check the error text.
+		if strings.HasSuffix(err.Error(), "Volume not attached") {
+			tflog.Debug(ctx, "volume not attached")
+		} else {
 			resp.Diagnostics.AddError(
 				"unable to detach volume",
 				err.Error(),
 			)
 			return
 		}
-
+	} else {
 		_, err = client.Wait(ctx, op, exoscale.OperationStateSuccess)
 		if err != nil {
 			resp.Diagnostics.AddError(
@@ -554,7 +556,7 @@ func (r *ResourceVolume) Delete(ctx context.Context, req resource.DeleteRequest,
 	}
 
 	// Delete remote resource.
-	op, err := client.DeleteBlockStorageVolume(
+	op, err = client.DeleteBlockStorageVolume(
 		ctx,
 		id,
 	)
