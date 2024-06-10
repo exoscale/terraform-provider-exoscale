@@ -5,6 +5,7 @@
 BUG FIXES:
 
 - Fix panic when ListSKSClusterVersions returns error #357
+- Don't throw error if volume detach call fails due to volume not attached #367
 
 IMPROVEMENTS:
 
