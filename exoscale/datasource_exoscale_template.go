@@ -24,7 +24,9 @@ const (
 
 func dataSourceTemplate() *schema.Resource {
 	return &schema.Resource{
-		Description: "Fetch Exoscale [Compute Instance Templates](https://community.exoscale.com/documentation/compute/custom-templates/) data.",
+		Description: `Fetch Exoscale [Compute Instance Templates](https://community.exoscale.com/documentation/compute/custom-templates/) data.
+
+Exoscale instance templates are regulary updated to include the latest updates. Whenever this happens, the template ID also changes which can lead terraform to plan the recreation of an instance. To work around this you may find [this issue](https://github.com/exoscale/terraform-provider-exoscale/issues/366) helpful.`,
 		Schema: map[string]*schema.Schema{
 			dsTemplateAttrZone: {
 				Description: "The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.",
