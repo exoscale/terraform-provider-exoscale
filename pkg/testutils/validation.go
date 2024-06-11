@@ -46,7 +46,7 @@ func CheckResourceAttributes(want TestAttrs, got map[string]string) error {
 				}
 			}
 
-			return fmt.Errorf("invalid value for attribute %q:\n%s\n", // nolint:revive
+			return fmt.Errorf("invalid value for attribute %q:\n%s\n", //lint:ignore ST1005 it's more readable with newlines
 				attr, strings.Join(errors, "\n"))
 		}
 	}

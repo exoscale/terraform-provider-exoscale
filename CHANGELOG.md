@@ -16,6 +16,7 @@ IMPROVEMENTS:
 IMPROVEMENTS
 
 - SKS: document dependency of CSI on CCM #359 
+- go.mk: lint with staticcheck #364 
 
 BUG FIXES
 

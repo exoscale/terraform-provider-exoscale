@@ -128,7 +128,7 @@ func CheckInstanceDestroy(testInstance *egoscale.Instance) resource.TestCheckFun
 			return err
 		}
 
-		return errors.New("Compute testInstance still exists")
+		return errors.New("compute testInstance still exists")
 	}
 }
 
@@ -180,7 +180,7 @@ func CheckSecurityGroupDestroy(securityGroup *egoscale.SecurityGroup) resource.T
 			return err
 		}
 
-		return errors.New("Security Group still exists")
+		return errors.New("security Group still exists")
 	}
 }
 
@@ -232,7 +232,7 @@ func CheckPrivateNetworkDestroy(privateNetwork *egoscale.PrivateNetwork) resourc
 			return err
 		}
 
-		return errors.New("Private Network still exists")
+		return errors.New("private Network still exists")
 	}
 }
 
@@ -284,7 +284,7 @@ func CheckElasticIPDestroy(elasticIP *egoscale.ElasticIP) resource.TestCheckFunc
 			return err
 		}
 
-		return errors.New("Elastic IP still exists")
+		return errors.New("elastic IP still exists")
 	}
 }
 
@@ -396,7 +396,7 @@ func CheckInstancePoolDestroy(pool *egoscale.InstancePool) resource.TestCheckFun
 					return nil
 				}
 
-				return errors.New("Instance Pool still exists")
+				return errors.New("instance Pool still exists")
 			}),
 			repeat.StopOnSuccess(),
 			repeat.LimitMaxTries(10),

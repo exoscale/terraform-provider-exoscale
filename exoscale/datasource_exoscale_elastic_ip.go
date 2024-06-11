@@ -211,7 +211,7 @@ func dataSourceElasticIPRead(ctx context.Context, d *schema.ResourceData, meta i
 	}
 
 	if elasticIP == nil {
-		return diag.FromErr(fmt.Errorf("Unable to find matching ElasticIP"))
+		return diag.FromErr(fmt.Errorf("unable to find matching ElasticIP"))
 	}
 
 	d.SetId(*elasticIP.ID)
