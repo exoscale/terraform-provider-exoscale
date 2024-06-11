@@ -10,6 +10,7 @@ BUG FIXES:
 IMPROVEMENTS:
 
 - `exoscale_instance_pool`: add `anti-affinity-group` & deprecate `affinity-group` #355
+- template: document ignore_changes #368 
 
 ## 0.59.1 (June 3, 2024)
 
