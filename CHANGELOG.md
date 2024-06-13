@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.59.2 (June 13, 2024)
 
 BUG FIXES:
 
