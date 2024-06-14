@@ -4,14 +4,14 @@ page_title: "exoscale_template Data Source - terraform-provider-exoscale"
 subcategory: ""
 description: |-
   Fetch Exoscale Compute Instance Templates https://community.exoscale.com/documentation/compute/custom-templates/ data.
-  Exoscale instance templates are regulary updated to include the latest updates. Whenever this happens, the template ID also changes which can lead terraform to plan the recreation of an instance. To work around this you may find this issue https://github.com/exoscale/terraform-provider-exoscale/issues/366 helpful.
+  Exoscale instance templates are regularly updated to include the latest updates. Whenever this happens, the template ID also changes which can lead terraform to plan the recreation of an instance. To work around this you may find this issue https://github.com/exoscale/terraform-provider-exoscale/issues/366 helpful.
 ---
 
 # exoscale_template (Data Source)
 
 Fetch Exoscale [Compute Instance Templates](https://community.exoscale.com/documentation/compute/custom-templates/) data.
 
-Exoscale instance templates are regulary updated to include the latest updates. Whenever this happens, the template ID also changes which can lead terraform to plan the recreation of an instance. To work around this you may find [this issue](https://github.com/exoscale/terraform-provider-exoscale/issues/366) helpful.
+Exoscale instance templates are regularly updated to include the latest updates. Whenever this happens, the template ID also changes which can lead terraform to plan the recreation of an instance. To work around this you may find [this issue](https://github.com/exoscale/terraform-provider-exoscale/issues/366) helpful.
 
 ## Example Usage
 
