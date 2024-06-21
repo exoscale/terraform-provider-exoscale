@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+IMPROVEMENTS:
+
+- Bump dependency google.golang.org/protobuf from 1.31.0 to 1.33.0 #370
+
 ## 0.59.2 (June 13, 2024)
 
 BUG FIXES:
