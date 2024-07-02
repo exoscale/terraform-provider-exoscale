@@ -82,7 +82,7 @@ func resourceSecurityGroupRule() *schema.Resource {
 				Type:         schema.TypeInt,
 				Optional:     true,
 				ForceNew:     true,
-				ValidateFunc: validation.IntBetween(0, 255),
+				ValidateFunc: validation.IntBetween(-1, 254),
 				ConflictsWith: []string{
 					resSecurityGroupRuleAttrEndPort,
 					resSecurityGroupRuleAttrStartPort,
@@ -93,7 +93,7 @@ func resourceSecurityGroupRule() *schema.Resource {
 				Type:         schema.TypeInt,
 				Optional:     true,
 				ForceNew:     true,
-				ValidateFunc: validation.IntBetween(0, 255),
+				ValidateFunc: validation.IntBetween(-1, 254),
 				ConflictsWith: []string{
 					resSecurityGroupRuleAttrEndPort,
 					resSecurityGroupRuleAttrStartPort,

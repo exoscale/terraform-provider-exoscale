@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+BUG FIXES:
+
+- fix: allow ICMP Code and Type -1 to 254 #372 
+
 IMPROVEMENTS:
 
 - Bump dependency google.golang.org/protobuf from 1.31.0 to 1.33.0 #370
