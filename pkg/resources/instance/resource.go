@@ -15,6 +15,7 @@ import (
 	egoscale "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
 	egoscaleV3 "github.com/exoscale/egoscale/v3"
+	v3 "github.com/exoscale/egoscale/v3"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
@@ -65,6 +66,11 @@ func Resource() *schema.Resource {
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Default:     false,
+		},
+		"mac_address": {
+			Description: "MAC address",
+			Type:        schema.TypeString,
+			Computed:    true,
 		},
 		AttrIPv6Address: {
 			Description: "The instance (main network interface) IPv6 address (if enabled).",
@@ -455,9 +461,14 @@ func rRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.D
 		return diag.FromErr(err)
 	}
 
-	instance, err := client.GetInstance(ctx, zone, d.Id())
+	clientV3, err := config.GetClientV3WithZone(ctx, meta, zone)
 	if err != nil {
-		if errors.Is(err, exoapi.ErrNotFound) {
+		return diag.FromErr(err)
+	}
+
+	instance, err := clientV3.GetInstance(ctx, egoscaleV3.UUID(d.Id()))
+	if err != nil {
+		if errors.Is(err, v3.ErrNotFound) {
 			// Resource doesn't exist anymore, signaling the core to remove it from the state.
 			d.SetId("")
 			return nil
@@ -853,49 +864,53 @@ func rApply( //nolint:gocyclo
 	ctx context.Context,
 	client *egoscale.Client,
 	d *schema.ResourceData,
-	instance *egoscale.Instance,
+	instance *v3.Instance,
 ) diag.Diagnostics {
 	zone := d.Get(AttrZone).(string)
 
-	if instance.AntiAffinityGroupIDs != nil {
-		antiAffinityGroupIDs := make([]string, len(*instance.AntiAffinityGroupIDs))
-		copy(antiAffinityGroupIDs, *instance.AntiAffinityGroupIDs)
+	if len(instance.AntiAffinityGroups) > 0 {
+		antiAffinityGroupIDs := make([]string, len(instance.AntiAffinityGroups))
+		for _, aag := range instance.AntiAffinityGroups {
+			antiAffinityGroupIDs = append(antiAffinityGroupIDs, aag.ID.String())
+		}
 
 		if err := d.Set(AttrAntiAffinityGroupIDs, antiAffinityGroupIDs); err != nil {
 			return diag.FromErr(err)
 		}
 	}
 
-	if err := d.Set(AttrCreatedAt, instance.CreatedAt.String()); err != nil {
+	if err := d.Set(AttrCreatedAt, instance.CreatedAT.String()); err != nil {
 		return diag.FromErr(err)
 	}
 
 	if err := d.Set(
 		AttrDeployTargetID,
-		utils.DefaultString(instance.DeployTargetID, ""),
+		utils.DefaultString(v3.Ptr(instance.DeployTarget.ID.String()), ""),
 	); err != nil {
 		return diag.FromErr(err)
 	}
 
-	if err := d.Set(AttrDiskSize, *instance.DiskSize); err != nil {
+	if err := d.Set(AttrDiskSize, instance.DiskSize); err != nil {
 		return diag.FromErr(err)
 	}
 
-	if instance.ElasticIPIDs != nil {
-		elasticIPIDs := make([]string, len(*instance.ElasticIPIDs))
-		copy(elasticIPIDs, *instance.ElasticIPIDs)
+	if len(instance.ElasticIPS) > 0 {
+		elasticIPIDs := make([]string, len(instance.ElasticIPS))
+		for _, eip := range instance.ElasticIPS {
+			elasticIPIDs = append(elasticIPIDs, eip.ID.String())
+		}
 
 		if err := d.Set(AttrElasticIPIDs, elasticIPIDs); err != nil {
 			return diag.FromErr(err)
 		}
 	}
 
-	if err := d.Set(AttrIPv6, utils.DefaultBool(instance.IPv6Enabled, false)); err != nil {
+	if err := d.Set(AttrIPv6, utils.DefaultBool(v3.Ptr(instance.Ipv6Address != ""), false)); err != nil {
 		return diag.FromErr(err)
 	}
 
-	if instance.IPv6Address != nil {
-		if err := d.Set(AttrIPv6Address, instance.IPv6Address.String()); err != nil {
+	if instance.Ipv6Address != "" {
+		if err := d.Set(AttrIPv6Address, instance.Ipv6Address); err != nil {
 			return diag.FromErr(err)
 		}
 	}
@@ -904,36 +919,36 @@ func rApply( //nolint:gocyclo
 		return diag.FromErr(err)
 	}
 
-	if err := d.Set(AttrName, *instance.Name); err != nil {
+	if err := d.Set(AttrName, instance.Name); err != nil {
 		return diag.FromErr(err)
 	}
 
-	if instance.PrivateNetworkIDs != nil {
-		privateNetworkIDs := make([]string, len(*instance.PrivateNetworkIDs))
-		networkInterfaces := make([]map[string]interface{}, len(*instance.PrivateNetworkIDs))
+	if len(instance.PrivateNetworks) > 0 {
+		privateNetworkIDs := make([]string, len(instance.PrivateNetworks))
+		networkInterfaces := make([]map[string]interface{}, len(instance.PrivateNetworks))
 
-		for i, id := range *instance.PrivateNetworkIDs {
-			privateNetwork, err := client.GetPrivateNetwork(ctx, zone, id)
+		for i, privnet := range instance.PrivateNetworks {
+			privateNetwork, err := client.GetPrivateNetwork(ctx, zone, privnet.ID.String())
 			if err != nil {
 				return diag.FromErr(err)
 			}
 
 			var instanceAddress *string
 			for _, lease := range privateNetwork.Leases {
-				if *lease.InstanceID == *instance.ID {
+				if *lease.InstanceID == instance.ID.String() {
 					address := lease.IPAddress.String()
 					instanceAddress = &address
 					break
 				}
 			}
 
-			nif, err := NetworkInterface{id, instanceAddress}.ToInterface()
+			nif, err := NetworkInterface{privnet.ID.String(), instanceAddress}.ToInterface()
 			if err != nil {
 				return diag.FromErr(err)
 			}
 
 			networkInterfaces[i] = nif
-			privateNetworkIDs[i] = id
+			privateNetworkIDs[i] = privnet.ID.String()
 		}
 		if err := d.Set(AttrPrivateNetworkIDs, privateNetworkIDs); err != nil {
 			return diag.FromErr(err)
@@ -943,8 +958,8 @@ func rApply( //nolint:gocyclo
 		}
 	}
 
-	if instance.PublicIPAddress != nil {
-		if err := d.Set(AttrPublicIPAddress, instance.PublicIPAddress.String()); err != nil {
+	if instance.PublicIP != nil {
+		if err := d.Set(AttrPublicIPAddress, instance.PublicIP.String()); err != nil {
 			return diag.FromErr(err)
 		}
 	}
@@ -953,9 +968,11 @@ func rApply( //nolint:gocyclo
 		return diag.FromErr(err)
 	}
 
-	if instance.SecurityGroupIDs != nil {
-		securityGroupIDs := make([]string, len(*instance.SecurityGroupIDs))
-		copy(securityGroupIDs, *instance.SecurityGroupIDs)
+	if len(instance.SecurityGroups) > 0 {
+		securityGroupIDs := make([]string, len(instance.SecurityGroups))
+		for _, sg := range instance.SecurityGroups {
+			securityGroupIDs = append(securityGroupIDs, sg.ID.String())
+		}
 
 		if err := d.Set(AttrSecurityGroupIDs, securityGroupIDs); err != nil {
 			return diag.FromErr(err)
@@ -966,14 +983,14 @@ func rApply( //nolint:gocyclo
 		return diag.FromErr(err)
 	}
 
-	if err := d.Set(AttrTemplateID, instance.TemplateID); err != nil {
+	if err := d.Set(AttrTemplateID, instance.Template.ID.String()); err != nil {
 		return diag.FromErr(err)
 	}
 
 	rdns, err := client.GetInstanceReverseDNS(
 		ctx,
 		d.Get(AttrZone).(string),
-		*instance.ID,
+		instance.ID.String(),
 	)
 	if err != nil && !errors.Is(err, exoapi.ErrNotFound) {
 		return diag.Errorf("unable to retrieve instance reverse-dns: %s", err)
@@ -985,7 +1002,7 @@ func rApply( //nolint:gocyclo
 	instanceType, err := client.GetInstanceType(
 		ctx,
 		d.Get(AttrZone).(string),
-		*instance.InstanceTypeID,
+		instance.InstanceType.ID.String(),
 	)
 	if err != nil {
 		return diag.Errorf("unable to retrieve instance type: %s", err)
@@ -998,8 +1015,8 @@ func rApply( //nolint:gocyclo
 		return diag.FromErr(err)
 	}
 
-	if instance.UserData != nil {
-		userData, err := utils.DecodeUserData(*instance.UserData)
+	if instance.UserData != "" {
+		userData, err := utils.DecodeUserData(instance.UserData)
 		if err != nil {
 			return diag.Errorf("unable to decode user data: %s", err)
 		}
@@ -1008,11 +1025,11 @@ func rApply( //nolint:gocyclo
 		}
 	}
 
-	if instance.PublicIPAddress != nil {
+	if instance.PublicIP != nil {
 		// Connection info for the `ssh` remote-exec provisioner
 		d.SetConnInfo(map[string]string{
 			"type": "ssh",
-			"host": instance.PublicIPAddress.String(),
+			"host": instance.PublicIP.String(),
 		})
 	}
 
