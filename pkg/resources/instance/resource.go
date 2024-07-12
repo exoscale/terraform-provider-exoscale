@@ -108,6 +108,11 @@ func Resource() *schema.Resource {
 						Type:        schema.TypeString,
 						Required:    true,
 					},
+					"mac_address": {
+						Description: "MAC address",
+						Type:        schema.TypeString,
+						Computed:    true,
+					},
 				},
 			},
 		},
