@@ -67,7 +67,7 @@ func Resource() *schema.Resource {
 			Optional:    true,
 			Default:     false,
 		},
-		"mac_address": {
+		AttrMACAddress: {
 			Description: "MAC address",
 			Type:        schema.TypeString,
 			Computed:    true,
@@ -456,11 +456,6 @@ func rRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.D
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(config.GetEnvironment(meta), zone))
 	defer cancel()
 
-	client, err := config.GetClient(meta)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
 	clientV3, err := config.GetClientV3WithZone(ctx, meta, zone)
 	if err != nil {
 		return diag.FromErr(err)
@@ -480,7 +475,7 @@ func rRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.D
 		"id": utils.IDString(d, Name),
 	})
 
-	return rApply(ctx, client, d, instance)
+	return rApply(ctx, clientV3, d, instance)
 }
 
 func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics { //nolint:gocyclo
@@ -862,12 +857,10 @@ func rDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 
 func rApply( //nolint:gocyclo
 	ctx context.Context,
-	client *egoscale.Client,
+	clientV3 *v3.Client,
 	d *schema.ResourceData,
 	instance *v3.Instance,
 ) diag.Diagnostics {
-	zone := d.Get(AttrZone).(string)
-
 	if len(instance.AntiAffinityGroups) > 0 {
 		antiAffinityGroupIDs := make([]string, len(instance.AntiAffinityGroups))
 		for _, aag := range instance.AntiAffinityGroups {
@@ -885,7 +878,13 @@ func rApply( //nolint:gocyclo
 
 	if err := d.Set(
 		AttrDeployTargetID,
-		utils.DefaultString(v3.Ptr(instance.DeployTarget.ID.String()), ""),
+		func() string {
+			if instance.DeployTarget != nil {
+				return instance.DeployTarget.ID.String()
+			} else {
+				return ""
+			}
+		}(),
 	); err != nil {
 		return diag.FromErr(err)
 	}
@@ -915,6 +914,12 @@ func rApply( //nolint:gocyclo
 		}
 	}
 
+	if instance.MACAddress != "" {
+		if err := d.Set(AttrMACAddress, instance.MACAddress); err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
 	if err := d.Set(AttrLabels, instance.Labels); err != nil {
 		return diag.FromErr(err)
 	}
@@ -928,21 +933,21 @@ func rApply( //nolint:gocyclo
 		networkInterfaces := make([]map[string]interface{}, len(instance.PrivateNetworks))
 
 		for i, privnet := range instance.PrivateNetworks {
-			privateNetwork, err := client.GetPrivateNetwork(ctx, zone, privnet.ID.String())
+			privateNetwork, err := clientV3.GetPrivateNetwork(ctx, privnet.ID)
 			if err != nil {
 				return diag.FromErr(err)
 			}
 
 			var instanceAddress *string
 			for _, lease := range privateNetwork.Leases {
-				if *lease.InstanceID == instance.ID.String() {
-					address := lease.IPAddress.String()
+				if lease.InstanceID.String() == instance.ID.String() {
+					address := lease.IP.String()
 					instanceAddress = &address
 					break
 				}
 			}
 
-			nif, err := NetworkInterface{privnet.ID.String(), instanceAddress}.ToInterface()
+			nif, err := NetworkInterface{privnet.ID.String(), instanceAddress, privnet.MACAddress}.ToInterface()
 			if err != nil {
 				return diag.FromErr(err)
 			}
@@ -964,8 +969,10 @@ func rApply( //nolint:gocyclo
 		}
 	}
 
-	if err := d.Set(AttrSSHKey, instance.SSHKey); err != nil {
-		return diag.FromErr(err)
+	if instance.SSHKey != nil {
+		if err := d.Set(AttrSSHKey, instance.SSHKey.Name); err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
 	if len(instance.SecurityGroups) > 0 {
@@ -983,36 +990,30 @@ func rApply( //nolint:gocyclo
 		return diag.FromErr(err)
 	}
 
-	if err := d.Set(AttrTemplateID, instance.Template.ID.String()); err != nil {
-		return diag.FromErr(err)
+	if instance.Template != nil {
+		if err := d.Set(AttrTemplateID, instance.Template.ID.String()); err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
-	rdns, err := client.GetInstanceReverseDNS(
-		ctx,
-		d.Get(AttrZone).(string),
-		instance.ID.String(),
-	)
-	if err != nil && !errors.Is(err, exoapi.ErrNotFound) {
+	rdns, err := clientV3.GetReverseDNSInstance(ctx, instance.ID)
+	if err != nil && !errors.Is(err, v3.ErrNotFound) {
 		return diag.Errorf("unable to retrieve instance reverse-dns: %s", err)
 	}
-	if err := d.Set(AttrReverseDNS, strings.TrimSuffix(rdns, ".")); err != nil {
-		return diag.FromErr(err)
+	if rdns != nil {
+		if err := d.Set(AttrReverseDNS, strings.TrimSuffix(string(rdns.DomainName), ".")); err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
-	instanceType, err := client.GetInstanceType(
-		ctx,
-		d.Get(AttrZone).(string),
-		instance.InstanceType.ID.String(),
-	)
-	if err != nil {
-		return diag.Errorf("unable to retrieve instance type: %s", err)
-	}
-	if err := d.Set(AttrType, fmt.Sprintf(
-		"%s.%s",
-		strings.ToLower(*instanceType.Family),
-		strings.ToLower(*instanceType.Size),
-	)); err != nil {
-		return diag.FromErr(err)
+	if instance.InstanceType != nil && instance.InstanceType.Family != "" && instance.InstanceType.Size != "" {
+		if err := d.Set(AttrType, fmt.Sprintf(
+			"%s.%s",
+			strings.ToLower(string(instance.InstanceType.Family)),
+			strings.ToLower(string(instance.InstanceType.Size)),
+		)); err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
 	if instance.UserData != "" {
