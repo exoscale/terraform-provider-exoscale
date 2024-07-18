@@ -117,7 +117,7 @@ func resourceSKSNodepool() *schema.Resource {
 					resSKSNodepoolAttrKubeletGCMinAge: {
 						Type:        schema.TypeString,
 						Optional:    true,
-						Description: "The minimum age for an unused image before it is garbage collected",
+						Description: "The minimum age for an unused image before it is garbage collected (k8s duration format, eg. 1h)",
 					},
 					resSKSNodepoolAttrKubeletGCHighThreshold: {
 						Type:        schema.TypeInt,
