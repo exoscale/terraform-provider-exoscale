@@ -4,7 +4,8 @@
 
 BUG FIXES:
 
-- fix: allow ICMP Code and Type -1 to 254 #372 
+- fix: allow ICMP Code and Type -1 to 254 #372
+- Bump kafka version used by tests #378
 
 IMPROVEMENTS:
 
