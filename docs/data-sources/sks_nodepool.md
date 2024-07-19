@@ -53,6 +53,6 @@ Optional:
 
 - `high_threshold` (Number) The percent of disk usage after which image garbage collection is always run
 - `low_threshold` (Number) The percent of disk usage before which image garbage collection is never run
-- `min_age` (String) The minimum age for an unused image before it is garbage collected
+- `min_age` (String) The minimum age for an unused image before it is garbage collected (k8s duration format, eg. 1h)
 
 
