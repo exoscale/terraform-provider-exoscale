@@ -218,6 +218,21 @@ func Resource() *schema.Resource {
 	}
 }
 
+func findInstanceType(ctx context.Context, c *v3.Client, x string) (*v3.InstanceType, error) {
+	res, err := c.ListInstanceTypes(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, r := range res.InstanceTypes {
+		if r.ID.String() == x {
+			return c.GetInstanceType(ctx, r.ID)
+		}
+	}
+
+	return nil, v3.ErrNotFound
+}
+
 func rCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics { //nolint:gocyclo
 	tflog.Debug(ctx, "beginning create", map[string]interface{}{
 		"id": utils.IDString(d, Name),
@@ -862,7 +877,7 @@ func rApply( //nolint:gocyclo
 	instance *v3.Instance,
 ) diag.Diagnostics {
 	if len(instance.AntiAffinityGroups) > 0 {
-		antiAffinityGroupIDs := make([]string, len(instance.AntiAffinityGroups))
+		antiAffinityGroupIDs := make([]string, 0, len(instance.AntiAffinityGroups))
 		for _, aag := range instance.AntiAffinityGroups {
 			antiAffinityGroupIDs = append(antiAffinityGroupIDs, aag.ID.String())
 		}
@@ -894,7 +909,7 @@ func rApply( //nolint:gocyclo
 	}
 
 	if len(instance.ElasticIPS) > 0 {
-		elasticIPIDs := make([]string, len(instance.ElasticIPS))
+		elasticIPIDs := make([]string, 0, len(instance.ElasticIPS))
 		for _, eip := range instance.ElasticIPS {
 			elasticIPIDs = append(elasticIPIDs, eip.ID.String())
 		}
@@ -976,7 +991,7 @@ func rApply( //nolint:gocyclo
 	}
 
 	if len(instance.SecurityGroups) > 0 {
-		securityGroupIDs := make([]string, len(instance.SecurityGroups))
+		securityGroupIDs := make([]string, 0, len(instance.SecurityGroups))
 		for _, sg := range instance.SecurityGroups {
 			securityGroupIDs = append(securityGroupIDs, sg.ID.String())
 		}
@@ -1000,20 +1015,25 @@ func rApply( //nolint:gocyclo
 	if err != nil && !errors.Is(err, v3.ErrNotFound) {
 		return diag.Errorf("unable to retrieve instance reverse-dns: %s", err)
 	}
+	rdnsAttr := ""
 	if rdns != nil {
-		if err := d.Set(AttrReverseDNS, strings.TrimSuffix(string(rdns.DomainName), ".")); err != nil {
-			return diag.FromErr(err)
-		}
+		rdnsAttr = strings.TrimSuffix(string(rdns.DomainName), ".")
+	}
+	if err := d.Set(AttrReverseDNS, rdnsAttr); err != nil {
+		return diag.FromErr(err)
 	}
 
-	if instance.InstanceType != nil && instance.InstanceType.Family != "" && instance.InstanceType.Size != "" {
-		if err := d.Set(AttrType, fmt.Sprintf(
-			"%s.%s",
-			strings.ToLower(string(instance.InstanceType.Family)),
-			strings.ToLower(string(instance.InstanceType.Size)),
-		)); err != nil {
-			return diag.FromErr(err)
-		}
+	instanceType, err := findInstanceType(ctx, clientV3, instance.InstanceType.ID.String())
+	if err != nil {
+		return diag.Errorf("unable to find instance type: %s", err)
+	}
+
+	if err := d.Set(AttrType, fmt.Sprintf(
+		"%s.%s",
+		strings.ToLower(string(instanceType.Family)),
+		strings.ToLower(string(instanceType.Size)),
+	)); err != nil {
+		return diag.FromErr(err)
 	}
 
 	if instance.UserData != "" {
