@@ -71,6 +71,7 @@ directory for complete configuration examples.
 - `created_at` (String) The instance creation date.
 - `id` (String) The ID of this resource.
 - `ipv6_address` (String) The instance (main network interface) IPv6 address (if enabled).
+- `mac_address` (String) MAC address
 - `private_network_ids` (Set of String, Deprecated) A list of private networks (IDs) attached to the instance. Please use the `network_interface.*.network_id` argument instead.
 - `public_ip_address` (String) The instance (main network interface) IPv4 address.
 
@@ -84,6 +85,10 @@ Required:
 Optional:
 
 - `ip_address` (String) The IPv4 address to request as static DHCP lease if the network interface is attached to a *managed* private network.
+
+Read-Only:
+
+- `mac_address` (String) MAC address
 
 
 <a id="nestedblock--timeouts"></a>

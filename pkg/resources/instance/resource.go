@@ -14,7 +14,6 @@ import (
 
 	egoscale "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
-	egoscaleV3 "github.com/exoscale/egoscale/v3"
 	v3 "github.com/exoscale/egoscale/v3"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
@@ -258,7 +257,7 @@ func rCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 	clientV3, err := utils.SwitchClientZone(
 		ctx,
 		defaultClientV3,
-		egoscaleV3.ZoneName(zone),
+		v3.ZoneName(zone),
 	)
 	if err != nil {
 		return diag.FromErr(err)
@@ -401,17 +400,17 @@ func rCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 	// Attach block storage volumes if set
 	if bsSet, ok := d.Get(AttrBlockStorageVolumeIDs).(*schema.Set); ok {
 		for _, bs := range bsSet.List() {
-			iid, err := egoscaleV3.ParseUUID(*instance.ID)
+			iid, err := v3.ParseUUID(*instance.ID)
 			if err != nil {
 				return diag.Errorf("unable to parse instance ID: %s", err)
 			}
-			bid, err := egoscaleV3.ParseUUID(bs.(string))
+			bid, err := v3.ParseUUID(bs.(string))
 			if err != nil {
 				return diag.Errorf("unable to parse block storage ID: %s", err)
 			}
 
-			request := egoscaleV3.AttachBlockStorageVolumeToInstanceRequest{
-				Instance: &egoscaleV3.InstanceTarget{
+			request := v3.AttachBlockStorageVolumeToInstanceRequest{
+				Instance: &v3.InstanceTarget{
 					ID: iid,
 				},
 			}
@@ -425,7 +424,7 @@ func rCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 				return diag.Errorf("unable to parse attached instance ID: %s", err)
 			}
 
-			_, err = clientV3.Wait(ctx, op, egoscaleV3.OperationStateSuccess)
+			_, err = clientV3.Wait(ctx, op, v3.OperationStateSuccess)
 			if err != nil {
 				return diag.Errorf("failed to create block storage: %s", err)
 			}
@@ -476,7 +475,7 @@ func rRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.D
 		return diag.FromErr(err)
 	}
 
-	instance, err := clientV3.GetInstance(ctx, egoscaleV3.UUID(d.Id()))
+	instance, err := clientV3.GetInstance(ctx, v3.UUID(d.Id()))
 	if err != nil {
 		if errors.Is(err, v3.ErrNotFound) {
 			// Resource doesn't exist anymore, signaling the core to remove it from the state.
@@ -518,7 +517,7 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 	clientV3, err := utils.SwitchClientZone(
 		ctx,
 		defaultClientV3,
-		egoscaleV3.ZoneName(zone),
+		v3.ZoneName(zone),
 	)
 	if err != nil {
 		return diag.FromErr(err)
@@ -590,17 +589,17 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 
 		if added := cur.Difference(old); added.Len() > 0 {
 			for _, id := range added.List() {
-				iid, err := egoscaleV3.ParseUUID(*instance.ID)
+				iid, err := v3.ParseUUID(*instance.ID)
 				if err != nil {
 					return diag.Errorf("unable to parse instance ID: %s", err)
 				}
-				bid, err := egoscaleV3.ParseUUID(id.(string))
+				bid, err := v3.ParseUUID(id.(string))
 				if err != nil {
 					return diag.Errorf("unable to parse block storage ID: %s", err)
 				}
 
-				request := egoscaleV3.AttachBlockStorageVolumeToInstanceRequest{
-					Instance: &egoscaleV3.InstanceTarget{
+				request := v3.AttachBlockStorageVolumeToInstanceRequest{
+					Instance: &v3.InstanceTarget{
 						ID: iid,
 					},
 				}
@@ -614,7 +613,7 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 					return diag.Errorf("unable to parse attached instance ID: %s", err)
 				}
 
-				_, err = clientV3.Wait(ctx, op, egoscaleV3.OperationStateSuccess)
+				_, err = clientV3.Wait(ctx, op, v3.OperationStateSuccess)
 				if err != nil {
 					return diag.Errorf("failed to attach block storage: %s", err)
 				}
@@ -623,7 +622,7 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 
 		if removed := old.Difference(cur); removed.Len() > 0 {
 			for _, id := range removed.List() {
-				bid, err := egoscaleV3.ParseUUID(id.(string))
+				bid, err := v3.ParseUUID(id.(string))
 				if err != nil {
 					return diag.Errorf("unable to parse block storage ID: %s", err)
 				}
@@ -633,14 +632,14 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 					bid,
 				)
 				if err != nil {
-					if !errors.Is(err, egoscaleV3.ErrNotFound) {
+					if !errors.Is(err, v3.ErrNotFound) {
 						return diag.Errorf("failed to detach block storage: %s", err)
 					}
 
 					continue
 				}
 
-				_, err = clientV3.Wait(ctx, op, egoscaleV3.OperationStateSuccess)
+				_, err = clientV3.Wait(ctx, op, v3.OperationStateSuccess)
 				if err != nil {
 					return diag.Errorf("failed to detach block storage: %s", err)
 				}
