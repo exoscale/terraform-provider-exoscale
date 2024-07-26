@@ -64,6 +64,7 @@ func nodepoolToDataMap(nodepool *v2.SKSNodepool) general.TerraformObject {
 	general.Assign(ret, resSKSNodepoolAttrLabels, nodepool.Labels)
 	general.Assign(ret, resSKSNodepoolAttrName, nodepool.Name)
 	general.Assign(ret, resSKSNodepoolAttrPrivateNetworkIDs, nodepool.PrivateNetworkIDs)
+	// TODO
 	general.Assign(ret, resSKSNodepoolAttrSecurityGroupIDs, nodepool.SecurityGroupIDs)
 	general.Assign(ret, resSKSNodepoolAttrSize, nodepool.Size)
 	general.Assign(ret, resSKSNodepoolAttrState, nodepool.State)
