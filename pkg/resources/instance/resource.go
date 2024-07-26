@@ -217,21 +217,6 @@ func Resource() *schema.Resource {
 	}
 }
 
-func findInstanceType(ctx context.Context, c *v3.Client, x string) (*v3.InstanceType, error) {
-	res, err := c.ListInstanceTypes(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, r := range res.InstanceTypes {
-		if r.ID.String() == x {
-			return c.GetInstanceType(ctx, r.ID)
-		}
-	}
-
-	return nil, v3.ErrNotFound
-}
-
 func rCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics { //nolint:gocyclo
 	tflog.Debug(ctx, "beginning create", map[string]interface{}{
 		"id": utils.IDString(d, Name),
@@ -1022,7 +1007,12 @@ func rApply( //nolint:gocyclo
 		return diag.FromErr(err)
 	}
 
-	instanceType, err := findInstanceType(ctx, clientV3, instance.InstanceType.ID.String())
+	instanceTypes, err := clientV3.ListInstanceTypes(ctx)
+	if err != nil {
+		return diag.Errorf("unable to find instance type: %s", err)
+	}
+
+	instanceType, err := instanceTypes.FindInstanceType(instance.InstanceType.ID.String())
 	if err != nil {
 		return diag.Errorf("unable to find instance type: %s", err)
 	}
