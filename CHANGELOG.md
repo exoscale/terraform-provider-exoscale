@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+FEATURES:
+
+- exoscale_compute_instance: mac address attribute #373 
+
 BUG FIXES:
 
 - fix: allow ICMP Code and Type -1 to 254 #372

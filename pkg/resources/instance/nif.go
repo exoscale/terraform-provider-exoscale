@@ -8,8 +8,9 @@ import (
 )
 
 type NetworkInterface struct {
-	NetworkID string  `json:"network_id"`
-	IPAddress *string `json:"ip_address"`
+	NetworkID  string  `json:"network_id"`
+	IPAddress  *string `json:"ip_address"`
+	MacAddress string  `json:"mac_address"`
 }
 
 func NewNetworkInterface(raw interface{}) (*NetworkInterface, error) {

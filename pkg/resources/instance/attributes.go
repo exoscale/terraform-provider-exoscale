@@ -14,6 +14,7 @@ const (
 	AttrID                    = "id"
 	AttrIPv6                  = "ipv6"
 	AttrIPv6Address           = "ipv6_address"
+	AttrMACAddress            = "mac_address"
 	AttrLabels                = "labels"
 	AttrManagerID             = "manager_id"
 	AttrManagerType           = "manager_type"

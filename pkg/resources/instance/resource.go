@@ -14,7 +14,7 @@ import (
 
 	egoscale "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
-	egoscaleV3 "github.com/exoscale/egoscale/v3"
+	v3 "github.com/exoscale/egoscale/v3"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
@@ -66,6 +66,11 @@ func Resource() *schema.Resource {
 			Optional:    true,
 			Default:     false,
 		},
+		AttrMACAddress: {
+			Description: "MAC address",
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
 		AttrIPv6Address: {
 			Description: "The instance (main network interface) IPv6 address (if enabled).",
 			Type:        schema.TypeString,
@@ -107,6 +112,11 @@ func Resource() *schema.Resource {
 						Description: "The [exoscale_private_network](./private_network.md) (ID) to attach to the instance.",
 						Type:        schema.TypeString,
 						Required:    true,
+					},
+					"mac_address": {
+						Description: "MAC address",
+						Type:        schema.TypeString,
+						Computed:    true,
 					},
 				},
 			},
@@ -232,7 +242,7 @@ func rCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 	clientV3, err := utils.SwitchClientZone(
 		ctx,
 		defaultClientV3,
-		egoscaleV3.ZoneName(zone),
+		v3.ZoneName(zone),
 	)
 	if err != nil {
 		return diag.FromErr(err)
@@ -375,17 +385,17 @@ func rCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 	// Attach block storage volumes if set
 	if bsSet, ok := d.Get(AttrBlockStorageVolumeIDs).(*schema.Set); ok {
 		for _, bs := range bsSet.List() {
-			iid, err := egoscaleV3.ParseUUID(*instance.ID)
+			iid, err := v3.ParseUUID(*instance.ID)
 			if err != nil {
 				return diag.Errorf("unable to parse instance ID: %s", err)
 			}
-			bid, err := egoscaleV3.ParseUUID(bs.(string))
+			bid, err := v3.ParseUUID(bs.(string))
 			if err != nil {
 				return diag.Errorf("unable to parse block storage ID: %s", err)
 			}
 
-			request := egoscaleV3.AttachBlockStorageVolumeToInstanceRequest{
-				Instance: &egoscaleV3.InstanceTarget{
+			request := v3.AttachBlockStorageVolumeToInstanceRequest{
+				Instance: &v3.InstanceTarget{
 					ID: iid,
 				},
 			}
@@ -399,7 +409,7 @@ func rCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 				return diag.Errorf("unable to parse attached instance ID: %s", err)
 			}
 
-			_, err = clientV3.Wait(ctx, op, egoscaleV3.OperationStateSuccess)
+			_, err = clientV3.Wait(ctx, op, v3.OperationStateSuccess)
 			if err != nil {
 				return diag.Errorf("failed to create block storage: %s", err)
 			}
@@ -445,14 +455,14 @@ func rRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.D
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(config.GetEnvironment(meta), zone))
 	defer cancel()
 
-	client, err := config.GetClient(meta)
+	clientV3, err := config.GetClientV3WithZone(ctx, meta, zone)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	instance, err := client.GetInstance(ctx, zone, d.Id())
+	instance, err := clientV3.GetInstance(ctx, v3.UUID(d.Id()))
 	if err != nil {
-		if errors.Is(err, exoapi.ErrNotFound) {
+		if errors.Is(err, v3.ErrNotFound) {
 			// Resource doesn't exist anymore, signaling the core to remove it from the state.
 			d.SetId("")
 			return nil
@@ -464,7 +474,7 @@ func rRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.D
 		"id": utils.IDString(d, Name),
 	})
 
-	return rApply(ctx, client, d, instance)
+	return rApply(ctx, clientV3, d, instance)
 }
 
 func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics { //nolint:gocyclo
@@ -492,7 +502,7 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 	clientV3, err := utils.SwitchClientZone(
 		ctx,
 		defaultClientV3,
-		egoscaleV3.ZoneName(zone),
+		v3.ZoneName(zone),
 	)
 	if err != nil {
 		return diag.FromErr(err)
@@ -564,17 +574,17 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 
 		if added := cur.Difference(old); added.Len() > 0 {
 			for _, id := range added.List() {
-				iid, err := egoscaleV3.ParseUUID(*instance.ID)
+				iid, err := v3.ParseUUID(*instance.ID)
 				if err != nil {
 					return diag.Errorf("unable to parse instance ID: %s", err)
 				}
-				bid, err := egoscaleV3.ParseUUID(id.(string))
+				bid, err := v3.ParseUUID(id.(string))
 				if err != nil {
 					return diag.Errorf("unable to parse block storage ID: %s", err)
 				}
 
-				request := egoscaleV3.AttachBlockStorageVolumeToInstanceRequest{
-					Instance: &egoscaleV3.InstanceTarget{
+				request := v3.AttachBlockStorageVolumeToInstanceRequest{
+					Instance: &v3.InstanceTarget{
 						ID: iid,
 					},
 				}
@@ -588,7 +598,7 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 					return diag.Errorf("unable to parse attached instance ID: %s", err)
 				}
 
-				_, err = clientV3.Wait(ctx, op, egoscaleV3.OperationStateSuccess)
+				_, err = clientV3.Wait(ctx, op, v3.OperationStateSuccess)
 				if err != nil {
 					return diag.Errorf("failed to attach block storage: %s", err)
 				}
@@ -597,7 +607,7 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 
 		if removed := old.Difference(cur); removed.Len() > 0 {
 			for _, id := range removed.List() {
-				bid, err := egoscaleV3.ParseUUID(id.(string))
+				bid, err := v3.ParseUUID(id.(string))
 				if err != nil {
 					return diag.Errorf("unable to parse block storage ID: %s", err)
 				}
@@ -607,14 +617,14 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 					bid,
 				)
 				if err != nil {
-					if !errors.Is(err, egoscaleV3.ErrNotFound) {
+					if !errors.Is(err, v3.ErrNotFound) {
 						return diag.Errorf("failed to detach block storage: %s", err)
 					}
 
 					continue
 				}
 
-				_, err = clientV3.Wait(ctx, op, egoscaleV3.OperationStateSuccess)
+				_, err = clientV3.Wait(ctx, op, v3.OperationStateSuccess)
 				if err != nil {
 					return diag.Errorf("failed to detach block storage: %s", err)
 				}
@@ -846,51 +856,65 @@ func rDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 
 func rApply( //nolint:gocyclo
 	ctx context.Context,
-	client *egoscale.Client,
+	clientV3 *v3.Client,
 	d *schema.ResourceData,
-	instance *egoscale.Instance,
+	instance *v3.Instance,
 ) diag.Diagnostics {
-	zone := d.Get(AttrZone).(string)
-
-	if instance.AntiAffinityGroupIDs != nil {
-		antiAffinityGroupIDs := make([]string, len(*instance.AntiAffinityGroupIDs))
-		copy(antiAffinityGroupIDs, *instance.AntiAffinityGroupIDs)
+	if len(instance.AntiAffinityGroups) > 0 {
+		antiAffinityGroupIDs := make([]string, 0, len(instance.AntiAffinityGroups))
+		for _, aag := range instance.AntiAffinityGroups {
+			antiAffinityGroupIDs = append(antiAffinityGroupIDs, aag.ID.String())
+		}
 
 		if err := d.Set(AttrAntiAffinityGroupIDs, antiAffinityGroupIDs); err != nil {
 			return diag.FromErr(err)
 		}
 	}
 
-	if err := d.Set(AttrCreatedAt, instance.CreatedAt.String()); err != nil {
+	if err := d.Set(AttrCreatedAt, instance.CreatedAT.String()); err != nil {
 		return diag.FromErr(err)
 	}
 
 	if err := d.Set(
 		AttrDeployTargetID,
-		utils.DefaultString(instance.DeployTargetID, ""),
+		func() string {
+			if instance.DeployTarget != nil {
+				return instance.DeployTarget.ID.String()
+			} else {
+				return ""
+			}
+		}(),
 	); err != nil {
 		return diag.FromErr(err)
 	}
 
-	if err := d.Set(AttrDiskSize, *instance.DiskSize); err != nil {
+	if err := d.Set(AttrDiskSize, instance.DiskSize); err != nil {
 		return diag.FromErr(err)
 	}
 
-	if instance.ElasticIPIDs != nil {
-		elasticIPIDs := make([]string, len(*instance.ElasticIPIDs))
-		copy(elasticIPIDs, *instance.ElasticIPIDs)
+	if len(instance.ElasticIPS) > 0 {
+		elasticIPIDs := make([]string, 0, len(instance.ElasticIPS))
+		for _, eip := range instance.ElasticIPS {
+			elasticIPIDs = append(elasticIPIDs, eip.ID.String())
+		}
 
 		if err := d.Set(AttrElasticIPIDs, elasticIPIDs); err != nil {
 			return diag.FromErr(err)
 		}
 	}
 
-	if err := d.Set(AttrIPv6, utils.DefaultBool(instance.IPv6Enabled, false)); err != nil {
+	if err := d.Set(AttrIPv6, utils.DefaultBool(v3.Ptr(instance.Ipv6Address != ""), false)); err != nil {
 		return diag.FromErr(err)
 	}
 
-	if instance.IPv6Address != nil {
-		if err := d.Set(AttrIPv6Address, instance.IPv6Address.String()); err != nil {
+	if instance.Ipv6Address != "" {
+		if err := d.Set(AttrIPv6Address, instance.Ipv6Address); err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
+	if instance.MACAddress != "" {
+		if err := d.Set(AttrMACAddress, instance.MACAddress); err != nil {
 			return diag.FromErr(err)
 		}
 	}
@@ -899,36 +923,36 @@ func rApply( //nolint:gocyclo
 		return diag.FromErr(err)
 	}
 
-	if err := d.Set(AttrName, *instance.Name); err != nil {
+	if err := d.Set(AttrName, instance.Name); err != nil {
 		return diag.FromErr(err)
 	}
 
-	if instance.PrivateNetworkIDs != nil {
-		privateNetworkIDs := make([]string, len(*instance.PrivateNetworkIDs))
-		networkInterfaces := make([]map[string]interface{}, len(*instance.PrivateNetworkIDs))
+	if len(instance.PrivateNetworks) > 0 {
+		privateNetworkIDs := make([]string, len(instance.PrivateNetworks))
+		networkInterfaces := make([]map[string]interface{}, len(instance.PrivateNetworks))
 
-		for i, id := range *instance.PrivateNetworkIDs {
-			privateNetwork, err := client.GetPrivateNetwork(ctx, zone, id)
+		for i, privnet := range instance.PrivateNetworks {
+			privateNetwork, err := clientV3.GetPrivateNetwork(ctx, privnet.ID)
 			if err != nil {
 				return diag.FromErr(err)
 			}
 
 			var instanceAddress *string
 			for _, lease := range privateNetwork.Leases {
-				if *lease.InstanceID == *instance.ID {
-					address := lease.IPAddress.String()
+				if lease.InstanceID.String() == instance.ID.String() {
+					address := lease.IP.String()
 					instanceAddress = &address
 					break
 				}
 			}
 
-			nif, err := NetworkInterface{id, instanceAddress}.ToInterface()
+			nif, err := NetworkInterface{privnet.ID.String(), instanceAddress, privnet.MACAddress}.ToInterface()
 			if err != nil {
 				return diag.FromErr(err)
 			}
 
 			networkInterfaces[i] = nif
-			privateNetworkIDs[i] = id
+			privateNetworkIDs[i] = privnet.ID.String()
 		}
 		if err := d.Set(AttrPrivateNetworkIDs, privateNetworkIDs); err != nil {
 			return diag.FromErr(err)
@@ -938,19 +962,23 @@ func rApply( //nolint:gocyclo
 		}
 	}
 
-	if instance.PublicIPAddress != nil {
-		if err := d.Set(AttrPublicIPAddress, instance.PublicIPAddress.String()); err != nil {
+	if instance.PublicIP != nil {
+		if err := d.Set(AttrPublicIPAddress, instance.PublicIP.String()); err != nil {
 			return diag.FromErr(err)
 		}
 	}
 
-	if err := d.Set(AttrSSHKey, instance.SSHKey); err != nil {
-		return diag.FromErr(err)
+	if instance.SSHKey != nil {
+		if err := d.Set(AttrSSHKey, instance.SSHKey.Name); err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
-	if instance.SecurityGroupIDs != nil {
-		securityGroupIDs := make([]string, len(*instance.SecurityGroupIDs))
-		copy(securityGroupIDs, *instance.SecurityGroupIDs)
+	if len(instance.SecurityGroups) > 0 {
+		securityGroupIDs := make([]string, 0, len(instance.SecurityGroups))
+		for _, sg := range instance.SecurityGroups {
+			securityGroupIDs = append(securityGroupIDs, sg.ID.String())
+		}
 
 		if err := d.Set(AttrSecurityGroupIDs, securityGroupIDs); err != nil {
 			return diag.FromErr(err)
@@ -961,40 +989,44 @@ func rApply( //nolint:gocyclo
 		return diag.FromErr(err)
 	}
 
-	if err := d.Set(AttrTemplateID, instance.TemplateID); err != nil {
-		return diag.FromErr(err)
+	if instance.Template != nil {
+		if err := d.Set(AttrTemplateID, instance.Template.ID.String()); err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
-	rdns, err := client.GetInstanceReverseDNS(
-		ctx,
-		d.Get(AttrZone).(string),
-		*instance.ID,
-	)
-	if err != nil && !errors.Is(err, exoapi.ErrNotFound) {
+	rdns, err := clientV3.GetReverseDNSInstance(ctx, instance.ID)
+	if err != nil && !errors.Is(err, v3.ErrNotFound) {
 		return diag.Errorf("unable to retrieve instance reverse-dns: %s", err)
 	}
-	if err := d.Set(AttrReverseDNS, strings.TrimSuffix(rdns, ".")); err != nil {
+	rdnsAttr := ""
+	if rdns != nil {
+		rdnsAttr = strings.TrimSuffix(string(rdns.DomainName), ".")
+	}
+	if err := d.Set(AttrReverseDNS, rdnsAttr); err != nil {
 		return diag.FromErr(err)
 	}
 
-	instanceType, err := client.GetInstanceType(
-		ctx,
-		d.Get(AttrZone).(string),
-		*instance.InstanceTypeID,
-	)
+	instanceTypes, err := clientV3.ListInstanceTypes(ctx)
 	if err != nil {
-		return diag.Errorf("unable to retrieve instance type: %s", err)
+		return diag.Errorf("unable to find instance type: %s", err)
 	}
+
+	instanceType, err := instanceTypes.FindInstanceType(instance.InstanceType.ID.String())
+	if err != nil {
+		return diag.Errorf("unable to find instance type: %s", err)
+	}
+
 	if err := d.Set(AttrType, fmt.Sprintf(
 		"%s.%s",
-		strings.ToLower(*instanceType.Family),
-		strings.ToLower(*instanceType.Size),
+		strings.ToLower(string(instanceType.Family)),
+		strings.ToLower(string(instanceType.Size)),
 	)); err != nil {
 		return diag.FromErr(err)
 	}
 
-	if instance.UserData != nil {
-		userData, err := utils.DecodeUserData(*instance.UserData)
+	if instance.UserData != "" {
+		userData, err := utils.DecodeUserData(instance.UserData)
 		if err != nil {
 			return diag.Errorf("unable to decode user data: %s", err)
 		}
@@ -1003,11 +1035,11 @@ func rApply( //nolint:gocyclo
 		}
 	}
 
-	if instance.PublicIPAddress != nil {
+	if instance.PublicIP != nil {
 		// Connection info for the `ssh` remote-exec provisioner
 		d.SetConnInfo(map[string]string{
 			"type": "ssh",
-			"host": instance.PublicIPAddress.String(),
+			"host": instance.PublicIP.String(),
 		})
 	}
 
