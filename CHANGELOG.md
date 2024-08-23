@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+IMPROVEMENTS:
+
+- go.mk: upgrade to v2.0.3 #383
+
 ## 0.60.0
 
 FEATURES:
