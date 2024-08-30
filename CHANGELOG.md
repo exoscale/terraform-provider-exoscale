@@ -5,6 +5,7 @@
 IMPROVEMENTS:
 
 - go.mk: upgrade to v2.0.3 #383
+- Re-enable DNS service tests #384
 
 BUG FIXES:
 
