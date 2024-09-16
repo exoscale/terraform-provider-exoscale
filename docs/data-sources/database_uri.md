@@ -2,7 +2,9 @@
 page_title: "exoscale_database_uri Data Source - terraform-provider-exoscale"
 subcategory: ""
 description: |-
-  Fetch Exoscale Database https://community.exoscale.com/documentation/dbaas/ URI data.
+  Fetch Exoscale Database https://community.exoscale.com/documentation/dbaas/ connection URI data.
+  This data source returns database conection details of the default (admin) user only.
+  URI parts are also available individually for convenience.
   Corresponding resource: exoscale_database ../resources/database.md.
 ---
 
@@ -61,7 +63,7 @@ output "my_database_uri" {
 
 ### Required
 
-- `name` (String) The database name to match.
+- `name` (String) Name of database service to match.
 - `type` (String) The type of the database service (`kafka`, `mysql`, `opensearch`, `pg`, `redis`).
 - `zone` (String) The Exoscale Zone name.
 
@@ -71,8 +73,14 @@ output "my_database_uri" {
 
 ### Read-Only
 
+- `db_name` (String) Default database name
+- `host` (String) Database service hostname
 - `id` (String) The ID of this resource.
-- `uri` (String, Sensitive) The database service connection URI.
+- `password` (String, Sensitive) Admin user password
+- `port` (Number) Database service port
+- `schema` (String) Database service connection schema
+- `uri` (String, Sensitive) Database service connection URI.
+- `username` (String) Admin user username
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
