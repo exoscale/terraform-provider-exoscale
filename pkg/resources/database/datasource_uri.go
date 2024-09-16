@@ -191,6 +191,9 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 	// Read remote state.
 	data.Id = data.Name
 
+	var uri string
+	var params map[string]interface{}
+
 	switch data.Type.ValueString() {
 	case "kafka": // kafka has: schema, host & port
 		res, err := client.GetDBAASServiceKafka(ctx, data.Name.ValueString())
@@ -202,24 +205,108 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 			return
 		}
 
-		data.URI = types.StringValue(res.URI)
-		if i, ok := res.URIParams["host"]; ok {
-			if h, ok := i.(string); ok {
-				data.Host = types.StringValue(h)
-			}
-		}
-		if i, ok := res.URIParams["port"]; ok {
-			if s, ok := i.(string); ok {
-				if p, err := strconv.ParseInt(s, 10, 64); err == nil {
-					data.Port = types.Int64Value(p)
-				}
-			}
-		}
+		uri = res.URI
+		params = res.URIParams
 	case "mysql":
+		res, err := client.GetDBAASServiceMysql(ctx, data.Name.ValueString())
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Client Error",
+				fmt.Sprintf("Unable to read Database Service kafka: %s", err),
+			)
+			return
+		}
+
+		data.Schema = types.StringValue("mysql")
+
+		uri = res.URI
+		params = res.URIParams
 	case "pg":
+		res, err := client.GetDBAASServicePG(ctx, data.Name.ValueString())
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Client Error",
+				fmt.Sprintf("Unable to read Database Service kafka: %s", err),
+			)
+			return
+		}
+
+		data.Schema = types.StringValue("postgres")
+
+		uri = res.URI
+		params = res.URIParams
 	case "redis":
+		res, err := client.GetDBAASServiceRedis(ctx, data.Name.ValueString())
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Client Error",
+				fmt.Sprintf("Unable to read Database Service kafka: %s", err),
+			)
+			return
+		}
+
+		data.Schema = types.StringValue("rediss")
+
+		uri = res.URI
+		params = res.URIParams
 	case "opensearch":
+		res, err := client.GetDBAASServiceOpensearch(ctx, data.Name.ValueString())
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Client Error",
+				fmt.Sprintf("Unable to read Database Service kafka: %s", err),
+			)
+			return
+		}
+
+		data.Schema = types.StringValue("https")
+
+		uri = res.URI
+		params = res.URIParams
 	case "grafana":
+		res, err := client.GetDBAASServiceGrafana(ctx, data.Name.ValueString())
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Client Error",
+				fmt.Sprintf("Unable to read Database Service kafka: %s", err),
+			)
+			return
+		}
+
+		data.Schema = types.StringValue("https")
+
+		uri = res.URI
+		params = res.URIParams
+	}
+
+	data.URI = types.StringValue(uri)
+
+	if i, ok := params["host"]; ok {
+		if s, ok := i.(string); ok {
+			data.Host = types.StringValue(s)
+		}
+	}
+	if i, ok := params["port"]; ok {
+		if s, ok := i.(string); ok {
+			if n, err := strconv.ParseInt(s, 10, 64); err == nil {
+				data.Port = types.Int64Value(n)
+			}
+		}
+	}
+	if i, ok := params["user"]; ok {
+		if s, ok := i.(string); ok {
+			data.Username = types.StringValue(s)
+		}
+	}
+	if i, ok := params["password"]; ok {
+		if s, ok := i.(string); ok {
+			data.Password = types.StringValue(s)
+		}
+	}
+	if i, ok := params["dbname"]; ok {
+		if s, ok := i.(string); ok {
+			data.DbName = types.StringValue(s)
+		}
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
