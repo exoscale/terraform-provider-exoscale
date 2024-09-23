@@ -6,6 +6,10 @@ IMPROVEMENTS:
 
 - go.mk: upgrade to v2.0.3 #383
 
+BUG FIXES:
+
+- Fix tests for database redis resource #388
+
 ## 0.60.0
 
 FEATURES:
