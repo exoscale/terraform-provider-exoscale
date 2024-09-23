@@ -56,7 +56,7 @@ func testResourceRedis(t *testing.T) {
 	dataCreate.MaintenanceDow = "monday"
 	dataCreate.MaintenanceTime = "01:23:00"
 	dataCreate.IpFilter = []string{"1.2.3.4/32"}
-	dataCreate.RedisSettings = strconv.Quote(`{"lfu_decay_time":1,"lfu_log_factor":10,"maxmemory_policy":"noeviction","notify_keyspace_events":"","persistence":"rdb","ssl":true,"timeout":300}`)
+	dataCreate.RedisSettings = strconv.Quote(`{"io_threads":1,"lfu_decay_time":1,"lfu_log_factor":10,"maxmemory_policy":"noeviction","notify_keyspace_events":"","persistence":"rdb","ssl":true,"timeout":300}`)
 	buf := &bytes.Buffer{}
 	err = tpl.Execute(buf, &dataCreate)
 	if err != nil {
@@ -68,8 +68,7 @@ func testResourceRedis(t *testing.T) {
 	dataUpdate.MaintenanceDow = "tuesday"
 	dataUpdate.MaintenanceTime = "02:34:00"
 	dataUpdate.IpFilter = nil
-	dataUpdate.RedisSettings = strconv.Quote(`{"long_query_time":5,"sql_mode":"ANSI,TRADITIONAL","sql_require_primary_key":true}`)
-	dataUpdate.RedisSettings = strconv.Quote(`{"lfu_decay_time":1,"lfu_log_factor":10,"maxmemory_policy":"noeviction","notify_keyspace_events":"","persistence":"rdb","pubsub_client_output_buffer_limit":64,"ssl":true,"timeout":300}`)
+	dataUpdate.RedisSettings = strconv.Quote(`{"io_threads":1,"lfu_decay_time":1,"lfu_log_factor":10,"maxmemory_policy":"noeviction","notify_keyspace_events":"","persistence":"rdb","pubsub_client_output_buffer_limit":64,"ssl":true,"timeout":300}`)
 	buf = &bytes.Buffer{}
 	err = tpl.Execute(buf, &dataUpdate)
 	if err != nil {

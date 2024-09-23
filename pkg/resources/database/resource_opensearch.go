@@ -475,7 +475,7 @@ func (r *Resource) updateOpensearch(ctx context.Context, stateData *ResourceMode
 			updated = true
 		}
 
-		if planData.Opensearch.IndexPatterns != nil && len(planData.Opensearch.IndexPatterns) > 0 {
+		if len(planData.Opensearch.IndexPatterns) > 0 {
 			patterns := []struct {
 				MaxIndexCount    *int64                                                                  `json:"max-index-count,omitempty"`
 				Pattern          *string                                                                 `json:"pattern,omitempty"`
