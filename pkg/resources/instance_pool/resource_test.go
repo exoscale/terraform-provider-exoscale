@@ -96,7 +96,7 @@ locals {
 
 data "exoscale_template" "debian" {
   zone = local.zone
-  name = "Linux Debian 10 (Buster) 64-bit"
+  name = "Linux Debian 12 (Bookworm) 64-bit"
 }
 
 resource "exoscale_private_network" "test" {
