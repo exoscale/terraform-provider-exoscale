@@ -33,7 +33,6 @@ var _ datasource.DataSourceWithConfigure = &DataSourceURI{}
 // DataSourceURI defines the resource implementation.
 type DataSourceURI struct {
 	client *exoscale.Client
-	env    string
 }
 
 // NewDataSourceURI creates instance of DataSourceURI.
