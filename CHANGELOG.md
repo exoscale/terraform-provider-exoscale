@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+FEATURES:
+
+- database_uri: add URI parameters as attributes #387
+
 IMPROVEMENTS:
 
 - go.mk: upgrade to v2.0.3 #383
