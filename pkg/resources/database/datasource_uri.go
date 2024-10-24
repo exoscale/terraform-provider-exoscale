@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strconv"
 
 	exoscale "github.com/exoscale/egoscale/v3"
@@ -33,6 +34,25 @@ var _ datasource.DataSourceWithConfigure = &DataSourceURI{}
 // DataSourceURI defines the resource implementation.
 type DataSourceURI struct {
 	client *exoscale.Client
+}
+
+func uriWithPassword(uri string, username string, password string) (string, error) {
+	if uri == "" {
+		return "", fmt.Errorf("empty URI provided")
+	}
+
+	re := regexp.MustCompile(`(.*)://(.*)@(.*)`)
+	matches := re.FindStringSubmatch(uri)
+
+	if len(matches) != 4 {
+		return "", fmt.Errorf("URI must contain username (format: protocol://username@some-host.com)")
+	}
+
+	return fmt.Sprintf("%s://%s:%s@%s",
+		matches[1],
+		username,
+		password,
+		matches[3]), nil
 }
 
 // NewDataSourceURI creates instance of DataSourceURI.
@@ -193,6 +213,8 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 	var uri string
 	var params map[string]interface{}
 
+	const adminUsername = "avnadmin"
+
 	switch data.Type.ValueString() {
 	case "kafka": // kafka has: schema, host & port
 		res, err := client.GetDBAASServiceKafka(ctx, data.Name.ValueString())
@@ -204,50 +226,87 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 			return
 		}
 
-		uri = res.URI
+		creds, err := client.RevealDBAASKafkaUserPassword(ctx, data.Name.ValueString(), adminUsername)
+		uri, err = uriWithPassword(res.URI, creds.Username, creds.Password)
+
+		if err != nil {
+			resp.Diagnostics.AddError("Client Error",
+				fmt.Sprintf("Unable to get Database Service kafka secret: %s", err),
+			)
+			return
+		}
+
 		params = res.URIParams
+		params["password"] = creds.Password
 	case "mysql":
 		res, err := client.GetDBAASServiceMysql(ctx, data.Name.ValueString())
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Client Error",
-				fmt.Sprintf("Unable to read Database Service kafka: %s", err),
+				fmt.Sprintf("Unable to read Database Service MySQL: %s", err),
 			)
 			return
 		}
 
 		data.Schema = types.StringValue("mysql")
 
-		uri = res.URI
+		creds, err := client.RevealDBAASMysqlUserPassword(ctx, data.Name.ValueString(), adminUsername)
+		uri, err = uriWithPassword(res.URI, creds.Username, creds.Password)
+
+		if err != nil {
+			resp.Diagnostics.AddError("Client Error",
+				fmt.Sprintf("Unable to get Database Service MySQL secret: %s", err),
+			)
+			return
+		}
 		params = res.URIParams
+		params["password"] = creds.Password
 	case "pg":
 		res, err := client.GetDBAASServicePG(ctx, data.Name.ValueString())
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Client Error",
-				fmt.Sprintf("Unable to read Database Service kafka: %s", err),
+				fmt.Sprintf("Unable to read Database Service Postgres: %s", err),
 			)
 			return
 		}
 
 		data.Schema = types.StringValue("postgres")
 
-		uri = res.URI
+		creds, err := client.RevealDBAASPostgresUserPassword(ctx, data.Name.ValueString(), adminUsername)
+		uri, err = uriWithPassword(res.URI, creds.Username, creds.Password)
+
+		if err != nil {
+			resp.Diagnostics.AddError("Client Error",
+				fmt.Sprintf("Unable to get Database Service Postgres secret: %s", err),
+			)
+			return
+		}
 		params = res.URIParams
+		params["password"] = creds.Password
 	case "redis":
 		res, err := client.GetDBAASServiceRedis(ctx, data.Name.ValueString())
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Client Error",
-				fmt.Sprintf("Unable to read Database Service kafka: %s", err),
+				fmt.Sprintf("Unable to read Database Service Redis: %s", err),
 			)
 			return
 		}
 
 		data.Schema = types.StringValue("rediss")
 
-		uri = res.URI
+		creds, err := client.RevealDBAASRedisUserPassword(ctx, data.Name.ValueString(), adminUsername)
+		uri, err = uriWithPassword(res.URI, creds.Username, creds.Password)
+
+		if err != nil {
+			resp.Diagnostics.AddError("Client Error",
+				fmt.Sprintf("Unable to get Database Service Redis secret: %s", err),
+			)
+			return
+		}
 		params = res.URIParams
+		params["password"] = creds.Password
 	case "opensearch":
 		res, err := client.GetDBAASServiceOpensearch(ctx, data.Name.ValueString())
 		if err != nil {
@@ -261,21 +320,40 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 		data.Schema = types.StringValue("https")
 
 		uri = res.URI
+		creds, err := client.RevealDBAASOpensearchUserPassword(ctx, data.Name.ValueString(), adminUsername)
+		uri, err = uriWithPassword(res.URI, creds.Username, creds.Password)
+
+		if err != nil {
+			resp.Diagnostics.AddError("Client Error",
+				fmt.Sprintf("Unable to get Database Service OpenSearch secret: %s", err),
+			)
+			return
+		}
 		params = res.URIParams
+		params["password"] = creds.Password
 	case "grafana":
 		res, err := client.GetDBAASServiceGrafana(ctx, data.Name.ValueString())
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Client Error",
-				fmt.Sprintf("Unable to read Database Service kafka: %s", err),
+				fmt.Sprintf("Unable to read Database Service Grafana: %s", err),
 			)
 			return
 		}
 
 		data.Schema = types.StringValue("https")
 
-		uri = res.URI
+		creds, err := client.RevealDBAASGrafanaUserPassword(ctx, data.Name.ValueString(), adminUsername)
+		uri, err = uriWithPassword(res.URI, creds.Username, creds.Password)
+
+		if err != nil {
+			resp.Diagnostics.AddError("Client Error",
+				fmt.Sprintf("Unable to get Database Service Grafana secret: %s", err),
+			)
+			return
+		}
 		params = res.URIParams
+		params["password"] = creds.Password
 	}
 
 	data.URI = types.StringValue(uri)
