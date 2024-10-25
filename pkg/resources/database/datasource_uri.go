@@ -211,6 +211,7 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 	data.Id = data.Name
 
 	var uri string
+	var password string
 	var params map[string]interface{}
 
 	const adminUsername = "avnadmin"
@@ -227,11 +228,19 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 		}
 
 		creds, err := client.RevealDBAASKafkaUserPassword(ctx, data.Name.ValueString(), adminUsername)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Client Error",
+				fmt.Sprintf("Unable to reveal Database Service kafka secret: %s", err),
+			)
+			return
+		}
+		password = creds.Password
 		uri, err = uriWithPassword(res.URI, creds.Username, creds.Password)
 
 		if err != nil {
 			resp.Diagnostics.AddError("Client Error",
-				fmt.Sprintf("Unable to get Database Service kafka secret: %s", err),
+				fmt.Sprintf("Unable to parse Database Service kafka secret: %s", err),
 			)
 			return
 		}
@@ -251,14 +260,23 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 		data.Schema = types.StringValue("mysql")
 
 		creds, err := client.RevealDBAASMysqlUserPassword(ctx, data.Name.ValueString(), adminUsername)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Client Error",
+				fmt.Sprintf("Unable to reveal Database Service MySQL secret: %s", err),
+			)
+			return
+		}
+		password = creds.Password
 		uri, err = uriWithPassword(res.URI, creds.Username, creds.Password)
 
 		if err != nil {
 			resp.Diagnostics.AddError("Client Error",
-				fmt.Sprintf("Unable to get Database Service MySQL secret: %s", err),
+				fmt.Sprintf("Unable to parse Database Service MySQL secret: %s", err),
 			)
 			return
 		}
+
 		params = res.URIParams
 		params["password"] = creds.Password
 	case "pg":
@@ -274,6 +292,14 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 		data.Schema = types.StringValue("postgres")
 
 		creds, err := client.RevealDBAASPostgresUserPassword(ctx, data.Name.ValueString(), adminUsername)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Client Error",
+				fmt.Sprintf("Unable to fetch Database Service Postgres: %s", err),
+			)
+			return
+		}
+		password = creds.Password
 		uri, err = uriWithPassword(res.URI, creds.Username, creds.Password)
 
 		if err != nil {
@@ -297,11 +323,19 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 		data.Schema = types.StringValue("rediss")
 
 		creds, err := client.RevealDBAASRedisUserPassword(ctx, data.Name.ValueString(), adminUsername)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Client Error",
+				fmt.Sprintf("Unable to reveal Database Service Redis secret: %s", err),
+			)
+			return
+		}
+		password = creds.Password
 		uri, err = uriWithPassword(res.URI, creds.Username, creds.Password)
 
 		if err != nil {
 			resp.Diagnostics.AddError("Client Error",
-				fmt.Sprintf("Unable to get Database Service Redis secret: %s", err),
+				fmt.Sprintf("Unable to parse Database Service Redis secret: %s", err),
 			)
 			return
 		}
@@ -319,13 +353,20 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 
 		data.Schema = types.StringValue("https")
 
-		uri = res.URI
 		creds, err := client.RevealDBAASOpensearchUserPassword(ctx, data.Name.ValueString(), adminUsername)
-		uri, err = uriWithPassword(res.URI, creds.Username, creds.Password)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Client Error",
+				fmt.Sprintf("Unable to reveal Database Service OpenSearch secret: %s", err),
+			)
+			return
+		}
+		password = creds.Password
 
+		uri, err = uriWithPassword(res.URI, creds.Username, creds.Password)
 		if err != nil {
 			resp.Diagnostics.AddError("Client Error",
-				fmt.Sprintf("Unable to get Database Service OpenSearch secret: %s", err),
+				fmt.Sprintf("Unable to parse Database Service OpenSearch secret: %s", err),
 			)
 			return
 		}
@@ -344,11 +385,19 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 		data.Schema = types.StringValue("https")
 
 		creds, err := client.RevealDBAASGrafanaUserPassword(ctx, data.Name.ValueString(), adminUsername)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Client Error",
+				fmt.Sprintf("Unable to reveal Database Service Grafana secret: %s", err),
+			)
+			return
+		}
+		password = creds.Password
 		uri, err = uriWithPassword(res.URI, creds.Username, creds.Password)
 
 		if err != nil {
 			resp.Diagnostics.AddError("Client Error",
-				fmt.Sprintf("Unable to get Database Service Grafana secret: %s", err),
+				fmt.Sprintf("Unable to parse Database Service Grafana secret: %s", err),
 			)
 			return
 		}
