@@ -45,7 +45,7 @@ func uriWithPassword(uri string, username string, password string) (string, erro
 	matches := re.FindStringSubmatch(uri)
 
 	if len(matches) != 4 {
-		return "", fmt.Errorf("URI must contain username (format: protocol://username@some-host.com)")
+		return "", fmt.Errorf("uri must contain username (format: protocol://username@some-host.com)")
 	}
 
 	return fmt.Sprintf("%s://%s:%s@%s",
