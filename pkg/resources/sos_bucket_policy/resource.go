@@ -82,6 +82,9 @@ func (r *ResourceSOSBucketPolicy) Schema(ctx context.Context, req resource.Schem
 				},
 			},
 		},
+		Blocks: map[string]schema.Block{
+			"timeouts": timeouts.BlockAll(ctx),
+		},
 	}
 }
 
@@ -130,7 +133,7 @@ func (r *ResourceSOSBucketPolicy) Create(ctx context.Context, req resource.Creat
 	_, err = sosClient.PutBucketPolicy(ctx, &s3.PutBucketPolicyInput{
 		Bucket: plan.Bucket.ValueStringPointer(),
 		Policy: plan.Policy.ValueStringPointer(),
-	}, nil)
+	})
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"failed to put bucket policy",
@@ -177,7 +180,7 @@ func (r *ResourceSOSBucketPolicy) Read(ctx context.Context, req resource.ReadReq
 
 	policy, err := sosClient.GetBucketPolicy(ctx, &s3.GetBucketPolicyInput{
 		Bucket: state.Bucket.ValueStringPointer(),
-	}, nil)
+	})
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"failed to get bucket policy",
@@ -230,7 +233,7 @@ func (r *ResourceSOSBucketPolicy) Update(ctx context.Context, req resource.Updat
 		_, err = sosClient.PutBucketPolicy(ctx, &s3.PutBucketPolicyInput{
 			Bucket: plan.Bucket.ValueStringPointer(),
 			Policy: plan.Policy.ValueStringPointer(),
-		}, nil)
+		})
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"failed to put bucket policy",
@@ -280,7 +283,7 @@ func (r *ResourceSOSBucketPolicy) Delete(ctx context.Context, req resource.Delet
 
 	_, err = sosClient.DeleteBucketPolicy(ctx, &s3.DeleteBucketPolicyInput{
 		Bucket: state.Bucket.ValueStringPointer(),
-	}, nil)
+	})
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"failed to put bucket policy",
