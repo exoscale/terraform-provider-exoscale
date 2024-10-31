@@ -8,6 +8,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-go/tfprotov5"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
+
 	"github.com/hashicorp/terraform-plugin-mux/internal/tfprotov5tov6"
 	"github.com/hashicorp/terraform-plugin-mux/internal/tfprotov6tov5"
 )
@@ -44,18 +45,27 @@ func (s v5tov6Server) ApplyResourceChange(ctx context.Context, req *tfprotov6.Ap
 }
 
 func (s v5tov6Server) CallFunction(ctx context.Context, req *tfprotov6.CallFunctionRequest) (*tfprotov6.CallFunctionResponse, error) {
-	// Remove and call s.v5Server.CallFunction below directly.
-	// Reference: https://github.com/hashicorp/terraform-plugin-mux/issues/210
-	functionServer, ok := s.v5Server.(tfprotov5.FunctionServer)
+	v5Req := tfprotov6tov5.CallFunctionRequest(req)
 
+	v5Resp, err := s.v5Server.CallFunction(ctx, v5Req)
+	if err != nil {
+		return nil, err
+	}
+
+	return tfprotov5tov6.CallFunctionResponse(v5Resp), nil
+}
+
+func (s v5tov6Server) CloseEphemeralResource(ctx context.Context, req *tfprotov6.CloseEphemeralResourceRequest) (*tfprotov6.CloseEphemeralResourceResponse, error) {
+	// TODO: Remove and call s.v5Server.CloseEphemeralResource below directly once interface becomes required
+	ephemeralResourceServer, ok := s.v5Server.(tfprotov5.EphemeralResourceServer)
 	if !ok {
-		v6Resp := &tfprotov6.CallFunctionResponse{
+		v6Resp := &tfprotov6.CloseEphemeralResourceResponse{
 			Diagnostics: []*tfprotov6.Diagnostic{
 				{
 					Severity: tfprotov6.DiagnosticSeverityError,
-					Summary:  "Provider Functions Not Implemented",
-					Detail: "A provider-defined function call was received by the provider, however the provider does not implement functions. " +
-						"Either upgrade the provider to a version that implements provider-defined functions or this is a bug in Terraform that should be reported to the Terraform maintainers.",
+					Summary:  "CloseEphemeralResource Not Implemented",
+					Detail: "A CloseEphemeralResource call was received by the provider, however the provider does not implement the RPC. " +
+						"Either upgrade the provider to a version that implements CloseEphemeralResource or this is a bug in Terraform that should be reported to the Terraform maintainers.",
 				},
 			},
 		}
@@ -63,16 +73,15 @@ func (s v5tov6Server) CallFunction(ctx context.Context, req *tfprotov6.CallFunct
 		return v6Resp, nil
 	}
 
-	v5Req := tfprotov6tov5.CallFunctionRequest(req)
-	// Reference: https://github.com/hashicorp/terraform-plugin-mux/issues/210
-	// v5Resp, err := s.v5Server.CallFunction(ctx, v5Req)
-	v5Resp, err := functionServer.CallFunction(ctx, v5Req)
+	v5Req := tfprotov6tov5.CloseEphemeralResourceRequest(req)
 
+	// v5Resp, err := s.v5Server.CloseEphemeralResource(ctx, v5Req)
+	v5Resp, err := ephemeralResourceServer.CloseEphemeralResource(ctx, v5Req)
 	if err != nil {
 		return nil, err
 	}
 
-	return tfprotov5tov6.CallFunctionResponse(v5Resp), nil
+	return tfprotov5tov6.CloseEphemeralResourceResponse(v5Resp), nil
 }
 
 func (s v5tov6Server) ConfigureProvider(ctx context.Context, req *tfprotov6.ConfigureProviderRequest) (*tfprotov6.ConfigureProviderResponse, error) {
@@ -87,23 +96,9 @@ func (s v5tov6Server) ConfigureProvider(ctx context.Context, req *tfprotov6.Conf
 }
 
 func (s v5tov6Server) GetFunctions(ctx context.Context, req *tfprotov6.GetFunctionsRequest) (*tfprotov6.GetFunctionsResponse, error) {
-	// Remove and call s.v5Server.GetFunctions below directly.
-	// Reference: https://github.com/hashicorp/terraform-plugin-mux/issues/210
-	functionServer, ok := s.v5Server.(tfprotov5.FunctionServer)
-
-	if !ok {
-		v6Resp := &tfprotov6.GetFunctionsResponse{
-			Functions: map[string]*tfprotov6.Function{},
-		}
-
-		return v6Resp, nil
-	}
-
 	v5Req := tfprotov6tov5.GetFunctionsRequest(req)
-	// Reference: https://github.com/hashicorp/terraform-plugin-mux/issues/210
-	// v5Resp, err := s.v5Server.GetFunctions(ctx, v5Req)
-	v5Resp, err := functionServer.GetFunctions(ctx, v5Req)
 
+	v5Resp, err := s.v5Server.GetFunctions(ctx, v5Req)
 	if err != nil {
 		return nil, err
 	}
@@ -144,6 +139,46 @@ func (s v5tov6Server) ImportResourceState(ctx context.Context, req *tfprotov6.Im
 	return tfprotov5tov6.ImportResourceStateResponse(v5Resp), nil
 }
 
+func (s v5tov6Server) MoveResourceState(ctx context.Context, req *tfprotov6.MoveResourceStateRequest) (*tfprotov6.MoveResourceStateResponse, error) {
+	v5Req := tfprotov6tov5.MoveResourceStateRequest(req)
+
+	v5Resp, err := s.v5Server.MoveResourceState(ctx, v5Req)
+	if err != nil {
+		return nil, err
+	}
+
+	return tfprotov5tov6.MoveResourceStateResponse(v5Resp), nil
+}
+
+func (s v5tov6Server) OpenEphemeralResource(ctx context.Context, req *tfprotov6.OpenEphemeralResourceRequest) (*tfprotov6.OpenEphemeralResourceResponse, error) {
+	// TODO: Remove and call s.v5Server.OpenEphemeralResource below directly once interface becomes required
+	ephemeralResourceServer, ok := s.v5Server.(tfprotov5.EphemeralResourceServer)
+	if !ok {
+		v6Resp := &tfprotov6.OpenEphemeralResourceResponse{
+			Diagnostics: []*tfprotov6.Diagnostic{
+				{
+					Severity: tfprotov6.DiagnosticSeverityError,
+					Summary:  "OpenEphemeralResource Not Implemented",
+					Detail: "A OpenEphemeralResource call was received by the provider, however the provider does not implement the RPC. " +
+						"Either upgrade the provider to a version that implements OpenEphemeralResource or this is a bug in Terraform that should be reported to the Terraform maintainers.",
+				},
+			},
+		}
+
+		return v6Resp, nil
+	}
+
+	v5Req := tfprotov6tov5.OpenEphemeralResourceRequest(req)
+
+	// v5Resp, err := s.v5Server.OpenEphemeralResource(ctx, v5Req)
+	v5Resp, err := ephemeralResourceServer.OpenEphemeralResource(ctx, v5Req)
+	if err != nil {
+		return nil, err
+	}
+
+	return tfprotov5tov6.OpenEphemeralResourceResponse(v5Resp), nil
+}
+
 func (s v5tov6Server) PlanResourceChange(ctx context.Context, req *tfprotov6.PlanResourceChangeRequest) (*tfprotov6.PlanResourceChangeResponse, error) {
 	v5Req := tfprotov6tov5.PlanResourceChangeRequest(req)
 	v5Resp, err := s.v5Server.PlanResourceChange(ctx, v5Req)
@@ -182,6 +217,35 @@ func (s v5tov6Server) ReadResource(ctx context.Context, req *tfprotov6.ReadResou
 	return tfprotov5tov6.ReadResourceResponse(v5Resp), nil
 }
 
+func (s v5tov6Server) RenewEphemeralResource(ctx context.Context, req *tfprotov6.RenewEphemeralResourceRequest) (*tfprotov6.RenewEphemeralResourceResponse, error) {
+	// TODO: Remove and call s.v5Server.RenewEphemeralResource below directly once interface becomes required
+	ephemeralResourceServer, ok := s.v5Server.(tfprotov5.EphemeralResourceServer)
+	if !ok {
+		v6Resp := &tfprotov6.RenewEphemeralResourceResponse{
+			Diagnostics: []*tfprotov6.Diagnostic{
+				{
+					Severity: tfprotov6.DiagnosticSeverityError,
+					Summary:  "RenewEphemeralResource Not Implemented",
+					Detail: "A RenewEphemeralResource call was received by the provider, however the provider does not implement the RPC. " +
+						"Either upgrade the provider to a version that implements RenewEphemeralResource or this is a bug in Terraform that should be reported to the Terraform maintainers.",
+				},
+			},
+		}
+
+		return v6Resp, nil
+	}
+
+	v5Req := tfprotov6tov5.RenewEphemeralResourceRequest(req)
+
+	// v5Resp, err := s.v5Server.RenewEphemeralResource(ctx, v5Req)
+	v5Resp, err := ephemeralResourceServer.RenewEphemeralResource(ctx, v5Req)
+	if err != nil {
+		return nil, err
+	}
+
+	return tfprotov5tov6.RenewEphemeralResourceResponse(v5Resp), nil
+}
+
 func (s v5tov6Server) StopProvider(ctx context.Context, req *tfprotov6.StopProviderRequest) (*tfprotov6.StopProviderResponse, error) {
 	v5Req := tfprotov6tov5.StopProviderRequest(req)
 	v5Resp, err := s.v5Server.StopProvider(ctx, v5Req)
@@ -213,6 +277,35 @@ func (s v5tov6Server) ValidateDataResourceConfig(ctx context.Context, req *tfpro
 	}
 
 	return tfprotov5tov6.ValidateDataResourceConfigResponse(v5Resp), nil
+}
+
+func (s v5tov6Server) ValidateEphemeralResourceConfig(ctx context.Context, req *tfprotov6.ValidateEphemeralResourceConfigRequest) (*tfprotov6.ValidateEphemeralResourceConfigResponse, error) {
+	// TODO: Remove and call s.v5Server.ValidateEphemeralResourceConfig below directly once interface becomes required
+	ephemeralResourceServer, ok := s.v5Server.(tfprotov5.EphemeralResourceServer)
+	if !ok {
+		v6Resp := &tfprotov6.ValidateEphemeralResourceConfigResponse{
+			Diagnostics: []*tfprotov6.Diagnostic{
+				{
+					Severity: tfprotov6.DiagnosticSeverityError,
+					Summary:  "ValidateEphemeralResourceConfig Not Implemented",
+					Detail: "A ValidateEphemeralResourceConfig call was received by the provider, however the provider does not implement the RPC. " +
+						"Either upgrade the provider to a version that implements ValidateEphemeralResourceConfig or this is a bug in Terraform that should be reported to the Terraform maintainers.",
+				},
+			},
+		}
+
+		return v6Resp, nil
+	}
+
+	v5Req := tfprotov6tov5.ValidateEphemeralResourceConfigRequest(req)
+
+	// v5Resp, err := s.v5Server.ValidateEphemeralResourceConfig(ctx, v5Req)
+	v5Resp, err := ephemeralResourceServer.ValidateEphemeralResourceConfig(ctx, v5Req)
+	if err != nil {
+		return nil, err
+	}
+
+	return tfprotov5tov6.ValidateEphemeralResourceConfigResponse(v5Resp), nil
 }
 
 func (s v5tov6Server) ValidateProviderConfig(ctx context.Context, req *tfprotov6.ValidateProviderConfigRequest) (*tfprotov6.ValidateProviderConfigResponse, error) {

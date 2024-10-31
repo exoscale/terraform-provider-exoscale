@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -18,8 +19,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-
-	exoscale "github.com/exoscale/egoscale/v3"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
@@ -34,7 +33,6 @@ var _ resource.ResourceWithImportState = &ResourceSOSBucketPolicy{}
 
 // ResourceSOSBucketPolicy defines the resource implementation.
 type ResourceSOSBucketPolicy struct {
-	client     *exoscale.Client
 	baseConfig *providerConfig.BaseConfig
 }
 
@@ -45,9 +43,9 @@ func NewResourceSOSBucketPolicy() resource.Resource {
 
 // ResourceSOSBucketPolicyModel defines the resource data model.
 type ResourceSOSBucketPolicyModel struct {
-	Bucket types.String `tfsdk:"bucket"`
-	Policy types.String `tfsdk:"policy"`
-	Zone   types.String `tfsdk:"zone"`
+	Bucket types.String         `tfsdk:"bucket"`
+	Policy jsontypes.Normalized `tfsdk:"policy"`
+	Zone   types.String         `tfsdk:"zone"`
 
 	Timeouts timeouts.Value `tfsdk:"timeouts"`
 }
@@ -71,6 +69,7 @@ func (r *ResourceSOSBucketPolicy) Schema(ctx context.Context, req resource.Schem
 			},
 			AttrPolicy: schema.StringAttribute{
 				Description: attrPolicyDescription,
+				CustomType:  jsontypes.NormalizedType{},
 				Required:    true,
 			},
 			AttrZone: schema.StringAttribute{
@@ -96,10 +95,7 @@ func (r *ResourceSOSBucketPolicy) Configure(ctx context.Context, req resource.Co
 		return
 	}
 
-	providerData := req.ProviderData.(*providerConfig.ExoscaleProviderConfig)
-
-	r.client = providerData.ClientV3
-	r.baseConfig = &providerData.Config
+	r.baseConfig = &req.ProviderData.(*providerConfig.ExoscaleProviderConfig).Config
 }
 
 func (r *ResourceSOSBucketPolicy) NewSOSClient(ctx context.Context, zone string) (*s3.Client, error) {
@@ -131,6 +127,17 @@ func (r *ResourceSOSBucketPolicy) Create(ctx context.Context, req resource.Creat
 		)
 		return
 	}
+
+	// policy, err := normalizeJSON(plan.Policy.ValueString())
+	// if err != nil {
+	// 	resp.Diagnostics.AddError(
+	// 		"failed to normalize policy JSON",
+	// 		err.Error(),
+	// 	)
+	// 	return
+	// }
+
+	// plan.Policy = types.StringValue(policy)
 
 	_, err = sosClient.PutBucketPolicy(ctx, &s3.PutBucketPolicyInput{
 		Bucket: plan.Bucket.ValueStringPointer(),
@@ -199,12 +206,16 @@ func (r *ResourceSOSBucketPolicy) Read(ctx context.Context, req resource.ReadReq
 		return
 	}
 
-	pol, err := normalizeJSON(*policy.Policy)
-	if err != nil {
-		return
-	}
+	// pol, err := normalizeJSON(*policy.Policy)
+	// if err != nil {
+	// 	resp.Diagnostics.AddError(
+	// 		"failed to normalize bucket policy JSON",
+	// 		err.Error(),
+	// 	)
+	// 	return
+	// }
 
-	state.Policy = types.StringValue(pol)
+	// state.Policy = types.StringValue(pol)
 
 	// Save updated state into Terraform state.
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
@@ -217,13 +228,13 @@ func (r *ResourceSOSBucketPolicy) Read(ctx context.Context, req resource.ReadReq
 func normalizeJSON(j string) (string, error) {
 	var m map[string]interface{}
 
-	if err := json.Unmarshal([]byte(j), m); err != nil {
-		return "", err
+	if err := json.Unmarshal([]byte(j), &m); err != nil {
+		return "", fmt.Errorf("failed to unmarshal: %q, %w", j, err)
 	}
 
-	normalized, err := json.Marshal(m)
+	normalized, err := json.Marshal(&m)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to remarshal: %#v, %w", m, err)
 	}
 
 	return string(normalized), nil
@@ -232,11 +243,11 @@ func normalizeJSON(j string) (string, error) {
 func isJSONEqual(j1, j2 string) (bool, error) {
 	var map1, map2 map[string]interface{}
 
-	if err := json.Unmarshal([]byte(j1), map1); err != nil {
+	if err := json.Unmarshal([]byte(j1), &map1); err != nil {
 		return false, err
 	}
 
-	if err := json.Unmarshal([]byte(j2), map2); err != nil {
+	if err := json.Unmarshal([]byte(j2), &map2); err != nil {
 		return false, err
 	}
 
@@ -273,15 +284,27 @@ func (r *ResourceSOSBucketPolicy) Update(ctx context.Context, req resource.Updat
 		return
 	}
 
-	jsonIsEqual, err := isJSONEqual(plan.Policy.ValueString(), state.Policy.ValueString())
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"failed to test JSON equality of policy",
-			err.Error(),
-		)
-		return
-	}
+	// jsonIsEqual, err := isJSONEqual(plan.Policy.ValueString(), state.Policy.ValueString())
+	// if err != nil {
+	// 	resp.Diagnostics.AddError(
+	// 		"failed to test JSON equality of policy",
+	// 		err.Error(),
+	// 	)
+	// 	return
+	// }
 
+	// policy, err := normalizeJSON(plan.Policy.ValueString())
+	// if err != nil {
+	// 	resp.Diagnostics.AddError(
+	// 		"failed to normalize policy JSON",
+	// 		err.Error(),
+	// 	)
+	// 	return
+	// }
+
+	// plan.Policy = types.StringValue(policy)
+
+	jsonIsEqual := plan.Policy.Equal(state.Policy)
 	if !jsonIsEqual {
 		_, err = sosClient.PutBucketPolicy(ctx, &s3.PutBucketPolicyInput{
 			Bucket: plan.Bucket.ValueStringPointer(),
@@ -374,6 +397,7 @@ func (r *ResourceSOSBucketPolicy) ImportState(ctx context.Context, req resource.
 
 	state.Bucket = types.StringValue(idParts[0])
 	state.Zone = types.StringValue(idParts[1])
+	// TODO policy?
 
 	// Save state into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)

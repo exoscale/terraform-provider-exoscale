@@ -7,12 +7,16 @@ import (
 	"context"
 
 	"github.com/hashicorp/terraform-plugin-framework/attr"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/internal/fwfunction"
+	"github.com/hashicorp/terraform-plugin-framework/internal/fwtype"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
 
 // Ensure the implementation satisifies the desired interfaces.
-var _ Return = SetReturn{}
+var (
+	_ Return                                      = SetReturn{}
+	_ fwfunction.ReturnWithValidateImplementation = SetReturn{}
+)
 
 // SetReturn represents a function return that is an unordered collection of a
 // single element type. Either the ElementType or CustomType field must be set.
@@ -22,9 +26,15 @@ var _ Return = SetReturn{}
 //   - If CustomType is set, use its associated value type.
 //   - Otherwise, use [types.Set] or a Go slice value type compatible with the
 //     element type.
+//
+// Return documentation is expected in the function [Definition] documentation.
 type SetReturn struct {
 	// ElementType is the type for all elements of the set. This field must be
 	// set.
+	//
+	// Element types that contain a dynamic type (i.e. types.Dynamic) are not supported.
+	// If underlying dynamic values are required, replace this return definition with
+	// DynamicReturn instead.
 	ElementType attr.Type
 
 	// CustomType enables the use of a custom data type in place of the
@@ -46,7 +56,7 @@ func (r SetReturn) GetType() attr.Type {
 }
 
 // NewResultData returns a new result data based on the type.
-func (r SetReturn) NewResultData(ctx context.Context) (ResultData, diag.Diagnostics) {
+func (r SetReturn) NewResultData(ctx context.Context) (ResultData, *FuncError) {
 	value := basetypes.NewSetUnknown(r.ElementType)
 
 	if r.CustomType == nil {
@@ -55,5 +65,21 @@ func (r SetReturn) NewResultData(ctx context.Context) (ResultData, diag.Diagnost
 
 	valuable, diags := r.CustomType.ValueFromSet(ctx, value)
 
-	return NewResultData(valuable), diags
+	return NewResultData(valuable), FuncErrorFromDiags(ctx, diags)
+}
+
+// ValidateImplementation contains logic for validating the
+// provider-defined implementation of the Return to prevent unexpected
+// errors or panics. This logic runs during the GetProviderSchema RPC and
+// should never include false positives.
+func (p SetReturn) ValidateImplementation(ctx context.Context, req fwfunction.ValidateReturnImplementationRequest, resp *fwfunction.ValidateReturnImplementationResponse) {
+	if p.CustomType == nil {
+		if fwtype.ContainsCollectionWithDynamic(p.GetType()) {
+			resp.Diagnostics.Append(fwtype.ReturnCollectionWithDynamicTypeDiag())
+		}
+
+		if fwtype.ContainsMissingUnderlyingType(p.GetType()) {
+			resp.Diagnostics.Append(fwtype.ReturnMissingUnderlyingTypeDiag())
+		}
+	}
 }
