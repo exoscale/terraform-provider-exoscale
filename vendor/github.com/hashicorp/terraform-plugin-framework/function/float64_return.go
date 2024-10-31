@@ -7,7 +7,6 @@ import (
 	"context"
 
 	"github.com/hashicorp/terraform-plugin-framework/attr"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
 
@@ -21,6 +20,8 @@ var _ Return = Float64Return{}
 //
 // - If CustomType is set, use its associated value type.
 // - Otherwise, use [types.Float64], *float64, or float64.
+//
+// Return documentation is expected in the function [Definition] documentation.
 type Float64Return struct {
 	// CustomType enables the use of a custom data type in place of the
 	// default [basetypes.Float64Type]. When setting data, the
@@ -39,7 +40,7 @@ func (r Float64Return) GetType() attr.Type {
 }
 
 // NewResultData returns a new result data based on the type.
-func (r Float64Return) NewResultData(ctx context.Context) (ResultData, diag.Diagnostics) {
+func (r Float64Return) NewResultData(ctx context.Context) (ResultData, *FuncError) {
 	value := basetypes.NewFloat64Unknown()
 
 	if r.CustomType == nil {
@@ -48,5 +49,5 @@ func (r Float64Return) NewResultData(ctx context.Context) (ResultData, diag.Diag
 
 	valuable, diags := r.CustomType.ValueFromFloat64(ctx, value)
 
-	return NewResultData(valuable), diags
+	return NewResultData(valuable), FuncErrorFromDiags(ctx, diags)
 }

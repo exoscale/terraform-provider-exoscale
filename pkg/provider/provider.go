@@ -195,6 +195,7 @@ func (p *ExoscaleProvider) DataSources(ctx context.Context) []func() datasource.
 		func() datasource.DataSource {
 			return &nlb_service.NLBServiceListDataSource{}
 		},
+		sos_bucket_policy.NewDataSourceSOSBucketPolicy,
 	}
 }
 
