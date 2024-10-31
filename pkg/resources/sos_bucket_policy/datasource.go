@@ -5,6 +5,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 
+	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -35,9 +36,9 @@ func NewDataSourceSOSBucketPolicy() datasource.DataSource {
 
 // DataSourceSOSBucketPolicyModel defines the resource data model.
 type DataSourceSOSBucketPolicyModel struct {
-	Bucket types.String `tfsdk:"bucket"`
-	Policy types.String `tfsdk:"policy"`
-	Zone   types.String `tfsdk:"zone"`
+	Bucket types.String         `tfsdk:"bucket"`
+	Policy jsontypes.Normalized `tfsdk:"policy"`
+	Zone   types.String         `tfsdk:"zone"`
 
 	Timeouts timeouts.Value `tfsdk:"timeouts"`
 }
@@ -66,6 +67,7 @@ func (d *DataSourceSOSBucketPolicy) Schema(
 			},
 			AttrPolicy: schema.StringAttribute{
 				Description: attrPolicyDescription,
+				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 			},
 			AttrZone: schema.StringAttribute{
@@ -128,7 +130,7 @@ func (d *DataSourceSOSBucketPolicy) Read(ctx context.Context, req datasource.Rea
 	}
 
 	// Read remote state.
-	policy, err := sosClient.GetBucketPolicy(ctx, &s3.GetBucketPolicyInput{
+	policyOut, err := sosClient.GetBucketPolicy(ctx, &s3.GetBucketPolicyInput{
 		Bucket: plan.Bucket.ValueStringPointer(),
 	})
 	if err != nil {
@@ -139,16 +141,7 @@ func (d *DataSourceSOSBucketPolicy) Read(ctx context.Context, req datasource.Rea
 		return
 	}
 
-	pol, err := normalizeJSON(*policy.Policy)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"failed to normalize bucket policy JSON",
-			err.Error(),
-		)
-		return
-	}
-
-	plan.Policy = types.StringValue(pol)
+	plan.Policy = jsontypes.NewNormalizedValue(*policyOut.Policy)
 
 	// Save updated state into Terraform state.
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
