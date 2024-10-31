@@ -22,10 +22,10 @@ resource "exoscale_sos_bucket_policy" "my_policy" {
   zone   = local.my_zone
 }
 
-# data "exoscale_sos_bucket_policy" "my_policy_ds" {
-#   bucket = "${local.my_bucket}-${resource.random_uuid.my_uuid.result}"
-#   zone   = local.my_zone
-# }
+data "exoscale_sos_bucket_policy" "my_policy_ds" {
+  bucket = "${local.my_bucket}-${resource.random_uuid.my_uuid.result}"
+  zone   = local.my_zone
+}
 
 # Outputs
 output "my_bucket_uri" {
@@ -36,5 +36,6 @@ output "my_bucket_uri" {
   )
 }
 
-# output "my_object_uri" {
-# data.exoscale_sos_bucket_policy.my_policy_ds.policy,
+output "my_data_policy" {
+  value = data.exoscale_sos_bucket_policy.my_policy_ds.policy
+}

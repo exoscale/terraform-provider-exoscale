@@ -2,9 +2,7 @@ package sos_bucket_policy
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"reflect"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/service/s3"
@@ -128,17 +126,6 @@ func (r *ResourceSOSBucketPolicy) Create(ctx context.Context, req resource.Creat
 		return
 	}
 
-	// policy, err := normalizeJSON(plan.Policy.ValueString())
-	// if err != nil {
-	// 	resp.Diagnostics.AddError(
-	// 		"failed to normalize policy JSON",
-	// 		err.Error(),
-	// 	)
-	// 	return
-	// }
-
-	// plan.Policy = types.StringValue(policy)
-
 	_, err = sosClient.PutBucketPolicy(ctx, &s3.PutBucketPolicyInput{
 		Bucket: plan.Bucket.ValueStringPointer(),
 		Policy: plan.Policy.ValueStringPointer(),
@@ -206,52 +193,12 @@ func (r *ResourceSOSBucketPolicy) Read(ctx context.Context, req resource.ReadReq
 		return
 	}
 
-	// pol, err := normalizeJSON(*policy.Policy)
-	// if err != nil {
-	// 	resp.Diagnostics.AddError(
-	// 		"failed to normalize bucket policy JSON",
-	// 		err.Error(),
-	// 	)
-	// 	return
-	// }
-
-	// state.Policy = types.StringValue(pol)
-
 	// Save updated state into Terraform state.
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 
 	tflog.Trace(ctx, "resource read done", map[string]interface{}{
 		AttrBucket: state.Bucket,
 	})
-}
-
-func normalizeJSON(j string) (string, error) {
-	var m map[string]interface{}
-
-	if err := json.Unmarshal([]byte(j), &m); err != nil {
-		return "", fmt.Errorf("failed to unmarshal: %q, %w", j, err)
-	}
-
-	normalized, err := json.Marshal(&m)
-	if err != nil {
-		return "", fmt.Errorf("failed to remarshal: %#v, %w", m, err)
-	}
-
-	return string(normalized), nil
-}
-
-func isJSONEqual(j1, j2 string) (bool, error) {
-	var map1, map2 map[string]interface{}
-
-	if err := json.Unmarshal([]byte(j1), &map1); err != nil {
-		return false, err
-	}
-
-	if err := json.Unmarshal([]byte(j2), &map2); err != nil {
-		return false, err
-	}
-
-	return reflect.DeepEqual(map1, map2), nil
 }
 
 // Update resources in-place by receiving Terraform prior state, configuration, and plan data, performing update logic, and saving updated Terraform state data.
@@ -284,28 +231,7 @@ func (r *ResourceSOSBucketPolicy) Update(ctx context.Context, req resource.Updat
 		return
 	}
 
-	// jsonIsEqual, err := isJSONEqual(plan.Policy.ValueString(), state.Policy.ValueString())
-	// if err != nil {
-	// 	resp.Diagnostics.AddError(
-	// 		"failed to test JSON equality of policy",
-	// 		err.Error(),
-	// 	)
-	// 	return
-	// }
-
-	// policy, err := normalizeJSON(plan.Policy.ValueString())
-	// if err != nil {
-	// 	resp.Diagnostics.AddError(
-	// 		"failed to normalize policy JSON",
-	// 		err.Error(),
-	// 	)
-	// 	return
-	// }
-
-	// plan.Policy = types.StringValue(policy)
-
-	jsonIsEqual := plan.Policy.Equal(state.Policy)
-	if !jsonIsEqual {
+	if !plan.Policy.Equal(state.Policy) {
 		_, err = sosClient.PutBucketPolicy(ctx, &s3.PutBucketPolicyInput{
 			Bucket: plan.Bucket.ValueStringPointer(),
 			Policy: plan.Policy.ValueStringPointer(),
