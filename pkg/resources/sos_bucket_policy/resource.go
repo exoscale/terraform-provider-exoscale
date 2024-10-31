@@ -2,7 +2,9 @@ package sos_bucket_policy
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"reflect"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/service/s3"
@@ -189,7 +191,20 @@ func (r *ResourceSOSBucketPolicy) Read(ctx context.Context, req resource.ReadReq
 		return
 	}
 
-	state.Policy = types.StringPointerValue(policy.Policy)
+	if policy == nil {
+		resp.Diagnostics.AddError(
+			"bucket policy is nil",
+			"",
+		)
+		return
+	}
+
+	pol, err := normalizeJSON(*policy.Policy)
+	if err != nil {
+		return
+	}
+
+	state.Policy = types.StringValue(pol)
 
 	// Save updated state into Terraform state.
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
@@ -197,6 +212,35 @@ func (r *ResourceSOSBucketPolicy) Read(ctx context.Context, req resource.ReadReq
 	tflog.Trace(ctx, "resource read done", map[string]interface{}{
 		AttrBucket: state.Bucket,
 	})
+}
+
+func normalizeJSON(j string) (string, error) {
+	var m map[string]interface{}
+
+	if err := json.Unmarshal([]byte(j), m); err != nil {
+		return "", err
+	}
+
+	normalized, err := json.Marshal(m)
+	if err != nil {
+		return "", err
+	}
+
+	return string(normalized), nil
+}
+
+func isJSONEqual(j1, j2 string) (bool, error) {
+	var map1, map2 map[string]interface{}
+
+	if err := json.Unmarshal([]byte(j1), map1); err != nil {
+		return false, err
+	}
+
+	if err := json.Unmarshal([]byte(j2), map2); err != nil {
+		return false, err
+	}
+
+	return reflect.DeepEqual(map1, map2), nil
 }
 
 // Update resources in-place by receiving Terraform prior state, configuration, and plan data, performing update logic, and saving updated Terraform state data.
@@ -229,7 +273,16 @@ func (r *ResourceSOSBucketPolicy) Update(ctx context.Context, req resource.Updat
 		return
 	}
 
-	if !plan.Policy.Equal(state.Policy) {
+	jsonIsEqual, err := isJSONEqual(plan.Policy.ValueString(), state.Policy.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"failed to test JSON equality of policy",
+			err.Error(),
+		)
+		return
+	}
+
+	if !jsonIsEqual {
 		_, err = sosClient.PutBucketPolicy(ctx, &s3.PutBucketPolicyInput{
 			Bucket: plan.Bucket.ValueStringPointer(),
 			Policy: plan.Policy.ValueStringPointer(),
