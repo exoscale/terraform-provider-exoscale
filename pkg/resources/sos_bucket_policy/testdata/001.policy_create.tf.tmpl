@@ -1,10 +1,33 @@
-#resource "aws_s3_bucket" "test_bucket" {
-#  bucket = "terraform-provider-test-{{ .ID }}"
-#}
+variable "exoscale_api_key" {
+  type = string
+}
+
+variable "exoscale_api_secret" {
+  type = string
+  sensitive = true
+}
+
+provider "aws" {
+  access_key = var.exoscale_api_key
+  secret_key = var.exoscale_api_secret
+
+  region = "{{ .Zone }}"
+  endpoints {
+    s3 = "https://sos-{{ .Zone }}.exo.io"
+  }
+
+  # Disable AWS-specific features
+  skip_credentials_validation = true
+  skip_region_validation      = true
+  skip_requesting_account_id  = true
+}
+
+resource "aws_s3_bucket" "test_bucket" {
+  bucket = "terraform-provider-test-{{ .ID }}"
+}
 
 resource "exoscale_sos_bucket_policy" "test_policy" {
-  bucket = "my-bucket-f8d3b023-126c-6ec1-4c87-4eace1780e1f"
-  #bucket = "terraform-provider-test-{{ .ID }}"
+  bucket = aws_s3_bucket.test_bucket.bucket
   policy = templatefile("testdata/bucket_policy.json.tpl", {})
   zone = "{{ .Zone }}"
 }
