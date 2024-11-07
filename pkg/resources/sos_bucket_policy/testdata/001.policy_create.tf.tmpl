@@ -1,0 +1,15 @@
+#resource "aws_s3_bucket" "test_bucket" {
+#  bucket = "terraform-provider-test-{{ .ID }}"
+#}
+
+resource "exoscale_sos_bucket_policy" "test_policy" {
+  bucket = "my-bucket-f8d3b023-126c-6ec1-4c87-4eace1780e1f"
+  #bucket = "terraform-provider-test-{{ .ID }}"
+  policy = templatefile("testdata/bucket_policy.json.tpl", {})
+  zone = "{{ .Zone }}"
+}
+
+#data "exoscale_block_storage_volume" "test_volume" {
+#  zone = "{{ .Zone }}"
+#  id = exoscale_block_storage_volume.test_volume.id
+#}
