@@ -9,6 +9,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-testing/config"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/testutils"
 )
@@ -78,6 +79,17 @@ func TestSOSBucketPolicy(t *testing.T) {
 					),
 					resource.TestCheckResourceAttr(policyDataSourceName, "policy", jsonPolicyDenyNoWS),
 				),
+			},
+			// Import
+			{
+				ConfigVariables: confVars,
+				ResourceName:    policyResourceName,
+				ImportStateIdFunc: func() resource.ImportStateIdFunc {
+					return func(s *terraform.State) (string, error) {
+						return fmt.Sprintf("%s@%s", s.RootModule().Resources[policyResourceName].Primary.Attributes["bucket"], testdataSpec.Zone), nil
+					}
+				}(),
+				ImportState: true,
 			},
 		},
 	})
