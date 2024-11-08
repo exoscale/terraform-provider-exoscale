@@ -22,6 +22,7 @@ import (
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/database"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/iam"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/nlb_service"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/sos_bucket_policy"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/zones"
 )
 
@@ -194,6 +195,7 @@ func (p *ExoscaleProvider) DataSources(ctx context.Context) []func() datasource.
 		func() datasource.DataSource {
 			return &nlb_service.NLBServiceListDataSource{}
 		},
+		sos_bucket_policy.NewDataSourceSOSBucketPolicy,
 	}
 }
 
@@ -205,6 +207,7 @@ func (p *ExoscaleProvider) Resources(ctx context.Context) []func() resource.Reso
 		iam.NewResourceAPIKey,
 		block_storage.NewResourceVolume,
 		block_storage.NewResourceSnapshot,
+		sos_bucket_policy.NewResourceSOSBucketPolicy,
 	}
 }
 

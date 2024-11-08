@@ -4,12 +4,17 @@
 package function
 
 import (
+	"context"
+
 	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/internal/fwfunction"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
 
 // Ensure the implementation satisifies the desired interfaces.
 var _ Parameter = NumberParameter{}
+var _ ParameterWithNumberValidators = NumberParameter{}
+var _ fwfunction.ParameterWithValidateImplementation = NumberParameter{}
 
 // NumberParameter represents a function parameter that is a 512-bit arbitrary
 // precision number.
@@ -55,13 +60,25 @@ type NumberParameter struct {
 
 	// Name is a short usage name for the parameter, such as "data". This name
 	// is used in documentation, such as generating a function signature,
-	// however its usage may be extended in the future. If no name is provided,
-	// this will default to "param".
+	// however its usage may be extended in the future.
+	//
+	// If no name is provided, this will default to "param" with a suffix of the
+	// position the parameter is in the function definition. ("param1", "param2", etc.)
+	// If the parameter is variadic, the default name will be "varparam".
 	//
 	// This must be a valid Terraform identifier, such as starting with an
 	// alphabetical character and followed by alphanumeric or underscore
 	// characters.
 	Name string
+
+	// Validators is a list of validators that can be used to validate the
+	// parameter.
+	Validators []NumberParameterValidator
+}
+
+// GetValidators returns the list of validators for the parameter.
+func (p NumberParameter) GetValidators() []NumberParameterValidator {
+	return p.Validators
 }
 
 // GetAllowNullValue returns if the parameter accepts a null value.
@@ -86,11 +103,7 @@ func (p NumberParameter) GetMarkdownDescription() string {
 
 // GetName returns the parameter name.
 func (p NumberParameter) GetName() string {
-	if p.Name != "" {
-		return p.Name
-	}
-
-	return DefaultParameterName
+	return p.Name
 }
 
 // GetType returns the parameter data type.
@@ -100,4 +113,10 @@ func (p NumberParameter) GetType() attr.Type {
 	}
 
 	return basetypes.NumberType{}
+}
+
+func (p NumberParameter) ValidateImplementation(ctx context.Context, req fwfunction.ValidateParameterImplementationRequest, resp *fwfunction.ValidateParameterImplementationResponse) {
+	if p.GetName() == "" {
+		resp.Diagnostics.Append(fwfunction.MissingParameterNameDiag(req.FunctionName, req.ParameterPosition))
+	}
 }
