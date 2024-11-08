@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
@@ -100,6 +101,24 @@ func (r *ResourceSOSBucketPolicy) NewSOSClient(ctx context.Context, zone string)
 	return sos.NewSOSClient(ctx, zone, r.baseConfig.Key, r.baseConfig.Secret)
 }
 
+// pollBucket tries to get the bucket until it becomes available.
+// Unfortunately the PubBucketPolicy may return before the bucket is
+// available through GetBucketPolicy.
+func pollBucket(ctx context.Context, sosClient *s3.Client, bucket string) error {
+	var err error = nil
+
+	for _ = range 10 {
+		time.Sleep(500 * time.Millisecond)
+		if _, err = sosClient.GetBucketPolicy(ctx, &s3.GetBucketPolicyInput{
+			Bucket: &bucket,
+		}); err == nil {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("timed out waiting for bucket to be available: %w", err)
+}
+
 func (r *ResourceSOSBucketPolicy) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan ResourceSOSBucketPolicyModel
 
@@ -133,6 +152,14 @@ func (r *ResourceSOSBucketPolicy) Create(ctx context.Context, req resource.Creat
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"failed to put bucket policy",
+			err.Error(),
+		)
+		return
+	}
+
+	if err := pollBucket(ctx, sosClient, plan.Bucket.ValueString()); err != nil {
+		resp.Diagnostics.AddError(
+			"failed to poll bucket policy",
 			err.Error(),
 		)
 		return
@@ -243,6 +270,14 @@ func (r *ResourceSOSBucketPolicy) Update(ctx context.Context, req resource.Updat
 			)
 			return
 		}
+	}
+
+	if err := pollBucket(ctx, sosClient, plan.Bucket.ValueString()); err != nil {
+		resp.Diagnostics.AddError(
+			"failed to poll bucket policy",
+			err.Error(),
+		)
+		return
 	}
 
 	state.Policy = plan.Policy
