@@ -27,9 +27,12 @@ func TestSOSBucketPolicy(t *testing.T) {
 		"exoscale_api_secret": config.StringVariable(os.Getenv("EXOSCALE_API_SECRET")),
 	}
 
-	jsonPolicy := "{\n  \"default-service-strategy\": \"allow\",\n  \"services\": {\n    \"sos\": {\n      \"type\": \"allow\"\n    }\n  }\n}\n"
+	jsonPolicyTpl := "{\n  \"default-service-strategy\": \"%s\",\n  \"services\": {\n    \"sos\": {\n      \"type\": \"allow\"\n    }\n  }\n}\n"
+	jsonPolicy := fmt.Sprintf(jsonPolicyTpl, "allow")
+	jsonPolicyDeny := fmt.Sprintf(jsonPolicyTpl, "deny")
 	wsRegex := regexp.MustCompile(`\s+`)
 	jsonPolicyNoWS := wsRegex.ReplaceAllString(jsonPolicy, "")
+	jsonPolicyDenyNoWS := wsRegex.ReplaceAllString(jsonPolicyDeny, "")
 
 	resource.Test(t, resource.TestCase{
 		ExternalProviders: map[string]resource.ExternalProvider{
@@ -56,6 +59,24 @@ func TestSOSBucketPolicy(t *testing.T) {
 						jsonPolicy,
 					),
 					resource.TestCheckResourceAttr(policyDataSourceName, "policy", jsonPolicyNoWS),
+				),
+			},
+			// 2 Update policy
+			{
+				ConfigVariables: confVars,
+				Config:          testutils.ParseTestdataConfig("./testdata/002.policy_update.tf.tmpl", &testdataSpec),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						policyResourceName,
+						"bucket",
+						fmt.Sprintf("terraform-provider-test-%d", testdataSpec.ID),
+					),
+					resource.TestCheckResourceAttr(
+						policyResourceName,
+						"policy",
+						jsonPolicyDeny,
+					),
+					resource.TestCheckResourceAttr(policyDataSourceName, "policy", jsonPolicyDenyNoWS),
 				),
 			},
 		},
