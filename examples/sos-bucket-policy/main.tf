@@ -17,13 +17,13 @@ resource "aws_s3_bucket" "my_bucket" {
 }
 
 resource "exoscale_sos_bucket_policy" "my_policy" {
-  bucket = "${local.my_bucket}-${resource.random_uuid.my_uuid.result}"
+  bucket = aws_s3_bucket.my_bucket.bucket
   policy = templatefile("${path.module}/bucket_policy.json.tpl", {})
   zone   = local.my_zone
 }
 
 data "exoscale_sos_bucket_policy" "my_policy_ds" {
-  bucket = "${local.my_bucket}-${resource.random_uuid.my_uuid.result}"
+  bucket = exoscale_sos_bucket_policy.my_policy.bucket
   zone   = local.my_zone
 }
 

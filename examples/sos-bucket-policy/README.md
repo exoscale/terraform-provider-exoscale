@@ -12,8 +12,9 @@ terraform apply \
 
 Outputs:
 
-my_object_uri = "https://sos-ch-gva-2.exo.io/my-bucket-2da17217-8ef3-254d-429e-08bced1109a5/my-object.txt"
+my_bucket_uri = <<EOT
+https://sos-ch-gva-2.exo.io/my-bucket-6bed6744-c98e-aaba-1710-3ac09522348e
 
-$ wget -qO- https://sos-ch-gva-2.exo.io/my-bucket-2da17217-8ef3-254d-429e-08bced1109a5/my-object.txt
-Hello World!
+EOT
+my_data_policy = "{\"default-service-strategy\":\"allow\",\"services\":{\"sos\":{\"type\":\"allow\"}}}"
 ```
