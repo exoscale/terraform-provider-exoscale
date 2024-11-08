@@ -60,7 +60,7 @@ func (r *ResourceSOSBucketPolicy) Schema(ctx context.Context, req resource.Schem
 		MarkdownDescription: ResourceSOSBucketPolicyDescription,
 		Attributes: map[string]schema.Attribute{
 			AttrBucket: schema.StringAttribute{
-				Description: attrBucketDescription,
+				Description: "❗ " + attrBucketDescription,
 				Required:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -72,7 +72,7 @@ func (r *ResourceSOSBucketPolicy) Schema(ctx context.Context, req resource.Schem
 				Required:    true,
 			},
 			AttrZone: schema.StringAttribute{
-				MarkdownDescription: attrZoneDescription,
+				MarkdownDescription: "❗ " + attrZoneDescription,
 				Required:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -107,7 +107,7 @@ func (r *ResourceSOSBucketPolicy) NewSOSClient(ctx context.Context, zone string)
 func pollBucket(ctx context.Context, sosClient *s3.Client, bucket string) error {
 	var err error = nil
 
-	for _ = range 10 {
+	for range 10 {
 		time.Sleep(500 * time.Millisecond)
 		if _, err = sosClient.GetBucketPolicy(ctx, &s3.GetBucketPolicyInput{
 			Bucket: &bucket,
