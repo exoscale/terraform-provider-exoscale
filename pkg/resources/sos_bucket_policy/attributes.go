@@ -6,5 +6,5 @@ const (
 	AttrPolicy            = "policy"
 	attrPolicyDescription = "The content of the policy"
 	AttrZone              = "zone"
-	attrZoneDescription   = "❗ The Exoscale [Zone](https://www.exoscale.com/datacenters/) name."
+	attrZoneDescription   = "The Exoscale [Zone](https://www.exoscale.com/datacenters/) name."
 )
