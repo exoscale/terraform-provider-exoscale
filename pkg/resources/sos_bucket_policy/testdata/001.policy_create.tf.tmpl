@@ -32,7 +32,8 @@ resource "exoscale_sos_bucket_policy" "test_policy" {
   zone = "{{ .Zone }}"
 }
 
-#data "exoscale_block_storage_volume" "test_volume" {
-#  zone = "{{ .Zone }}"
-#  id = exoscale_block_storage_volume.test_volume.id
-#}
+data "exoscale_sos_bucket_policy" "test_policy" {
+  zone = "{{ .Zone }}"
+  bucket = exoscale_sos_bucket_policy.test_policy.bucket
+  depends_on = [exoscale_sos_bucket_policy.test_policy]
+}

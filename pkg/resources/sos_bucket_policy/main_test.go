@@ -3,6 +3,7 @@ package sos_bucket_policy_test
 import (
 	"fmt"
 	"os"
+	"regexp"
 	"testing"
 	"time"
 
@@ -14,7 +15,7 @@ import (
 
 func TestSOSBucketPolicy(t *testing.T) {
 	policyResourceName := "exoscale_sos_bucket_policy.test_policy"
-	// policyDataSourceName := "data." + policyResourceName
+	policyDataSourceName := "data." + policyResourceName
 
 	testdataSpec := testutils.TestdataSpec{
 		ID:   time.Now().UnixNano(),
@@ -25,6 +26,10 @@ func TestSOSBucketPolicy(t *testing.T) {
 		"exoscale_api_key":    config.StringVariable(os.Getenv("EXOSCALE_API_KEY")),
 		"exoscale_api_secret": config.StringVariable(os.Getenv("EXOSCALE_API_SECRET")),
 	}
+
+	jsonPolicy := "{\n  \"default-service-strategy\": \"allow\",\n  \"services\": {\n    \"sos\": {\n      \"type\": \"allow\"\n    }\n  }\n}\n"
+	wsRegex := regexp.MustCompile(`\s+`)
+	jsonPolicyNoWS := wsRegex.ReplaceAllString(jsonPolicy, "")
 
 	resource.Test(t, resource.TestCase{
 		ExternalProviders: map[string]resource.ExternalProvider{
@@ -48,8 +53,9 @@ func TestSOSBucketPolicy(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						policyResourceName,
 						"policy",
-						fmt.Sprintf("{\n  \"default-service-strategy\": \"allow\",\n  \"services\": {\n    \"sos\": {\n      \"type\": \"allow\"\n    }\n  }\n}\n"),
+						jsonPolicy,
 					),
+					resource.TestCheckResourceAttr(policyDataSourceName, "policy", jsonPolicyNoWS),
 				),
 			},
 		},
