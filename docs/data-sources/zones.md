@@ -2,7 +2,7 @@
 page_title: "exoscale_zones Data Source - terraform-provider-exoscale"
 subcategory: ""
 description: |-
-Lists all zones.
+  Lists all zones.
 ---
 
 # exoscale_zones (Data Source)
