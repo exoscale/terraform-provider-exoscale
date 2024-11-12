@@ -11,7 +11,7 @@ Manage Exoscale [Scalable Kubernetes Service (SKS)](https://community.exoscale.c
 
 ## Example Usage
 
-```hcl
+```terraform
 resource "exoscale_sks_cluster" "my_sks_cluster" {
   zone = "ch-gva-2"
   name = "my-sks-cluster"

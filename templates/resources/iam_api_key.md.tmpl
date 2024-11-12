@@ -13,7 +13,7 @@ Manage Exoscale [IAM](https://community.exoscale.com/documentation/iam/) API Key
 
 ## Example Usage
 
-```hcl
+```terraform
 resource "exoscale_iam_role" "my_role" {
   name = "my-role"
   description = "Example role"

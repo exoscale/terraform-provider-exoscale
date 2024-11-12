@@ -13,7 +13,7 @@ Corresponding data source: [exoscale_security_group](../data-sources/security_gr
 
 ## Example Usage
 
-```hcl
+```terraform
 resource "exoscale_security_group" "my_security_group" {
   name = "my-security-group"
 }

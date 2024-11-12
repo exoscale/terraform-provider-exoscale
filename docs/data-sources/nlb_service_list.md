@@ -14,7 +14,7 @@ Corresponding resource: [exoscale_nlb](../resources/nlb.md).
 
 ## Example Usage
 
-```hcl
+```terraform
 data "exoscale_nlb_service_list" "example_nlb_services" {
   name = "my-nlb"
 }

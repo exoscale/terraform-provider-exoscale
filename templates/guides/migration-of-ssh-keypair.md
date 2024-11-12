@@ -18,7 +18,7 @@ Should you need to generate a key _pair_ (public and private key), we invite you
 [tls_private_key][tls_private_key] and the resource's `public_key_openssh` output along Exoscale
 `exoscale_ssh_key`. Example given:
 
-```hcl
+```terraform
 resource "tls_private_key" "my_ssh_key" {
   algorithm = "ED25519"
 }

@@ -15,7 +15,7 @@ Manage Exoscale [IAM](https://community.exoscale.com/documentation/iam/) Org Pol
 
 ## Example Usage
 
-```hcl
+```terraform
 resource "exoscale_iam_org_policy" "org_policy" {
   default_service_strategy = "allow"
   services = {

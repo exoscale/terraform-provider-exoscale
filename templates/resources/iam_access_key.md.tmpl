@@ -13,7 +13,7 @@ Manage Exoscale [IAM Access Keys](https://community.exoscale.com/documentation/i
 
 ## Example Usage
 
-```hcl
+```terraform
 resource "exoscale_iam_access_key" "my_sos_access_key" {
   name       = "my-sos-access-key"
   operations = ["get-sos-object", "list-sos-bucket"]
