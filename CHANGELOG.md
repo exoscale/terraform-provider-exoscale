@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+BUG FIXES:
+
+- Add default mysql settings values in relevant acc test #394
+
 ## 0.61.0
 
 FEATURES:

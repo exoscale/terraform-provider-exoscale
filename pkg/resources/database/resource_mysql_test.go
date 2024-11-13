@@ -62,7 +62,7 @@ func testResourceMysql(t *testing.T) {
 	dataCreate.MaintenanceTime = "01:23:00"
 	dataCreate.BackupSchedule = "01:23"
 	dataCreate.IpFilter = []string{"1.2.3.4/32"}
-	dataCreate.MysqlSettings = strconv.Quote(`{"sql_mode":"ANSI,TRADITIONAL","sql_require_primary_key":true}`)
+	dataCreate.MysqlSettings = strconv.Quote(`{"long_query_time":1,"slow_query_log":true,"sql_mode":"ANSI,TRADITIONAL","sql_require_primary_key":true}`)
 	buf := &bytes.Buffer{}
 	err = tpl.Execute(buf, &dataCreate)
 	if err != nil {
@@ -75,7 +75,7 @@ func testResourceMysql(t *testing.T) {
 	dataUpdate.MaintenanceTime = "02:34:00"
 	dataUpdate.BackupSchedule = "23:45"
 	dataUpdate.IpFilter = nil
-	dataUpdate.MysqlSettings = strconv.Quote(`{"long_query_time":5,"sql_mode":"ANSI,TRADITIONAL","sql_require_primary_key":true}`)
+	dataUpdate.MysqlSettings = strconv.Quote(`{"long_query_time":5,"slow_query_log":true,"sql_mode":"ANSI,TRADITIONAL","sql_require_primary_key":true}`)
 	buf = &bytes.Buffer{}
 	err = tpl.Execute(buf, &dataUpdate)
 	if err != nil {
