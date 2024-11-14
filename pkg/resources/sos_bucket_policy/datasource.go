@@ -62,13 +62,13 @@ func (d *DataSourceSOSBucketPolicy) Schema(
 		MarkdownDescription: DataSourceSOSBucketPolicyDescription,
 		Attributes: map[string]schema.Attribute{
 			AttrBucket: schema.StringAttribute{
-				Description: attrBucketDescription,
-				Required:    true,
+				MarkdownDescription: attrBucketDescription,
+				Required:            true,
 			},
 			AttrPolicy: schema.StringAttribute{
-				Description: attrPolicyDescription,
-				CustomType:  jsontypes.NormalizedType{},
-				Computed:    true,
+				MarkdownDescription: attrPolicyDescription,
+				CustomType:          jsontypes.NormalizedType{},
+				Computed:            true,
 			},
 			AttrZone: schema.StringAttribute{
 				MarkdownDescription: attrZoneDescription,

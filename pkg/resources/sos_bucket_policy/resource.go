@@ -60,16 +60,16 @@ func (r *ResourceSOSBucketPolicy) Schema(ctx context.Context, req resource.Schem
 		MarkdownDescription: ResourceSOSBucketPolicyDescription,
 		Attributes: map[string]schema.Attribute{
 			AttrBucket: schema.StringAttribute{
-				Description: "❗ " + attrBucketDescription,
-				Required:    true,
+				MarkdownDescription: "❗ " + attrBucketDescription,
+				Required:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			AttrPolicy: schema.StringAttribute{
-				Description: attrPolicyDescription,
-				CustomType:  jsontypes.NormalizedType{},
-				Required:    true,
+				MarkdownDescription: attrPolicyDescription,
+				CustomType:          jsontypes.NormalizedType{},
+				Required:            true,
 			},
 			AttrZone: schema.StringAttribute{
 				MarkdownDescription: "❗ " + attrZoneDescription,
