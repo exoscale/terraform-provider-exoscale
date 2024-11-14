@@ -377,8 +377,9 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 		}
 
 		data.Schema = types.StringValue("rediss")
+		const redisDefaultUsername = "default"
 
-		creds, err := client.RevealDBAASRedisUserPassword(ctx, data.Name.ValueString(), adminUsername)
+		creds, err := client.RevealDBAASRedisUserPassword(ctx, data.Name.ValueString(), redisDefaultUsername)
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Client Error",
