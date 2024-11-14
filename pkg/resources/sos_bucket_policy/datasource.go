@@ -79,7 +79,9 @@ func (d *DataSourceSOSBucketPolicy) Schema(
 			},
 		},
 		Blocks: map[string]schema.Block{
-			"timeouts": timeouts.BlockAll(ctx),
+			"timeouts": timeouts.Block(ctx, timeouts.Opts{
+				Read: true,
+			}),
 		},
 	}
 }
