@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"time"
 
 	exoscale "github.com/exoscale/egoscale/v3"
 
@@ -174,6 +175,45 @@ func (d *DataSourceURI) Configure(
 	d.client = req.ProviderData.(*providerConfig.ExoscaleProviderConfig).ClientV3
 }
 
+// waitForDBService polls the database service until it reaches the RUNNING state or fails
+func waitForDBAASService[T any](
+	ctx context.Context,
+	getService func(context.Context, string) (*T, error),
+	serviceName string,
+	getState func(*T) string,
+) (*T, error) {
+	ticker := time.NewTicker(2 * time.Second)
+	defer ticker.Stop()
+
+polling:
+	for {
+		select {
+		case <-ticker.C:
+			service, err := getService(ctx, serviceName)
+			if err != nil {
+				return nil, fmt.Errorf("error polling service status: %w", err)
+			}
+
+			state := getState(service)
+			if state == string(exoscale.EnumServiceStateRunning) {
+				break polling
+			} else if state != string(exoscale.EnumServiceStateRebalancing) && state != string(exoscale.EnumServiceStateRebuilding) {
+				return nil, fmt.Errorf("service reached unexpected state: %s", state)
+			}
+
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
+	}
+
+	// Get final state after breaking from polling loop
+	service, err := getService(ctx, serviceName)
+	if err != nil {
+		return nil, fmt.Errorf("error getting final service state: %w", err)
+	}
+	return service, nil
+}
+
 // Read defines how the data source updates Terraform's state to reflect the retrieved data.
 func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var data DataSourceURIModel
@@ -216,8 +256,13 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 	const adminUsername = "avnadmin"
 
 	switch data.Type.ValueString() {
-	case "kafka": // kafka has: schema, host & port
-		res, err := client.GetDBAASServiceKafka(ctx, data.Name.ValueString())
+	case "kafka":
+		res, err := waitForDBAASService(
+			ctx,
+			client.GetDBAASServiceKafka,
+			data.Name.ValueString(),
+			func(s *exoscale.DBAASServiceKafka) string { return string(s.State) },
+		)
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Client Error",
@@ -246,7 +291,12 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 		params = res.URIParams
 		params["password"] = creds.Password
 	case "mysql":
-		res, err := client.GetDBAASServiceMysql(ctx, data.Name.ValueString())
+		res, err := waitForDBAASService(
+			ctx,
+			client.GetDBAASServiceMysql,
+			data.Name.ValueString(),
+			func(s *exoscale.DBAASServiceMysql) string { return string(s.State) },
+		)
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Client Error",
@@ -277,7 +327,12 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 		params = res.URIParams
 		params["password"] = creds.Password
 	case "pg":
-		res, err := client.GetDBAASServicePG(ctx, data.Name.ValueString())
+		res, err := waitForDBAASService(
+			ctx,
+			client.GetDBAASServicePG,
+			data.Name.ValueString(),
+			func(s *exoscale.DBAASServicePG) string { return string(s.State) },
+		)
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Client Error",
@@ -307,7 +362,12 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 		params = res.URIParams
 		params["password"] = creds.Password
 	case "redis":
-		res, err := client.GetDBAASServiceRedis(ctx, data.Name.ValueString())
+		res, err := waitForDBAASService(
+			ctx,
+			client.GetDBAASServiceRedis,
+			data.Name.ValueString(),
+			func(s *exoscale.DBAASServiceRedis) string { return string(s.State) },
+		)
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Client Error",
@@ -337,7 +397,12 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 		params = res.URIParams
 		params["password"] = creds.Password
 	case "opensearch":
-		res, err := client.GetDBAASServiceOpensearch(ctx, data.Name.ValueString())
+		res, err := waitForDBAASService(
+			ctx,
+			client.GetDBAASServiceOpensearch,
+			data.Name.ValueString(),
+			func(s *exoscale.DBAASServiceOpensearch) string { return string(s.State) },
+		)
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Client Error",
@@ -368,7 +433,12 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 		params = res.URIParams
 		params["password"] = creds.Password
 	case "grafana":
-		res, err := client.GetDBAASServiceGrafana(ctx, data.Name.ValueString())
+		res, err := waitForDBAASService(
+			ctx,
+			client.GetDBAASServiceGrafana,
+			data.Name.ValueString(),
+			func(s *exoscale.DBAASServiceGrafana) string { return string(s.State) },
+		)
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Client Error",
