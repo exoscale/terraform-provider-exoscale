@@ -9,8 +9,10 @@ import (
 	awscredentials "github.com/aws/aws-sdk-go-v2/credentials"
 )
 
-func NewSOSClient(ctx context.Context, zone, exoAPIKey, exoAPISecret string) (*s3.Client, error) {
-	sosEndpoint := "https://sos-" + zone + ".exo.io"
+func NewSOSClient(ctx context.Context, zone, sosEndpoint, exoAPIKey, exoAPISecret string) (*s3.Client, error) {
+	if sosEndpoint == "" {
+		sosEndpoint = "https://sos-" + zone + ".exo.io"
+	}
 	cfg, err := awsconfig.LoadDefaultConfig(
 		ctx,
 		awsconfig.WithRegion(zone),

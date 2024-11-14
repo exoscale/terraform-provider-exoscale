@@ -98,7 +98,7 @@ func (d *DataSourceSOSBucketPolicy) Configure(
 }
 
 func (d *DataSourceSOSBucketPolicy) NewSOSClient(ctx context.Context, zone string) (*s3.Client, error) {
-	return sos.NewSOSClient(ctx, zone, d.baseConfig.Key, d.baseConfig.Secret)
+	return sos.NewSOSClient(ctx, zone, d.baseConfig.SOSEndpoint, d.baseConfig.Key, d.baseConfig.Secret)
 }
 
 // Read defines how the data source updates Terraform's state to reflect the retrieved data.

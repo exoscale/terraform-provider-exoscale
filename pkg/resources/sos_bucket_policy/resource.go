@@ -98,7 +98,7 @@ func (r *ResourceSOSBucketPolicy) Configure(ctx context.Context, req resource.Co
 }
 
 func (r *ResourceSOSBucketPolicy) NewSOSClient(ctx context.Context, zone string) (*s3.Client, error) {
-	return sos.NewSOSClient(ctx, zone, r.baseConfig.Key, r.baseConfig.Secret)
+	return sos.NewSOSClient(ctx, zone, r.baseConfig.SOSEndpoint, r.baseConfig.Key, r.baseConfig.Secret)
 }
 
 // pollBucket tries to get the bucket until it becomes available.

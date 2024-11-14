@@ -44,6 +44,7 @@ type ExoscaleProviderModel struct {
 	Environment types.String  `tfsdk:"environment"`
 	Timeout     types.Float64 `tfsdk:"timeout"`
 	Delay       types.Int64   `tfsdk:"delay"`
+	SOSEndpoint types.String  `tfsdk:"sos_endpoint"`
 }
 
 func (p *ExoscaleProvider) Metadata(ctx context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
@@ -118,6 +119,16 @@ func (p *ExoscaleProvider) Configure(ctx context.Context, req provider.Configure
 		environment = data.Environment.ValueString()
 	}
 
+	var sosEndpoint string
+	if data.Environment.IsNull() {
+		sosEndpoint = providerConfig.GetMultiEnvDefault([]string{
+			"EXOSCALE_SOS_ENDPOINT",
+			"EXOSCALE_STORAGE_API_ENDPOINT",
+		}, "")
+	} else {
+		sosEndpoint = data.Environment.ValueString()
+	}
+
 	var timeout float64
 	if data.Timeout.IsNull() {
 		var err error
@@ -171,6 +182,7 @@ func (p *ExoscaleProvider) Configure(ctx context.Context, req provider.Configure
 		ClientV2:    clv2,
 		ClientV3:    clv3,
 		Environment: environment,
+		SOSEndpoint: sosEndpoint,
 	}
 
 	resp.ResourceData = &providerConfig.ExoscaleProviderConfig{
@@ -178,6 +190,7 @@ func (p *ExoscaleProvider) Configure(ctx context.Context, req provider.Configure
 		ClientV2:    clv2,
 		ClientV3:    clv3,
 		Environment: environment,
+		SOSEndpoint: sosEndpoint,
 	}
 }
 
