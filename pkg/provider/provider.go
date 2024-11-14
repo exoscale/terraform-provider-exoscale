@@ -30,6 +30,7 @@ const (
 	KeyAttrName         = "key"
 	SecretAttrName      = "secret"
 	EnvironmentAttrName = "environment"
+	SOSEndpointAttrName = "sos_endpoint"
 	TimeoutAttrName     = "timeout"
 	DelayAttrName       = "delay"
 )
@@ -64,6 +65,9 @@ func (p *ExoscaleProvider) Schema(ctx context.Context, req provider.SchemaReques
 				MarkdownDescription: "Exoscale API secret",
 			},
 			EnvironmentAttrName: schema.StringAttribute{
+				Optional: true,
+			},
+			SOSEndpointAttrName: schema.StringAttribute{
 				Optional: true,
 			},
 			TimeoutAttrName: schema.Float64Attribute{
@@ -120,13 +124,13 @@ func (p *ExoscaleProvider) Configure(ctx context.Context, req provider.Configure
 	}
 
 	var sosEndpoint string
-	if data.Environment.IsNull() {
+	if data.SOSEndpoint.IsNull() {
 		sosEndpoint = providerConfig.GetMultiEnvDefault([]string{
 			"EXOSCALE_SOS_ENDPOINT",
 			"EXOSCALE_STORAGE_API_ENDPOINT",
 		}, "")
 	} else {
-		sosEndpoint = data.Environment.ValueString()
+		sosEndpoint = data.SOSEndpoint.ValueString()
 	}
 
 	var timeout float64
@@ -148,6 +152,7 @@ func (p *ExoscaleProvider) Configure(ctx context.Context, req provider.Configure
 		Secret:      secret,
 		Timeout:     exoscale.ConvertTimeout(timeout),
 		Environment: environment,
+		SOSEndpoint: sosEndpoint,
 	}
 
 	clv2, err := exoscale.CreateClient(&baseConfig)
