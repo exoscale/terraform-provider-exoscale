@@ -19,7 +19,7 @@ import (
 	"github.com/exoscale/terraform-provider-exoscale/pkg/sos"
 )
 
-const DataSourceSOSBucketPolicyDescription = "Fetch Exoscale [SOS Bucket Policies](https://community.exoscale.com/documentation/storage/bucketpolicy/).\n"
+const DataSourceSOSBucketPolicyDescription = "Fetch Exoscale [SOS Bucket Policies](https://community.exoscale.com/documentation/storage/bucketpolicy/)."
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ datasource.DataSourceWithConfigure = &DataSourceSOSBucketPolicy{}
