@@ -75,7 +75,7 @@ func testResourceMysql(t *testing.T) {
 	dataUpdate.MaintenanceTime = "02:34:00"
 	dataUpdate.BackupSchedule = "23:45"
 	dataUpdate.IpFilter = nil
-	dataUpdate.MysqlSettings = strconv.Quote(`{"long_query_time":5,"slow_query_log":true,"log_output":"INSIGHTS","sql_mode":"ANSI,TRADITIONAL","sql_require_primary_key":true}`)
+	dataUpdate.MysqlSettings = strconv.Quote(`{"log_output":"INSIGHTS","long_query_time":5,"slow_query_log":true,"sql_mode":"ANSI,TRADITIONAL","sql_require_primary_key":true}`)
 	buf = &bytes.Buffer{}
 	err = tpl.Execute(buf, &dataUpdate)
 	if err != nil {
