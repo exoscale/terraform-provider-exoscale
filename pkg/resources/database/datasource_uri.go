@@ -271,19 +271,13 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 			return
 		}
 
+		uri = res.URI
+
 		creds, err := client.RevealDBAASKafkaUserPassword(ctx, data.Name.ValueString(), adminUsername)
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Client Error",
 				fmt.Sprintf("Unable to reveal Database Service kafka secret: %s", err),
-			)
-			return
-		}
-		uri, err = uriWithPassword(res.URI, creds.Username, creds.Password)
-
-		if err != nil {
-			resp.Diagnostics.AddError("Client Error",
-				fmt.Sprintf("Unable to parse Database Service kafka secret: %s", err),
 			)
 			return
 		}
@@ -448,6 +442,7 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 			return
 		}
 
+		uri = res.URI
 		data.Schema = types.StringValue("https")
 
 		creds, err := client.RevealDBAASGrafanaUserPassword(ctx, data.Name.ValueString(), adminUsername)
@@ -458,14 +453,7 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 			)
 			return
 		}
-		uri, err = uriWithPassword(res.URI, creds.Username, creds.Password)
 
-		if err != nil {
-			resp.Diagnostics.AddError("Client Error",
-				fmt.Sprintf("Unable to parse Database Service Grafana secret: %s", err),
-			)
-			return
-		}
 		params = res.URIParams
 		params["password"] = creds.Password
 	}
