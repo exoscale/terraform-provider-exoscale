@@ -257,7 +257,7 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 
 	switch data.Type.ValueString() {
 	case "kafka":
-        res, err := client.GetDBAASServiceKafka(ctx, data.Name.ValueString())
+		res, err := client.GetDBAASServiceKafka(ctx, data.Name.ValueString())
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Client Error",
