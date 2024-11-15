@@ -225,7 +225,7 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 	}
 
 	// Set timeout
-	t, diags := data.Timeouts.Read(ctx, 2*config.DefaultTimeout)
+	t, diags := data.Timeouts.Read(ctx, config.DefaultTimeout)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
