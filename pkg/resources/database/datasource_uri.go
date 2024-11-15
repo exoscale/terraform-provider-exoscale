@@ -257,12 +257,7 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 
 	switch data.Type.ValueString() {
 	case "kafka":
-		res, err := waitForDBAASService(
-			ctx,
-			client.GetDBAASServiceKafka,
-			data.Name.ValueString(),
-			func(s *exoscale.DBAASServiceKafka) string { return string(s.State) },
-		)
+        res, err := client.GetDBAASServiceKafka(ctx, data.Name.ValueString())
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Client Error",
@@ -272,18 +267,7 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 		}
 
 		uri = res.URI
-
-		creds, err := client.RevealDBAASKafkaUserPassword(ctx, data.Name.ValueString(), adminUsername)
-		if err != nil {
-			resp.Diagnostics.AddError(
-				"Client Error",
-				fmt.Sprintf("Unable to reveal Database Service kafka secret: %s", err),
-			)
-			return
-		}
-
 		params = res.URIParams
-		params["password"] = creds.Password
 	case "mysql":
 		res, err := waitForDBAASService(
 			ctx,
@@ -401,7 +385,7 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Client Error",
-				fmt.Sprintf("Unable to read Database Service kafka: %s", err),
+				fmt.Sprintf("Unable to read Database Service Opensearch: %s", err),
 			)
 			return
 		}
