@@ -184,7 +184,7 @@ func (r *ResourceSOSBucketPolicy) Read(ctx context.Context, req resource.ReadReq
 	}
 
 	// Set timeout.
-	timeout, diags := state.Timeouts.Create(ctx, config.DefaultTimeout)
+	timeout, diags := state.Timeouts.Read(ctx, config.DefaultTimeout)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -220,6 +220,8 @@ func (r *ResourceSOSBucketPolicy) Read(ctx context.Context, req resource.ReadReq
 		return
 	}
 
+	state.Policy = jsontypes.NewNormalizedValue(*policy.Policy)
+
 	// Save updated state into Terraform state.
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 
@@ -241,7 +243,7 @@ func (r *ResourceSOSBucketPolicy) Update(ctx context.Context, req resource.Updat
 	}
 
 	// Set timeout.
-	timeout, diags := plan.Timeouts.Create(ctx, config.DefaultTimeout)
+	timeout, diags := plan.Timeouts.Update(ctx, config.DefaultTimeout)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -301,7 +303,7 @@ func (r *ResourceSOSBucketPolicy) Delete(ctx context.Context, req resource.Delet
 	}
 
 	// Set timeout.
-	timeout, diags := state.Timeouts.Create(ctx, config.DefaultTimeout)
+	timeout, diags := state.Timeouts.Delete(ctx, config.DefaultTimeout)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
