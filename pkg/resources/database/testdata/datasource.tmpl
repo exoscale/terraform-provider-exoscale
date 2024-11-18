@@ -2,7 +2,7 @@ data "exoscale_database_uri" "{{ .ResourceName }}" {
 	name = {{ .Name }}
 	type = "{{ .Type }}"
 	zone = "{{ .Zone }}"
-    timeout = {
+    timeout {
         read = "20m"
     }
 }
