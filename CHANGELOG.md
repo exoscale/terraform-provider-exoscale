@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.61.1
+
 BUG FIXES:
 
 - Add default mysql settings values in relevant acc test #394
