@@ -3,7 +3,9 @@ package database
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strconv"
+	"time"
 
 	exoscale "github.com/exoscale/egoscale/v3"
 
@@ -33,6 +35,25 @@ var _ datasource.DataSourceWithConfigure = &DataSourceURI{}
 // DataSourceURI defines the resource implementation.
 type DataSourceURI struct {
 	client *exoscale.Client
+}
+
+func uriWithPassword(uri string, username string, password string) (string, error) {
+	if uri == "" {
+		return "", fmt.Errorf("empty URI provided")
+	}
+
+	re := regexp.MustCompile(`(.*)://(.*)@(.*)`)
+	matches := re.FindStringSubmatch(uri)
+
+	if len(matches) != 4 {
+		return "", fmt.Errorf("uri must contain username (format: protocol://username@some-host.com)")
+	}
+
+	return fmt.Sprintf("%s://%s:%s@%s",
+		matches[1],
+		username,
+		password,
+		matches[3]), nil
 }
 
 // NewDataSourceURI creates instance of DataSourceURI.
@@ -154,6 +175,45 @@ func (d *DataSourceURI) Configure(
 	d.client = req.ProviderData.(*providerConfig.ExoscaleProviderConfig).ClientV3
 }
 
+// waitForDBService polls the database service until it reaches the RUNNING state or fails
+func waitForDBAASService[T any](
+	ctx context.Context,
+	getService func(context.Context, string) (*T, error),
+	serviceName string,
+	getState func(*T) string,
+) (*T, error) {
+	ticker := time.NewTicker(2 * time.Second)
+	defer ticker.Stop()
+
+polling:
+	for {
+		select {
+		case <-ticker.C:
+			service, err := getService(ctx, serviceName)
+			if err != nil {
+				return nil, fmt.Errorf("error polling service status: %w", err)
+			}
+
+			state := getState(service)
+			if state == string(exoscale.EnumServiceStateRunning) {
+				break polling
+			} else if state != string(exoscale.EnumServiceStateRebalancing) && state != string(exoscale.EnumServiceStateRebuilding) {
+				return nil, fmt.Errorf("service reached unexpected state: %s", state)
+			}
+
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
+	}
+
+	// Get final state after breaking from polling loop
+	service, err := getService(ctx, serviceName)
+	if err != nil {
+		return nil, fmt.Errorf("error getting final service state: %w", err)
+	}
+	return service, nil
+}
+
 // Read defines how the data source updates Terraform's state to reflect the retrieved data.
 func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var data DataSourceURIModel
@@ -193,8 +253,10 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 	var uri string
 	var params map[string]interface{}
 
+	const adminUsername = "avnadmin"
+
 	switch data.Type.ValueString() {
-	case "kafka": // kafka has: schema, host & port
+	case "kafka":
 		res, err := client.GetDBAASServiceKafka(ctx, data.Name.ValueString())
 		if err != nil {
 			resp.Diagnostics.AddError(
@@ -207,75 +269,177 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 		uri = res.URI
 		params = res.URIParams
 	case "mysql":
-		res, err := client.GetDBAASServiceMysql(ctx, data.Name.ValueString())
+		res, err := waitForDBAASService(
+			ctx,
+			client.GetDBAASServiceMysql,
+			data.Name.ValueString(),
+			func(s *exoscale.DBAASServiceMysql) string { return string(s.State) },
+		)
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Client Error",
-				fmt.Sprintf("Unable to read Database Service kafka: %s", err),
+				fmt.Sprintf("Unable to read Database Service MySQL: %s", err),
 			)
 			return
 		}
 
 		data.Schema = types.StringValue("mysql")
 
-		uri = res.URI
-		params = res.URIParams
-	case "pg":
-		res, err := client.GetDBAASServicePG(ctx, data.Name.ValueString())
+		creds, err := client.RevealDBAASMysqlUserPassword(ctx, data.Name.ValueString(), adminUsername)
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Client Error",
-				fmt.Sprintf("Unable to read Database Service kafka: %s", err),
+				fmt.Sprintf("Unable to reveal Database Service MySQL secret: %s", err),
+			)
+			return
+		}
+		uri, err = uriWithPassword(res.URI, creds.Username, creds.Password)
+
+		if err != nil {
+			resp.Diagnostics.AddError("Client Error",
+				fmt.Sprintf("Unable to parse Database Service MySQL secret: %s", err),
+			)
+			return
+		}
+
+		params = res.URIParams
+		params["password"] = creds.Password
+	case "pg":
+		res, err := waitForDBAASService(
+			ctx,
+			client.GetDBAASServicePG,
+			data.Name.ValueString(),
+			func(s *exoscale.DBAASServicePG) string { return string(s.State) },
+		)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Client Error",
+				fmt.Sprintf("Unable to read Database Service Postgres: %s", err),
 			)
 			return
 		}
 
 		data.Schema = types.StringValue("postgres")
 
-		uri = res.URI
-		params = res.URIParams
-	case "redis":
-		res, err := client.GetDBAASServiceRedis(ctx, data.Name.ValueString())
+		creds, err := client.RevealDBAASPostgresUserPassword(ctx, data.Name.ValueString(), adminUsername)
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Client Error",
-				fmt.Sprintf("Unable to read Database Service kafka: %s", err),
+				fmt.Sprintf("Unable to fetch Database Service Postgres: %s", err),
+			)
+			return
+		}
+		uri, err = uriWithPassword(res.URI, creds.Username, creds.Password)
+
+		if err != nil {
+			resp.Diagnostics.AddError("Client Error",
+				fmt.Sprintf("Unable to get Database Service Postgres secret: %s", err),
+			)
+			return
+		}
+		params = res.URIParams
+		params["password"] = creds.Password
+	case "redis":
+		res, err := waitForDBAASService(
+			ctx,
+			client.GetDBAASServiceRedis,
+			data.Name.ValueString(),
+			func(s *exoscale.DBAASServiceRedis) string { return string(s.State) },
+		)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Client Error",
+				fmt.Sprintf("Unable to read Database Service Redis: %s", err),
 			)
 			return
 		}
 
 		data.Schema = types.StringValue("rediss")
+		const redisDefaultUsername = "default"
 
-		uri = res.URI
+		creds, err := client.RevealDBAASRedisUserPassword(ctx, data.Name.ValueString(), redisDefaultUsername)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Client Error",
+				fmt.Sprintf("Unable to reveal Database Service Redis secret: %s", err),
+			)
+			return
+		}
+		uri, err = uriWithPassword(res.URI, creds.Username, creds.Password)
+
+		if err != nil {
+			resp.Diagnostics.AddError("Client Error",
+				fmt.Sprintf("Unable to parse Database Service Redis secret: %s", err),
+			)
+			return
+		}
 		params = res.URIParams
+		params["password"] = creds.Password
 	case "opensearch":
-		res, err := client.GetDBAASServiceOpensearch(ctx, data.Name.ValueString())
+		res, err := waitForDBAASService(
+			ctx,
+			client.GetDBAASServiceOpensearch,
+			data.Name.ValueString(),
+			func(s *exoscale.DBAASServiceOpensearch) string { return string(s.State) },
+		)
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Client Error",
-				fmt.Sprintf("Unable to read Database Service kafka: %s", err),
+				fmt.Sprintf("Unable to read Database Service Opensearch: %s", err),
 			)
 			return
 		}
 
 		data.Schema = types.StringValue("https")
 
-		uri = res.URI
+		creds, err := client.RevealDBAASOpensearchUserPassword(ctx, data.Name.ValueString(), adminUsername)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Client Error",
+				fmt.Sprintf("Unable to reveal Database Service OpenSearch secret: %s", err),
+			)
+			return
+		}
+
+		uri, err = uriWithPassword(res.URI, creds.Username, creds.Password)
+		if err != nil {
+			resp.Diagnostics.AddError("Client Error",
+				fmt.Sprintf("Unable to parse Database Service OpenSearch secret: %s", err),
+			)
+			return
+		}
+
 		params = res.URIParams
+		params["password"] = creds.Password
 	case "grafana":
-		res, err := client.GetDBAASServiceGrafana(ctx, data.Name.ValueString())
+		res, err := waitForDBAASService(
+			ctx,
+			client.GetDBAASServiceGrafana,
+			data.Name.ValueString(),
+			func(s *exoscale.DBAASServiceGrafana) string { return string(s.State) },
+		)
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Client Error",
-				fmt.Sprintf("Unable to read Database Service kafka: %s", err),
+				fmt.Sprintf("Unable to read Database Service Grafana: %s", err),
 			)
 			return
 		}
 
+		uri = res.URI
 		data.Schema = types.StringValue("https")
 
-		uri = res.URI
+		creds, err := client.RevealDBAASGrafanaUserPassword(ctx, data.Name.ValueString(), adminUsername)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Client Error",
+				fmt.Sprintf("Unable to reveal Database Service Grafana secret: %s", err),
+			)
+			return
+		}
+
 		params = res.URIParams
+		params["password"] = creds.Password
 	}
 
 	data.URI = types.StringValue(uri)
