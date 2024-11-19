@@ -6,6 +6,10 @@ BUG FIXES:
 
 - Add default mysql settings values in relevant acc test #394
 
+IMPROVEMENTS:
+
+- Fetching database credentials via dedicated API endpoints 
+
 ## 0.61.0
 
 FEATURES:
