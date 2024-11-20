@@ -44,6 +44,7 @@ func testDataSourceURI(t *testing.T) {
 		Plan:                  "hobbyist-2",
 		Zone:                  testutils.TestZoneName,
 		TerminationProtection: false,
+		AdminUsername: 		   acctest.RandomWithPrefix(testutils.TestUsername),
 	}
 	buf := &bytes.Buffer{}
 	err = tplResourcePg.Execute(buf, &resourcePg)
