@@ -114,7 +114,7 @@ func (d *DataSourceSOSBucketPolicy) Read(ctx context.Context, req datasource.Rea
 	}
 
 	// Set timeout.
-	timeout, diags := plan.Timeouts.Create(ctx, config.DefaultTimeout)
+	timeout, diags := plan.Timeouts.Read(ctx, config.DefaultTimeout)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
