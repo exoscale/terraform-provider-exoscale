@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+BUG FIXES:
+
+- Fix for allowing admin_username for dbaas #396
+
 ## 0.61.1
 
 BUG FIXES:
@@ -10,7 +14,7 @@ BUG FIXES:
 
 IMPROVEMENTS:
 
-- Fetching database credentials via dedicated API endpoints 
+- Fetching database credentials via dedicated API endpoints #395
 
 ## 0.61.0
 
