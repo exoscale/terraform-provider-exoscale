@@ -27,6 +27,7 @@ func testDataSourceURI(t *testing.T) {
 	}
 
 	fullResourceName := "data.exoscale_database_uri.test"
+	pgUsername := acctest.RandomWithPrefix(testutils.TestUsername)
 	data := DataSourceURIModel{
 		ResourceName: "test",
 		Name:         "exoscale_database.test.name",
@@ -44,7 +45,7 @@ func testDataSourceURI(t *testing.T) {
 		Plan:                  "hobbyist-2",
 		Zone:                  testutils.TestZoneName,
 		TerminationProtection: false,
-		AdminUsername:         acctest.RandomWithPrefix(testutils.TestUsername),
+		AdminUsername:         pgUsername,
 	}
 	buf := &bytes.Buffer{}
 	err = tplResourcePg.Execute(buf, &resourcePg)
@@ -71,7 +72,7 @@ func testDataSourceURI(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(fullResourceName, "uri"),
 					resource.TestCheckResourceAttr(fullResourceName, "schema", "postgres"),
-					resource.TestCheckResourceAttr(fullResourceName, "username", "avnadmin"),
+					resource.TestCheckResourceAttr(fullResourceName, "username", pgUsername),
 					resource.TestCheckResourceAttrSet(fullResourceName, "password"),
 					resource.TestCheckResourceAttrSet(fullResourceName, "host"),
 					resource.TestCheckResourceAttrSet(fullResourceName, "port"),
