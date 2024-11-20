@@ -22,6 +22,7 @@ import (
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/database"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/iam"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/nlb_service"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/sos_bucket_policy"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/zones"
 )
 
@@ -29,6 +30,7 @@ const (
 	KeyAttrName         = "key"
 	SecretAttrName      = "secret"
 	EnvironmentAttrName = "environment"
+	SOSEndpointAttrName = "sos_endpoint"
 	TimeoutAttrName     = "timeout"
 	DelayAttrName       = "delay"
 )
@@ -43,6 +45,7 @@ type ExoscaleProviderModel struct {
 	Environment types.String  `tfsdk:"environment"`
 	Timeout     types.Float64 `tfsdk:"timeout"`
 	Delay       types.Int64   `tfsdk:"delay"`
+	SOSEndpoint types.String  `tfsdk:"sos_endpoint"`
 }
 
 func (p *ExoscaleProvider) Metadata(ctx context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
@@ -62,6 +65,9 @@ func (p *ExoscaleProvider) Schema(ctx context.Context, req provider.SchemaReques
 				MarkdownDescription: "Exoscale API secret",
 			},
 			EnvironmentAttrName: schema.StringAttribute{
+				Optional: true,
+			},
+			SOSEndpointAttrName: schema.StringAttribute{
 				Optional: true,
 			},
 			TimeoutAttrName: schema.Float64Attribute{
@@ -117,6 +123,16 @@ func (p *ExoscaleProvider) Configure(ctx context.Context, req provider.Configure
 		environment = data.Environment.ValueString()
 	}
 
+	var sosEndpoint string
+	if data.SOSEndpoint.IsNull() {
+		sosEndpoint = providerConfig.GetMultiEnvDefault([]string{
+			"EXOSCALE_SOS_ENDPOINT",
+			"EXOSCALE_STORAGE_API_ENDPOINT",
+		}, "")
+	} else {
+		sosEndpoint = data.SOSEndpoint.ValueString()
+	}
+
 	var timeout float64
 	if data.Timeout.IsNull() {
 		var err error
@@ -136,6 +152,7 @@ func (p *ExoscaleProvider) Configure(ctx context.Context, req provider.Configure
 		Secret:      secret,
 		Timeout:     exoscale.ConvertTimeout(timeout),
 		Environment: environment,
+		SOSEndpoint: sosEndpoint,
 	}
 
 	clv2, err := exoscale.CreateClient(&baseConfig)
@@ -170,6 +187,7 @@ func (p *ExoscaleProvider) Configure(ctx context.Context, req provider.Configure
 		ClientV2:    clv2,
 		ClientV3:    clv3,
 		Environment: environment,
+		SOSEndpoint: sosEndpoint,
 	}
 
 	resp.ResourceData = &providerConfig.ExoscaleProviderConfig{
@@ -177,6 +195,7 @@ func (p *ExoscaleProvider) Configure(ctx context.Context, req provider.Configure
 		ClientV2:    clv2,
 		ClientV3:    clv3,
 		Environment: environment,
+		SOSEndpoint: sosEndpoint,
 	}
 }
 
@@ -194,6 +213,7 @@ func (p *ExoscaleProvider) DataSources(ctx context.Context) []func() datasource.
 		func() datasource.DataSource {
 			return &nlb_service.NLBServiceListDataSource{}
 		},
+		sos_bucket_policy.NewDataSourceSOSBucketPolicy,
 	}
 }
 
@@ -205,6 +225,7 @@ func (p *ExoscaleProvider) Resources(ctx context.Context) []func() resource.Reso
 		iam.NewResourceAPIKey,
 		block_storage.NewResourceVolume,
 		block_storage.NewResourceSnapshot,
+		sos_bucket_policy.NewResourceSOSBucketPolicy,
 	}
 }
 

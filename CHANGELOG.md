@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+FEATURES:
+
+- sos: introduce bucket policy resource #391
+
 ## 0.61.1
 
 BUG FIXES:
@@ -31,7 +35,7 @@ BUG FIXES:
 
 FEATURES:
 
-- exoscale_compute_instance: mac address attribute #373 
+- exoscale_compute_instance: mac address attribute #373
 
 BUG FIXES:
 
@@ -54,14 +58,14 @@ BUG FIXES:
 IMPROVEMENTS:
 
 - `exoscale_instance_pool`: add `anti-affinity-group` & deprecate `affinity-group` #355
-- template: document ignore_changes #368 
+- template: document ignore_changes #368
 
 ## 0.59.1 (June 3, 2024)
 
 IMPROVEMENTS
 
-- SKS: document dependency of CSI on CCM #359 
-- go.mk: lint with staticcheck #364 
+- SKS: document dependency of CSI on CCM #359
+- go.mk: lint with staticcheck #364
 
 BUG FIXES
 
@@ -72,7 +76,7 @@ BUG FIXES
 
 FEATURES:
 
-- block-storage: update names and labels of volumes and snapshots #354 
+- block-storage: update names and labels of volumes and snapshots #354
 
 BUG FIXES:
 
@@ -85,13 +89,13 @@ FEATURES:
 - Add Kubelet Image GC support for SKS nodepools
 - Block storage volume resource & data source #341
 - Block storage volume snapshot resource & data source #344
-- sks_cluster: enable CSI addon on existing clusters #350 
+- sks_cluster: enable CSI addon on existing clusters #350
 
 BUG FIXES:
 
 - Fix dbaas bugs causing acceptance tests to fail #346
-- docs: fix example in index.md #345 
-- Set labels on unmanaged eip creation #347 
+- docs: fix example in index.md #345
+- Set labels on unmanaged eip creation #347
 
 ## 0.57.0 (April 3, 2024)
 
@@ -101,13 +105,13 @@ FEATURES:
 
 IMPROVEMENTS:
 
-- go.mk: remove submodule and initialize through make #338 
+- go.mk: remove submodule and initialize through make #338
 
 ## 0.56.0 (February 28, 2024)
 
 FEATURES:
 
-- compute_instance: add destroy_protected attr #337 
+- compute_instance: add destroy_protected attr #337
 
 IMPROVEMENTS:
 
@@ -118,7 +122,7 @@ IMPROVEMENTS:
 IMPROVEMENTS:
 
 - Bump golang.org/x/crypto from 0.14.0 to 0.17.0 (#323)
-- sks_nodepool: add an example for taints #324 
+- sks_nodepool: add an example for taints #324
 - SKS tests: renable cluster update test as upstream bug is fixed (#309)
 - Make `iam_role.name` attribute require replace as per API behavior (#330)
 - Handle DNS record normalization #332

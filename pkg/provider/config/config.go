@@ -17,6 +17,7 @@ type BaseConfig struct {
 	Secret      string
 	Timeout     time.Duration
 	Environment string
+	SOSEndpoint string
 }
 
 type ExoscaleProviderConfig struct {
@@ -24,6 +25,7 @@ type ExoscaleProviderConfig struct {
 	ClientV2    *exov2.Client
 	ClientV3    *exov3.Client
 	Environment string
+	SOSEndpoint string
 }
 
 func GetMultiEnvDefault(ks []string, dv string) string {

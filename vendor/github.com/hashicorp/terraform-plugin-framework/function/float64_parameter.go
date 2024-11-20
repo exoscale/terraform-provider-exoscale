@@ -4,12 +4,17 @@
 package function
 
 import (
+	"context"
+
 	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/internal/fwfunction"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
 
 // Ensure the implementation satisifies the desired interfaces.
 var _ Parameter = Float64Parameter{}
+var _ ParameterWithFloat64Validators = Float64Parameter{}
+var _ fwfunction.ParameterWithValidateImplementation = Float64Parameter{}
 
 // Float64Parameter represents a function parameter that is a 64-bit floating
 // point number.
@@ -57,13 +62,25 @@ type Float64Parameter struct {
 
 	// Name is a short usage name for the parameter, such as "data". This name
 	// is used in documentation, such as generating a function signature,
-	// however its usage may be extended in the future. If no name is provided,
-	// this will default to "param".
+	// however its usage may be extended in the future.
+	//
+	// If no name is provided, this will default to "param" with a suffix of the
+	// position the parameter is in the function definition. ("param1", "param2", etc.)
+	// If the parameter is variadic, the default name will be "varparam".
 	//
 	// This must be a valid Terraform identifier, such as starting with an
 	// alphabetical character and followed by alphanumeric or underscore
 	// characters.
 	Name string
+
+	// Validators is a list of float64 validators that should be applied to the
+	// parameter.
+	Validators []Float64ParameterValidator
+}
+
+// GetValidators returns the list of validators for the parameter.
+func (p Float64Parameter) GetValidators() []Float64ParameterValidator {
+	return p.Validators
 }
 
 // GetAllowNullValue returns if the parameter accepts a null value.
@@ -88,11 +105,7 @@ func (p Float64Parameter) GetMarkdownDescription() string {
 
 // GetName returns the parameter name.
 func (p Float64Parameter) GetName() string {
-	if p.Name != "" {
-		return p.Name
-	}
-
-	return DefaultParameterName
+	return p.Name
 }
 
 // GetType returns the parameter data type.
@@ -102,4 +115,10 @@ func (p Float64Parameter) GetType() attr.Type {
 	}
 
 	return basetypes.Float64Type{}
+}
+
+func (p Float64Parameter) ValidateImplementation(ctx context.Context, req fwfunction.ValidateParameterImplementationRequest, resp *fwfunction.ValidateParameterImplementationResponse) {
+	if p.GetName() == "" {
+		resp.Diagnostics.Append(fwfunction.MissingParameterNameDiag(req.FunctionName, req.ParameterPosition))
+	}
 }

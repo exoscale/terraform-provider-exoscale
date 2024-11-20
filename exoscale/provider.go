@@ -65,6 +65,10 @@ func Provider() *schema.Provider {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
+			"sos_endpoint": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
 			"timeout": {
 				Type:     schema.TypeFloat,
 				Optional: true,
@@ -183,6 +187,13 @@ func ProviderConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 			DefaultEnvironment)
 	}
 
+	sosEndpoint, sosEndpointOK := d.GetOk("sos_endpoint")
+	if !sosEndpointOK {
+		environment = providerConfig.GetEnvDefault(
+			"EXOSCALE_SOS_ENDPOINT",
+			providerConfig.GetEnvDefault("EXOSCALE_STORAGE_API_ENDPOINT", ""))
+	}
+
 	if keyOK || secretOK {
 		if !keyOK || !secretOK {
 			return nil, diag.Errorf(
@@ -211,6 +222,7 @@ func ProviderConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 		Secret:      secret.(string),
 		Timeout:     ConvertTimeout(timeout),
 		Environment: environment.(string),
+		SOSEndpoint: sosEndpoint.(string),
 	}
 
 	clv2, err := CreateClient(&baseConfig)
@@ -237,10 +249,11 @@ func ProviderConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 	exov3.UserAgent = UserAgent
 
 	return map[string]interface{}{
-			"config":      baseConfig,
-			"client":      clv2,
-			"clientV3":    clv3,
-			"environment": environment,
+			"config":       baseConfig,
+			"client":       clv2,
+			"clientV3":     clv3,
+			"environment":  environment,
+			"sos_endpoint": sosEndpoint,
 		},
 		diags
 }
