@@ -252,6 +252,7 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 
 	var uri string
 	var params map[string]interface{}
+	var user string
 
 	switch data.Type.ValueString() {
 	case "kafka":
@@ -270,16 +271,20 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 		}
 
 		uri = res.URI
-		params, err = paramsWithCheck(res.URIParams)
-		if err != nil {
+		params = res.URIParams
+		if i, ok := params["user"]; ok {
+			if s, ok := i.(string); ok {
+				user = s
+			}
+		} else {
 			resp.Diagnostics.AddError(
 				"Client Error",
-				fmt.Sprintf("Unable to check Database Service Kafka parameters: %s", err),
+				"Database Service Kafka parameter user is missing",
 			)
 			return
 		}
 
-		creds, err := client.RevealDBAASMysqlUserPassword(ctx, data.Name.ValueString(), params["user"].(string))
+		creds, err := client.RevealDBAASMysqlUserPassword(ctx, data.Name.ValueString(), user)
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Client Error",
@@ -303,17 +308,21 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 			return
 		}
 
-		params, err = paramsWithCheck(res.URIParams)
-		if err != nil {
+		params = res.URIParams
+		if i, ok := params["user"]; ok {
+			if s, ok := i.(string); ok {
+				user = s
+			}
+		} else {
 			resp.Diagnostics.AddError(
 				"Client Error",
-				fmt.Sprintf("Unable to check Database Service MySQL parameters: %s", err),
+				"Database Service MySQL parameter user is missing",
 			)
 			return
 		}
 		data.Schema = types.StringValue("mysql")
 
-		creds, err := client.RevealDBAASMysqlUserPassword(ctx, data.Name.ValueString(), params["user"].(string))
+		creds, err := client.RevealDBAASMysqlUserPassword(ctx, data.Name.ValueString(), user)
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Client Error",
@@ -346,17 +355,21 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 			return
 		}
 
-		params, err = paramsWithCheck(res.URIParams)
-		if err != nil {
+		params = res.URIParams
+		if i, ok := params["user"]; ok {
+			if s, ok := i.(string); ok {
+				user = s
+			}
+		} else {
 			resp.Diagnostics.AddError(
 				"Client Error",
-				fmt.Sprintf("Unable to check Database Service Postgres parameters: %s", err),
+				"Database Service Postgres parameter user is missing",
 			)
 			return
 		}
 		data.Schema = types.StringValue("postgres")
 
-		creds, err := client.RevealDBAASPostgresUserPassword(ctx, data.Name.ValueString(), params["user"].(string))
+		creds, err := client.RevealDBAASPostgresUserPassword(ctx, data.Name.ValueString(), user)
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Client Error",
@@ -388,17 +401,21 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 			return
 		}
 
-		params, err = paramsWithCheck(res.URIParams)
-		if err != nil {
+		params = res.URIParams
+		if i, ok := params["user"]; ok {
+			if s, ok := i.(string); ok {
+				user = s
+			}
+		} else {
 			resp.Diagnostics.AddError(
 				"Client Error",
-				fmt.Sprintf("Unable to check Database Service Redis parameters: %s", err),
+				"Database Service Redis parameter user is missing",
 			)
 			return
 		}
 		data.Schema = types.StringValue("rediss")
 
-		creds, err := client.RevealDBAASRedisUserPassword(ctx, data.Name.ValueString(), params["user"].(string))
+		creds, err := client.RevealDBAASRedisUserPassword(ctx, data.Name.ValueString(), user)
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Client Error",
@@ -414,7 +431,6 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 			)
 			return
 		}
-		params = res.URIParams
 		params["password"] = creds.Password
 	case "opensearch":
 		res, err := waitForDBAASService(
@@ -431,17 +447,21 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 			return
 		}
 
-		params, err = paramsWithCheck(res.URIParams)
-		if err != nil {
+		params = res.URIParams
+		if i, ok := params["user"]; ok {
+			if s, ok := i.(string); ok {
+				user = s
+			}
+		} else {
 			resp.Diagnostics.AddError(
 				"Client Error",
-				fmt.Sprintf("Unable to check Database Service Opensearch parameters: %s", err),
+				"Database Service Opensearch parameter user is missing",
 			)
 			return
 		}
 		data.Schema = types.StringValue("https")
 
-		creds, err := client.RevealDBAASOpensearchUserPassword(ctx, data.Name.ValueString(), params["user"].(string))
+		creds, err := client.RevealDBAASOpensearchUserPassword(ctx, data.Name.ValueString(), user)
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Client Error",
@@ -475,17 +495,21 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 		}
 
 		uri = res.URI
-		params, err = paramsWithCheck(res.URIParams)
-		if err != nil {
+		params = res.URIParams
+		if i, ok := params["user"]; ok {
+			if s, ok := i.(string); ok {
+				user = s
+			}
+		} else {
 			resp.Diagnostics.AddError(
 				"Client Error",
-				fmt.Sprintf("Unable to check Database Service Grafana parameters: %s", err),
+				"Database Service Grafana parameter user is missing",
 			)
 			return
 		}
 		data.Schema = types.StringValue("https")
 
-		creds, err := client.RevealDBAASGrafanaUserPassword(ctx, data.Name.ValueString(), params["user"].(string))
+		creds, err := client.RevealDBAASGrafanaUserPassword(ctx, data.Name.ValueString(), user)
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Client Error",
@@ -531,17 +555,5 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 }
 
 func paramsWithCheck(params map[string]interface{}) (map[string]interface{}, error) {
-	if _, ok := params["host"]; !ok {
-		return nil, fmt.Errorf("host parameter is missing")
-	}
-	if _, ok := params["port"]; !ok {
-		return nil, fmt.Errorf("port parameter is missing")
-	}
-	if _, ok := params["user"]; !ok {
-		return nil, fmt.Errorf("user parameter is missing")
-	}
-	if _, ok := params["dbname"]; !ok {
-		return nil, fmt.Errorf("dbname parameter is missing")
-	}
 	return params, nil
 }
