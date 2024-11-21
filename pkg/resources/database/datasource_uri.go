@@ -554,6 +554,3 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func paramsWithCheck(params map[string]interface{}) (map[string]interface{}, error) {
-	return params, nil
-}
