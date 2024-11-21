@@ -255,17 +255,39 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 
 	switch data.Type.ValueString() {
 	case "kafka":
-		res, err := client.GetDBAASServiceKafka(ctx, data.Name.ValueString())
+		res, err := waitForDBAASService(
+			ctx,
+			client.GetDBAASServiceKafka,
+			data.Name.ValueString(),
+			func(s *exoscale.DBAASServiceKafka) string { return string(s.State) },
+		)
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Client Error",
-				fmt.Sprintf("Unable to read Database Service kafka: %s", err),
+				fmt.Sprintf("Unable to read Database Service Kafka: %s", err),
 			)
 			return
 		}
 
 		uri = res.URI
-		params = res.URIParams
+		params, err = paramsWithCheck(res.URIParams)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Client Error",
+				fmt.Sprintf("Unable to check Database Service Kafka parameters: %s", err),
+			)
+			return
+		}
+
+		creds, err := client.RevealDBAASMysqlUserPassword(ctx, data.Name.ValueString(), params["user"].(string))
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Client Error",
+				fmt.Sprintf("Unable to reveal Database Service MySQL secret: %s", err),
+			)
+			return
+		}
+		params["password"] = creds.Password
 	case "mysql":
 		res, err := waitForDBAASService(
 			ctx,
@@ -281,7 +303,14 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 			return
 		}
 
-		params = res.URIParams
+		params, err = paramsWithCheck(res.URIParams)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Client Error",
+				fmt.Sprintf("Unable to check Database Service MySQL parameters: %s", err),
+			)
+			return
+		}
 		data.Schema = types.StringValue("mysql")
 
 		creds, err := client.RevealDBAASMysqlUserPassword(ctx, data.Name.ValueString(), params["user"].(string))
@@ -317,7 +346,14 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 			return
 		}
 
-		params = res.URIParams
+		params, err = paramsWithCheck(res.URIParams)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Client Error",
+				fmt.Sprintf("Unable to check Database Service Postgres parameters: %s", err),
+			)
+			return
+		}
 		data.Schema = types.StringValue("postgres")
 
 		creds, err := client.RevealDBAASPostgresUserPassword(ctx, data.Name.ValueString(), params["user"].(string))
@@ -352,7 +388,14 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 			return
 		}
 
-		params = res.URIParams
+		params, err = paramsWithCheck(res.URIParams)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Client Error",
+				fmt.Sprintf("Unable to check Database Service Redis parameters: %s", err),
+			)
+			return
+		}
 		data.Schema = types.StringValue("rediss")
 
 		creds, err := client.RevealDBAASRedisUserPassword(ctx, data.Name.ValueString(), params["user"].(string))
@@ -388,7 +431,14 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 			return
 		}
 
-		params = res.URIParams
+		params, err = paramsWithCheck(res.URIParams)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Client Error",
+				fmt.Sprintf("Unable to check Database Service Opensearch parameters: %s", err),
+			)
+			return
+		}
 		data.Schema = types.StringValue("https")
 
 		creds, err := client.RevealDBAASOpensearchUserPassword(ctx, data.Name.ValueString(), params["user"].(string))
@@ -425,7 +475,14 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 		}
 
 		uri = res.URI
-		params = res.URIParams
+		params, err = paramsWithCheck(res.URIParams)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Client Error",
+				fmt.Sprintf("Unable to check Database Service Grafana parameters: %s", err),
+			)
+			return
+		}
 		data.Schema = types.StringValue("https")
 
 		creds, err := client.RevealDBAASGrafanaUserPassword(ctx, data.Name.ValueString(), params["user"].(string))
@@ -471,4 +528,20 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+}
+
+func paramsWithCheck(params map[string]interface{}) (map[string]interface{}, error) {
+	if _, ok := params["host"]; !ok {
+		return nil, fmt.Errorf("host parameter is missing")
+	}
+	if _, ok := params["port"]; !ok {
+		return nil, fmt.Errorf("port parameter is missing")
+	}
+	if _, ok := params["user"]; !ok {
+		return nil, fmt.Errorf("user parameter is missing")
+	}
+	if _, ok := params["dbname"]; !ok {
+		return nil, fmt.Errorf("dbname parameter is missing")
+	}
+	return params, nil
 }
