@@ -283,6 +283,13 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 			)
 			return
 		}
+		if user == "" {
+			resp.Diagnostics.AddError(
+				"Client Error",
+				"Database Service Kafka user is empty",
+			)
+			return
+		}
 
 		creds, err := client.RevealDBAASMysqlUserPassword(ctx, data.Name.ValueString(), user)
 		if err != nil {
@@ -317,6 +324,13 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 			resp.Diagnostics.AddError(
 				"Client Error",
 				"Database Service MySQL parameter user is missing",
+			)
+			return
+		}
+		if user == "" {
+			resp.Diagnostics.AddError(
+				"Client Error",
+				"Database Service MySQL user is empty",
 			)
 			return
 		}
@@ -367,6 +381,13 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 			)
 			return
 		}
+		if user == "" {
+			resp.Diagnostics.AddError(
+				"Client Error",
+				"Database Service Postgres user is empty",
+			)
+			return
+		}
 		data.Schema = types.StringValue("postgres")
 
 		creds, err := client.RevealDBAASPostgresUserPassword(ctx, data.Name.ValueString(), user)
@@ -385,6 +406,7 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 			)
 			return
 		}
+
 		params["password"] = creds.Password
 	case "redis":
 		res, err := waitForDBAASService(
@@ -410,6 +432,13 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 			resp.Diagnostics.AddError(
 				"Client Error",
 				"Database Service Redis parameter user is missing",
+			)
+			return
+		}
+		if user == "" {
+			resp.Diagnostics.AddError(
+				"Client Error",
+				"Database Service Redis user is empty",
 			)
 			return
 		}
@@ -459,6 +488,13 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 			)
 			return
 		}
+		if user == "" {
+			resp.Diagnostics.AddError(
+				"Client Error",
+				"Database Service Opensearch user is empty",
+			)
+			return
+		}
 		data.Schema = types.StringValue("https")
 
 		creds, err := client.RevealDBAASOpensearchUserPassword(ctx, data.Name.ValueString(), user)
@@ -504,6 +540,13 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 			resp.Diagnostics.AddError(
 				"Client Error",
 				"Database Service Grafana parameter user is missing",
+			)
+			return
+		}
+		if user == "" {
+			resp.Diagnostics.AddError(
+				"Client Error",
+				"Database Service Grafana user is empty",
 			)
 			return
 		}
