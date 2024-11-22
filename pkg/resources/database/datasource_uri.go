@@ -252,8 +252,7 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 
 	var uri string
 	var params map[string]interface{}
-
-	const adminUsername = "avnadmin"
+	var user string
 
 	switch data.Type.ValueString() {
 	case "kafka":
@@ -261,7 +260,7 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Client Error",
-				fmt.Sprintf("Unable to read Database Service kafka: %s", err),
+				fmt.Sprintf("Unable to read Database Service Kafka: %s", err),
 			)
 			return
 		}
@@ -283,9 +282,22 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 			return
 		}
 
+		params = res.URIParams
+		if i, ok := params["user"]; ok {
+			if s, ok := i.(string); ok {
+				user = s
+			}
+		}
+		if user == "" {
+			resp.Diagnostics.AddError(
+				"Client Error",
+				"Database Service MySQL user is empty",
+			)
+			return
+		}
 		data.Schema = types.StringValue("mysql")
 
-		creds, err := client.RevealDBAASMysqlUserPassword(ctx, data.Name.ValueString(), adminUsername)
+		creds, err := client.RevealDBAASMysqlUserPassword(ctx, data.Name.ValueString(), user)
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Client Error",
@@ -302,7 +314,6 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 			return
 		}
 
-		params = res.URIParams
 		params["password"] = creds.Password
 	case "pg":
 		res, err := waitForDBAASService(
@@ -319,9 +330,22 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 			return
 		}
 
+		params = res.URIParams
+		if i, ok := params["user"]; ok {
+			if s, ok := i.(string); ok {
+				user = s
+			}
+		}
+		if user == "" {
+			resp.Diagnostics.AddError(
+				"Client Error",
+				"Database Service Postgres user is empty",
+			)
+			return
+		}
 		data.Schema = types.StringValue("postgres")
 
-		creds, err := client.RevealDBAASPostgresUserPassword(ctx, data.Name.ValueString(), adminUsername)
+		creds, err := client.RevealDBAASPostgresUserPassword(ctx, data.Name.ValueString(), user)
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Client Error",
@@ -337,7 +361,7 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 			)
 			return
 		}
-		params = res.URIParams
+
 		params["password"] = creds.Password
 	case "redis":
 		res, err := waitForDBAASService(
@@ -354,10 +378,22 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 			return
 		}
 
+		params = res.URIParams
+		if i, ok := params["user"]; ok {
+			if s, ok := i.(string); ok {
+				user = s
+			}
+		}
+		if user == "" {
+			resp.Diagnostics.AddError(
+				"Client Error",
+				"Database Service Redis user is empty",
+			)
+			return
+		}
 		data.Schema = types.StringValue("rediss")
-		const redisDefaultUsername = "default"
 
-		creds, err := client.RevealDBAASRedisUserPassword(ctx, data.Name.ValueString(), redisDefaultUsername)
+		creds, err := client.RevealDBAASRedisUserPassword(ctx, data.Name.ValueString(), user)
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Client Error",
@@ -373,7 +409,6 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 			)
 			return
 		}
-		params = res.URIParams
 		params["password"] = creds.Password
 	case "opensearch":
 		res, err := waitForDBAASService(
@@ -390,9 +425,22 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 			return
 		}
 
+		params = res.URIParams
+		if i, ok := params["user"]; ok {
+			if s, ok := i.(string); ok {
+				user = s
+			}
+		}
+		if user == "" {
+			resp.Diagnostics.AddError(
+				"Client Error",
+				"Database Service Opensearch user is empty",
+			)
+			return
+		}
 		data.Schema = types.StringValue("https")
 
-		creds, err := client.RevealDBAASOpensearchUserPassword(ctx, data.Name.ValueString(), adminUsername)
+		creds, err := client.RevealDBAASOpensearchUserPassword(ctx, data.Name.ValueString(), user)
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Client Error",
@@ -409,7 +457,6 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 			return
 		}
 
-		params = res.URIParams
 		params["password"] = creds.Password
 	case "grafana":
 		res, err := waitForDBAASService(
@@ -427,9 +474,22 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 		}
 
 		uri = res.URI
+		params = res.URIParams
+		if i, ok := params["user"]; ok {
+			if s, ok := i.(string); ok {
+				user = s
+			}
+		}
+		if user == "" {
+			resp.Diagnostics.AddError(
+				"Client Error",
+				"Database Service Grafana user is empty",
+			)
+			return
+		}
 		data.Schema = types.StringValue("https")
 
-		creds, err := client.RevealDBAASGrafanaUserPassword(ctx, data.Name.ValueString(), adminUsername)
+		creds, err := client.RevealDBAASGrafanaUserPassword(ctx, data.Name.ValueString(), user)
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Client Error",
@@ -438,7 +498,6 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 			return
 		}
 
-		params = res.URIParams
 		params["password"] = creds.Password
 	}
 
