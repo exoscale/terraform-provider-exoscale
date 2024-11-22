@@ -1,14 +1,16 @@
 # Changelog
 
+## 0.62.1
+
+BUG FIXES:
+
+- Fix for allowing admin_username for dbaas #396
+
 ## 0.62.0
 
 FEATURES:
 
 - sos: introduce bucket policy resource #391
-
-BUG FIXES:
-
-- Fix for allowing admin_username for dbaas #396
 
 ## 0.61.1
 
