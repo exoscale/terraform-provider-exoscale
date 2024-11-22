@@ -287,12 +287,6 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 			if s, ok := i.(string); ok {
 				user = s
 			}
-		} else {
-			resp.Diagnostics.AddError(
-				"Client Error",
-				"Database Service MySQL parameter user is missing",
-			)
-			return
 		}
 		if user == "" {
 			resp.Diagnostics.AddError(
@@ -341,12 +335,6 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 			if s, ok := i.(string); ok {
 				user = s
 			}
-		} else {
-			resp.Diagnostics.AddError(
-				"Client Error",
-				"Database Service Postgres parameter user is missing",
-			)
-			return
 		}
 		if user == "" {
 			resp.Diagnostics.AddError(
@@ -395,12 +383,6 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 			if s, ok := i.(string); ok {
 				user = s
 			}
-		} else {
-			resp.Diagnostics.AddError(
-				"Client Error",
-				"Database Service Redis parameter user is missing",
-			)
-			return
 		}
 		if user == "" {
 			resp.Diagnostics.AddError(
@@ -448,12 +430,6 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 			if s, ok := i.(string); ok {
 				user = s
 			}
-		} else {
-			resp.Diagnostics.AddError(
-				"Client Error",
-				"Database Service Opensearch parameter user is missing",
-			)
-			return
 		}
 		if user == "" {
 			resp.Diagnostics.AddError(
@@ -503,12 +479,6 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 			if s, ok := i.(string); ok {
 				user = s
 			}
-		} else {
-			resp.Diagnostics.AddError(
-				"Client Error",
-				"Database Service Grafana parameter user is missing",
-			)
-			return
 		}
 		if user == "" {
 			resp.Diagnostics.AddError(
