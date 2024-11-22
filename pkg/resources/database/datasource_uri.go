@@ -272,34 +272,6 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 
 		uri = res.URI
 		params = res.URIParams
-		if i, ok := params["user"]; ok {
-			if s, ok := i.(string); ok {
-				user = s
-			}
-		} else {
-			resp.Diagnostics.AddError(
-				"Client Error",
-				"Database Service Kafka parameter user is missing",
-			)
-			return
-		}
-		if user == "" {
-			resp.Diagnostics.AddError(
-				"Client Error",
-				"Database Service Kafka user is empty",
-			)
-			return
-		}
-
-		creds, err := client.RevealDBAASMysqlUserPassword(ctx, data.Name.ValueString(), user)
-		if err != nil {
-			resp.Diagnostics.AddError(
-				"Client Error",
-				fmt.Sprintf("Unable to reveal Database Service MySQL secret: %s", err),
-			)
-			return
-		}
-		params["password"] = creds.Password
 	case "mysql":
 		res, err := waitForDBAASService(
 			ctx,
