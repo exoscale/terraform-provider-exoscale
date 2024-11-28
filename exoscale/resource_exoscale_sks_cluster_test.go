@@ -263,6 +263,7 @@ func TestAccResourceSKSCluster(t *testing.T) {
 				ImportStateVerifyIgnore: []string{
 					"oidc.#",
 					"oidc.0.%",
+					"addons",
 					resSKSClusterAttrOIDC(resSKSClusterAttrOIDCClientID),
 					resSKSClusterAttrOIDC(resSKSClusterAttrOIDCGroupsClaim),
 					resSKSClusterAttrOIDC(resSKSClusterAttrOIDCGroupsPrefix),
