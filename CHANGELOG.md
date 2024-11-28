@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+BUG FIXES:
+
+- Bump default timeout to 1h #398
+
 ## 0.62.1
 
 BUG FIXES:

@@ -127,6 +127,4 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 )
 
-go 1.22.0
-
-toolchain go1.23.0
+go 1.23
