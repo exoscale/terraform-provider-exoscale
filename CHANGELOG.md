@@ -11,6 +11,7 @@ BUG FIXES:
 BUG FIXES:
 
 - Bump default timeout to 1h #398
+- Don't validate addons attribute in SKS cluster resource test #399
 
 ## 0.62.1
 
