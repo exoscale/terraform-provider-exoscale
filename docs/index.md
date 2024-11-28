@@ -52,7 +52,7 @@ provider "exoscale" {
 - `key` (String) Exoscale API key
 - `secret` (String, Sensitive) Exoscale API secret
 - `sos_endpoint` (String)
-- `timeout` (Number) Timeout in seconds for waiting on compute resources to become available (by default: 300)
+- `timeout` (Number) Timeout in seconds for waiting on compute resources to become available (by default: 3600)
 
 ### Fine-tuning Timeout durations
 
