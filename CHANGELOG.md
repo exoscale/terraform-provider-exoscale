@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.62.2
 
 BUG FIXES:
 
