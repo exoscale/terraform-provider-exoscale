@@ -189,7 +189,7 @@ func ProviderConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 
 	sosEndpoint, sosEndpointOK := d.GetOk("sos_endpoint")
 	if !sosEndpointOK {
-		environment = providerConfig.GetEnvDefault(
+		sosEndpoint = providerConfig.GetEnvDefault(
 			"EXOSCALE_SOS_ENDPOINT",
 			providerConfig.GetEnvDefault("EXOSCALE_STORAGE_API_ENDPOINT", ""))
 	}
