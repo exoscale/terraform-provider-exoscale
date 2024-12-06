@@ -122,7 +122,7 @@ func (r *OpensearchUserResource) ImportState(ctx context.Context, req resource.I
 
 }
 
-func (data *OpensearchUserResourceModel) Create(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics) {
+func (data *OpensearchUserResourceModel) CreateResource(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics) {
 
 	createRequest := exoscale.CreateDBAASOpensearchUserRequest{
 		Username: exoscale.DBAASUserUsername(data.Username.ValueString()),
@@ -183,7 +183,7 @@ func (data *OpensearchUserResourceModel) Delete(ctx context.Context, client *exo
 
 }
 
-func (data *OpensearchUserResourceModel) Read(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics) {
+func (data *OpensearchUserResourceModel) ReadResource(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics) {
 
 	svc, err := client.GetDBAASServiceOpensearch(ctx, data.Service.ValueString())
 	if err != nil {
@@ -200,9 +200,16 @@ func (data *OpensearchUserResourceModel) Read(ctx context.Context, client *exosc
 	diagnostics.AddError("Client Error", "Unable to read user for the service")
 }
 
-func (data *OpensearchUserResourceModel) Update(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics) {
+func (data *OpensearchUserResourceModel) UpdateResource(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics) {
 	// Nothing to do here as all fields of this resource are immutable; replaces will be required
 	// automatically
+}
+
+func (data *OpensearchUserResourceModel) WaitForService(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics) {
+	_, err := waitForDBAASService(ctx, client.GetDBAASServiceOpensearch, data.Service.ValueString(), func(t *exoscale.DBAASServiceOpensearch) string { return string(t.State) })
+	if err != nil {
+		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read Database service Opensearch %s", err.Error()))
+	}
 }
 
 func (data *OpensearchUserResourceModel) GetTimeouts() timeouts.Value {

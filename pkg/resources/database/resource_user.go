@@ -67,7 +67,7 @@ var commonAttributes = map[string]schema.Attribute{
 
 	// Computed attributes
 	"id": schema.StringAttribute{
-		MarkdownDescription: "The ID of this resource, as SERVICENAME/USERNAME",
+		MarkdownDescription: "The ID of this resource, computed as SERVICENAME/USERNAME",
 		Computed:            true,
 		PlanModifiers: []planmodifier.String{
 			stringplanmodifier.UseStateForUnknown(),
@@ -94,19 +94,32 @@ func buildUserAttributes(newAttributes map[string]schema.Attribute) map[string]s
 
 }
 
-type DatabaseServiceUserModel interface {
-	Read(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics)
-	Create(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics)
+// ResourceModelInterface defines necessary functions for interacting with resources
+type ResourceModelInterface interface {
+	// ReadResource reads resource from remote and populate the model accordingly
+	ReadResource(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics)
+	// CreateResource creates the resource according to the model, and then
+	// update computed fields if applicable
+	CreateResource(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics)
+	// DeleteResource deletes the resource
 	Delete(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics)
-	Update(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics)
+	// UpdateResource updates the remote resource w/ the new model
+	UpdateResource(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics)
+
+	// WaitForService waits for the service to be RUNNING.
+	WaitForService(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics)
+
+	// Accessing and setting attributes
 	GetTimeouts() timeouts.Value
 	SetTimeouts(timeouts.Value)
-	GenerateID()
 	GetID() basetypes.StringValue
 	GetZone() basetypes.StringValue
+
+	// Should set the return value of .GetID() to service/username
+	GenerateID()
 }
 
-func UserRead[T DatabaseServiceUserModel](ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse, data T, client *exoscale.Client) {
+func UserRead[T ResourceModelInterface](ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse, data T, client *exoscale.Client) {
 
 	// Read Terraform prior state data into the model
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
@@ -138,7 +151,7 @@ func UserRead[T DatabaseServiceUserModel](ctx context.Context, req resource.Read
 		return
 	}
 
-	data.Read(ctx, client, &resp.Diagnostics)
+	data.ReadResource(ctx, client, &resp.Diagnostics)
 
 	if resp.Diagnostics.HasError() {
 		return
@@ -153,7 +166,7 @@ func UserRead[T DatabaseServiceUserModel](ctx context.Context, req resource.Read
 
 }
 
-func UserReadForImport[T DatabaseServiceUserModel](ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse, data T, client *exoscale.Client) {
+func UserReadForImport[T ResourceModelInterface](ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse, data T, client *exoscale.Client) {
 
 	// Set timeout
 	t, diags := data.GetTimeouts().Read(ctx, config.DefaultTimeout)
@@ -179,7 +192,7 @@ func UserReadForImport[T DatabaseServiceUserModel](ctx context.Context, req reso
 		return
 	}
 
-	data.Read(ctx, client, &resp.Diagnostics)
+	data.ReadResource(ctx, client, &resp.Diagnostics)
 
 	if resp.Diagnostics.HasError() {
 		return
@@ -194,7 +207,7 @@ func UserReadForImport[T DatabaseServiceUserModel](ctx context.Context, req reso
 
 }
 
-func UserCreate[T DatabaseServiceUserModel](ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse, data T, client *exoscale.Client) {
+func UserCreate[T ResourceModelInterface](ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse, data T, client *exoscale.Client) {
 
 	// Read Terraform prior state data into the model
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
@@ -226,7 +239,8 @@ func UserCreate[T DatabaseServiceUserModel](ctx context.Context, req resource.Cr
 		return
 	}
 
-	data.Create(ctx, client, &diags)
+	data.WaitForService(ctx, client, &resp.Diagnostics)
+	data.CreateResource(ctx, client, &diags)
 
 	if resp.Diagnostics.HasError() {
 		return
@@ -241,7 +255,7 @@ func UserCreate[T DatabaseServiceUserModel](ctx context.Context, req resource.Cr
 
 }
 
-func UserUpdate[T DatabaseServiceUserModel](ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse, stateData, planData T, client *exoscale.Client) {
+func UserUpdate[T ResourceModelInterface](ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse, stateData, planData T, client *exoscale.Client) {
 	// Read Terraform plan data into the model
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &planData)...)
 	// Read Terraform state data (for comparison) into the model
@@ -272,7 +286,8 @@ func UserUpdate[T DatabaseServiceUserModel](ctx context.Context, req resource.Up
 		return
 	}
 
-	planData.Update(ctx, client, &diags)
+	planData.WaitForService(ctx, client, &resp.Diagnostics)
+	planData.UpdateResource(ctx, client, &diags)
 
 	if resp.Diagnostics.HasError() {
 		return
@@ -286,7 +301,7 @@ func UserUpdate[T DatabaseServiceUserModel](ctx context.Context, req resource.Up
 	})
 }
 
-func UserDelete[T DatabaseServiceUserModel](ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse, data T, client *exoscale.Client) {
+func UserDelete[T ResourceModelInterface](ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse, data T, client *exoscale.Client) {
 	// Read Terraform prior state data into the model
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 

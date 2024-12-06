@@ -136,7 +136,7 @@ func (r *PGUserResource) ImportState(ctx context.Context, req resource.ImportSta
 
 }
 
-func (data *PGUserResourceModel) Create(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics) {
+func (data *PGUserResourceModel) CreateResource(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics) {
 
 	createRequest := exoscale.CreateDBAASPostgresUserRequest{
 		Username: exoscale.DBAASUserUsername(data.Username.ValueString()),
@@ -204,7 +204,7 @@ func (data *PGUserResourceModel) Delete(ctx context.Context, client *exoscale.Cl
 
 }
 
-func (data *PGUserResourceModel) Read(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics) {
+func (data *PGUserResourceModel) ReadResource(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics) {
 
 	svc, err := client.GetDBAASServicePG(ctx, data.Service.ValueString())
 	if err != nil {
@@ -224,9 +224,16 @@ func (data *PGUserResourceModel) Read(ctx context.Context, client *exoscale.Clie
 	diagnostics.AddError("Client Error", "Unable to read user for the service")
 }
 
-func (data *PGUserResourceModel) Update(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics) {
+func (data *PGUserResourceModel) UpdateResource(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics) {
 	// Nothing to do here as all fields of this resource are immutable; replaces will be required
 	// automatically
+}
+
+func (data *PGUserResourceModel) WaitForService(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics) {
+	_, err := waitForDBAASService(ctx, client.GetDBAASServicePG, data.Service.ValueString(), func(t *exoscale.DBAASServicePG) string { return string(t.State) })
+	if err != nil {
+		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read Database service Opensearch %s", err.Error()))
+	}
 }
 
 func (data *PGUserResourceModel) GetTimeouts() timeouts.Value {
