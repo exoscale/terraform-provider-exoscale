@@ -1,0 +1,18 @@
+resource "exoscale_database_kafka_user" {{ .ResourceName }} {
+  username = "{{ .Username }}"
+  service = {{ .Service }}
+  zone = "{{ .Zone }}"
+
+  {{- if .AccessKey }}
+  access_key = "{{ .AccessKey }}"
+  {{- end }}
+
+  {{- if .AccessCert }}
+  access_cert = "{{ .AccessCert }}"
+  {{- end }}
+
+  {{- if .AccessCertExpiry }}
+  access_cert_expiry = "{{ .AccessCertExpiry }}"
+  {{- end }}
+
+}
