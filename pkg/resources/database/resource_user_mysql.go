@@ -140,7 +140,7 @@ func (r *MysqlUserResource) ImportState(ctx context.Context, req resource.Import
 
 }
 
-func (data *MysqlUserResourceModel) Create(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics) {
+func (data *MysqlUserResourceModel) CreateResource(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics) {
 
 	createRequest := exoscale.CreateDBAASMysqlUserRequest{
 		Username: exoscale.DBAASUserUsername(data.Username.ValueString()),
@@ -207,7 +207,7 @@ func (data *MysqlUserResourceModel) Delete(ctx context.Context, client *exoscale
 
 }
 
-func (data *MysqlUserResourceModel) Read(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics) {
+func (data *MysqlUserResourceModel) ReadResource(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics) {
 
 	svc, err := client.GetDBAASServiceMysql(ctx, data.Service.ValueString())
 	if err != nil {
@@ -225,9 +225,16 @@ func (data *MysqlUserResourceModel) Read(ctx context.Context, client *exoscale.C
 	diagnostics.AddError("Client Error", "Unable to read user for the service")
 }
 
-func (data *MysqlUserResourceModel) Update(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics) {
+func (data *MysqlUserResourceModel) UpdateResource(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics) {
 	// Nothing to do here as all fields of this resource are immutable; replaces will be required
 	// automatically
+}
+
+func (data *MysqlUserResourceModel) WaitForService(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics) {
+	_, err := waitForDBAASService(ctx, client.GetDBAASServiceMysql, data.Service.ValueString(), func(t *exoscale.DBAASServiceMysql) string { return string(t.State) })
+	if err != nil {
+		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read Database service MySQL %s", err.Error()))
+	}
 }
 
 func (data *MysqlUserResourceModel) GetTimeouts() timeouts.Value {
