@@ -141,7 +141,7 @@ func (r *KafkaUserResource) ImportState(ctx context.Context, req resource.Import
 
 }
 
-func (data *KafkaUserResourceModel) Create(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics) {
+func (data *KafkaUserResourceModel) CreateResource(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics) {
 
 	createRequest := exoscale.CreateDBAASKafkaUserRequest{
 		Username: exoscale.DBAASUserUsername(data.Username.ValueString()),
@@ -205,7 +205,7 @@ func (data *KafkaUserResourceModel) Delete(ctx context.Context, client *exoscale
 
 }
 
-func (data *KafkaUserResourceModel) Read(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics) {
+func (data *KafkaUserResourceModel) ReadResource(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics) {
 
 	svc, err := client.GetDBAASServiceKafka(ctx, data.Service.ValueString())
 	if err != nil {
@@ -225,9 +225,16 @@ func (data *KafkaUserResourceModel) Read(ctx context.Context, client *exoscale.C
 	diagnostics.AddError("Client Error", "Unable to read user for the service")
 }
 
-func (data *KafkaUserResourceModel) Update(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics) {
+func (data *KafkaUserResourceModel) UpdateResource(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics) {
 	// Nothing to do here as all fields of this resource are immutable; replaces will be required
 	// automatically
+}
+
+func (data *KafkaUserResourceModel) WaitForService(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics) {
+	_, err := waitForDBAASService(ctx, client.GetDBAASServiceKafka, data.Service.ValueString(), func(t *exoscale.DBAASServiceKafka) string { return string(t.State) })
+	if err != nil {
+		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read Database service Kafka %s", err.Error()))
+	}
 }
 
 func (data *KafkaUserResourceModel) GetTimeouts() timeouts.Value {
