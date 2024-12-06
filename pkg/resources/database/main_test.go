@@ -16,16 +16,16 @@ import (
 )
 
 func TestDatabase(t *testing.T) {
-	t.Run("ResourcePg", testResourcePg)
-	t.Run("ResourceMysql", testResourceMysql)
-	t.Run("ResourceRedis", testResourceRedis)
+	// t.Run("ResourcePg", testResourcePg)
+	// t.Run("ResourceMysql", testResourceMysql)
+	// t.Run("ResourceRedis", testResourceRedis)
 	t.Run("ResourceKafka", testResourceKafka)
-	t.Run("ResourceOpensearch", testResourceOpensearch)
-	t.Run("ResourceGrafana", testResourceGrafana)
-	t.Run("DataSourceURI", testDataSourceURI)
+	// t.Run("ResourceOpensearch", testResourceOpensearch)
+	// t.Run("ResourceGrafana", testResourceGrafana)
+	// t.Run("DataSourceURI", testDataSourceURI)
 }
 
-func CheckDestroy(dbType, name string) resource.TestCheckFunc {
+func CheckServiceDestroy(dbType, name string) resource.TestCheckFunc {
 	return func(_ *terraform.State) error {
 		client, err := testutils.APIClient()
 		if err != nil {

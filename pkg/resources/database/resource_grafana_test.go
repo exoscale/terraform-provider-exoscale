@@ -78,7 +78,7 @@ func testResourceGrafana(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testutils.AccPreCheck(t) },
-		CheckDestroy:             CheckDestroy("grafana", dataBase.Name),
+		CheckDestroy:             CheckServiceDestroy("grafana", dataBase.Name),
 		ProtoV6ProviderFactories: testutils.TestAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{

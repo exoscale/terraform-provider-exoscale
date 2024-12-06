@@ -231,7 +231,7 @@ func (data *KafkaUserResourceModel) UpdateResource(ctx context.Context, client *
 }
 
 func (data *KafkaUserResourceModel) WaitForService(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics) {
-	_, err := waitForDBAASService(ctx, client.GetDBAASServiceKafka, data.Service.ValueString(), func(t *exoscale.DBAASServiceKafka) string { return string(t.State) })
+	_, err := waitForDBAASServiceReadyForUsers(ctx, client.GetDBAASServiceKafka, data.Service.ValueString(), func(t *exoscale.DBAASServiceKafka) bool { return len(t.Users) > 0 })
 	if err != nil {
 		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read Database service Kafka %s", err.Error()))
 	}

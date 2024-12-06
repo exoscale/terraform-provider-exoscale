@@ -206,7 +206,7 @@ func (data *OpensearchUserResourceModel) UpdateResource(ctx context.Context, cli
 }
 
 func (data *OpensearchUserResourceModel) WaitForService(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics) {
-	_, err := waitForDBAASService(ctx, client.GetDBAASServiceOpensearch, data.Service.ValueString(), func(t *exoscale.DBAASServiceOpensearch) string { return string(t.State) })
+	_, err := waitForDBAASServiceReadyForUsers(ctx, client.GetDBAASServiceOpensearch, data.Service.ValueString(), func(t *exoscale.DBAASServiceOpensearch) bool { return len(t.Users) > 0 })
 	if err != nil {
 		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read Database service Opensearch %s", err.Error()))
 	}

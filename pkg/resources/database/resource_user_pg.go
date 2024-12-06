@@ -230,7 +230,7 @@ func (data *PGUserResourceModel) UpdateResource(ctx context.Context, client *exo
 }
 
 func (data *PGUserResourceModel) WaitForService(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics) {
-	_, err := waitForDBAASService(ctx, client.GetDBAASServicePG, data.Service.ValueString(), func(t *exoscale.DBAASServicePG) string { return string(t.State) })
+	_, err := waitForDBAASServiceReadyForUsers(ctx, client.GetDBAASServicePG, data.Service.ValueString(), func(t *exoscale.DBAASServicePG) bool { return len(t.Users) > 0 })
 	if err != nil {
 		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read Database service Opensearch %s", err.Error()))
 	}

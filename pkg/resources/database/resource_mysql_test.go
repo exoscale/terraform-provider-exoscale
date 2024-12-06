@@ -85,7 +85,7 @@ func testResourceMysql(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testutils.AccPreCheck(t) },
-		CheckDestroy:             CheckDestroy("mysql", dataBase.Name),
+		CheckDestroy:             CheckServiceDestroy("mysql", dataBase.Name),
 		ProtoV6ProviderFactories: testutils.TestAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{

@@ -120,7 +120,7 @@ func testResourceOpensearch(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testutils.AccPreCheck(t) },
-		CheckDestroy:             CheckDestroy("opensearch", dataBase.Name),
+		CheckDestroy:             CheckServiceDestroy("opensearch", dataBase.Name),
 		ProtoV6ProviderFactories: testutils.TestAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
