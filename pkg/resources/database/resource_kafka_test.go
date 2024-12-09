@@ -95,20 +95,19 @@ func testResourceKafka(t *testing.T) {
 	serviceDataCreate.EnableCertAuth = true
 	serviceDataCreate.IpFilter = []string{"1.2.3.4/32"}
 	serviceDataCreate.KafkaSettings = strconv.Quote(`{"num_partitions":10}`)
+
+	userDataCreate := userDataBase
+
 	buf := &bytes.Buffer{}
 	err = serviceTpl.Execute(buf, &serviceDataCreate)
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	userDataCreate := userDataBase
 	err = userTpl.Execute(buf, &userDataCreate)
 	if err != nil {
 		t.Fatal(err)
 	}
-
 	configCreate := buf.String()
-	fmt.Println(configCreate)
 
 	serviceDataUpdate := serviceDataBase
 	serviceDataUpdate.MaintenanceDow = "tuesday"
@@ -121,14 +120,15 @@ func testResourceKafka(t *testing.T) {
 	serviceDataUpdate.KafkaSettings = strconv.Quote(`{"compression_type":"gzip","num_partitions":10}`)
 	serviceDataUpdate.RestSettings = strconv.Quote(`{"consumer_request_max_bytes":100000}`)
 	serviceDataUpdate.ConnectSettings = strconv.Quote(`{"session_timeout_ms":6000}`)
+
+	userDataUpdate := userDataBase
+	userDataUpdate.Username = "bar"
+
 	buf = &bytes.Buffer{}
 	err = serviceTpl.Execute(buf, &serviceDataUpdate)
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	userDataUpdate := userDataBase
-	userDataUpdate.Username = "bar"
 	err = userTpl.Execute(buf, &userDataUpdate)
 	if err != nil {
 		t.Fatal(err)
@@ -163,6 +163,7 @@ func testResourceKafka(t *testing.T) {
 
 					// User
 					resource.TestCheckResourceAttrSet(userFullResourceName, "password"),
+					resource.TestCheckResourceAttrSet(userFullResourceName, "type"),
 					resource.TestCheckResourceAttrSet(userFullResourceName, "access_key"),
 					resource.TestCheckResourceAttrSet(userFullResourceName, "access_cert"),
 					resource.TestCheckResourceAttrSet(userFullResourceName, "access_cert_expiry"),
@@ -394,7 +395,6 @@ func CheckExistsKafkaUser(service, username string, data *TemplateModelKafkaUser
 			if u.Username != nil {
 				serviceUsernames = append(serviceUsernames, *u.Username)
 				if *u.Username == username {
-					// Kafka only has immutable fields
 					return nil
 				}
 			}
