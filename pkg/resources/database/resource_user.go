@@ -32,6 +32,7 @@ type UserResourceModel struct {
 	Username types.String `tfsdk:"username"`
 	Password types.String `tfsdk:"password"`
 	Zone     types.String `tfsdk:"zone"`
+	Type     types.String `tfsdk:"type"`
 
 	Timeouts timeouts.Value `tfsdk:"timeouts"`
 }
@@ -77,6 +78,10 @@ var commonAttributes = map[string]schema.Attribute{
 		Description: "The password of the service user.",
 		Computed:    true,
 		Sensitive:   true,
+	},
+	"type": schema.StringAttribute{
+		Description: "The type of the service user.",
+		Computed:    true,
 	},
 }
 
