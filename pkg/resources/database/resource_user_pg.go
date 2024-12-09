@@ -31,7 +31,7 @@ type PGUserResource struct {
 
 type PGUserResourceModel struct {
 	UserResourceModel
-	AllowReplication types.Bool `tfsdk:"replication"`
+	AllowReplication types.Bool `tfsdk:"allow_replication"`
 }
 
 func (r *PGUserResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -173,6 +173,7 @@ func (data *PGUserResourceModel) CreateResource(ctx context.Context, client *exo
 	for _, user := range svc.Users {
 		if user.Username == data.Username.ValueString() {
 			data.Password = basetypes.NewStringValue(user.Password)
+			data.Type = basetypes.NewStringValue(user.Type)
 			if user.AllowReplication != nil {
 				data.AllowReplication = basetypes.NewBoolValue(*user.AllowReplication)
 			}
@@ -215,6 +216,7 @@ func (data *PGUserResourceModel) ReadResource(ctx context.Context, client *exosc
 	for _, user := range svc.Users {
 		if user.Username == data.Username.ValueString() {
 			data.Password = basetypes.NewStringValue(user.Password)
+			data.Type = basetypes.NewStringValue(user.Type)
 			if user.AllowReplication != nil {
 				data.AllowReplication = basetypes.NewBoolValue(*user.AllowReplication)
 			}

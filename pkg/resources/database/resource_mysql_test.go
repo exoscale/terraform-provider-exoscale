@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"testing"
 	"text/template"
 
@@ -41,14 +42,31 @@ type TemplateModelMysql struct {
 	Version        string
 }
 
+type TemplateModelMysqlUser struct {
+	ResourceName string
+
+	Username string
+	Zone     string
+	Service  string
+
+	Type     string
+	Password string
+
+	Authentication string
+}
+
 func testResourceMysql(t *testing.T) {
-	tpl, err := template.ParseFiles("testdata/resource_mysql.tmpl")
+	serviceTpl, err := template.ParseFiles("testdata/resource_mysql.tmpl")
+	if err != nil {
+		t.Fatal(err)
+	}
+	userTpl, err := template.ParseFiles("testdata/resource_user_mysql.tmpl")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	fullResourceName := "exoscale_database.test"
-	dataBase := TemplateModelMysql{
+	serviceFullResourceName := "exoscale_database.test"
+	serviceDataBase := TemplateModelMysql{
 		ResourceName:          "test",
 		Name:                  acctest.RandomWithPrefix(testutils.Prefix),
 		Plan:                  "hobbyist-2",
@@ -57,27 +75,51 @@ func testResourceMysql(t *testing.T) {
 		Version:               "8",
 	}
 
-	dataCreate := dataBase
-	dataCreate.MaintenanceDow = "monday"
-	dataCreate.MaintenanceTime = "01:23:00"
-	dataCreate.BackupSchedule = "01:23"
-	dataCreate.IpFilter = []string{"1.2.3.4/32"}
-	dataCreate.MysqlSettings = strconv.Quote(`{"log_output":"INSIGHTS","long_query_time":1,"slow_query_log":true,"sql_mode":"ANSI,TRADITIONAL","sql_require_primary_key":true}`)
+	userFullResourceName := "exoscale_database_mysql_user.test_user"
+	userDataBase := TemplateModelMysqlUser{
+		ResourceName: "test_user",
+		Username:     "foo",
+		Zone:         serviceDataBase.Zone,
+		Service:      fmt.Sprintf("%s.name", serviceFullResourceName),
+	}
+
+	serviceDataCreate := serviceDataBase
+	serviceDataCreate.MaintenanceDow = "monday"
+	serviceDataCreate.MaintenanceTime = "01:23:00"
+	serviceDataCreate.BackupSchedule = "01:23"
+	serviceDataCreate.IpFilter = []string{"1.2.3.4/32"}
+	serviceDataCreate.MysqlSettings = strconv.Quote(`{"log_output":"INSIGHTS","long_query_time":1,"slow_query_log":true,"sql_mode":"ANSI,TRADITIONAL","sql_require_primary_key":true}`)
+
+	userDataCreate := userDataBase
+	userDataCreate.Authentication = "caching_sha2_password"
+
 	buf := &bytes.Buffer{}
-	err = tpl.Execute(buf, &dataCreate)
+	err = serviceTpl.Execute(buf, &serviceDataCreate)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = userTpl.Execute(buf, &userDataCreate)
 	if err != nil {
 		t.Fatal(err)
 	}
 	configCreate := buf.String()
 
-	dataUpdate := dataBase
-	dataUpdate.MaintenanceDow = "tuesday"
-	dataUpdate.MaintenanceTime = "02:34:00"
-	dataUpdate.BackupSchedule = "23:45"
-	dataUpdate.IpFilter = nil
-	dataUpdate.MysqlSettings = strconv.Quote(`{"log_output":"INSIGHTS","long_query_time":5,"slow_query_log":true,"sql_mode":"ANSI,TRADITIONAL","sql_require_primary_key":true}`)
+	serviceDataUpdate := serviceDataBase
+	serviceDataUpdate.MaintenanceDow = "tuesday"
+	serviceDataUpdate.MaintenanceTime = "02:34:00"
+	serviceDataUpdate.BackupSchedule = "23:45"
+	serviceDataUpdate.IpFilter = nil
+	serviceDataUpdate.MysqlSettings = strconv.Quote(`{"log_output":"INSIGHTS","long_query_time":5,"slow_query_log":true,"sql_mode":"ANSI,TRADITIONAL","sql_require_primary_key":true}`)
+
+	userDataUpdate := userDataBase
+	userDataUpdate.Authentication = "mysql_native_password"
+
 	buf = &bytes.Buffer{}
-	err = tpl.Execute(buf, &dataUpdate)
+	err = serviceTpl.Execute(buf, &serviceDataUpdate)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = userTpl.Execute(buf, &userDataUpdate)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -85,22 +127,36 @@ func testResourceMysql(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testutils.AccPreCheck(t) },
-		CheckDestroy:             CheckServiceDestroy("mysql", dataBase.Name),
+		CheckDestroy:             CheckServiceDestroy("mysql", serviceDataBase.Name),
 		ProtoV6ProviderFactories: testutils.TestAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Create
 				Config: configCreate,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttrSet(fullResourceName, "created_at"),
-					resource.TestCheckResourceAttrSet(fullResourceName, "disk_size"),
-					resource.TestCheckResourceAttrSet(fullResourceName, "node_cpus"),
-					resource.TestCheckResourceAttrSet(fullResourceName, "node_memory"),
-					resource.TestCheckResourceAttrSet(fullResourceName, "nodes"),
-					resource.TestCheckResourceAttrSet(fullResourceName, "ca_certificate"),
-					resource.TestCheckResourceAttrSet(fullResourceName, "updated_at"),
+					// Service
+					resource.TestCheckResourceAttrSet(serviceFullResourceName, "created_at"),
+					resource.TestCheckResourceAttrSet(serviceFullResourceName, "disk_size"),
+					resource.TestCheckResourceAttrSet(serviceFullResourceName, "node_cpus"),
+					resource.TestCheckResourceAttrSet(serviceFullResourceName, "node_memory"),
+					resource.TestCheckResourceAttrSet(serviceFullResourceName, "nodes"),
+					resource.TestCheckResourceAttrSet(serviceFullResourceName, "ca_certificate"),
+					resource.TestCheckResourceAttrSet(serviceFullResourceName, "updated_at"),
 					func(s *terraform.State) error {
-						err := CheckExistsMysql(dataBase.Name, &dataCreate)
+						err := CheckExistsMysql(serviceDataBase.Name, &serviceDataCreate)
+						if err != nil {
+							return err
+						}
+
+						return nil
+					},
+
+					// User
+					resource.TestCheckResourceAttrSet(userFullResourceName, "password"),
+					resource.TestCheckResourceAttrSet(userFullResourceName, "type"),
+					resource.TestCheckResourceAttrSet(userFullResourceName, "authentication"),
+					func(s *terraform.State) error {
+						err := CheckExistsMysqlUser(serviceDataBase.Name, userDataBase.Username, &userDataCreate)
 						if err != nil {
 							return err
 						}
@@ -113,22 +169,45 @@ func testResourceMysql(t *testing.T) {
 				// Update
 				Config: configUpdate,
 				Check: resource.ComposeAggregateTestCheckFunc(
+					// Service
 					func(s *terraform.State) error {
-						err := CheckExistsMysql(dataBase.Name, &dataUpdate)
+						err := CheckExistsMysql(serviceDataBase.Name, &serviceDataUpdate)
 						if err != nil {
 							return err
 						}
 
 						return nil
 					},
+
+					// User
+					func(s *terraform.State) error {
+						// Check the new user exists
+						err = CheckExistsMysqlUser(serviceDataBase.Name, userDataUpdate.Username, &userDataUpdate)
+						if err != nil {
+							return err
+						}
+
+						return nil
+
+					},
 				),
 			},
 			{
 				// Import
-				ResourceName: fullResourceName,
+				ResourceName: serviceFullResourceName,
 				ImportStateIdFunc: func() resource.ImportStateIdFunc {
 					return func(*terraform.State) (string, error) {
-						return fmt.Sprintf("%s@%s", dataBase.Name, dataBase.Zone), nil
+						return fmt.Sprintf("%s@%s", serviceDataBase.Name, serviceDataBase.Zone), nil
+					}
+				}(),
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			{
+				ResourceName: userFullResourceName,
+				ImportStateIdFunc: func() resource.ImportStateIdFunc {
+					return func(*terraform.State) (string, error) {
+						return fmt.Sprintf("%s/%s@%s", serviceDataBase.Name, userDataBase.Username, userDataBase.Zone), nil
 					}
 				}(),
 				ImportState:       true,
@@ -197,9 +276,46 @@ func CheckExistsMysql(name string, data *TemplateModelMysql) error {
 		}
 	}
 
-	if data.Version != *service.Version {
-		return fmt.Errorf("mysql.version: expected %q, got %q", data.Version, *service.Version)
+	majVersion := strings.Split(*service.Version, ".")[0]
+
+	if data.Version != majVersion {
+		return fmt.Errorf("mysql.version: expected %q, got %q", data.Version, majVersion)
 	}
 
 	return nil
+}
+
+func CheckExistsMysqlUser(service, username string, data *TemplateModelMysqlUser) error {
+
+	client, err := testutils.APIClient()
+	if err != nil {
+		return err
+	}
+
+	ctx := exoapi.WithEndpoint(context.Background(), exoapi.NewReqEndpoint(testutils.TestEnvironment(), testutils.TestZoneName))
+
+	res, err := client.GetDbaasServiceMysqlWithResponse(ctx, oapi.DbaasServiceName(service))
+	if err != nil {
+		return err
+	}
+	if res.StatusCode() != http.StatusOK {
+		return fmt.Errorf("API request error: unexpected status %s", res.Status())
+	}
+	svc := res.JSON200
+
+	serviceUsernames := make([]string, 0)
+	if svc.Users != nil {
+		for _, u := range *svc.Users {
+			if u.Username != nil {
+				serviceUsernames = append(serviceUsernames, *u.Username)
+				if *u.Username == username {
+					if *u.Authentication == data.Authentication {
+						return nil
+					}
+				}
+			}
+		}
+	}
+
+	return fmt.Errorf("could not find user %s for service %s, found %v", username, service, serviceUsernames)
 }

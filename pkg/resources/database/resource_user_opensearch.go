@@ -155,6 +155,7 @@ func (data *OpensearchUserResourceModel) CreateResource(ctx context.Context, cli
 	for _, user := range svc.Users {
 		if user.Username == data.Username.ValueString() {
 			data.Password = basetypes.NewStringValue(user.Password)
+			data.Type = basetypes.NewStringValue(user.Type)
 			return
 		}
 	}
@@ -194,6 +195,7 @@ func (data *OpensearchUserResourceModel) ReadResource(ctx context.Context, clien
 	for _, user := range svc.Users {
 		if user.Username == data.Username.ValueString() {
 			data.Password = basetypes.NewStringValue(user.Password)
+			data.Type = basetypes.NewStringValue(user.Type)
 			return
 		}
 	}

@@ -178,6 +178,7 @@ func (data *MysqlUserResourceModel) CreateResource(ctx context.Context, client *
 	for _, user := range svc.Users {
 		if user.Username == data.Username.ValueString() {
 			data.Password = basetypes.NewStringValue(user.Password)
+			data.Type = basetypes.NewStringValue(user.Type)
 			data.Authentication = basetypes.NewStringValue(user.Authentication)
 			return
 		}
@@ -218,6 +219,7 @@ func (data *MysqlUserResourceModel) ReadResource(ctx context.Context, client *ex
 	for _, user := range svc.Users {
 		if user.Username == data.Username.ValueString() {
 			data.Password = basetypes.NewStringValue(user.Password)
+			data.Type = basetypes.NewStringValue(user.Type)
 			data.Authentication = basetypes.NewStringValue(user.Authentication)
 			return
 		}
