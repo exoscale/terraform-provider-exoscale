@@ -617,11 +617,14 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 					bid,
 				)
 				if err != nil {
-					if !errors.Is(err, v3.ErrNotFound) {
-						return diag.Errorf("failed to detach block storage: %s", err)
+					// Ideally we would have a custom error defined in OpenAPI spec & egoscale.
+					// For now we just check the error text.
+					if strings.HasSuffix(err.Error(), "Volume not attached") {
+						tflog.Info(ctx, "volume not attached")
+						continue
 					}
 
-					continue
+					return diag.Errorf("failed to detach block storage: %s", err)
 				}
 
 				_, err = clientV3.Wait(ctx, op, v3.OperationStateSuccess)
