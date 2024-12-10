@@ -3,12 +3,12 @@
 page_title: "exoscale_database_pg_user Resource - terraform-provider-exoscale"
 subcategory: ""
 description: |-
-  Manage service users for a PostgreSQL Exoscale Database Services (DBaaS) https://community.exoscale.com/documentation/dbaas/.
+  ❗ Manage service users for a PostgreSQL Exoscale Database Services (DBaaS) https://community.exoscale.com/documentation/dbaas/.
 ---
 
 # exoscale_database_pg_user (Resource)
 
-Manage service users for a PostgreSQL Exoscale [Database Services (DBaaS)](https://community.exoscale.com/documentation/dbaas/).
+❗ Manage service users for a PostgreSQL Exoscale [Database Services (DBaaS)](https://community.exoscale.com/documentation/dbaas/).
 
 
 
@@ -28,7 +28,7 @@ Manage service users for a PostgreSQL Exoscale [Database Services (DBaaS)](https
 
 ### Read-Only
 
-- `id` (String) The ID of this resource, computed as SERVICENAME/USERNAME
+- `id` (String) The ID of this resource, computed as service/username
 - `password` (String, Sensitive) The password of the service user.
 - `type` (String) The type of the service user.
 
