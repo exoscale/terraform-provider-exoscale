@@ -53,7 +53,7 @@ func (r *MysqlUserResource) Schema(ctx context.Context, req resource.SchemaReque
 		MarkdownDescription: "Manage service users for MySQL Exoscale [Database Services (DBaaS)](https://community.exoscale.com/documentation/dbaas/).",
 		Attributes: buildUserAttributes(map[string]schema.Attribute{
 			"authentication": schema.StringAttribute{
-				MarkdownDescription: "Authentication details. The possible values are `null`, `caching_sha2_password` and `mysql_native_password`.",
+				MarkdownDescription: "❗ Authentication details. The possible values are `null`, `caching_sha2_password` and `mysql_native_password`.",
 				Optional:            true,
 				Computed:            true,
 				Validators: []validator.String{

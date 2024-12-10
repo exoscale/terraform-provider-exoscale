@@ -30,7 +30,7 @@ Manage service users for a Kafka Exoscale [Database Services (DBaaS)](https://co
 - `access_cert` (String, Sensitive) Access certificate for the user.
 - `access_cert_expiry` (String) Access certificate expiry date.
 - `access_key` (String, Sensitive) Access certificate key for the user.
-- `id` (String) The ID of this resource, computed as SERVICENAME/USERNAME
+- `id` (String) The ID of this resource, computed as service/username
 - `password` (String, Sensitive) The password of the service user.
 - `type` (String) The type of the service user.
 

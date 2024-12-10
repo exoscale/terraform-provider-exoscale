@@ -48,7 +48,7 @@ func (r *PGUserResource) Metadata(ctx context.Context, req resource.MetadataRequ
 func (r *PGUserResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		// This description is used by the documentation generator and the language server.
-		MarkdownDescription: "Manage service users for a PostgreSQL Exoscale [Database Services (DBaaS)](https://community.exoscale.com/documentation/dbaas/).",
+		MarkdownDescription: "❗ Manage service users for a PostgreSQL Exoscale [Database Services (DBaaS)](https://community.exoscale.com/documentation/dbaas/).",
 		Attributes: buildUserAttributes(map[string]schema.Attribute{
 			"allow_replication": schema.BoolAttribute{
 				MarkdownDescription: "Allows replication",

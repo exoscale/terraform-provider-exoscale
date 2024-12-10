@@ -27,7 +27,7 @@ Manage service users for an Opensearch Exoscale [Database Services (DBaaS)](http
 
 ### Read-Only
 
-- `id` (String) The ID of this resource, computed as SERVICENAME/USERNAME
+- `id` (String) The ID of this resource, computed as service/username
 - `password` (String, Sensitive) The password of the service user.
 - `type` (String) The type of the service user.
 
