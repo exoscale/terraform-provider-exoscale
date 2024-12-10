@@ -68,7 +68,7 @@ var commonAttributes = map[string]schema.Attribute{
 
 	// Computed attributes
 	"id": schema.StringAttribute{
-		MarkdownDescription: "The ID of this resource, computed as SERVICENAME/USERNAME",
+		MarkdownDescription: "The ID of this resource, computed as service/username",
 		Computed:            true,
 		PlanModifiers: []planmodifier.String{
 			stringplanmodifier.UseStateForUnknown(),

@@ -23,12 +23,12 @@ Manage service users for MySQL Exoscale [Database Services (DBaaS)](https://comm
 
 ### Optional
 
-- `authentication` (String) Authentication details. The possible values are `null`, `caching_sha2_password` and `mysql_native_password`.
+- `authentication` (String) ❗ Authentication details. The possible values are `null`, `caching_sha2_password` and `mysql_native_password`.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
-- `id` (String) The ID of this resource, computed as SERVICENAME/USERNAME
+- `id` (String) The ID of this resource, computed as service/username
 - `password` (String, Sensitive) The password of the service user.
 - `type` (String) The type of the service user.
 
