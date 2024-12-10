@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+BUG FIXES:
+
+- Ignore block storage detach error when already detached #393
+
 ## 0.62.3
 
 BUG FIXES:
