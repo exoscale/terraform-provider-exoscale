@@ -78,7 +78,7 @@ func testResourceRedis(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testutils.AccPreCheck(t) },
-		CheckDestroy:             CheckDestroy("redis", dataBase.Name),
+		CheckDestroy:             CheckServiceDestroy("redis", dataBase.Name),
 		ProtoV6ProviderFactories: testutils.TestAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
