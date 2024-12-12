@@ -115,7 +115,7 @@ func Resource() *schema.Resource {
 			Elem:        &schema.Schema{Type: schema.TypeString},
 		},
 		AttrSecurityGroupIDs: {
-			Description: "A list of [exoscale_security_group](./security_groups.md) (IDs).",
+			Description: "A list of [exoscale_security_group](./security_group.md) (IDs).",
 			Type:        schema.TypeSet,
 			Optional:    true,
 			Set:         schema.HashString,

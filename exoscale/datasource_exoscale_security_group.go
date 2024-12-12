@@ -40,7 +40,7 @@ Corresponding resource: [exoscale_security_group](../resources/security_group.md
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
-				Description: "The list of external network sources, in [CIDR](https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing#CIDR_notatio) notation.",
+				Description: "The list of external network sources, in [CIDR](https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing#CIDR_notation) notation.",
 			},
 		},
 

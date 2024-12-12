@@ -38,6 +38,6 @@ directory for complete configuration examples.
 
 ### Read-Only
 
-- `external_sources` (Set of String) The list of external network sources, in [CIDR](https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing#CIDR_notatio) notation.
+- `external_sources` (Set of String) The list of external network sources, in [CIDR](https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing#CIDR_notation) notation.
 
 

@@ -42,7 +42,7 @@ func resourceSecurityGroupSchema() map[string]*schema.Schema {
 				Type:         schema.TypeString,
 				ValidateFunc: validation.IsCIDRNetwork(0, 128),
 			},
-			Description: "A list of external network sources, in [CIDR](https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing#CIDR_notatio) notation.",
+			Description: "A list of external network sources, in [CIDR](https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing#CIDR_notation) notation.",
 		},
 		resSecurityGroupAttrName: {
 			Type:     schema.TypeString,
