@@ -11,6 +11,8 @@ import (
 
 	egoscale "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
+	v3 "github.com/exoscale/egoscale/v3"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
 )
 
 func CheckAntiAffinityGroupExists(r string, res *egoscale.AntiAffinityGroup) resource.TestCheckFunc {
@@ -340,7 +342,7 @@ func CheckSSHKeyDestroy(sshKey *egoscale.SSHKey) resource.TestCheckFunc {
 	}
 }
 
-func CheckInstancePoolExists(r string, pool *egoscale.InstancePool) resource.TestCheckFunc {
+func CheckInstancePoolExists(r string, pool *v3.InstancePool) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[r]
 		if !ok {
@@ -351,13 +353,19 @@ func CheckInstancePoolExists(r string, pool *egoscale.InstancePool) resource.Tes
 			return errors.New("resource ID not set")
 		}
 
-		client, err := APIClient()
+		ctx := context.Background()
+		defaultClientV3, err := APIClientV3()
 		if err != nil {
 			return err
 		}
-		ctx := exoapi.WithEndpoint(context.Background(), exoapi.NewReqEndpoint(TestEnvironment(), TestZoneName))
 
-		res, err := client.GetInstancePool(ctx, TestZoneName, rs.Primary.ID)
+		client, err := utils.SwitchClientZone(
+			ctx,
+			defaultClientV3,
+			TestZoneName,
+		)
+
+		res, err := client.GetInstancePool(ctx, v3.UUID(rs.Primary.ID))
 		if err != nil {
 			return err
 		}
@@ -367,7 +375,7 @@ func CheckInstancePoolExists(r string, pool *egoscale.InstancePool) resource.Tes
 	}
 }
 
-func CheckInstancePoolDestroy(pool *egoscale.InstancePool) resource.TestCheckFunc {
+func CheckInstancePoolDestroy(pool *v3.InstancePool) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		if pool == nil {
 			return nil
@@ -384,7 +392,7 @@ func CheckInstancePoolDestroy(pool *egoscale.InstancePool) resource.TestCheckFun
 		// by retrying a few times before returning an error.
 		return repeat.Repeat(
 			repeat.Fn(func() error {
-				pool, err := client.GetInstancePool(ctx, TestZoneName, *pool.ID)
+				pool, err := client.GetInstancePool(ctx, TestZoneName, pool.ID.String())
 				if err != nil {
 					if errors.Is(err, exoapi.ErrNotFound) {
 						return nil

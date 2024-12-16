@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/stretchr/testify/require"
 
-	egoscale "github.com/exoscale/egoscale/v2"
+	v3 "github.com/exoscale/egoscale/v3"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/instance_pool"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/testutils"
@@ -152,7 +152,7 @@ resource "exoscale_instance_pool" "test" {
 func testResource(t *testing.T) {
 	var (
 		r            = "exoscale_instance_pool.test"
-		instancePool egoscale.InstancePool
+		instancePool v3.InstancePool
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -176,18 +176,18 @@ func testResource(t *testing.T) {
 							return err
 						}
 
-						a.Len(*instancePool.AntiAffinityGroupIDs, 1)
-						a.Equal(rDescription, *instancePool.Description)
-						a.Equal(rDiskSize, *instancePool.DiskSize)
-						a.Equal(rInstancePrefix, *instancePool.InstancePrefix)
-						a.Len(*instancePool.InstanceIDs, int(rSize))
-						a.Equal(testutils.TestInstanceTypeIDTiny, *instancePool.InstanceTypeID)
-						a.True(*instancePool.IPv6Enabled)
-						a.Equal(rLabelValue, (*instancePool.Labels)["test"])
-						a.Equal(rName, *instancePool.Name)
-						a.Equal(rSize, *instancePool.Size)
-						a.Equal(templateID, *instancePool.TemplateID)
-						a.Equal(expectedUserData, *instancePool.UserData)
+						a.Len(instancePool.AntiAffinityGroups, 1)
+						a.Equal(rDescription, instancePool.Description)
+						a.Equal(rDiskSize, instancePool.DiskSize)
+						a.Equal(rInstancePrefix, instancePool.InstancePrefix)
+						a.Len(instancePool.Instances, int(rSize))
+						a.Equal(testutils.TestInstanceTypeIDTiny, instancePool.InstanceType.ID)
+						a.True(*instancePool.Ipv6Enabled)
+						a.Equal(rLabelValue, (instancePool.Labels)["test"])
+						a.Equal(rName, instancePool.Name)
+						a.Equal(rSize, instancePool.Size)
+						a.Equal(templateID, instancePool.Template.ID)
+						a.Equal(expectedUserData, instancePool.UserData)
 
 						return nil
 					},
@@ -227,20 +227,20 @@ func testResource(t *testing.T) {
 							return err
 						}
 
-						a.Len(*instancePool.AntiAffinityGroupIDs, 1)
-						a.Equal(rDescriptionUpdated, *instancePool.Description)
-						a.Equal(rDiskSizeUpdated, *instancePool.DiskSize)
-						a.Equal(instance_pool.DefaultInstancePrefix, *instancePool.InstancePrefix)
-						a.Len(*instancePool.InstanceIDs, int(rSizeUpdated))
-						a.Equal(testutils.TestInstanceTypeIDSmall, *instancePool.InstanceTypeID)
-						a.False(*instancePool.IPv6Enabled)
-						a.Equal(rLabelValueUpdated, (*instancePool.Labels)["test"])
-						a.Equal(rNameUpdated, *instancePool.Name)
-						a.Len(*instancePool.PrivateNetworkIDs, 1)
-						a.Equal(rSizeUpdated, *instancePool.Size)
+						a.Len(instancePool.AntiAffinityGroups, 1)
+						a.Equal(rDescriptionUpdated, instancePool.Description)
+						a.Equal(rDiskSizeUpdated, instancePool.DiskSize)
+						a.Equal(instance_pool.DefaultInstancePrefix, instancePool.InstancePrefix)
+						a.Len(instancePool.Instances, int(rSizeUpdated))
+						a.Equal(testutils.TestInstanceTypeIDSmall, instancePool.InstanceType.ID)
+						a.False(*instancePool.Ipv6Enabled)
+						a.Equal(rLabelValueUpdated, (instancePool.Labels)["test"])
+						a.Equal(rNameUpdated, instancePool.Name)
+						a.Len(instancePool.PrivateNetworks, 1)
+						a.Equal(rSizeUpdated, instancePool.Size)
 						a.Equal(rKeyPair, *instancePool.SSHKey)
-						a.Equal(templateID, *instancePool.TemplateID)
-						a.Equal(expectedUserData, *instancePool.UserData)
+						a.Equal(templateID, instancePool.Template.ID)
+						a.Equal(expectedUserData, instancePool.UserData)
 
 						return nil
 					},
@@ -265,9 +265,9 @@ func testResource(t *testing.T) {
 			{
 				// Import
 				ResourceName: r,
-				ImportStateIdFunc: func(instancePool *egoscale.InstancePool) resource.ImportStateIdFunc {
+				ImportStateIdFunc: func(instancePool *v3.InstancePool) resource.ImportStateIdFunc {
 					return func(*terraform.State) (string, error) {
-						return fmt.Sprintf("%s@%s", *instancePool.ID, testutils.TestZoneName), nil
+						return fmt.Sprintf("%s@%s", instancePool.ID.String(), testutils.TestZoneName), nil
 					}
 				}(&instancePool),
 				ImportState: true,
@@ -296,7 +296,7 @@ func testResource(t *testing.T) {
 						},
 						func(s []*terraform.InstanceState) map[string]string {
 							for _, state := range s {
-								if state.ID == *instancePool.ID {
+								if state.ID == instancePool.ID.String() {
 									return state.Attributes
 								}
 							}

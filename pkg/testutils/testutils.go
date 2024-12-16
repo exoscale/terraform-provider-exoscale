@@ -15,6 +15,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	egoscale "github.com/exoscale/egoscale/v2"
+	v3 "github.com/exoscale/egoscale/v3"
+	"github.com/exoscale/egoscale/v3/credentials"
 
 	"github.com/exoscale/terraform-provider-exoscale/exoscale"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
@@ -77,6 +79,16 @@ func APIClient() (*egoscale.Client, error) {
 	if err != nil {
 		return nil, err
 	}
+	return client, nil
+}
+
+func APIClientV3() (*v3.Client, error) {
+	client, err := v3.NewClient(credentials.NewEnvCredentials(), nil)
+
+	if err != nil {
+		return nil, err
+	}
+
 	return client, nil
 }
 
