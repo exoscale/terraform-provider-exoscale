@@ -22,7 +22,7 @@ Before proceeding, please:
 
 In this guide, we will assume the following configuration as an example:
 
-```hcl
+```terraform
 resource "exoscale_compute" "my_instance" {
   disk_size = 10
   display_name = "my-instance"
@@ -88,7 +88,7 @@ Now, these resources are removed from the state.
 
 Replace the `exoscale_network` block by the new `exoscale_private_network` resource:
 
-```hcl
+```terraform
 resource "exoscale_private_network" "my_network" {
   name = "privnet"
   description = "Private Network"
@@ -103,7 +103,7 @@ In this example we are using unmanaged private network, for managed network you 
 
 Now replace `exoscale_compute` and `exoscale_nic` blocks with `exoscale_compute_instance`:
 
-```hcl
+```terraform
 resource "exoscale_compute_instance" "my_instance" {
   disk_size = 10
   name = "my-instance"

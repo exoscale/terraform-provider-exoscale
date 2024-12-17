@@ -14,7 +14,7 @@ Corresponding resource: [exoscale_nlb](../resources/nlb.md).
 
 ## Example Usage
 
-```hcl
+```terraform
 data "exoscale_nlb_service_list" "example_nlb_services" {
   name = "my-nlb"
 }
@@ -44,7 +44,7 @@ directory for complete configuration examples.
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-- `services` (Attributes List) The list of [exoscale_nlb_service](./nlb_service.md). (see [below for nested schema](#nestedatt--services))
+- `services` (Attributes List) The list of [exoscale_nlb_service](./nlb_service_list.md). (see [below for nested schema](#nestedatt--services))
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`

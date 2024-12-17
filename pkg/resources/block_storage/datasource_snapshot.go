@@ -22,7 +22,7 @@ const DataSourceSnapshotDescription = `Fetch [Exoscale Block Storage](https://co
 
 Block Storage offers persistent externally attached volumes for your workloads.
 
-Corresponding resource: [exoscale_block_storage_snapshot](../resources/block_storage_snapshot.md).`
+Corresponding resource: [exoscale_block_storage_snapshot](../resources/block_storage_volume_snapshot.md).`
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ datasource.DataSourceWithConfigure = &DataSourceSnapshot{}

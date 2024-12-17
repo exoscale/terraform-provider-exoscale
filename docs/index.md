@@ -27,7 +27,7 @@ use the Exoscale Terraform provider.
 
 ### Example
 
-```hcl
+```terraform
 terraform {
   required_providers {
     exoscale = {
@@ -59,7 +59,7 @@ provider "exoscale" {
 In addition of the global `timeout` provider setting, the waiting time of async
 operations can be fine-tuned per resource and per operation type:
 
-```hcl
+```terraform
 resource "exoscale_instance_pool" "web" {
   # ...
 
@@ -77,7 +77,7 @@ resource "exoscale_instance_pool" "web" {
 
 Here is a simple HCL configuration provisioning an Exoscale Compute instance:
 
-```hcl
+```terraform
 terraform {
   required_providers {
     exoscale = {

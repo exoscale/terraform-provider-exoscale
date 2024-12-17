@@ -129,7 +129,7 @@ Corresponding resource: [exoscale_nlb](../resources/nlb.md).`,
 				Optional:            true,
 			},
 			NLBServiceListAttrNLBServiceList: schema.ListNestedAttribute{
-				MarkdownDescription: "The list of [exoscale_nlb_service](./nlb_service.md).",
+				MarkdownDescription: "The list of [exoscale_nlb_service](./nlb_service_list.md).",
 				Computed:            true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{

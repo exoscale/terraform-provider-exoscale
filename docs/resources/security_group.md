@@ -13,7 +13,7 @@ Corresponding data source: [exoscale_security_group](../data-sources/security_gr
 
 ## Example Usage
 
-```hcl
+```terraform
 resource "exoscale_security_group" "my_security_group" {
   name = "my-security-group"
 }
@@ -34,7 +34,7 @@ directory for complete configuration examples.
 ### Optional
 
 - `description` (String) ❗ A free-form text describing the group.
-- `external_sources` (Set of String) A list of external network sources, in [CIDR](https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing#CIDR_notatio) notation.
+- `external_sources` (Set of String) A list of external network sources, in [CIDR](https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing#CIDR_notation) notation.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only

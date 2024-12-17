@@ -18,7 +18,7 @@ Corresponding resource: [exoscale_database](../resources/database.md).
 
 ## Example Usage
 
-```hcl
+```terraform
 resource "exoscale_database" "my_database" {
   zone = "ch-gva-2"
   name = "my-database"

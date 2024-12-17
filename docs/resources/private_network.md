@@ -15,7 +15,7 @@ Corresponding data source: [exoscale_private_network](../data-sources/private_ne
 
 *Unmanaged* private network:
 
-```hcl
+```terraform
 resource "exoscale_private_network" "my_private_network" {
   zone = "ch-gva-2"
   name = "my-private-network"
@@ -24,7 +24,7 @@ resource "exoscale_private_network" "my_private_network" {
 
 *Managed* private network:
 
-```hcl
+```terraform
 resource "exoscale_private_network" "my_managed_private_network" {
   zone = "ch-gva-2"
   name = "my-managed-private-network"

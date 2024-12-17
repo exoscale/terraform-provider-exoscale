@@ -11,7 +11,7 @@ Lists all zones.
 
 ## Example Usage
 
-```hcl
+```terraform
 data "exoscale_zones" "example_zones" {}
 
 # Outputs

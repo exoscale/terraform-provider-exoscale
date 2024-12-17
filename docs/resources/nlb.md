@@ -13,7 +13,7 @@ Corresponding data source: [exoscale_nlb](../data-sources/nlb.md).
 
 ## Example Usage
 
-```hcl
+```terraform
 resource "exoscale_nlb" "my_nlb" {
   zone = "ch-gva-2"
   name = "my-nlb"

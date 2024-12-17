@@ -15,7 +15,7 @@ Corresponding data source: [exoscale_elastic_ip](../data-sources/elastic_ip.md).
 
 *Unmanaged* EIPv4:
 
-```hcl
+```terraform
 resource "exoscale_elastic_ip" "my_elastic_ip" {
   zone = "ch-gva-2"
 }
@@ -23,7 +23,7 @@ resource "exoscale_elastic_ip" "my_elastic_ip" {
 
 *Managed* EIPv6:
 
-```hcl
+```terraform
 resource "exoscale_elastic_ip" "my_managed_elastic_ip" {
   zone = "ch-gva-2"
   address_family = "inet6"

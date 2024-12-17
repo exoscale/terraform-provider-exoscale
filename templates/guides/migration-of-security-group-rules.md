@@ -22,7 +22,7 @@ Before proceeding, please:
 
 In this guide, we will assume the following configuration as an example:
 
-```hcl
+```terraform
 resource "exoscale_security_group" "webapp" {
   name = "webapp"
   # ...
@@ -122,7 +122,7 @@ Now, these resources are removed from the state.
 
 Replace the `exoscale_security_group_rules` block by new `exoscale_security_group_rule` resources:
 
-```hcl
+```terraform
 resource "exoscale_security_group_rule" "webapp_ssh" {
   security_group_id = exoscale_security_group.webapp.id
   type = "INGRESS"

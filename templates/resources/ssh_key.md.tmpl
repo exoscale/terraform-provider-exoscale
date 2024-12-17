@@ -13,7 +13,7 @@ Manage Exoscale [SSH Keys](https://community.exoscale.com/documentation/compute/
 
 ## Example Usage
 
-```hcl
+```terraform
 resource "exoscale_ssh_key" "my_ssh_key" {
   name       = "my-ssh-key"
   public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDGRY..."
@@ -24,7 +24,7 @@ Should you want to _create_ an SSH keypair (including *private* key) with Terraf
 [tls_private_key](https://registry.terraform.io/providers/hashicorp/tls/latest/docs/resources/private_key)
 resource:
 
-```hcl
+```terraform
 resource "tls_private_key" "my_ssh_key" {
   algorithm = "ED25519"
 }

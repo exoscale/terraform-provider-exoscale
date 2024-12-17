@@ -60,7 +60,7 @@ directory for complete configuration examples.
 - `key_pair` (String) The [exoscale_ssh_key](./ssh_key.md) (name) to authorize in the managed instances.
 - `labels` (Map of String) A map of key/value labels.
 - `network_ids` (Set of String) A list of [exoscale_private_network](./private_network.md) (IDs).
-- `security_group_ids` (Set of String) A list of [exoscale_security_group](./security_groups.md) (IDs).
+- `security_group_ids` (Set of String) A list of [exoscale_security_group](./security_group.md) (IDs).
 - `service_offering` (String, Deprecated) The managed instances type. Please use the `instance_type` argument instead.
 - `state` (String)
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
