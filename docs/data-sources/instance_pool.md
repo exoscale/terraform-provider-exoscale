@@ -55,6 +55,7 @@ directory for complete configuration examples.
 - `instances` (Set of Object) The list of managed instances. Structure is documented below. (see [below for nested schema](#nestedatt--instances))
 - `ipv6` (Boolean) Whether IPv6 is enabled on managed instances.
 - `key_pair` (String) The [exoscale_ssh_key](../resources/ssh_key.md) (name) authorized on the managed instances.
+- `min_available` (Number) Minimum number of running Instances.
 - `network_ids` (Set of String) The list of attached [exoscale_private_network](../resources/private_network.md) (IDs).
 - `security_group_ids` (Set of String) The list of attached [exoscale_security_group](../resources/security_group.md) (IDs).
 - `size` (Number) The number managed instances.

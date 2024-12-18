@@ -21,6 +21,7 @@ const (
 	AttrServiceOffering         = "service_offering"
 	AttrSecurityGroupIDs        = "security_group_ids"
 	AttrSize                    = "size"
+	AttrMinAvailable            = "min_available"
 	AttrState                   = "state"
 	AttrTemplateID              = "template_id"
 	AttrUserData                = "user_data"
