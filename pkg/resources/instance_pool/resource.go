@@ -491,37 +491,51 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 	updateRequest := v3.UpdateInstancePoolRequest{}
 	var updated bool
 
-	if set := d.Get(AttrAffinityGroupIDs).(*schema.Set); d.HasChange(AttrAffinityGroupIDs) {
-		updateRequest.AntiAffinityGroups = func() []v3.AntiAffinityGroup {
-			list := make([]v3.AntiAffinityGroup, set.Len())
-			for i, v := range set.List() {
-				list[i] = v3.AntiAffinityGroup{
-					ID: v3.UUID(v.(string)),
-				}
+	// We need to explicitely specify the AntiaffinityGroups on
+	// update otherwise the orchestrator will interpret that as
+	// clearing the list of AAGs
+	set := d.Get(AttrAffinityGroupIDs).(*schema.Set)
+	updateRequest.AntiAffinityGroups = func() []v3.AntiAffinityGroup {
+		list := make([]v3.AntiAffinityGroup, set.Len())
+		for i, v := range set.List() {
+			list[i] = v3.AntiAffinityGroup{
+				ID: v3.UUID(v.(string)),
 			}
-			return list
-		}()
-		updated = true
-	}
-
-	if set := d.Get(AttrAntiAffinityGroupIDs).(*schema.Set); d.HasChange(AttrAntiAffinityGroupIDs) {
-		updateRequest.AntiAffinityGroups = func() []v3.AntiAffinityGroup {
-			list := make([]v3.AntiAffinityGroup, set.Len())
-			for i, v := range set.List() {
-				list[i] = v3.AntiAffinityGroup{
-					ID: v3.UUID(v.(string)),
-				}
-			}
-			return list
-		}()
-		updated = true
-	}
-
-	if d.HasChange(AttrDeployTargetID) {
-		v := d.Get(AttrDeployTargetID).(string)
-		updateRequest.DeployTarget = &v3.DeployTarget{
-			ID: v3.UUID(v),
 		}
+		return list
+	}()
+	if d.HasChange(AttrAffinityGroupIDs) {
+		updated = true
+	} else {
+
+	}
+
+	// We need to explicitely specify the AntiaffinityGroups on
+	// update otherwise the orchestrator will interpret that as
+	// clearing the list of AAGs
+	set = d.Get(AttrAntiAffinityGroupIDs).(*schema.Set)
+	updateRequest.AntiAffinityGroups = func() []v3.AntiAffinityGroup {
+		list := make([]v3.AntiAffinityGroup, set.Len())
+		for i, v := range set.List() {
+			list[i] = v3.AntiAffinityGroup{
+				ID: v3.UUID(v.(string)),
+			}
+		}
+		return list
+	}()
+	if d.HasChange(AttrAntiAffinityGroupIDs) {
+		updated = true
+	}
+
+	// We need to explicitely specify the DeployTarget on
+	// update otherwise the orchestrator will interpret that as
+	// clearing the DeployTarget
+	if v, getSuccess := d.GetOk(AttrDeployTargetID); getSuccess {
+		updateRequest.DeployTarget = &v3.DeployTarget{
+			ID: v3.UUID(v.(string)),
+		}
+	}
+	if d.HasChange(AttrDeployTargetID) {
 		updated = true
 	}
 
@@ -537,17 +551,20 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 		updated = true
 	}
 
-	if d.HasChange(AttrElasticIPIDs) {
-		set := d.Get(AttrElasticIPIDs).(*schema.Set)
-		updateRequest.ElasticIPS = func() []v3.ElasticIP {
-			list := make([]v3.ElasticIP, set.Len())
-			for i, v := range set.List() {
-				list[i] = v3.ElasticIP{
-					ID: v3.UUID(v.(string)),
-				}
+	// We need to explicitely specify the Elastic IPs on
+	// update otherwise the orchestrator will interpret that as
+	// clearing the list of assocaited EIPs
+	set = d.Get(AttrElasticIPIDs).(*schema.Set)
+	updateRequest.ElasticIPS = func() []v3.ElasticIP {
+		list := make([]v3.ElasticIP, set.Len())
+		for i, v := range set.List() {
+			list[i] = v3.ElasticIP{
+				ID: v3.UUID(v.(string)),
 			}
-			return list
-		}()
+		}
+		return list
+	}()
+	if d.HasChange(AttrElasticIPIDs) {
 		updated = true
 	}
 
@@ -563,11 +580,14 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 		updated = true
 	}
 
+	// We need to explicitely specify the SSHKey on
+	// update otherwise the orchestrator will interpret that as
+	// clearing the list of associated SSH key
+	v := d.Get(AttrKeyPair).(string)
+	updateRequest.SSHKey = &v3.SSHKey{
+		Name: v,
+	}
 	if d.HasChange(AttrKeyPair) {
-		v := d.Get(AttrKeyPair).(string)
-		updateRequest.SSHKey = &v3.SSHKey{
-			Name: v,
-		}
 		updated = true
 	}
 
@@ -586,31 +606,37 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 		updated = true
 	}
 
-	if d.HasChange(AttrNetworkIDs) {
-		set := d.Get(AttrNetworkIDs).(*schema.Set)
-		updateRequest.PrivateNetworks = func() []v3.PrivateNetwork {
-			list := make([]v3.PrivateNetwork, set.Len())
-			for i, v := range set.List() {
-				list[i] = v3.PrivateNetwork{
-					ID: v3.UUID(v.(string)),
-				}
+	// We need to explicitely specify the PrivateNetworks on
+	// update otherwise the orchestrator will interpret that as
+	// clearing the list of PrivNets
+	set = d.Get(AttrNetworkIDs).(*schema.Set)
+	updateRequest.PrivateNetworks = func() []v3.PrivateNetwork {
+		list := make([]v3.PrivateNetwork, set.Len())
+		for i, v := range set.List() {
+			list[i] = v3.PrivateNetwork{
+				ID: v3.UUID(v.(string)),
 			}
-			return list
-		}()
+		}
+		return list
+	}()
+	if d.HasChange(AttrNetworkIDs) {
 		updated = true
 	}
 
-	if d.HasChange(AttrSecurityGroupIDs) {
-		set := d.Get(AttrSecurityGroupIDs).(*schema.Set)
-		updateRequest.SecurityGroups = func() []v3.SecurityGroup {
-			list := make([]v3.SecurityGroup, set.Len())
-			for i, v := range set.List() {
-				list[i] = v3.SecurityGroup{
-					ID: v3.UUID(v.(string)),
-				}
+	// We need to explicitely specify the SecurityGroups on
+	// update otherwise the orchestrator will interpret that as
+	// clearing the list of SecurityGroups
+	set = d.Get(AttrSecurityGroupIDs).(*schema.Set)
+	updateRequest.SecurityGroups = func() []v3.SecurityGroup {
+		list := make([]v3.SecurityGroup, set.Len())
+		for i, v := range set.List() {
+			list[i] = v3.SecurityGroup{
+				ID: v3.UUID(v.(string)),
 			}
-			return list
-		}()
+		}
+		return list
+	}()
+	if d.HasChange(AttrSecurityGroupIDs) {
 		updated = true
 	}
 
