@@ -91,7 +91,7 @@ func testResourceOpensearch(t *testing.T) {
 		Version:               "1",
 	}
 
-	userFullResourceName := "exoscale_database_opensearch_user.test_user"
+	userFullResourceName := "exoscale_dbaas_opensearch_user.test_user"
 	userDataBase := TemplateModelOpensearchUser{
 		ResourceName: "test_user",
 		Username:     "foo",

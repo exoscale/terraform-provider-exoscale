@@ -71,7 +71,7 @@ func testResourcePg(t *testing.T) {
 		Version:               "13",
 	}
 
-	userFullResourceName := "exoscale_database_pg_user.test_user"
+	userFullResourceName := "exoscale_dbaas_pg_user.test_user"
 	userDataBase := TemplateModelPgUser{
 		ResourceName: "test_user",
 		Username:     "foo",

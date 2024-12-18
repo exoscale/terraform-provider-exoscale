@@ -44,7 +44,7 @@ func (r *MysqlUserResource) Configure(ctx context.Context, req resource.Configur
 }
 
 func (r *MysqlUserResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_database_mysql_user"
+	resp.TypeName = req.ProviderTypeName + "_dbaas_mysql_user"
 }
 
 func (r *MysqlUserResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {

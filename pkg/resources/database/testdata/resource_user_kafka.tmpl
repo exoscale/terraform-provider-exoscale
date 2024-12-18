@@ -1,4 +1,4 @@
-resource "exoscale_database_kafka_user" {{ .ResourceName }} {
+resource "exoscale_dbaas_kafka_user" {{ .ResourceName }} {
   username = "{{ .Username }}"
   service = {{ .Service }}
   zone = "{{ .Zone }}"
