@@ -81,7 +81,7 @@ func testResourceKafka(t *testing.T) {
 		Version:               "3.7",
 	}
 
-	userFullResourceName := "exoscale_database_kafka_user.test_user"
+	userFullResourceName := "exoscale_dbaas_kafka_user.test_user"
 	userDataBase := TemplateModelKafkaUser{
 		ResourceName: "test_user",
 		Username:     "foo",

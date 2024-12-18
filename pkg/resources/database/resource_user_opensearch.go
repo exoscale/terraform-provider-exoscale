@@ -39,7 +39,7 @@ func (r *OpensearchUserResource) Configure(ctx context.Context, req resource.Con
 }
 
 func (r *OpensearchUserResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_database_opensearch_user"
+	resp.TypeName = req.ProviderTypeName + "_dbaas_opensearch_user"
 }
 
 func (r *OpensearchUserResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {

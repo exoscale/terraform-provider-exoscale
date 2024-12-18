@@ -42,7 +42,7 @@ func (r *KafkaUserResource) Configure(ctx context.Context, req resource.Configur
 }
 
 func (r *KafkaUserResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_database_kafka_user"
+	resp.TypeName = req.ProviderTypeName + "_dbaas_kafka_user"
 }
 
 func (r *KafkaUserResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {

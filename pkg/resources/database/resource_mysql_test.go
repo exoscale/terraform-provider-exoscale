@@ -75,7 +75,7 @@ func testResourceMysql(t *testing.T) {
 		Version:               "8",
 	}
 
-	userFullResourceName := "exoscale_database_mysql_user.test_user"
+	userFullResourceName := "exoscale_dbaas_mysql_user.test_user"
 	userDataBase := TemplateModelMysqlUser{
 		ResourceName: "test_user",
 		Username:     "foo",
