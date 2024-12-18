@@ -443,7 +443,7 @@ func rRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.D
 
 	zone := d.Get(AttrZone).(string)
 
-	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutCreate))
+	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
 	defer cancel()
 
 	defaultClientV3, err := config.GetClientV3(meta)
@@ -483,7 +483,7 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 
 	zone := d.Get(AttrZone).(string)
 
-	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutCreate))
+	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutUpdate))
 	defer cancel()
 
 	defaultClientV3, err := config.GetClientV3(meta)
@@ -725,7 +725,7 @@ func rDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 
 	zone := d.Get(AttrZone).(string)
 
-	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutCreate))
+	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutDelete))
 	defer cancel()
 
 	defaultClientV3, err := config.GetClientV3(meta)
