@@ -33,7 +33,9 @@ var (
 	rInstanceType                = "standard.tiny"
 	rInstanceTypeUpdated         = "standard.small"
 	rSize                  int64 = 1
+	rMinAvailable          int64 = 0
 	rSizeUpdated                 = rSize * 2
+	rMinAvailableUpdated         = rMinAvailable + 1
 	rUserData                    = acctest.RandString(10)
 	rUserDataUpdated             = rUserData + "-updated"
 
@@ -62,6 +64,7 @@ resource "exoscale_instance_pool" "test" {
   template_id = data.exoscale_template.ubuntu.id
   instance_type = "%s"
   size = %d
+  min_available = %d
   disk_size = %d
   ipv6 = true
   anti_affinity_group_ids = [exoscale_anti_affinity_group.test.id]
@@ -83,6 +86,7 @@ resource "exoscale_instance_pool" "test" {
 		rDescription,
 		rInstanceType,
 		rSize,
+		rMinAvailable,
 		rDiskSize,
 		rInstancePrefix,
 		rUserData,
@@ -120,6 +124,7 @@ resource "exoscale_instance_pool" "test" {
   template_id = data.exoscale_template.debian.id
   instance_type = "%s"
   size = %d
+  min_available = %d
   disk_size = %d
   ipv6 = false
   key_pair = exoscale_ssh_key.test.name
@@ -143,6 +148,7 @@ resource "exoscale_instance_pool" "test" {
 		rDescriptionUpdated,
 		rInstanceTypeUpdated,
 		rSizeUpdated,
+		rMinAvailableUpdated,
 		rDiskSizeUpdated,
 		rUserDataUpdated,
 		rLabelValueUpdated,
@@ -202,6 +208,7 @@ func testResource(t *testing.T) {
 						instance_pool.AttrName:                        testutils.ValidateString(rName),
 						instance_pool.AttrSecurityGroupIDs + ".#":     testutils.ValidateString("1"),
 						instance_pool.AttrSize:                        testutils.ValidateString(fmt.Sprint(rSize)),
+						instance_pool.AttrMinAvailable:                testutils.ValidateString(fmt.Sprint(rMinAvailable)),
 						instance_pool.AttrState:                       validation.ToDiagFunc(validation.NoZeroValues),
 						instance_pool.AttrTemplateID:                  validation.ToDiagFunc(validation.IsUUID),
 						instance_pool.AttrUserData:                    testutils.ValidateString(rUserData),
@@ -256,6 +263,7 @@ func testResource(t *testing.T) {
 						instance_pool.AttrName:                        testutils.ValidateString(rNameUpdated),
 						instance_pool.AttrNetworkIDs + ".#":           testutils.ValidateString("1"),
 						instance_pool.AttrSize:                        testutils.ValidateString(fmt.Sprint(rSizeUpdated)),
+						instance_pool.AttrMinAvailable:                testutils.ValidateString(fmt.Sprint(rMinAvailableUpdated)),
 						instance_pool.AttrState:                       validation.ToDiagFunc(validation.NoZeroValues),
 						instance_pool.AttrUserData:                    testutils.ValidateString(rUserDataUpdated),
 					})),
@@ -291,6 +299,7 @@ func testResource(t *testing.T) {
 							instance_pool.AttrName:              testutils.ValidateString(rNameUpdated),
 							instance_pool.AttrNetworkIDs + ".#": testutils.ValidateString("1"),
 							instance_pool.AttrSize:              testutils.ValidateString(fmt.Sprint(rSizeUpdated)),
+							instance_pool.AttrMinAvailable:      testutils.ValidateString(fmt.Sprint(rMinAvailableUpdated)),
 							instance_pool.AttrState:             validation.ToDiagFunc(validation.NoZeroValues),
 							instance_pool.AttrUserData:          testutils.ValidateString(rUserDataUpdated),
 						},

@@ -135,6 +135,13 @@ func Resource() *schema.Resource {
 			Required:     true,
 			ValidateFunc: validation.IntAtLeast(1),
 		},
+		AttrMinAvailable: {
+			Description:  "Minimum number of running Instances.",
+			Type:         schema.TypeInt,
+			Computed:     true,
+			Optional:     true,
+			ValidateFunc: validation.IntAtLeast(0),
+		},
 		AttrState: {
 			Type:     schema.TypeString,
 			Optional: true,
@@ -288,6 +295,10 @@ func rCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 	if v, ok := d.GetOk(AttrSize); ok {
 		i := int64(v.(int))
 		createPoolRequest.Size = i
+	}
+	if v, ok := d.GetOk(AttrMinAvailable); ok {
+		i := int64(v.(int))
+		createPoolRequest.MinAvailable = i
 	}
 
 	if v, ok := d.GetOk(AttrTemplateID); ok {
@@ -669,6 +680,12 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 		updated = true
 	}
 
+	if d.HasChange(AttrMinAvailable) {
+		v := int64(d.Get(AttrMinAvailable).(int))
+		updateRequest.MinAvailable = &v
+		updated = true
+	}
+
 	if updated {
 		op, err := client.UpdateInstancePool(ctx, v3.UUID(d.Id()), updateRequest)
 		if err != nil {
@@ -861,6 +878,10 @@ func rApply(ctx context.Context, client *v3.Client, d *schema.ResourceData, pool
 	}
 
 	if err := d.Set(AttrSize, pool.Size); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set(AttrMinAvailable, pool.MinAvailable); err != nil {
 		return diag.FromErr(err)
 	}
 
