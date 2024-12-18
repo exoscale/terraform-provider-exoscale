@@ -227,13 +227,12 @@ func dsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.
 		if err == nil {
 			return diag.FromErr(err)
 		}
-		for _, p := range rep.InstancePools {
-			if p.Name == name {
-				pool = &p
-				break
-			}
-		}
 
+		p, err := rep.FindInstancePool(name.(string))
+		if err == nil {
+			return diag.FromErr(err)
+		}
+		pool = &p
 	}
 
 	if err != nil {
