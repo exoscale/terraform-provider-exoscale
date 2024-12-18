@@ -60,6 +60,7 @@ Read-Only:
 - `ipv6` (Boolean)
 - `key_pair` (String)
 - `labels` (Map of String)
+- `min_available` (Number)
 - `name` (String)
 - `network_ids` (Set of String)
 - `security_group_ids` (Set of String)
