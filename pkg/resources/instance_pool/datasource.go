@@ -190,7 +190,7 @@ func dsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.
 
 	zone := d.Get(AttrZone).(string)
 
-	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutCreate))
+	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
 	defer cancel()
 
 	defaultClientV3, err := config.GetClientV3(meta)
