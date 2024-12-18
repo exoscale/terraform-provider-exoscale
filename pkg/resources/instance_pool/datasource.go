@@ -109,6 +109,11 @@ func DataSourceSchema() map[string]*schema.Schema {
 			Type:        schema.TypeInt,
 			Computed:    true,
 		},
+		AttrMinAvailable: {
+			Description: "Minimum number of running Instances.",
+			Type:        schema.TypeInt,
+			Computed:    true,
+		},
 		AttrState: {
 			Description: "The pool state.",
 			Type:        schema.TypeString,
@@ -314,6 +319,7 @@ func dsBuildData(pool *v3.InstancePool, zone string) (map[string]interface{}, er
 	}
 	data[AttrName] = pool.Name
 	data[AttrSize] = pool.Size
+	data[AttrMinAvailable] = pool.MinAvailable
 	data[AttrState] = pool.State
 	data[AttrTemplateID] = pool.Template.ID
 	data[AttrZone] = zone
