@@ -306,12 +306,12 @@ func rCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 			AttrInstanceType,
 		)
 	}
-	it := d.Get(AttrServiceOffering).(string)
+	instanceTypeCompoundName := d.Get(AttrServiceOffering).(string)
 	if v, ok := d.GetOk(AttrInstanceType); ok {
-		it = v.(string)
+		instanceTypeCompoundName = v.(string)
 	}
 
-	createPoolRequest.InstanceType, err = client.GetInstanceType(ctx, v3.UUID(it))
+	createPoolRequest.InstanceType, err = utils.FindInstanceTypeByNameV3(ctx, client, instanceTypeCompoundName)
 	if err != nil {
 		return diag.Errorf("error retrieving instance type: %s", err)
 	}
@@ -615,7 +615,8 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 	}
 
 	if d.HasChange(AttrInstanceType) {
-		instanceType, err := client.GetInstanceType(ctx, v3.UUID(d.Get(AttrInstanceType).(string)))
+
+		instanceType, err := utils.FindInstanceTypeByNameV3(ctx, client, d.Get(AttrInstanceType).(string))
 		if err != nil {
 			return diag.Errorf("error retrieving instance type: %s", err)
 		}
@@ -654,8 +655,9 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 	}
 
 	if d.HasChange(AttrSize) {
+
 		op, err := client.ScaleInstancePool(ctx, v3.UUID(d.Id()), v3.ScaleInstancePoolRequest{
-			Size: d.Get(AttrSize).(int64),
+			Size: int64(d.Get(AttrSize).(int)),
 		})
 		if err != nil {
 			return diag.FromErr(err)
@@ -776,8 +778,10 @@ func rApply(ctx context.Context, client *v3.Client, d *schema.ResourceData, pool
 		return diag.FromErr(err)
 	}
 
-	if err := d.Set(AttrKeyPair, pool.SSHKey); err != nil {
-		return diag.FromErr(err)
+	if pool.SSHKey != nil {
+		if err := d.Set(AttrKeyPair, pool.SSHKey.Name); err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
 	if err := d.Set(AttrLabels, pool.Labels); err != nil {

@@ -181,12 +181,12 @@ func testResource(t *testing.T) {
 						a.Equal(rDiskSize, instancePool.DiskSize)
 						a.Equal(rInstancePrefix, instancePool.InstancePrefix)
 						a.Len(instancePool.Instances, int(rSize))
-						a.Equal(testutils.TestInstanceTypeIDTiny, instancePool.InstanceType.ID)
+						a.Equal(testutils.TestInstanceTypeIDTiny, instancePool.InstanceType.ID.String())
 						a.True(*instancePool.Ipv6Enabled)
 						a.Equal(rLabelValue, (instancePool.Labels)["test"])
 						a.Equal(rName, instancePool.Name)
 						a.Equal(rSize, instancePool.Size)
-						a.Equal(templateID, instancePool.Template.ID)
+						a.Equal(templateID, instancePool.Template.ID.String())
 						a.Equal(expectedUserData, instancePool.UserData)
 
 						return nil
@@ -232,14 +232,14 @@ func testResource(t *testing.T) {
 						a.Equal(rDiskSizeUpdated, instancePool.DiskSize)
 						a.Equal(instance_pool.DefaultInstancePrefix, instancePool.InstancePrefix)
 						a.Len(instancePool.Instances, int(rSizeUpdated))
-						a.Equal(testutils.TestInstanceTypeIDSmall, instancePool.InstanceType.ID)
+						a.Equal(testutils.TestInstanceTypeIDSmall, instancePool.InstanceType.ID.String())
 						a.False(*instancePool.Ipv6Enabled)
 						a.Equal(rLabelValueUpdated, (instancePool.Labels)["test"])
 						a.Equal(rNameUpdated, instancePool.Name)
 						a.Len(instancePool.PrivateNetworks, 1)
 						a.Equal(rSizeUpdated, instancePool.Size)
-						a.Equal(rKeyPair, *instancePool.SSHKey)
-						a.Equal(templateID, instancePool.Template.ID)
+						a.Equal(rKeyPair, instancePool.SSHKey.Name)
+						a.Equal(templateID, instancePool.Template.ID.String())
 						a.Equal(expectedUserData, instancePool.UserData)
 
 						return nil

@@ -364,6 +364,9 @@ func CheckInstancePoolExists(r string, pool *v3.InstancePool) resource.TestCheck
 			defaultClientV3,
 			TestZoneName,
 		)
+		if err != nil {
+			return err
+		}
 
 		res, err := client.GetInstancePool(ctx, v3.UUID(rs.Primary.ID))
 		if err != nil {

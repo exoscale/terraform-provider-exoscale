@@ -9,8 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	exo "github.com/exoscale/egoscale/v2"
-	exoapi "github.com/exoscale/egoscale/v2/api"
+	v3 "github.com/exoscale/egoscale/v3"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
 )
@@ -186,11 +185,18 @@ func dsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.
 
 	zone := d.Get(AttrZone).(string)
 
-	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(config.GetEnvironment(meta), zone))
+	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutCreate))
 	defer cancel()
 
-	client, err := config.GetClient(meta)
+	defaultClientV3, err := config.GetClientV3(meta)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	client, err := utils.SwitchClientZone(
+		ctx,
+		defaultClientV3,
+		v3.ZoneName(zone),
+	)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -205,30 +211,40 @@ func dsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.
 		)
 	}
 
-	pool, err := client.FindInstancePool(
-		ctx,
-		zone, func() string {
-			if byID {
-				return id.(string)
+	var pool *v3.InstancePool
+	if byID {
+		pool, err = client.GetInstancePool(
+			ctx,
+			v3.UUID(id.(string)),
+		)
+	} else {
+		rep, err := client.ListInstancePools(ctx)
+		if err == nil {
+			return diag.FromErr(err)
+		}
+		for _, p := range rep.InstancePools {
+			if p.Name == name {
+				pool = &p
+				break
 			}
-			return name.(string)
-		}(),
-	)
+		}
+
+	}
+
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	d.SetId(*pool.ID)
+	d.SetId(pool.ID.String())
 
-	data, err := dsBuildData(pool)
+	data, err := dsBuildData(pool, zone)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	instanceType, err := client.GetInstanceType(
 		ctx,
-		zone,
-		*pool.InstanceTypeID,
+		pool.InstanceType.ID,
 	)
 	if err != nil {
 		return diag.Errorf("error retrieving instance type: %s", err)
@@ -236,27 +252,27 @@ func dsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.
 
 	data[AttrInstanceType] = fmt.Sprintf(
 		"%s.%s",
-		strings.ToLower(*instanceType.Family),
-		strings.ToLower(*instanceType.Size),
+		strings.ToLower(string(instanceType.Family)),
+		strings.ToLower(string(instanceType.Size)),
 	)
 
-	if pool.InstanceIDs != nil {
-		instancesData := make([]interface{}, len(*pool.InstanceIDs))
-		for i, id := range *pool.InstanceIDs {
-			instance, err := client.GetInstance(ctx, zone, id)
+	if pool.Instances != nil {
+		instancesData := make([]interface{}, len(pool.Instances))
+		for k, i := range pool.Instances {
+			instance, err := client.GetInstance(ctx, i.ID)
 			if err != nil {
 				return diag.FromErr(err)
 			}
 
 			var ipv6, publicIp string
-			if instance.IPv6Address != nil {
-				ipv6 = instance.IPv6Address.String()
+			if instance.Ipv6Address != "" {
+				ipv6 = instance.Ipv6Address
 			}
-			if instance.PublicIPAddress != nil {
-				publicIp = instance.PublicIPAddress.String()
+			if instance.PublicIP.String() != "" {
+				publicIp = instance.PublicIP.String()
 			}
 
-			instancesData[i] = map[string]interface{}{
+			instancesData[k] = map[string]interface{}{
 				AttrInstanceID:              id,
 				AttrInstanceIPv6Address:     ipv6,
 				AttrInstanceName:            instance.Name,
@@ -282,45 +298,74 @@ func dsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.
 }
 
 // dsBuildData builds terraform data object from egoscale API struct.
-func dsBuildData(pool *exo.InstancePool) (map[string]interface{}, error) {
+func dsBuildData(pool *v3.InstancePool, zone string) (map[string]interface{}, error) {
 	data := map[string]interface{}{}
 
-	data[AttrDeployTargetID] = pool.DeployTargetID
-	data[AttrDescription] = utils.DefaultString(pool.Description, "")
+	if pool.DeployTarget != nil {
+		data[AttrDeployTargetID] = pool.DeployTarget.ID
+	}
+	data[AttrDescription] = utils.DefaultString(&pool.Description, "")
 	data[AttrDiskSize] = pool.DiskSize
 	data[AttrID] = pool.ID
-	data[AttrInstancePrefix] = utils.DefaultString(pool.InstancePrefix, "")
-	data[AttrIPv6] = utils.DefaultBool(pool.IPv6Enabled, false)
-	data[AttrKeyPair] = pool.SSHKey
+	data[AttrInstancePrefix] = utils.DefaultString(&pool.InstancePrefix, "")
+	data[AttrIPv6] = utils.DefaultBool(pool.Ipv6Enabled, false)
+	if pool.SSHKey != nil {
+		data[AttrKeyPair] = pool.SSHKey.Name
+	}
 	data[AttrName] = pool.Name
 	data[AttrSize] = pool.Size
 	data[AttrState] = pool.State
-	data[AttrTemplateID] = pool.TemplateID
-	data[AttrZone] = pool.Zone
+	data[AttrTemplateID] = pool.Template.ID
+	data[AttrZone] = zone
 
-	if pool.AntiAffinityGroupIDs != nil {
-		data[AttrAntiAffinityGroupIDs] = *pool.AntiAffinityGroupIDs
-		data[AttrAffinityGroupIDs] = *pool.AntiAffinityGroupIDs // deprecated
+	if pool.AntiAffinityGroups != nil {
+
+		antiAffinityGroupIds := make([]string, len(pool.AntiAffinityGroups))
+
+		for i, g := range pool.AntiAffinityGroups {
+			antiAffinityGroupIds[i] = g.ID.String()
+		}
+
+		data[AttrAntiAffinityGroupIDs] = antiAffinityGroupIds
+		data[AttrAffinityGroupIDs] = antiAffinityGroupIds // deprecated
 	}
 
 	if pool.Labels != nil {
-		data[AttrLabels] = *pool.Labels
+		data[AttrLabels] = pool.Labels
 	}
 
-	if pool.ElasticIPIDs != nil {
-		data[AttrElasticIPIDs] = *pool.ElasticIPIDs
+	if pool.ElasticIPS != nil {
+		data[AttrElasticIPIDs] = func() []string {
+			l := make([]string, len(pool.ElasticIPS))
+			for i, g := range pool.ElasticIPS {
+				l[i] = g.ID.String()
+			}
+			return l
+		}()
 	}
 
-	if pool.PrivateNetworkIDs != nil {
-		data[AttrNetworkIDs] = *pool.PrivateNetworkIDs
+	if pool.PrivateNetworks != nil {
+		data[AttrNetworkIDs] = func() []string {
+			l := make([]string, len(pool.PrivateNetworks))
+			for i, g := range pool.PrivateNetworks {
+				l[i] = g.ID.String()
+			}
+			return l
+		}()
 	}
 
-	if pool.SecurityGroupIDs != nil {
-		data[AttrSecurityGroupIDs] = *pool.SecurityGroupIDs
+	if pool.SecurityGroups != nil {
+		data[AttrSecurityGroupIDs] = func() []string {
+			l := make([]string, len(pool.SecurityGroups))
+			for i, g := range pool.SecurityGroups {
+				l[i] = g.ID.String()
+			}
+			return l
+		}()
 	}
 
-	if pool.UserData != nil {
-		userData, err := utils.DecodeUserData(*pool.UserData)
+	if pool.UserData != "" {
+		userData, err := utils.DecodeUserData(pool.UserData)
 		if err != nil {
 			return nil, fmt.Errorf("error decoding user data: %w", err)
 		}
