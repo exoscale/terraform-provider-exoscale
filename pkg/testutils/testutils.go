@@ -83,7 +83,13 @@ func APIClient() (*egoscale.Client, error) {
 }
 
 func APIClientV3() (*v3.Client, error) {
-	client, err := v3.NewClient(credentials.NewEnvCredentials(), nil)
+
+	creds := credentials.NewStaticCredentials(
+		os.Getenv("EXOSCALE_API_KEY"),
+		os.Getenv("EXOSCALE_API_SECRET"),
+	)
+
+	client, err := v3.NewClient(creds)
 
 	if err != nil {
 		return nil, err
