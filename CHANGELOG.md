@@ -5,6 +5,7 @@
 BUG FIXES:
 
 - Ignore block storage detach error when already detached #393
+- Remove hardcoded timeout from db redis test #403
 
 ## 0.62.3
 
