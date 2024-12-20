@@ -269,3 +269,35 @@ func SwitchClientZone(ctx context.Context, client *exov3.Client, zone exov3.Zone
 
 	return client.WithEndpoint(endpoint), nil
 }
+
+// FindInstanceTypeByName copies the behaviour of egoscale v2's client.FindInstanceType
+// but using the v3 api:
+// FindInstanceType attempts to find an Instance type by family+size or ID.
+// To search by family+size, the expected format for v is "[FAMILY.]SIZE" (e.g. "large", "gpu.medium"),
+// with family defaulting to "standard" if not specified.
+func FindInstanceTypeByNameV3(ctx context.Context, client *exov3.Client, id string) (*exov3.InstanceType, error) {
+
+	var typeFamily, typeSize string
+
+	parts := strings.SplitN(id, ".", 2)
+	if l := len(parts); l > 0 {
+		if l == 1 {
+			typeFamily, typeSize = "standard", strings.ToLower(parts[0])
+		} else {
+			typeFamily, typeSize = strings.ToLower(parts[0]), strings.ToLower(parts[1])
+		}
+	}
+
+	res, err := client.ListInstanceTypes(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, r := range res.InstanceTypes {
+		if string(r.Family) == typeFamily && string(r.Size) == typeSize {
+			return client.GetInstanceType(ctx, r.ID)
+		}
+	}
+
+	return nil, exov3.ErrNotFound
+}

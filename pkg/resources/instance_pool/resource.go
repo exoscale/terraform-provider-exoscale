@@ -11,8 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
-	egoscale "github.com/exoscale/egoscale/v2"
-	exoapi "github.com/exoscale/egoscale/v2/api"
+	v3 "github.com/exoscale/egoscale/v3"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
@@ -136,6 +135,13 @@ func Resource() *schema.Resource {
 			Required:     true,
 			ValidateFunc: validation.IntAtLeast(1),
 		},
+		AttrMinAvailable: {
+			Description:  "Minimum number of running Instances.",
+			Type:         schema.TypeInt,
+			Computed:     true,
+			Optional:     true,
+			ValidateFunc: validation.IntAtLeast(0),
+		},
 		AttrState: {
 			Type:     schema.TypeString,
 			Optional: true,
@@ -229,44 +235,53 @@ func rCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 	zone := d.Get(AttrZone).(string)
 
 	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutCreate))
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(config.GetEnvironment(meta), zone))
 	defer cancel()
 
-	client, err := config.GetClient(meta)
+	defaultClientV3, err := config.GetClientV3(meta)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	client, err := utils.SwitchClientZone(
+		ctx,
+		defaultClientV3,
+		v3.ZoneName(zone),
+	)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	pool := new(egoscale.InstancePool)
+	createPoolRequest := new(v3.CreateInstancePoolRequest)
 
 	if v, ok := d.GetOk(AttrDeployTargetID); ok {
 		s := v.(string)
-		pool.DeployTargetID = &s
+		createPoolRequest.DeployTarget = &v3.DeployTarget{
+			ID: v3.UUID(s),
+		}
 	}
 
 	if v, ok := d.GetOk(AttrDescription); ok {
 		s := v.(string)
-		pool.Description = &s
+		createPoolRequest.Description = s
 	}
 
 	if v, ok := d.GetOk(AttrDiskSize); ok {
 		i := int64(v.(int))
-		pool.DiskSize = &i
+		createPoolRequest.DiskSize = i
 	}
 
 	if v, ok := d.GetOk(AttrName); ok {
 		s := v.(string)
-		pool.Name = &s
+		createPoolRequest.Name = s
 	}
 
 	if v, ok := d.GetOk(AttrInstancePrefix); ok {
 		s := v.(string)
-		pool.InstancePrefix = &s
+		createPoolRequest.InstancePrefix = s
 	}
 
 	if v, ok := d.GetOk(AttrKeyPair); ok {
 		s := v.(string)
-		pool.SSHKey = &s
+		createPoolRequest.SSHKey = &v3.SSHKey{Name: s}
 	}
 
 	if l, ok := d.GetOk(AttrLabels); ok {
@@ -274,17 +289,23 @@ func rCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 		for k, v := range l.(map[string]interface{}) {
 			labels[k] = v.(string)
 		}
-		pool.Labels = &labels
+		createPoolRequest.Labels = labels
 	}
 
 	if v, ok := d.GetOk(AttrSize); ok {
 		i := int64(v.(int))
-		pool.Size = &i
+		createPoolRequest.Size = i
+	}
+	if v, ok := d.GetOk(AttrMinAvailable); ok {
+		i := int64(v.(int))
+		createPoolRequest.MinAvailable = i
 	}
 
 	if v, ok := d.GetOk(AttrTemplateID); ok {
 		s := v.(string)
-		pool.TemplateID = &s
+		createPoolRequest.Template = &v3.Template{
+			ID: v3.UUID(s),
+		}
 	}
 
 	// FIXME: once the "instance_type" attribute has been made required, this check can be removed.
@@ -296,26 +317,27 @@ func rCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 			AttrInstanceType,
 		)
 	}
-	it := d.Get(AttrServiceOffering).(string)
+	instanceTypeCompoundName := d.Get(AttrServiceOffering).(string)
 	if v, ok := d.GetOk(AttrInstanceType); ok {
-		it = v.(string)
+		instanceTypeCompoundName = v.(string)
 	}
 
-	instanceType, err := client.FindInstanceType(ctx, zone, it)
+	createPoolRequest.InstanceType, err = utils.FindInstanceTypeByNameV3(ctx, client, instanceTypeCompoundName)
 	if err != nil {
 		return diag.Errorf("error retrieving instance type: %s", err)
 	}
-	pool.InstanceTypeID = instanceType.ID
 
 	if v, ok := d.GetOk(AttrAffinityGroupIDs); ok {
 		if set, ok := v.(*schema.Set); ok {
-			pool.AntiAffinityGroupIDs = func() (v *[]string) {
+			createPoolRequest.AntiAffinityGroups = func() (v []v3.AntiAffinityGroup) {
 				if l := set.Len(); l > 0 {
-					list := make([]string, l)
+					list := make([]v3.AntiAffinityGroup, l)
 					for i, v := range set.List() {
-						list[i] = v.(string)
+						list[i] = v3.AntiAffinityGroup{
+							ID: v3.UUID(v.(string)),
+						}
 					}
-					v = &list
+					v = list
 				}
 				return
 			}()
@@ -324,13 +346,15 @@ func rCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 
 	if v, ok := d.GetOk(AttrAntiAffinityGroupIDs); ok {
 		if set, ok := v.(*schema.Set); ok {
-			pool.AntiAffinityGroupIDs = func() (v *[]string) {
+			createPoolRequest.AntiAffinityGroups = func() (v []v3.AntiAffinityGroup) {
 				if l := set.Len(); l > 0 {
-					list := make([]string, l)
+					list := make([]v3.AntiAffinityGroup, l)
 					for i, v := range set.List() {
-						list[i] = v.(string)
+						list[i] = v3.AntiAffinityGroup{
+							ID: v3.UUID(v.(string)),
+						}
 					}
-					v = &list
+					v = list
 				}
 				return
 			}()
@@ -338,68 +362,72 @@ func rCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 	}
 
 	if set, ok := d.Get(AttrSecurityGroupIDs).(*schema.Set); ok {
-		pool.SecurityGroupIDs = func() (v *[]string) {
+		createPoolRequest.SecurityGroups = func() (v []v3.SecurityGroup) {
 			if l := set.Len(); l > 0 {
-				list := make([]string, l)
+				list := make([]v3.SecurityGroup, l)
 				for i, v := range set.List() {
-					list[i] = v.(string)
+					list[i] = v3.SecurityGroup{
+						ID: v3.UUID(v.(string)),
+					}
 				}
-				v = &list
+				v = list
 			}
 			return
 		}()
 	}
 
 	if set, ok := d.Get(AttrNetworkIDs).(*schema.Set); ok {
-		pool.PrivateNetworkIDs = func() (v *[]string) {
+		createPoolRequest.PrivateNetworks = func() (v []v3.PrivateNetwork) {
 			if l := set.Len(); l > 0 {
-				list := make([]string, l)
+				list := make([]v3.PrivateNetwork, l)
 				for i, v := range set.List() {
-					list[i] = v.(string)
+					list[i] = v3.PrivateNetwork{
+						ID: v3.UUID(v.(string)),
+					}
 				}
-				v = &list
+				v = list
 			}
 			return
 		}()
 	}
 
 	if set, ok := d.Get(AttrElasticIPIDs).(*schema.Set); ok {
-		pool.ElasticIPIDs = func() (v *[]string) {
+		createPoolRequest.ElasticIPS = func() (v []v3.ElasticIP) {
 			if l := set.Len(); l > 0 {
-				list := make([]string, l)
+				list := make([]v3.ElasticIP, l)
 				for i, v := range set.List() {
-					list[i] = v.(string)
+					list[i] = v3.ElasticIP{
+						ID: v3.UUID(v.(string)),
+					}
 				}
-				v = &list
+				v = list
 			}
 			return
 		}()
 	}
 
 	enableIPv6 := d.Get(AttrIPv6).(bool)
-	pool.IPv6Enabled = &enableIPv6
+	createPoolRequest.Ipv6Enabled = &enableIPv6
 
 	if v := d.Get(AttrUserData).(string); v != "" {
 		userData, _, err := utils.EncodeUserData(v)
 		if err != nil {
 			return diag.FromErr(err)
 		}
-		pool.UserData = &userData
+		createPoolRequest.UserData = userData
 	}
 
-	// FIXME: we have to reference the embedded egoscale/v2.Client explicitly
-	//  here because there is already a CreateInstancePool() method on the root
-	//  egoscale client clashing with the v2 one. This can be changed once we
-	//  use API V2-only calls.
-	pool, err = client.CreateInstancePool(ctx, zone, pool)
+	op, err := client.CreateInstancePool(ctx, *createPoolRequest)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	d.SetId(*pool.ID)
 
-	if err := client.WaitInstancePoolConverged(ctx, zone, *pool.ID); err != nil {
+	op, err = client.Wait(ctx, op, v3.OperationStateSuccess)
+	if err != nil {
 		return diag.FromErr(err)
 	}
+
+	d.SetId(op.Reference.ID.String())
 
 	tflog.Debug(ctx, "create finished successfully", map[string]interface{}{
 		"id": utils.IDString(d, Name),
@@ -416,17 +444,24 @@ func rRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.D
 	zone := d.Get(AttrZone).(string)
 
 	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(config.GetEnvironment(meta), zone))
 	defer cancel()
 
-	client, err := config.GetClient(meta)
+	defaultClientV3, err := config.GetClientV3(meta)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	client, err := utils.SwitchClientZone(
+		ctx,
+		defaultClientV3,
+		v3.ZoneName(zone),
+	)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	pool, err := client.GetInstancePool(ctx, zone, d.Id())
+	pool, err := client.GetInstancePool(ctx, v3.UUID(d.Id()))
 	if err != nil {
-		if errors.Is(err, exoapi.ErrNotFound) {
+		if errors.Is(err, v3.ErrNotFound) {
 			// Resource doesn't exist anymore, signaling the core to remove it from the state.
 			d.SetId("")
 			return nil
@@ -449,88 +484,121 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 	zone := d.Get(AttrZone).(string)
 
 	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutUpdate))
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(config.GetEnvironment(meta), zone))
 	defer cancel()
 
-	client, err := config.GetClient(meta)
+	defaultClientV3, err := config.GetClientV3(meta)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	client, err := utils.SwitchClientZone(
+		ctx,
+		defaultClientV3,
+		v3.ZoneName(zone),
+	)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	pool, err := client.GetInstancePool(ctx, zone, d.Id())
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
+	updateRequest := v3.UpdateInstancePoolRequest{}
 	var updated bool
 
-	if set := d.Get(AttrAffinityGroupIDs).(*schema.Set); d.HasChange(AttrAffinityGroupIDs) {
-		pool.AntiAffinityGroupIDs = func() *[]string {
-			list := make([]string, set.Len())
-			for i, v := range set.List() {
-				list[i] = v.(string)
+	// We need to explicitely specify the AntiaffinityGroups on
+	// update otherwise the orchestrator will interpret that as
+	// clearing the list of AAGs
+	set := d.Get(AttrAffinityGroupIDs).(*schema.Set)
+	updateRequest.AntiAffinityGroups = func() []v3.AntiAffinityGroup {
+		list := make([]v3.AntiAffinityGroup, set.Len())
+		for i, v := range set.List() {
+			list[i] = v3.AntiAffinityGroup{
+				ID: v3.UUID(v.(string)),
 			}
-			return &list
-		}()
+		}
+		return list
+	}()
+	if d.HasChange(AttrAffinityGroupIDs) {
+		updated = true
+	} else {
+
+	}
+
+	// We need to explicitely specify the AntiaffinityGroups on
+	// update otherwise the orchestrator will interpret that as
+	// clearing the list of AAGs
+	set = d.Get(AttrAntiAffinityGroupIDs).(*schema.Set)
+	updateRequest.AntiAffinityGroups = func() []v3.AntiAffinityGroup {
+		list := make([]v3.AntiAffinityGroup, set.Len())
+		for i, v := range set.List() {
+			list[i] = v3.AntiAffinityGroup{
+				ID: v3.UUID(v.(string)),
+			}
+		}
+		return list
+	}()
+	if d.HasChange(AttrAntiAffinityGroupIDs) {
 		updated = true
 	}
 
-	if set := d.Get(AttrAntiAffinityGroupIDs).(*schema.Set); d.HasChange(AttrAntiAffinityGroupIDs) {
-		pool.AntiAffinityGroupIDs = func() *[]string {
-			list := make([]string, set.Len())
-			for i, v := range set.List() {
-				list[i] = v.(string)
-			}
-			return &list
-		}()
-		updated = true
+	// We need to explicitely specify the DeployTarget on
+	// update otherwise the orchestrator will interpret that as
+	// clearing the DeployTarget
+	if v, getSuccess := d.GetOk(AttrDeployTargetID); getSuccess {
+		updateRequest.DeployTarget = &v3.DeployTarget{
+			ID: v3.UUID(v.(string)),
+		}
 	}
-
 	if d.HasChange(AttrDeployTargetID) {
-		v := d.Get(AttrDeployTargetID).(string)
-		pool.DeployTargetID = &v
 		updated = true
 	}
 
 	if d.HasChange(AttrDescription) {
 		v := d.Get(AttrDescription).(string)
-		pool.Description = &v
+		updateRequest.Description = v
 		updated = true
 	}
 
 	if d.HasChange(AttrDiskSize) {
 		v := int64(d.Get(AttrDiskSize).(int))
-		pool.DiskSize = &v
+		updateRequest.DiskSize = v
 		updated = true
 	}
 
-	if d.HasChange(AttrElasticIPIDs) {
-		set := d.Get(AttrElasticIPIDs).(*schema.Set)
-		pool.ElasticIPIDs = func() *[]string {
-			list := make([]string, set.Len())
-			for i, v := range set.List() {
-				list[i] = v.(string)
+	// We need to explicitely specify the Elastic IPs on
+	// update otherwise the orchestrator will interpret that as
+	// clearing the list of assocaited EIPs
+	set = d.Get(AttrElasticIPIDs).(*schema.Set)
+	updateRequest.ElasticIPS = func() []v3.ElasticIP {
+		list := make([]v3.ElasticIP, set.Len())
+		for i, v := range set.List() {
+			list[i] = v3.ElasticIP{
+				ID: v3.UUID(v.(string)),
 			}
-			return &list
-		}()
+		}
+		return list
+	}()
+	if d.HasChange(AttrElasticIPIDs) {
 		updated = true
 	}
 
 	if d.HasChange(AttrInstancePrefix) {
 		v := d.Get(AttrInstancePrefix).(string)
-		pool.InstancePrefix = &v
+		updateRequest.InstancePrefix = &v
 		updated = true
 	}
 
 	if d.HasChange(AttrIPv6) {
 		v := d.Get(AttrIPv6).(bool)
-		pool.IPv6Enabled = &v
+		updateRequest.Ipv6Enabled = &v
 		updated = true
 	}
 
+	// We need to explicitely specify the SSHKey on
+	// update otherwise the orchestrator will interpret that as
+	// clearing the list of associated SSH key
+	v := d.Get(AttrKeyPair).(string)
+	updateRequest.SSHKey = &v3.SSHKey{
+		Name: v,
+	}
 	if d.HasChange(AttrKeyPair) {
-		v := d.Get(AttrKeyPair).(string)
-		pool.SSHKey = &v
 		updated = true
 	}
 
@@ -539,52 +607,67 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 		for k, v := range d.Get(AttrLabels).(map[string]interface{}) {
 			labels[k] = v.(string)
 		}
-		pool.Labels = &labels
+		updateRequest.Labels = labels
 		updated = true
 	}
 
 	if d.HasChange(AttrName) {
 		v := d.Get(AttrName).(string)
-		pool.Name = &v
+		updateRequest.Name = v
 		updated = true
 	}
 
+	// We need to explicitely specify the PrivateNetworks on
+	// update otherwise the orchestrator will interpret that as
+	// clearing the list of PrivNets
+	set = d.Get(AttrNetworkIDs).(*schema.Set)
+	updateRequest.PrivateNetworks = func() []v3.PrivateNetwork {
+		list := make([]v3.PrivateNetwork, set.Len())
+		for i, v := range set.List() {
+			list[i] = v3.PrivateNetwork{
+				ID: v3.UUID(v.(string)),
+			}
+		}
+		return list
+	}()
 	if d.HasChange(AttrNetworkIDs) {
-		set := d.Get(AttrNetworkIDs).(*schema.Set)
-		pool.PrivateNetworkIDs = func() *[]string {
-			list := make([]string, set.Len())
-			for i, v := range set.List() {
-				list[i] = v.(string)
-			}
-			return &list
-		}()
 		updated = true
 	}
 
-	if d.HasChange(AttrSecurityGroupIDs) {
-		set := d.Get(AttrSecurityGroupIDs).(*schema.Set)
-		pool.SecurityGroupIDs = func() *[]string {
-			list := make([]string, set.Len())
-			for i, v := range set.List() {
-				list[i] = v.(string)
+	// We need to explicitely specify the SecurityGroups on
+	// update otherwise the orchestrator will interpret that as
+	// clearing the list of SecurityGroups
+	set = d.Get(AttrSecurityGroupIDs).(*schema.Set)
+	updateRequest.SecurityGroups = func() []v3.SecurityGroup {
+		list := make([]v3.SecurityGroup, set.Len())
+		for i, v := range set.List() {
+			list[i] = v3.SecurityGroup{
+				ID: v3.UUID(v.(string)),
 			}
-			return &list
-		}()
+		}
+		return list
+	}()
+	if d.HasChange(AttrSecurityGroupIDs) {
 		updated = true
 	}
 
 	if d.HasChange(AttrInstanceType) {
-		instanceType, err := client.FindInstanceType(ctx, zone, d.Get(AttrInstanceType).(string))
+
+		instanceType, err := utils.FindInstanceTypeByNameV3(ctx, client, d.Get(AttrInstanceType).(string))
 		if err != nil {
 			return diag.Errorf("error retrieving instance type: %s", err)
 		}
-		pool.InstanceTypeID = instanceType.ID
+		updateRequest.InstanceType = &v3.InstanceType{
+			ID: instanceType.ID,
+		}
 		updated = true
 	}
 
 	if d.HasChange(AttrTemplateID) {
 		v := d.Get(AttrTemplateID).(string)
-		pool.TemplateID = &v
+		updateRequest.Template = &v3.Template{
+			ID: v3.UUID(v),
+		}
 		updated = true
 	}
 
@@ -593,29 +676,39 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 		if err != nil {
 			return diag.FromErr(err)
 		}
-		pool.UserData = &v
+		updateRequest.UserData = &v
+		updated = true
+	}
+
+	if d.HasChange(AttrMinAvailable) {
+		v := int64(d.Get(AttrMinAvailable).(int))
+		updateRequest.MinAvailable = &v
 		updated = true
 	}
 
 	if updated {
-		if err = client.UpdateInstancePool(ctx, zone, pool); err != nil {
+		op, err := client.UpdateInstancePool(ctx, v3.UUID(d.Id()), updateRequest)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		_, err = client.Wait(ctx, op, v3.OperationStateSuccess)
+		if err != nil {
 			return diag.FromErr(err)
 		}
 	}
 
 	if d.HasChange(AttrSize) {
-		if err = client.ScaleInstancePool(
-			ctx,
-			zone,
-			pool,
-			int64(d.Get(AttrSize).(int)),
-		); err != nil {
+
+		op, err := client.ScaleInstancePool(ctx, v3.UUID(d.Id()), v3.ScaleInstancePoolRequest{
+			Size: int64(d.Get(AttrSize).(int)),
+		})
+		if err != nil {
 			return diag.FromErr(err)
 		}
-	}
-
-	if err := client.WaitInstancePoolConverged(ctx, zone, *pool.ID); err != nil {
-		return diag.FromErr(err)
+		_, err = client.Wait(ctx, op, v3.OperationStateSuccess)
+		if err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
 	tflog.Debug(ctx, "update finished successfully", map[string]interface{}{
@@ -633,16 +726,26 @@ func rDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 	zone := d.Get(AttrZone).(string)
 
 	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutDelete))
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(config.GetEnvironment(meta), zone))
 	defer cancel()
 
-	client, err := config.GetClient(meta)
+	defaultClientV3, err := config.GetClientV3(meta)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	client, err := utils.SwitchClientZone(
+		ctx,
+		defaultClientV3,
+		v3.ZoneName(zone),
+	)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	poolID := d.Id()
-	err = client.DeleteInstancePool(ctx, zone, &egoscale.InstancePool{ID: &poolID})
+	op, err := client.DeleteInstancePool(ctx, v3.UUID(d.Id()))
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	_, err = client.Wait(ctx, op, v3.OperationStateSuccess)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -654,12 +757,17 @@ func rDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 	return nil
 }
 
-func rApply(ctx context.Context, client *egoscale.Client, d *schema.ResourceData, pool *egoscale.InstancePool) diag.Diagnostics { //nolint:gocyclo
-	zone := d.Get(AttrZone).(string)
+func rApply(ctx context.Context, client *v3.Client, d *schema.ResourceData, pool *v3.InstancePool) diag.Diagnostics { //nolint:gocyclo
 
-	if pool.AntiAffinityGroupIDs != nil {
-		antiAffinityGroupIDs := make([]string, len(*pool.AntiAffinityGroupIDs))
-		copy(antiAffinityGroupIDs, *pool.AntiAffinityGroupIDs)
+	if pool.AntiAffinityGroups != nil {
+		antiAffinityGroupIDs := make([]string, len(pool.AntiAffinityGroups))
+		copy(antiAffinityGroupIDs, func() []string {
+			l := make([]string, len(pool.AntiAffinityGroups))
+			for i, g := range pool.AntiAffinityGroups {
+				l[i] = g.ID.String()
+			}
+			return l
+		}())
 
 		if _, ok := d.GetOk(AttrAffinityGroupIDs); ok {
 			if err := d.Set(AttrAffinityGroupIDs, antiAffinityGroupIDs); err != nil {
@@ -674,37 +782,49 @@ func rApply(ctx context.Context, client *egoscale.Client, d *schema.ResourceData
 		}
 	}
 
-	if err := d.Set(AttrDeployTargetID, utils.DefaultString(pool.DeployTargetID, "")); err != nil {
+	if pool.DeployTarget != nil {
+		dpId := pool.DeployTarget.ID.String()
+		if err := d.Set(AttrDeployTargetID, utils.DefaultString(&dpId, "")); err != nil {
+			return diag.FromErr(err)
+		}
+
+	}
+
+	if err := d.Set(AttrDescription, utils.DefaultString(&pool.Description, "")); err != nil {
 		return diag.FromErr(err)
 	}
 
-	if err := d.Set(AttrDescription, utils.DefaultString(pool.Description, "")); err != nil {
+	if err := d.Set(AttrDiskSize, pool.DiskSize); err != nil {
 		return diag.FromErr(err)
 	}
 
-	if err := d.Set(AttrDiskSize, *pool.DiskSize); err != nil {
-		return diag.FromErr(err)
-	}
-
-	if pool.ElasticIPIDs != nil {
-		elasticIPIDs := make([]string, len(*pool.ElasticIPIDs))
-		copy(elasticIPIDs, *pool.ElasticIPIDs)
+	if pool.ElasticIPS != nil {
+		elasticIPIDs := make([]string, len(pool.ElasticIPS))
+		copy(elasticIPIDs, func() []string {
+			l := make([]string, len(pool.ElasticIPS))
+			for i, g := range pool.ElasticIPS {
+				l[i] = g.ID.String()
+			}
+			return l
+		}())
 
 		if err := d.Set(AttrElasticIPIDs, elasticIPIDs); err != nil {
 			return diag.FromErr(err)
 		}
 	}
 
-	if err := d.Set(AttrInstancePrefix, utils.DefaultString(pool.InstancePrefix, "")); err != nil {
+	if err := d.Set(AttrInstancePrefix, utils.DefaultString(&pool.InstancePrefix, "")); err != nil {
 		return diag.FromErr(err)
 	}
 
-	if err := d.Set(AttrIPv6, utils.DefaultBool(pool.IPv6Enabled, false)); err != nil {
+	if err := d.Set(AttrIPv6, utils.DefaultBool(pool.Ipv6Enabled, false)); err != nil {
 		return diag.FromErr(err)
 	}
 
-	if err := d.Set(AttrKeyPair, pool.SSHKey); err != nil {
-		return diag.FromErr(err)
+	if pool.SSHKey != nil {
+		if err := d.Set(AttrKeyPair, pool.SSHKey.Name); err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
 	if err := d.Set(AttrLabels, pool.Labels); err != nil {
@@ -715,34 +835,45 @@ func rApply(ctx context.Context, client *egoscale.Client, d *schema.ResourceData
 		return diag.FromErr(err)
 	}
 
-	if pool.PrivateNetworkIDs != nil {
-		if err := d.Set(AttrNetworkIDs, *pool.PrivateNetworkIDs); err != nil {
+	if pool.PrivateNetworks != nil {
+		if err := d.Set(AttrNetworkIDs, func() []string {
+			l := make([]string, len(pool.PrivateNetworks))
+			for i, g := range pool.PrivateNetworks {
+				l[i] = g.ID.String()
+			}
+			return l
+		}()); err != nil {
 			return diag.FromErr(err)
 		}
 	}
 
-	if pool.SecurityGroupIDs != nil {
-		if err := d.Set(AttrSecurityGroupIDs, *pool.SecurityGroupIDs); err != nil {
+	if pool.SecurityGroups != nil {
+		if err := d.Set(AttrSecurityGroupIDs, func() []string {
+			l := make([]string, len(pool.SecurityGroups))
+			for i, g := range pool.SecurityGroups {
+				l[i] = g.ID.String()
+			}
+			return l
+		}()); err != nil {
 			return diag.FromErr(err)
 		}
 	}
 
 	instanceType, err := client.GetInstanceType(
 		ctx,
-		d.Get(AttrZone).(string),
-		*pool.InstanceTypeID,
+		pool.InstanceType.ID,
 	)
 	if err != nil {
 		return diag.Errorf("error retrieving instance type: %s", err)
 	}
 	if err := d.Set(AttrInstanceType, fmt.Sprintf(
 		"%s.%s",
-		strings.ToLower(*instanceType.Family),
-		strings.ToLower(*instanceType.Size),
+		strings.ToLower(string(instanceType.Family)),
+		strings.ToLower(string(instanceType.Size)),
 	)); err != nil {
 		return diag.FromErr(err)
 	}
-	if err := d.Set(AttrServiceOffering, strings.ToLower(*instanceType.Size)); err != nil {
+	if err := d.Set(AttrServiceOffering, strings.ToLower(string(instanceType.Size))); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -750,16 +881,20 @@ func rApply(ctx context.Context, client *egoscale.Client, d *schema.ResourceData
 		return diag.FromErr(err)
 	}
 
+	if err := d.Set(AttrMinAvailable, pool.MinAvailable); err != nil {
+		return diag.FromErr(err)
+	}
+
 	if err := d.Set(AttrState, pool.State); err != nil {
 		return diag.FromErr(err)
 	}
 
-	if err := d.Set(AttrTemplateID, pool.TemplateID); err != nil {
+	if err := d.Set(AttrTemplateID, pool.Template.ID); err != nil {
 		return diag.FromErr(err)
 	}
 
-	if pool.UserData != nil {
-		userData, err := utils.DecodeUserData(*pool.UserData)
+	if pool.UserData != "" {
+		userData, err := utils.DecodeUserData(pool.UserData)
 		if err != nil {
 			return diag.Errorf("error decoding user data: %s", err)
 		}
@@ -768,29 +903,20 @@ func rApply(ctx context.Context, client *egoscale.Client, d *schema.ResourceData
 		}
 	}
 
-	if pool.InstanceIDs != nil {
-		instanceIDs := make([]string, len(*pool.InstanceIDs))
-		instanceDetails := make([]interface{}, len(*pool.InstanceIDs))
+	if pool.Instances != nil {
+		instanceIDs := make([]string, len(pool.Instances))
+		instanceDetails := make([]interface{}, len(pool.Instances))
 
-		for i, id := range *pool.InstanceIDs {
-			instanceIDs[i] = id
+		for k, i := range pool.Instances {
+			instanceIDs[k] = i.ID.String()
 
 			// instance details
-			instance, err := client.GetInstance(ctx, zone, id)
+			instance, err := client.GetInstance(ctx, i.ID)
 			if err != nil {
 				return diag.FromErr(err)
 			}
 
-			instanceType, err := client.GetInstanceType(
-				ctx,
-				d.Get(AttrZone).(string),
-				*instance.InstanceTypeID,
-			)
-			if err != nil {
-				return diag.Errorf("unable to retrieve instance type: %s", err)
-			}
-
-			instanceDetails[i] = computeInstanceToResource(instance, instanceType)
+			instanceDetails[k] = computeInstanceToResource(instance)
 		}
 
 		if err := d.Set(AttrVirtualMachines, instanceIDs); err != nil {
@@ -805,12 +931,11 @@ func rApply(ctx context.Context, client *egoscale.Client, d *schema.ResourceData
 	return nil
 }
 
-func computeInstanceToResource(instance *egoscale.Instance, instanceType *egoscale.InstanceType) interface{} {
+func computeInstanceToResource(instance *v3.Instance) interface{} {
 	c := make(map[string]interface{})
 	c[AttrInstanceID] = instance.ID
-	c[AttrInstanceIPv6Address] = utils.AddressToStringPtr(instance.IPv6Address)
+	c[AttrInstanceIPv6Address] = instance.Ipv6Address
 	c[AttrInstanceName] = instance.Name
-	c[AttrInstancePublicIPAddress] = utils.AddressToStringPtr(instance.PublicIPAddress)
-
+	c[AttrInstancePublicIPAddress] = utils.AddressToStringPtr(&instance.PublicIP)
 	return c
 }
