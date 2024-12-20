@@ -214,6 +214,43 @@ polling:
 	return service, nil
 }
 
+// waitForDBAASServiceReadyForUsers polls the database service until it is ready to accept user creation
+func waitForDBAASServiceReadyForUsers[T any](
+	ctx context.Context,
+	getService func(context.Context, string) (*T, error),
+	serviceName string,
+	usersReady func(*T) bool,
+) (*T, error) {
+	ticker := time.NewTicker(2 * time.Second)
+	defer ticker.Stop()
+
+polling:
+	for {
+		select {
+		case <-ticker.C:
+			service, err := getService(ctx, serviceName)
+			if err != nil {
+				return nil, fmt.Errorf("error polling service status: %w", err)
+			}
+
+			usersReady := usersReady(service)
+			if usersReady {
+				break polling
+			}
+
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
+	}
+
+	// Get final state after breaking from polling loop
+	service, err := getService(ctx, serviceName)
+	if err != nil {
+		return nil, fmt.Errorf("error getting final service state: %w", err)
+	}
+	return service, nil
+}
+
 // Read defines how the data source updates Terraform's state to reflect the retrieved data.
 func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var data DataSourceURIModel

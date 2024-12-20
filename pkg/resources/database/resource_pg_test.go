@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"testing"
 	"text/template"
 
@@ -42,14 +43,26 @@ type TemplateModelPg struct {
 	Version           string
 }
 
+type TemplateModelPgUser struct {
+	ResourceName string
+
+	Username string
+	Service  string
+	Zone     string
+}
+
 func testResourcePg(t *testing.T) {
-	tpl, err := template.ParseFiles("testdata/resource_pg.tmpl")
+	serviceTpl, err := template.ParseFiles("testdata/resource_pg.tmpl")
+	if err != nil {
+		t.Fatal(err)
+	}
+	userTpl, err := template.ParseFiles("testdata/resource_user_pg.tmpl")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	fullResourceName := "exoscale_database.test"
-	dataBase := TemplateModelPg{
+	serviceFullResourceName := "exoscale_database.test"
+	serviceDataBase := TemplateModelPg{
 		ResourceName:          "test",
 		Name:                  acctest.RandomWithPrefix(testutils.Prefix),
 		Plan:                  "hobbyist-2",
@@ -58,30 +71,53 @@ func testResourcePg(t *testing.T) {
 		Version:               "13",
 	}
 
-	dataCreate := dataBase
-	dataCreate.MaintenanceDow = "monday"
-	dataCreate.MaintenanceTime = "01:23:00"
-	dataCreate.BackupSchedule = "01:23"
-	dataCreate.IpFilter = []string{"1.2.3.4/32"}
-	dataCreate.PgSettings = strconv.Quote(`{"timezone":"Europe/Zurich"}`)
-	dataCreate.PgbouncerSettings = strconv.Quote(`{"min_pool_size":10}`)
+	userFullResourceName := "exoscale_dbaas_pg_user.test_user"
+	userDataBase := TemplateModelPgUser{
+		ResourceName: "test_user",
+		Username:     "foo",
+		Zone:         serviceDataBase.Zone,
+		Service:      fmt.Sprintf("%s.name", serviceFullResourceName),
+	}
+
+	serviceDataCreate := serviceDataBase
+	serviceDataCreate.MaintenanceDow = "monday"
+	serviceDataCreate.MaintenanceTime = "01:23:00"
+	serviceDataCreate.BackupSchedule = "01:23"
+	serviceDataCreate.IpFilter = []string{"1.2.3.4/32"}
+	serviceDataCreate.PgSettings = strconv.Quote(`{"timezone":"Europe/Zurich"}`)
+	serviceDataCreate.PgbouncerSettings = strconv.Quote(`{"min_pool_size":10}`)
+
+	userDataCreate := userDataBase
+
 	buf := &bytes.Buffer{}
-	err = tpl.Execute(buf, &dataCreate)
+	err = serviceTpl.Execute(buf, &serviceDataCreate)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = userTpl.Execute(buf, &userDataCreate)
 	if err != nil {
 		t.Fatal(err)
 	}
 	configCreate := buf.String()
 
-	dataUpdate := dataBase
-	dataUpdate.MaintenanceDow = "tuesday"
-	dataUpdate.MaintenanceTime = "02:34:00"
-	dataUpdate.BackupSchedule = "23:45"
-	dataUpdate.IpFilter = nil
-	dataUpdate.PgSettings = strconv.Quote(`{"max_worker_processes":10,"timezone":"Europe/Zurich"}`)
-	dataUpdate.PgbouncerSettings = strconv.Quote(`{"autodb_pool_size":5,"min_pool_size":10}`)
-	dataUpdate.PglookoutSettings = strconv.Quote(`{"max_failover_replication_time_lag":30}`)
+	serviceDataUpdate := serviceDataBase
+	serviceDataUpdate.MaintenanceDow = "tuesday"
+	serviceDataUpdate.MaintenanceTime = "02:34:00"
+	serviceDataUpdate.BackupSchedule = "23:45"
+	serviceDataUpdate.IpFilter = nil
+	serviceDataUpdate.PgSettings = strconv.Quote(`{"max_worker_processes":10,"timezone":"Europe/Zurich"}`)
+	serviceDataUpdate.PgbouncerSettings = strconv.Quote(`{"autodb_pool_size":5,"min_pool_size":10}`)
+	serviceDataUpdate.PglookoutSettings = strconv.Quote(`{"max_failover_replication_time_lag":30}`)
+
+	userDataUpdate := userDataBase
+	userDataUpdate.Username = "bar"
+
 	buf = &bytes.Buffer{}
-	err = tpl.Execute(buf, &dataUpdate)
+	err = serviceTpl.Execute(buf, &serviceDataUpdate)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = userTpl.Execute(buf, &userDataUpdate)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -89,22 +125,34 @@ func testResourcePg(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testutils.AccPreCheck(t) },
-		CheckDestroy:             CheckDestroy("pg", dataBase.Name),
+		CheckDestroy:             CheckServiceDestroy("pg", serviceDataBase.Name),
 		ProtoV6ProviderFactories: testutils.TestAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Create
 				Config: configCreate,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttrSet(fullResourceName, "created_at"),
-					resource.TestCheckResourceAttrSet(fullResourceName, "disk_size"),
-					resource.TestCheckResourceAttrSet(fullResourceName, "node_cpus"),
-					resource.TestCheckResourceAttrSet(fullResourceName, "node_memory"),
-					resource.TestCheckResourceAttrSet(fullResourceName, "nodes"),
-					resource.TestCheckResourceAttrSet(fullResourceName, "ca_certificate"),
-					resource.TestCheckResourceAttrSet(fullResourceName, "updated_at"),
+					// Service
+					resource.TestCheckResourceAttrSet(serviceFullResourceName, "created_at"),
+					resource.TestCheckResourceAttrSet(serviceFullResourceName, "disk_size"),
+					resource.TestCheckResourceAttrSet(serviceFullResourceName, "node_cpus"),
+					resource.TestCheckResourceAttrSet(serviceFullResourceName, "node_memory"),
+					resource.TestCheckResourceAttrSet(serviceFullResourceName, "nodes"),
+					resource.TestCheckResourceAttrSet(serviceFullResourceName, "ca_certificate"),
+					resource.TestCheckResourceAttrSet(serviceFullResourceName, "updated_at"),
 					func(s *terraform.State) error {
-						err := CheckExistsPg(dataBase.Name, &dataCreate)
+						err := CheckExistsPg(serviceDataBase.Name, &serviceDataCreate)
+						if err != nil {
+							return err
+						}
+
+						return nil
+					},
+					// User
+					resource.TestCheckResourceAttrSet(userFullResourceName, "password"),
+					resource.TestCheckResourceAttrSet(userFullResourceName, "type"),
+					func(s *terraform.State) error {
+						err := CheckExistsPgUser(serviceDataBase.Name, userDataBase.Username, &userDataCreate)
 						if err != nil {
 							return err
 						}
@@ -117,8 +165,26 @@ func testResourcePg(t *testing.T) {
 				// Update
 				Config: configUpdate,
 				Check: resource.ComposeAggregateTestCheckFunc(
+					// Service
 					func(s *terraform.State) error {
-						err := CheckExistsPg(dataBase.Name, &dataUpdate)
+						err := CheckExistsPg(serviceDataBase.Name, &serviceDataUpdate)
+						if err != nil {
+							return err
+						}
+
+						return nil
+					},
+
+					// User
+					func(s *terraform.State) error {
+						// Check the old user was deleted
+						err := CheckExistsPgUser(serviceDataBase.Name, userDataBase.Username, &userDataUpdate)
+						if err == nil {
+							return fmt.Errorf("expected to not find user %s", userDataBase.Username)
+						}
+
+						// Check the new user exists
+						err = CheckExistsPgUser(serviceDataBase.Name, userDataUpdate.Username, &userDataUpdate)
 						if err != nil {
 							return err
 						}
@@ -129,15 +195,25 @@ func testResourcePg(t *testing.T) {
 			},
 			{
 				// Import
-				ResourceName: fullResourceName,
+				ResourceName: serviceFullResourceName,
 				ImportStateIdFunc: func() resource.ImportStateIdFunc {
 					return func(*terraform.State) (string, error) {
-						return fmt.Sprintf("%s@%s", dataBase.Name, dataBase.Zone), nil
+						return fmt.Sprintf("%s@%s", serviceDataBase.Name, serviceDataBase.Zone), nil
 					}
 				}(),
 				ImportState: true,
 				// NOTE: ImportStateVerify doesn't work when there are optional attributes.
 				//ImportStateVerify: true
+			},
+			{
+				ResourceName: userFullResourceName,
+				ImportStateIdFunc: func() resource.ImportStateIdFunc {
+					return func(*terraform.State) (string, error) {
+						return fmt.Sprintf("%s/%s@%s", serviceDataBase.Name, userDataUpdate.Username, userDataBase.Zone), nil
+					}
+				}(),
+				ImportState:       true,
+				ImportStateVerify: true,
 			},
 		},
 	})
@@ -184,11 +260,44 @@ func CheckExistsPg(name string, data *TemplateModelPg) error {
 		return fmt.Errorf("pg.maintenance_time: expected %q, got %q", data.MaintenanceTime, service.Maintenance.Time)
 	}
 
-	if data.Version != *service.Version {
-		return fmt.Errorf("pg.version: expected %q, got %q", data.Version, *service.Version)
+	serviceMajVersion := strings.Split(*service.Version, ".")[0]
+
+	if data.Version != serviceMajVersion {
+		return fmt.Errorf("pg.version: expected %q, got %q", data.Version, serviceMajVersion)
 	}
 
 	//  NOTE: Due to default values setup by Aiven, we won't validate settings.
 
 	return nil
+}
+
+func CheckExistsPgUser(service, username string, data *TemplateModelPgUser) error {
+
+	client, err := testutils.APIClient()
+	if err != nil {
+		return err
+	}
+
+	ctx := exoapi.WithEndpoint(context.Background(), exoapi.NewReqEndpoint(testutils.TestEnvironment(), testutils.TestZoneName))
+
+	res, err := client.GetDbaasServicePgWithResponse(ctx, oapi.DbaasServiceName(service))
+	if err != nil {
+		return err
+	}
+	if res.StatusCode() != http.StatusOK {
+		return fmt.Errorf("API request error: unexpected status %s", res.Status())
+	}
+	svc := res.JSON200
+
+	serviceUsernames := make([]string, 0)
+	if svc.Users != nil {
+		for _, u := range *svc.Users {
+			serviceUsernames = append(serviceUsernames, u.Username)
+			if u.Username == username {
+				return nil
+			}
+		}
+	}
+
+	return fmt.Errorf("could not find user %s for service %s, found %v", username, service, serviceUsernames)
 }

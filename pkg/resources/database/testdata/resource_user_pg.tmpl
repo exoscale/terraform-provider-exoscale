@@ -1,0 +1,5 @@
+resource "exoscale_dbaas_pg_user" {{ .ResourceName }} {
+  username = "{{ .Username }}"
+  service = {{ .Service }}
+  zone = "{{ .Zone }}"
+}

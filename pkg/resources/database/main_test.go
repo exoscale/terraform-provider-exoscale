@@ -25,7 +25,7 @@ func TestDatabase(t *testing.T) {
 	t.Run("DataSourceURI", testDataSourceURI)
 }
 
-func CheckDestroy(dbType, name string) resource.TestCheckFunc {
+func CheckServiceDestroy(dbType, name string) resource.TestCheckFunc {
 	return func(_ *terraform.State) error {
 		client, err := testutils.APIClient()
 		if err != nil {
