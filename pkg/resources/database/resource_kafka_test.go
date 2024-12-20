@@ -245,7 +245,7 @@ func CheckExistsKafka(name string, data *TemplateModelKafka) error {
 
 	res, err := client.GetDbaasServiceKafkaWithResponse(ctx, oapi.DbaasServiceName(name))
 	if err != nil {
-		return fmt.Errorf("aww")
+		return err
 	}
 	if res.StatusCode() != http.StatusOK {
 		return fmt.Errorf("API request error: unexpected status %s", res.Status())
