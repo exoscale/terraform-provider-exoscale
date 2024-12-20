@@ -245,8 +245,11 @@ func UserCreate[T ResourceModelInterface](ctx context.Context, req resource.Crea
 	}
 
 	data.WaitForService(ctx, client, &resp.Diagnostics)
-	data.CreateResource(ctx, client, &diags)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
+	data.CreateResource(ctx, client, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
