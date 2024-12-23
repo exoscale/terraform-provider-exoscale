@@ -202,7 +202,7 @@ func testResourceMysql(t *testing.T) {
 				}(),
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: strings.Fields("updated_at"),
+				ImportStateVerifyIgnore: strings.Fields("updated_at state"),
 			},
 			{
 				ResourceName: userFullResourceName,

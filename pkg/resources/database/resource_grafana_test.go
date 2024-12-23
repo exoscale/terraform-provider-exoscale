@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"testing"
 	"text/template"
 
@@ -124,8 +125,9 @@ func testResourceGrafana(t *testing.T) {
 						return fmt.Sprintf("%s@%s", dataBase.Name, dataBase.Zone), nil
 					}
 				}(),
-				ImportState:       true,
-				ImportStateVerify: true,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: strings.Fields("updated_at state"),
 			},
 		},
 	})

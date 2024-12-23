@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"testing"
 	"text/template"
 
@@ -218,8 +219,9 @@ func testResourceKafka(t *testing.T) {
 						return fmt.Sprintf("%s@%s", serviceDataBase.Name, serviceDataBase.Zone), nil
 					}
 				}(),
-				ImportState:       true,
-				ImportStateVerify: true,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: strings.Fields("updated_at state"),
 			},
 			{
 				ResourceName: userFullResourceName,
