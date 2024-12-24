@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"testing"
 	"text/template"
 
@@ -78,7 +79,7 @@ func testResourceRedis(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testutils.AccPreCheck(t) },
-		CheckDestroy:             CheckDestroy("redis", dataBase.Name),
+		CheckDestroy:             CheckServiceDestroy("redis", dataBase.Name),
 		ProtoV6ProviderFactories: testutils.TestAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
@@ -124,8 +125,9 @@ func testResourceRedis(t *testing.T) {
 						return fmt.Sprintf("%s@%s", dataBase.Name, dataBase.Zone), nil
 					}
 				}(),
-				ImportState:       true,
-				ImportStateVerify: true,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: strings.Fields("updated_at state"),
 			},
 		},
 	})

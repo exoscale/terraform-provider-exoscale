@@ -64,7 +64,7 @@ func testDataSourceURI(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testutils.AccPreCheck(t) },
-		CheckDestroy:             CheckDestroy("pg", resourcePg.Name),
+		CheckDestroy:             CheckServiceDestroy("pg", resourcePg.Name),
 		ProtoV6ProviderFactories: testutils.TestAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
@@ -110,7 +110,7 @@ func testDataSourceURI(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testutils.AccPreCheck(t) },
-		CheckDestroy:             CheckDestroy("mysql", resourceMysql.Name),
+		CheckDestroy:             CheckServiceDestroy("mysql", resourceMysql.Name),
 		ProtoV6ProviderFactories: testutils.TestAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
@@ -157,7 +157,7 @@ func testDataSourceURI(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testutils.AccPreCheck(t) },
-		CheckDestroy:             CheckDestroy("redis", resourceRedis.Name),
+		CheckDestroy:             CheckServiceDestroy("redis", resourceRedis.Name),
 		ProtoV6ProviderFactories: testutils.TestAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
@@ -204,7 +204,7 @@ func testDataSourceURI(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testutils.AccPreCheck(t) },
-		CheckDestroy:             CheckDestroy("kafka", resourceKafka.Name),
+		CheckDestroy:             CheckServiceDestroy("kafka", resourceKafka.Name),
 		ProtoV6ProviderFactories: testutils.TestAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
@@ -252,7 +252,7 @@ func testDataSourceURI(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testutils.AccPreCheck(t) },
-		CheckDestroy:             CheckDestroy("opensearch", resourceOpensearch.Name),
+		CheckDestroy:             CheckServiceDestroy("opensearch", resourceOpensearch.Name),
 		ProtoV6ProviderFactories: testutils.TestAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
@@ -299,7 +299,7 @@ func testDataSourceURI(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testutils.AccPreCheck(t) },
-		CheckDestroy:             CheckDestroy("grafana", resourceGrafana.Name),
+		CheckDestroy:             CheckServiceDestroy("grafana", resourceGrafana.Name),
 		ProtoV6ProviderFactories: testutils.TestAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{

@@ -1,0 +1,9 @@
+resource "exoscale_dbaas_mysql_user" {{ .ResourceName }} {
+  username = "{{ .Username }}"
+  service = {{ .Service }}
+  zone = "{{ .Zone }}"
+
+  {{- if .Authentication }}
+  authentication = "{{ .Authentication }}"
+  {{- end }}
+}

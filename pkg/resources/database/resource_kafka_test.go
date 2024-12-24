@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"testing"
 	"text/template"
 
@@ -46,14 +47,33 @@ type TemplateModelKafka struct {
 	Version                string
 }
 
+type TemplateModelKafkaUser struct {
+	ResourceName string
+
+	Username string
+	Zone     string
+	Service  string
+
+	Type     string
+	Password string
+
+	AccessKey        string
+	AccessCert       string
+	AccessCertExpiry string
+}
+
 func testResourceKafka(t *testing.T) {
-	tpl, err := template.ParseFiles("testdata/resource_kafka.tmpl")
+	serviceTpl, err := template.ParseFiles("testdata/resource_kafka.tmpl")
+	if err != nil {
+		t.Fatal(err)
+	}
+	userTpl, err := template.ParseFiles("testdata/resource_user_kafka.tmpl")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	fullResourceName := "exoscale_database.test"
-	dataBase := TemplateModelKafka{
+	serviceFullResourceName := "exoscale_database.test"
+	serviceDataBase := TemplateModelKafka{
 		ResourceName:          "test",
 		Name:                  acctest.RandomWithPrefix(testutils.Prefix),
 		Plan:                  "business-4",
@@ -62,32 +82,55 @@ func testResourceKafka(t *testing.T) {
 		Version:               "3.7",
 	}
 
-	dataCreate := dataBase
-	dataCreate.MaintenanceDow = "monday"
-	dataCreate.MaintenanceTime = "01:23:00"
-	dataCreate.EnableCertAuth = true
-	dataCreate.IpFilter = []string{"1.2.3.4/32"}
-	dataCreate.KafkaSettings = strconv.Quote(`{"num_partitions":10}`)
+	userFullResourceName := "exoscale_dbaas_kafka_user.test_user"
+	userDataBase := TemplateModelKafkaUser{
+		ResourceName: "test_user",
+		Username:     "foo",
+		Zone:         serviceDataBase.Zone,
+		Service:      fmt.Sprintf("%s.name", serviceFullResourceName),
+	}
+
+	serviceDataCreate := serviceDataBase
+	serviceDataCreate.MaintenanceDow = "monday"
+	serviceDataCreate.MaintenanceTime = "01:23:00"
+	serviceDataCreate.EnableCertAuth = true
+	serviceDataCreate.IpFilter = []string{"1.2.3.4/32"}
+	serviceDataCreate.KafkaSettings = strconv.Quote(`{"num_partitions":10}`)
+
+	userDataCreate := userDataBase
+
 	buf := &bytes.Buffer{}
-	err = tpl.Execute(buf, &dataCreate)
+	err = serviceTpl.Execute(buf, &serviceDataCreate)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = userTpl.Execute(buf, &userDataCreate)
 	if err != nil {
 		t.Fatal(err)
 	}
 	configCreate := buf.String()
 
-	dataUpdate := dataBase
-	dataUpdate.MaintenanceDow = "tuesday"
-	dataUpdate.MaintenanceTime = "02:34:00"
-	dataUpdate.EnableCertAuth = false
-	dataUpdate.EnableSASLAuth = true
-	dataUpdate.EnableKafkaREST = true
-	dataUpdate.EnableKafkaConnect = true
-	dataUpdate.IpFilter = nil
-	dataUpdate.KafkaSettings = strconv.Quote(`{"compression_type":"gzip","num_partitions":10}`)
-	dataUpdate.RestSettings = strconv.Quote(`{"consumer_request_max_bytes":100000}`)
-	dataUpdate.ConnectSettings = strconv.Quote(`{"session_timeout_ms":6000}`)
+	serviceDataUpdate := serviceDataBase
+	serviceDataUpdate.MaintenanceDow = "tuesday"
+	serviceDataUpdate.MaintenanceTime = "02:34:00"
+	serviceDataUpdate.EnableCertAuth = false
+	serviceDataUpdate.EnableSASLAuth = true
+	serviceDataUpdate.EnableKafkaREST = true
+	serviceDataUpdate.EnableKafkaConnect = true
+	serviceDataUpdate.IpFilter = nil
+	serviceDataUpdate.KafkaSettings = strconv.Quote(`{"compression_type":"gzip","num_partitions":10}`)
+	serviceDataUpdate.RestSettings = strconv.Quote(`{"consumer_request_max_bytes":100000}`)
+	serviceDataUpdate.ConnectSettings = strconv.Quote(`{"session_timeout_ms":6000}`)
+
+	userDataUpdate := userDataBase
+	userDataUpdate.Username = "bar"
+
 	buf = &bytes.Buffer{}
-	err = tpl.Execute(buf, &dataUpdate)
+	err = serviceTpl.Execute(buf, &serviceDataUpdate)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = userTpl.Execute(buf, &userDataUpdate)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -95,22 +138,38 @@ func testResourceKafka(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testutils.AccPreCheck(t) },
-		CheckDestroy:             CheckDestroy("kafka", dataBase.Name),
+		CheckDestroy:             CheckServiceDestroy("kafka", serviceDataBase.Name),
 		ProtoV6ProviderFactories: testutils.TestAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				// Create
 				Config: configCreate,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttrSet(fullResourceName, "created_at"),
-					resource.TestCheckResourceAttrSet(fullResourceName, "disk_size"),
-					resource.TestCheckResourceAttrSet(fullResourceName, "node_cpus"),
-					resource.TestCheckResourceAttrSet(fullResourceName, "node_memory"),
-					resource.TestCheckResourceAttrSet(fullResourceName, "nodes"),
-					resource.TestCheckResourceAttrSet(fullResourceName, "ca_certificate"),
-					resource.TestCheckResourceAttrSet(fullResourceName, "updated_at"),
+					// Service
+					resource.TestCheckResourceAttrSet(serviceFullResourceName, "created_at"),
+					resource.TestCheckResourceAttrSet(serviceFullResourceName, "disk_size"),
+					resource.TestCheckResourceAttrSet(serviceFullResourceName, "node_cpus"),
+					resource.TestCheckResourceAttrSet(serviceFullResourceName, "node_memory"),
+					resource.TestCheckResourceAttrSet(serviceFullResourceName, "nodes"),
+					resource.TestCheckResourceAttrSet(serviceFullResourceName, "ca_certificate"),
+					resource.TestCheckResourceAttrSet(serviceFullResourceName, "updated_at"),
 					func(s *terraform.State) error {
-						err := CheckExistsKafka(dataBase.Name, &dataCreate)
+						err := CheckExistsKafka(serviceDataBase.Name, &serviceDataCreate)
+						if err != nil {
+							return err
+						}
+
+						return nil
+					},
+
+					// User
+					resource.TestCheckResourceAttrSet(userFullResourceName, "password"),
+					resource.TestCheckResourceAttrSet(userFullResourceName, "type"),
+					resource.TestCheckResourceAttrSet(userFullResourceName, "access_key"),
+					resource.TestCheckResourceAttrSet(userFullResourceName, "access_cert"),
+					resource.TestCheckResourceAttrSet(userFullResourceName, "access_cert_expiry"),
+					func(s *terraform.State) error {
+						err := CheckExistsKafkaUser(serviceDataBase.Name, userDataBase.Username, &userDataCreate)
 						if err != nil {
 							return err
 						}
@@ -123,22 +182,52 @@ func testResourceKafka(t *testing.T) {
 				// Update
 				Config: configUpdate,
 				Check: resource.ComposeAggregateTestCheckFunc(
+					// Service
 					func(s *terraform.State) error {
-						err := CheckExistsKafka(dataBase.Name, &dataUpdate)
+						err := CheckExistsKafka(serviceDataBase.Name, &serviceDataUpdate)
 						if err != nil {
 							return err
 						}
 
 						return nil
 					},
+
+					// User
+					func(s *terraform.State) error {
+						// Check the old user was deleted
+						err := CheckExistsKafkaUser(serviceDataBase.Name, userDataBase.Username, &userDataUpdate)
+						if err == nil {
+							return fmt.Errorf("expected to not find user %s", userDataBase.Username)
+						}
+
+						// Check the new user exists
+						err = CheckExistsKafkaUser(serviceDataBase.Name, userDataUpdate.Username, &userDataUpdate)
+						if err != nil {
+							return err
+						}
+
+						return nil
+
+					},
 				),
 			},
 			{
 				// Import
-				ResourceName: fullResourceName,
+				ResourceName: serviceFullResourceName,
 				ImportStateIdFunc: func() resource.ImportStateIdFunc {
 					return func(*terraform.State) (string, error) {
-						return fmt.Sprintf("%s@%s", dataBase.Name, dataBase.Zone), nil
+						return fmt.Sprintf("%s@%s", serviceDataBase.Name, serviceDataBase.Zone), nil
+					}
+				}(),
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: strings.Fields("updated_at state"),
+			},
+			{
+				ResourceName: userFullResourceName,
+				ImportStateIdFunc: func() resource.ImportStateIdFunc {
+					return func(*terraform.State) (string, error) {
+						return fmt.Sprintf("%s/%s@%s", serviceDataBase.Name, userDataUpdate.Username, userDataBase.Zone), nil
 					}
 				}(),
 				ImportState:       true,
@@ -282,4 +371,37 @@ func CheckExistsKafka(name string, data *TemplateModelKafka) error {
 	}
 
 	return nil
+}
+
+func CheckExistsKafkaUser(service, username string, data *TemplateModelKafkaUser) error {
+
+	client, err := testutils.APIClient()
+	if err != nil {
+		return err
+	}
+
+	ctx := exoapi.WithEndpoint(context.Background(), exoapi.NewReqEndpoint(testutils.TestEnvironment(), testutils.TestZoneName))
+
+	res, err := client.GetDbaasServiceKafkaWithResponse(ctx, oapi.DbaasServiceName(service))
+	if err != nil {
+		return err
+	}
+	if res.StatusCode() != http.StatusOK {
+		return fmt.Errorf("API request error: unexpected status %s", res.Status())
+	}
+	svc := res.JSON200
+
+	serviceUsernames := make([]string, 0)
+	if svc.Users != nil {
+		for _, u := range *svc.Users {
+			if u.Username != nil {
+				serviceUsernames = append(serviceUsernames, *u.Username)
+				if *u.Username == username {
+					return nil
+				}
+			}
+		}
+	}
+
+	return fmt.Errorf("could not find user %s for service %s, found %v", username, service, serviceUsernames)
 }
