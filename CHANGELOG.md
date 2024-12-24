@@ -5,6 +5,7 @@
 FEATURES:
 
 - InstancePool: min-available support #406
+- dbaas: support for users #401
 
 BUG FIXES:
 
