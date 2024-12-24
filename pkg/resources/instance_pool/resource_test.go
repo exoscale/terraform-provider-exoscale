@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/stretchr/testify/require"
 
-	egoscale "github.com/exoscale/egoscale/v2"
+	v3 "github.com/exoscale/egoscale/v3"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/instance_pool"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/testutils"
@@ -33,7 +33,9 @@ var (
 	rInstanceType                = "standard.tiny"
 	rInstanceTypeUpdated         = "standard.small"
 	rSize                  int64 = 1
+	rMinAvailable          int64 = 0
 	rSizeUpdated                 = rSize * 2
+	rMinAvailableUpdated         = rMinAvailable + 1
 	rUserData                    = acctest.RandString(10)
 	rUserDataUpdated             = rUserData + "-updated"
 
@@ -62,6 +64,7 @@ resource "exoscale_instance_pool" "test" {
   template_id = data.exoscale_template.ubuntu.id
   instance_type = "%s"
   size = %d
+  min_available = %d
   disk_size = %d
   ipv6 = true
   anti_affinity_group_ids = [exoscale_anti_affinity_group.test.id]
@@ -83,6 +86,7 @@ resource "exoscale_instance_pool" "test" {
 		rDescription,
 		rInstanceType,
 		rSize,
+		rMinAvailable,
 		rDiskSize,
 		rInstancePrefix,
 		rUserData,
@@ -120,6 +124,7 @@ resource "exoscale_instance_pool" "test" {
   template_id = data.exoscale_template.debian.id
   instance_type = "%s"
   size = %d
+  min_available = %d
   disk_size = %d
   ipv6 = false
   key_pair = exoscale_ssh_key.test.name
@@ -143,6 +148,7 @@ resource "exoscale_instance_pool" "test" {
 		rDescriptionUpdated,
 		rInstanceTypeUpdated,
 		rSizeUpdated,
+		rMinAvailableUpdated,
 		rDiskSizeUpdated,
 		rUserDataUpdated,
 		rLabelValueUpdated,
@@ -152,7 +158,7 @@ resource "exoscale_instance_pool" "test" {
 func testResource(t *testing.T) {
 	var (
 		r            = "exoscale_instance_pool.test"
-		instancePool egoscale.InstancePool
+		instancePool v3.InstancePool
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -176,18 +182,18 @@ func testResource(t *testing.T) {
 							return err
 						}
 
-						a.Len(*instancePool.AntiAffinityGroupIDs, 1)
-						a.Equal(rDescription, *instancePool.Description)
-						a.Equal(rDiskSize, *instancePool.DiskSize)
-						a.Equal(rInstancePrefix, *instancePool.InstancePrefix)
-						a.Len(*instancePool.InstanceIDs, int(rSize))
-						a.Equal(testutils.TestInstanceTypeIDTiny, *instancePool.InstanceTypeID)
-						a.True(*instancePool.IPv6Enabled)
-						a.Equal(rLabelValue, (*instancePool.Labels)["test"])
-						a.Equal(rName, *instancePool.Name)
-						a.Equal(rSize, *instancePool.Size)
-						a.Equal(templateID, *instancePool.TemplateID)
-						a.Equal(expectedUserData, *instancePool.UserData)
+						a.Len(instancePool.AntiAffinityGroups, 1)
+						a.Equal(rDescription, instancePool.Description)
+						a.Equal(rDiskSize, instancePool.DiskSize)
+						a.Equal(rInstancePrefix, instancePool.InstancePrefix)
+						a.Len(instancePool.Instances, int(rSize))
+						a.Equal(testutils.TestInstanceTypeIDTiny, instancePool.InstanceType.ID.String())
+						a.True(*instancePool.Ipv6Enabled)
+						a.Equal(rLabelValue, (instancePool.Labels)["test"])
+						a.Equal(rName, instancePool.Name)
+						a.Equal(rSize, instancePool.Size)
+						a.Equal(templateID, instancePool.Template.ID.String())
+						a.Equal(expectedUserData, instancePool.UserData)
 
 						return nil
 					},
@@ -202,6 +208,7 @@ func testResource(t *testing.T) {
 						instance_pool.AttrName:                        testutils.ValidateString(rName),
 						instance_pool.AttrSecurityGroupIDs + ".#":     testutils.ValidateString("1"),
 						instance_pool.AttrSize:                        testutils.ValidateString(fmt.Sprint(rSize)),
+						instance_pool.AttrMinAvailable:                testutils.ValidateString(fmt.Sprint(rMinAvailable)),
 						instance_pool.AttrState:                       validation.ToDiagFunc(validation.NoZeroValues),
 						instance_pool.AttrTemplateID:                  validation.ToDiagFunc(validation.IsUUID),
 						instance_pool.AttrUserData:                    testutils.ValidateString(rUserData),
@@ -227,20 +234,20 @@ func testResource(t *testing.T) {
 							return err
 						}
 
-						a.Len(*instancePool.AntiAffinityGroupIDs, 1)
-						a.Equal(rDescriptionUpdated, *instancePool.Description)
-						a.Equal(rDiskSizeUpdated, *instancePool.DiskSize)
-						a.Equal(instance_pool.DefaultInstancePrefix, *instancePool.InstancePrefix)
-						a.Len(*instancePool.InstanceIDs, int(rSizeUpdated))
-						a.Equal(testutils.TestInstanceTypeIDSmall, *instancePool.InstanceTypeID)
-						a.False(*instancePool.IPv6Enabled)
-						a.Equal(rLabelValueUpdated, (*instancePool.Labels)["test"])
-						a.Equal(rNameUpdated, *instancePool.Name)
-						a.Len(*instancePool.PrivateNetworkIDs, 1)
-						a.Equal(rSizeUpdated, *instancePool.Size)
-						a.Equal(rKeyPair, *instancePool.SSHKey)
-						a.Equal(templateID, *instancePool.TemplateID)
-						a.Equal(expectedUserData, *instancePool.UserData)
+						a.Len(instancePool.AntiAffinityGroups, 1)
+						a.Equal(rDescriptionUpdated, instancePool.Description)
+						a.Equal(rDiskSizeUpdated, instancePool.DiskSize)
+						a.Equal(instance_pool.DefaultInstancePrefix, instancePool.InstancePrefix)
+						a.Len(instancePool.Instances, int(rSizeUpdated))
+						a.Equal(testutils.TestInstanceTypeIDSmall, instancePool.InstanceType.ID.String())
+						a.False(*instancePool.Ipv6Enabled)
+						a.Equal(rLabelValueUpdated, (instancePool.Labels)["test"])
+						a.Equal(rNameUpdated, instancePool.Name)
+						a.Len(instancePool.PrivateNetworks, 1)
+						a.Equal(rSizeUpdated, instancePool.Size)
+						a.Equal(rKeyPair, instancePool.SSHKey.Name)
+						a.Equal(templateID, instancePool.Template.ID.String())
+						a.Equal(expectedUserData, instancePool.UserData)
 
 						return nil
 					},
@@ -256,6 +263,7 @@ func testResource(t *testing.T) {
 						instance_pool.AttrName:                        testutils.ValidateString(rNameUpdated),
 						instance_pool.AttrNetworkIDs + ".#":           testutils.ValidateString("1"),
 						instance_pool.AttrSize:                        testutils.ValidateString(fmt.Sprint(rSizeUpdated)),
+						instance_pool.AttrMinAvailable:                testutils.ValidateString(fmt.Sprint(rMinAvailableUpdated)),
 						instance_pool.AttrState:                       validation.ToDiagFunc(validation.NoZeroValues),
 						instance_pool.AttrUserData:                    testutils.ValidateString(rUserDataUpdated),
 					})),
@@ -265,9 +273,9 @@ func testResource(t *testing.T) {
 			{
 				// Import
 				ResourceName: r,
-				ImportStateIdFunc: func(instancePool *egoscale.InstancePool) resource.ImportStateIdFunc {
+				ImportStateIdFunc: func(instancePool *v3.InstancePool) resource.ImportStateIdFunc {
 					return func(*terraform.State) (string, error) {
-						return fmt.Sprintf("%s@%s", *instancePool.ID, testutils.TestZoneName), nil
+						return fmt.Sprintf("%s@%s", instancePool.ID.String(), testutils.TestZoneName), nil
 					}
 				}(&instancePool),
 				ImportState: true,
@@ -291,12 +299,13 @@ func testResource(t *testing.T) {
 							instance_pool.AttrName:              testutils.ValidateString(rNameUpdated),
 							instance_pool.AttrNetworkIDs + ".#": testutils.ValidateString("1"),
 							instance_pool.AttrSize:              testutils.ValidateString(fmt.Sprint(rSizeUpdated)),
+							instance_pool.AttrMinAvailable:      testutils.ValidateString(fmt.Sprint(rMinAvailableUpdated)),
 							instance_pool.AttrState:             validation.ToDiagFunc(validation.NoZeroValues),
 							instance_pool.AttrUserData:          testutils.ValidateString(rUserDataUpdated),
 						},
 						func(s []*terraform.InstanceState) map[string]string {
 							for _, state := range s {
-								if state.ID == *instancePool.ID {
+								if state.ID == instancePool.ID.String() {
 									return state.Attributes
 								}
 							}

@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	exoapi "github.com/exoscale/egoscale/v2/api"
+	v3 "github.com/exoscale/egoscale/v3"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
@@ -50,21 +50,28 @@ func dsListRead(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	zone := d.Get(AttrZone).(string)
 
 	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(config.GetEnvironment(meta), zone))
 	defer cancel()
 
-	client, err := config.GetClient(meta)
+	defaultClientV3, err := config.GetClientV3(meta)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-
-	pools, err := client.ListInstancePools(
+	client, err := utils.SwitchClientZone(
 		ctx,
-		zone,
+		defaultClientV3,
+		v3.ZoneName(zone),
 	)
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
+	poolResponse, err := client.ListInstancePools(
+		ctx,
+	)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	pools := poolResponse.InstancePools
 
 	data := make([]interface{}, 0, len(pools))
 	ids := make([]string, 0, len(pools))
@@ -72,65 +79,63 @@ func dsListRead(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 	for _, item := range pools {
 		// we use ID to generate a resource ID, we cannot list instance pools without ID.
-		if item.ID == nil {
+		if item.ID == "" {
 			continue
 		}
 
-		ids = append(ids, *item.ID)
+		ids = append(ids, item.ID.String())
 
 		pool, err := client.GetInstancePool(
 			ctx,
-			zone,
-			*item.ID,
+			item.ID,
 		)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 
-		poolData, err := dsBuildData(pool)
+		poolData, err := dsBuildData(pool, zone)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 
-		if pool.InstanceTypeID != nil {
-			tid := *pool.InstanceTypeID
+		if pool.InstanceType != nil {
+			tid := pool.InstanceType.ID.String()
 			if _, ok := instanceTypes[tid]; !ok {
 				instanceType, err := client.GetInstanceType(
 					ctx,
-					zone,
-					tid,
+					v3.UUID(tid),
 				)
 				if err != nil {
 					return diag.Errorf("unable to retrieve instance type: %s", err)
 				}
 				instanceTypes[tid] = fmt.Sprintf(
 					"%s.%s",
-					strings.ToLower(*instanceType.Family),
-					strings.ToLower(*instanceType.Size),
+					strings.ToLower(string(instanceType.Family)),
+					strings.ToLower(string(instanceType.Size)),
 				)
 			}
 
 			poolData[AttrInstanceType] = instanceTypes[tid]
 		}
 
-		if pool.InstanceIDs != nil {
-			instancesData := make([]interface{}, len(*pool.InstanceIDs))
-			for i, id := range *pool.InstanceIDs {
-				instance, err := client.GetInstance(ctx, zone, id)
+		if pool.Instances != nil {
+			instancesData := make([]interface{}, len(pool.Instances))
+			for k, i := range pool.Instances {
+				instance, err := client.GetInstance(ctx, i.ID)
 				if err != nil {
 					return diag.FromErr(err)
 				}
 
 				var ipv6, publicIp string
-				if instance.IPv6Address != nil {
-					ipv6 = instance.IPv6Address.String()
+				if instance.Ipv6Address != "" {
+					ipv6 = instance.Ipv6Address
 				}
-				if instance.PublicIPAddress != nil {
-					publicIp = instance.PublicIPAddress.String()
+				if instance.PublicIP.String() != "" {
+					publicIp = instance.PublicIP.String()
 				}
 
-				instancesData[i] = map[string]interface{}{
-					AttrInstanceID:              id,
+				instancesData[k] = map[string]interface{}{
+					AttrInstanceID:              i.ID,
 					AttrInstanceIPv6Address:     ipv6,
 					AttrInstanceName:            instance.Name,
 					AttrInstancePublicIPAddress: publicIp,

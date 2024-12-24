@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+FEATURES:
+
+- InstancePool: min-available support #406
+
 BUG FIXES:
 
 - Ignore block storage detach error when already detached #393
