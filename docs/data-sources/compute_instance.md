@@ -57,7 +57,8 @@ directory for complete configuration examples.
 - `public_ip_address` (String) The instance (main network interface) IPv4 address.
 - `reverse_dns` (String) Domain name for reverse DNS record.
 - `security_group_ids` (Set of String) The list of attached [exoscale_security_group](../resources/security_group.md) (IDs).
-- `ssh_key` (String) The [exoscale_ssh_key](../resources/ssh_key.md) (name) authorized on the instance.
+- `ssh_key` (String, Deprecated) The [exoscale_ssh_key](../resources/ssh_key.md) (name) authorized on the instance.
+- `ssh_keys` (Set of String) The list of [exoscale_ssh_key](../resources/ssh_key.md) (name) authorized on the instance.
 - `state` (String) The instance state.
 - `template_id` (String) The instance [exoscale_template](./template.md) ID.
 - `type` (String) The instance type.

@@ -12,8 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	v2 "github.com/exoscale/egoscale/v2"
-	exoapi "github.com/exoscale/egoscale/v2/api"
+	v3 "github.com/exoscale/egoscale/v3"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/filter"
@@ -50,15 +49,6 @@ Corresponding resource: [exoscale_compute_instance](../resources/compute_instanc
 	return ret
 }
 
-var instanceListFilledFields = map[string]struct{}{
-	AttrID:              {},
-	AttrName:            {},
-	AttrZone:            {},
-	AttrType:            {},
-	AttrPublicIPAddress: {},
-	AttrState:           {},
-}
-
 func dsListRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	tflog.Debug(ctx, "beginning read", map[string]interface{}{
 		"id": utils.IDString(d, NameList),
@@ -67,80 +57,66 @@ func dsListRead(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	zone := d.Get(AttrZone).(string)
 
 	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(config.GetEnvironment(meta), zone))
 	defer cancel()
 
-	client, err := config.GetClient(meta)
+	defaultClientV3, err := config.GetClientV3(meta)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-
-	instances, err := client.ListInstances(
+	client, err := utils.SwitchClientZone(
 		ctx,
-		zone,
+		defaultClientV3,
+		v3.ZoneName(zone),
 	)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	data := make([]interface{}, 0, len(instances))
-	ids := make([]string, 0, len(instances))
-	instanceTypes := map[string]string{}
+	listInstancesResponse, err := client.ListInstances(
+		ctx,
+	)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	data := make([]interface{}, 0, len(listInstancesResponse.Instances))
+	ids := make([]string, 0, len(listInstancesResponse.Instances))
+	instanceTypes := map[v3.UUID]string{}
 
 	filters, err := filter.CreateFilters(ctx, d, DataSourceSchema())
 	if err != nil {
 		return diag.Errorf("failed to create filter: %q", err)
 	}
 
-	onlyListFieldsAreFiltered := true
 	filteredFields := filter.GetFilteredFields(ctx, d, DataSourceSchema())
-	for fieldName := range filteredFields {
-		if _, ok := instanceListFilledFields[fieldName]; !ok {
-			onlyListFieldsAreFiltered = false
-		}
-	}
 
-	for _, listInst := range instances {
+	for _, listInst := range listInstancesResponse.Instances {
 		// we use ID to generate a resource ID, we cannot list instances without ID.
-		if listInst.ID == nil {
+		if listInst.ID == "" {
 			continue
 		}
 
-		ids = append(ids, *listInst.ID)
+		ids = append(ids, listInst.ID.String())
 
-		var inst *v2.Instance
-
-		// to save time the full instance data is only fetched if a field
-		// is filtered which is not already returned by ListInstances.
-		// If the instance passes the filter step the full data will be fetched later.
-		allInstanceDataFetched := false
-		if onlyListFieldsAreFiltered {
-			inst = listInst
-		} else {
-			inst, err = client.GetInstance(
-				ctx,
-				zone,
-				*listInst.ID,
-			)
-			if err != nil {
-				return diag.FromErr(err)
-			}
-
-			allInstanceDataFetched = true
+		inst, err := client.GetInstance(
+			ctx,
+			listInst.ID,
+		)
+		if err != nil {
+			return diag.FromErr(err)
 		}
 
-		instanceData, err := dsBuildData(inst)
+		instanceData, err := dsBuildData(inst, zone)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 
 		getInstanceReverseDNS := func() diag.Diagnostics {
-			rdns, err := client.GetInstanceReverseDNS(ctx, zone, *inst.ID)
-			if err != nil && !errors.Is(err, exoapi.ErrNotFound) {
+			rdns, err := client.GetReverseDNSInstance(ctx, inst.ID)
+			if err != nil && !errors.Is(err, v3.ErrNotFound) {
 				return diag.Errorf("unable to retrieve instance reverse-dns: %s", err)
 			}
-			instanceData[AttrReverseDNS] = rdns
-
+			instanceData[AttrReverseDNS] = string(rdns.DomainName)
 			return nil
 		}
 
@@ -157,12 +133,11 @@ func dsListRead(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		// The API returns the instance type as a UUID.
 		// We lazily convert it to the <family>.<size> format.
 		instanceType := ""
-		if inst.InstanceTypeID != nil {
-			tid := *inst.InstanceTypeID
+		if inst.InstanceType != nil && inst.InstanceType.ID != "" {
+			tid := inst.InstanceType.ID
 			if _, ok := instanceTypes[tid]; !ok {
 				instanceType, err := client.GetInstanceType(
 					ctx,
-					zone,
 					tid,
 				)
 				if err != nil {
@@ -170,8 +145,8 @@ func dsListRead(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 				}
 				instanceTypes[tid] = fmt.Sprintf(
 					"%s.%s",
-					strings.ToLower(*instanceType.Family),
-					strings.ToLower(*instanceType.Size),
+					strings.ToLower(string(instanceType.Family)),
+					strings.ToLower(string(instanceType.Size)),
 				)
 			}
 
@@ -182,24 +157,6 @@ func dsListRead(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 		if !filter.CheckForMatch(instanceData, filters) {
 			continue
-		}
-
-		if !allInstanceDataFetched {
-			inst, err = client.GetInstance(
-				ctx,
-				zone,
-				*listInst.ID,
-			)
-			if err != nil {
-				return diag.FromErr(err)
-			}
-
-			instanceData, err = dsBuildData(inst)
-			if err != nil {
-				return diag.FromErr(err)
-			}
-
-			instanceData[AttrType] = instanceType
 		}
 
 		if !reverseDNSFiltered {

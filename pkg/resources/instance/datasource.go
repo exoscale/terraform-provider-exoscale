@@ -10,8 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	exo "github.com/exoscale/egoscale/v2"
-	exoapi "github.com/exoscale/egoscale/v2/api"
+	v3 "github.com/exoscale/egoscale/v3"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
@@ -106,6 +105,14 @@ func DataSourceSchema() map[string]*schema.Schema {
 			Description: "The [exoscale_ssh_key](../resources/ssh_key.md) (name) authorized on the instance.",
 			Type:        schema.TypeString,
 			Computed:    true,
+			Deprecated:  "Use ssh_keys instead",
+		},
+		AttrSSHKeys: {
+			Description: "The list of [exoscale_ssh_key](../resources/ssh_key.md) (name) authorized on the instance.",
+			Type:        schema.TypeSet,
+			Computed:    true,
+			Set:         schema.HashString,
+			Elem:        &schema.Schema{Type: schema.TypeString},
 		},
 		AttrSecurityGroupIDs: {
 			Description: "The list of attached [exoscale_security_group](../resources/security_group.md) (IDs).",
@@ -167,10 +174,17 @@ func dsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.
 	zone := d.Get(AttrZone).(string)
 
 	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(config.GetEnvironment(meta), zone))
 	defer cancel()
 
-	client, err := config.GetClient(meta)
+	defaultClientV3, err := config.GetClientV3(meta)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	client, err := utils.SwitchClientZone(
+		ctx,
+		defaultClientV3,
+		v3.ZoneName(zone),
+	)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -185,30 +199,52 @@ func dsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.
 		)
 	}
 
-	instance, err := client.FindInstance(
-		ctx,
-		zone, func() string {
-			if byID {
-				return id.(string)
+	// v3.ListInstancesResponse.FindListInstancesResponseInstances doesn't error when multiple instances
+	// in the zone have the same name so to avoid any differing behaviour, let's write this explicitely
+	// until it is patched
+	var instance *v3.Instance
+	if byID {
+		instance, err = client.GetInstance(ctx, v3.UUID(id.(string)))
+		if err != nil {
+			return diag.Errorf("unable to retrieve instance: %s", err)
+		}
+	} else {
+		instanceList, err := client.ListInstances(ctx)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		var found *v3.ListInstancesResponseInstances = nil
+		for _, i := range instanceList.Instances {
+			if i.Name == name {
+				if found == nil {
+					found = &i
+				} else {
+					return diag.FromErr(errors.New("multiple resources found with the same name"))
+				}
 			}
-			return name.(string)
-		}(),
-	)
-	if err != nil {
-		return diag.FromErr(err)
+		}
+
+		if found == nil {
+			return diag.Errorf("unable to retrieve instance: %s", fmt.Errorf("%q not found in ListInstancesResponse: %w", name, v3.ErrNotFound))
+		}
+
+		instance, err = client.GetInstance(ctx, found.ID)
+		if err != nil {
+			return diag.Errorf("unable to retrieve instance: %s", err)
+		}
 	}
 
-	d.SetId(*instance.ID)
+	d.SetId(string(instance.ID))
 
-	data, err := dsBuildData(instance)
+	data, err := dsBuildData(instance, zone)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	instanceType, err := client.GetInstanceType(
 		ctx,
-		zone,
-		*instance.InstanceTypeID,
+		instance.InstanceType.ID,
 	)
 	if err != nil {
 		return diag.Errorf("unable to retrieve instance type: %s", err)
@@ -216,15 +252,15 @@ func dsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.
 
 	data[AttrType] = fmt.Sprintf(
 		"%s.%s",
-		strings.ToLower(*instanceType.Family),
-		strings.ToLower(*instanceType.Size),
+		strings.ToLower(string(instanceType.Family)),
+		strings.ToLower(string(instanceType.Size)),
 	)
 
-	rdns, err := client.GetInstanceReverseDNS(ctx, zone, *instance.ID)
-	if err != nil && !errors.Is(err, exoapi.ErrNotFound) {
+	rdns, err := client.GetReverseDNSInstance(ctx, instance.ID)
+	if err != nil && !errors.Is(err, v3.ErrNotFound) {
 		return diag.Errorf("unable to retrieve instance reverse-dns: %s", err)
 	}
-	data[AttrReverseDNS] = strings.TrimSuffix(rdns, ".")
+	data[AttrReverseDNS] = strings.TrimSuffix(string(rdns.DomainName), ".")
 
 	for key, value := range data {
 		err := d.Set(key, value)
@@ -241,34 +277,82 @@ func dsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.
 }
 
 // dsBuildData builds terraform data object from egoscale API struct.
-func dsBuildData(instance *exo.Instance) (map[string]interface{}, error) {
+func dsBuildData(instance *v3.Instance, zone string) (map[string]interface{}, error) {
 	data := map[string]interface{}{}
 
-	data[AttrDeployTargetID] = instance.DeployTargetID
 	data[AttrDiskSize] = instance.DiskSize
 	data[AttrID] = instance.ID
 	data[AttrName] = instance.Name
-	data[AttrSSHKey] = instance.SSHKey
 	data[AttrState] = instance.State
-	data[AttrTemplateID] = instance.TemplateID
-	data[AttrZone] = instance.Zone
+	data[AttrZone] = zone
 
-	data[AttrIPv6] = utils.DefaultBool(instance.IPv6Enabled, false)
+	data[AttrIPv6] = func() bool { return instance.PublicIPAssignment == v3.PublicIPAssignmentDual }()
 
-	if instance.ElasticIPIDs != nil {
-		data[AttrElasticIPIDs] = *instance.ElasticIPIDs
+	data[AttrDeployTargetID] = func() (s string) {
+		if instance.DeployTarget != nil {
+			s = instance.DeployTarget.ID.String()
+		} else {
+			s = ""
+		}
+		return
+	}()
+
+	if instance.SSHKey != nil {
+		data[AttrSSHKey] = instance.SSHKey.Name
 	}
-	if instance.AntiAffinityGroupIDs != nil {
-		data[AttrAntiAffinityGroupIDs] = *instance.AntiAffinityGroupIDs
+
+	if instance.Template != nil {
+		data[AttrTemplateID] = instance.Template.ID.String()
+	}
+
+	if instance.SSHKeys != nil {
+		data[AttrSSHKeys] = func() []string {
+			list := make([]string, len(instance.SSHKeys))
+			for i, k := range instance.SSHKeys {
+				list[i] = k.Name
+			}
+			return list
+		}()
+	}
+
+	if instance.ElasticIPS != nil {
+		data[AttrElasticIPIDs] = func() []string {
+			list := make([]string, len(instance.ElasticIPS))
+			for i, eip := range instance.ElasticIPS {
+				list[i] = eip.ID.String()
+			}
+			return list
+		}()
+	}
+	if instance.AntiAffinityGroups != nil {
+		data[AttrAntiAffinityGroupIDs] = func() []string {
+			list := make([]string, len(instance.AntiAffinityGroups))
+			for i, aag := range instance.AntiAffinityGroups {
+				list[i] = aag.ID.String()
+			}
+			return list
+		}()
 	}
 	if instance.Labels != nil {
-		data[AttrLabels] = *instance.Labels
+		data[AttrLabels] = instance.Labels
 	}
-	if instance.PrivateNetworkIDs != nil {
-		data[AttrPrivateNetworkIDs] = *instance.PrivateNetworkIDs
+	if instance.PrivateNetworks != nil {
+		data[AttrPrivateNetworkIDs] = func() []string {
+			list := make([]string, len(instance.PrivateNetworks))
+			for i, pn := range instance.PrivateNetworks {
+				list[i] = pn.ID.String()
+			}
+			return list
+		}()
 	}
-	if instance.SecurityGroupIDs != nil {
-		data[AttrSecurityGroupIDs] = *instance.SecurityGroupIDs
+	if instance.SecurityGroups != nil {
+		data[AttrSecurityGroupIDs] = func() []string {
+			list := make([]string, len(instance.SecurityGroups))
+			for i, sg := range instance.SecurityGroups {
+				list[i] = sg.ID.String()
+			}
+			return list
+		}()
 	}
 
 	if instance.Manager != nil {
@@ -276,20 +360,18 @@ func dsBuildData(instance *exo.Instance) (map[string]interface{}, error) {
 		data[AttrManagerType] = instance.Manager.Type
 	}
 
-	if instance.CreatedAt != nil {
-		data[AttrCreatedAt] = instance.CreatedAt.String()
+	data[AttrCreatedAt] = instance.CreatedAT.String()
+
+	if instance.Ipv6Address != "" {
+		data[AttrIPv6Address] = instance.Ipv6Address
 	}
 
-	if instance.IPv6Address != nil {
-		data[AttrIPv6Address] = instance.IPv6Address.String()
+	if instance.PublicIP.String() != "" {
+		data[AttrPublicIPAddress] = instance.PublicIP.String()
 	}
 
-	if instance.PublicIPAddress != nil {
-		data[AttrPublicIPAddress] = instance.PublicIPAddress.String()
-	}
-
-	if instance.UserData != nil {
-		userData, err := utils.DecodeUserData(*instance.UserData)
+	if instance.UserData != "" {
+		userData, err := utils.DecodeUserData(instance.UserData)
 		if err != nil {
 			return nil, fmt.Errorf("unable to decode user data: %w", err)
 		}

@@ -25,6 +25,7 @@ const (
 	AttrPrivate               = "private"
 	AttrReverseDNS            = "reverse_dns"
 	AttrSSHKey                = "ssh_key"
+	AttrSSHKeys               = "ssh_keys"
 	AttrSecurityGroupIDs      = "security_group_ids"
 	AttrState                 = "state"
 	AttrTemplateID            = "template_id"
