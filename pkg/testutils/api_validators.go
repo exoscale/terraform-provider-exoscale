@@ -45,6 +45,42 @@ func CheckAntiAffinityGroupExists(r string, res *egoscale.AntiAffinityGroup) res
 	}
 }
 
+func CheckAntiAffinityGroupExistsV3(r string, res *v3.AntiAffinityGroup) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[r]
+		if !ok {
+			return errors.New("resource not found in the state")
+		}
+
+		if rs.Primary.ID == "" {
+			return errors.New("resource ID not set")
+		}
+
+		ctx := context.Background()
+		defaultClientV3, err := APIClientV3()
+		if err != nil {
+			return err
+		}
+
+		client, err := utils.SwitchClientZone(
+			ctx,
+			defaultClientV3,
+			TestZoneName,
+		)
+		if err != nil {
+			return err
+		}
+
+		data, err := client.GetAntiAffinityGroup(ctx, v3.UUID(rs.Primary.ID))
+		if err != nil {
+			return err
+		}
+
+		*res = *data
+		return nil
+	}
+}
+
 func CheckAntiAffinityGroupDestroy(res *egoscale.AntiAffinityGroup) resource.TestCheckFunc {
 	return func(_ *terraform.State) error {
 		if res == nil {
@@ -105,6 +141,42 @@ func CheckInstanceExists(r string, testInstance *egoscale.Instance) resource.Tes
 	}
 }
 
+func CheckInstanceExistsV3(r string, testInstance *v3.Instance) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[r]
+		if !ok {
+			return errors.New("resource not found in the state")
+		}
+
+		if rs.Primary.ID == "" {
+			return errors.New("resource ID not set")
+		}
+
+		ctx := context.Background()
+		defaultClientV3, err := APIClientV3()
+		if err != nil {
+			return err
+		}
+
+		client, err := utils.SwitchClientZone(
+			ctx,
+			defaultClientV3,
+			TestZoneName,
+		)
+		if err != nil {
+			return err
+		}
+
+		res, err := client.GetInstance(ctx, v3.UUID(rs.Primary.ID))
+		if err != nil {
+			return err
+		}
+
+		*testInstance = *res
+		return nil
+	}
+}
+
 func CheckInstanceDestroy(testInstance *egoscale.Instance) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		if testInstance == nil {
@@ -134,6 +206,40 @@ func CheckInstanceDestroy(testInstance *egoscale.Instance) resource.TestCheckFun
 	}
 }
 
+func CheckInstanceDestroyV3(testInstance *v3.Instance) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		if testInstance == nil {
+			return nil
+		}
+
+		ctx := context.Background()
+		defaultClientV3, err := APIClientV3()
+		if err != nil {
+			return err
+		}
+
+		client, err := utils.SwitchClientZone(
+			ctx,
+			defaultClientV3,
+			TestZoneName,
+		)
+		if err != nil {
+			return err
+		}
+
+		_, err = client.GetInstance(ctx, testInstance.ID)
+		if err != nil {
+			if errors.Is(err, v3.ErrNotFound) {
+				return nil
+			}
+
+			return err
+		}
+
+		return errors.New("compute testInstance still exists")
+	}
+}
+
 func CheckSecurityGroupExists(r string, securityGroup *egoscale.SecurityGroup) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[r]
@@ -152,6 +258,42 @@ func CheckSecurityGroupExists(r string, securityGroup *egoscale.SecurityGroup) r
 
 		ctx := exoapi.WithEndpoint(context.Background(), exoapi.NewReqEndpoint(TestEnvironment(), TestZoneName))
 		res, err := client.GetSecurityGroup(ctx, TestZoneName, rs.Primary.ID)
+		if err != nil {
+			return err
+		}
+
+		*securityGroup = *res
+		return nil
+	}
+}
+
+func CheckSecurityGroupExistsV3(r string, securityGroup *v3.SecurityGroup) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[r]
+		if !ok {
+			return errors.New("resource not found in the state")
+		}
+
+		if rs.Primary.ID == "" {
+			return errors.New("resource ID not set")
+		}
+
+		ctx := context.Background()
+		defaultClientV3, err := APIClientV3()
+		if err != nil {
+			return err
+		}
+
+		client, err := utils.SwitchClientZone(
+			ctx,
+			defaultClientV3,
+			TestZoneName,
+		)
+		if err != nil {
+			return err
+		}
+
+		res, err := client.GetSecurityGroup(ctx, v3.UUID(rs.Primary.ID))
 		if err != nil {
 			return err
 		}
@@ -213,6 +355,41 @@ func CheckPrivateNetworkExists(r string, privateNetwork *egoscale.PrivateNetwork
 	}
 }
 
+func CheckPrivateNetworkExistsV3(r string, privateNetwork *v3.PrivateNetwork) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[r]
+		if !ok {
+			return errors.New("resource not found in the state")
+		}
+
+		if rs.Primary.ID == "" {
+			return errors.New("resource ID not set")
+		}
+
+		ctx := context.Background()
+		defaultClientV3, err := APIClientV3()
+		if err != nil {
+			return err
+		}
+
+		client, err := utils.SwitchClientZone(
+			ctx,
+			defaultClientV3,
+			TestZoneName,
+		)
+		if err != nil {
+			return err
+		}
+		res, err := client.GetPrivateNetwork(ctx, v3.UUID(rs.Primary.ID))
+		if err != nil {
+			return err
+		}
+
+		*privateNetwork = *res
+		return nil
+	}
+}
+
 func CheckPrivateNetworkDestroy(privateNetwork *egoscale.PrivateNetwork) resource.TestCheckFunc {
 	return func(_ *terraform.State) error {
 		if privateNetwork == nil {
@@ -265,6 +442,42 @@ func CheckElasticIPExists(r string, elasticIP *egoscale.ElasticIP) resource.Test
 	}
 }
 
+func CheckElasticIPExistsV3(r string, elasticIP *v3.ElasticIP) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[r]
+		if !ok {
+			return errors.New("resource not found in the state")
+		}
+
+		if rs.Primary.ID == "" {
+			return errors.New("resource ID not set")
+		}
+
+		ctx := context.Background()
+		defaultClientV3, err := APIClientV3()
+		if err != nil {
+			return err
+		}
+
+		client, err := utils.SwitchClientZone(
+			ctx,
+			defaultClientV3,
+			TestZoneName,
+		)
+		if err != nil {
+			return err
+		}
+
+		res, err := client.GetElasticIP(ctx, v3.UUID(rs.Primary.ID))
+		if err != nil {
+			return err
+		}
+
+		*elasticIP = *res
+		return nil
+	}
+}
+
 func CheckElasticIPDestroy(elasticIP *egoscale.ElasticIP) resource.TestCheckFunc {
 	return func(_ *terraform.State) error {
 		if elasticIP == nil {
@@ -308,6 +521,42 @@ func CheckSSHKeyExists(r string, sshKey *egoscale.SSHKey) resource.TestCheckFunc
 		ctx := exoapi.WithEndpoint(context.Background(), exoapi.NewReqEndpoint(TestEnvironment(), TestZoneName))
 
 		res, err := client.GetSSHKey(ctx, TestZoneName, rs.Primary.ID)
+		if err != nil {
+			return err
+		}
+
+		*sshKey = *res
+		return nil
+	}
+}
+
+func CheckSSHKeyExistsV3(r string, sshKey *v3.SSHKey) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[r]
+		if !ok {
+			return errors.New("resource not found in the state")
+		}
+
+		if rs.Primary.ID == "" {
+			return errors.New("resource ID not set")
+		}
+
+		ctx := context.Background()
+		defaultClientV3, err := APIClientV3()
+		if err != nil {
+			return err
+		}
+
+		client, err := utils.SwitchClientZone(
+			ctx,
+			defaultClientV3,
+			TestZoneName,
+		)
+		if err != nil {
+			return err
+		}
+
+		res, err := client.GetSSHKey(ctx, rs.Primary.ID)
 		if err != nil {
 			return err
 		}

@@ -61,7 +61,8 @@ directory for complete configuration examples.
 - `private` (Boolean) Whether the instance is private (no public IP addresses; default: false)
 - `reverse_dns` (String) Domain name for reverse DNS record.
 - `security_group_ids` (Set of String) A list of [exoscale_security_group](./security_group.md) (IDs) to attach to the instance.
-- `ssh_key` (String) The [exoscale_ssh_key](./ssh_key.md) (name) to authorize in the instance (may only be set at creation time).
+- `ssh_key` (String, Deprecated) The [exoscale_ssh_key](./ssh_key.md) (name) to authorize in the instance (may only be set at creation time).
+- `ssh_keys` (Set of String) The list of [exoscale_ssh_key](./ssh_key.md) (name) to authorize in the instance (may only be set at creation time).
 - `state` (String) The instance state (`running` or `stopped`; default: `running`).
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `user_data` (String) [cloud-init](https://cloudinit.readthedocs.io/) configuration.

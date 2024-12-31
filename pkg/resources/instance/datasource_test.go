@@ -106,7 +106,7 @@ func testDataSource(t *testing.T) {
 		ProviderFactories: testutils.Providers(),
 		Steps: []resource.TestStep{
 			{
-				Config:      `data "exoscale_compute_instance" "test" { zone = "lolnope" }`,
+				Config:      `data "exoscale_compute_instance" "test" { zone = "ch-gva-2" }`,
 				ExpectError: regexp.MustCompile("either name or id must be specified"),
 			},
 			{

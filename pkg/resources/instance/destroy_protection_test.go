@@ -46,7 +46,7 @@ resource "exoscale_compute_instance" "my_instance" {
 
 var (
 	destroyProtectionTmpl  = template.Must(template.New("compute_instance").Parse(computeInstanceResource))
-	destroyProtectionError = regexp.MustCompile(`invalid request: Operation delete-instance on resource .* is forbidden - reason: manual instance protection`)
+	destroyProtectionError = regexp.MustCompile(`Forbidden: Operation delete-instance on resource .* is forbidden - reason: manual instance protection`)
 )
 
 type destroyProtectionTestData struct {

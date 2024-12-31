@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/stretchr/testify/require"
 
-	egoscale "github.com/exoscale/egoscale/v2"
+	v3 "github.com/exoscale/egoscale/v3"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/instance"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/testutils"
@@ -28,6 +28,7 @@ var (
 	rNameUpdated                 = rName + "-updated"
 	rPrivateNetworkName          = acctest.RandomWithPrefix(testutils.Prefix)
 	rSSHKeyName                  = acctest.RandomWithPrefix(testutils.Prefix)
+	rSSHKeyName2                 = acctest.RandomWithPrefix(testutils.Prefix)
 	rSecurityGroupName           = acctest.RandomWithPrefix(testutils.Prefix)
 	rStateStopped                = "stopped"
 	rStateRunning                = "running"
@@ -388,34 +389,79 @@ resource "exoscale_compute_instance" "test" {
 		rType,
 		rDiskSize,
 	)
+	rConfigCreateMultipleSSHKeys = fmt.Sprintf(`
+locals {
+  zone = "%s"
+}
+
+data "exoscale_template" "ubuntu" {
+  zone = local.zone
+  name = "Linux Ubuntu 20.04 LTS 64-bit"
+}
+
+data "exoscale_security_group" "default" {
+  name = "default"
+}
+
+resource "exoscale_ssh_key" "test" {
+	name       = "%s"
+	public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ/FXzAnsaRwP74Mji68Vt6+iz4mmCkC7QpUmPT4zKvf test"
+}
+
+resource "exoscale_ssh_key" "test2" {
+	name       = "%s"
+	public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBbM7A2vC0avqeFBvc0QdZMb6YjP4rTD0VLfV0tnbkGD test2"
+}
+  
+resource "exoscale_compute_instance" "test" {
+  zone                    = local.zone
+  name                    = "%s"
+  type                    = "%s"
+  disk_size               = %d
+  template_id             = data.exoscale_template.ubuntu.id
+  security_group_ids      = [data.exoscale_security_group.default.id]
+  ssh_keys                = [exoscale_ssh_key.test.name, exoscale_ssh_key.test2.name]
+  timeouts {
+    delete = "10m"
+  }
+}
+`,
+		testutils.TestZoneName,
+		rSSHKeyName,
+		rSSHKeyName2,
+		rName,
+		rType,
+		rDiskSize,
+	)
 )
 
 func testResource(t *testing.T) {
 	var (
 		r                     = "exoscale_compute_instance.test"
-		testInstance          egoscale.Instance
-		testAntiAffinityGroup egoscale.AntiAffinityGroup
-		testPrivateNetwork    egoscale.PrivateNetwork
-		testSecurityGroup     egoscale.SecurityGroup
-		testElasticIP         egoscale.ElasticIP
-		testSSHKey            egoscale.SSHKey
+		testInstance          v3.Instance
+		testAntiAffinityGroup v3.AntiAffinityGroup
+		testPrivateNetwork    v3.PrivateNetwork
+		testSecurityGroup     v3.SecurityGroup
+		testElasticIP         v3.ElasticIP
+		testSSHKey            v3.SSHKey
+		testSSHKey2           v3.SSHKey
 	)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testutils.AccPreCheck(t) },
 		ProviderFactories: testutils.Providers(),
-		CheckDestroy:      testutils.CheckInstanceDestroy(&testInstance),
+		CheckDestroy:      testutils.CheckInstanceDestroyV3(&testInstance),
 		Steps: []resource.TestStep{
 			{
 				// Create stopped testInstance
 				Config: rConfigCreateStopped,
 				Check: resource.ComposeTestCheckFunc(
-					testutils.CheckSecurityGroupExists("exoscale_security_group.test", &testSecurityGroup),
-					testutils.CheckAntiAffinityGroupExists("exoscale_anti_affinity_group.test", &testAntiAffinityGroup),
-					testutils.CheckPrivateNetworkExists("exoscale_private_network.test", &testPrivateNetwork),
-					testutils.CheckElasticIPExists("exoscale_elastic_ip.test", &testElasticIP),
-					testutils.CheckSSHKeyExists("exoscale_ssh_key.test", &testSSHKey),
-					testutils.CheckInstanceExists(r, &testInstance),
+					testutils.CheckSecurityGroupExistsV3("exoscale_security_group.test", &testSecurityGroup),
+					testutils.CheckAntiAffinityGroupExistsV3("exoscale_anti_affinity_group.test", &testAntiAffinityGroup),
+					testutils.CheckPrivateNetworkExistsV3("exoscale_private_network.test", &testPrivateNetwork),
+					testutils.CheckElasticIPExistsV3("exoscale_elastic_ip.test", &testElasticIP),
+					testutils.CheckSSHKeyExistsV3("exoscale_ssh_key.test", &testSSHKey),
+					testutils.CheckInstanceExistsV3(r, &testInstance),
 					func(s *terraform.State) error {
 						a := require.New(t)
 
@@ -430,23 +476,36 @@ func testResource(t *testing.T) {
 							return err
 						}
 
-						a.NotNil(testInstance.AntiAffinityGroupIDs)
-						a.ElementsMatch([]string{*testAntiAffinityGroup.ID}, *testInstance.AntiAffinityGroupIDs)
-						a.Equal(rDiskSize, *testInstance.DiskSize)
-						a.NotNil(testInstance.ElasticIPIDs)
-						a.ElementsMatch([]string{*testElasticIP.ID}, *testInstance.ElasticIPIDs)
-						a.Equal(testutils.TestInstanceTypeIDTiny, *testInstance.InstanceTypeID)
-						a.True(*testInstance.IPv6Enabled)
-						a.Equal(rLabelValue, (*testInstance.Labels)["test"])
-						a.Equal(rName, *testInstance.Name)
-						a.NotNil(testInstance.PrivateNetworkIDs)
-						a.ElementsMatch([]string{*testPrivateNetwork.ID}, *testInstance.PrivateNetworkIDs)
-						a.Equal(*testSSHKey.Name, *testInstance.SSHKey)
-						a.NotNil(testInstance.SecurityGroupIDs)
-						a.ElementsMatch([]string{defaultSecurityGroupID, *testSecurityGroup.ID}, *testInstance.SecurityGroupIDs)
-						a.Equal(rStateStopped, *testInstance.State)
-						a.Equal(templateID, *testInstance.TemplateID)
-						a.Equal(expectedUserData, *testInstance.UserData)
+						a.NotEmpty(testInstance.AntiAffinityGroups)
+						a.Len(testInstance.AntiAffinityGroups, 1)
+						a.ElementsMatch([]string{testAntiAffinityGroup.ID.String()}, []string{testInstance.AntiAffinityGroups[0].ID.String()})
+						a.Equal(rDiskSize, testInstance.DiskSize)
+						a.NotEmpty(testInstance.ElasticIPS)
+						a.Len(testInstance.ElasticIPS, 1)
+						a.ElementsMatch([]string{testElasticIP.ID.String()}, []string{testInstance.ElasticIPS[0].ID.String()})
+						a.Equal(testutils.TestInstanceTypeIDTiny, testInstance.InstanceType.ID.String())
+						a.Equal(testInstance.PublicIPAssignment, v3.PublicIPAssignmentDual)
+						a.Equal(rLabelValue, (testInstance.Labels)["test"])
+						a.Equal(rName, testInstance.Name)
+						a.NotEmpty(testInstance.PrivateNetworks)
+						a.Len(testInstance.PrivateNetworks, 1)
+						a.ElementsMatch([]string{testPrivateNetwork.ID.String()}, []string{testInstance.PrivateNetworks[0].ID.String()})
+						a.NotEmpty(testInstance.SSHKey)
+						a.Equal(testSSHKey.Name, testInstance.SSHKey.Name)
+						a.NotEmpty(testInstance.SSHKeys)
+						a.Len(testInstance.SSHKeys, 1)
+						a.ElementsMatch([]string{testSSHKey.Name}, []string{testInstance.SSHKeys[0].Name})
+						a.NotEmpty(testInstance.SecurityGroups)
+						a.ElementsMatch([]string{defaultSecurityGroupID, testSecurityGroup.ID.String()}, func() []string {
+							ls := make([]string, len(testInstance.SecurityGroups))
+							for i, sg := range testInstance.SecurityGroups {
+								ls[i] = sg.ID.String()
+							}
+							return ls
+						}())
+						a.Equal(rStateStopped, string(testInstance.State))
+						a.Equal(templateID, testInstance.Template.ID.String())
+						a.Equal(expectedUserData, testInstance.UserData)
 
 						return nil
 					},
@@ -478,7 +537,7 @@ func testResource(t *testing.T) {
 				// Update stopped testInstance
 				Config: rConfigUpdateStopped,
 				Check: resource.ComposeTestCheckFunc(
-					testutils.CheckInstanceExists(r, &testInstance),
+					testutils.CheckInstanceExistsV3(r, &testInstance),
 					func(s *terraform.State) error {
 						a := require.New(t)
 
@@ -490,18 +549,20 @@ func testResource(t *testing.T) {
 							return err
 						}
 
-						a.NotNil(testInstance.AntiAffinityGroupIDs)
-						a.ElementsMatch([]string{*testAntiAffinityGroup.ID}, *testInstance.AntiAffinityGroupIDs)
-						a.Equal(rDiskSizeUpdated, *testInstance.DiskSize)
-						a.Nil(testInstance.ElasticIPIDs)
-						a.Equal(testutils.TestInstanceTypeIDSmall, *testInstance.InstanceTypeID)
-						a.Equal(rLabelValueUpdated, (*testInstance.Labels)["test"])
-						a.Equal(rNameUpdated, *testInstance.Name)
-						a.Nil(testInstance.PrivateNetworkIDs)
-						a.NotNil(testInstance.SecurityGroupIDs)
-						a.ElementsMatch([]string{defaultSecurityGroupID}, *testInstance.SecurityGroupIDs)
-						a.Equal(rStateStopped, *testInstance.State)
-						a.Equal(expectedUserData, *testInstance.UserData)
+						a.NotEmpty(testInstance.AntiAffinityGroups)
+						a.Len(testInstance.AntiAffinityGroups, 1)
+						a.ElementsMatch([]string{testAntiAffinityGroup.ID.String()}, []string{testInstance.AntiAffinityGroups[0].ID.String()})
+						a.Equal(rDiskSizeUpdated, testInstance.DiskSize)
+						a.Empty(testInstance.ElasticIPS)
+						a.Equal(testutils.TestInstanceTypeIDSmall, testInstance.InstanceType.ID.String())
+						a.Equal(rLabelValueUpdated, (testInstance.Labels)["test"])
+						a.Equal(rNameUpdated, testInstance.Name)
+						a.Empty(testInstance.PrivateNetworks)
+						a.NotEmpty(testInstance.SecurityGroups)
+						a.Len(testInstance.SecurityGroups, 1)
+						a.ElementsMatch([]string{defaultSecurityGroupID}, []string{testInstance.SecurityGroups[0].ID.String()})
+						a.Equal(rStateStopped, string(testInstance.State))
+						a.Equal(expectedUserData, testInstance.UserData)
 
 						return nil
 					},
@@ -523,7 +584,7 @@ func testResource(t *testing.T) {
 				// Start testInstance
 				Config: rConfigStart,
 				Check: resource.ComposeTestCheckFunc(
-					testutils.CheckInstanceExists(r, &testInstance),
+					testutils.CheckInstanceExistsV3(r, &testInstance),
 					func(s *terraform.State) error {
 						a := require.New(t)
 
@@ -535,18 +596,20 @@ func testResource(t *testing.T) {
 							return err
 						}
 
-						a.NotNil(testInstance.AntiAffinityGroupIDs)
-						a.ElementsMatch([]string{*testAntiAffinityGroup.ID}, *testInstance.AntiAffinityGroupIDs)
-						a.Equal(rDiskSizeUpdated, *testInstance.DiskSize)
-						a.Nil(testInstance.ElasticIPIDs)
-						a.Equal(testutils.TestInstanceTypeIDSmall, *testInstance.InstanceTypeID)
-						a.Equal(rLabelValueUpdated, (*testInstance.Labels)["test"])
-						a.Equal(rNameUpdated, *testInstance.Name)
-						a.Nil(testInstance.PrivateNetworkIDs)
-						a.NotNil(testInstance.SecurityGroupIDs)
-						a.ElementsMatch([]string{defaultSecurityGroupID}, *testInstance.SecurityGroupIDs)
-						a.Equal(rStateRunning, *testInstance.State)
-						a.Equal(expectedUserData, *testInstance.UserData)
+						a.NotEmpty(testInstance.AntiAffinityGroups)
+						a.Len(testInstance.AntiAffinityGroups, 1)
+						a.ElementsMatch([]string{testAntiAffinityGroup.ID.String()}, []string{testInstance.AntiAffinityGroups[0].ID.String()})
+						a.Equal(rDiskSizeUpdated, testInstance.DiskSize)
+						a.Empty(testInstance.ElasticIPS)
+						a.Equal(testutils.TestInstanceTypeIDSmall, testInstance.InstanceType.ID.String())
+						a.Equal(rLabelValueUpdated, (testInstance.Labels)["test"])
+						a.Equal(rNameUpdated, testInstance.Name)
+						a.Empty(testInstance.PrivateNetworks)
+						a.NotEmpty(testInstance.SecurityGroups)
+						a.Len(testInstance.SecurityGroups, 1)
+						a.ElementsMatch([]string{defaultSecurityGroupID}, []string{testInstance.SecurityGroups[0].ID.String()})
+						a.Equal(rStateRunning, string(testInstance.State))
+						a.Equal(expectedUserData, testInstance.UserData)
 
 						return nil
 					},
@@ -568,7 +631,7 @@ func testResource(t *testing.T) {
 				// Update running Instance
 				Config: rConfigUpdateStarted,
 				Check: resource.ComposeTestCheckFunc(
-					testutils.CheckInstanceExists(r, &testInstance),
+					testutils.CheckInstanceExistsV3(r, &testInstance),
 					func(s *terraform.State) error {
 						a := require.New(t)
 
@@ -580,18 +643,20 @@ func testResource(t *testing.T) {
 							return err
 						}
 
-						a.NotNil(testInstance.AntiAffinityGroupIDs)
-						a.ElementsMatch([]string{*testAntiAffinityGroup.ID}, *testInstance.AntiAffinityGroupIDs)
-						a.Equal(rDiskSizeUpdated2, *testInstance.DiskSize)
-						a.Nil(testInstance.ElasticIPIDs)
-						a.Equal(testutils.TestInstanceTypeIDSmall, *testInstance.InstanceTypeID)
-						a.Equal(rLabelValueUpdated, (*testInstance.Labels)["test"])
-						a.Equal(rNameUpdated, *testInstance.Name)
-						a.Nil(testInstance.PrivateNetworkIDs)
-						a.NotNil(testInstance.SecurityGroupIDs)
-						a.ElementsMatch([]string{defaultSecurityGroupID}, *testInstance.SecurityGroupIDs)
-						a.Equal(rStateRunning, *testInstance.State)
-						a.Equal(expectedUserData, *testInstance.UserData)
+						a.NotEmpty(testInstance.AntiAffinityGroups)
+						a.Len(testInstance.AntiAffinityGroups, 1)
+						a.ElementsMatch([]string{testAntiAffinityGroup.ID.String()}, []string{testInstance.AntiAffinityGroups[0].ID.String()})
+						a.Equal(rDiskSizeUpdated2, testInstance.DiskSize)
+						a.Empty(testInstance.ElasticIPS)
+						a.Equal(testutils.TestInstanceTypeIDSmall, testInstance.InstanceType.ID.String())
+						a.Equal(rLabelValueUpdated, (testInstance.Labels)["test"])
+						a.Equal(rNameUpdated, testInstance.Name)
+						a.Empty(testInstance.PrivateNetworks)
+						a.NotEmpty(testInstance.SecurityGroups)
+						a.Len(testInstance.SecurityGroups, 1)
+						a.ElementsMatch([]string{defaultSecurityGroupID}, []string{testInstance.SecurityGroups[0].ID.String()})
+						a.Equal(rStateRunning, string(testInstance.State))
+						a.Equal(expectedUserData, testInstance.UserData)
 
 						return nil
 					},
@@ -612,14 +677,16 @@ func testResource(t *testing.T) {
 			{
 				// Import
 				ResourceName: r,
-				ImportStateIdFunc: func(testInstance *egoscale.Instance) resource.ImportStateIdFunc {
+				ImportStateIdFunc: func(testInstance *v3.Instance) resource.ImportStateIdFunc {
 					return func(*terraform.State) (string, error) {
-						return fmt.Sprintf("%s@%s", *testInstance.ID, testutils.TestZoneName), nil
+						return fmt.Sprintf("%s@%s", testInstance.ID, testutils.TestZoneName), nil
 					}
 				}(&testInstance),
-				ImportState:             true,
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{instance.AttrPrivateNetworkIDs, instance.AttrPrivate},
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{instance.AttrPrivateNetworkIDs, instance.AttrPrivate,
+					// SSHKeys are used only at creation so we can ignore those fields at import
+					instance.AttrSSHKey, instance.AttrSSHKeys},
 				ImportStateCheck: func(s []*terraform.InstanceState) error {
 					return testutils.CheckResourceAttributes(
 						testutils.TestAttrs{
@@ -633,7 +700,7 @@ func testResource(t *testing.T) {
 						},
 						func(s []*terraform.InstanceState) map[string]string {
 							for _, state := range s {
-								if state.ID == *testInstance.ID {
+								if state.ID == testInstance.ID.String() {
 									return state.Attributes
 								}
 							}
@@ -646,27 +713,28 @@ func testResource(t *testing.T) {
 	})
 
 	// Test for managed network interface
-	testInstance = egoscale.Instance{}
-	testPrivateNetwork = egoscale.PrivateNetwork{}
+	testInstance = v3.Instance{}
+	testPrivateNetwork = v3.PrivateNetwork{}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testutils.AccPreCheck(t) },
 		ProviderFactories: testutils.Providers(),
-		CheckDestroy:      testutils.CheckInstanceDestroy(&testInstance),
+		CheckDestroy:      testutils.CheckInstanceDestroyV3(&testInstance),
 		Steps: []resource.TestStep{
 			{
 				Config: rConfigCreateManaged,
 				Check: resource.ComposeTestCheckFunc(
-					testutils.CheckInstanceExists(r, &testInstance),
-					testutils.CheckPrivateNetworkExists("exoscale_private_network.test", &testPrivateNetwork),
+					testutils.CheckInstanceExistsV3(r, &testInstance),
+					testutils.CheckPrivateNetworkExistsV3("exoscale_private_network.test", &testPrivateNetwork),
 					func(s *terraform.State) error {
 						a := require.New(t)
 
-						a.Equal(rDiskSize, *testInstance.DiskSize)
-						a.Equal(testutils.TestInstanceTypeIDTiny, *testInstance.InstanceTypeID)
-						a.Equal(rName, *testInstance.Name)
-						a.NotNil(testInstance.PrivateNetworkIDs)
-						a.ElementsMatch([]string{*testPrivateNetwork.ID}, *testInstance.PrivateNetworkIDs)
+						a.Equal(rDiskSize, testInstance.DiskSize)
+						a.Equal(testutils.TestInstanceTypeIDTiny, testInstance.InstanceType.ID.String())
+						a.Equal(rName, testInstance.Name)
+						a.NotEmpty(testInstance.PrivateNetworks)
+						a.Len(testInstance.PrivateNetworks, 1)
+						a.ElementsMatch([]string{testPrivateNetwork.ID.String()}, []string{testInstance.PrivateNetworks[0].ID.String()})
 
 						return nil
 					},
@@ -679,6 +747,53 @@ func testResource(t *testing.T) {
 						instance.AttrTemplateID:                         validation.ToDiagFunc(validation.IsUUID),
 						instance.AttrType:                               testutils.ValidateString(rType),
 						instance.AttrZone:                               testutils.ValidateString(testutils.TestZoneName),
+					})),
+				),
+			},
+		},
+	})
+
+	// Test for multiple SSH Keys
+	testInstance = v3.Instance{}
+	testSSHKey = v3.SSHKey{}
+	testSSHKey2 = v3.SSHKey{}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testutils.AccPreCheck(t) },
+		ProviderFactories: testutils.Providers(),
+		CheckDestroy:      testutils.CheckInstanceDestroyV3(&testInstance),
+		Steps: []resource.TestStep{
+			{
+				Config: rConfigCreateMultipleSSHKeys,
+				Check: resource.ComposeTestCheckFunc(
+					testutils.CheckInstanceExistsV3(r, &testInstance),
+					testutils.CheckSSHKeyExistsV3("exoscale_ssh_key.test", &testSSHKey),
+					testutils.CheckSSHKeyExistsV3("exoscale_ssh_key.test2", &testSSHKey2),
+					func(s *terraform.State) error {
+						a := require.New(t)
+
+						a.Equal(rDiskSize, testInstance.DiskSize)
+						a.Equal(testutils.TestInstanceTypeIDTiny, testInstance.InstanceType.ID.String())
+						a.Equal(rName, testInstance.Name)
+						a.NotEmpty(testInstance.SSHKeys)
+						a.Len(testInstance.SSHKeys, 2)
+						a.ElementsMatch([]string{rSSHKeyName, rSSHKeyName2}, func() []string {
+							list := make([]string, len(testInstance.SSHKeys))
+							for i, s := range testInstance.SSHKeys {
+								list[i] = s.Name
+							}
+							return list
+						}())
+
+						return nil
+					},
+					testutils.CheckResourceState(r, testutils.CheckResourceStateValidateAttributes(testutils.TestAttrs{
+						instance.AttrCreatedAt:  validation.ToDiagFunc(validation.NoZeroValues),
+						instance.AttrDiskSize:   testutils.ValidateString(fmt.Sprint(rDiskSize)),
+						instance.AttrName:       testutils.ValidateString(rName),
+						instance.AttrTemplateID: validation.ToDiagFunc(validation.IsUUID),
+						instance.AttrType:       testutils.ValidateString(rType),
+						instance.AttrZone:       testutils.ValidateString(testutils.TestZoneName),
 					})),
 				),
 			},
