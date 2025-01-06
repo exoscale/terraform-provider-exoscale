@@ -172,15 +172,13 @@ func (p *ExoscaleProvider) Configure(ctx context.Context, req provider.Configure
 
 	opts := []exov3.ClientOpt{}
 	if ep := os.Getenv("EXOSCALE_API_ENDPOINT"); ep != "" {
-		opts = append(opts, exov3.ClientOptWithEndpoint(exov3.Endpoint(ep)))
+		opts = append(opts, exov3.ClientOptWithEndpoint(exov3.Endpoint(ep)), exov3.ClientOptWithUserAgent(exoscale.UserAgent))
 	}
 
 	clv3, err := exov3.NewClient(creds, opts...)
 	if err != nil {
 		resp.Diagnostics.AddError(err.Error(), "unable to initialize Exoscale API V3 client")
 	}
-
-	exov3.UserAgent = exoscale.UserAgent
 
 	resp.DataSourceData = &providerConfig.ExoscaleProviderConfig{
 		Config:      baseConfig,
