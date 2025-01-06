@@ -238,15 +238,13 @@ func ProviderConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 
 	opts := []exov3.ClientOpt{}
 	if ep := os.Getenv("EXOSCALE_API_ENDPOINT"); ep != "" {
-		opts = append(opts, exov3.ClientOptWithEndpoint(exov3.Endpoint(ep)))
+		opts = append(opts, exov3.ClientOptWithEndpoint(exov3.Endpoint(ep)), exov3.ClientOptWithUserAgent(UserAgent))
 	}
 
 	clv3, err := exov3.NewClient(creds, opts...)
 	if err != nil {
 		return nil, diag.FromErr(err)
 	}
-
-	exov3.UserAgent = UserAgent
 
 	return map[string]interface{}{
 			"config":       baseConfig,

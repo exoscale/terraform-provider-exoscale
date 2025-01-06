@@ -92,6 +92,7 @@ Read-Only:
 - `reverse_dns` (String)
 - `security_group_ids` (Set of String)
 - `ssh_key` (String)
+- `ssh_keys` (Set of String)
 - `state` (String)
 - `template_id` (String)
 - `type` (String)

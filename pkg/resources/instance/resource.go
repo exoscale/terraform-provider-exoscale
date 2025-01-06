@@ -12,8 +12,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
-	egoscale "github.com/exoscale/egoscale/v2"
-	exoapi "github.com/exoscale/egoscale/v2/api"
 	v3 "github.com/exoscale/egoscale/v3"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
@@ -145,9 +143,18 @@ func Resource() *schema.Resource {
 			Optional:    true,
 		},
 		AttrSSHKey: {
-			Description: "The [exoscale_ssh_key](./ssh_key.md) (name) to authorize in the instance (may only be set at creation time).",
-			Type:        schema.TypeString,
+			Description:   "The [exoscale_ssh_key](./ssh_key.md) (name) to authorize in the instance (may only be set at creation time).",
+			Type:          schema.TypeString,
+			Optional:      true,
+			Deprecated:    "Use ssh_keys instead",
+			ConflictsWith: []string{AttrSSHKeys},
+		},
+		AttrSSHKeys: {
+			Description: "The list of [exoscale_ssh_key](./ssh_key.md) (name) to authorize in the instance (may only be set at creation time).",
+			Type:        schema.TypeSet,
 			Optional:    true,
+			Set:         schema.HashString,
+			Elem:        &schema.Schema{Type: schema.TypeString},
 		},
 		AttrSecurityGroupIDs: {
 			Description: "A list of [exoscale_security_group](./security_group.md) (IDs) to attach to the instance.",
@@ -225,16 +232,8 @@ func rCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 	zone := d.Get(AttrZone).(string)
 
 	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutCreate))
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(config.GetEnvironment(meta), zone))
 	defer cancel()
 
-	client, err := config.GetClient(meta)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	// Use egoscale V3 for BlockStorage API.
-	// This is a temporary workaround until this resource is migrate to tf framework.
 	defaultClientV3, err := config.GetClientV3(meta)
 	if err != nil {
 		return diag.FromErr(err)
@@ -248,19 +247,21 @@ func rCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 		return diag.FromErr(err)
 	}
 
-	instance := &egoscale.Instance{
-		Name:       utils.NonEmptyStringPtr(d.Get(AttrName).(string)),
-		TemplateID: utils.NonEmptyStringPtr(d.Get(AttrTemplateID).(string)),
+	instanceRequest := &v3.CreateInstanceRequest{
+		Name:     d.Get(AttrName).(string),
+		Template: &v3.Template{ID: v3.UUID(d.Get(AttrTemplateID).(string))},
 	}
 
 	if set, ok := d.Get(AttrAntiAffinityGroupIDs).(*schema.Set); ok {
-		instance.AntiAffinityGroupIDs = func() (v *[]string) {
+		instanceRequest.AntiAffinityGroups = func() (v []v3.AntiAffinityGroup) {
 			if l := set.Len(); l > 0 {
-				list := make([]string, l)
+				list := make([]v3.AntiAffinityGroup, l)
 				for i, v := range set.List() {
-					list[i] = v.(string)
+					list[i] = v3.AntiAffinityGroup{
+						ID: v3.UUID(v.(string)),
+					}
 				}
-				v = &list
+				v = list
 			}
 			return
 		}()
@@ -268,90 +269,115 @@ func rCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 
 	if v, ok := d.GetOk(AttrDeployTargetID); ok {
 		s := v.(string)
-		instance.DeployTargetID = &s
+		instanceRequest.DeployTarget = &v3.DeployTarget{
+			ID: v3.UUID(s),
+		}
 	}
 
 	if v, ok := d.GetOk(AttrDiskSize); ok {
 		i := int64(v.(int))
-		instance.DiskSize = &i
+		instanceRequest.DiskSize = i
 	}
 
 	if privateInstance, ok := d.GetOk(AttrPrivate); ok {
 		privateInstanceBool := privateInstance.(bool)
 		if privateInstanceBool {
 			t := "none"
-			instance.PublicIPAssignment = &t
+			instanceRequest.PublicIPAssignment = v3.PublicIPAssignment(t)
 		}
+	} else if enableIPv6, ok := d.GetOk(AttrIPv6); ok {
+		ipv6EnabledBool := enableIPv6.(bool)
+		if ipv6EnabledBool {
+			t := "dual"
+			instanceRequest.PublicIPAssignment = v3.PublicIPAssignment(t)
+		}
+	} else {
+		t := "inet4"
+		instanceRequest.PublicIPAssignment = v3.PublicIPAssignment(t)
 	}
-
-	enableIPv6 := d.Get(AttrIPv6).(bool)
-	instance.IPv6Enabled = &enableIPv6
 
 	if l, ok := d.GetOk(AttrLabels); ok {
 		labels := make(map[string]string)
 		for k, v := range l.(map[string]interface{}) {
 			labels[k] = v.(string)
 		}
-		instance.Labels = &labels
+		instanceRequest.Labels = labels
 	}
 
-	if v, ok := d.GetOk(AttrSSHKey); ok {
+	if v, ok := d.GetOk(AttrSSHKeys); ok {
+		keySet := v.(*schema.Set)
+		if keySet.Len() > 0 {
+			keys := make([]v3.SSHKey, keySet.Len())
+			for i, k := range keySet.List() {
+				keys[i] = v3.SSHKey{Name: k.(string)}
+			}
+			instanceRequest.SSHKeys = keys
+
+		}
+	} else if v, ok := d.GetOk(AttrSSHKey); ok {
 		s := v.(string)
-		instance.SSHKey = &s
+		instanceRequest.SSHKey = &v3.SSHKey{Name: s}
 	}
 
 	if set, ok := d.Get(AttrSecurityGroupIDs).(*schema.Set); ok {
-		instance.SecurityGroupIDs = func() (v *[]string) {
+		instanceRequest.SecurityGroups = func() (v []v3.SecurityGroup) {
 			if l := set.Len(); l > 0 {
-				list := make([]string, l)
+				list := make([]v3.SecurityGroup, l)
 				for i, v := range set.List() {
-					list[i] = v.(string)
+					list[i] = v3.SecurityGroup{
+						ID: v3.UUID(v.(string)),
+					}
 				}
-				v = &list
+				v = list
 			}
 			return
 		}()
 	}
 
-	instanceType, err := client.FindInstanceType(ctx, zone, d.Get(AttrType).(string))
+	instanceType, err := utils.FindInstanceTypeByNameV3(ctx, clientV3, d.Get(AttrType).(string))
 	if err != nil {
 		return diag.Errorf("unable to retrieve instance type: %s", err)
 	}
-	instance.InstanceTypeID = instanceType.ID
+	instanceRequest.InstanceType = instanceType
 
 	if v := d.Get(AttrUserData).(string); v != "" {
 		userData, _, err := utils.EncodeUserData(v)
 		if err != nil {
 			return diag.FromErr(err)
 		}
-		instance.UserData = &userData
+		instanceRequest.UserData = userData
 	}
 
-	// FIXME: we have to reference the embedded egoscale/v2.Client explicitly
-	//  here because there is already a CreateComputeInstance() method on the root
-	//  egoscale client clashing with the v2 one. This can be changed once we
-	//  use API V2-only calls.
-	instance, err = client.CreateInstance(ctx, zone, instance)
+	op, err := clientV3.CreateInstance(ctx, *instanceRequest)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	op, err = clientV3.Wait(ctx, op, v3.OperationStateSuccess)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
+	instanceId := op.Reference.ID
+
 	if isDestroyProtected, ok := d.GetOk(AttrDestroyProtected); ok && isDestroyProtected.(bool) {
-		_, err := client.AddInstanceProtectionWithResponse(ctx, *instance.ID)
+		_, err := clientV3.AddInstanceProtection(ctx, instanceId)
 		if err != nil {
-			return diag.Errorf("unable to make instance %s destroy protected: %s", *instance.ID, err)
+			return diag.Errorf("unable to make instance %s destroy protected: %s", instanceId, err)
 		}
 	}
 
 	if set, ok := d.Get(AttrElasticIPIDs).(*schema.Set); ok {
 		if set.Len() > 0 {
 			for _, id := range set.List() {
-				if err := client.AttachInstanceToElasticIP(
+				op, err := clientV3.AttachInstanceToElasticIP(
 					ctx,
-					zone,
-					instance,
-					&egoscale.ElasticIP{ID: utils.NonEmptyStringPtr(id.(string))},
-				); err != nil {
+					v3.UUID(id.(string)),
+					v3.AttachInstanceToElasticIPRequest{Instance: &v3.InstanceTarget{ID: instanceId}},
+				)
+				if err != nil {
+					return diag.Errorf("unable to attach Elastic IP %s: %s", id.(string), err)
+				}
+				if _, err = clientV3.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
 					return diag.Errorf("unable to attach Elastic IP %s: %s", id.(string), err)
 				}
 			}
@@ -365,18 +391,20 @@ func rCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 				return diag.FromErr(err)
 			}
 
-			opts := []egoscale.AttachInstanceToPrivateNetworkOpt{}
-			if nif.IPAddress != nil && *nif.IPAddress != "" {
-				opts = append(opts, egoscale.AttachInstanceToPrivateNetworkWithIPAddress(net.ParseIP(*nif.IPAddress)))
-			}
-
-			if err := client.AttachInstanceToPrivateNetwork(
+			op, err := clientV3.AttachInstanceToPrivateNetwork(
 				ctx,
-				zone,
-				instance,
-				&egoscale.PrivateNetwork{ID: &nif.NetworkID},
-				opts...,
-			); err != nil {
+				v3.UUID(nif.NetworkID),
+				v3.AttachInstanceToPrivateNetworkRequest{
+					Instance: &v3.AttachInstanceToPrivateNetworkRequestInstance{
+						ID: instanceId,
+					},
+					IP: net.ParseIP(*nif.IPAddress),
+				},
+			)
+			if err != nil {
+				return diag.Errorf("unable to attach Private Network %s: %s", nif.NetworkID, err)
+			}
+			if _, err = clientV3.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
 				return diag.Errorf("unable to attach Private Network %s: %s", nif.NetworkID, err)
 			}
 		}
@@ -385,10 +413,6 @@ func rCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 	// Attach block storage volumes if set
 	if bsSet, ok := d.Get(AttrBlockStorageVolumeIDs).(*schema.Set); ok {
 		for _, bs := range bsSet.List() {
-			iid, err := v3.ParseUUID(*instance.ID)
-			if err != nil {
-				return diag.Errorf("unable to parse instance ID: %s", err)
-			}
 			bid, err := v3.ParseUUID(bs.(string))
 			if err != nil {
 				return diag.Errorf("unable to parse block storage ID: %s", err)
@@ -396,7 +420,7 @@ func rCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 
 			request := v3.AttachBlockStorageVolumeToInstanceRequest{
 				Instance: &v3.InstanceTarget{
-					ID: iid,
+					ID: instanceId,
 				},
 			}
 
@@ -418,24 +442,33 @@ func rCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 
 	if v, ok := d.GetOk(AttrReverseDNS); ok {
 		rdns := v.(string)
-		err := client.UpdateInstanceReverseDNS(
+		op, err := clientV3.UpdateReverseDNSInstance(
 			ctx,
-			zone,
-			*instance.ID,
-			rdns,
+			instanceId,
+			v3.UpdateReverseDNSInstanceRequest{
+				DomainName: rdns,
+			},
 		)
 		if err != nil {
 			return diag.Errorf("unable to create Reverse DNS record: %s", err)
 		}
+		if _, err = clientV3.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
+			return diag.Errorf("unable to create Reverse DNS record: %s", err)
+		}
+
 	}
 
 	if v := d.Get(AttrState).(string); v == "stopped" {
-		if err := client.StopInstance(ctx, zone, instance); err != nil {
+		op, err := clientV3.StopInstance(ctx, instanceId)
+		if err != nil {
+			return diag.Errorf("unable to stop instance: %s", err)
+		}
+		if _, err = clientV3.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
 			return diag.Errorf("unable to stop instance: %s", err)
 		}
 	}
 
-	d.SetId(*instance.ID)
+	d.SetId(string(instanceId))
 
 	tflog.Debug(ctx, "create finished successfully", map[string]interface{}{
 		"id": utils.IDString(d, Name),
@@ -452,7 +485,6 @@ func rRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.D
 	zone := d.Get(AttrZone).(string)
 
 	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(config.GetEnvironment(meta), zone))
 	defer cancel()
 
 	clientV3, err := config.GetClientV3WithZone(ctx, meta, zone)
@@ -485,21 +517,13 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 	zone := d.Get(AttrZone).(string)
 
 	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutUpdate))
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(config.GetEnvironment(meta), zone))
 	defer cancel()
 
-	client, err := config.GetClient(meta)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	// Use egoscale V3 for BlockStorage API.
-	// This is a temporary workaround until this resource is migrate to tf framework.
 	defaultClientV3, err := config.GetClientV3(meta)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	clientV3, err := utils.SwitchClientZone(
+	client, err := utils.SwitchClientZone(
 		ctx,
 		defaultClientV3,
 		v3.ZoneName(zone),
@@ -508,25 +532,26 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 		return diag.FromErr(err)
 	}
 
-	instance, err := client.GetInstance(ctx, zone, d.Id())
+	instance, err := client.GetInstance(ctx, v3.UUID(d.Id()))
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	var updated bool
+	instanceUpdateRequest := v3.UpdateInstanceRequest{}
 
 	if d.HasChange(AttrLabels) {
 		labels := make(map[string]string)
 		for k, v := range d.Get(AttrLabels).(map[string]interface{}) {
 			labels[k] = v.(string)
 		}
-		instance.Labels = &labels
+		instanceUpdateRequest.Labels = labels
 		updated = true
 	}
 
 	if d.HasChange(AttrName) {
 		v := d.Get(AttrName).(string)
-		instance.Name = &v
+		instanceUpdateRequest.Name = v
 		updated = true
 	}
 
@@ -535,12 +560,16 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 		if err != nil {
 			return diag.FromErr(err)
 		}
-		instance.UserData = &v
+		instanceUpdateRequest.UserData = v
 		updated = true
 	}
 
 	if updated {
-		if err = client.UpdateInstance(ctx, zone, instance); err != nil {
+		op, err := client.UpdateInstance(ctx, instance.ID, instanceUpdateRequest)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		if _, err = client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
 			return diag.FromErr(err)
 		}
 	}
@@ -548,21 +577,30 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 	if d.HasChange(AttrReverseDNS) {
 		rdns := d.Get(AttrReverseDNS).(string)
 		if rdns == "" {
-			err = client.DeleteInstanceReverseDNS(
+			op, err := client.DeleteReverseDNSInstance(
 				ctx,
-				zone,
-				*instance.ID,
+				instance.ID,
 			)
+			if err != nil {
+				return diag.FromErr(err)
+			}
+			if _, err = client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
+				return diag.FromErr(err)
+			}
 		} else {
-			err = client.UpdateInstanceReverseDNS(
+			op, err := client.UpdateReverseDNSInstance(
 				ctx,
-				zone,
-				*instance.ID,
-				rdns,
+				instance.ID,
+				v3.UpdateReverseDNSInstanceRequest{
+					DomainName: rdns,
+				},
 			)
-		}
-		if err != nil {
-			return diag.FromErr(err)
+			if err != nil {
+				return diag.FromErr(err)
+			}
+			if _, err = client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
+				return diag.FromErr(err)
+			}
 		}
 	}
 
@@ -574,10 +612,6 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 
 		if added := cur.Difference(old); added.Len() > 0 {
 			for _, id := range added.List() {
-				iid, err := v3.ParseUUID(*instance.ID)
-				if err != nil {
-					return diag.Errorf("unable to parse instance ID: %s", err)
-				}
 				bid, err := v3.ParseUUID(id.(string))
 				if err != nil {
 					return diag.Errorf("unable to parse block storage ID: %s", err)
@@ -585,11 +619,11 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 
 				request := v3.AttachBlockStorageVolumeToInstanceRequest{
 					Instance: &v3.InstanceTarget{
-						ID: iid,
+						ID: instance.ID,
 					},
 				}
 
-				op, err := clientV3.AttachBlockStorageVolumeToInstance(
+				op, err := client.AttachBlockStorageVolumeToInstance(
 					ctx,
 					bid,
 					request,
@@ -598,7 +632,7 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 					return diag.Errorf("unable to parse attached instance ID: %s", err)
 				}
 
-				_, err = clientV3.Wait(ctx, op, v3.OperationStateSuccess)
+				_, err = client.Wait(ctx, op, v3.OperationStateSuccess)
 				if err != nil {
 					return diag.Errorf("failed to attach block storage: %s", err)
 				}
@@ -612,7 +646,7 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 					return diag.Errorf("unable to parse block storage ID: %s", err)
 				}
 
-				op, err := clientV3.DetachBlockStorageVolume(
+				op, err := client.DetachBlockStorageVolume(
 					ctx,
 					bid,
 				)
@@ -627,7 +661,7 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 					return diag.Errorf("failed to detach block storage: %s", err)
 				}
 
-				_, err = clientV3.Wait(ctx, op, v3.OperationStateSuccess)
+				_, err = client.Wait(ctx, op, v3.OperationStateSuccess)
 				if err != nil {
 					return diag.Errorf("failed to detach block storage: %s", err)
 				}
@@ -642,12 +676,15 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 
 		if added := cur.Difference(old); added.Len() > 0 {
 			for _, id := range added.List() {
-				if err := client.AttachInstanceToElasticIP(
+				op, err := client.AttachInstanceToElasticIP(
 					ctx,
-					zone,
-					instance,
-					&egoscale.ElasticIP{ID: utils.NonEmptyStringPtr(id.(string))},
-				); err != nil {
+					v3.UUID(id.(string)),
+					v3.AttachInstanceToElasticIPRequest{Instance: &v3.InstanceTarget{ID: instance.ID}},
+				)
+				if err != nil {
+					return diag.FromErr(err)
+				}
+				if _, err = client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
 					return diag.FromErr(err)
 				}
 			}
@@ -655,12 +692,15 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 
 		if removed := old.Difference(cur); removed.Len() > 0 {
 			for _, id := range removed.List() {
-				if err := client.DetachInstanceFromElasticIP(
+				op, err := client.DetachInstanceFromElasticIP(
 					ctx,
-					zone,
-					instance,
-					&egoscale.ElasticIP{ID: utils.NonEmptyStringPtr(id.(string))},
-				); err != nil {
+					v3.UUID(id.(string)),
+					v3.DetachInstanceFromElasticIPRequest{Instance: &v3.InstanceTarget{ID: instance.ID}},
+				)
+				if err != nil {
+					return diag.FromErr(err)
+				}
+				if _, err = client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
 					return diag.FromErr(err)
 				}
 			}
@@ -679,12 +719,15 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 					return diag.FromErr(err)
 				}
 
-				if err := client.DetachInstanceFromPrivateNetwork(
+				op, err := client.DetachInstanceFromPrivateNetwork(
 					ctx,
-					zone,
-					instance,
-					&egoscale.PrivateNetwork{ID: &nif.NetworkID},
-				); err != nil {
+					v3.UUID(nif.NetworkID),
+					v3.DetachInstanceFromPrivateNetworkRequest{Instance: &v3.Instance{ID: instance.ID}},
+				)
+				if err != nil {
+					return diag.FromErr(err)
+				}
+				if _, err = client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
 					return diag.FromErr(err)
 				}
 			}
@@ -697,18 +740,18 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 					return diag.FromErr(err)
 				}
 
-				opts := []egoscale.AttachInstanceToPrivateNetworkOpt{}
-				if nif.IPAddress != nil && *nif.IPAddress != "" {
-					opts = append(opts, egoscale.AttachInstanceToPrivateNetworkWithIPAddress(net.ParseIP(*nif.IPAddress)))
-				}
-
-				if err := client.AttachInstanceToPrivateNetwork(
+				op, err := client.AttachInstanceToPrivateNetwork(
 					ctx,
-					zone,
-					instance,
-					&egoscale.PrivateNetwork{ID: &nif.NetworkID},
-					opts...,
-				); err != nil {
+					v3.UUID(nif.NetworkID),
+					v3.AttachInstanceToPrivateNetworkRequest{
+						Instance: &v3.AttachInstanceToPrivateNetworkRequestInstance{ID: instance.ID},
+						IP:       net.ParseIP(*nif.IPAddress),
+					},
+				)
+				if err != nil {
+					return diag.FromErr(err)
+				}
+				if _, err = client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
 					return diag.FromErr(err)
 				}
 			}
@@ -722,12 +765,15 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 
 		if added := cur.Difference(old); added.Len() > 0 {
 			for _, id := range added.List() {
-				if err := client.AttachInstanceToSecurityGroup(
+				op, err := client.AttachInstanceToSecurityGroup(
 					ctx,
-					zone,
-					instance,
-					&egoscale.SecurityGroup{ID: utils.NonEmptyStringPtr(id.(string))},
-				); err != nil {
+					v3.UUID(id.(string)),
+					v3.AttachInstanceToSecurityGroupRequest{Instance: &v3.Instance{ID: instance.ID}},
+				)
+				if err != nil {
+					return diag.FromErr(err)
+				}
+				if _, err = client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
 					return diag.FromErr(err)
 				}
 			}
@@ -735,12 +781,15 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 
 		if removed := old.Difference(cur); removed.Len() > 0 {
 			for _, id := range removed.List() {
-				if err := client.DetachInstanceFromSecurityGroup(
+				op, err := client.DetachInstanceFromSecurityGroup(
 					ctx,
-					zone,
-					instance,
-					&egoscale.SecurityGroup{ID: utils.NonEmptyStringPtr(id.(string))},
-				); err != nil {
+					v3.UUID(id.(string)),
+					v3.DetachInstanceFromSecurityGroupRequest{Instance: &v3.Instance{ID: instance.ID}},
+				)
+				if err != nil {
+					return diag.FromErr(err)
+				}
+				if _, err = client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
 					return diag.FromErr(err)
 				}
 			}
@@ -754,44 +803,62 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 	) {
 		// Check if size is below current size to prevent uneeded stop as API will prevent the scale operation
 		if d.HasChange(AttrDiskSize) &&
-			*instance.DiskSize > int64(d.Get(AttrDiskSize).(int)) {
-			return diag.Errorf("unable to scale down the disk size, use size > %v", *instance.DiskSize)
+			instance.DiskSize > int64(d.Get(AttrDiskSize).(int)) {
+			return diag.Errorf("unable to scale down the disk size, use size > %v", instance.DiskSize)
 		}
 
 		// Compute instance scaling/disk resizing API operations requires the instance to be stopped.
 		if d.Get(AttrState) == "stopped" ||
 			d.HasChange(AttrDiskSize) ||
 			d.HasChange(AttrType) {
-			if err := client.StopInstance(ctx, zone, instance); err != nil {
+			op, err := client.StopInstance(ctx, instance.ID)
+			if err != nil {
 				return diag.Errorf("unable to stop instance: %s", err)
 			}
+			if _, err = client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
+				return diag.Errorf("unable to stop instance: %s", err)
+			}
+
 		}
 
 		if d.HasChange(AttrDiskSize) {
-			if err = client.ResizeInstanceDisk(
+			op, err := client.ResizeInstanceDisk(
 				ctx,
-				zone,
-				instance,
-				int64(d.Get(AttrDiskSize).(int)),
-			); err != nil {
-				return diag.FromErr(err)
+				instance.ID,
+				v3.ResizeInstanceDiskRequest{DiskSize: int64(d.Get(AttrDiskSize).(int))},
+			)
+			if err != nil {
+				return diag.Errorf("unable to resize disk: %s", err)
 			}
+			if _, err = client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
+				return diag.Errorf("unable to resize disk: %s", err)
+			}
+
 		}
 
 		if d.HasChange(AttrType) {
-			instanceType, err := client.FindInstanceType(ctx, zone, d.Get(AttrType).(string))
+			instanceType, err := utils.FindInstanceTypeByNameV3(ctx, client, d.Get(AttrType).(string))
 			if err != nil {
 				return diag.Errorf("unable to retrieve instance type: %s", err)
 			}
-			if err = client.ScaleInstance(ctx, zone, instance, instanceType); err != nil {
-				return diag.FromErr(err)
+			op, err := client.ScaleInstance(ctx, instance.ID, v3.ScaleInstanceRequest{InstanceType: instanceType})
+			if err != nil {
+				return diag.Errorf("unable to scale instance: %s", err)
+			}
+			if _, err = client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
+				return diag.Errorf("unable to scale instance: %s", err)
 			}
 		}
 
 		if d.Get(AttrState) == "running" {
-			if err := client.StartInstance(ctx, zone, instance); err != nil {
+			op, err := client.StartInstance(ctx, instance.ID, v3.StartInstanceRequest{})
+			if err != nil {
 				return diag.Errorf("unable to start instance: %s", err)
 			}
+			if _, err = client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
+				return diag.Errorf("unable to start instance: %s", err)
+			}
+
 		}
 	}
 
@@ -803,14 +870,20 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 	isDestroyProtected := d.Get(AttrDestroyProtected)
 	if isDestroyProtected != nil {
 		if isDestroyProtected.(bool) {
-			_, err := client.AddInstanceProtectionWithResponse(ctx, *instance.ID)
+			op, err := client.AddInstanceProtection(ctx, instance.ID)
 			if err != nil {
-				return diag.Errorf("unable to make instance %s destroy protected: %s", *instance.ID, err)
+				return diag.Errorf("unable to make instance %s destroy protected: %s", instance.ID, err)
+			}
+			if _, err = client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
+				return diag.Errorf("unable to make instance %s destroy protected: %s", instance.ID, err)
 			}
 		} else {
-			_, err := client.RemoveInstanceProtectionWithResponse(ctx, *instance.ID)
+			op, err := client.RemoveInstanceProtection(ctx, instance.ID)
 			if err != nil {
-				return diag.Errorf("unable to remove destroy protection from instance %s: %s", *instance.ID, err)
+				return diag.Errorf("unable to remove destroy protection from instance %s: %s", instance.ID, err)
+			}
+			if _, err = client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
+				return diag.Errorf("unable to remove destroy protection from instance %s: %s", instance.ID, err)
 			}
 		}
 	}
@@ -829,24 +902,41 @@ func rDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 
 	zone := d.Get(AttrZone).(string)
 
-	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutDelete))
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(config.GetEnvironment(meta), zone))
+	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutUpdate))
 	defer cancel()
 
-	client, err := config.GetClient(meta)
+	defaultClientV3, err := config.GetClientV3(meta)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	client, err := utils.SwitchClientZone(
+		ctx,
+		defaultClientV3,
+		v3.ZoneName(zone),
+	)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	if err := client.DeleteInstanceReverseDNS(ctx, zone, d.Id()); err != nil && !errors.Is(err, exoapi.ErrNotFound) {
+	op, err := client.DeleteReverseDNSInstance(ctx, v3.UUID(d.Id()))
+	if err != nil && !errors.Is(err, v3.ErrNotFound) {
 		return diag.FromErr(err)
 	}
-	err = client.DeleteInstance(
+
+	if op != nil {
+		if _, err := client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
+	op, err = client.DeleteInstance(
 		ctx,
-		zone,
-		&egoscale.Instance{ID: utils.NonEmptyStringPtr(d.Id())},
+		v3.UUID(d.Id()),
 	)
 	if err != nil {
+		return diag.FromErr(err)
+	}
+	if _, err := client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -864,9 +954,9 @@ func rApply( //nolint:gocyclo
 	instance *v3.Instance,
 ) diag.Diagnostics {
 	if len(instance.AntiAffinityGroups) > 0 {
-		antiAffinityGroupIDs := make([]string, 0, len(instance.AntiAffinityGroups))
-		for _, aag := range instance.AntiAffinityGroups {
-			antiAffinityGroupIDs = append(antiAffinityGroupIDs, aag.ID.String())
+		antiAffinityGroupIDs := make([]string, len(instance.AntiAffinityGroups))
+		for i, aag := range instance.AntiAffinityGroups {
+			antiAffinityGroupIDs[i] = aag.ID.String()
 		}
 
 		if err := d.Set(AttrAntiAffinityGroupIDs, antiAffinityGroupIDs); err != nil {
@@ -896,9 +986,9 @@ func rApply( //nolint:gocyclo
 	}
 
 	if len(instance.ElasticIPS) > 0 {
-		elasticIPIDs := make([]string, 0, len(instance.ElasticIPS))
-		for _, eip := range instance.ElasticIPS {
-			elasticIPIDs = append(elasticIPIDs, eip.ID.String())
+		elasticIPIDs := make([]string, len(instance.ElasticIPS))
+		for i, eip := range instance.ElasticIPS {
+			elasticIPIDs[i] = eip.ID.String()
 		}
 
 		if err := d.Set(AttrElasticIPIDs, elasticIPIDs); err != nil {
@@ -971,16 +1061,27 @@ func rApply( //nolint:gocyclo
 		}
 	}
 
-	if instance.SSHKey != nil {
+	// The API has a small quirk where it will populate both fiels regardless if
+	// we use ssh_keys or the deprecated ssh_keys, so we add a small check to avoid
+	// populating it in the plan if unset
+	if instance.SSHKey != nil && d.Get(AttrSSHKey) != "" {
 		if err := d.Set(AttrSSHKey, instance.SSHKey.Name); err != nil {
+			return diag.FromErr(err)
+		}
+	} else if instance.SSHKeys != nil {
+		keyNames := make([]string, len(instance.SSHKeys))
+		for i, k := range instance.SSHKeys {
+			keyNames[i] = k.Name
+		}
+		if err := d.Set(AttrSSHKeys, keyNames); err != nil {
 			return diag.FromErr(err)
 		}
 	}
 
 	if len(instance.SecurityGroups) > 0 {
-		securityGroupIDs := make([]string, 0, len(instance.SecurityGroups))
-		for _, sg := range instance.SecurityGroups {
-			securityGroupIDs = append(securityGroupIDs, sg.ID.String())
+		securityGroupIDs := make([]string, len(instance.SecurityGroups))
+		for i, sg := range instance.SecurityGroups {
+			securityGroupIDs[i] = sg.ID.String()
 		}
 
 		if err := d.Set(AttrSecurityGroupIDs, securityGroupIDs); err != nil {

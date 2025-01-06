@@ -19,7 +19,7 @@ type ListAntiAffinityGroupsResponse struct {
 // FindAntiAffinityGroup attempts to find an AntiAffinityGroup by nameOrID.
 func (l ListAntiAffinityGroupsResponse) FindAntiAffinityGroup(nameOrID string) (AntiAffinityGroup, error) {
 	for i, elem := range l.AntiAffinityGroups {
-		if string(elem.Name) == nameOrID || elem.ID.String() == nameOrID {
+		if string(elem.Name) == nameOrID || string(elem.ID) == nameOrID {
 			return l.AntiAffinityGroups[i], nil
 		}
 	}
@@ -35,7 +35,8 @@ func (c Client) ListAntiAffinityGroups(ctx context.Context) (*ListAntiAffinityGr
 	if err != nil {
 		return nil, fmt.Errorf("ListAntiAffinityGroups: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ListAntiAffinityGroups: execute request editors: %w", err)
@@ -90,7 +91,8 @@ func (c Client) CreateAntiAffinityGroup(ctx context.Context, req CreateAntiAffin
 	if err != nil {
 		return nil, fmt.Errorf("CreateAntiAffinityGroup: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -135,7 +137,8 @@ func (c Client) DeleteAntiAffinityGroup(ctx context.Context, id UUID) (*Operatio
 	if err != nil {
 		return nil, fmt.Errorf("DeleteAntiAffinityGroup: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteAntiAffinityGroup: execute request editors: %w", err)
@@ -178,7 +181,8 @@ func (c Client) GetAntiAffinityGroup(ctx context.Context, id UUID) (*AntiAffinit
 	if err != nil {
 		return nil, fmt.Errorf("GetAntiAffinityGroup: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetAntiAffinityGroup: execute request editors: %w", err)
@@ -217,15 +221,15 @@ type ListAPIKeysResponse struct {
 	APIKeys []IAMAPIKey `json:"api-keys,omitempty"`
 }
 
-// FindIAMAPIKey attempts to find an IAMAPIKey by name.
-func (l ListAPIKeysResponse) FindIAMAPIKey(name string) (IAMAPIKey, error) {
+// FindIAMAPIKey attempts to find an IAMAPIKey by nameOrKey.
+func (l ListAPIKeysResponse) FindIAMAPIKey(nameOrKey string) (IAMAPIKey, error) {
 	for i, elem := range l.APIKeys {
-		if string(elem.Name) == name {
+		if string(elem.Name) == nameOrKey || string(elem.Key) == nameOrKey {
 			return l.APIKeys[i], nil
 		}
 	}
 
-	return IAMAPIKey{}, fmt.Errorf("%q not found in ListAPIKeysResponse: %w", name, ErrNotFound)
+	return IAMAPIKey{}, fmt.Errorf("%q not found in ListAPIKeysResponse: %w", nameOrKey, ErrNotFound)
 }
 
 // List API keys
@@ -236,7 +240,8 @@ func (c Client) ListAPIKeys(ctx context.Context) (*ListAPIKeysResponse, error) {
 	if err != nil {
 		return nil, fmt.Errorf("ListAPIKeys: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ListAPIKeys: execute request editors: %w", err)
@@ -291,7 +296,8 @@ func (c Client) CreateAPIKey(ctx context.Context, req CreateAPIKeyRequest) (*IAM
 	if err != nil {
 		return nil, fmt.Errorf("CreateAPIKey: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -336,7 +342,8 @@ func (c Client) DeleteAPIKey(ctx context.Context, id string) (*Operation, error)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteAPIKey: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteAPIKey: execute request editors: %w", err)
@@ -379,7 +386,8 @@ func (c Client) GetAPIKey(ctx context.Context, id string) (*IAMAPIKey, error) {
 	if err != nil {
 		return nil, fmt.Errorf("GetAPIKey: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetAPIKey: execute request editors: %w", err)
@@ -421,7 +429,7 @@ type ListBlockStorageVolumesResponse struct {
 // FindBlockStorageVolume attempts to find an BlockStorageVolume by nameOrID.
 func (l ListBlockStorageVolumesResponse) FindBlockStorageVolume(nameOrID string) (BlockStorageVolume, error) {
 	for i, elem := range l.BlockStorageVolumes {
-		if string(elem.Name) == nameOrID || elem.ID.String() == nameOrID {
+		if string(elem.Name) == nameOrID || string(elem.ID) == nameOrID {
 			return l.BlockStorageVolumes[i], nil
 		}
 	}
@@ -445,7 +453,8 @@ func (c Client) ListBlockStorageVolumes(ctx context.Context, opts ...ListBlockSt
 	if err != nil {
 		return nil, fmt.Errorf("ListBlockStorageVolumes: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if len(opts) > 0 {
 		q := request.URL.Query()
@@ -512,7 +521,8 @@ func (c Client) CreateBlockStorageVolume(ctx context.Context, req CreateBlockSto
 	if err != nil {
 		return nil, fmt.Errorf("CreateBlockStorageVolume: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -556,7 +566,7 @@ type ListBlockStorageSnapshotsResponse struct {
 // FindBlockStorageSnapshot attempts to find an BlockStorageSnapshot by nameOrID.
 func (l ListBlockStorageSnapshotsResponse) FindBlockStorageSnapshot(nameOrID string) (BlockStorageSnapshot, error) {
 	for i, elem := range l.BlockStorageSnapshots {
-		if string(elem.Name) == nameOrID || elem.ID.String() == nameOrID {
+		if string(elem.Name) == nameOrID || string(elem.ID) == nameOrID {
 			return l.BlockStorageSnapshots[i], nil
 		}
 	}
@@ -572,7 +582,8 @@ func (c Client) ListBlockStorageSnapshots(ctx context.Context) (*ListBlockStorag
 	if err != nil {
 		return nil, fmt.Errorf("ListBlockStorageSnapshots: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ListBlockStorageSnapshots: execute request editors: %w", err)
@@ -615,7 +626,8 @@ func (c Client) DeleteBlockStorageSnapshot(ctx context.Context, id UUID) (*Opera
 	if err != nil {
 		return nil, fmt.Errorf("DeleteBlockStorageSnapshot: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteBlockStorageSnapshot: execute request editors: %w", err)
@@ -658,7 +670,8 @@ func (c Client) GetBlockStorageSnapshot(ctx context.Context, id UUID) (*BlockSto
 	if err != nil {
 		return nil, fmt.Errorf("GetBlockStorageSnapshot: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetBlockStorageSnapshot: execute request editors: %w", err)
@@ -712,7 +725,8 @@ func (c Client) UpdateBlockStorageSnapshot(ctx context.Context, id UUID, req Upd
 	if err != nil {
 		return nil, fmt.Errorf("UpdateBlockStorageSnapshot: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -757,7 +771,8 @@ func (c Client) DeleteBlockStorageVolume(ctx context.Context, id UUID) (*Operati
 	if err != nil {
 		return nil, fmt.Errorf("DeleteBlockStorageVolume: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteBlockStorageVolume: execute request editors: %w", err)
@@ -800,7 +815,8 @@ func (c Client) GetBlockStorageVolume(ctx context.Context, id UUID) (*BlockStora
 	if err != nil {
 		return nil, fmt.Errorf("GetBlockStorageVolume: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetBlockStorageVolume: execute request editors: %w", err)
@@ -854,7 +870,8 @@ func (c Client) UpdateBlockStorageVolume(ctx context.Context, id UUID, req Updat
 	if err != nil {
 		return nil, fmt.Errorf("UpdateBlockStorageVolume: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -909,7 +926,8 @@ func (c Client) AttachBlockStorageVolumeToInstance(ctx context.Context, id UUID,
 	if err != nil {
 		return nil, fmt.Errorf("AttachBlockStorageVolumeToInstance: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -965,7 +983,8 @@ func (c Client) CreateBlockStorageSnapshot(ctx context.Context, id UUID, req Cre
 	if err != nil {
 		return nil, fmt.Errorf("CreateBlockStorageSnapshot: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -1010,7 +1029,8 @@ func (c Client) DetachBlockStorageVolume(ctx context.Context, id UUID) (*Operati
 	if err != nil {
 		return nil, fmt.Errorf("DetachBlockStorageVolume: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DetachBlockStorageVolume: execute request editors: %w", err)
@@ -1063,7 +1083,8 @@ func (c Client) ResizeBlockStorageVolume(ctx context.Context, id UUID, req Resiz
 	if err != nil {
 		return nil, fmt.Errorf("ResizeBlockStorageVolume: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -1114,7 +1135,8 @@ func (c Client) GetConsoleProxyURL(ctx context.Context, id UUID) (*GetConsolePro
 	if err != nil {
 		return nil, fmt.Errorf("GetConsoleProxyURL: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetConsoleProxyURL: execute request editors: %w", err)
@@ -1161,7 +1183,8 @@ func (c Client) GetDBAASCACertificate(ctx context.Context) (*GetDBAASCACertifica
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASCACertificate: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetDBAASCACertificate: execute request editors: %w", err)
@@ -1196,6 +1219,1377 @@ func (c Client) GetDBAASCACertificate(ctx context.Context) (*GetDBAASCACertifica
 	return bodyresp, nil
 }
 
+// [BETA] Delete DataDog external integration endpoint
+func (c Client) DeleteDBAASExternalEndpointDatadog(ctx context.Context, endpointID UUID) (*Operation, error) {
+	path := fmt.Sprintf("/dbaas-external-endpoint-datadog/%v", endpointID)
+
+	request, err := http.NewRequestWithContext(ctx, "DELETE", c.serverEndpoint+path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("DeleteDBAASExternalEndpointDatadog: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("DeleteDBAASExternalEndpointDatadog: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("DeleteDBAASExternalEndpointDatadog: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "delete-dbaas-external-endpoint-datadog")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("DeleteDBAASExternalEndpointDatadog: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("DeleteDBAASExternalEndpointDatadog: http response: %w", err)
+	}
+
+	bodyresp := &Operation{}
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("DeleteDBAASExternalEndpointDatadog: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+// [BETA] Get DataDog external endpoint settings
+func (c Client) GetDBAASExternalEndpointDatadog(ctx context.Context, endpointID UUID) (*DBAASExternalEndpointDatadogOutput, error) {
+	path := fmt.Sprintf("/dbaas-external-endpoint-datadog/%v", endpointID)
+
+	request, err := http.NewRequestWithContext(ctx, "GET", c.serverEndpoint+path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("GetDBAASExternalEndpointDatadog: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("GetDBAASExternalEndpointDatadog: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("GetDBAASExternalEndpointDatadog: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-dbaas-external-endpoint-datadog")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("GetDBAASExternalEndpointDatadog: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("GetDBAASExternalEndpointDatadog: http response: %w", err)
+	}
+
+	bodyresp := &DBAASExternalEndpointDatadogOutput{}
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("GetDBAASExternalEndpointDatadog: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+// [BETA] Update DataDog external integration endpoint
+func (c Client) UpdateDBAASExternalEndpointDatadog(ctx context.Context, endpointID UUID, req DBAASEndpointDatadogInputUpdate) (*Operation, error) {
+	path := fmt.Sprintf("/dbaas-external-endpoint-datadog/%v", endpointID)
+
+	body, err := prepareJSONBody(req)
+	if err != nil {
+		return nil, fmt.Errorf("UpdateDBAASExternalEndpointDatadog: prepare Json body: %w", err)
+	}
+
+	request, err := http.NewRequestWithContext(ctx, "PUT", c.serverEndpoint+path, body)
+	if err != nil {
+		return nil, fmt.Errorf("UpdateDBAASExternalEndpointDatadog: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	request.Header.Add("Content-Type", "application/json")
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("UpdateDBAASExternalEndpointDatadog: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("UpdateDBAASExternalEndpointDatadog: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "update-dbaas-external-endpoint-datadog")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("UpdateDBAASExternalEndpointDatadog: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("UpdateDBAASExternalEndpointDatadog: http response: %w", err)
+	}
+
+	bodyresp := &Operation{}
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("UpdateDBAASExternalEndpointDatadog: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+// [BETA] Create DataDog external integration endpoint
+func (c Client) CreateDBAASExternalEndpointDatadog(ctx context.Context, name string, req DBAASEndpointDatadogInputCreate) (*Operation, error) {
+	path := fmt.Sprintf("/dbaas-external-endpoint-datadog/%v", name)
+
+	body, err := prepareJSONBody(req)
+	if err != nil {
+		return nil, fmt.Errorf("CreateDBAASExternalEndpointDatadog: prepare Json body: %w", err)
+	}
+
+	request, err := http.NewRequestWithContext(ctx, "POST", c.serverEndpoint+path, body)
+	if err != nil {
+		return nil, fmt.Errorf("CreateDBAASExternalEndpointDatadog: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	request.Header.Add("Content-Type", "application/json")
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("CreateDBAASExternalEndpointDatadog: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("CreateDBAASExternalEndpointDatadog: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "create-dbaas-external-endpoint-datadog")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("CreateDBAASExternalEndpointDatadog: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("CreateDBAASExternalEndpointDatadog: http response: %w", err)
+	}
+
+	bodyresp := &Operation{}
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("CreateDBAASExternalEndpointDatadog: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+// [BETA] Delete ElasticSearch logs external integration endpoint
+func (c Client) DeleteDBAASExternalEndpointElasticsearch(ctx context.Context, endpointID UUID) (*Operation, error) {
+	path := fmt.Sprintf("/dbaas-external-endpoint-elasticsearch/%v", endpointID)
+
+	request, err := http.NewRequestWithContext(ctx, "DELETE", c.serverEndpoint+path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("DeleteDBAASExternalEndpointElasticsearch: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("DeleteDBAASExternalEndpointElasticsearch: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("DeleteDBAASExternalEndpointElasticsearch: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "delete-dbaas-external-endpoint-elasticsearch")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("DeleteDBAASExternalEndpointElasticsearch: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("DeleteDBAASExternalEndpointElasticsearch: http response: %w", err)
+	}
+
+	bodyresp := &Operation{}
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("DeleteDBAASExternalEndpointElasticsearch: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+// [BETA] Get ElasticSearch Logs external integration endpoint settings
+func (c Client) GetDBAASExternalEndpointElasticsearch(ctx context.Context, endpointID UUID) (*DBAASEndpointElasticsearchOutput, error) {
+	path := fmt.Sprintf("/dbaas-external-endpoint-elasticsearch/%v", endpointID)
+
+	request, err := http.NewRequestWithContext(ctx, "GET", c.serverEndpoint+path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("GetDBAASExternalEndpointElasticsearch: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("GetDBAASExternalEndpointElasticsearch: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("GetDBAASExternalEndpointElasticsearch: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-dbaas-external-endpoint-elasticsearch")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("GetDBAASExternalEndpointElasticsearch: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("GetDBAASExternalEndpointElasticsearch: http response: %w", err)
+	}
+
+	bodyresp := &DBAASEndpointElasticsearchOutput{}
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("GetDBAASExternalEndpointElasticsearch: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+// [BETA] Update ElasticSearch Logs external integration endpoint
+func (c Client) UpdateDBAASExternalEndpointElasticsearch(ctx context.Context, endpointID UUID, req DBAASEndpointElasticsearchInputUpdate) (*Operation, error) {
+	path := fmt.Sprintf("/dbaas-external-endpoint-elasticsearch/%v", endpointID)
+
+	body, err := prepareJSONBody(req)
+	if err != nil {
+		return nil, fmt.Errorf("UpdateDBAASExternalEndpointElasticsearch: prepare Json body: %w", err)
+	}
+
+	request, err := http.NewRequestWithContext(ctx, "PUT", c.serverEndpoint+path, body)
+	if err != nil {
+		return nil, fmt.Errorf("UpdateDBAASExternalEndpointElasticsearch: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	request.Header.Add("Content-Type", "application/json")
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("UpdateDBAASExternalEndpointElasticsearch: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("UpdateDBAASExternalEndpointElasticsearch: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "update-dbaas-external-endpoint-elasticsearch")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("UpdateDBAASExternalEndpointElasticsearch: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("UpdateDBAASExternalEndpointElasticsearch: http response: %w", err)
+	}
+
+	bodyresp := &Operation{}
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("UpdateDBAASExternalEndpointElasticsearch: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+// [BETA] Create ElasticSearch Logs external integration endpoint
+func (c Client) CreateDBAASExternalEndpointElasticsearch(ctx context.Context, name string, req DBAASEndpointElasticsearchInputCreate) (*Operation, error) {
+	path := fmt.Sprintf("/dbaas-external-endpoint-elasticsearch/%v", name)
+
+	body, err := prepareJSONBody(req)
+	if err != nil {
+		return nil, fmt.Errorf("CreateDBAASExternalEndpointElasticsearch: prepare Json body: %w", err)
+	}
+
+	request, err := http.NewRequestWithContext(ctx, "POST", c.serverEndpoint+path, body)
+	if err != nil {
+		return nil, fmt.Errorf("CreateDBAASExternalEndpointElasticsearch: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	request.Header.Add("Content-Type", "application/json")
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("CreateDBAASExternalEndpointElasticsearch: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("CreateDBAASExternalEndpointElasticsearch: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "create-dbaas-external-endpoint-elasticsearch")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("CreateDBAASExternalEndpointElasticsearch: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("CreateDBAASExternalEndpointElasticsearch: http response: %w", err)
+	}
+
+	bodyresp := &Operation{}
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("CreateDBAASExternalEndpointElasticsearch: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+// [BETA] Delete OpenSearch logs external integration endpoint
+func (c Client) DeleteDBAASExternalEndpointOpensearch(ctx context.Context, endpointID UUID) (*Operation, error) {
+	path := fmt.Sprintf("/dbaas-external-endpoint-opensearch/%v", endpointID)
+
+	request, err := http.NewRequestWithContext(ctx, "DELETE", c.serverEndpoint+path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("DeleteDBAASExternalEndpointOpensearch: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("DeleteDBAASExternalEndpointOpensearch: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("DeleteDBAASExternalEndpointOpensearch: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "delete-dbaas-external-endpoint-opensearch")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("DeleteDBAASExternalEndpointOpensearch: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("DeleteDBAASExternalEndpointOpensearch: http response: %w", err)
+	}
+
+	bodyresp := &Operation{}
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("DeleteDBAASExternalEndpointOpensearch: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+// [BETA] Get OpenSearch Logs external integration endpoint settings
+func (c Client) GetDBAASExternalEndpointOpensearch(ctx context.Context, endpointID UUID) (*DBAASEndpointOpensearchOutput, error) {
+	path := fmt.Sprintf("/dbaas-external-endpoint-opensearch/%v", endpointID)
+
+	request, err := http.NewRequestWithContext(ctx, "GET", c.serverEndpoint+path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("GetDBAASExternalEndpointOpensearch: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("GetDBAASExternalEndpointOpensearch: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("GetDBAASExternalEndpointOpensearch: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-dbaas-external-endpoint-opensearch")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("GetDBAASExternalEndpointOpensearch: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("GetDBAASExternalEndpointOpensearch: http response: %w", err)
+	}
+
+	bodyresp := &DBAASEndpointOpensearchOutput{}
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("GetDBAASExternalEndpointOpensearch: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+// [BETA] Update OpenSearch Logs external integration endpoint
+func (c Client) UpdateDBAASExternalEndpointOpensearch(ctx context.Context, endpointID UUID, req DBAASEndpointOpensearchInputUpdate) (*Operation, error) {
+	path := fmt.Sprintf("/dbaas-external-endpoint-opensearch/%v", endpointID)
+
+	body, err := prepareJSONBody(req)
+	if err != nil {
+		return nil, fmt.Errorf("UpdateDBAASExternalEndpointOpensearch: prepare Json body: %w", err)
+	}
+
+	request, err := http.NewRequestWithContext(ctx, "PUT", c.serverEndpoint+path, body)
+	if err != nil {
+		return nil, fmt.Errorf("UpdateDBAASExternalEndpointOpensearch: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	request.Header.Add("Content-Type", "application/json")
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("UpdateDBAASExternalEndpointOpensearch: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("UpdateDBAASExternalEndpointOpensearch: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "update-dbaas-external-endpoint-opensearch")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("UpdateDBAASExternalEndpointOpensearch: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("UpdateDBAASExternalEndpointOpensearch: http response: %w", err)
+	}
+
+	bodyresp := &Operation{}
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("UpdateDBAASExternalEndpointOpensearch: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+// [BETA] Create OpenSearch Logs external integration endpoint
+func (c Client) CreateDBAASExternalEndpointOpensearch(ctx context.Context, name string, req DBAASEndpointOpensearchInputCreate) (*Operation, error) {
+	path := fmt.Sprintf("/dbaas-external-endpoint-opensearch/%v", name)
+
+	body, err := prepareJSONBody(req)
+	if err != nil {
+		return nil, fmt.Errorf("CreateDBAASExternalEndpointOpensearch: prepare Json body: %w", err)
+	}
+
+	request, err := http.NewRequestWithContext(ctx, "POST", c.serverEndpoint+path, body)
+	if err != nil {
+		return nil, fmt.Errorf("CreateDBAASExternalEndpointOpensearch: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	request.Header.Add("Content-Type", "application/json")
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("CreateDBAASExternalEndpointOpensearch: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("CreateDBAASExternalEndpointOpensearch: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "create-dbaas-external-endpoint-opensearch")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("CreateDBAASExternalEndpointOpensearch: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("CreateDBAASExternalEndpointOpensearch: http response: %w", err)
+	}
+
+	bodyresp := &Operation{}
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("CreateDBAASExternalEndpointOpensearch: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+// [BETA] Delete Prometheus external integration endpoint
+func (c Client) DeleteDBAASExternalEndpointPrometheus(ctx context.Context, endpointID UUID) (*Operation, error) {
+	path := fmt.Sprintf("/dbaas-external-endpoint-prometheus/%v", endpointID)
+
+	request, err := http.NewRequestWithContext(ctx, "DELETE", c.serverEndpoint+path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("DeleteDBAASExternalEndpointPrometheus: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("DeleteDBAASExternalEndpointPrometheus: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("DeleteDBAASExternalEndpointPrometheus: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "delete-dbaas-external-endpoint-prometheus")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("DeleteDBAASExternalEndpointPrometheus: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("DeleteDBAASExternalEndpointPrometheus: http response: %w", err)
+	}
+
+	bodyresp := &Operation{}
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("DeleteDBAASExternalEndpointPrometheus: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+// [BETA] Get Prometheus external integration endpoint settings
+func (c Client) GetDBAASExternalEndpointPrometheus(ctx context.Context, endpointID UUID) (*DBAASEndpointExternalPrometheusOutput, error) {
+	path := fmt.Sprintf("/dbaas-external-endpoint-prometheus/%v", endpointID)
+
+	request, err := http.NewRequestWithContext(ctx, "GET", c.serverEndpoint+path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("GetDBAASExternalEndpointPrometheus: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("GetDBAASExternalEndpointPrometheus: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("GetDBAASExternalEndpointPrometheus: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-dbaas-external-endpoint-prometheus")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("GetDBAASExternalEndpointPrometheus: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("GetDBAASExternalEndpointPrometheus: http response: %w", err)
+	}
+
+	bodyresp := &DBAASEndpointExternalPrometheusOutput{}
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("GetDBAASExternalEndpointPrometheus: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+// [BETA] Update Prometheus external integration endpoint
+func (c Client) UpdateDBAASExternalEndpointPrometheus(ctx context.Context, endpointID UUID, req DBAASEndpointPrometheusPayload) (*Operation, error) {
+	path := fmt.Sprintf("/dbaas-external-endpoint-prometheus/%v", endpointID)
+
+	body, err := prepareJSONBody(req)
+	if err != nil {
+		return nil, fmt.Errorf("UpdateDBAASExternalEndpointPrometheus: prepare Json body: %w", err)
+	}
+
+	request, err := http.NewRequestWithContext(ctx, "PUT", c.serverEndpoint+path, body)
+	if err != nil {
+		return nil, fmt.Errorf("UpdateDBAASExternalEndpointPrometheus: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	request.Header.Add("Content-Type", "application/json")
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("UpdateDBAASExternalEndpointPrometheus: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("UpdateDBAASExternalEndpointPrometheus: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "update-dbaas-external-endpoint-prometheus")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("UpdateDBAASExternalEndpointPrometheus: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("UpdateDBAASExternalEndpointPrometheus: http response: %w", err)
+	}
+
+	bodyresp := &Operation{}
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("UpdateDBAASExternalEndpointPrometheus: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+// [BETA] Create Prometheus external integration endpoint
+func (c Client) CreateDBAASExternalEndpointPrometheus(ctx context.Context, name string, req DBAASEndpointPrometheusPayload) (*Operation, error) {
+	path := fmt.Sprintf("/dbaas-external-endpoint-prometheus/%v", name)
+
+	body, err := prepareJSONBody(req)
+	if err != nil {
+		return nil, fmt.Errorf("CreateDBAASExternalEndpointPrometheus: prepare Json body: %w", err)
+	}
+
+	request, err := http.NewRequestWithContext(ctx, "POST", c.serverEndpoint+path, body)
+	if err != nil {
+		return nil, fmt.Errorf("CreateDBAASExternalEndpointPrometheus: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	request.Header.Add("Content-Type", "application/json")
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("CreateDBAASExternalEndpointPrometheus: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("CreateDBAASExternalEndpointPrometheus: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "create-dbaas-external-endpoint-prometheus")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("CreateDBAASExternalEndpointPrometheus: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("CreateDBAASExternalEndpointPrometheus: http response: %w", err)
+	}
+
+	bodyresp := &Operation{}
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("CreateDBAASExternalEndpointPrometheus: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+// [BETA] Delete RSyslog external integration endpoint
+func (c Client) DeleteDBAASExternalEndpointRsyslog(ctx context.Context, endpointID UUID) (*Operation, error) {
+	path := fmt.Sprintf("/dbaas-external-endpoint-rsyslog/%v", endpointID)
+
+	request, err := http.NewRequestWithContext(ctx, "DELETE", c.serverEndpoint+path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("DeleteDBAASExternalEndpointRsyslog: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("DeleteDBAASExternalEndpointRsyslog: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("DeleteDBAASExternalEndpointRsyslog: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "delete-dbaas-external-endpoint-rsyslog")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("DeleteDBAASExternalEndpointRsyslog: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("DeleteDBAASExternalEndpointRsyslog: http response: %w", err)
+	}
+
+	bodyresp := &Operation{}
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("DeleteDBAASExternalEndpointRsyslog: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+// [BETA] Get RSyslog external integration endpoint settings
+func (c Client) GetDBAASExternalEndpointRsyslog(ctx context.Context, endpointID UUID) (*DBAASExternalEndpointRsyslogOutput, error) {
+	path := fmt.Sprintf("/dbaas-external-endpoint-rsyslog/%v", endpointID)
+
+	request, err := http.NewRequestWithContext(ctx, "GET", c.serverEndpoint+path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("GetDBAASExternalEndpointRsyslog: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("GetDBAASExternalEndpointRsyslog: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("GetDBAASExternalEndpointRsyslog: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-dbaas-external-endpoint-rsyslog")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("GetDBAASExternalEndpointRsyslog: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("GetDBAASExternalEndpointRsyslog: http response: %w", err)
+	}
+
+	bodyresp := &DBAASExternalEndpointRsyslogOutput{}
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("GetDBAASExternalEndpointRsyslog: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+// [BETA] Update RSyslog external integration endpoint
+func (c Client) UpdateDBAASExternalEndpointRsyslog(ctx context.Context, endpointID UUID, req DBAASEndpointRsyslogInputUpdate) (*Operation, error) {
+	path := fmt.Sprintf("/dbaas-external-endpoint-rsyslog/%v", endpointID)
+
+	body, err := prepareJSONBody(req)
+	if err != nil {
+		return nil, fmt.Errorf("UpdateDBAASExternalEndpointRsyslog: prepare Json body: %w", err)
+	}
+
+	request, err := http.NewRequestWithContext(ctx, "PUT", c.serverEndpoint+path, body)
+	if err != nil {
+		return nil, fmt.Errorf("UpdateDBAASExternalEndpointRsyslog: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	request.Header.Add("Content-Type", "application/json")
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("UpdateDBAASExternalEndpointRsyslog: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("UpdateDBAASExternalEndpointRsyslog: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "update-dbaas-external-endpoint-rsyslog")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("UpdateDBAASExternalEndpointRsyslog: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("UpdateDBAASExternalEndpointRsyslog: http response: %w", err)
+	}
+
+	bodyresp := &Operation{}
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("UpdateDBAASExternalEndpointRsyslog: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+// [BETA] Create RSyslog external integration endpoint
+func (c Client) CreateDBAASExternalEndpointRsyslog(ctx context.Context, name string, req DBAASEndpointRsyslogInputCreate) (*Operation, error) {
+	path := fmt.Sprintf("/dbaas-external-endpoint-rsyslog/%v", name)
+
+	body, err := prepareJSONBody(req)
+	if err != nil {
+		return nil, fmt.Errorf("CreateDBAASExternalEndpointRsyslog: prepare Json body: %w", err)
+	}
+
+	request, err := http.NewRequestWithContext(ctx, "POST", c.serverEndpoint+path, body)
+	if err != nil {
+		return nil, fmt.Errorf("CreateDBAASExternalEndpointRsyslog: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	request.Header.Add("Content-Type", "application/json")
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("CreateDBAASExternalEndpointRsyslog: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("CreateDBAASExternalEndpointRsyslog: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "create-dbaas-external-endpoint-rsyslog")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("CreateDBAASExternalEndpointRsyslog: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("CreateDBAASExternalEndpointRsyslog: http response: %w", err)
+	}
+
+	bodyresp := &Operation{}
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("CreateDBAASExternalEndpointRsyslog: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+type ListDBAASExternalEndpointTypesResponseEndpointTypes struct {
+	ServiceTypes []string                  `json:"service-types,omitempty"`
+	Title        string                    `json:"title,omitempty"`
+	Type         EnumExternalEndpointTypes `json:"type,omitempty"`
+}
+
+type ListDBAASExternalEndpointTypesResponse struct {
+	EndpointTypes []ListDBAASExternalEndpointTypesResponseEndpointTypes `json:"endpoint-types,omitempty"`
+}
+
+// [BETA] List available external endpoint types and their schemas for DBaaS external integrations
+func (c Client) ListDBAASExternalEndpointTypes(ctx context.Context) (*ListDBAASExternalEndpointTypesResponse, error) {
+	path := "/dbaas-external-endpoint-types"
+
+	request, err := http.NewRequestWithContext(ctx, "GET", c.serverEndpoint+path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("ListDBAASExternalEndpointTypes: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("ListDBAASExternalEndpointTypes: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("ListDBAASExternalEndpointTypes: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "list-dbaas-external-endpoint-types")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("ListDBAASExternalEndpointTypes: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("ListDBAASExternalEndpointTypes: http response: %w", err)
+	}
+
+	bodyresp := &ListDBAASExternalEndpointTypesResponse{}
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("ListDBAASExternalEndpointTypes: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+type AttachDBAASServiceToEndpointRequest struct {
+	// External endpoint id
+	DestEndpointID UUID                      `json:"dest-endpoint-id" validate:"required"`
+	Type           EnumExternalEndpointTypes `json:"type" validate:"required"`
+}
+
+// [BETA] Create a new DBaaS connection between a DBaaS service and an external service
+func (c Client) AttachDBAASServiceToEndpoint(ctx context.Context, sourceServiceName string, req AttachDBAASServiceToEndpointRequest) (*Operation, error) {
+	path := fmt.Sprintf("/dbaas-external-endpoint/%v/attach", sourceServiceName)
+
+	body, err := prepareJSONBody(req)
+	if err != nil {
+		return nil, fmt.Errorf("AttachDBAASServiceToEndpoint: prepare Json body: %w", err)
+	}
+
+	request, err := http.NewRequestWithContext(ctx, "PUT", c.serverEndpoint+path, body)
+	if err != nil {
+		return nil, fmt.Errorf("AttachDBAASServiceToEndpoint: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	request.Header.Add("Content-Type", "application/json")
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("AttachDBAASServiceToEndpoint: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("AttachDBAASServiceToEndpoint: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "attach-dbaas-service-to-endpoint")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("AttachDBAASServiceToEndpoint: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("AttachDBAASServiceToEndpoint: http response: %w", err)
+	}
+
+	bodyresp := &Operation{}
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("AttachDBAASServiceToEndpoint: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+type DetachDBAASServiceFromEndpointRequest struct {
+	// External Integration ID
+	IntegrationID UUID `json:"integration-id" validate:"required"`
+}
+
+// [BETA] Detach a DBaaS external integration from a service
+func (c Client) DetachDBAASServiceFromEndpoint(ctx context.Context, sourceServiceName string, req DetachDBAASServiceFromEndpointRequest) (*Operation, error) {
+	path := fmt.Sprintf("/dbaas-external-endpoint/%v/detach", sourceServiceName)
+
+	body, err := prepareJSONBody(req)
+	if err != nil {
+		return nil, fmt.Errorf("DetachDBAASServiceFromEndpoint: prepare Json body: %w", err)
+	}
+
+	request, err := http.NewRequestWithContext(ctx, "PUT", c.serverEndpoint+path, body)
+	if err != nil {
+		return nil, fmt.Errorf("DetachDBAASServiceFromEndpoint: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	request.Header.Add("Content-Type", "application/json")
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("DetachDBAASServiceFromEndpoint: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("DetachDBAASServiceFromEndpoint: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "detach-dbaas-service-from-endpoint")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("DetachDBAASServiceFromEndpoint: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("DetachDBAASServiceFromEndpoint: http response: %w", err)
+	}
+
+	bodyresp := &Operation{}
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("DetachDBAASServiceFromEndpoint: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+type ListDBAASExternalEndpointsResponse struct {
+	DBAASEndpoints []DBAASExternalEndpoint `json:"dbaas-endpoints,omitempty"`
+}
+
+// FindDBAASExternalEndpoint attempts to find an DBAASExternalEndpoint by nameOrID.
+func (l ListDBAASExternalEndpointsResponse) FindDBAASExternalEndpoint(nameOrID string) (DBAASExternalEndpoint, error) {
+	for i, elem := range l.DBAASEndpoints {
+		if string(elem.Name) == nameOrID || string(elem.ID) == nameOrID {
+			return l.DBAASEndpoints[i], nil
+		}
+	}
+
+	return DBAASExternalEndpoint{}, fmt.Errorf("%q not found in ListDBAASExternalEndpointsResponse: %w", nameOrID, ErrNotFound)
+}
+
+// [BETA] List available external endpoints for integrations
+func (c Client) ListDBAASExternalEndpoints(ctx context.Context) (*ListDBAASExternalEndpointsResponse, error) {
+	path := "/dbaas-external-endpoints"
+
+	request, err := http.NewRequestWithContext(ctx, "GET", c.serverEndpoint+path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("ListDBAASExternalEndpoints: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("ListDBAASExternalEndpoints: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("ListDBAASExternalEndpoints: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "list-dbaas-external-endpoints")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("ListDBAASExternalEndpoints: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("ListDBAASExternalEndpoints: http response: %w", err)
+	}
+
+	bodyresp := &ListDBAASExternalEndpointsResponse{}
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("ListDBAASExternalEndpoints: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+type GetDBAASExternalIntegrationSettingsDatadogResponse struct {
+	Settings *DBAASIntegrationSettingsDatadog `json:"settings,omitempty"`
+}
+
+// [BETA] Get Datadog integration settings
+func (c Client) GetDBAASExternalIntegrationSettingsDatadog(ctx context.Context, integrationID UUID) (*GetDBAASExternalIntegrationSettingsDatadogResponse, error) {
+	path := fmt.Sprintf("/dbaas-external-integration-settings-datadog/%v", integrationID)
+
+	request, err := http.NewRequestWithContext(ctx, "GET", c.serverEndpoint+path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("GetDBAASExternalIntegrationSettingsDatadog: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("GetDBAASExternalIntegrationSettingsDatadog: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("GetDBAASExternalIntegrationSettingsDatadog: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-dbaas-external-integration-settings-datadog")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("GetDBAASExternalIntegrationSettingsDatadog: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("GetDBAASExternalIntegrationSettingsDatadog: http response: %w", err)
+	}
+
+	bodyresp := &GetDBAASExternalIntegrationSettingsDatadogResponse{}
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("GetDBAASExternalIntegrationSettingsDatadog: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+type UpdateDBAASExternalIntegrationSettingsDatadogRequest struct {
+	Settings *DBAASIntegrationSettingsDatadog `json:"settings,omitempty"`
+}
+
+// [BETA] Manage Datadog integration settings
+func (c Client) UpdateDBAASExternalIntegrationSettingsDatadog(ctx context.Context, integrationID UUID, req UpdateDBAASExternalIntegrationSettingsDatadogRequest) (*Operation, error) {
+	path := fmt.Sprintf("/dbaas-external-integration-settings-datadog/%v", integrationID)
+
+	body, err := prepareJSONBody(req)
+	if err != nil {
+		return nil, fmt.Errorf("UpdateDBAASExternalIntegrationSettingsDatadog: prepare Json body: %w", err)
+	}
+
+	request, err := http.NewRequestWithContext(ctx, "POST", c.serverEndpoint+path, body)
+	if err != nil {
+		return nil, fmt.Errorf("UpdateDBAASExternalIntegrationSettingsDatadog: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	request.Header.Add("Content-Type", "application/json")
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("UpdateDBAASExternalIntegrationSettingsDatadog: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("UpdateDBAASExternalIntegrationSettingsDatadog: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "update-dbaas-external-integration-settings-datadog")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("UpdateDBAASExternalIntegrationSettingsDatadog: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("UpdateDBAASExternalIntegrationSettingsDatadog: http response: %w", err)
+	}
+
+	bodyresp := &Operation{}
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("UpdateDBAASExternalIntegrationSettingsDatadog: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+// [BETA] Get a DBaaS external integration
+func (c Client) GetDBAASExternalIntegration(ctx context.Context, integrationID UUID) (*DBAASExternalIntegration, error) {
+	path := fmt.Sprintf("/dbaas-external-integration/%v", integrationID)
+
+	request, err := http.NewRequestWithContext(ctx, "GET", c.serverEndpoint+path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("GetDBAASExternalIntegration: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("GetDBAASExternalIntegration: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("GetDBAASExternalIntegration: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-dbaas-external-integration")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("GetDBAASExternalIntegration: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("GetDBAASExternalIntegration: http response: %w", err)
+	}
+
+	bodyresp := &DBAASExternalIntegration{}
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("GetDBAASExternalIntegration: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+type ListDBAASExternalIntegrationsResponse struct {
+	ExternalIntegrations []DBAASExternalIntegration `json:"external-integrations,omitempty"`
+}
+
+// [BETA] List all DBaaS connections between services and external endpoints
+func (c Client) ListDBAASExternalIntegrations(ctx context.Context, serviceName string) (*ListDBAASExternalIntegrationsResponse, error) {
+	path := fmt.Sprintf("/dbaas-external-integrations/%v", serviceName)
+
+	request, err := http.NewRequestWithContext(ctx, "GET", c.serverEndpoint+path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("ListDBAASExternalIntegrations: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("ListDBAASExternalIntegrations: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("ListDBAASExternalIntegrations: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "list-dbaas-external-integrations")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("ListDBAASExternalIntegrations: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("ListDBAASExternalIntegrations: http response: %w", err)
+	}
+
+	bodyresp := &ListDBAASExternalIntegrationsResponse{}
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("ListDBAASExternalIntegrations: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
 // Delete a Grafana service
 func (c Client) DeleteDBAASServiceGrafana(ctx context.Context, name string) (*Operation, error) {
 	path := fmt.Sprintf("/dbaas-grafana/%v", name)
@@ -1204,7 +2598,8 @@ func (c Client) DeleteDBAASServiceGrafana(ctx context.Context, name string) (*Op
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASServiceGrafana: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASServiceGrafana: execute request editors: %w", err)
@@ -1247,7 +2642,8 @@ func (c Client) GetDBAASServiceGrafana(ctx context.Context, name string) (*DBAAS
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASServiceGrafana: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetDBAASServiceGrafana: execute request editors: %w", err)
@@ -1330,7 +2726,8 @@ func (c Client) CreateDBAASServiceGrafana(ctx context.Context, name string, req 
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASServiceGrafana: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -1414,7 +2811,8 @@ func (c Client) UpdateDBAASServiceGrafana(ctx context.Context, name string, req 
 	if err != nil {
 		return nil, fmt.Errorf("UpdateDBAASServiceGrafana: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -1459,7 +2857,8 @@ func (c Client) StartDBAASGrafanaMaintenance(ctx context.Context, name string) (
 	if err != nil {
 		return nil, fmt.Errorf("StartDBAASGrafanaMaintenance: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("StartDBAASGrafanaMaintenance: execute request editors: %w", err)
@@ -1511,7 +2910,8 @@ func (c Client) ResetDBAASGrafanaUserPassword(ctx context.Context, serviceName s
 	if err != nil {
 		return nil, fmt.Errorf("ResetDBAASGrafanaUserPassword: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -1556,7 +2956,8 @@ func (c Client) RevealDBAASGrafanaUserPassword(ctx context.Context, serviceName 
 	if err != nil {
 		return nil, fmt.Errorf("RevealDBAASGrafanaUserPassword: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("RevealDBAASGrafanaUserPassword: execute request editors: %w", err)
@@ -1599,7 +3000,7 @@ type CreateDBAASIntegrationRequest struct {
 	SourceService DBAASServiceName `json:"source-service" validate:"required,gte=0,lte=63"`
 }
 
-// Create a new DBaaS integration between two services
+// [BETA] Create a new DBaaS integration between two services
 func (c Client) CreateDBAASIntegration(ctx context.Context, req CreateDBAASIntegrationRequest) (*Operation, error) {
 	path := "/dbaas-integration"
 
@@ -1612,7 +3013,8 @@ func (c Client) CreateDBAASIntegration(ctx context.Context, req CreateDBAASInteg
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASIntegration: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -1662,7 +3064,7 @@ type ListDBAASIntegrationSettingsResponse struct {
 	Settings *ListDBAASIntegrationSettingsResponseSettings `json:"settings,omitempty"`
 }
 
-// Get DBaaS integration settings
+// [BETA] Get DBaaS integration settings
 func (c Client) ListDBAASIntegrationSettings(ctx context.Context, integrationType string, sourceType string, destType string) (*ListDBAASIntegrationSettingsResponse, error) {
 	path := fmt.Sprintf("/dbaas-integration-settings/%v/%v/%v", integrationType, sourceType, destType)
 
@@ -1670,7 +3072,8 @@ func (c Client) ListDBAASIntegrationSettings(ctx context.Context, integrationTyp
 	if err != nil {
 		return nil, fmt.Errorf("ListDBAASIntegrationSettings: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ListDBAASIntegrationSettings: execute request editors: %w", err)
@@ -1709,7 +3112,7 @@ type ListDBAASIntegrationTypesResponse struct {
 	DBAASIntegrationTypes []DBAASIntegrationType `json:"dbaas-integration-types,omitempty"`
 }
 
-// Get DBaaS integration types
+// [BETA] Get DBaaS integration types
 func (c Client) ListDBAASIntegrationTypes(ctx context.Context) (*ListDBAASIntegrationTypesResponse, error) {
 	path := "/dbaas-integration-types"
 
@@ -1717,7 +3120,8 @@ func (c Client) ListDBAASIntegrationTypes(ctx context.Context) (*ListDBAASIntegr
 	if err != nil {
 		return nil, fmt.Errorf("ListDBAASIntegrationTypes: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ListDBAASIntegrationTypes: execute request editors: %w", err)
@@ -1752,7 +3156,7 @@ func (c Client) ListDBAASIntegrationTypes(ctx context.Context) (*ListDBAASIntegr
 	return bodyresp, nil
 }
 
-// Delete a DBaaS Integration
+// [BETA] Delete a DBaaS Integration
 func (c Client) DeleteDBAASIntegration(ctx context.Context, id UUID) (*Operation, error) {
 	path := fmt.Sprintf("/dbaas-integration/%v", id)
 
@@ -1760,7 +3164,8 @@ func (c Client) DeleteDBAASIntegration(ctx context.Context, id UUID) (*Operation
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASIntegration: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASIntegration: execute request editors: %w", err)
@@ -1795,7 +3200,7 @@ func (c Client) DeleteDBAASIntegration(ctx context.Context, id UUID) (*Operation
 	return bodyresp, nil
 }
 
-// Get a DBaaS Integration
+// [BETA] Get a DBaaS Integration
 func (c Client) GetDBAASIntegration(ctx context.Context, id UUID) (*DBAASIntegration, error) {
 	path := fmt.Sprintf("/dbaas-integration/%v", id)
 
@@ -1803,7 +3208,8 @@ func (c Client) GetDBAASIntegration(ctx context.Context, id UUID) (*DBAASIntegra
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASIntegration: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetDBAASIntegration: execute request editors: %w", err)
@@ -1843,7 +3249,7 @@ type UpdateDBAASIntegrationRequest struct {
 	Settings map[string]any `json:"settings" validate:"required"`
 }
 
-// Update a existing DBaaS integration
+// [BETA] Update a existing DBaaS integration
 func (c Client) UpdateDBAASIntegration(ctx context.Context, id UUID, req UpdateDBAASIntegrationRequest) (*Operation, error) {
 	path := fmt.Sprintf("/dbaas-integration/%v", id)
 
@@ -1856,7 +3262,8 @@ func (c Client) UpdateDBAASIntegration(ctx context.Context, id UUID, req UpdateD
 	if err != nil {
 		return nil, fmt.Errorf("UpdateDBAASIntegration: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -1901,7 +3308,8 @@ func (c Client) DeleteDBAASServiceKafka(ctx context.Context, name string) (*Oper
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASServiceKafka: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASServiceKafka: execute request editors: %w", err)
@@ -1944,7 +3352,8 @@ func (c Client) GetDBAASServiceKafka(ctx context.Context, name string) (*DBAASSe
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASServiceKafka: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetDBAASServiceKafka: execute request editors: %w", err)
@@ -2050,7 +3459,8 @@ func (c Client) CreateDBAASServiceKafka(ctx context.Context, name string, req Cr
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASServiceKafka: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -2158,7 +3568,8 @@ func (c Client) UpdateDBAASServiceKafka(ctx context.Context, name string, req Up
 	if err != nil {
 		return nil, fmt.Errorf("UpdateDBAASServiceKafka: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -2203,7 +3614,8 @@ func (c Client) GetDBAASKafkaAclConfig(ctx context.Context, name string) (*DBAAS
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASKafkaAclConfig: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetDBAASKafkaAclConfig: execute request editors: %w", err)
@@ -2246,7 +3658,8 @@ func (c Client) StartDBAASKafkaMaintenance(ctx context.Context, name string) (*O
 	if err != nil {
 		return nil, fmt.Errorf("StartDBAASKafkaMaintenance: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("StartDBAASKafkaMaintenance: execute request editors: %w", err)
@@ -2294,7 +3707,8 @@ func (c Client) CreateDBAASKafkaSchemaRegistryAclConfig(ctx context.Context, nam
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASKafkaSchemaRegistryAclConfig: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -2339,7 +3753,8 @@ func (c Client) DeleteDBAASKafkaSchemaRegistryAclConfig(ctx context.Context, nam
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASKafkaSchemaRegistryAclConfig: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASKafkaSchemaRegistryAclConfig: execute request editors: %w", err)
@@ -2387,7 +3802,8 @@ func (c Client) CreateDBAASKafkaTopicAclConfig(ctx context.Context, name string,
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASKafkaTopicAclConfig: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -2432,7 +3848,8 @@ func (c Client) DeleteDBAASKafkaTopicAclConfig(ctx context.Context, name string,
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASKafkaTopicAclConfig: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASKafkaTopicAclConfig: execute request editors: %w", err)
@@ -2467,6 +3884,50 @@ func (c Client) DeleteDBAASKafkaTopicAclConfig(ctx context.Context, name string,
 	return bodyresp, nil
 }
 
+// Reveal the secrets for DBaaS Kafka Connect
+func (c Client) RevealDBAASKafkaConnectPassword(ctx context.Context, serviceName string) (*DBAASUserKafkaConnectSecrets, error) {
+	path := fmt.Sprintf("/dbaas-kafka/%v/connect/password/reveal", serviceName)
+
+	request, err := http.NewRequestWithContext(ctx, "GET", c.serverEndpoint+path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("RevealDBAASKafkaConnectPassword: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("RevealDBAASKafkaConnectPassword: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("RevealDBAASKafkaConnectPassword: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "reveal-dbaas-kafka-connect-password")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("RevealDBAASKafkaConnectPassword: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("RevealDBAASKafkaConnectPassword: http response: %w", err)
+	}
+
+	bodyresp := &DBAASUserKafkaConnectSecrets{}
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("RevealDBAASKafkaConnectPassword: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
 type CreateDBAASKafkaUserRequest struct {
 	Username DBAASUserUsername `json:"username" validate:"required,gte=1,lte=64"`
 }
@@ -2484,7 +3945,8 @@ func (c Client) CreateDBAASKafkaUser(ctx context.Context, serviceName string, re
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASKafkaUser: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -2529,7 +3991,8 @@ func (c Client) DeleteDBAASKafkaUser(ctx context.Context, serviceName string, us
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASKafkaUser: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASKafkaUser: execute request editors: %w", err)
@@ -2581,7 +4044,8 @@ func (c Client) ResetDBAASKafkaUserPassword(ctx context.Context, serviceName str
 	if err != nil {
 		return nil, fmt.Errorf("ResetDBAASKafkaUserPassword: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -2626,7 +4090,8 @@ func (c Client) RevealDBAASKafkaUserPassword(ctx context.Context, serviceName st
 	if err != nil {
 		return nil, fmt.Errorf("RevealDBAASKafkaUserPassword: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("RevealDBAASKafkaUserPassword: execute request editors: %w", err)
@@ -2669,7 +4134,8 @@ func (c Client) GetDBAASMigrationStatus(ctx context.Context, name string) (*DBAA
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASMigrationStatus: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetDBAASMigrationStatus: execute request editors: %w", err)
@@ -2712,7 +4178,8 @@ func (c Client) DeleteDBAASServiceMysql(ctx context.Context, name string) (*Oper
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASServiceMysql: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASServiceMysql: execute request editors: %w", err)
@@ -2755,7 +4222,8 @@ func (c Client) GetDBAASServiceMysql(ctx context.Context, name string) (*DBAASSe
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASServiceMysql: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetDBAASServiceMysql: execute request editors: %w", err)
@@ -2894,7 +4362,8 @@ func (c Client) CreateDBAASServiceMysql(ctx context.Context, name string, req Cr
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASServiceMysql: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -3009,7 +4478,8 @@ func (c Client) UpdateDBAASServiceMysql(ctx context.Context, name string, req Up
 	if err != nil {
 		return nil, fmt.Errorf("UpdateDBAASServiceMysql: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -3046,6 +4516,50 @@ func (c Client) UpdateDBAASServiceMysql(ctx context.Context, name string, req Up
 	return bodyresp, nil
 }
 
+// Temporarily enable writes for MySQL services in read-only mode due to filled up storage
+func (c Client) EnableDBAASMysqlWrites(ctx context.Context, name string) (*Operation, error) {
+	path := fmt.Sprintf("/dbaas-mysql/%v/enable/writes", name)
+
+	request, err := http.NewRequestWithContext(ctx, "PUT", c.serverEndpoint+path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("EnableDBAASMysqlWrites: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("EnableDBAASMysqlWrites: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("EnableDBAASMysqlWrites: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "enable-dbaas-mysql-writes")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("EnableDBAASMysqlWrites: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("EnableDBAASMysqlWrites: http response: %w", err)
+	}
+
+	bodyresp := &Operation{}
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("EnableDBAASMysqlWrites: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
 // Initiate MySQL maintenance update
 func (c Client) StartDBAASMysqlMaintenance(ctx context.Context, name string) (*Operation, error) {
 	path := fmt.Sprintf("/dbaas-mysql/%v/maintenance/start", name)
@@ -3054,7 +4568,8 @@ func (c Client) StartDBAASMysqlMaintenance(ctx context.Context, name string) (*O
 	if err != nil {
 		return nil, fmt.Errorf("StartDBAASMysqlMaintenance: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("StartDBAASMysqlMaintenance: execute request editors: %w", err)
@@ -3097,7 +4612,8 @@ func (c Client) StopDBAASMysqlMigration(ctx context.Context, name string) (*Oper
 	if err != nil {
 		return nil, fmt.Errorf("StopDBAASMysqlMigration: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("StopDBAASMysqlMigration: execute request editors: %w", err)
@@ -3149,7 +4665,8 @@ func (c Client) CreateDBAASMysqlDatabase(ctx context.Context, serviceName string
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASMysqlDatabase: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -3194,7 +4711,8 @@ func (c Client) DeleteDBAASMysqlDatabase(ctx context.Context, serviceName string
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASMysqlDatabase: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASMysqlDatabase: execute request editors: %w", err)
@@ -3247,7 +4765,8 @@ func (c Client) CreateDBAASMysqlUser(ctx context.Context, serviceName string, re
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASMysqlUser: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -3292,7 +4811,8 @@ func (c Client) DeleteDBAASMysqlUser(ctx context.Context, serviceName string, us
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASMysqlUser: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASMysqlUser: execute request editors: %w", err)
@@ -3345,7 +4865,8 @@ func (c Client) ResetDBAASMysqlUserPassword(ctx context.Context, serviceName str
 	if err != nil {
 		return nil, fmt.Errorf("ResetDBAASMysqlUserPassword: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -3390,7 +4911,8 @@ func (c Client) RevealDBAASMysqlUserPassword(ctx context.Context, serviceName st
 	if err != nil {
 		return nil, fmt.Errorf("RevealDBAASMysqlUserPassword: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("RevealDBAASMysqlUserPassword: execute request editors: %w", err)
@@ -3433,7 +4955,8 @@ func (c Client) DeleteDBAASServiceOpensearch(ctx context.Context, name string) (
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASServiceOpensearch: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASServiceOpensearch: execute request editors: %w", err)
@@ -3476,7 +4999,8 @@ func (c Client) GetDBAASServiceOpensearch(ctx context.Context, name string) (*DB
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASServiceOpensearch: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetDBAASServiceOpensearch: execute request editors: %w", err)
@@ -3609,7 +5133,8 @@ func (c Client) CreateDBAASServiceOpensearch(ctx context.Context, name string, r
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASServiceOpensearch: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -3741,7 +5266,8 @@ func (c Client) UpdateDBAASServiceOpensearch(ctx context.Context, name string, r
 	if err != nil {
 		return nil, fmt.Errorf("UpdateDBAASServiceOpensearch: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -3786,7 +5312,8 @@ func (c Client) GetDBAASOpensearchAclConfig(ctx context.Context, name string) (*
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASOpensearchAclConfig: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetDBAASOpensearchAclConfig: execute request editors: %w", err)
@@ -3834,7 +5361,8 @@ func (c Client) UpdateDBAASOpensearchAclConfig(ctx context.Context, name string,
 	if err != nil {
 		return nil, fmt.Errorf("UpdateDBAASOpensearchAclConfig: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -3879,7 +5407,8 @@ func (c Client) StartDBAASOpensearchMaintenance(ctx context.Context, name string
 	if err != nil {
 		return nil, fmt.Errorf("StartDBAASOpensearchMaintenance: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("StartDBAASOpensearchMaintenance: execute request editors: %w", err)
@@ -3931,7 +5460,8 @@ func (c Client) CreateDBAASOpensearchUser(ctx context.Context, serviceName strin
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASOpensearchUser: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -3976,7 +5506,8 @@ func (c Client) DeleteDBAASOpensearchUser(ctx context.Context, serviceName strin
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASOpensearchUser: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASOpensearchUser: execute request editors: %w", err)
@@ -4028,7 +5559,8 @@ func (c Client) ResetDBAASOpensearchUserPassword(ctx context.Context, serviceNam
 	if err != nil {
 		return nil, fmt.Errorf("ResetDBAASOpensearchUserPassword: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -4073,7 +5605,8 @@ func (c Client) RevealDBAASOpensearchUserPassword(ctx context.Context, serviceNa
 	if err != nil {
 		return nil, fmt.Errorf("RevealDBAASOpensearchUserPassword: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("RevealDBAASOpensearchUserPassword: execute request editors: %w", err)
@@ -4116,7 +5649,8 @@ func (c Client) DeleteDBAASServicePG(ctx context.Context, name string) (*Operati
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASServicePG: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASServicePG: execute request editors: %w", err)
@@ -4159,7 +5693,8 @@ func (c Client) GetDBAASServicePG(ctx context.Context, name string) (*DBAASServi
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASServicePG: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetDBAASServicePG: execute request editors: %w", err)
@@ -4307,7 +5842,8 @@ func (c Client) CreateDBAASServicePG(ctx context.Context, name string, req Creat
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASServicePG: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -4434,7 +5970,8 @@ func (c Client) UpdateDBAASServicePG(ctx context.Context, name string, req Updat
 	if err != nil {
 		return nil, fmt.Errorf("UpdateDBAASServicePG: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -4479,7 +6016,8 @@ func (c Client) StartDBAASPGMaintenance(ctx context.Context, name string) (*Oper
 	if err != nil {
 		return nil, fmt.Errorf("StartDBAASPGMaintenance: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("StartDBAASPGMaintenance: execute request editors: %w", err)
@@ -4522,7 +6060,8 @@ func (c Client) StopDBAASPGMigration(ctx context.Context, name string) (*Operati
 	if err != nil {
 		return nil, fmt.Errorf("StopDBAASPGMigration: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("StopDBAASPGMigration: execute request editors: %w", err)
@@ -4578,7 +6117,8 @@ func (c Client) CreateDBAASPGConnectionPool(ctx context.Context, serviceName str
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASPGConnectionPool: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -4623,7 +6163,8 @@ func (c Client) DeleteDBAASPGConnectionPool(ctx context.Context, serviceName str
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASPGConnectionPool: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASPGConnectionPool: execute request editors: %w", err)
@@ -4678,7 +6219,8 @@ func (c Client) UpdateDBAASPGConnectionPool(ctx context.Context, serviceName str
 	if err != nil {
 		return nil, fmt.Errorf("UpdateDBAASPGConnectionPool: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -4736,7 +6278,8 @@ func (c Client) CreateDBAASPGDatabase(ctx context.Context, serviceName string, r
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASPGDatabase: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -4781,7 +6324,8 @@ func (c Client) DeleteDBAASPGDatabase(ctx context.Context, serviceName string, d
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASPGDatabase: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASPGDatabase: execute request editors: %w", err)
@@ -4834,7 +6378,8 @@ func (c Client) CreateDBAASPostgresUser(ctx context.Context, serviceName string,
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASPostgresUser: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -4879,7 +6424,8 @@ func (c Client) DeleteDBAASPostgresUser(ctx context.Context, serviceName string,
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASPostgresUser: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASPostgresUser: execute request editors: %w", err)
@@ -4931,7 +6477,8 @@ func (c Client) UpdateDBAASPostgresAllowReplication(ctx context.Context, service
 	if err != nil {
 		return nil, fmt.Errorf("UpdateDBAASPostgresAllowReplication: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -4985,7 +6532,8 @@ func (c Client) ResetDBAASPostgresUserPassword(ctx context.Context, serviceName 
 	if err != nil {
 		return nil, fmt.Errorf("ResetDBAASPostgresUserPassword: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -5030,7 +6578,8 @@ func (c Client) RevealDBAASPostgresUserPassword(ctx context.Context, serviceName
 	if err != nil {
 		return nil, fmt.Errorf("RevealDBAASPostgresUserPassword: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("RevealDBAASPostgresUserPassword: execute request editors: %w", err)
@@ -5082,7 +6631,8 @@ func (c Client) CreateDBAASPGUpgradeCheck(ctx context.Context, service string, r
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASPGUpgradeCheck: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -5127,7 +6677,8 @@ func (c Client) DeleteDBAASServiceRedis(ctx context.Context, name string) (*Oper
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASServiceRedis: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASServiceRedis: execute request editors: %w", err)
@@ -5170,7 +6721,8 @@ func (c Client) GetDBAASServiceRedis(ctx context.Context, name string) (*DBAASSe
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASServiceRedis: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetDBAASServiceRedis: execute request editors: %w", err)
@@ -5276,7 +6828,8 @@ func (c Client) CreateDBAASServiceRedis(ctx context.Context, name string, req Cr
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASServiceRedis: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -5381,7 +6934,8 @@ func (c Client) UpdateDBAASServiceRedis(ctx context.Context, name string, req Up
 	if err != nil {
 		return nil, fmt.Errorf("UpdateDBAASServiceRedis: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -5426,7 +6980,8 @@ func (c Client) StartDBAASRedisMaintenance(ctx context.Context, name string) (*O
 	if err != nil {
 		return nil, fmt.Errorf("StartDBAASRedisMaintenance: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("StartDBAASRedisMaintenance: execute request editors: %w", err)
@@ -5469,7 +7024,8 @@ func (c Client) StopDBAASRedisMigration(ctx context.Context, name string) (*Oper
 	if err != nil {
 		return nil, fmt.Errorf("StopDBAASRedisMigration: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("StopDBAASRedisMigration: execute request editors: %w", err)
@@ -5521,7 +7077,8 @@ func (c Client) CreateDBAASRedisUser(ctx context.Context, serviceName string, re
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASRedisUser: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -5566,7 +7123,8 @@ func (c Client) DeleteDBAASRedisUser(ctx context.Context, serviceName string, us
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASRedisUser: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASRedisUser: execute request editors: %w", err)
@@ -5618,7 +7176,8 @@ func (c Client) ResetDBAASRedisUserPassword(ctx context.Context, serviceName str
 	if err != nil {
 		return nil, fmt.Errorf("ResetDBAASRedisUserPassword: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -5663,7 +7222,8 @@ func (c Client) RevealDBAASRedisUserPassword(ctx context.Context, serviceName st
 	if err != nil {
 		return nil, fmt.Errorf("RevealDBAASRedisUserPassword: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("RevealDBAASRedisUserPassword: execute request editors: %w", err)
@@ -5721,7 +7281,8 @@ func (c Client) ListDBAASServices(ctx context.Context) (*ListDBAASServicesRespon
 	if err != nil {
 		return nil, fmt.Errorf("ListDBAASServices: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ListDBAASServices: execute request editors: %w", err)
@@ -5777,7 +7338,8 @@ func (c Client) GetDBAASServiceLogs(ctx context.Context, serviceName string, req
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASServiceLogs: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -5846,7 +7408,8 @@ func (c Client) GetDBAASServiceMetrics(ctx context.Context, serviceName string, 
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASServiceMetrics: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -5906,7 +7469,8 @@ func (c Client) ListDBAASServiceTypes(ctx context.Context) (*ListDBAASServiceTyp
 	if err != nil {
 		return nil, fmt.Errorf("ListDBAASServiceTypes: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ListDBAASServiceTypes: execute request editors: %w", err)
@@ -5949,7 +7513,8 @@ func (c Client) GetDBAASServiceType(ctx context.Context, serviceTypeName string)
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASServiceType: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetDBAASServiceType: execute request editors: %w", err)
@@ -5992,7 +7557,8 @@ func (c Client) DeleteDBAASService(ctx context.Context, name string) (*Operation
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASService: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASService: execute request editors: %w", err)
@@ -6052,7 +7618,8 @@ func (c Client) GetDBAASSettingsGrafana(ctx context.Context) (*GetDBAASSettingsG
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASSettingsGrafana: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetDBAASSettingsGrafana: execute request editors: %w", err)
@@ -6142,7 +7709,8 @@ func (c Client) GetDBAASSettingsKafka(ctx context.Context) (*GetDBAASSettingsKaf
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASSettingsKafka: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetDBAASSettingsKafka: execute request editors: %w", err)
@@ -6202,7 +7770,8 @@ func (c Client) GetDBAASSettingsMysql(ctx context.Context) (*GetDBAASSettingsMys
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASSettingsMysql: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetDBAASSettingsMysql: execute request editors: %w", err)
@@ -6262,7 +7831,8 @@ func (c Client) GetDBAASSettingsOpensearch(ctx context.Context) (*GetDBAASSettin
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASSettingsOpensearch: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetDBAASSettingsOpensearch: execute request editors: %w", err)
@@ -6352,7 +7922,8 @@ func (c Client) GetDBAASSettingsPG(ctx context.Context) (*GetDBAASSettingsPGResp
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASSettingsPG: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetDBAASSettingsPG: execute request editors: %w", err)
@@ -6412,7 +7983,8 @@ func (c Client) GetDBAASSettingsRedis(ctx context.Context) (*GetDBAASSettingsRed
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASSettingsRedis: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetDBAASSettingsRedis: execute request editors: %w", err)
@@ -6468,7 +8040,8 @@ func (c Client) CreateDBAASTaskMigrationCheck(ctx context.Context, service strin
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASTaskMigrationCheck: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -6513,7 +8086,8 @@ func (c Client) GetDBAASTask(ctx context.Context, service string, id UUID) (*DBA
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASTask: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetDBAASTask: execute request editors: %w", err)
@@ -6555,7 +8129,7 @@ type ListDeployTargetsResponse struct {
 // FindDeployTarget attempts to find an DeployTarget by nameOrID.
 func (l ListDeployTargetsResponse) FindDeployTarget(nameOrID string) (DeployTarget, error) {
 	for i, elem := range l.DeployTargets {
-		if string(elem.Name) == nameOrID || elem.ID.String() == nameOrID {
+		if string(elem.Name) == nameOrID || string(elem.ID) == nameOrID {
 			return l.DeployTargets[i], nil
 		}
 	}
@@ -6571,7 +8145,8 @@ func (c Client) ListDeployTargets(ctx context.Context) (*ListDeployTargetsRespon
 	if err != nil {
 		return nil, fmt.Errorf("ListDeployTargets: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ListDeployTargets: execute request editors: %w", err)
@@ -6614,7 +8189,8 @@ func (c Client) GetDeployTarget(ctx context.Context, id UUID) (*DeployTarget, er
 	if err != nil {
 		return nil, fmt.Errorf("GetDeployTarget: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetDeployTarget: execute request editors: %w", err)
@@ -6653,15 +8229,15 @@ type ListDNSDomainsResponse struct {
 	DNSDomains []DNSDomain `json:"dns-domains,omitempty"`
 }
 
-// FindDNSDomain attempts to find an DNSDomain by ID.
-func (l ListDNSDomainsResponse) FindDNSDomain(ID string) (DNSDomain, error) {
+// FindDNSDomain attempts to find an DNSDomain by idOrUnicodeName.
+func (l ListDNSDomainsResponse) FindDNSDomain(idOrUnicodeName string) (DNSDomain, error) {
 	for i, elem := range l.DNSDomains {
-		if elem.ID.String() == ID {
+		if string(elem.ID) == idOrUnicodeName || string(elem.UnicodeName) == idOrUnicodeName {
 			return l.DNSDomains[i], nil
 		}
 	}
 
-	return DNSDomain{}, fmt.Errorf("%q not found in ListDNSDomainsResponse: %w", ID, ErrNotFound)
+	return DNSDomain{}, fmt.Errorf("%q not found in ListDNSDomainsResponse: %w", idOrUnicodeName, ErrNotFound)
 }
 
 // List DNS domains
@@ -6672,7 +8248,8 @@ func (c Client) ListDNSDomains(ctx context.Context) (*ListDNSDomainsResponse, er
 	if err != nil {
 		return nil, fmt.Errorf("ListDNSDomains: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ListDNSDomains: execute request editors: %w", err)
@@ -6726,7 +8303,8 @@ func (c Client) CreateDNSDomain(ctx context.Context, req CreateDNSDomainRequest)
 	if err != nil {
 		return nil, fmt.Errorf("CreateDNSDomain: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -6770,7 +8348,7 @@ type ListDNSDomainRecordsResponse struct {
 // FindDNSDomainRecord attempts to find an DNSDomainRecord by nameOrID.
 func (l ListDNSDomainRecordsResponse) FindDNSDomainRecord(nameOrID string) (DNSDomainRecord, error) {
 	for i, elem := range l.DNSDomainRecords {
-		if string(elem.Name) == nameOrID || elem.ID.String() == nameOrID {
+		if string(elem.Name) == nameOrID || string(elem.ID) == nameOrID {
 			return l.DNSDomainRecords[i], nil
 		}
 	}
@@ -6786,7 +8364,8 @@ func (c Client) ListDNSDomainRecords(ctx context.Context, domainID UUID) (*ListD
 	if err != nil {
 		return nil, fmt.Errorf("ListDNSDomainRecords: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ListDNSDomainRecords: execute request editors: %w", err)
@@ -6867,7 +8446,8 @@ func (c Client) CreateDNSDomainRecord(ctx context.Context, domainID UUID, req Cr
 	if err != nil {
 		return nil, fmt.Errorf("CreateDNSDomainRecord: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -6912,7 +8492,8 @@ func (c Client) DeleteDNSDomainRecord(ctx context.Context, domainID UUID, record
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDNSDomainRecord: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteDNSDomainRecord: execute request editors: %w", err)
@@ -6955,7 +8536,8 @@ func (c Client) GetDNSDomainRecord(ctx context.Context, domainID UUID, recordID 
 	if err != nil {
 		return nil, fmt.Errorf("GetDNSDomainRecord: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetDNSDomainRecord: execute request editors: %w", err)
@@ -7014,7 +8596,8 @@ func (c Client) UpdateDNSDomainRecord(ctx context.Context, domainID UUID, record
 	if err != nil {
 		return nil, fmt.Errorf("UpdateDNSDomainRecord: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -7059,7 +8642,8 @@ func (c Client) DeleteDNSDomain(ctx context.Context, id UUID) (*Operation, error
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDNSDomain: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteDNSDomain: execute request editors: %w", err)
@@ -7102,7 +8686,8 @@ func (c Client) GetDNSDomain(ctx context.Context, id UUID) (*DNSDomain, error) {
 	if err != nil {
 		return nil, fmt.Errorf("GetDNSDomain: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetDNSDomain: execute request editors: %w", err)
@@ -7149,7 +8734,8 @@ func (c Client) GetDNSDomainZoneFile(ctx context.Context, id UUID) (*GetDNSDomai
 	if err != nil {
 		return nil, fmt.Errorf("GetDNSDomainZoneFile: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetDNSDomainZoneFile: execute request editors: %w", err)
@@ -7188,15 +8774,15 @@ type ListElasticIPSResponse struct {
 	ElasticIPS []ElasticIP `json:"elastic-ips,omitempty"`
 }
 
-// FindElasticIP attempts to find an ElasticIP by ID.
-func (l ListElasticIPSResponse) FindElasticIP(ID string) (ElasticIP, error) {
+// FindElasticIP attempts to find an ElasticIP by idOrIP.
+func (l ListElasticIPSResponse) FindElasticIP(idOrIP string) (ElasticIP, error) {
 	for i, elem := range l.ElasticIPS {
-		if elem.ID.String() == ID {
+		if string(elem.ID) == idOrIP || string(elem.IP) == idOrIP {
 			return l.ElasticIPS[i], nil
 		}
 	}
 
-	return ElasticIP{}, fmt.Errorf("%q not found in ListElasticIPSResponse: %w", ID, ErrNotFound)
+	return ElasticIP{}, fmt.Errorf("%q not found in ListElasticIPSResponse: %w", idOrIP, ErrNotFound)
 }
 
 // List Elastic IPs
@@ -7207,7 +8793,8 @@ func (c Client) ListElasticIPS(ctx context.Context) (*ListElasticIPSResponse, er
 	if err != nil {
 		return nil, fmt.Errorf("ListElasticIPS: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ListElasticIPS: execute request editors: %w", err)
@@ -7272,7 +8859,8 @@ func (c Client) CreateElasticIP(ctx context.Context, req CreateElasticIPRequest)
 	if err != nil {
 		return nil, fmt.Errorf("CreateElasticIP: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -7317,7 +8905,8 @@ func (c Client) DeleteElasticIP(ctx context.Context, id UUID) (*Operation, error
 	if err != nil {
 		return nil, fmt.Errorf("DeleteElasticIP: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteElasticIP: execute request editors: %w", err)
@@ -7360,7 +8949,8 @@ func (c Client) GetElasticIP(ctx context.Context, id UUID) (*ElasticIP, error) {
 	if err != nil {
 		return nil, fmt.Errorf("GetElasticIP: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetElasticIP: execute request editors: %w", err)
@@ -7416,7 +9006,8 @@ func (c Client) UpdateElasticIP(ctx context.Context, id UUID, req UpdateElasticI
 	if err != nil {
 		return nil, fmt.Errorf("UpdateElasticIP: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -7467,7 +9058,8 @@ func (c Client) ResetElasticIPField(ctx context.Context, id UUID, field ResetEla
 	if err != nil {
 		return nil, fmt.Errorf("ResetElasticIPField: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ResetElasticIPField: execute request editors: %w", err)
@@ -7520,7 +9112,8 @@ func (c Client) AttachInstanceToElasticIP(ctx context.Context, id UUID, req Atta
 	if err != nil {
 		return nil, fmt.Errorf("AttachInstanceToElasticIP: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -7575,7 +9168,8 @@ func (c Client) DetachInstanceFromElasticIP(ctx context.Context, id UUID, req De
 	if err != nil {
 		return nil, fmt.Errorf("DetachInstanceFromElasticIP: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -7636,7 +9230,8 @@ func (c Client) ListEvents(ctx context.Context, opts ...ListEventsOpt) ([]Event,
 	if err != nil {
 		return nil, fmt.Errorf("ListEvents: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if len(opts) > 0 {
 		q := request.URL.Query()
@@ -7687,7 +9282,8 @@ func (c Client) GetIAMOrganizationPolicy(ctx context.Context) (*IAMPolicy, error
 	if err != nil {
 		return nil, fmt.Errorf("GetIAMOrganizationPolicy: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetIAMOrganizationPolicy: execute request editors: %w", err)
@@ -7735,7 +9331,8 @@ func (c Client) UpdateIAMOrganizationPolicy(ctx context.Context, req IAMPolicy) 
 	if err != nil {
 		return nil, fmt.Errorf("UpdateIAMOrganizationPolicy: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -7779,7 +9376,7 @@ type ListIAMRolesResponse struct {
 // FindIAMRole attempts to find an IAMRole by nameOrID.
 func (l ListIAMRolesResponse) FindIAMRole(nameOrID string) (IAMRole, error) {
 	for i, elem := range l.IAMRoles {
-		if string(elem.Name) == nameOrID || elem.ID.String() == nameOrID {
+		if string(elem.Name) == nameOrID || string(elem.ID) == nameOrID {
 			return l.IAMRoles[i], nil
 		}
 	}
@@ -7795,7 +9392,8 @@ func (c Client) ListIAMRoles(ctx context.Context) (*ListIAMRolesResponse, error)
 	if err != nil {
 		return nil, fmt.Errorf("ListIAMRoles: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ListIAMRoles: execute request editors: %w", err)
@@ -7857,7 +9455,8 @@ func (c Client) CreateIAMRole(ctx context.Context, req CreateIAMRoleRequest) (*O
 	if err != nil {
 		return nil, fmt.Errorf("CreateIAMRole: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -7902,7 +9501,8 @@ func (c Client) DeleteIAMRole(ctx context.Context, id UUID) (*Operation, error) 
 	if err != nil {
 		return nil, fmt.Errorf("DeleteIAMRole: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteIAMRole: execute request editors: %w", err)
@@ -7945,7 +9545,8 @@ func (c Client) GetIAMRole(ctx context.Context, id UUID) (*IAMRole, error) {
 	if err != nil {
 		return nil, fmt.Errorf("GetIAMRole: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetIAMRole: execute request editors: %w", err)
@@ -8001,7 +9602,8 @@ func (c Client) UpdateIAMRole(ctx context.Context, id UUID, req UpdateIAMRoleReq
 	if err != nil {
 		return nil, fmt.Errorf("UpdateIAMRole: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -8051,7 +9653,8 @@ func (c Client) UpdateIAMRolePolicy(ctx context.Context, id UUID, req IAMPolicy)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateIAMRolePolicy: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -8136,7 +9739,7 @@ type ListInstancesResponse struct {
 // FindListInstancesResponseInstances attempts to find an ListInstancesResponseInstances by nameOrID.
 func (l ListInstancesResponse) FindListInstancesResponseInstances(nameOrID string) (ListInstancesResponseInstances, error) {
 	for i, elem := range l.Instances {
-		if string(elem.Name) == nameOrID || elem.ID.String() == nameOrID {
+		if string(elem.Name) == nameOrID || string(elem.ID) == nameOrID {
 			return l.Instances[i], nil
 		}
 	}
@@ -8178,7 +9781,8 @@ func (c Client) ListInstances(ctx context.Context, opts ...ListInstancesOpt) (*L
 	if err != nil {
 		return nil, fmt.Errorf("ListInstances: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if len(opts) > 0 {
 		q := request.URL.Query()
@@ -8263,7 +9867,8 @@ func (c Client) CreateInstance(ctx context.Context, req CreateInstanceRequest) (
 	if err != nil {
 		return nil, fmt.Errorf("CreateInstance: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -8307,7 +9912,7 @@ type ListInstancePoolsResponse struct {
 // FindInstancePool attempts to find an InstancePool by nameOrID.
 func (l ListInstancePoolsResponse) FindInstancePool(nameOrID string) (InstancePool, error) {
 	for i, elem := range l.InstancePools {
-		if string(elem.Name) == nameOrID || elem.ID.String() == nameOrID {
+		if string(elem.Name) == nameOrID || string(elem.ID) == nameOrID {
 			return l.InstancePools[i], nil
 		}
 	}
@@ -8323,7 +9928,8 @@ func (c Client) ListInstancePools(ctx context.Context) (*ListInstancePoolsRespon
 	if err != nil {
 		return nil, fmt.Errorf("ListInstancePools: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ListInstancePools: execute request editors: %w", err)
@@ -8419,7 +10025,8 @@ func (c Client) CreateInstancePool(ctx context.Context, req CreateInstancePoolRe
 	if err != nil {
 		return nil, fmt.Errorf("CreateInstancePool: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -8464,7 +10071,8 @@ func (c Client) DeleteInstancePool(ctx context.Context, id UUID) (*Operation, er
 	if err != nil {
 		return nil, fmt.Errorf("DeleteInstancePool: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteInstancePool: execute request editors: %w", err)
@@ -8507,7 +10115,8 @@ func (c Client) GetInstancePool(ctx context.Context, id UUID) (*InstancePool, er
 	if err != nil {
 		return nil, fmt.Errorf("GetInstancePool: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetInstancePool: execute request editors: %w", err)
@@ -8600,7 +10209,8 @@ func (c Client) UpdateInstancePool(ctx context.Context, id UUID, req UpdateInsta
 	if err != nil {
 		return nil, fmt.Errorf("UpdateInstancePool: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -8660,7 +10270,8 @@ func (c Client) ResetInstancePoolField(ctx context.Context, id UUID, field Reset
 	if err != nil {
 		return nil, fmt.Errorf("ResetInstancePoolField: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ResetInstancePoolField: execute request editors: %w", err)
@@ -8712,7 +10323,8 @@ func (c Client) EvictInstancePoolMembers(ctx context.Context, id UUID, req Evict
 	if err != nil {
 		return nil, fmt.Errorf("EvictInstancePoolMembers: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -8767,7 +10379,8 @@ func (c Client) ScaleInstancePool(ctx context.Context, id UUID, req ScaleInstanc
 	if err != nil {
 		return nil, fmt.Errorf("ScaleInstancePool: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -8808,15 +10421,15 @@ type ListInstanceTypesResponse struct {
 	InstanceTypes []InstanceType `json:"instance-types,omitempty"`
 }
 
-// FindInstanceType attempts to find an InstanceType by ID.
-func (l ListInstanceTypesResponse) FindInstanceType(ID string) (InstanceType, error) {
+// FindInstanceType attempts to find an InstanceType by id.
+func (l ListInstanceTypesResponse) FindInstanceType(id string) (InstanceType, error) {
 	for i, elem := range l.InstanceTypes {
-		if elem.ID.String() == ID {
+		if string(elem.ID) == id {
 			return l.InstanceTypes[i], nil
 		}
 	}
 
-	return InstanceType{}, fmt.Errorf("%q not found in ListInstanceTypesResponse: %w", ID, ErrNotFound)
+	return InstanceType{}, fmt.Errorf("%q not found in ListInstanceTypesResponse: %w", id, ErrNotFound)
 }
 
 // List Compute instance Types
@@ -8827,7 +10440,8 @@ func (c Client) ListInstanceTypes(ctx context.Context) (*ListInstanceTypesRespon
 	if err != nil {
 		return nil, fmt.Errorf("ListInstanceTypes: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ListInstanceTypes: execute request editors: %w", err)
@@ -8870,7 +10484,8 @@ func (c Client) GetInstanceType(ctx context.Context, id UUID) (*InstanceType, er
 	if err != nil {
 		return nil, fmt.Errorf("GetInstanceType: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetInstanceType: execute request editors: %w", err)
@@ -8913,7 +10528,8 @@ func (c Client) DeleteInstance(ctx context.Context, id UUID) (*Operation, error)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteInstance: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteInstance: execute request editors: %w", err)
@@ -8956,7 +10572,8 @@ func (c Client) GetInstance(ctx context.Context, id UUID) (*Instance, error) {
 	if err != nil {
 		return nil, fmt.Errorf("GetInstance: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetInstance: execute request editors: %w", err)
@@ -9013,7 +10630,8 @@ func (c Client) UpdateInstance(ctx context.Context, id UUID, req UpdateInstanceR
 	if err != nil {
 		return nil, fmt.Errorf("UpdateInstance: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -9064,7 +10682,8 @@ func (c Client) ResetInstanceField(ctx context.Context, id UUID, field ResetInst
 	if err != nil {
 		return nil, fmt.Errorf("ResetInstanceField: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ResetInstanceField: execute request editors: %w", err)
@@ -9107,7 +10726,8 @@ func (c Client) AddInstanceProtection(ctx context.Context, id UUID) (*Operation,
 	if err != nil {
 		return nil, fmt.Errorf("AddInstanceProtection: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("AddInstanceProtection: execute request editors: %w", err)
@@ -9150,7 +10770,8 @@ func (c Client) CreateSnapshot(ctx context.Context, id UUID) (*Operation, error)
 	if err != nil {
 		return nil, fmt.Errorf("CreateSnapshot: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("CreateSnapshot: execute request editors: %w", err)
@@ -9197,7 +10818,8 @@ func (c Client) RevealInstancePassword(ctx context.Context, id UUID) (*InstanceP
 	if err != nil {
 		return nil, fmt.Errorf("RevealInstancePassword: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("RevealInstancePassword: execute request editors: %w", err)
@@ -9240,7 +10862,8 @@ func (c Client) RebootInstance(ctx context.Context, id UUID) (*Operation, error)
 	if err != nil {
 		return nil, fmt.Errorf("RebootInstance: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("RebootInstance: execute request editors: %w", err)
@@ -9283,7 +10906,8 @@ func (c Client) RemoveInstanceProtection(ctx context.Context, id UUID) (*Operati
 	if err != nil {
 		return nil, fmt.Errorf("RemoveInstanceProtection: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("RemoveInstanceProtection: execute request editors: %w", err)
@@ -9338,7 +10962,8 @@ func (c Client) ResetInstance(ctx context.Context, id UUID, req ResetInstanceReq
 	if err != nil {
 		return nil, fmt.Errorf("ResetInstance: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -9383,7 +11008,8 @@ func (c Client) ResetInstancePassword(ctx context.Context, id UUID) (*Operation,
 	if err != nil {
 		return nil, fmt.Errorf("ResetInstancePassword: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ResetInstancePassword: execute request editors: %w", err)
@@ -9436,7 +11062,8 @@ func (c Client) ResizeInstanceDisk(ctx context.Context, id UUID, req ResizeInsta
 	if err != nil {
 		return nil, fmt.Errorf("ResizeInstanceDisk: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -9491,7 +11118,8 @@ func (c Client) ScaleInstance(ctx context.Context, id UUID, req ScaleInstanceReq
 	if err != nil {
 		return nil, fmt.Errorf("ScaleInstance: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -9553,7 +11181,8 @@ func (c Client) StartInstance(ctx context.Context, id UUID, req StartInstanceReq
 	if err != nil {
 		return nil, fmt.Errorf("StartInstance: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -9598,7 +11227,8 @@ func (c Client) StopInstance(ctx context.Context, id UUID) (*Operation, error) {
 	if err != nil {
 		return nil, fmt.Errorf("StopInstance: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("StopInstance: execute request editors: %w", err)
@@ -9652,7 +11282,8 @@ func (c Client) RevertInstanceToSnapshot(ctx context.Context, instanceID UUID, r
 	if err != nil {
 		return nil, fmt.Errorf("RevertInstanceToSnapshot: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -9696,7 +11327,7 @@ type ListLoadBalancersResponse struct {
 // FindLoadBalancer attempts to find an LoadBalancer by nameOrID.
 func (l ListLoadBalancersResponse) FindLoadBalancer(nameOrID string) (LoadBalancer, error) {
 	for i, elem := range l.LoadBalancers {
-		if string(elem.Name) == nameOrID || elem.ID.String() == nameOrID {
+		if string(elem.Name) == nameOrID || string(elem.ID) == nameOrID {
 			return l.LoadBalancers[i], nil
 		}
 	}
@@ -9712,7 +11343,8 @@ func (c Client) ListLoadBalancers(ctx context.Context) (*ListLoadBalancersRespon
 	if err != nil {
 		return nil, fmt.Errorf("ListLoadBalancers: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ListLoadBalancers: execute request editors: %w", err)
@@ -9768,7 +11400,8 @@ func (c Client) CreateLoadBalancer(ctx context.Context, req CreateLoadBalancerRe
 	if err != nil {
 		return nil, fmt.Errorf("CreateLoadBalancer: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -9813,7 +11446,8 @@ func (c Client) DeleteLoadBalancer(ctx context.Context, id UUID) (*Operation, er
 	if err != nil {
 		return nil, fmt.Errorf("DeleteLoadBalancer: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteLoadBalancer: execute request editors: %w", err)
@@ -9856,7 +11490,8 @@ func (c Client) GetLoadBalancer(ctx context.Context, id UUID) (*LoadBalancer, er
 	if err != nil {
 		return nil, fmt.Errorf("GetLoadBalancer: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetLoadBalancer: execute request editors: %w", err)
@@ -9912,7 +11547,8 @@ func (c Client) UpdateLoadBalancer(ctx context.Context, id UUID, req UpdateLoadB
 	if err != nil {
 		return nil, fmt.Errorf("UpdateLoadBalancer: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -9996,7 +11632,8 @@ func (c Client) AddServiceToLoadBalancer(ctx context.Context, id UUID, req AddSe
 	if err != nil {
 		return nil, fmt.Errorf("AddServiceToLoadBalancer: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -10041,7 +11678,8 @@ func (c Client) DeleteLoadBalancerService(ctx context.Context, id UUID, serviceI
 	if err != nil {
 		return nil, fmt.Errorf("DeleteLoadBalancerService: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteLoadBalancerService: execute request editors: %w", err)
@@ -10084,7 +11722,8 @@ func (c Client) GetLoadBalancerService(ctx context.Context, id UUID, serviceID U
 	if err != nil {
 		return nil, fmt.Errorf("GetLoadBalancerService: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetLoadBalancerService: execute request editors: %w", err)
@@ -10164,7 +11803,8 @@ func (c Client) UpdateLoadBalancerService(ctx context.Context, id UUID, serviceI
 	if err != nil {
 		return nil, fmt.Errorf("UpdateLoadBalancerService: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -10215,7 +11855,8 @@ func (c Client) ResetLoadBalancerServiceField(ctx context.Context, id UUID, serv
 	if err != nil {
 		return nil, fmt.Errorf("ResetLoadBalancerServiceField: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ResetLoadBalancerServiceField: execute request editors: %w", err)
@@ -10265,7 +11906,8 @@ func (c Client) ResetLoadBalancerField(ctx context.Context, id UUID, field Reset
 	if err != nil {
 		return nil, fmt.Errorf("ResetLoadBalancerField: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ResetLoadBalancerField: execute request editors: %w", err)
@@ -10308,7 +11950,8 @@ func (c Client) GetOperation(ctx context.Context, id UUID) (*Operation, error) {
 	if err != nil {
 		return nil, fmt.Errorf("GetOperation: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetOperation: execute request editors: %w", err)
@@ -10351,7 +11994,8 @@ func (c Client) GetOrganization(ctx context.Context) (*Organization, error) {
 	if err != nil {
 		return nil, fmt.Errorf("GetOrganization: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetOrganization: execute request editors: %w", err)
@@ -10393,7 +12037,7 @@ type ListPrivateNetworksResponse struct {
 // FindPrivateNetwork attempts to find an PrivateNetwork by nameOrID.
 func (l ListPrivateNetworksResponse) FindPrivateNetwork(nameOrID string) (PrivateNetwork, error) {
 	for i, elem := range l.PrivateNetworks {
-		if string(elem.Name) == nameOrID || elem.ID.String() == nameOrID {
+		if string(elem.Name) == nameOrID || string(elem.ID) == nameOrID {
 			return l.PrivateNetworks[i], nil
 		}
 	}
@@ -10409,7 +12053,8 @@ func (c Client) ListPrivateNetworks(ctx context.Context) (*ListPrivateNetworksRe
 	if err != nil {
 		return nil, fmt.Errorf("ListPrivateNetworks: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ListPrivateNetworks: execute request editors: %w", err)
@@ -10454,6 +12099,8 @@ type CreatePrivateNetworkRequest struct {
 	Name string `json:"name" validate:"required,gte=1,lte=255"`
 	// Private Network netmask
 	Netmask net.IP `json:"netmask,omitempty"`
+	// Private Network DHCP Options
+	Options *PrivateNetworkOptions `json:"options,omitempty"`
 	// Private Network start IP address
 	StartIP net.IP `json:"start-ip,omitempty"`
 }
@@ -10471,7 +12118,8 @@ func (c Client) CreatePrivateNetwork(ctx context.Context, req CreatePrivateNetwo
 	if err != nil {
 		return nil, fmt.Errorf("CreatePrivateNetwork: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -10516,7 +12164,8 @@ func (c Client) DeletePrivateNetwork(ctx context.Context, id UUID) (*Operation, 
 	if err != nil {
 		return nil, fmt.Errorf("DeletePrivateNetwork: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeletePrivateNetwork: execute request editors: %w", err)
@@ -10559,7 +12208,8 @@ func (c Client) GetPrivateNetwork(ctx context.Context, id UUID) (*PrivateNetwork
 	if err != nil {
 		return nil, fmt.Errorf("GetPrivateNetwork: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetPrivateNetwork: execute request editors: %w", err)
@@ -10604,6 +12254,8 @@ type UpdatePrivateNetworkRequest struct {
 	Name string `json:"name,omitempty" validate:"omitempty,gte=1,lte=255"`
 	// Private Network netmask
 	Netmask net.IP `json:"netmask,omitempty"`
+	// Private Network DHCP Options
+	Options *PrivateNetworkOptions `json:"options,omitempty"`
 	// Private Network start IP address
 	StartIP net.IP `json:"start-ip,omitempty"`
 }
@@ -10621,7 +12273,8 @@ func (c Client) UpdatePrivateNetwork(ctx context.Context, id UUID, req UpdatePri
 	if err != nil {
 		return nil, fmt.Errorf("UpdatePrivateNetwork: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -10672,7 +12325,8 @@ func (c Client) ResetPrivateNetworkField(ctx context.Context, id UUID, field Res
 	if err != nil {
 		return nil, fmt.Errorf("ResetPrivateNetworkField: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ResetPrivateNetworkField: execute request editors: %w", err)
@@ -10733,7 +12387,8 @@ func (c Client) AttachInstanceToPrivateNetwork(ctx context.Context, id UUID, req
 	if err != nil {
 		return nil, fmt.Errorf("AttachInstanceToPrivateNetwork: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -10788,7 +12443,8 @@ func (c Client) DetachInstanceFromPrivateNetwork(ctx context.Context, id UUID, r
 	if err != nil {
 		return nil, fmt.Errorf("DetachInstanceFromPrivateNetwork: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -10849,7 +12505,8 @@ func (c Client) UpdatePrivateNetworkInstanceIP(ctx context.Context, id UUID, req
 	if err != nil {
 		return nil, fmt.Errorf("UpdatePrivateNetworkInstanceIP: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -10898,7 +12555,8 @@ func (c Client) ListQuotas(ctx context.Context) (*ListQuotasResponse, error) {
 	if err != nil {
 		return nil, fmt.Errorf("ListQuotas: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ListQuotas: execute request editors: %w", err)
@@ -10941,7 +12599,8 @@ func (c Client) GetQuota(ctx context.Context, entity string) (*Quota, error) {
 	if err != nil {
 		return nil, fmt.Errorf("GetQuota: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetQuota: execute request editors: %w", err)
@@ -10984,7 +12643,8 @@ func (c Client) DeleteReverseDNSElasticIP(ctx context.Context, id UUID) (*Operat
 	if err != nil {
 		return nil, fmt.Errorf("DeleteReverseDNSElasticIP: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteReverseDNSElasticIP: execute request editors: %w", err)
@@ -11027,7 +12687,8 @@ func (c Client) GetReverseDNSElasticIP(ctx context.Context, id UUID) (*ReverseDN
 	if err != nil {
 		return nil, fmt.Errorf("GetReverseDNSElasticIP: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetReverseDNSElasticIP: execute request editors: %w", err)
@@ -11079,7 +12740,8 @@ func (c Client) UpdateReverseDNSElasticIP(ctx context.Context, id UUID, req Upda
 	if err != nil {
 		return nil, fmt.Errorf("UpdateReverseDNSElasticIP: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -11124,7 +12786,8 @@ func (c Client) DeleteReverseDNSInstance(ctx context.Context, id UUID) (*Operati
 	if err != nil {
 		return nil, fmt.Errorf("DeleteReverseDNSInstance: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteReverseDNSInstance: execute request editors: %w", err)
@@ -11167,7 +12830,8 @@ func (c Client) GetReverseDNSInstance(ctx context.Context, id UUID) (*ReverseDNS
 	if err != nil {
 		return nil, fmt.Errorf("GetReverseDNSInstance: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetReverseDNSInstance: execute request editors: %w", err)
@@ -11219,7 +12883,8 @@ func (c Client) UpdateReverseDNSInstance(ctx context.Context, id UUID, req Updat
 	if err != nil {
 		return nil, fmt.Errorf("UpdateReverseDNSInstance: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -11263,7 +12928,7 @@ type ListSecurityGroupsResponse struct {
 // FindSecurityGroup attempts to find an SecurityGroup by nameOrID.
 func (l ListSecurityGroupsResponse) FindSecurityGroup(nameOrID string) (SecurityGroup, error) {
 	for i, elem := range l.SecurityGroups {
-		if string(elem.Name) == nameOrID || elem.ID.String() == nameOrID {
+		if string(elem.Name) == nameOrID || string(elem.ID) == nameOrID {
 			return l.SecurityGroups[i], nil
 		}
 	}
@@ -11297,7 +12962,8 @@ func (c Client) ListSecurityGroups(ctx context.Context, opts ...ListSecurityGrou
 	if err != nil {
 		return nil, fmt.Errorf("ListSecurityGroups: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if len(opts) > 0 {
 		q := request.URL.Query()
@@ -11360,7 +13026,8 @@ func (c Client) CreateSecurityGroup(ctx context.Context, req CreateSecurityGroup
 	if err != nil {
 		return nil, fmt.Errorf("CreateSecurityGroup: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -11405,7 +13072,8 @@ func (c Client) DeleteSecurityGroup(ctx context.Context, id UUID) (*Operation, e
 	if err != nil {
 		return nil, fmt.Errorf("DeleteSecurityGroup: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteSecurityGroup: execute request editors: %w", err)
@@ -11448,7 +13116,8 @@ func (c Client) GetSecurityGroup(ctx context.Context, id UUID) (*SecurityGroup, 
 	if err != nil {
 		return nil, fmt.Errorf("GetSecurityGroup: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetSecurityGroup: execute request editors: %w", err)
@@ -11541,7 +13210,8 @@ func (c Client) AddRuleToSecurityGroup(ctx context.Context, id UUID, req AddRule
 	if err != nil {
 		return nil, fmt.Errorf("AddRuleToSecurityGroup: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -11586,7 +13256,8 @@ func (c Client) DeleteRuleFromSecurityGroup(ctx context.Context, id UUID, ruleID
 	if err != nil {
 		return nil, fmt.Errorf("DeleteRuleFromSecurityGroup: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteRuleFromSecurityGroup: execute request editors: %w", err)
@@ -11639,7 +13310,8 @@ func (c Client) AddExternalSourceToSecurityGroup(ctx context.Context, id UUID, r
 	if err != nil {
 		return nil, fmt.Errorf("AddExternalSourceToSecurityGroup: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -11694,7 +13366,8 @@ func (c Client) AttachInstanceToSecurityGroup(ctx context.Context, id UUID, req 
 	if err != nil {
 		return nil, fmt.Errorf("AttachInstanceToSecurityGroup: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -11749,7 +13422,8 @@ func (c Client) DetachInstanceFromSecurityGroup(ctx context.Context, id UUID, re
 	if err != nil {
 		return nil, fmt.Errorf("DetachInstanceFromSecurityGroup: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -11804,7 +13478,8 @@ func (c Client) RemoveExternalSourceFromSecurityGroup(ctx context.Context, id UU
 	if err != nil {
 		return nil, fmt.Errorf("RemoveExternalSourceFromSecurityGroup: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -11848,7 +13523,7 @@ type ListSKSClustersResponse struct {
 // FindSKSCluster attempts to find an SKSCluster by nameOrID.
 func (l ListSKSClustersResponse) FindSKSCluster(nameOrID string) (SKSCluster, error) {
 	for i, elem := range l.SKSClusters {
-		if string(elem.Name) == nameOrID || elem.ID.String() == nameOrID {
+		if string(elem.Name) == nameOrID || string(elem.ID) == nameOrID {
 			return l.SKSClusters[i], nil
 		}
 	}
@@ -11864,7 +13539,8 @@ func (c Client) ListSKSClusters(ctx context.Context) (*ListSKSClustersResponse, 
 	if err != nil {
 		return nil, fmt.Errorf("ListSKSClusters: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ListSKSClusters: execute request editors: %w", err)
@@ -11946,7 +13622,8 @@ func (c Client) CreateSKSCluster(ctx context.Context, req CreateSKSClusterReques
 	if err != nil {
 		return nil, fmt.Errorf("CreateSKSCluster: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -11991,7 +13668,8 @@ func (c Client) ListSKSClusterDeprecatedResources(ctx context.Context, id UUID) 
 	if err != nil {
 		return nil, fmt.Errorf("ListSKSClusterDeprecatedResources: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ListSKSClusterDeprecatedResources: execute request editors: %w", err)
@@ -12043,7 +13721,8 @@ func (c Client) GenerateSKSClusterKubeconfig(ctx context.Context, id UUID, req S
 	if err != nil {
 		return nil, fmt.Errorf("GenerateSKSClusterKubeconfig: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -12100,7 +13779,8 @@ func (c Client) ListSKSClusterVersions(ctx context.Context, opts ...ListSKSClust
 	if err != nil {
 		return nil, fmt.Errorf("ListSKSClusterVersions: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if len(opts) > 0 {
 		q := request.URL.Query()
@@ -12151,7 +13831,8 @@ func (c Client) DeleteSKSCluster(ctx context.Context, id UUID) (*Operation, erro
 	if err != nil {
 		return nil, fmt.Errorf("DeleteSKSCluster: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteSKSCluster: execute request editors: %w", err)
@@ -12194,7 +13875,8 @@ func (c Client) GetSKSCluster(ctx context.Context, id UUID) (*SKSCluster, error)
 	if err != nil {
 		return nil, fmt.Errorf("GetSKSCluster: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetSKSCluster: execute request editors: %w", err)
@@ -12256,7 +13938,8 @@ func (c Client) UpdateSKSCluster(ctx context.Context, id UUID, req UpdateSKSClus
 	if err != nil {
 		return nil, fmt.Errorf("UpdateSKSCluster: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -12313,7 +13996,8 @@ func (c Client) GetSKSClusterAuthorityCert(ctx context.Context, id UUID, authori
 	if err != nil {
 		return nil, fmt.Errorf("GetSKSClusterAuthorityCert: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetSKSClusterAuthorityCert: execute request editors: %w", err)
@@ -12358,7 +14042,8 @@ func (c Client) GetSKSClusterInspection(ctx context.Context, id UUID) (*GetSKSCl
 	if err != nil {
 		return nil, fmt.Errorf("GetSKSClusterInspection: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetSKSClusterInspection: execute request editors: %w", err)
@@ -12393,6 +14078,13 @@ func (c Client) GetSKSClusterInspection(ctx context.Context, id UUID) (*GetSKSCl
 	return bodyresp, nil
 }
 
+type CreateSKSNodepoolRequestPublicIPAssignment string
+
+const (
+	CreateSKSNodepoolRequestPublicIPAssignmentInet4 CreateSKSNodepoolRequestPublicIPAssignment = "inet4"
+	CreateSKSNodepoolRequestPublicIPAssignmentDual  CreateSKSNodepoolRequestPublicIPAssignment = "dual"
+)
+
 type CreateSKSNodepoolRequest struct {
 	// Nodepool addons
 	Addons []string `json:"addons,omitempty"`
@@ -12404,17 +14096,21 @@ type CreateSKSNodepoolRequest struct {
 	Description string `json:"description,omitempty" validate:"omitempty,lte=255"`
 	// Nodepool instances disk size in GiB
 	DiskSize int64 `json:"disk-size" validate:"required,gte=20,lte=51200"`
-	// Prefix to apply to instances names (default: pool)
+	// Prefix to apply to instances names (default: pool), lowercase only
 	InstancePrefix string `json:"instance-prefix,omitempty" validate:"omitempty,gte=1,lte=30"`
 	// Compute instance type
 	InstanceType *InstanceType `json:"instance-type" validate:"required"`
 	// Kubelet image GC options
 	KubeletImageGC *KubeletImageGC `json:"kubelet-image-gc,omitempty"`
 	Labels         Labels          `json:"labels,omitempty"`
-	// Nodepool name
+	// Nodepool name, lowercase only
 	Name string `json:"name" validate:"required,gte=1,lte=255"`
 	// Nodepool Private Networks
 	PrivateNetworks []PrivateNetwork `json:"private-networks,omitempty"`
+	// Configures public IP assignment of the Instances with:
+	// * both IPv4 and IPv6 (`dual`) addressing.
+	// * both IPv4 and IPv6 (`dual`) addressing.
+	PublicIPAssignment CreateSKSNodepoolRequestPublicIPAssignment `json:"public-ip-assignment,omitempty"`
 	// Nodepool Security Groups
 	SecurityGroups []SecurityGroup `json:"security-groups,omitempty"`
 	// Number of instances
@@ -12435,7 +14131,8 @@ func (c Client) CreateSKSNodepool(ctx context.Context, id UUID, req CreateSKSNod
 	if err != nil {
 		return nil, fmt.Errorf("CreateSKSNodepool: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -12480,7 +14177,8 @@ func (c Client) DeleteSKSNodepool(ctx context.Context, id UUID, sksNodepoolID UU
 	if err != nil {
 		return nil, fmt.Errorf("DeleteSKSNodepool: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteSKSNodepool: execute request editors: %w", err)
@@ -12523,7 +14221,8 @@ func (c Client) GetSKSNodepool(ctx context.Context, id UUID, sksNodepoolID UUID)
 	if err != nil {
 		return nil, fmt.Errorf("GetSKSNodepool: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetSKSNodepool: execute request editors: %w", err)
@@ -12558,6 +14257,13 @@ func (c Client) GetSKSNodepool(ctx context.Context, id UUID, sksNodepoolID UUID)
 	return bodyresp, nil
 }
 
+type UpdateSKSNodepoolRequestPublicIPAssignment string
+
+const (
+	UpdateSKSNodepoolRequestPublicIPAssignmentInet4 UpdateSKSNodepoolRequestPublicIPAssignment = "inet4"
+	UpdateSKSNodepoolRequestPublicIPAssignmentDual  UpdateSKSNodepoolRequestPublicIPAssignment = "dual"
+)
+
 type UpdateSKSNodepoolRequest struct {
 	// Nodepool Anti-affinity Groups
 	AntiAffinityGroups []AntiAffinityGroup `json:"anti-affinity-groups,omitempty"`
@@ -12567,15 +14273,19 @@ type UpdateSKSNodepoolRequest struct {
 	Description string `json:"description,omitempty" validate:"omitempty,lte=255"`
 	// Nodepool instances disk size in GiB
 	DiskSize int64 `json:"disk-size,omitempty" validate:"omitempty,gte=20,lte=51200"`
-	// Prefix to apply to managed instances names (default: pool)
+	// Prefix to apply to managed instances names (default: pool), lowercase only
 	InstancePrefix string `json:"instance-prefix,omitempty" validate:"omitempty,gte=1,lte=30"`
 	// Compute instance type
 	InstanceType *InstanceType `json:"instance-type,omitempty"`
 	Labels       Labels        `json:"labels,omitempty"`
-	// Nodepool name
+	// Nodepool name, lowercase only
 	Name string `json:"name,omitempty" validate:"omitempty,gte=1,lte=255"`
 	// Nodepool Private Networks
 	PrivateNetworks []PrivateNetwork `json:"private-networks,omitempty"`
+	// Configures public IP assignment of the Instances with:
+	// * both IPv4 and IPv6 (`dual`) addressing.
+	// * both IPv4 and IPv6 (`dual`) addressing.
+	PublicIPAssignment UpdateSKSNodepoolRequestPublicIPAssignment `json:"public-ip-assignment,omitempty"`
 	// Nodepool Security Groups
 	SecurityGroups []SecurityGroup   `json:"security-groups,omitempty"`
 	Taints         SKSNodepoolTaints `json:"taints,omitempty"`
@@ -12594,7 +14304,8 @@ func (c Client) UpdateSKSNodepool(ctx context.Context, id UUID, sksNodepoolID UU
 	if err != nil {
 		return nil, fmt.Errorf("UpdateSKSNodepool: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -12650,7 +14361,8 @@ func (c Client) ResetSKSNodepoolField(ctx context.Context, id UUID, sksNodepoolI
 	if err != nil {
 		return nil, fmt.Errorf("ResetSKSNodepoolField: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ResetSKSNodepoolField: execute request editors: %w", err)
@@ -12702,7 +14414,8 @@ func (c Client) EvictSKSNodepoolMembers(ctx context.Context, id UUID, sksNodepoo
 	if err != nil {
 		return nil, fmt.Errorf("EvictSKSNodepoolMembers: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -12757,7 +14470,8 @@ func (c Client) ScaleSKSNodepool(ctx context.Context, id UUID, sksNodepoolID UUI
 	if err != nil {
 		return nil, fmt.Errorf("ScaleSKSNodepool: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -12802,7 +14516,8 @@ func (c Client) RotateSKSCcmCredentials(ctx context.Context, id UUID) (*Operatio
 	if err != nil {
 		return nil, fmt.Errorf("RotateSKSCcmCredentials: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("RotateSKSCcmCredentials: execute request editors: %w", err)
@@ -12845,7 +14560,8 @@ func (c Client) RotateSKSOperatorsCA(ctx context.Context, id UUID) (*Operation, 
 	if err != nil {
 		return nil, fmt.Errorf("RotateSKSOperatorsCA: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("RotateSKSOperatorsCA: execute request editors: %w", err)
@@ -12898,7 +14614,8 @@ func (c Client) UpgradeSKSCluster(ctx context.Context, id UUID, req UpgradeSKSCl
 	if err != nil {
 		return nil, fmt.Errorf("UpgradeSKSCluster: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -12943,7 +14660,8 @@ func (c Client) UpgradeSKSClusterServiceLevel(ctx context.Context, id UUID) (*Op
 	if err != nil {
 		return nil, fmt.Errorf("UpgradeSKSClusterServiceLevel: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("UpgradeSKSClusterServiceLevel: execute request editors: %w", err)
@@ -12993,7 +14711,8 @@ func (c Client) ResetSKSClusterField(ctx context.Context, id UUID, field ResetSK
 	if err != nil {
 		return nil, fmt.Errorf("ResetSKSClusterField: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ResetSKSClusterField: execute request editors: %w", err)
@@ -13035,7 +14754,7 @@ type ListSnapshotsResponse struct {
 // FindSnapshot attempts to find an Snapshot by nameOrID.
 func (l ListSnapshotsResponse) FindSnapshot(nameOrID string) (Snapshot, error) {
 	for i, elem := range l.Snapshots {
-		if string(elem.Name) == nameOrID || elem.ID.String() == nameOrID {
+		if string(elem.Name) == nameOrID || string(elem.ID) == nameOrID {
 			return l.Snapshots[i], nil
 		}
 	}
@@ -13051,7 +14770,8 @@ func (c Client) ListSnapshots(ctx context.Context) (*ListSnapshotsResponse, erro
 	if err != nil {
 		return nil, fmt.Errorf("ListSnapshots: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ListSnapshots: execute request editors: %w", err)
@@ -13094,7 +14814,8 @@ func (c Client) DeleteSnapshot(ctx context.Context, id UUID) (*Operation, error)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteSnapshot: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteSnapshot: execute request editors: %w", err)
@@ -13137,7 +14858,8 @@ func (c Client) GetSnapshot(ctx context.Context, id UUID) (*Snapshot, error) {
 	if err != nil {
 		return nil, fmt.Errorf("GetSnapshot: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetSnapshot: execute request editors: %w", err)
@@ -13180,7 +14902,8 @@ func (c Client) ExportSnapshot(ctx context.Context, id UUID) (*Operation, error)
 	if err != nil {
 		return nil, fmt.Errorf("ExportSnapshot: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ExportSnapshot: execute request editors: %w", err)
@@ -13241,7 +14964,8 @@ func (c Client) PromoteSnapshotToTemplate(ctx context.Context, id UUID, req Prom
 	if err != nil {
 		return nil, fmt.Errorf("PromoteSnapshotToTemplate: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -13301,7 +15025,8 @@ func (c Client) ListSOSBucketsUsage(ctx context.Context) (*ListSOSBucketsUsageRe
 	if err != nil {
 		return nil, fmt.Errorf("ListSOSBucketsUsage: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ListSOSBucketsUsage: execute request editors: %w", err)
@@ -13356,7 +15081,8 @@ func (c Client) GetSOSPresignedURL(ctx context.Context, bucket string, opts ...G
 	if err != nil {
 		return nil, fmt.Errorf("GetSOSPresignedURL: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if len(opts) > 0 {
 		q := request.URL.Query()
@@ -13403,15 +15129,15 @@ type ListSSHKeysResponse struct {
 	SSHKeys []SSHKey `json:"ssh-keys,omitempty"`
 }
 
-// FindSSHKey attempts to find an SSHKey by name.
-func (l ListSSHKeysResponse) FindSSHKey(name string) (SSHKey, error) {
+// FindSSHKey attempts to find an SSHKey by nameOrFingerprint.
+func (l ListSSHKeysResponse) FindSSHKey(nameOrFingerprint string) (SSHKey, error) {
 	for i, elem := range l.SSHKeys {
-		if string(elem.Name) == name {
+		if string(elem.Name) == nameOrFingerprint || string(elem.Fingerprint) == nameOrFingerprint {
 			return l.SSHKeys[i], nil
 		}
 	}
 
-	return SSHKey{}, fmt.Errorf("%q not found in ListSSHKeysResponse: %w", name, ErrNotFound)
+	return SSHKey{}, fmt.Errorf("%q not found in ListSSHKeysResponse: %w", nameOrFingerprint, ErrNotFound)
 }
 
 // List SSH keys
@@ -13422,7 +15148,8 @@ func (c Client) ListSSHKeys(ctx context.Context) (*ListSSHKeysResponse, error) {
 	if err != nil {
 		return nil, fmt.Errorf("ListSSHKeys: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ListSSHKeys: execute request editors: %w", err)
@@ -13477,7 +15204,8 @@ func (c Client) RegisterSSHKey(ctx context.Context, req RegisterSSHKeyRequest) (
 	if err != nil {
 		return nil, fmt.Errorf("RegisterSSHKey: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -13522,7 +15250,8 @@ func (c Client) DeleteSSHKey(ctx context.Context, name string) (*Operation, erro
 	if err != nil {
 		return nil, fmt.Errorf("DeleteSSHKey: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteSSHKey: execute request editors: %w", err)
@@ -13565,7 +15294,8 @@ func (c Client) GetSSHKey(ctx context.Context, name string) (*SSHKey, error) {
 	if err != nil {
 		return nil, fmt.Errorf("GetSSHKey: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetSSHKey: execute request editors: %w", err)
@@ -13607,7 +15337,7 @@ type ListTemplatesResponse struct {
 // FindTemplate attempts to find an Template by nameOrID.
 func (l ListTemplatesResponse) FindTemplate(nameOrID string) (Template, error) {
 	for i, elem := range l.Templates {
-		if string(elem.Name) == nameOrID || elem.ID.String() == nameOrID {
+		if string(elem.Name) == nameOrID || string(elem.ID) == nameOrID {
 			return l.Templates[i], nil
 		}
 	}
@@ -13644,7 +15374,8 @@ func (c Client) ListTemplates(ctx context.Context, opts ...ListTemplatesOpt) (*L
 	if err != nil {
 		return nil, fmt.Errorf("ListTemplates: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if len(opts) > 0 {
 		q := request.URL.Query()
@@ -13734,7 +15465,8 @@ func (c Client) RegisterTemplate(ctx context.Context, req RegisterTemplateReques
 	if err != nil {
 		return nil, fmt.Errorf("RegisterTemplate: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -13779,7 +15511,8 @@ func (c Client) DeleteTemplate(ctx context.Context, id UUID) (*Operation, error)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteTemplate: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("DeleteTemplate: execute request editors: %w", err)
@@ -13822,7 +15555,8 @@ func (c Client) GetTemplate(ctx context.Context, id UUID) (*Template, error) {
 	if err != nil {
 		return nil, fmt.Errorf("GetTemplate: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("GetTemplate: execute request editors: %w", err)
@@ -13875,7 +15609,8 @@ func (c Client) CopyTemplate(ctx context.Context, id UUID, req CopyTemplateReque
 	if err != nil {
 		return nil, fmt.Errorf("CopyTemplate: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -13932,7 +15667,8 @@ func (c Client) UpdateTemplate(ctx context.Context, id UUID, req UpdateTemplateR
 	if err != nil {
 		return nil, fmt.Errorf("UpdateTemplate: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	request.Header.Add("Content-Type", "application/json")
 
@@ -13973,15 +15709,15 @@ type ListZonesResponse struct {
 	Zones []Zone `json:"zones,omitempty"`
 }
 
-// FindZone attempts to find an Zone by name.
-func (l ListZonesResponse) FindZone(name string) (Zone, error) {
+// FindZone attempts to find an Zone by nameOrAPIEndpoint.
+func (l ListZonesResponse) FindZone(nameOrAPIEndpoint string) (Zone, error) {
 	for i, elem := range l.Zones {
-		if string(elem.Name) == name {
+		if string(elem.Name) == nameOrAPIEndpoint || string(elem.APIEndpoint) == nameOrAPIEndpoint {
 			return l.Zones[i], nil
 		}
 	}
 
-	return Zone{}, fmt.Errorf("%q not found in ListZonesResponse: %w", name, ErrNotFound)
+	return Zone{}, fmt.Errorf("%q not found in ListZonesResponse: %w", nameOrAPIEndpoint, ErrNotFound)
 }
 
 // List Zones
@@ -13992,7 +15728,8 @@ func (c Client) ListZones(ctx context.Context) (*ListZonesResponse, error) {
 	if err != nil {
 		return nil, fmt.Errorf("ListZones: new request: %w", err)
 	}
-	request.Header.Add("User-Agent", UserAgent)
+
+	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ListZones: execute request editors: %w", err)

@@ -5,7 +5,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.42
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.66.2
 	github.com/exoscale/egoscale v0.102.4
-	github.com/exoscale/egoscale/v3 v3.1.1
+	github.com/exoscale/egoscale/v3 v3.1.7
 	github.com/google/go-cmp v0.6.0
 	github.com/hashicorp/go-cleanhttp v0.5.2
 	github.com/hashicorp/go-cty v1.4.1-0.20200414143053-d3edf31b6320
@@ -21,7 +21,7 @@ require (
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.34.0
 	github.com/hashicorp/terraform-plugin-testing v1.10.0
 	github.com/ssgreg/repeat v1.5.1
-	github.com/stretchr/testify v1.8.4
+	github.com/stretchr/testify v1.9.0
 	github.com/xeipuuv/gojsonschema v1.2.0
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -102,7 +102,7 @@ require (
 	github.com/spf13/cast v1.6.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.18.2 // indirect
-	github.com/stretchr/objx v0.5.0 // indirect
+	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/vmihailenco/msgpack v4.0.4+incompatible // indirect
 	github.com/vmihailenco/msgpack/v5 v5.4.1 // indirect
