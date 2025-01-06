@@ -199,40 +199,27 @@ func dsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.
 		)
 	}
 
-	// v3.ListInstancesResponse.FindListInstancesResponseInstances doesn't error when multiple instances
-	// in the zone have the same name so to avoid any differing behaviour, let's write this explicitely
-	// until it is patched
-	var instance *v3.Instance
-	if byID {
-		instance, err = client.GetInstance(ctx, v3.UUID(id.(string)))
-		if err != nil {
-			return diag.Errorf("unable to retrieve instance: %s", err)
-		}
-	} else {
-		instanceList, err := client.ListInstances(ctx)
-		if err != nil {
-			return diag.FromErr(err)
-		}
+	instanceList, err := client.ListInstances(ctx)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
-		var found *v3.ListInstancesResponseInstances = nil
-		for _, i := range instanceList.Instances {
-			if i.Name == name {
-				if found == nil {
-					found = &i
-				} else {
-					return diag.FromErr(errors.New("multiple resources found with the same name"))
-				}
+	instanceListResp, err := instanceList.FindListInstancesResponseInstances(
+		func() string {
+			if byID {
+				return id.(string)
+			} else {
+				return name.(string)
 			}
-		}
+		}(),
+	)
+	if err != nil {
+		return diag.Errorf("unable to retrieve instance: %s", err)
+	}
 
-		if found == nil {
-			return diag.Errorf("unable to retrieve instance: %s", fmt.Errorf("%q not found in ListInstancesResponse: %w", name, v3.ErrNotFound))
-		}
-
-		instance, err = client.GetInstance(ctx, found.ID)
-		if err != nil {
-			return diag.Errorf("unable to retrieve instance: %s", err)
-		}
+	instance, err := client.GetInstance(ctx, instanceListResp.ID)
+	if err != nil {
+		return diag.Errorf("unable to retrieve instance: %s", err)
 	}
 
 	d.SetId(string(instance.ID))
