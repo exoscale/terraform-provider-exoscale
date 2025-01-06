@@ -6,6 +6,7 @@ FEATURES:
 
 - InstancePool: min-available support #406
 - dbaas: support for users #401
+- exoscale_instance: use egoscale v3 & support for multiple SSH Keys #408
 
 BUG FIXES:
 
