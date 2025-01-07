@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
-	"github.com/exoscale/terraform-provider-exoscale/utils/testutils"
+	"github.com/exoscale/terraform-provider-exoscale/exoscale/testutils"
 )
 
 func TestBlockStorage(t *testing.T) {

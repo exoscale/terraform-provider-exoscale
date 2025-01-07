@@ -12,9 +12,9 @@ import (
 
 	v3 "github.com/exoscale/egoscale/v3"
 
+	"github.com/exoscale/terraform-provider-exoscale/exoscale/testutils"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/instance_pool"
-	"github.com/exoscale/terraform-provider-exoscale/utils"
-	"github.com/exoscale/terraform-provider-exoscale/utils/testutils"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
 )
 
 var (

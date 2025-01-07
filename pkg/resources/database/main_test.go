@@ -12,7 +12,7 @@ import (
 	"github.com/exoscale/egoscale/v2/api"
 	"github.com/exoscale/egoscale/v2/oapi"
 
-	"github.com/exoscale/terraform-provider-exoscale/utils/testutils"
+	"github.com/exoscale/terraform-provider-exoscale/exoscale/testutils"
 )
 
 func TestDatabase(t *testing.T) {
