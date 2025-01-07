@@ -18,7 +18,6 @@ import (
 
 	exov2 "github.com/exoscale/egoscale/v2"
 	exov3 "github.com/exoscale/egoscale/v3"
-	v3 "github.com/exoscale/egoscale/v3"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 )
@@ -306,7 +305,7 @@ func FindInstanceTypeByNameV3(ctx context.Context, client *exov3.Client, id stri
 // In the context of converting list of IDs to resources for egoscale V3 update and
 // creation requests, we're using a  lot of inline funcitons, increasing reading complexity
 // when one is called more than once, we should aim to regroup them here.
-func AntiAffiniGroupsToAntiAffinityGroupIDs(aags []v3.AntiAffinityGroup) (ls []string) {
+func AntiAffiniGroupsToAntiAffinityGroupIDs(aags []exov3.AntiAffinityGroup) (ls []string) {
 	ls = make([]string, len(aags))
 	for i, aag := range aags {
 		ls[i] = aag.ID.String()
@@ -314,17 +313,17 @@ func AntiAffiniGroupsToAntiAffinityGroupIDs(aags []v3.AntiAffinityGroup) (ls []s
 	return
 }
 
-func AntiAffinityGroupIDsToAntiAffinityGroups(ids []interface{}) (ls []v3.AntiAffinityGroup) {
-	ls = make([]v3.AntiAffinityGroup, len(ids))
+func AntiAffinityGroupIDsToAntiAffinityGroups(ids []interface{}) (ls []exov3.AntiAffinityGroup) {
+	ls = make([]exov3.AntiAffinityGroup, len(ids))
 	for i, id := range ids {
-		ls[i] = v3.AntiAffinityGroup{
-			ID: v3.UUID(id.(string)),
+		ls[i] = exov3.AntiAffinityGroup{
+			ID: exov3.UUID(id.(string)),
 		}
 	}
 	return
 }
 
-func PrivateNetworksToPrivateNetworkIDs(privnets []v3.PrivateNetwork) (ls []string) {
+func PrivateNetworksToPrivateNetworkIDs(privnets []exov3.PrivateNetwork) (ls []string) {
 	ls = make([]string, len(privnets))
 	for i, aag := range privnets {
 		ls[i] = aag.ID.String()
@@ -332,17 +331,17 @@ func PrivateNetworksToPrivateNetworkIDs(privnets []v3.PrivateNetwork) (ls []stri
 	return
 }
 
-func PrivateNetworkIDsToPrivateNetworks(ids []interface{}) (ls []v3.PrivateNetwork) {
-	ls = make([]v3.PrivateNetwork, len(ids))
+func PrivateNetworkIDsToPrivateNetworks(ids []interface{}) (ls []exov3.PrivateNetwork) {
+	ls = make([]exov3.PrivateNetwork, len(ids))
 	for i, id := range ids {
-		ls[i] = v3.PrivateNetwork{
-			ID: v3.UUID(id.(string)),
+		ls[i] = exov3.PrivateNetwork{
+			ID: exov3.UUID(id.(string)),
 		}
 	}
 	return
 }
 
-func SecurityGroupsToSecurityGroupIDs(sgs []v3.SecurityGroup) (ls []string) {
+func SecurityGroupsToSecurityGroupIDs(sgs []exov3.SecurityGroup) (ls []string) {
 	ls = make([]string, len(sgs))
 	for i, aag := range sgs {
 		ls[i] = aag.ID.String()
@@ -350,17 +349,17 @@ func SecurityGroupsToSecurityGroupIDs(sgs []v3.SecurityGroup) (ls []string) {
 	return
 }
 
-func SecurityGroupIDsToSecurityGroups(ids []interface{}) (ls []v3.SecurityGroup) {
-	ls = make([]v3.SecurityGroup, len(ids))
+func SecurityGroupIDsToSecurityGroups(ids []interface{}) (ls []exov3.SecurityGroup) {
+	ls = make([]exov3.SecurityGroup, len(ids))
 	for i, id := range ids {
-		ls[i] = v3.SecurityGroup{
-			ID: v3.UUID(id.(string)),
+		ls[i] = exov3.SecurityGroup{
+			ID: exov3.UUID(id.(string)),
 		}
 	}
 	return
 }
 
-func ElasticIPsToElasticIPIDs(eips []v3.ElasticIP) (ls []string) {
+func ElasticIPsToElasticIPIDs(eips []exov3.ElasticIP) (ls []string) {
 	ls = make([]string, len(eips))
 	for i, aag := range eips {
 		ls[i] = aag.ID.String()
@@ -368,11 +367,11 @@ func ElasticIPsToElasticIPIDs(eips []v3.ElasticIP) (ls []string) {
 	return
 }
 
-func ElasticIPIDsToElasticIPs(ids []interface{}) (ls []v3.ElasticIP) {
-	ls = make([]v3.ElasticIP, len(ids))
+func ElasticIPIDsToElasticIPs(ids []interface{}) (ls []exov3.ElasticIP) {
+	ls = make([]exov3.ElasticIP, len(ids))
 	for i, id := range ids {
-		ls[i] = v3.ElasticIP{
-			ID: v3.UUID(id.(string)),
+		ls[i] = exov3.ElasticIP{
+			ID: exov3.UUID(id.(string)),
 		}
 	}
 	return
