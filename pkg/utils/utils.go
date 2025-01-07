@@ -303,6 +303,9 @@ func FindInstanceTypeByNameV3(ctx context.Context, client *exov3.Client, id stri
 	return nil, exov3.ErrNotFound
 }
 
+// In the context of converting list of IDs to resources for egoscale V3 update and
+// creation requests, we're using a  lot of inline funcitons, increasing reading complexity
+// when one is called more than once, we should aim to regroup them here.
 func AntiAffiniGroupsToAntiAffinityGroupIDs(aags []v3.AntiAffinityGroup) (ls []string) {
 	ls = make([]string, len(aags))
 	for i, aag := range aags {
@@ -321,9 +324,9 @@ func AntiAffinityGroupIDsToAntiAffinityGroups(ids []interface{}) (ls []v3.AntiAf
 	return
 }
 
-func PrivateNetworksToPrivateNetworkIDs(aags []v3.PrivateNetwork) (ls []string) {
-	ls = make([]string, len(aags))
-	for i, aag := range aags {
+func PrivateNetworksToPrivateNetworkIDs(privnets []v3.PrivateNetwork) (ls []string) {
+	ls = make([]string, len(privnets))
+	for i, aag := range privnets {
 		ls[i] = aag.ID.String()
 	}
 	return
@@ -339,9 +342,9 @@ func PrivateNetworkIDsToPrivateNetworks(ids []interface{}) (ls []v3.PrivateNetwo
 	return
 }
 
-func SecurityGroupsToSecurityGroupIDs(aags []v3.SecurityGroup) (ls []string) {
-	ls = make([]string, len(aags))
-	for i, aag := range aags {
+func SecurityGroupsToSecurityGroupIDs(sgs []v3.SecurityGroup) (ls []string) {
+	ls = make([]string, len(sgs))
+	for i, aag := range sgs {
 		ls[i] = aag.ID.String()
 	}
 	return
@@ -351,6 +354,24 @@ func SecurityGroupIDsToSecurityGroups(ids []interface{}) (ls []v3.SecurityGroup)
 	ls = make([]v3.SecurityGroup, len(ids))
 	for i, id := range ids {
 		ls[i] = v3.SecurityGroup{
+			ID: v3.UUID(id.(string)),
+		}
+	}
+	return
+}
+
+func ElasticIPsToElasticIPIDs(eips []v3.ElasticIP) (ls []string) {
+	ls = make([]string, len(eips))
+	for i, aag := range eips {
+		ls[i] = aag.ID.String()
+	}
+	return
+}
+
+func ElasticIPIDsToElasticIPs(ids []interface{}) (ls []v3.ElasticIP) {
+	ls = make([]v3.ElasticIP, len(ids))
+	for i, id := range ids {
+		ls[i] = v3.ElasticIP{
 			ID: v3.UUID(id.(string)),
 		}
 	}
