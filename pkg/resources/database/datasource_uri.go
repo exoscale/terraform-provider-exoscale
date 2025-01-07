@@ -18,7 +18,7 @@ import (
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
-	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
+	"github.com/exoscale/terraform-provider-exoscale/utils"
 )
 
 const DataSourceURIDescription = `Fetch Exoscale [Database](https://community.exoscale.com/documentation/dbaas/) connection URI data.

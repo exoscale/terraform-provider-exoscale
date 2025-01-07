@@ -13,7 +13,7 @@ import (
 	v3 "github.com/exoscale/egoscale/v3"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
-	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
+	"github.com/exoscale/terraform-provider-exoscale/utils"
 )
 
 // DataSourceSchema returns a schema for a single Compute instance data source.

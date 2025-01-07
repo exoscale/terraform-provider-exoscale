@@ -10,7 +10,7 @@ import (
 	exoapi "github.com/exoscale/egoscale/v2/api"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
-	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
+	"github.com/exoscale/terraform-provider-exoscale/utils"
 )
 
 func DataSource() *schema.Resource {

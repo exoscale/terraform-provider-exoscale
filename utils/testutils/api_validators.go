@@ -12,7 +12,7 @@ import (
 	egoscale "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
 	v3 "github.com/exoscale/egoscale/v3"
-	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
+	"github.com/exoscale/terraform-provider-exoscale/utils"
 )
 
 func CheckAntiAffinityGroupExists(r string, res *egoscale.AntiAffinityGroup) resource.TestCheckFunc {

@@ -5,7 +5,7 @@ import (
 	"html/template"
 	"testing"
 
-	"github.com/exoscale/terraform-provider-exoscale/exoscale/testutils"
+	"github.com/exoscale/terraform-provider-exoscale/utils/testutils"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )

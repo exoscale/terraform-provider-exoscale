@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
-	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
+	"github.com/exoscale/terraform-provider-exoscale/utils"
 )
 
 // testAttrs represents a map of expected resource attributes during acceptance tests.

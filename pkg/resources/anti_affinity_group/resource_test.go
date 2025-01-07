@@ -11,8 +11,8 @@ import (
 
 	egoscale "github.com/exoscale/egoscale/v2"
 
-	"github.com/exoscale/terraform-provider-exoscale/exoscale/testutils"
 	aagroup "github.com/exoscale/terraform-provider-exoscale/pkg/resources/anti_affinity_group"
+	"github.com/exoscale/terraform-provider-exoscale/utils/testutils"
 )
 
 var (

@@ -15,7 +15,7 @@ import (
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
-	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
+	"github.com/exoscale/terraform-provider-exoscale/utils"
 )
 
 const DataSourceVolumeDescription = `Fetch [Exoscale Block Storage](https://community.exoscale.com/documentation/block-storage/) Volume.

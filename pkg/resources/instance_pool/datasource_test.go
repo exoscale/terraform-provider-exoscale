@@ -11,8 +11,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
-	"github.com/exoscale/terraform-provider-exoscale/exoscale/testutils"
-	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
+	"github.com/exoscale/terraform-provider-exoscale/utils"
+	"github.com/exoscale/terraform-provider-exoscale/utils/testutils"
 )
 
 var (
