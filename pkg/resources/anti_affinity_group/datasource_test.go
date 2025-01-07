@@ -11,8 +11,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
-	"github.com/exoscale/terraform-provider-exoscale/exoscale/testutils"
 	aagroup "github.com/exoscale/terraform-provider-exoscale/pkg/resources/anti_affinity_group"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/testutils"
 )
 
 var dsGroupName = acctest.RandomWithPrefix(testutils.Prefix)

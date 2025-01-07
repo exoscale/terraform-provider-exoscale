@@ -20,7 +20,7 @@ import (
 	exoapi "github.com/exoscale/egoscale/v2/api"
 	"github.com/exoscale/egoscale/v2/oapi"
 
-	"github.com/exoscale/terraform-provider-exoscale/exoscale/testutils"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/testutils"
 )
 
 type TemplateModelKafka struct {

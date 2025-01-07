@@ -5,7 +5,7 @@ import (
 	"testing"
 	"text/template"
 
-	"github.com/exoscale/terraform-provider-exoscale/exoscale/testutils"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/testutils"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
@@ -14,7 +14,7 @@ import (
 func testResourceRole(t *testing.T) {
 	fullResourceName := "exoscale_iam_role.test"
 
-	tpl, err := template.ParseFiles("./testdata/resource_iam_role.tmpl")
+	tpl, err := template.ParseFiles("../../testutils/testdata/resource_iam_role.tmpl")
 	if err != nil {
 		t.Fatal(err)
 	}

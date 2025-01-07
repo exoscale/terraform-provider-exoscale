@@ -5,7 +5,7 @@ import (
 	"testing"
 	"text/template"
 
-	"github.com/exoscale/terraform-provider-exoscale/exoscale/testutils"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/testutils"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
@@ -15,7 +15,7 @@ func testResourceAPIKey(t *testing.T) {
 	fullResourceName := "exoscale_iam_api_key.test"
 
 	// Role
-	tpl1, err := template.ParseFiles("./testdata/resource_iam_role.tmpl")
+	tpl1, err := template.ParseFiles("../../testutils/testdata/resource_iam_role.tmpl")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -51,7 +51,7 @@ func testResourceAPIKey(t *testing.T) {
 	configCreate := buf.String() + "\n"
 
 	// API Key
-	tpl2, err := template.ParseFiles("./testdata/resource_iam_api_key.tmpl")
+	tpl2, err := template.ParseFiles("../../testutils/testdata/resource_iam_api_key.tmpl")
 	if err != nil {
 		t.Fatal(err)
 	}
