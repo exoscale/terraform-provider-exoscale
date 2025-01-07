@@ -12,8 +12,10 @@ import (
 
 	egoscale "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
+	v3 "github.com/exoscale/egoscale/v3"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/general"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
 )
 
 const (
@@ -38,6 +40,7 @@ const (
 	resSKSNodepoolAttrLabels                 = "labels"
 	resSKSNodepoolAttrID                     = "id"
 	resSKSNodepoolAttrName                   = "name"
+	resSKSNOdepoolAttrIPV6Enabled            = "ipv6"
 	resSKSNodepoolAttrPrivateNetworkIDs      = "private_network_ids"
 	resSKSNodepoolAttrSecurityGroupIDs       = "security_group_ids"
 	resSKSNodepoolAttrSize                   = "size"
@@ -148,6 +151,12 @@ func resourceSKSNodepool() *schema.Resource {
 			Required:    true,
 			Description: "The SKS node pool name.",
 		},
+		resSKSNOdepoolAttrIPV6Enabled: {
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Default:     false,
+			Description: "Enable IPV6 for the nodepool nodes",
+		},
 		resSKSNodepoolAttrPrivateNetworkIDs: {
 			Type:        schema.TypeSet,
 			Optional:    true,
@@ -250,26 +259,36 @@ func resourceSKSNodepoolCreate(ctx context.Context, d *schema.ResourceData, meta
 	zone := d.Get(resSKSNodepoolAttrZone).(string)
 
 	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutCreate))
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
-	client := getClient(meta)
-
-	sksCluster, err := client.GetSKSCluster(ctx, zone, d.Get(resSKSNodepoolAttrClusterID).(string))
+	defaultClientV3, err := config.GetClientV3(meta)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	client, err := utils.SwitchClientZone(
+		ctx,
+		defaultClientV3,
+		v3.ZoneName(zone),
+	)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	sksNodepool := new(egoscale.SKSNodepool)
+	sksCluster, err := client.GetSKSCluster(ctx, v3.UUID(d.Get(resSKSNodepoolAttrClusterID).(string)))
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	sksNodepoolCreate := new(v3.CreateSKSNodepoolRequest)
 
 	if set, ok := d.Get(resSKSNodepoolAttrAntiAffinityGroupIDs).(*schema.Set); ok {
-		sksNodepool.AntiAffinityGroupIDs = func() (v *[]string) {
+		sksNodepoolCreate.AntiAffinityGroups = func() (v []v3.AntiAffinityGroup) {
 			if l := set.Len(); l > 0 {
-				list := make([]string, l)
+				list := make([]v3.AntiAffinityGroup, l)
 				for i, v := range set.List() {
-					list[i] = v.(string)
+					list[i] = v3.AntiAffinityGroup{ID: v3.UUID(v.(string))}
 				}
-				v = &list
+				v = list
 			}
 			return
 		}()
@@ -277,54 +296,65 @@ func resourceSKSNodepoolCreate(ctx context.Context, d *schema.ResourceData, meta
 
 	if v, ok := d.GetOk(resSKSNodepoolAttrDeployTargetID); ok {
 		s := v.(string)
-		sksNodepool.DeployTargetID = &s
+		sksNodepoolCreate.DeployTarget = &v3.DeployTarget{ID: v3.UUID(s)}
 	}
 
 	if v, ok := d.GetOk(resSKSNodepoolAttrDescription); ok {
 		s := v.(string)
-		sksNodepool.Description = &s
+		sksNodepoolCreate.Description = s
 	}
 
 	if v, ok := d.GetOk(resSKSNodepoolAttrDiskSize); ok {
 		i := int64(v.(int))
-		sksNodepool.DiskSize = &i
+		sksNodepoolCreate.DiskSize = i
 	}
 
 	if v, ok := d.GetOk(resSKSNodepoolAttrInstancePrefix); ok {
 		s := v.(string)
-		sksNodepool.InstancePrefix = &s
+		sksNodepoolCreate.InstancePrefix = s
 	}
 
-	instanceType, err := client.FindInstanceType(ctx, zone, d.Get(resSKSNodepoolAttrInstanceType).(string))
+	if v, ok := d.GetOk(resSKSNOdepoolAttrIPV6Enabled); ok {
+		b := v.(bool)
+		if b {
+			sksNodepoolCreate.PublicIPAssignment = v3.CreateSKSNodepoolRequestPublicIPAssignmentDual
+		} else {
+			sksNodepoolCreate.PublicIPAssignment = v3.CreateSKSNodepoolRequestPublicIPAssignmentInet4
+		}
+	}
+
+	instanceType, err := utils.FindInstanceTypeByNameV3(ctx, client, d.Get(resSKSNodepoolAttrInstanceType).(string))
 	if err != nil {
 		return diag.Errorf("error retrieving instance type: %s", err)
 	}
-	sksNodepool.InstanceTypeID = instanceType.ID
+	sksNodepoolCreate.InstanceType = &v3.InstanceType{
+		ID: instanceType.ID,
+	}
 
 	if k, ok := d.GetOk(resSKSNodepoolAttrKubeletGC); ok {
 		kubeletGc := k.(*schema.Set).List()[0].(map[string]interface{})
-		sksNodepoolKubeletGc := new(egoscale.SKSNodepoolKubeletImageGc)
+		sksNodepoolKubeletGc := new(v3.KubeletImageGC)
 
 		if val, ok := kubeletGc[resSKSNodepoolAttrKubeletGCMinAge]; ok {
 			sksNodepoolKubeletGcMinAge := val.(string)
-			sksNodepoolKubeletGc.MinAge = &sksNodepoolKubeletGcMinAge
+			sksNodepoolKubeletGc.MinAge = sksNodepoolKubeletGcMinAge
 		}
 
 		if val, ok := kubeletGc[resSKSNodepoolAttrKubeletGCLowThreshold]; ok {
 			sksNodepoolKubeletGcLowThreshold := val.(int)
 			sksNodepoolKubeletGcLowThresholdInt64 := int64(sksNodepoolKubeletGcLowThreshold)
-			sksNodepoolKubeletGc.LowThreshold = &sksNodepoolKubeletGcLowThresholdInt64
+			sksNodepoolKubeletGc.LowThreshold = sksNodepoolKubeletGcLowThresholdInt64
 
 		}
 
 		if val, ok := kubeletGc[resSKSNodepoolAttrKubeletGCHighThreshold]; ok {
 			sksNodepoolKubeletGcHighThreshold := val.(int)
 			sksNodepoolKubeletGcHighThresholdInt64 := int64(sksNodepoolKubeletGcHighThreshold)
-			sksNodepoolKubeletGc.HighThreshold = &sksNodepoolKubeletGcHighThresholdInt64
+			sksNodepoolKubeletGc.HighThreshold = sksNodepoolKubeletGcHighThresholdInt64
 
 		}
 
-		sksNodepool.KubeletImageGc = sksNodepoolKubeletGc
+		sksNodepoolCreate.KubeletImageGC = sksNodepoolKubeletGc
 	}
 
 	if l, ok := d.GetOk(resSKSNodepoolAttrLabels); ok {
@@ -332,35 +362,35 @@ func resourceSKSNodepoolCreate(ctx context.Context, d *schema.ResourceData, meta
 		for k, v := range l.(map[string]interface{}) {
 			labels[k] = v.(string)
 		}
-		sksNodepool.Labels = &labels
+		sksNodepoolCreate.Labels = labels
 	}
 
 	if v, ok := d.GetOk(resSKSNodepoolAttrName); ok {
 		s := v.(string)
-		sksNodepool.Name = &s
+		sksNodepoolCreate.Name = s
 	}
 
 	if set, ok := d.Get(resSKSNodepoolAttrPrivateNetworkIDs).(*schema.Set); ok {
-		sksNodepool.PrivateNetworkIDs = func() (v *[]string) {
+		sksNodepoolCreate.PrivateNetworks = func() (v []v3.PrivateNetwork) {
 			if l := set.Len(); l > 0 {
-				list := make([]string, l)
+				list := make([]v3.PrivateNetwork, l)
 				for i, v := range set.List() {
-					list[i] = v.(string)
+					list[i] = v3.PrivateNetwork{ID: v3.UUID(v.(string))}
 				}
-				v = &list
+				v = list
 			}
 			return
 		}()
 	}
 
 	if set, ok := d.Get(resSKSNodepoolAttrSecurityGroupIDs).(*schema.Set); ok {
-		sksNodepool.SecurityGroupIDs = func() (v *[]string) {
+		sksNodepoolCreate.SecurityGroups = func() (v []v3.SecurityGroup) {
 			if l := set.Len(); l > 0 {
-				list := make([]string, l)
+				list := make([]v3.SecurityGroup, l)
 				for i, v := range set.List() {
-					list[i] = v.(string)
+					list[i] = v3.SecurityGroup{ID: v3.UUID(v.(string))}
 				}
-				v = &list
+				v = list
 			}
 			return
 		}()
@@ -368,7 +398,7 @@ func resourceSKSNodepoolCreate(ctx context.Context, d *schema.ResourceData, meta
 
 	if v, ok := d.GetOk(resSKSNodepoolAttrSize); ok {
 		i := int64(v.(int))
-		sksNodepool.Size = &i
+		sksNodepoolCreate.Size = i
 	}
 
 	var addOns []string
@@ -376,27 +406,32 @@ func resourceSKSNodepoolCreate(ctx context.Context, d *schema.ResourceData, meta
 		addOns = append(addOns, sksNodepoolAddonStorageLVM)
 	}
 	if len(addOns) > 0 {
-		sksNodepool.AddOns = &addOns
+		sksNodepoolCreate.Addons = addOns
 	}
 
 	if t, ok := d.GetOk(resSKSNodepoolAttrTaints); ok {
-		taints := make(map[string]*egoscale.SKSNodepoolTaint)
+		taints := make(v3.SKSNodepoolTaints)
 		for k, v := range t.(map[string]interface{}) {
-			taint, err := parseSKSNodepoolTaint(v.(string))
+			taint, err := parseSKSNodepoolTaintV3(v.(string))
 			if err != nil {
 				return diag.Errorf("invalid taint %q: %s", v.(string), err)
 			}
-			taints[k] = taint
+			taints[k] = *taint
 		}
-		sksNodepool.Taints = &taints
+		sksNodepoolCreate.Taints = taints
 	}
 
-	sksNodepool, err = client.CreateSKSNodepool(ctx, zone, sksCluster, sksNodepool)
+	op, err := client.CreateSKSNodepool(ctx, sksCluster.ID, *sksNodepoolCreate)
 	if err != nil {
 		return diag.FromErr(err)
 	}
+	if op, err = client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
+		return diag.FromErr(err)
+	}
 
-	d.SetId(*sksNodepool.ID)
+	sksNodepoolID := op.Reference.ID
+
+	d.SetId(sksNodepoolID.String())
 
 	tflog.Debug(ctx, "create finished successfully", map[string]interface{}{
 		"id": resourceSKSNodepoolIDString(d),
@@ -781,5 +816,21 @@ func parseSKSNodepoolTaint(v string) (*egoscale.SKSNodepoolTaint, error) {
 	return &egoscale.SKSNodepoolTaint{
 		Effect: taintEffect,
 		Value:  taintValue,
+	}, nil
+}
+
+// parseSKSNodepoolTaintV3 works the same as parseSKSNodepoolTaint, but
+// returns a v3.SKSNodepoolTaint
+func parseSKSNodepoolTaintV3(v string) (*v3.SKSNodepoolTaint, error) {
+
+	x, err := parseSKSNodepoolTaint(v)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &v3.SKSNodepoolTaint{
+		Effect: v3.SKSNodepoolTaintEffect(x.Effect),
+		Value:  x.Value,
 	}, nil
 }
