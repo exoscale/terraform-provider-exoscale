@@ -18,6 +18,7 @@ import (
 
 	exov2 "github.com/exoscale/egoscale/v2"
 	exov3 "github.com/exoscale/egoscale/v3"
+	v3 "github.com/exoscale/egoscale/v3"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 )
@@ -300,4 +301,58 @@ func FindInstanceTypeByNameV3(ctx context.Context, client *exov3.Client, id stri
 	}
 
 	return nil, exov3.ErrNotFound
+}
+
+func AntiAffiniGroupsToAntiAffinityGroupIDs(aags []v3.AntiAffinityGroup) (ls []string) {
+	ls = make([]string, len(aags))
+	for i, aag := range aags {
+		ls[i] = aag.ID.String()
+	}
+	return
+}
+
+func AntiAffinityGroupIDsToAntiAffinityGroups(ids []interface{}) (ls []v3.AntiAffinityGroup) {
+	ls = make([]v3.AntiAffinityGroup, len(ids))
+	for i, id := range ids {
+		ls[i] = v3.AntiAffinityGroup{
+			ID: v3.UUID(id.(string)),
+		}
+	}
+	return
+}
+
+func PrivateNetworksToPrivateNetworkIDs(aags []v3.PrivateNetwork) (ls []string) {
+	ls = make([]string, len(aags))
+	for i, aag := range aags {
+		ls[i] = aag.ID.String()
+	}
+	return
+}
+
+func PrivateNetworkIDsToPrivateNetworks(ids []interface{}) (ls []v3.PrivateNetwork) {
+	ls = make([]v3.PrivateNetwork, len(ids))
+	for i, id := range ids {
+		ls[i] = v3.PrivateNetwork{
+			ID: v3.UUID(id.(string)),
+		}
+	}
+	return
+}
+
+func SecurityGroupsToSecurityGroupIDs(aags []v3.SecurityGroup) (ls []string) {
+	ls = make([]string, len(aags))
+	for i, aag := range aags {
+		ls[i] = aag.ID.String()
+	}
+	return
+}
+
+func SecurityGroupIDsToSecurityGroups(ids []interface{}) (ls []v3.SecurityGroup) {
+	ls = make([]v3.SecurityGroup, len(ids))
+	for i, id := range ids {
+		ls[i] = v3.SecurityGroup{
+			ID: v3.UUID(id.(string)),
+		}
+	}
+	return
 }
