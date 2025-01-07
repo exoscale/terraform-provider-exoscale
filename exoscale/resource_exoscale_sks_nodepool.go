@@ -603,6 +603,15 @@ func resourceSKSNodepoolUpdate(ctx context.Context, d *schema.ResourceData, meta
 		updated = true
 	}
 
+	if d.HasChange(resSKSNOdepoolAttrIPV6Enabled) {
+		v := d.Get(resSKSNOdepoolAttrIPV6Enabled).(bool)
+		if v {
+			sksNodepoolUpdate.PublicIPAssignment = v3.UpdateSKSNodepoolRequestPublicIPAssignmentDual
+		} else {
+			sksNodepoolUpdate.PublicIPAssignment = v3.UpdateSKSNodepoolRequestPublicIPAssignmentInet4
+		}
+	}
+
 	if updated {
 		op, err := client.UpdateSKSNodepool(ctx, sksCluster.ID, sksNp.ID, *sksNodepoolUpdate)
 		if err != nil {
