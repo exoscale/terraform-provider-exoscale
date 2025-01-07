@@ -5,7 +5,7 @@ import (
 	"testing"
 	"text/template"
 
-	"github.com/exoscale/terraform-provider-exoscale/pkg/testutils"
+	"github.com/exoscale/terraform-provider-exoscale/exoscale/testutils"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -15,7 +15,7 @@ func testResourceOrgPolicy(t *testing.T) {
 	fullResourceName := "exoscale_iam_org_policy.test"
 	expression := acctest.RandomWithPrefix(testutils.Prefix)
 
-	tpl, err := template.ParseFiles("../../testutils/testdata/resource_iam_org_policy.tmpl")
+	tpl, err := template.ParseFiles("./testdata/resource_iam_org_policy.tmpl")
 	if err != nil {
 		t.Fatal(err)
 	}

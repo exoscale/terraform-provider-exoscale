@@ -6,7 +6,7 @@ import (
 	"testing"
 	"text/template"
 
-	"github.com/exoscale/terraform-provider-exoscale/pkg/testutils"
+	"github.com/exoscale/terraform-provider-exoscale/exoscale/testutils"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -16,7 +16,7 @@ func testListDataSource(t *testing.T) {
 	buf := &bytes.Buffer{}
 
 	// template testdata
-	tpl, err := template.ParseFiles("../../testutils/testdata/datasource_template.tmpl")
+	tpl, err := template.ParseFiles("./testdata/datasource_template.tmpl")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -33,7 +33,7 @@ func testListDataSource(t *testing.T) {
 	buf.WriteString("\n")
 
 	// ipool testdata
-	tpl, err = template.ParseFiles("../../testutils/testdata/resource_instance_pool.tmpl")
+	tpl, err = template.ParseFiles("./testdata/resource_instance_pool.tmpl")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -54,7 +54,7 @@ func testListDataSource(t *testing.T) {
 	buf.WriteString("\n")
 
 	// nlb testdata
-	tpl, err = template.ParseFiles("../../testutils/testdata/resource_nlb.tmpl")
+	tpl, err = template.ParseFiles("./testdata/resource_nlb.tmpl")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -71,7 +71,7 @@ func testListDataSource(t *testing.T) {
 	buf.WriteString("\n")
 
 	// nlb_service testdata
-	tpl, err = template.ParseFiles("../../testutils/testdata/resource_nlb_service.tmpl")
+	tpl, err = template.ParseFiles("./testdata/resource_nlb_service.tmpl")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -97,7 +97,7 @@ func testListDataSource(t *testing.T) {
 
 	// datasource by name
 	buf = &bytes.Buffer{}
-	tpl, err = template.ParseFiles("../../testutils/testdata/datasource_nlb_service_list.tmpl")
+	tpl, err = template.ParseFiles("./testdata/datasource_nlb_service_list.tmpl")
 	if err != nil {
 		t.Fatal(err)
 	}

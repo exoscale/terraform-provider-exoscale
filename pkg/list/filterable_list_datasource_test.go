@@ -6,7 +6,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 
-	"github.com/exoscale/terraform-provider-exoscale/pkg/testutils"
+	"github.com/exoscale/terraform-provider-exoscale/exoscale/testutils"
 )
 
 func TestFilterableListDataSource(t *testing.T) {
