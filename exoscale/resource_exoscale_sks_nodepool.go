@@ -447,13 +447,23 @@ func resourceSKSNodepoolRead(ctx context.Context, d *schema.ResourceData, meta i
 
 	zone := d.Get(resSKSNodepoolAttrZone).(string)
 
-	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
+	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutCreate))
 	defer cancel()
 
-	client := getClient(meta)
+	defaultClientV3, err := config.GetClientV3(meta)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	client, err := utils.SwitchClientZone(
+		ctx,
+		defaultClientV3,
+		v3.ZoneName(zone),
+	)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
-	sks, err := client.GetSKSCluster(ctx, zone, d.Get(resSKSNodepoolAttrClusterID).(string))
+	sks, err := client.GetSKSCluster(ctx, v3.UUID(d.Get(resSKSNodepoolAttrClusterID).(string)))
 	if err != nil {
 		if errors.Is(err, exoapi.ErrNotFound) {
 			// Parent SKS cluster doesn't exist anymore, so does the SKS Nodepool.
@@ -463,10 +473,10 @@ func resourceSKSNodepoolRead(ctx context.Context, d *schema.ResourceData, meta i
 		return diag.FromErr(err)
 	}
 
-	var sksNodepool *egoscale.SKSNodepool
+	var sksNodepool *v3.SKSNodepool
 	for _, np := range sks.Nodepools {
-		if *np.ID == d.Id() {
-			sksNodepool = np
+		if np.ID == v3.UUID(d.Id()) {
+			sksNodepool = &np
 			break
 		}
 	}
@@ -668,118 +678,136 @@ func resourceSKSNodepoolDelete(ctx context.Context, d *schema.ResourceData, meta
 
 func resourceSKSNodepoolApply(
 	ctx context.Context,
-	client *egoscale.Client,
+	client *v3.Client,
 	d *schema.ResourceData,
-	sksNodepool *egoscale.SKSNodepool,
+	sksNodepool *v3.SKSNodepool,
 ) error {
-	if sksNodepool.AntiAffinityGroupIDs != nil {
-		antiAffinityGroupIDs := make([]string, len(*sksNodepool.AntiAffinityGroupIDs))
-		copy(antiAffinityGroupIDs, *sksNodepool.AntiAffinityGroupIDs)
-		if err := d.Set(resSKSNodepoolAttrAntiAffinityGroupIDs, antiAffinityGroupIDs); err != nil {
+	if sksNodepool.AntiAffinityGroups != nil {
+		if err := d.Set(resSKSNodepoolAttrAntiAffinityGroupIDs, func() []string {
+			ls := make([]string, 0)
+			for _, aag := range sksNodepool.AntiAffinityGroups {
+				ls = append(ls, aag.ID.String())
+			}
+			return ls
+		}()); err != nil {
 			return err
 		}
 	}
 
-	if sksNodepool.AddOns != nil {
-		if err := d.Set(resSKSNodepoolAttrStorageLVM, in(*sksNodepool.AddOns, sksNodepoolAddonStorageLVM)); err != nil {
+	if sksNodepool.Addons != nil {
+		if err := d.Set(resSKSNodepoolAttrStorageLVM, in(sksNodepool.Addons, sksNodepoolAddonStorageLVM)); err != nil {
 			return err
 		}
 	}
 
-	if err := d.Set(resSKSNodepoolAttrCreatedAt, sksNodepool.CreatedAt.String()); err != nil {
+	if err := d.Set(resSKSNodepoolAttrCreatedAt, sksNodepool.CreatedAT.String()); err != nil {
 		return err
 	}
 
-	if err := d.Set(resSKSNodepoolAttrDeployTargetID, defaultString(sksNodepool.DeployTargetID, "")); err != nil {
+	if sksNodepool.DeployTarget != nil {
+		if err := d.Set(resSKSNodepoolAttrDeployTargetID, sksNodepool.DeployTarget.ID.String()); err != nil {
+			return err
+		}
+	}
+
+	if err := d.Set(resSKSNodepoolAttrDescription, sksNodepool.Description); err != nil {
 		return err
 	}
 
-	if err := d.Set(resSKSNodepoolAttrDescription, defaultString(sksNodepool.Description, "")); err != nil {
+	if err := d.Set(resSKSNodepoolAttrDiskSize, sksNodepool.DiskSize); err != nil {
 		return err
 	}
 
-	if err := d.Set(resSKSNodepoolAttrDiskSize, *sksNodepool.DiskSize); err != nil {
-		return err
+	if sksNodepool.InstancePool != nil {
+		if err := d.Set(resSKSNodepoolAttrInstancePoolID, sksNodepool.InstancePool.ID.String()); err != nil {
+			return err
+		}
 	}
 
-	if err := d.Set(resSKSNodepoolAttrInstancePoolID, *sksNodepool.InstancePoolID); err != nil {
-		return err
-	}
-
-	if err := d.Set(resSKSNodepoolAttrInstancePrefix, defaultString(sksNodepool.InstancePrefix, "")); err != nil {
+	if err := d.Set(resSKSNodepoolAttrInstancePrefix, sksNodepool.InstancePrefix); err != nil {
 		return err
 	}
 
 	instanceType, err := client.GetInstanceType(
 		ctx,
-		d.Get(resSKSNodepoolAttrZone).(string),
-		*sksNodepool.InstanceTypeID,
+		sksNodepool.InstanceType.ID,
 	)
 	if err != nil {
 		return fmt.Errorf("error retrieving instance type: %w", err)
 	}
 	if err := d.Set(resSKSNodepoolAttrInstanceType, fmt.Sprintf(
 		"%s.%s",
-		strings.ToLower(*instanceType.Family),
-		strings.ToLower(*instanceType.Size),
+		strings.ToLower(string(instanceType.Family)),
+		strings.ToLower(string(instanceType.Size)),
 	)); err != nil {
 		return err
 	}
 
-	kubeletGc := d.Get(resSKSNodepoolAttrKubeletGC).(*schema.Set)
-	if err := d.Set(resSKSNodepoolAttrKubeletGC, schema.NewSet(kubeletGc.F, []interface{}{
-		func() map[string]interface{} {
-			i := map[string]interface{}{}
-			if sksNodepool.KubeletImageGc.MinAge != nil {
-				i[resSKSNodepoolAttrKubeletGCMinAge] = *sksNodepool.KubeletImageGc.MinAge
-			}
-			if sksNodepool.KubeletImageGc.HighThreshold != nil {
-				i[resSKSNodepoolAttrKubeletGCHighThreshold] = int(*sksNodepool.KubeletImageGc.HighThreshold)
-			}
-			if sksNodepool.KubeletImageGc.LowThreshold != nil {
-				i[resSKSNodepoolAttrKubeletGCLowThreshold] = int(*sksNodepool.KubeletImageGc.LowThreshold)
-			}
-			return i
-		}(),
-	})); err != nil {
-		return err
+	if sksNodepool.KubeletImageGC != nil {
+		kubeletGc := d.Get(resSKSNodepoolAttrKubeletGC).(*schema.Set)
+		if err := d.Set(resSKSNodepoolAttrKubeletGC, schema.NewSet(kubeletGc.F, []interface{}{
+			func() map[string]interface{} {
+				i := map[string]interface{}{}
+				if sksNodepool.KubeletImageGC.MinAge != "" {
+					i[resSKSNodepoolAttrKubeletGCMinAge] = sksNodepool.KubeletImageGC.MinAge
+				}
+				if sksNodepool.KubeletImageGC.HighThreshold != 0 {
+					i[resSKSNodepoolAttrKubeletGCHighThreshold] = int(sksNodepool.KubeletImageGC.HighThreshold)
+				}
+				if sksNodepool.KubeletImageGC.LowThreshold != 0 {
+					i[resSKSNodepoolAttrKubeletGCLowThreshold] = int(sksNodepool.KubeletImageGC.LowThreshold)
+				}
+				return i
+			}(),
+		})); err != nil {
+			return err
+		}
+
 	}
 
 	if err := d.Set(resSKSNodepoolAttrLabels, sksNodepool.Labels); err != nil {
 		return err
 	}
 
-	if err := d.Set(resSKSNodepoolAttrName, *sksNodepool.Name); err != nil {
+	if err := d.Set(resSKSNodepoolAttrName, sksNodepool.Name); err != nil {
 		return err
 	}
 
-	if sksNodepool.PrivateNetworkIDs != nil {
-		privateNetworkIDs := make([]string, len(*sksNodepool.PrivateNetworkIDs))
-		copy(privateNetworkIDs, *sksNodepool.PrivateNetworkIDs)
-		if err := d.Set(resSKSNodepoolAttrPrivateNetworkIDs, privateNetworkIDs); err != nil {
+	if sksNodepool.PrivateNetworks != nil {
+		if err := d.Set(resSKSNodepoolAttrPrivateNetworkIDs, func() []string {
+			ls := make([]string, 0)
+			for _, pn := range sksNodepool.PrivateNetworks {
+				ls = append(ls, pn.ID.String())
+			}
+			return ls
+		}()); err != nil {
 			return err
 		}
 	}
 
-	if sksNodepool.SecurityGroupIDs != nil {
-		securityGroupIDs := make([]string, len(*sksNodepool.SecurityGroupIDs))
-		copy(securityGroupIDs, *sksNodepool.SecurityGroupIDs)
-		if err := d.Set(resSKSNodepoolAttrSecurityGroupIDs, securityGroupIDs); err != nil {
+	if sksNodepool.SecurityGroups != nil {
+		if err := d.Set(resSKSNodepoolAttrSecurityGroupIDs, func() []string {
+			ls := make([]string, 0)
+			for _, pn := range sksNodepool.SecurityGroups {
+				ls = append(ls, pn.ID.String())
+			}
+			return ls
+		}()); err != nil {
 			return err
 		}
 	}
 
-	if err := d.Set(resSKSNodepoolAttrSize, *sksNodepool.Size); err != nil {
+	if err := d.Set(resSKSNodepoolAttrSize, sksNodepool.Size); err != nil {
 		return err
 	}
 
-	if err := d.Set(resSKSNodepoolAttrState, *sksNodepool.State); err != nil {
+	if err := d.Set(resSKSNodepoolAttrState, sksNodepool.State); err != nil {
 		return err
 	}
 
 	if sksNodepool.Taints != nil {
 		taints := make(map[string]string)
-		for k, v := range *sksNodepool.Taints {
+		for k, v := range sksNodepool.Taints {
 			taints[k] = fmt.Sprintf("%s:%s", v.Value, v.Effect)
 		}
 		if err := d.Set(resSKSNodepoolAttrTaints, taints); err != nil {
@@ -787,12 +815,24 @@ func resourceSKSNodepoolApply(
 		}
 	}
 
-	if err := d.Set(resSKSNodepoolAttrTemplateID, *sksNodepool.TemplateID); err != nil {
+	if sksNodepool.Template != nil {
+		if err := d.Set(resSKSNodepoolAttrTemplateID, sksNodepool.Template.ID); err != nil {
+			return err
+		}
+	}
+
+	if err := d.Set(resSKSNodepoolAttrVersion, sksNodepool.Version); err != nil {
 		return err
 	}
 
-	if err := d.Set(resSKSNodepoolAttrVersion, *sksNodepool.Version); err != nil {
-		return err
+	if sksNodepool.PublicIPAssignment == v3.SKSNodepoolPublicIPAssignmentDual {
+		if err := d.Set(resSKSNOdepoolAttrIPV6Enabled, true); err != nil {
+			return err
+		}
+	} else {
+		if err := d.Set(resSKSNOdepoolAttrIPV6Enabled, false); err != nil {
+			return err
+		}
 	}
 
 	return nil
