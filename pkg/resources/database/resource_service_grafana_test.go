@@ -23,7 +23,7 @@ import (
 	"github.com/exoscale/terraform-provider-exoscale/pkg/testutils"
 )
 
-type TemplateModelRedis struct {
+type TemplateModelGrafana struct {
 	ResourceName string
 
 	Name string
@@ -34,19 +34,18 @@ type TemplateModelRedis struct {
 	MaintenanceTime       string
 	TerminationProtection bool
 
-	IpFilter      []string
-	RedisSettings string
+	IpFilter        []string
+	GrafanaSettings string
 }
 
-//lint:ignore U1000 redis EOL
-func testResourceRedis(t *testing.T) {
-	tpl, err := template.ParseFiles("testdata/resource_redis.tmpl")
+func testResourceGrafana(t *testing.T) {
+	tpl, err := template.ParseFiles("testdata/resource_grafana.tmpl")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	fullResourceName := "exoscale_database.test"
-	dataBase := TemplateModelRedis{
+	fullResourceName := "exoscale_dbaas.test"
+	dataBase := TemplateModelGrafana{
 		ResourceName:          "test",
 		Name:                  acctest.RandomWithPrefix(testutils.Prefix),
 		Plan:                  "hobbyist-2",
@@ -58,7 +57,7 @@ func testResourceRedis(t *testing.T) {
 	dataCreate.MaintenanceDow = "monday"
 	dataCreate.MaintenanceTime = "01:23:00"
 	dataCreate.IpFilter = []string{"1.2.3.4/32"}
-	dataCreate.RedisSettings = strconv.Quote(`{"io_threads":1,"lfu_decay_time":1,"lfu_log_factor":10,"maxmemory_policy":"noeviction","notify_keyspace_events":"","persistence":"rdb","ssl":true,"timeout":300}`)
+	dataCreate.GrafanaSettings = strconv.Quote(`{"disable_gravatar":true}`)
 	buf := &bytes.Buffer{}
 	err = tpl.Execute(buf, &dataCreate)
 	if err != nil {
@@ -70,7 +69,7 @@ func testResourceRedis(t *testing.T) {
 	dataUpdate.MaintenanceDow = "tuesday"
 	dataUpdate.MaintenanceTime = "02:34:00"
 	dataUpdate.IpFilter = nil
-	dataUpdate.RedisSettings = strconv.Quote(`{"io_threads":1,"lfu_decay_time":1,"lfu_log_factor":10,"maxmemory_policy":"noeviction","notify_keyspace_events":"","persistence":"rdb","pubsub_client_output_buffer_limit":64,"ssl":true,"timeout":300}`)
+	dataUpdate.GrafanaSettings = strconv.Quote(`{"allow_embedding":true,"disable_gravatar":true}`)
 	buf = &bytes.Buffer{}
 	err = tpl.Execute(buf, &dataUpdate)
 	if err != nil {
@@ -80,7 +79,7 @@ func testResourceRedis(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testutils.AccPreCheck(t) },
-		CheckDestroy:             CheckServiceDestroy("redis", dataBase.Name),
+		CheckDestroy:             CheckServiceDestroy("grafana", dataBase.Name),
 		ProtoV6ProviderFactories: testutils.TestAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
@@ -95,7 +94,7 @@ func testResourceRedis(t *testing.T) {
 					resource.TestCheckResourceAttrSet(fullResourceName, "ca_certificate"),
 					resource.TestCheckResourceAttrSet(fullResourceName, "updated_at"),
 					func(s *terraform.State) error {
-						err := CheckExistsRedis(dataBase.Name, &dataCreate)
+						err := CheckExistsGrafana(dataBase.Name, &dataCreate)
 						if err != nil {
 							return err
 						}
@@ -109,7 +108,7 @@ func testResourceRedis(t *testing.T) {
 				Config: configUpdate,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					func(s *terraform.State) error {
-						err := CheckExistsRedis(dataBase.Name, &dataUpdate)
+						err := CheckExistsGrafana(dataBase.Name, &dataUpdate)
 						if err != nil {
 							return err
 						}
@@ -134,7 +133,7 @@ func testResourceRedis(t *testing.T) {
 	})
 }
 
-func CheckExistsRedis(name string, data *TemplateModelRedis) error {
+func CheckExistsGrafana(name string, data *TemplateModelGrafana) error {
 	client, err := testutils.APIClient()
 	if err != nil {
 		return err
@@ -142,7 +141,7 @@ func CheckExistsRedis(name string, data *TemplateModelRedis) error {
 
 	ctx := exoapi.WithEndpoint(context.Background(), exoapi.NewReqEndpoint(testutils.TestEnvironment(), testutils.TestZoneName))
 
-	res, err := client.GetDbaasServiceRedisWithResponse(ctx, oapi.DbaasServiceName(name))
+	res, err := client.GetDbaasServiceGrafanaWithResponse(ctx, oapi.DbaasServiceName(name))
 	if err != nil {
 		return err
 	}
@@ -160,20 +159,20 @@ func CheckExistsRedis(name string, data *TemplateModelRedis) error {
 	}
 
 	if !cmp.Equal(data.IpFilter, *service.IpFilter, cmpopts.EquateEmpty()) {
-		return fmt.Errorf("redis.ip_filter: expected %q, got %q", data.IpFilter, *service.IpFilter)
+		return fmt.Errorf("grafana.ip_filter: expected %q, got %q", data.IpFilter, *service.IpFilter)
 	}
 
 	if v := string(service.Maintenance.Dow); data.MaintenanceDow != v {
-		return fmt.Errorf("redis.maintenance_dow: expected %q, got %q", data.MaintenanceDow, v)
+		return fmt.Errorf("grafana.maintenance_dow: expected %q, got %q", data.MaintenanceDow, v)
 	}
 
 	if data.MaintenanceTime != service.Maintenance.Time {
-		return fmt.Errorf("redis.maintenance_time: expected %q, got %q", data.MaintenanceTime, service.Maintenance.Time)
+		return fmt.Errorf("grafana.maintenance_time: expected %q, got %q", data.MaintenanceTime, service.Maintenance.Time)
 	}
 
-	if data.RedisSettings != "" {
+	if data.GrafanaSettings != "" {
 		obj := map[string]interface{}{}
-		s, err := strconv.Unquote(data.RedisSettings)
+		s, err := strconv.Unquote(data.GrafanaSettings)
 		if err != nil {
 			return err
 		}
@@ -183,9 +182,9 @@ func CheckExistsRedis(name string, data *TemplateModelRedis) error {
 		}
 		if !cmp.Equal(
 			obj,
-			*service.RedisSettings,
+			*service.GrafanaSettings,
 		) {
-			return fmt.Errorf("redis.redis_settings: expected %q, got %q", obj, *service.RedisSettings)
+			return fmt.Errorf("grafana.grafana_settings: expected %q, got %q", obj, *service.GrafanaSettings)
 		}
 	}
 
