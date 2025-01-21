@@ -87,7 +87,7 @@ func validateBool(b bool) schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(func(i interface{}, k string) (s []string, es []error) {
 		value, err := strconv.ParseBool(i.(string))
 		if err != nil {
-			es = append(es, fmt.Errorf("expected type of %s to be bool", k))
+			es = append(es, fmt.Errorf("expected type of %s to be bool: %w", k, err))
 			return
 		}
 
