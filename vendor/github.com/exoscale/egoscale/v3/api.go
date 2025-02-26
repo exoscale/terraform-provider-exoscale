@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"net/http/httputil"
 	"os"
@@ -40,26 +41,46 @@ func ParseUUID(s string) (UUID, error) {
 // Final states are one of: failure, success, timeout.
 // If states argument are given, returns an error if the final state not match on of those.
 func (c Client) Wait(ctx context.Context, op *Operation, states ...OperationState) (*Operation, error) {
+	const abortErrorsCount = 5
+
 	if op == nil {
 		return nil, fmt.Errorf("operation is nil")
 	}
 
-	ticker := time.NewTicker(c.pollingInterval)
+	startTime := time.Now()
+
+	ticker := time.NewTicker(pollInterval(0))
 	defer ticker.Stop()
 
 	if op.State != OperationStatePending {
 		return op, nil
 	}
 
+	var subsequentErrors int
 	var operation *Operation
 polling:
 	for {
 		select {
 		case <-ticker.C:
+			runTime := time.Since(startTime)
+
+			if c.waitTimeout != 0 && runTime > c.waitTimeout {
+				return nil, fmt.Errorf("operation: %q: max wait timeout reached", op.ID)
+			}
+
+			newInterval := pollInterval(runTime)
+			ticker.Reset(newInterval)
+
 			o, err := c.GetOperation(ctx, op.ID)
 			if err != nil {
-				return nil, err
+				subsequentErrors++
+				if subsequentErrors >= abortErrorsCount {
+					return nil, err
+				}
+				continue
 			}
+			subsequentErrors = 0
+
 			if o.State == OperationStatePending {
 				continue
 			}
@@ -138,6 +159,28 @@ func (c Client) Validate(s any) error {
 	}
 
 	return err
+}
+
+// pollInterval returns the wait interval (as a time.Duration) before the next poll, based on the current runtime of a job.
+// The polling frequency is:
+//   - every 3 seconds for the first 30 seconds
+//   - then increases linearly to reach 1 minute at 15 minutes of runtime
+//   - after 15 minutes, it stays at 1 minute intervals
+func pollInterval(runTime time.Duration) time.Duration {
+	runTimeSeconds := runTime.Seconds()
+
+	// Coefficients for the linear equation y = a * x + b
+	a := 57.0 / 870.0
+	b := 3.0 - 30.0*a
+
+	minWait := 3.0
+	maxWait := 60.0
+
+	interval := a*runTimeSeconds + b
+	interval = math.Max(minWait, interval)
+	interval = math.Min(maxWait, interval)
+
+	return time.Duration(interval) * time.Second
 }
 
 func prepareJSONBody(body any) (*bytes.Reader, error) {

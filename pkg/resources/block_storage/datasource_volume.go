@@ -229,7 +229,9 @@ func (d *DataSourceVolume) Read(ctx context.Context, req datasource.ReadRequest,
 	}
 
 	plan.Instance = types.ObjectNull(VolumeInstanceModel{}.Types())
-	if volume.Instance != nil {
+	// the API can return an instance object with with an empty ID string, which
+	// is functionally the same as no instance object (volume is not assigned)
+	if volume.Instance != nil && volume.Instance.ID.String() != "" {
 		instance := VolumeInstanceModel{}
 		instance.ID = types.StringValue(volume.Instance.ID.String())
 
