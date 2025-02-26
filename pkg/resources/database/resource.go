@@ -168,9 +168,6 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 			"state": schema.StringAttribute{
 				MarkdownDescription: "The current state of the database service.",
 				Computed:            true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
 			},
 			"ca_certificate": schema.StringAttribute{
 				MarkdownDescription: "CA Certificate required to reach a DBaaS service through a TLS-protected connection.",
