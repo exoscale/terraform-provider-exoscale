@@ -49,6 +49,8 @@ resource "exoscale_sks_cluster" "test" {
     test = "%s"
   }
 
+  enable_kube_proxy = true
+
   oidc {
     client_id  = "%s"
     groups_claim = "%s"
@@ -106,6 +108,8 @@ resource "exoscale_sks_cluster" "test" {
   labels = {
     test = "%s"
   }
+
+  enable_kube_proxy = true
 
   timeouts {
     create = "10m"
@@ -264,6 +268,7 @@ func TestAccResourceSKSCluster(t *testing.T) {
 					"oidc.#",
 					"oidc.0.%",
 					"addons",
+					resSKSClusterAttrEnableKubeProxy,
 					resSKSClusterAttrOIDC(resSKSClusterAttrOIDCClientID),
 					resSKSClusterAttrOIDC(resSKSClusterAttrOIDCGroupsClaim),
 					resSKSClusterAttrOIDC(resSKSClusterAttrOIDCGroupsPrefix),
