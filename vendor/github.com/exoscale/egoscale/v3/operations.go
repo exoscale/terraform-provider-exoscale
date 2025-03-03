@@ -9457,6 +9457,50 @@ func (c Client) UpdateIAMOrganizationPolicy(ctx context.Context, req IAMPolicy) 
 	return bodyresp, nil
 }
 
+// Reset IAM Organization Policy
+func (c Client) ResetIAMOrganizationPolicy(ctx context.Context) (*Operation, error) {
+	path := "/iam-organization-policy:reset"
+
+	request, err := http.NewRequestWithContext(ctx, "POST", c.serverEndpoint+path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("ResetIAMOrganizationPolicy: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("ResetIAMOrganizationPolicy: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("ResetIAMOrganizationPolicy: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "reset-iam-organization-policy")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("ResetIAMOrganizationPolicy: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("ResetIAMOrganizationPolicy: http response: %w", err)
+	}
+
+	bodyresp := &Operation{}
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("ResetIAMOrganizationPolicy: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
 type ListIAMRolesResponse struct {
 	IAMRoles []IAMRole `json:"iam-roles,omitempty"`
 }
@@ -13750,7 +13794,11 @@ type CreateSKSClusterRequest struct {
 	Cni CreateSKSClusterRequestCni `json:"cni,omitempty"`
 	// Cluster description
 	Description *string `json:"description,omitempty" validate:"omitempty,lte=255"`
-	Labels      Labels  `json:"labels,omitempty"`
+	// Indicates whether to deploy the Kubernetes network proxy. When unspecified, defaults to `true` unless Cilium CNI is selected
+	EnableKubeProxy *bool `json:"enable-kube-proxy,omitempty"`
+	// A list of Kubernetes-only Alpha features to enable for API server component
+	FeatureGates []string `json:"feature-gates"`
+	Labels       Labels   `json:"labels,omitempty"`
 	// Cluster service level
 	Level CreateSKSClusterRequestLevel `json:"level" validate:"required"`
 	// Cluster name
@@ -14070,7 +14118,9 @@ type UpdateSKSClusterRequest struct {
 	AutoUpgrade *bool `json:"auto-upgrade,omitempty"`
 	// Cluster description
 	Description *string `json:"description,omitempty" validate:"omitempty,lte=255"`
-	Labels      Labels  `json:"labels,omitempty"`
+	// A list of Kubernetes-only Alpha features to enable for API server component
+	FeatureGates []string `json:"feature-gates"`
+	Labels       Labels   `json:"labels,omitempty"`
 	// Cluster name
 	Name string `json:"name,omitempty" validate:"omitempty,gte=1,lte=255"`
 	// SKS Cluster OpenID config map
