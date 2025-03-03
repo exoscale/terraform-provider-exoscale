@@ -269,7 +269,7 @@ func resourceSKSClusterCreate(ctx context.Context, d *schema.ResourceData, meta 
 	}
 
 	createReq := v3.CreateSKSClusterRequest{
-		FeatureGates: make([]string, 0), // mandatory field but unimplemented in the provider yet
+		FeatureGates: make([]string, 0), // mandatory due to a bug https://github.com/exoscale/terraform-provider-exoscale/pull/412#discussion_r1977616102
 	}
 
 	var addOns []string
@@ -507,7 +507,7 @@ func resourceSKSClusterUpdate(ctx context.Context, d *schema.ResourceData, meta 
 
 	var updated bool
 	updateReq := v3.UpdateSKSClusterRequest{
-		FeatureGates: make([]string, 0), // mandatory field but unimplemented in the provider yet
+		FeatureGates: make([]string, 0), // mandatory field due to a bug https://github.com/exoscale/terraform-provider-exoscale/pull/412#discussion_r1977616102
 	}
 
 	if d.HasChange(resSKSClusterAttrAutoUpgrade) {
