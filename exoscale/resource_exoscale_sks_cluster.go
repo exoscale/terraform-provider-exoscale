@@ -31,6 +31,7 @@ const (
 	resSKSClusterAttrControlPlaneCA     = "control_plane_ca"
 	resSKSClusterAttrCreatedAt          = "created_at"
 	resSKSClusterAttrDescription        = "description"
+	resSKSClusterAttrEnableKubeProxy    = "enable_kube_proxy"
 	resSKSClusterAttrEndpoint           = "endpoint"
 	resSKSClusterAttrExoscaleCCM        = "exoscale_ccm"
 	resSKSClusterAttrExoscaleCSI        = "exoscale_csi"
@@ -99,6 +100,12 @@ func resourceSKSCluster() *schema.Resource {
 			Type:        schema.TypeString,
 			Optional:    true,
 			Description: "A free-form text describing the cluster.",
+		},
+		resSKSClusterAttrEnableKubeProxy: {
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Description: "Indicates whether to deploy the Kubernetes network proxy. (may only be set at creation time)",
+			ForceNew:    true,
 		},
 		resSKSClusterAttrEndpoint: {
 			Type:        schema.TypeString,
@@ -261,7 +268,9 @@ func resourceSKSClusterCreate(ctx context.Context, d *schema.ResourceData, meta 
 		return diag.FromErr(err)
 	}
 
-	createReq := v3.CreateSKSClusterRequest{}
+	createReq := v3.CreateSKSClusterRequest{
+		FeatureGates: make([]string, 0), // mandatory field but unimplemented in the provider yet
+	}
 
 	var addOns []string
 	if addonsSet, ok := d.Get(resSKSClusterAttrAddons).(*schema.Set); ok && addonsSet.Len() > 0 {
@@ -285,6 +294,11 @@ func resourceSKSClusterCreate(ctx context.Context, d *schema.ResourceData, meta 
 
 	if autoUpgrade := d.Get(resSKSClusterAttrAutoUpgrade).(bool); autoUpgrade {
 		createReq.AutoUpgrade = &autoUpgrade
+	}
+
+	if enableKubeProxy, isSet := d.GetOk(resSKSClusterAttrEnableKubeProxy); isSet {
+		v := enableKubeProxy.(bool)
+		createReq.EnableKubeProxy = &v
 	}
 
 	if v, ok := d.GetOk(resSKSClusterAttrCNI); ok {
@@ -492,7 +506,9 @@ func resourceSKSClusterUpdate(ctx context.Context, d *schema.ResourceData, meta 
 	}
 
 	var updated bool
-	updateReq := v3.UpdateSKSClusterRequest{}
+	updateReq := v3.UpdateSKSClusterRequest{
+		FeatureGates: make([]string, 0), // mandatory field but unimplemented in the provider yet
+	}
 
 	if d.HasChange(resSKSClusterAttrAutoUpgrade) {
 		autoUpgrade := d.Get(resSKSClusterAttrAutoUpgrade).(bool)
