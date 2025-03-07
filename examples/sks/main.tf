@@ -15,6 +15,8 @@ data "exoscale_security_group" "default" {
 resource "exoscale_sks_cluster" "my_sks_cluster" {
   zone = local.my_zone
   name = "my-sks-cluster"
+  auto_upgrade = true
+  exoscale_csi = true
 }
 
 # (ad-hoc anti-affinity group)
