@@ -14,6 +14,7 @@ BUG FIXES:
 - Ignore block storage detach error when already detached #393
 - Remove hardcoded timeout from db redis test #403
 - Use dedicated endpoint for fetching database user credentials #416
+- Deprecate database opensearch max_index_count #414
 
 ## 0.62.3
 
