@@ -79,6 +79,7 @@ var ResourceOpensearchSchema = schema.SingleNestedBlock{
 		"max_index_count": schema.Int64Attribute{
 			MarkdownDescription: "Maximum number of indexes to keep (Minimum value is `0`)",
 			Optional:            true,
+			DeprecationMessage:  "This attribute is deprecated and is ignored",
 		},
 		"settings": schema.StringAttribute{
 			MarkdownDescription: "OpenSearch-specific settings, in json. e.g.`jsonencode({thread_pool_search_size: 64})`. Use `exo x get-dbaas-settings-opensearch` to get a list of available settings.",
@@ -167,7 +168,6 @@ func (r *Resource) createOpensearch(ctx context.Context, data *ResourceModel, di
 	service := oapi.CreateDbaasServiceOpensearchJSONRequestBody{
 		Plan:                     data.Plan.ValueString(),
 		TerminationProtection:    data.TerminationProtection.ValueBoolPointer(),
-		MaxIndexCount:            data.Opensearch.MaxIndexCount.ValueInt64Pointer(),
 		ForkFromService:          (*oapi.DbaasServiceName)(data.Opensearch.ForkFromService.ValueStringPointer()),
 		RecoveryBackupName:       data.Opensearch.RecoveryBackupName.ValueStringPointer(),
 		KeepIndexRefreshInterval: data.Opensearch.KeepIndexRefreshInterval.ValueBoolPointer(),
@@ -409,10 +409,6 @@ func (r *Resource) readOpensearch(ctx context.Context, data *ResourceModel, diag
 		data.Opensearch.KeepIndexRefreshInterval = types.BoolPointerValue(apiService.KeepIndexRefreshInterval)
 	}
 
-	if !data.Opensearch.MaxIndexCount.IsNull() || isImport {
-		data.Opensearch.MaxIndexCount = types.Int64PointerValue(apiService.MaxIndexCount)
-	}
-
 	data.Opensearch.Version = types.StringNull()
 	if apiService.Version != nil {
 		data.Opensearch.Version = types.StringValue(strings.SplitN(*apiService.Version, ".", 2)[0])
@@ -536,11 +532,6 @@ func (r *Resource) updateOpensearch(ctx context.Context, stateData *ResourceMode
 
 		if !planData.Opensearch.KeepIndexRefreshInterval.IsNull() && !planData.Opensearch.KeepIndexRefreshInterval.Equal(stateData.Opensearch.KeepIndexRefreshInterval) {
 			service.KeepIndexRefreshInterval = planData.Opensearch.KeepIndexRefreshInterval.ValueBoolPointer()
-			updated = true
-		}
-
-		if !planData.Opensearch.MaxIndexCount.IsNull() && !planData.Opensearch.MaxIndexCount.Equal(stateData.Opensearch.MaxIndexCount) {
-			service.MaxIndexCount = planData.Opensearch.MaxIndexCount.ValueInt64Pointer()
 			updated = true
 		}
 
