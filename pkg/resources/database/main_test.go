@@ -18,7 +18,9 @@ import (
 func TestDatabase(t *testing.T) {
 	t.Run("ResourcePg", testResourcePg)
 	t.Run("ResourceMysql", testResourceMysql)
-	t.Run("ResourceRedis", testResourceRedis)
+	// Redis is EOL and creating a service is no longer possible.
+	// TODO: Clean up this test.
+	//t.Run("ResourceRedis", testResourceRedis)
 	t.Run("ResourceKafka", testResourceKafka)
 	t.Run("ResourceOpensearch", testResourceOpensearch)
 	t.Run("ResourceGrafana", testResourceGrafana)

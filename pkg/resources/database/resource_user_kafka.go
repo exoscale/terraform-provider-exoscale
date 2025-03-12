@@ -173,11 +173,19 @@ func (data *KafkaUserResourceModel) CreateResource(ctx context.Context, client *
 
 	for _, user := range svc.Users {
 		if user.Username == data.Username.ValueString() {
-			data.Password = basetypes.NewStringValue(user.Password)
 			data.Type = basetypes.NewStringValue(user.Type)
-			data.AccessCert = basetypes.NewStringValue(user.AccessCert)
-			data.AccessKey = basetypes.NewStringValue(user.AccessKey)
-			data.AccessCertExpiry = basetypes.NewStringValue(user.AccessCertExpiry.String())
+
+			pass, err := client.RevealDBAASKafkaUserPassword(ctx, data.Service.ValueString(), data.Username.ValueString())
+			if err != nil {
+				diagnostics.AddError("Client Error", fmt.Sprintf("Unable to reveal pg user password, got error: %s", err))
+				return
+			}
+
+			data.Password = basetypes.NewStringValue(pass.Password)
+			data.AccessCert = basetypes.NewStringValue(pass.AccessCert)
+			data.AccessKey = basetypes.NewStringValue(pass.AccessKey)
+			data.AccessCertExpiry = basetypes.NewStringValue(pass.AccessCertExpiry.String())
+
 			return
 		}
 	}
@@ -216,11 +224,19 @@ func (data *KafkaUserResourceModel) ReadResource(ctx context.Context, client *ex
 
 	for _, user := range svc.Users {
 		if user.Username == data.Username.ValueString() {
-			data.Password = basetypes.NewStringValue(user.Password)
 			data.Type = basetypes.NewStringValue(user.Type)
-			data.AccessCert = basetypes.NewStringValue(user.AccessCert)
-			data.AccessKey = basetypes.NewStringValue(user.AccessKey)
-			data.AccessCertExpiry = basetypes.NewStringValue(user.AccessCertExpiry.String())
+
+			pass, err := client.RevealDBAASKafkaUserPassword(ctx, data.Service.ValueString(), data.Username.ValueString())
+			if err != nil {
+				diagnostics.AddError("Client Error", fmt.Sprintf("Unable to reveal pg user password, got error: %s", err))
+				return
+			}
+
+			data.Password = basetypes.NewStringValue(pass.Password)
+			data.AccessCert = basetypes.NewStringValue(pass.AccessCert)
+			data.AccessKey = basetypes.NewStringValue(pass.AccessKey)
+			data.AccessCertExpiry = basetypes.NewStringValue(pass.AccessCertExpiry.String())
+
 			return
 		}
 	}

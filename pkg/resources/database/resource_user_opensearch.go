@@ -154,8 +154,16 @@ func (data *OpensearchUserResourceModel) CreateResource(ctx context.Context, cli
 
 	for _, user := range svc.Users {
 		if user.Username == data.Username.ValueString() {
-			data.Password = basetypes.NewStringValue(user.Password)
 			data.Type = basetypes.NewStringValue(user.Type)
+
+			pass, err := client.RevealDBAASOpensearchUserPassword(ctx, data.Service.ValueString(), data.Username.ValueString())
+			if err != nil {
+				diagnostics.AddError("Client Error", fmt.Sprintf("Unable to reveal pg user password, got error: %s", err))
+				return
+			}
+
+			data.Password = basetypes.NewStringValue(pass.Password)
+
 			return
 		}
 	}
@@ -194,8 +202,16 @@ func (data *OpensearchUserResourceModel) ReadResource(ctx context.Context, clien
 
 	for _, user := range svc.Users {
 		if user.Username == data.Username.ValueString() {
-			data.Password = basetypes.NewStringValue(user.Password)
 			data.Type = basetypes.NewStringValue(user.Type)
+
+			pass, err := client.RevealDBAASOpensearchUserPassword(ctx, data.Service.ValueString(), data.Username.ValueString())
+			if err != nil {
+				diagnostics.AddError("Client Error", fmt.Sprintf("Unable to reveal pg user password, got error: %s", err))
+				return
+			}
+
+			data.Password = basetypes.NewStringValue(pass.Password)
+
 			return
 		}
 	}
