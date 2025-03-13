@@ -20,6 +20,7 @@ import (
 
 	exoscale "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
+	v3 "github.com/exoscale/egoscale/v3"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
@@ -36,6 +37,7 @@ func NewResource() resource.Resource {
 // Resource defines the DBaaS Service resource implementation.
 type Resource struct {
 	client *exoscale.Client
+	clientV3 *v3.Client
 	env    string
 }
 
@@ -61,6 +63,7 @@ type ResourceModel struct {
 	Pg         *ResourcePgModel         `tfsdk:"pg"`
 	Mysql      *ResourceMysqlModel      `tfsdk:"mysql"`
 	Redis      *ResourceRedisModel      `tfsdk:"redis"`
+	Valkey     *ResourceValkeyModel     `tfsdk:"valkey"`
 	Kafka      *ResourceKafkaModel      `tfsdk:"kafka"`
 	Opensearch *ResourceOpensearchModel `tfsdk:"opensearch"`
 	Grafana    *ResourceGrafanaModel    `tfsdk:"grafana"`
@@ -214,6 +217,7 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 			"opensearch": ResourceOpensearchSchema,
 			"pg":         ResourcePgSchema,
 			"redis":      ResourceRedisSchema,
+			"valkey":     ResourceValkeySchema,
 			"timeouts":   timeouts.BlockAll(ctx),
 		},
 		Version: 1,
@@ -224,7 +228,7 @@ func (r *Resource) Configure(ctx context.Context, req resource.ConfigureRequest,
 	if req.ProviderData == nil {
 		return
 	}
-
+	r.clientV3 = req.ProviderData.(*providerConfig.ExoscaleProviderConfig).ClientV3
 	r.client = req.ProviderData.(*providerConfig.ExoscaleProviderConfig).ClientV2
 	r.env = req.ProviderData.(*providerConfig.ExoscaleProviderConfig).Environment
 }
@@ -427,6 +431,8 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 		r.createMysql(ctx, &data, &resp.Diagnostics)
 	case "redis":
 		r.createRedis(ctx, &data, &resp.Diagnostics)
+	case "valkey":
+		r.createValkey(ctx, &data, &resp.Diagnostics)
 	case "kafka":
 		r.createKafka(ctx, &data, &resp.Diagnostics)
 	case "opensearch":
@@ -474,6 +480,8 @@ func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *res
 		r.readMysql(ctx, &data, &resp.Diagnostics)
 	case "redis":
 		r.readRedis(ctx, &data, &resp.Diagnostics)
+	case "valkey":
+		r.readValkey(ctx, &data, &resp.Diagnostics)
 	case "kafka":
 		r.readKafka(ctx, &data, &resp.Diagnostics)
 	case "opensearch":
@@ -522,6 +530,8 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 		r.updateMysql(ctx, &stateData, &planData, &resp.Diagnostics)
 	case "redis":
 		r.updateRedis(ctx, &stateData, &planData, &resp.Diagnostics)
+	case "valkey":
+		r.updateValkey(ctx, &stateData, &planData, &resp.Diagnostics)
 	case "kafka":
 		r.updateKafka(ctx, &stateData, &planData, &resp.Diagnostics)
 	case "opensearch":
