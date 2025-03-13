@@ -181,6 +181,7 @@ func testResourceOpensearch(t *testing.T) {
 					},
 					// User
 					resource.TestCheckResourceAttrSet(userFullResourceName, "type"),
+					resource.TestCheckResourceAttrSet(userFullResourceName, "password"),
 					func(s *terraform.State) error {
 						err := CheckExistsOpensearchUser(serviceDataBase.Name, userDataBase.Username, &userDataCreate)
 						if err != nil {
