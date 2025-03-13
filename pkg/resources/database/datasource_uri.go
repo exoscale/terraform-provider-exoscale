@@ -110,7 +110,7 @@ func (d *DataSourceURI) Schema(
 				Required:            true,
 			},
 			"type": schema.StringAttribute{
-				MarkdownDescription: "The type of the database service (`kafka`, `mysql`, `opensearch`, `pg`, `redis`).",
+				MarkdownDescription: "The type of the database service (`kafka`, `mysql`, `opensearch`, `pg`, `redis`, `valkey`).",
 				Required:            true,
 				Validators: []validator.String{
 					stringvalidator.OneOf(ServicesList...),
@@ -443,6 +443,53 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 		if err != nil {
 			resp.Diagnostics.AddError("Client Error",
 				fmt.Sprintf("Unable to parse Database Service Redis secret: %s", err),
+			)
+			return
+		}
+		params["password"] = creds.Password
+	case "valkey":
+		res, err := waitForDBAASService(
+			ctx,
+			client.GetDBAASServiceValkey,
+			data.Name.ValueString(),
+			func(s *exoscale.DBAASServiceValkey) string { return string(s.State) },
+		)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Client Error",
+				fmt.Sprintf("Unable to read Database Service Valkey: %s", err),
+			)
+			return
+		}
+
+		params = res.URIParams
+		if i, ok := params["user"]; ok {
+			if s, ok := i.(string); ok {
+				user = s
+			}
+		}
+		if user == "" {
+			resp.Diagnostics.AddError(
+				"Client Error",
+				"Database Service Valkey user is empty",
+			)
+			return
+		}
+		data.Schema = types.StringValue("valkeys")
+
+		creds, err := client.RevealDBAASValkeyUserPassword(ctx, data.Name.ValueString(), user)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Client Error",
+				fmt.Sprintf("Unable to reveal Database Service Valkey secret: %s", err),
+			)
+			return
+		}
+		uri, err = uriWithPassword(res.URI, creds.Username, creds.Password)
+
+		if err != nil {
+			resp.Diagnostics.AddError("Client Error",
+				fmt.Sprintf("Unable to parse Database Service Valkey secret: %s", err),
 			)
 			return
 		}
