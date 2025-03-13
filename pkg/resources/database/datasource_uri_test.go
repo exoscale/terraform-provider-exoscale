@@ -128,53 +128,6 @@ func testDataSourceURI(t *testing.T) {
 		},
 	})
 
-	// Test database Redis URI
-	tplResourceRedis, err := template.ParseFiles("testdata/resource_redis.tmpl")
-	if err != nil {
-		t.Fatal(err)
-	}
-	resourceRedis := TemplateModelRedis{
-		ResourceName:          "test",
-		Name:                  acctest.RandomWithPrefix(testutils.Prefix),
-		Plan:                  "hobbyist-2",
-		Zone:                  testutils.TestZoneName,
-		TerminationProtection: false,
-	}
-	buf = &bytes.Buffer{}
-	err = tplResourceRedis.Execute(buf, &resourceRedis)
-	if err != nil {
-		t.Fatal(err)
-	}
-	part = buf.String()
-
-	data.Type = "redis"
-	buf = &bytes.Buffer{}
-	err = tplData.Execute(buf, &data)
-	if err != nil {
-		t.Fatal(err)
-	}
-	config = fmt.Sprintf("%s\n%s", part, buf.String())
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { testutils.AccPreCheck(t) },
-		CheckDestroy:             CheckServiceDestroy("redis", resourceRedis.Name),
-		ProtoV6ProviderFactories: testutils.TestAccProtoV6ProviderFactories,
-		Steps: []resource.TestStep{
-			{
-				Config: config,
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttrSet(fullResourceName, "uri"),
-					resource.TestCheckResourceAttr(fullResourceName, "schema", "rediss"),
-					resource.TestCheckResourceAttr(fullResourceName, "username", "default"),
-					resource.TestCheckResourceAttrSet(fullResourceName, "password"),
-					resource.TestCheckResourceAttrSet(fullResourceName, "host"),
-					resource.TestCheckResourceAttrSet(fullResourceName, "port"),
-					resource.TestCheckNoResourceAttr(fullResourceName, "db_name"),
-				),
-			},
-		},
-	})
-
 	// Test database Kafka URI
 	tplResourceKafka, err := template.ParseFiles("testdata/resource_kafka.tmpl")
 	if err != nil {

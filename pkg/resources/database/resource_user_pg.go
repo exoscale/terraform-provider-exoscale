@@ -172,11 +172,19 @@ func (data *PGUserResourceModel) CreateResource(ctx context.Context, client *exo
 
 	for _, user := range svc.Users {
 		if user.Username == data.Username.ValueString() {
-			data.Password = basetypes.NewStringValue(user.Password)
 			data.Type = basetypes.NewStringValue(user.Type)
 			if user.AllowReplication != nil {
 				data.AllowReplication = basetypes.NewBoolValue(*user.AllowReplication)
 			}
+
+			pass, err := client.RevealDBAASPostgresUserPassword(ctx, data.Service.ValueString(), data.Username.ValueString())
+			if err != nil {
+				diagnostics.AddError("Client Error", fmt.Sprintf("Unable to reveal pg user password, got error: %s", err))
+				return
+			}
+
+			data.Password = basetypes.NewStringValue(pass.Password)
+
 			return
 		}
 	}
@@ -206,7 +214,6 @@ func (data *PGUserResourceModel) Delete(ctx context.Context, client *exoscale.Cl
 }
 
 func (data *PGUserResourceModel) ReadResource(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics) {
-
 	svc, err := client.GetDBAASServicePG(ctx, data.Service.ValueString())
 	if err != nil {
 		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read service pg user, got error: %s", err))
@@ -215,11 +222,19 @@ func (data *PGUserResourceModel) ReadResource(ctx context.Context, client *exosc
 
 	for _, user := range svc.Users {
 		if user.Username == data.Username.ValueString() {
-			data.Password = basetypes.NewStringValue(user.Password)
 			data.Type = basetypes.NewStringValue(user.Type)
 			if user.AllowReplication != nil {
 				data.AllowReplication = basetypes.NewBoolValue(*user.AllowReplication)
 			}
+
+			pass, err := client.RevealDBAASPostgresUserPassword(ctx, data.Service.ValueString(), data.Username.ValueString())
+			if err != nil {
+				diagnostics.AddError("Client Error", fmt.Sprintf("Unable to reveal pg user password, got error: %s", err))
+				return
+			}
+
+			data.Password = basetypes.NewStringValue(pass.Password)
+
 			return
 		}
 	}

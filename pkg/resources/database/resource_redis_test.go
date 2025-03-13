@@ -38,6 +38,7 @@ type TemplateModelRedis struct {
 	RedisSettings string
 }
 
+//lint:ignore U1000 redis EOL
 func testResourceRedis(t *testing.T) {
 	tpl, err := template.ParseFiles("testdata/resource_redis.tmpl")
 	if err != nil {
