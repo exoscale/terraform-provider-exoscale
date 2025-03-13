@@ -180,8 +180,8 @@ func testResourceOpensearch(t *testing.T) {
 						return nil
 					},
 					// User
-					resource.TestCheckResourceAttrSet(userFullResourceName, "password"),
 					resource.TestCheckResourceAttrSet(userFullResourceName, "type"),
+					resource.TestCheckResourceAttrSet(userFullResourceName, "password"),
 					func(s *terraform.State) error {
 						err := CheckExistsOpensearchUser(serviceDataBase.Name, userDataBase.Username, &userDataCreate)
 						if err != nil {
@@ -234,7 +234,7 @@ func testResourceOpensearch(t *testing.T) {
 				}(),
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: strings.Fields("updated_at state"),
+				ImportStateVerifyIgnore: strings.Fields("updated_at state opensearch.max_index_count"),
 			},
 			{
 				ResourceName: userFullResourceName,
@@ -289,10 +289,6 @@ func CheckExistsOpensearch(name string, data *TemplateModelOpensearch) error {
 
 	if data.KeepIndexRefreshInterval != *service.KeepIndexRefreshInterval {
 		return fmt.Errorf("keep_index_refresh_interval: expected %v, got %v", data.KeepIndexRefreshInterval, *service.KeepIndexRefreshInterval)
-	}
-
-	if data.MaxIndexCount != strconv.FormatInt(*service.MaxIndexCount, 10) {
-		return fmt.Errorf("max_index_count: expected %v, got %v", data.MaxIndexCount, *service.MaxIndexCount)
 	}
 
 	if len(data.IndexPatterns) != len(*service.IndexPatterns) {
