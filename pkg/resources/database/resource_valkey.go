@@ -17,7 +17,7 @@ import (
 )
 
 type ResourceValkeyModel struct {
-	IpFilter types.Set    `tfsdk:"ip_filter"`
+	IPFilter types.Set    `tfsdk:"ip_filter"`
 	Settings types.String `tfsdk:"valkey_settings"`
 }
 
@@ -56,10 +56,10 @@ func (r *Resource) createValkey(ctx context.Context, data *ResourceModel, diagno
 	}
 
 	if data.Valkey != nil {
-		if !data.Valkey.IpFilter.IsUnknown() {
+		if !data.Valkey.IPFilter.IsUnknown() {
 			obj := []string{}
-			if len(data.Valkey.IpFilter.Elements()) > 0 {
-				dg := data.Valkey.IpFilter.ElementsAs(ctx, &obj, false)
+			if len(data.Valkey.IPFilter.Elements()) > 0 {
+				dg := data.Valkey.IPFilter.ElementsAs(ctx, &obj, false)
 				if dg.HasError() {
 					diagnostics.Append(dg...)
 					return
@@ -82,19 +82,19 @@ func (r *Resource) createValkey(ctx context.Context, data *ResourceModel, diagno
 				return
 			}
 
-			ssl := settings["ssl"].(bool)
+			ssl := getSettingBool(settings, "ssl")
 			service.ValkeySettings = &v3.JSONSchemaValkey{
-				AclChannelsDefault:            v3.JSONSchemaValkeyAclChannelsDefault(settings["acl_channels_default"].(string)),
-				IoThreads:                     settings["io_threads"].(int),
-				LfuDecayTime:                  settings["lfu_decay_time"].(int),
-				LfuLogFactor:                  settings["lfu_log_factor"].(int),
-				MaxmemoryPolicy:               v3.JSONSchemaValkeyMaxmemoryPolicy(settings["maxmemory_policy"].(string)),
-				NotifyKeyspaceEvents:          settings["notify_keyspace_events"].(string),
-				NumberOfDatabases:             settings["number_of_databases"].(int),
-				Persistence:                   v3.JSONSchemaValkeyPersistence(settings["persistence"].(string)),
-				PubsubClientOutputBufferLimit: settings["pubsub_client_output_buffer_limit"].(int),
+				AclChannelsDefault:            v3.JSONSchemaValkeyAclChannelsDefault(getSettingString(settings, "acl_channels_default")),
+				IoThreads:                     getSettingFloat64(settings, "io_threads"),
+				LfuDecayTime:                  getSettingFloat64(settings, "lfu_decay_time"),
+				LfuLogFactor:                  getSettingFloat64(settings, "lfu_log_factor"),
+				MaxmemoryPolicy:               v3.JSONSchemaValkeyMaxmemoryPolicy(getSettingString(settings, "maxmemory_policy")),
+				NotifyKeyspaceEvents:          getSettingString(settings, "notify_keyspace_events"),
+				NumberOfDatabases:             getSettingFloat64(settings, "number_of_databases"),
+				Persistence:                   v3.JSONSchemaValkeyPersistence(getSettingString(settings, "persistence")),
+				PubsubClientOutputBufferLimit: getSettingFloat64(settings, "pubsub_client_output_buffer_limit"),
 				SSL:                           &ssl,
-				Timeout:                       settings["timeout"].(int),
+				Timeout:                       getSettingFloat64(settings, "timeout"),
 			}
 		}
 	}
@@ -152,7 +152,7 @@ func (r *Resource) readValkey(ctx context.Context, data *ResourceModel, diagnost
 		data.Valkey = &ResourceValkeyModel{}
 	}
 
-	data.Valkey.IpFilter = types.SetNull(types.StringType)
+	data.Valkey.IPFilter = types.SetNull(types.StringType)
 	if apiService.IPFilter != nil {
 		v, dg := types.SetValueFrom(ctx, types.StringType, apiService.IPFilter)
 		if dg.HasError() {
@@ -160,7 +160,7 @@ func (r *Resource) readValkey(ctx context.Context, data *ResourceModel, diagnost
 			return
 		}
 
-		data.Valkey.IpFilter = v
+		data.Valkey.IPFilter = v
 	}
 
 	data.Valkey.Settings = types.StringNull()
@@ -204,16 +204,16 @@ func (r *Resource) updateValkey(ctx context.Context, stateData *ResourceModel, p
 			stateData.Valkey = &ResourceValkeyModel{}
 		}
 
-		if !planData.Valkey.IpFilter.Equal(stateData.Valkey.IpFilter) {
-			obj := []string{}
-			if len(planData.Valkey.IpFilter.Elements()) > 0 {
-				dg := planData.Valkey.IpFilter.ElementsAs(ctx, &obj, false)
+		if !planData.Valkey.IPFilter.Equal(stateData.Valkey.IPFilter) {
+			ips := []string{}
+			if len(planData.Valkey.IPFilter.Elements()) > 0 {
+				dg := planData.Valkey.IPFilter.ElementsAs(ctx, &ips, false)
 				if dg.HasError() {
 					diagnostics.Append(dg...)
 					return
 				}
 			}
-			service.IPFilter = obj
+			service.IPFilter = ips
 			updated = true
 		}
 
@@ -230,19 +230,20 @@ func (r *Resource) updateValkey(ctx context.Context, stateData *ResourceModel, p
 					diagnostics.AddError("Validation error", fmt.Sprintf("invalid Valkey settings: %s", err))
 					return
 				}
-				ssl := settings["ssl"].(bool)
+
+				ssl := getSettingBool(settings, "ssl")
 				service.ValkeySettings = &v3.JSONSchemaValkey{
-					AclChannelsDefault:            v3.JSONSchemaValkeyAclChannelsDefault(settings["acl_channels_default"].(string)),
-					IoThreads:                     settings["io_threads"].(int),
-					LfuDecayTime:                  settings["lfu_decay_time"].(int),
-					LfuLogFactor:                  settings["lfu_log_factor"].(int),
-					MaxmemoryPolicy:               v3.JSONSchemaValkeyMaxmemoryPolicy(settings["maxmemory_policy"].(string)),
-					NotifyKeyspaceEvents:          settings["notify_keyspace_events"].(string),
-					NumberOfDatabases:             settings["number_of_databases"].(int),
-					Persistence:                   v3.JSONSchemaValkeyPersistence(settings["persistence"].(string)),
-					PubsubClientOutputBufferLimit: settings["pubsub_client_output_buffer_limit"].(int),
+					AclChannelsDefault:            v3.JSONSchemaValkeyAclChannelsDefault(getSettingString(settings, "acl_channels_default")),
+					IoThreads:                     getSettingFloat64(settings, "io_threads"),
+					LfuDecayTime:                  getSettingFloat64(settings, "lfu_decay_time"),
+					LfuLogFactor:                  getSettingFloat64(settings, "lfu_log_factor"),
+					MaxmemoryPolicy:               v3.JSONSchemaValkeyMaxmemoryPolicy(getSettingString(settings, "maxmemory_policy")),
+					NotifyKeyspaceEvents:          getSettingString(settings, "notify_keyspace_events"),
+					NumberOfDatabases:             getSettingFloat64(settings, "number_of_databases"),
+					Persistence:                   v3.JSONSchemaValkeyPersistence(getSettingString(settings, "persistence")),
+					PubsubClientOutputBufferLimit: getSettingFloat64(settings, "pubsub_client_output_buffer_limit"),
 					SSL:                           &ssl,
-					Timeout:                       settings["timeout"].(int),
+					Timeout:                       getSettingFloat64(settings, "timeout"),
 				}
 			}
 			updated = true
