@@ -36,9 +36,9 @@ func NewResource() resource.Resource {
 
 // Resource defines the DBaaS Service resource implementation.
 type Resource struct {
-	client *exoscale.Client
+	client 	 *exoscale.Client
 	clientV3 *v3.Client
-	env    string
+	env    	 string
 }
 
 // ResourceModel describes the generic DBaaS Service resource data model.
