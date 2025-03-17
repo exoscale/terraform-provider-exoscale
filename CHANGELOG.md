@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+IMPROVEMENTS
+
+- compute_instance: make disk_size a required field #419 
+
 ## 0.63.0
 
 FEATURES:
