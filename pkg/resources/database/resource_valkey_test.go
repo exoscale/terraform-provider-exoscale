@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"strconv"
 	"strings"
 	"testing"
@@ -16,8 +15,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
-
-	v3 "github.com/exoscale/egoscale/v3"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/testutils"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
@@ -164,7 +161,7 @@ func CheckExistsValkey(name string, data *TemplateModelValkey) error {
 	}
 
 	if !cmp.Equal(data.IpFilter, service.IPFilter, cmpopts.EquateEmpty()) {
-		return fmt.Errorf("valkey.ip_filter: expected %q, got %q", data.IpFilter, *service.IpFilter)
+		return fmt.Errorf("valkey.ip_filter: expected %q, got %q", data.IpFilter, service.IPFilter)
 	}
 
 	if v := string(service.Maintenance.Dow); data.MaintenanceDow != v {
@@ -189,7 +186,9 @@ func CheckExistsValkey(name string, data *TemplateModelValkey) error {
 			settings,
 			*service.ValkeySettings,
 		) {
-			return fmt.Errorf("valkey.redis_settings: expected %q, got %q", settings, *service.RedisSettings)
+			expectedJSON, _ := json.Marshal(settings)
+			actualJSON, _ := json.Marshal(service.ValkeySettings)
+			return fmt.Errorf("valkey.redis_settings: expected %s, got %s", string(expectedJSON), string(actualJSON))
 		}
 	}
 
