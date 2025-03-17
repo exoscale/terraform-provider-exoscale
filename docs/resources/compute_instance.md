@@ -42,6 +42,7 @@ directory for complete configuration examples.
 
 ### Required
 
+- `disk_size` (Number) The instance disk size (GiB; at least `10`). Can not be decreased after creation. **WARNING**: updating this attribute stops/restarts the instance.
 - `name` (String) The compute instance name.
 - `template_id` (String) ❗ The [exoscale_template](../data-sources/template.md) (ID) to use when creating the instance.
 - `type` (String) The instance type (`<family>.<size>`, e.g. `standard.medium`; use the [Exoscale CLI](https://github.com/exoscale/cli/) - `exo compute instance-type list` - for the list of available types). **WARNING**: updating this attribute stops/restarts the instance.
@@ -53,7 +54,6 @@ directory for complete configuration examples.
 - `block_storage_volume_ids` (Set of String) A list of [exoscale_block_storage_volume](./block_storage_volume.md) (ID) to attach to the instance.
 - `deploy_target_id` (String) ❗ A deploy target ID.
 - `destroy_protected` (Boolean) Mark the instance as protected, the Exoscale API will refuse to delete the instance until the protection is removed (boolean; default: `false`).
-- `disk_size` (Number) The instance disk size (GiB; at least `10`). Can not be decreased after creation. **WARNING**: updating this attribute stops/restarts the instance.
 - `elastic_ip_ids` (Set of String) A list of [exoscale_elastic_ip](./elastic_ip.md) (IDs) to attach to the instance.
 - `ipv6` (Boolean) Enable IPv6 on the instance (boolean; default: `false`).
 - `labels` (Map of String) A map of key/value labels.
