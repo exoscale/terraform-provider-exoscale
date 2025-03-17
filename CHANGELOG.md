@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+FEATURES:
+
+- dbaas support for mysql,pg database, and deprecate `exoscale_database` in favour of `exoscale_dbaas` #410
+
 ## 0.63.0
 
 FEATURES:
