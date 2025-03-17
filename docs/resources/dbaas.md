@@ -98,7 +98,7 @@ Optional:
 - `index_template` (Block, Optional) Template settings for all new indexes (see [below for nested schema](#nestedblock--opensearch--index_template))
 - `ip_filter` (Set of String) Allow incoming connections from this list of CIDR address block, e.g. `["10.20.0.0/16"]
 - `keep_index_refresh_interval` (Boolean) Aiven automation resets index.refresh_interval to default value for every index to be sure that indices are always visible to search. If it doesn't fit your case, you can disable this by setting up this flag to true.
-- `max_index_count` (Number) Maximum number of indexes to keep (Minimum value is `0`)
+- `max_index_count` (Number, Deprecated) Maximum number of indexes to keep (Minimum value is `0`)
 - `recovery_backup_name` (String) ❗ Name of a backup to recover from
 - `settings` (String) OpenSearch-specific settings, in json. e.g.`jsonencode({thread_pool_search_size: 64})`. Use `exo x get-dbaas-settings-opensearch` to get a list of available settings.
 - `version` (String) ❗ OpenSearch major version (`exo dbaas type show opensearch` for reference)
