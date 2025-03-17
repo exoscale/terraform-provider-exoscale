@@ -54,7 +54,7 @@ func testResourceValkey(t *testing.T) {
 	dataCreate.MaintenanceDow = "monday"
 	dataCreate.MaintenanceTime = "01:23:00"
 	dataCreate.IpFilter = []string{"1.2.3.4/32"}
-	dataCreate.ValkeySettings = strconv.Quote(`{"io_threads":1,"lfu_decay_time":1,"lfu_log_factor":10,"maxmemory_policy":"noeviction","notify_keyspace_events":"","persistence":"rdb","ssl":true,"timeout":300}`)
+	dataCreate.ValkeySettings = strconv.Quote(`{"io_threads":1,"lfu_decay_time":1,"lfu_log_factor":10,"maxmemory_policy":"noeviction","persistence":"rdb","ssl":true,"timeout":300}`)
 	buf := &bytes.Buffer{}
 	err = tpl.Execute(buf, &dataCreate)
 	if err != nil {
