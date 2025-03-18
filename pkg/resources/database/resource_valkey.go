@@ -50,6 +50,10 @@ func (r *Resource) createValkey(ctx context.Context, data *ResourceModel, diagno
 	}
 
 	client, err := utils.SwitchClientZone(ctx, r.clientV3, v3.ZoneName(data.Zone.ValueString()))
+	if err != nil {
+		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to init client, got error: %s", err))
+		return
+	}
 
 	if !data.MaintenanceDOW.IsUnknown() && !data.MaintenanceTime.IsUnknown() {
 		service.Maintenance = &v3.CreateDBAASServiceValkeyRequestMaintenance{
@@ -120,6 +124,11 @@ func (r *Resource) createValkey(ctx context.Context, data *ResourceModel, diagno
 // It is used in the dedicated Read action but also as a finishing step of Create, Update and Import.
 func (r *Resource) readValkey(ctx context.Context, data *ResourceModel, diagnostics *diag.Diagnostics) {
 	client, err := utils.SwitchClientZone(ctx, r.clientV3, v3.ZoneName(data.Zone.ValueString()))
+	if err != nil {
+		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to init client, got error: %s", err))
+		return
+	}
+
 	caCert, err := client.GetDBAASCACertificate(ctx)
 	if err != nil {
 		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to get CA Certificate: %s", err))
