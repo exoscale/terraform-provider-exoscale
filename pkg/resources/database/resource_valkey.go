@@ -13,6 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	v3 "github.com/exoscale/egoscale/v3"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/validators"
 )
 
@@ -48,6 +49,8 @@ func (r *Resource) createValkey(ctx context.Context, data *ResourceModel, diagno
 		TerminationProtection: data.TerminationProtection.ValueBoolPointer(),
 	}
 
+	client, err := utils.SwitchClientZone(ctx, r.clientV3, v3.ZoneName(data.Zone.ValueString()))
+
 	if !data.MaintenanceDOW.IsUnknown() && !data.MaintenanceTime.IsUnknown() {
 		service.Maintenance = &v3.CreateDBAASServiceValkeyRequestMaintenance{
 			Dow:  v3.CreateDBAASServiceValkeyRequestMaintenanceDow(data.MaintenanceDOW.ValueString()),
@@ -70,7 +73,7 @@ func (r *Resource) createValkey(ctx context.Context, data *ResourceModel, diagno
 		}
 
 		if !data.Valkey.Settings.IsUnknown() {
-			settingsSchema, err := r.clientV3.GetDBAASSettingsValkey(ctx)
+			settingsSchema, err := client.GetDBAASSettingsValkey(ctx)
 			if err != nil {
 				diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database settings schema, got error: %s", err))
 				return
@@ -99,11 +102,12 @@ func (r *Resource) createValkey(ctx context.Context, data *ResourceModel, diagno
 		}
 	}
 
-	_, err := r.clientV3.CreateDBAASServiceValkey(
+	_, err = client.CreateDBAASServiceValkey(
 		ctx,
 		data.Name.ValueString(),
 		service,
 	)
+
 	if err != nil {
 		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create database service valkey, got error: %s", err))
 		return
@@ -115,14 +119,21 @@ func (r *Resource) createValkey(ctx context.Context, data *ResourceModel, diagno
 // readValkey function handles Valkey specific part of database resource Read logic.
 // It is used in the dedicated Read action but also as a finishing step of Create, Update and Import.
 func (r *Resource) readValkey(ctx context.Context, data *ResourceModel, diagnostics *diag.Diagnostics) {
-	caCert, err := r.clientV3.GetDBAASCACertificate(ctx)
+	client, err := utils.SwitchClientZone(ctx, r.clientV3, v3.ZoneName(data.Zone.ValueString()))
+	caCert, err := client.GetDBAASCACertificate(ctx)
 	if err != nil {
 		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to get CA Certificate: %s", err))
 		return
 	}
 	data.CA = types.StringValue(caCert.Certificate)
 
-	res, err := r.clientV3.GetDBAASServiceValkey(ctx, data.Id.ValueString())
+	if err != nil {
+		diagnostics.AddError("Client Error", fmt.Sprintf("couldn't create client error: %s", err))
+		return
+	}
+
+	res, err := client.GetDBAASServiceValkey(ctx, data.Id.ValueString())
+
 	if err != nil {
 		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database service valkey, got error: %s", err))
 		return
@@ -177,6 +188,12 @@ func (r *Resource) readValkey(ctx context.Context, data *ResourceModel, diagnost
 // updateValkey function handles Valkey specific part of database resource Update logic.
 func (r *Resource) updateValkey(ctx context.Context, stateData *ResourceModel, planData *ResourceModel, diagnostics *diag.Diagnostics) {
 	var updated bool
+	client, err := utils.SwitchClientZone(ctx, r.clientV3, v3.ZoneName(stateData.Zone.ValueString()))
+
+	if err != nil {
+		diagnostics.AddError("Client Error", fmt.Sprintf("couldn't create client error: %s", err))
+		return
+	}
 
 	service := v3.UpdateDBAASServiceValkeyRequest{}
 
@@ -218,7 +235,7 @@ func (r *Resource) updateValkey(ctx context.Context, stateData *ResourceModel, p
 		}
 
 		if !planData.Valkey.Settings.Equal(stateData.Valkey.Settings) {
-			settingsSchema, err := r.clientV3.GetDBAASSettingsValkey(ctx)
+			settingsSchema, err := client.GetDBAASSettingsValkey(ctx)
 			if err != nil {
 				diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database settings schema, got error: %s", err))
 				return
@@ -253,7 +270,7 @@ func (r *Resource) updateValkey(ctx context.Context, stateData *ResourceModel, p
 	if !updated {
 		tflog.Info(ctx, "no updates detected", map[string]interface{}{})
 	} else {
-		_, err := r.clientV3.UpdateDBAASServiceValkey(
+		_, err := client.UpdateDBAASServiceValkey(
 			ctx,
 			planData.Id.ValueString(),
 			service,

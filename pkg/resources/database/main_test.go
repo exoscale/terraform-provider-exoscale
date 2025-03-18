@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -28,14 +29,16 @@ func TestDatabase(t *testing.T) {
 
 func CheckServiceDestroy(dbType, name string) resource.TestCheckFunc {
 	return func(_ *terraform.State) error {
+		ctx := context.Background()
+
 		client, err := testutils.APIClient()
 		if err != nil {
 			return err
 		}
 
-		ctx := api.WithEndpoint(context.Background(), api.NewReqEndpoint(testutils.TestEnvironment(), testutils.TestZoneName))
+		ctx = api.WithEndpoint(ctx, api.NewReqEndpoint(testutils.TestEnvironment(), testutils.TestZoneName))
 
-		ctxV3 := context.Background()
+		ctxV3 := ctx
 
 		defaultClientV3, err := testutils.APIClientV3()
 		if err != nil {
@@ -52,28 +55,34 @@ func CheckServiceDestroy(dbType, name string) resource.TestCheckFunc {
 			return err
 		}
 
+		var serviceErr error
 		switch dbType {
 		case "grafana":
-			_, err = client.GetDbaasServiceGrafanaWithResponse(ctx, oapi.DbaasServiceName(name))
+			_, serviceErr = client.GetDbaasServiceGrafanaWithResponse(ctx, oapi.DbaasServiceName(name))
 		case "kafka":
-			_, err = client.GetDbaasServiceKafkaWithResponse(ctx, oapi.DbaasServiceName(name))
+			_, serviceErr = client.GetDbaasServiceKafkaWithResponse(ctx, oapi.DbaasServiceName(name))
 		case "mysql":
-			_, err = client.GetDbaasServiceMysqlWithResponse(ctx, oapi.DbaasServiceName(name))
+			_, serviceErr = client.GetDbaasServiceMysqlWithResponse(ctx, oapi.DbaasServiceName(name))
 		case "pg":
-			_, err = client.GetDbaasServicePgWithResponse(ctx, oapi.DbaasServiceName(name))
+			_, serviceErr = client.GetDbaasServicePgWithResponse(ctx, oapi.DbaasServiceName(name))
 		case "valkey":
-			_, err = clientV3.GetDBAASServiceValkey(ctxV3, name)
+			_, serviceErr = clientV3.GetDBAASServiceValkey(ctxV3, name)
 		case "opensearch":
-			_, err = client.GetDbaasServiceOpensearchWithResponse(ctx, oapi.DbaasServiceName(name))
+			_, serviceErr = client.GetDbaasServiceOpensearchWithResponse(ctx, oapi.DbaasServiceName(name))
 		default:
 			return fmt.Errorf("unsupported database service type %q", dbType)
 		}
 
-		if err != nil {
-			if errors.Is(err, api.ErrNotFound) {
+		if serviceErr != nil {
+			// For V2 API
+			if errors.Is(serviceErr, api.ErrNotFound) {
 				return nil
 			}
-			return err
+			// For V3 API
+			if strings.Contains(serviceErr.Error(), "Not Found: Service does not exist") {
+				return nil
+			}
+			return serviceErr
 		}
 
 		return fmt.Errorf("database service %q not deleted", name)

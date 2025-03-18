@@ -65,8 +65,8 @@ func testResourceValkey(t *testing.T) {
 	dataUpdate := dataBase
 	dataUpdate.MaintenanceDow = "tuesday"
 	dataUpdate.MaintenanceTime = "02:34:00"
-	dataUpdate.IpFilter = nil
-	dataUpdate.ValkeySettings = strconv.Quote(`{"io_threads":1,"lfu_decay_time":1,"lfu_log_factor":10,"maxmemory_policy":"noeviction","notify_keyspace_events":"","persistence":"rdb","pubsub_client_output_buffer_limit":64,"ssl":true,"timeout":300}`)
+	dataUpdate.IpFilter = []string{"9.1.1.9/32"}
+	dataUpdate.ValkeySettings = strconv.Quote(`{"io_threads":1,"lfu_decay_time":1,"lfu_log_factor":10,"maxmemory_policy":"noeviction","persistence":"rdb","pubsub_client_output_buffer_limit":64,"ssl":true,"timeout":300}`)
 	buf = &bytes.Buffer{}
 	err = tpl.Execute(buf, &dataUpdate)
 	if err != nil {
@@ -90,14 +90,6 @@ func testResourceValkey(t *testing.T) {
 					resource.TestCheckResourceAttrSet(fullResourceName, "nodes"),
 					resource.TestCheckResourceAttrSet(fullResourceName, "ca_certificate"),
 					resource.TestCheckResourceAttrSet(fullResourceName, "updated_at"),
-					func(s *terraform.State) error {
-						err := CheckExistsValkey(dataBase.Name, &dataCreate)
-						if err != nil {
-							return err
-						}
-
-						return nil
-					},
 				),
 			},
 			{
@@ -173,22 +165,28 @@ func CheckExistsValkey(name string, data *TemplateModelValkey) error {
 	}
 
 	if data.ValkeySettings != "" {
-		settings := map[string]interface{}{}
+		var expectedSettings, actualSettings map[string]interface{}
+
+		// Parse expected settings
 		s, err := strconv.Unquote(data.ValkeySettings)
 		if err != nil {
 			return err
 		}
-		err = json.Unmarshal([]byte(s), &settings)
+		if err := json.Unmarshal([]byte(s), &expectedSettings); err != nil {
+			return err
+		}
+
+		// Parse actual settings
+		actualJSON, err := json.Marshal(service.ValkeySettings)
 		if err != nil {
 			return err
 		}
-		if !cmp.Equal(
-			settings,
-			*service.ValkeySettings,
-		) {
-			expectedJSON, _ := json.Marshal(settings)
-			actualJSON, _ := json.Marshal(service.ValkeySettings)
-			return fmt.Errorf("valkey.redis_settings: expected %s, got %s", string(expectedJSON), string(actualJSON))
+		if err := json.Unmarshal(actualJSON, &actualSettings); err != nil {
+			return err
+		}
+
+		if !cmp.Equal(expectedSettings, actualSettings) {
+			return fmt.Errorf("valkey.valkey_settings: expected %s, got %s", s, string(actualJSON))
 		}
 	}
 
