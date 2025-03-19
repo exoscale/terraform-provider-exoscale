@@ -247,7 +247,9 @@ func dsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.
 	if err != nil && !errors.Is(err, v3.ErrNotFound) {
 		return diag.Errorf("unable to retrieve instance reverse-dns: %s", err)
 	}
-	data[AttrReverseDNS] = strings.TrimSuffix(string(rdns.DomainName), ".")
+	if rdns != nil {
+		data[AttrReverseDNS] = strings.TrimSuffix(string(rdns.DomainName), ".")
+	}
 
 	for key, value := range data {
 		err := d.Set(key, value)
