@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+BUG FIXES:
+
+- Fix panic on empty reverse DNS in instance datasources #421
+
 ## 0.63.0
 
 FEATURES:
