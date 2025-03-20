@@ -111,13 +111,17 @@ func dsListRead(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 			return diag.FromErr(err)
 		}
 
-		getInstanceReverseDNS := func() diag.Diagnostics {
+		getInstanceReverseDNS := func() (string, diag.Diagnostics) {
 			rdns, err := client.GetReverseDNSInstance(ctx, inst.ID)
-			if err != nil && !errors.Is(err, v3.ErrNotFound) {
-				return diag.Errorf("unable to retrieve instance reverse-dns: %s", err)
+			if err != nil {
+				if !errors.Is(err, v3.ErrNotFound) {
+					return "", diag.Errorf("unable to retrieve instance reverse-dns: %s", err)
+				}
+
+				return "", nil
 			}
-			instanceData[AttrReverseDNS] = string(rdns.DomainName)
-			return nil
+
+			return string(rdns.DomainName), nil
 		}
 
 		// to save time the reverse DNS is only fetched if it's filtered
@@ -125,9 +129,12 @@ func dsListRead(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		// instance actually passes the filter
 		_, reverseDNSFiltered := filteredFields[AttrReverseDNS]
 		if reverseDNSFiltered {
-			if diagn := getInstanceReverseDNS(); diagn != nil {
+			rdns, diagn := getInstanceReverseDNS()
+			if diagn != nil {
 				return diagn
 			}
+
+			instanceData[AttrReverseDNS] = rdns
 		}
 
 		// The API returns the instance type as a UUID.
@@ -160,9 +167,12 @@ func dsListRead(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		}
 
 		if !reverseDNSFiltered {
-			if diagn := getInstanceReverseDNS(); diagn != nil {
+			rdns, diagn := getInstanceReverseDNS()
+			if diagn != nil {
 				return diagn
 			}
+
+			instanceData[AttrReverseDNS] = rdns
 		}
 
 		data = append(data, instanceData)
