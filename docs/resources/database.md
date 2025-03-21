@@ -52,7 +52,7 @@ directory for complete configuration examples.
 
 - `name` (String) ❗ The name of the database service.
 - `plan` (String) The plan of the database service (use the [Exoscale CLI](https://github.com/exoscale/cli/) - `exo dbaas type show <TYPE> --plans` - for reference).
-- `type` (String) ❗ The type of the database service (`kafka`, `mysql`, `opensearch`, `pg`, `redis`, `grafana`).
+- `type` (String) ❗ The type of the database service (`kafka`, `mysql`, `opensearch`, `pg`, `grafana`, `valkey`).
 - `zone` (String) ❗ The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.
 
 ### Optional

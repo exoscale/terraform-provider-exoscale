@@ -301,3 +301,34 @@ func dumpResponse(resp *http.Response) {
 		}
 	}
 }
+
+// FindInstanceType attempts to find an InstanceType by id, or by a string or the form FAMILY.SIZE or SIZE,
+// where family defaults to "standard"
+func (l ListInstanceTypesResponse) FindInstanceTypeByIdOrFamilyAndSize(familyAndSizeOrId string) (InstanceType, error) {
+	var result []InstanceType
+
+	var typeFamily, typeSize string
+	parts := strings.SplitN(familyAndSizeOrId, ".", 2)
+	if l := len(parts); l > 0 {
+		if l == 1 {
+			typeFamily, typeSize = "standard", strings.ToLower(parts[0])
+		} else {
+			typeFamily, typeSize = strings.ToLower(parts[0]), strings.ToLower(parts[1])
+		}
+	}
+
+	for i, elem := range l.InstanceTypes {
+		if string(elem.ID) == familyAndSizeOrId || (string(elem.Size) == typeSize && string(elem.Family) == typeFamily) {
+			result = append(result, l.InstanceTypes[i])
+		}
+	}
+	if len(result) == 1 {
+		return result[0], nil
+	}
+
+	if len(result) > 1 {
+		return InstanceType{}, fmt.Errorf("%q too many found in ListInstanceTypesResponse: %w", familyAndSizeOrId, ErrConflict)
+	}
+
+	return InstanceType{}, fmt.Errorf("%q not found in ListInstanceTypesResponse: %w", familyAndSizeOrId, ErrNotFound)
+}
