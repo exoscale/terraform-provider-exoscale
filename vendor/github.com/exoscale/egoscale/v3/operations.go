@@ -14491,7 +14491,7 @@ type CreateSKSClusterRequest struct {
 	// Indicates whether to deploy the Kubernetes network proxy. When unspecified, defaults to `true` unless Cilium CNI is selected
 	EnableKubeProxy *bool `json:"enable-kube-proxy,omitempty"`
 	// A list of Kubernetes-only Alpha features to enable for API server component
-	FeatureGates []string `json:"feature-gates"`
+	FeatureGates []string `json:"feature-gates,omitempty"`
 	Labels       Labels   `json:"labels,omitempty"`
 	// Cluster service level
 	Level CreateSKSClusterRequestLevel `json:"level" validate:"required"`
@@ -14815,7 +14815,7 @@ type UpdateSKSClusterRequest struct {
 	// Add or remove the operators certificate authority (CA) from the list of trusted CAs of the api server. The default value is true
 	EnableOperatorsCA *bool `json:"enable-operators-ca,omitempty"`
 	// A list of Kubernetes-only Alpha features to enable for API server component
-	FeatureGates []string `json:"feature-gates"`
+	FeatureGates []string `json:"feature-gates,omitempty"`
 	Labels       Labels   `json:"labels,omitempty"`
 	// Cluster name
 	Name string `json:"name,omitempty" validate:"omitempty,gte=1,lte=255"`
