@@ -6,6 +6,7 @@ var (
 		"mysql",
 		"pg",
 		"redis",
+		"valkey",
 		"opensearch",
 		"grafana",
 	}

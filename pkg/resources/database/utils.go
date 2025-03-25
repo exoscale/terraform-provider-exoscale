@@ -80,3 +80,33 @@ func PartialSettingsPatch(data, patch map[string]interface{}) {
 		}
 	}
 }
+
+// getSettingFloat64 safely retrieves a float64 value from settings map and converts to int
+func getSettingFloat64(settings map[string]interface{}, key string) int {
+	if val, ok := settings[key]; ok && val != nil {
+		if fVal, ok := val.(float64); ok {
+			return int(fVal)
+		}
+	}
+	return 0
+}
+
+// getSettingString safely retrieves a string value from settings map
+func getSettingString(settings map[string]interface{}, key string) string {
+	if val, ok := settings[key]; ok && val != nil {
+		if sVal, ok := val.(string); ok {
+			return sVal
+		}
+	}
+	return ""
+}
+
+// getSettingBool safely retrieves a bool value from settings map
+func getSettingBool(settings map[string]interface{}, key string) bool {
+	if val, ok := settings[key]; ok && val != nil {
+		if bVal, ok := val.(bool); ok {
+			return bVal
+		}
+	}
+	return false
+}

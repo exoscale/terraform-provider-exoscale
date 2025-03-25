@@ -1,0 +1,28 @@
+resource "exoscale_database" {{ .ResourceName }} {
+  name = "{{ .Name }}"
+  type = "valkey"
+  plan = "{{ .Plan }}"
+  zone = "{{ .Zone }}"
+
+  {{- if .MaintenanceDow }}
+  maintenance_dow = "{{ .MaintenanceDow }}"
+  {{- end }}
+
+  {{- if .MaintenanceTime }}
+  maintenance_time = "{{ .MaintenanceTime }}"
+  {{- end }}
+  termination_protection = {{- .TerminationProtection }}
+  valkey {
+    {{- if .IpFilter }}
+    ip_filter = [
+    {{- range $k,$v := .IpFilter }}
+       "{{ $v }}",
+    {{- end }}
+    ]
+    {{- end }}
+
+    {{- if .ValkeySettings }}
+    valkey_settings = {{ .ValkeySettings }}
+    {{- end }}
+  }
+}
