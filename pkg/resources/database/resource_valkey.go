@@ -117,7 +117,69 @@ func (r *Resource) createValkey(ctx context.Context, data *ResourceModel, diagno
 		return
 	}
 
-	r.readValkey(ctx, data, diagnostics)
+	res, err := client.GetDBAASServiceValkey(ctx, data.Name.ValueString())
+	if err != nil {
+		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database service valkey, got error: %s", err))
+		return
+	}
+
+	// Set computed attributes
+	apiService := res
+	caCert, err := client.GetDBAASCACertificate(ctx)
+	if err != nil {
+		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to get CA Certificate: %s", err))
+		return
+	}
+
+	data.CA = types.StringValue(caCert.Certificate)
+
+	serviceState := string(apiService.State)
+
+	data.CreatedAt = types.StringValue(apiService.CreatedAT.String())
+	data.DiskSize = types.Int64PointerValue(&apiService.DiskSize)
+	data.NodeCPUs = types.Int64PointerValue(&apiService.NodeCPUCount)
+	data.NodeMemory = types.Int64PointerValue(&apiService.NodeMemory)
+	data.Nodes = types.Int64PointerValue(&apiService.NodeCount)
+	data.State = types.StringPointerValue(&serviceState)
+	data.UpdatedAt = types.StringValue(apiService.UpdatedAT.String())
+
+	if data.TerminationProtection.IsUnknown() {
+		data.TerminationProtection = types.BoolPointerValue(apiService.TerminationProtection)
+	}
+
+	if data.MaintenanceDOW.IsUnknown() || data.MaintenanceTime.IsUnknown() {
+		data.MaintenanceDOW = types.StringNull()
+		data.MaintenanceTime = types.StringNull()
+
+		if apiService.Maintenance != nil {
+			data.MaintenanceDOW = types.StringValue(string(apiService.Maintenance.Dow))
+			data.MaintenanceTime = types.StringValue(apiService.Maintenance.Time)
+		}
+	}
+
+	if data.Valkey.IPFilter.IsUnknown() {
+		data.Valkey.IPFilter = types.SetNull(types.StringType)
+		if apiService.IPFilter != nil {
+			v, dg := types.SetValueFrom(ctx, types.StringType, apiService.IPFilter)
+			if dg.HasError() {
+				diagnostics.Append(dg...)
+				return
+			}
+			data.Valkey.IPFilter = v
+		}
+	}
+
+	if data.Valkey.Settings.IsUnknown() {
+		data.Valkey.Settings = types.StringNull()
+		if apiService.ValkeySettings != nil {
+			settings, err := json.Marshal(*apiService.ValkeySettings)
+			if err != nil {
+				diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
+				return
+			}
+			data.Valkey.Settings = types.StringValue(string(settings))
+		}
+	}
 }
 
 // readValkey function handles Valkey specific part of database resource Read logic.
