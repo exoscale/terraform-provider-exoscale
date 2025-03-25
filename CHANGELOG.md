@@ -9,6 +9,12 @@ BUG FIXES:
 
 - Fix panic on empty reverse DNS in instance datasources #421
 
+## Unreleased
+
+IMPROVEMENTS
+
+- compute_instance: make disk_size a required field #419 
+
 ## 0.63.0
 
 FEATURES:
