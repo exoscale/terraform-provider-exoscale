@@ -1,8 +1,13 @@
 # Changelog
+:w
+## Unreleased
 
-## 0.64.0
 FEATURES:
 - dbaas: support for valkey #418
+
+BUG FIXES:
+
+- Fix panic on empty reverse DNS in instance datasources #421
 
 ## 0.63.0
 
