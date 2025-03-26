@@ -1,6 +1,8 @@
 # Changelog
-:w
+
 ## Unreleased
+
+## 0.64.0
 
 FEATURES:
 - dbaas: support for valkey #418
