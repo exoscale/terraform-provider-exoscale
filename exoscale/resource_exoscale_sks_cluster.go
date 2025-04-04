@@ -506,9 +506,7 @@ func resourceSKSClusterUpdate(ctx context.Context, d *schema.ResourceData, meta 
 	}
 
 	var updated bool
-	updateReq := v3.UpdateSKSClusterRequest{
-		FeatureGates: make([]string, 0), // mandatory field due to a bug https://github.com/exoscale/terraform-provider-exoscale/pull/412#discussion_r1977616102
-	}
+	updateReq := v3.UpdateSKSClusterRequest{}
 
 	if d.HasChange(resSKSClusterAttrAutoUpgrade) {
 		autoUpgrade := d.Get(resSKSClusterAttrAutoUpgrade).(bool)
