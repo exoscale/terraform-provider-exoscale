@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+FEATURES:
+
+- sks_cluster: enable_kube_proxy parameter #412
+
 ## 0.64.0
 
 FEATURES:
