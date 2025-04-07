@@ -249,7 +249,9 @@ func (data *MysqlUserResourceModel) UpdateResource(ctx context.Context, client *
 }
 
 func (data *MysqlUserResourceModel) WaitForService(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics) {
-	_, err := waitForDBAASServiceReadyForUsers(ctx, client.GetDBAASServiceMysql, data.Service.ValueString(), func(t *exoscale.DBAASServiceMysql) bool { return t.State == exoscale.EnumServiceStateRunning })
+	_, err := waitForDBAASServiceReadyForUsers(ctx, client.GetDBAASServiceMysql, data.Service.ValueString(), func(t *exoscale.DBAASServiceMysql) bool {
+		return len(t.Users) > 0
+	})
 	if err != nil {
 		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read Database service MySQL %s", err.Error()))
 	}
