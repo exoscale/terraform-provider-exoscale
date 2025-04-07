@@ -268,9 +268,7 @@ func resourceSKSClusterCreate(ctx context.Context, d *schema.ResourceData, meta 
 		return diag.FromErr(err)
 	}
 
-	createReq := v3.CreateSKSClusterRequest{
-		FeatureGates: make([]string, 0), // mandatory due to a bug https://github.com/exoscale/terraform-provider-exoscale/pull/412#discussion_r1977616102
-	}
+	createReq := v3.CreateSKSClusterRequest{}
 
 	var addOns []string
 	if addonsSet, ok := d.Get(resSKSClusterAttrAddons).(*schema.Set); ok && addonsSet.Len() > 0 {
