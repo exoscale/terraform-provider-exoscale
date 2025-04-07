@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+FEATURES:
+
+- sks_cluster: enable_kube_proxy parameter #412
+
 ## 0.64.0
 
 FEATURES:
@@ -19,7 +23,6 @@ FEATURES:
 - dbaas: support for users #401
 - exoscale_instance: use egoscale v3 & support for multiple SSH Keys #408
 - sks_nodepool: use egoscale v3 + add support for dual pane #409
-- sks_cluster: sks cluster: enable_kube_proxy parameter #412
 
 BUG FIXES:
 
