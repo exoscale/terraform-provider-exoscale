@@ -334,7 +334,7 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 		}
 		data.Schema = types.StringValue("mysql")
 
-		res, err = waitForDBAASServiceReadyForUsers(ctx, client.GetDBAASServiceMysql, data.Name.ValueString(), func(t *exoscale.DBAASServiceMysql) bool {
+		res, err = waitForDBAASServiceReadyForFn(ctx, client.GetDBAASServiceMysql, data.Name.ValueString(), func(t *exoscale.DBAASServiceMysql) bool {
 			return len(t.Users) > 0
 		})
 		if err != nil {
@@ -393,7 +393,7 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 		}
 		data.Schema = types.StringValue("postgres")
 
-		res, err = waitForDBAASServiceReadyForUsers(ctx, client.GetDBAASServicePG, data.Name.ValueString(), func(t *exoscale.DBAASServicePG) bool {
+		res, err = waitForDBAASServiceReadyForFn(ctx, client.GetDBAASServicePG, data.Name.ValueString(), func(t *exoscale.DBAASServicePG) bool {
 			return len(t.Users) > 0
 		})
 		if err != nil {
