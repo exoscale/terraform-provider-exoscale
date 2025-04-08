@@ -15,8 +15,8 @@ var (
 	cluster2Name                = acctest.RandomWithPrefix(testPrefix + "-cluster-2")
 	affinityGroupName           = acctest.RandomWithPrefix(testPrefix + "-affinity-group")
 	securityGroupName           = acctest.RandomWithPrefix(testPrefix + "-security-group")
-	nodepool1Name               = acctest.RandomWithPrefix(testPrefix + "-nodepool")
-	nodepool2Name               = acctest.RandomWithPrefix(testPrefix + "-nodepool-2")
+	nodepool1Name               = acctest.RandomWithPrefix(testPrefix + "-ds-nodepool")
+	nodepool2Name               = acctest.RandomWithPrefix(testPrefix + "-ds-nodepool-2")
 	testAccSKSDataSourcesConfig = fmt.Sprintf(`
 locals {
   my_zone = %q
@@ -210,7 +210,7 @@ func TestAccSKSDataSources(t *testing.T) {
 		data %q %q {
 		  zone = %q
 		  size = 3
-		  name = "/.*nodepool-2/"
+		  name = "/.*-ds-nodepool-2/"
 		}
 		`, dsId, dsName, zone),
 			DataSourceIdentifier: dsId,
@@ -224,7 +224,7 @@ func TestAccSKSDataSources(t *testing.T) {
 			Config: fmt.Sprintf(`
 		data %q %q {
 		  zone = %q
-		  name = "/.*-nodepool.*/"
+		  name = "/.*-ds-nodepool.*/"
 		}
 		`, dsId, dsName, zone),
 			DataSourceIdentifier: dsId,
