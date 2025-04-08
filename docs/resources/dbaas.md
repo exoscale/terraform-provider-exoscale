@@ -19,7 +19,7 @@ Manage Exoscale [Database Services (DBaaS)](https://community.exoscale.com/docum
 
 - `name` (String) ❗ The name of the database service.
 - `plan` (String) The plan of the database service (use the [Exoscale CLI](https://github.com/exoscale/cli/) - `exo dbaas type show <TYPE> --plans` - for reference).
-- `type` (String) ❗ The type of the database service (`kafka`, `mysql`, `opensearch`, `pg`, `redis`, `grafana`).
+- `type` (String) ❗ The type of the database service (`kafka`, `mysql`, `opensearch`, `pg`, `redis`, `valkey`, `grafana`).
 - `zone` (String) ❗ The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.
 
 ### Optional
@@ -34,6 +34,7 @@ Manage Exoscale [Database Services (DBaaS)](https://community.exoscale.com/docum
 - `redis` (Block, Optional) *redis* database service type specific arguments. Structure is documented below. (see [below for nested schema](#nestedblock--redis))
 - `termination_protection` (Boolean) The database service protection boolean flag against termination/power-off.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `valkey` (Block, Optional) *valkey* database service type specific arguments. Structure is documented below. (see [below for nested schema](#nestedblock--valkey))
 
 ### Read-Only
 
@@ -167,6 +168,15 @@ Optional:
 - `delete` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Setting a timeout for a Delete operation is only applicable if changes are saved into state before the destroy operation occurs.
 - `read` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
 - `update` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours).
+
+
+<a id="nestedblock--valkey"></a>
+### Nested Schema for `valkey`
+
+Optional:
+
+- `ip_filter` (Set of String) A list of CIDR blocks to allow incoming connections from.
+- `valkey_settings` (String) Valkey configuration settings in JSON format (`exo dbaas type show valkey --settings=valkey` for reference).
 
 -> The symbol ❗ in an attribute indicates that modifying it, will force the creation of a new resource.
 

@@ -110,7 +110,7 @@ func (d *DataSourceURI) Schema(
 				Required:            true,
 			},
 			"type": schema.StringAttribute{
-				MarkdownDescription: "The type of the database service (`kafka`, `mysql`, `opensearch`, `pg`, `redis`, `valkey`).",
+				MarkdownDescription: "The type of the database service (`kafka`, `mysql`, `opensearch`, `pg`, `redis`, `valkey`, `grafana`).",
 				Required:            true,
 				Validators: []validator.String{
 					stringvalidator.OneOf(ServicesList...),

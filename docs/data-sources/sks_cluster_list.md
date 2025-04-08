@@ -27,6 +27,7 @@ description: |-
 - `control_plane_ca` (String) Match against this string. If you supply a string that begins and ends with a "/" it will be matched as a regex.
 - `created_at` (String) Match against this string. If you supply a string that begins and ends with a "/" it will be matched as a regex.
 - `description` (String) Match against this string. If you supply a string that begins and ends with a "/" it will be matched as a regex.
+- `enable_kube_proxy` (Boolean) Match against this bool
 - `endpoint` (String) Match against this string. If you supply a string that begins and ends with a "/" it will be matched as a regex.
 - `exoscale_ccm` (Boolean) Match against this bool
 - `exoscale_csi` (Boolean) Match against this bool
@@ -55,6 +56,7 @@ Read-Only:
 - `control_plane_ca` (String)
 - `created_at` (String)
 - `description` (String)
+- `enable_kube_proxy` (Boolean)
 - `endpoint` (String)
 - `exoscale_ccm` (Boolean)
 - `exoscale_csi` (Boolean)

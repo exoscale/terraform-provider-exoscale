@@ -64,7 +64,7 @@ output "my_database_uri" {
 ### Required
 
 - `name` (String) Name of database service to match.
-- `type` (String) The type of the database service (`kafka`, `mysql`, `opensearch`, `pg`, `valkey`).
+- `type` (String) The type of the database service (`kafka`, `mysql`, `opensearch`, `pg`, `redis`, `valkey`, `grafana`).
 - `zone` (String) The Exoscale Zone name.
 
 ### Optional
