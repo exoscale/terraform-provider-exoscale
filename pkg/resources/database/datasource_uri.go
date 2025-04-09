@@ -334,6 +334,17 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 		}
 		data.Schema = types.StringValue("mysql")
 
+		res, err = waitForDBAASServiceReadyForUsers(ctx, client.GetDBAASServiceMysql, data.Name.ValueString(), func(t *exoscale.DBAASServiceMysql) bool {
+			return len(t.Users) > 0
+		})
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Client Error",
+				fmt.Sprintf("Unable to read users for Database Service MySQL: %s", err),
+			)
+			return
+		}
+
 		creds, err := client.RevealDBAASMysqlUserPassword(ctx, data.Name.ValueString(), user)
 		if err != nil {
 			resp.Diagnostics.AddError(
@@ -381,6 +392,17 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 			return
 		}
 		data.Schema = types.StringValue("postgres")
+
+		res, err = waitForDBAASServiceReadyForUsers(ctx, client.GetDBAASServicePG, data.Name.ValueString(), func(t *exoscale.DBAASServicePG) bool {
+			return len(t.Users) > 0
+		})
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Client Error",
+				fmt.Sprintf("Unable to read users for Database Service Postgres: %s", err),
+			)
+			return
+		}
 
 		creds, err := client.RevealDBAASPostgresUserPassword(ctx, data.Name.ValueString(), user)
 		if err != nil {

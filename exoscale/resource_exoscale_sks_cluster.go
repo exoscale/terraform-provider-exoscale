@@ -31,6 +31,7 @@ const (
 	resSKSClusterAttrControlPlaneCA     = "control_plane_ca"
 	resSKSClusterAttrCreatedAt          = "created_at"
 	resSKSClusterAttrDescription        = "description"
+	resSKSClusterAttrEnableKubeProxy    = "enable_kube_proxy"
 	resSKSClusterAttrEndpoint           = "endpoint"
 	resSKSClusterAttrExoscaleCCM        = "exoscale_ccm"
 	resSKSClusterAttrExoscaleCSI        = "exoscale_csi"
@@ -99,6 +100,12 @@ func resourceSKSCluster() *schema.Resource {
 			Type:        schema.TypeString,
 			Optional:    true,
 			Description: "A free-form text describing the cluster.",
+		},
+		resSKSClusterAttrEnableKubeProxy: {
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Description: "Indicates whether to deploy the Kubernetes network proxy. (may only be set at creation time)",
+			ForceNew:    true,
 		},
 		resSKSClusterAttrEndpoint: {
 			Type:        schema.TypeString,
@@ -285,6 +292,11 @@ func resourceSKSClusterCreate(ctx context.Context, d *schema.ResourceData, meta 
 
 	if autoUpgrade := d.Get(resSKSClusterAttrAutoUpgrade).(bool); autoUpgrade {
 		createReq.AutoUpgrade = &autoUpgrade
+	}
+
+	if enableKubeProxy, isSet := d.GetOk(resSKSClusterAttrEnableKubeProxy); isSet {
+		v := enableKubeProxy.(bool)
+		createReq.EnableKubeProxy = &v
 	}
 
 	if v, ok := d.GetOk(resSKSClusterAttrCNI); ok {
