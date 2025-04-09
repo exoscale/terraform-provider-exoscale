@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+BUG FIXES:
+- dbaas: Valkey plan scaling fix #423
+
 ## 0.64.0
 
 FEATURES:
