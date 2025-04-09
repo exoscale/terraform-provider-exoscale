@@ -146,23 +146,14 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 			"node_cpus": schema.Int64Attribute{
 				MarkdownDescription: "The number of CPUs of the database service.",
 				Computed:            true,
-				PlanModifiers: []planmodifier.Int64{
-					int64planmodifier.UseStateForUnknown(),
-				},
 			},
 			"node_memory": schema.Int64Attribute{
 				MarkdownDescription: "The amount of memory of the database service.",
 				Computed:            true,
-				PlanModifiers: []planmodifier.Int64{
-					int64planmodifier.UseStateForUnknown(),
-				},
 			},
 			"nodes": schema.Int64Attribute{
 				MarkdownDescription: "The number of nodes of the database service.",
 				Computed:            true,
-				PlanModifiers: []planmodifier.Int64{
-					int64planmodifier.UseStateForUnknown(),
-				},
 			},
 			"plan": schema.StringAttribute{
 				MarkdownDescription: "The plan of the database service (use the [Exoscale CLI](https://github.com/exoscale/cli/) - `exo dbaas type show <TYPE> --plans` - for reference).",
