@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -256,6 +257,9 @@ func (data MysqlDatabaseResourceModel) WaitForService(ctx context.Context, clien
 	_, err := waitForDBAASServiceReadyForFn(ctx, client.GetDBAASServiceMysql, data.Service.ValueString(), func(t *v3.DBAASServiceMysql) bool {
 		return t.State == v3.EnumServiceStateRunning && len(t.Databases) > 0
 	})
+
+	time.Sleep(SERVICE_READY_DELAY)
+
 	if err != nil {
 		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read Database service Mysql %s", err.Error()))
 	}

@@ -249,9 +249,8 @@ func (data *PGUserResourceModel) UpdateResource(ctx context.Context, client *v3.
 
 func (data *PGUserResourceModel) WaitForService(ctx context.Context, client *v3.Client, diagnostics *diag.Diagnostics) {
 	_, err := waitForDBAASServiceReadyForFn(ctx, client.GetDBAASServicePG, data.Service.ValueString(), func(t *v3.DBAASServicePG) bool { return t.State == v3.EnumServiceStateRunning })
-	// DbaaS API is unstable when a service goes from rebuilding from running,
-	// this wait time helps avoid that
-	time.Sleep(time.Second * 10)
+
+	time.Sleep(SERVICE_READY_DELAY)
 	if err != nil {
 		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read Database service PG %s", err.Error()))
 	}

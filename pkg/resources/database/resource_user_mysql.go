@@ -254,7 +254,7 @@ func (data *MysqlUserResourceModel) WaitForService(ctx context.Context, client *
 		return t.State == exoscale.EnumServiceStateRunning && len(t.Users) > 0
 	})
 
-	time.Sleep(MYSQL_READY_DELAY)
+	time.Sleep(SERVICE_READY_DELAY)
 
 	if err != nil {
 		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read Database service MySQL %s", err.Error()))
