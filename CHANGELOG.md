@@ -3,11 +3,11 @@
 ## Unreleased
 
 FEATURES:
-
 - sks_cluster: enable_kube_proxy parameter #412
 
 BUG FIXES:
 - Fix conflict causing acc tests to fail #422
+- dbaas: Valkey plan scaling fix #423
 
 ## 0.64.0
 
