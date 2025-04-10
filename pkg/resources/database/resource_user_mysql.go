@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	exoscale "github.com/exoscale/egoscale/v3"
 	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
@@ -252,6 +253,9 @@ func (data *MysqlUserResourceModel) WaitForService(ctx context.Context, client *
 	_, err := waitForDBAASServiceReadyForFn(ctx, client.GetDBAASServiceMysql, data.Service.ValueString(), func(t *exoscale.DBAASServiceMysql) bool {
 		return t.State == exoscale.EnumServiceStateRunning && len(t.Users) > 0
 	})
+
+	time.Sleep(MYSQL_READY_DELAY)
+
 	if err != nil {
 		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read Database service MySQL %s", err.Error()))
 	}

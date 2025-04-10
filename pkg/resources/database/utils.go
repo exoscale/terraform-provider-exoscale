@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	exoscale "github.com/exoscale/egoscale/v3"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
@@ -18,6 +19,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/xeipuuv/gojsonschema"
 )
+
+// MySQL services need a few seconds after becoming ready for API to stabilize
+// so we enforce a sleep.
+// Any additional delays are to be added in this file after this one
+const MYSQL_READY_DELAY = time.Second * 10
 
 // validateSettings validates user-provided JSON-formatted
 // Database Service settings against a reference JSON Schema.
@@ -133,6 +139,8 @@ type ResourceModelInterface interface {
 	UpdateResource(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics)
 
 	// WaitForService waits for the service to be be available for resource updates.
+	// different services have different quirks regarding what available means, so
+	// it's best to dispatch like this
 	WaitForService(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics)
 
 	// Accessing and setting attributes
