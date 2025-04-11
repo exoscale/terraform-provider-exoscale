@@ -41,6 +41,7 @@ directory for complete configuration examples.
 - `auto_upgrade` (Boolean) Enable automatic upgrading of the control plane version.
 - `cni` (String) The CNI plugin that is to be used. Available options are "calico" or "cilium". Defaults to "calico". Setting empty string will result in a cluster with no CNI.
 - `description` (String) A free-form text describing the cluster.
+- `enable_kube_proxy` (Boolean) ❗ Indicates whether to deploy the Kubernetes network proxy. (may only be set at creation time)
 - `exoscale_ccm` (Boolean) Deploy the Exoscale [Cloud Controller Manager](https://github.com/exoscale/exoscale-cloud-controller-manager/) in the control plane (boolean; default: `true`; may only be set at creation time).
 - `exoscale_csi` (Boolean) Deploy the Exoscale [Container Storage Interface](https://github.com/exoscale/exoscale-csi-driver/) on worker nodes (boolean; default: `false`; requires the CCM to be enabled).
 - `labels` (Map of String) A map of key/value labels.

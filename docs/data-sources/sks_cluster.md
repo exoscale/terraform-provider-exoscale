@@ -28,6 +28,7 @@ description: |-
 - `control_plane_ca` (String) The CA certificate (in PEM format) for TLS communications between control plane components.
 - `created_at` (String) The cluster creation date.
 - `description` (String) A free-form text describing the cluster.
+- `enable_kube_proxy` (Boolean) ❗ Indicates whether to deploy the Kubernetes network proxy. (may only be set at creation time)
 - `endpoint` (String) The cluster API endpoint.
 - `exoscale_ccm` (Boolean) Deploy the Exoscale [Cloud Controller Manager](https://github.com/exoscale/exoscale-cloud-controller-manager/) in the control plane (boolean; default: `true`; may only be set at creation time).
 - `exoscale_csi` (Boolean) Deploy the Exoscale [Container Storage Interface](https://github.com/exoscale/exoscale-csi-driver/) on worker nodes (boolean; default: `false`; requires the CCM to be enabled).

@@ -4,6 +4,7 @@
 
 FEATURES:
 - sks_cluster: enable_kube_proxy parameter #412
+- dbaas support for mysql,pg database, and deprecate `exoscale_database` in favour of `exoscale_dbaas` #410
 
 BUG FIXES:
 - Fix conflict causing acc tests to fail #422

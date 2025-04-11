@@ -43,7 +43,7 @@ var ResourceValkeySchema = schema.SingleNestedBlock{
 }
 
 // createValkey function handles Valkey specific part of database resource creation logic.
-func (r *Resource) createValkey(ctx context.Context, data *ResourceModel, diagnostics *diag.Diagnostics) {
+func (r *ServiceResource) createValkey(ctx context.Context, data *ServiceResourceModel, diagnostics *diag.Diagnostics) {
 	service := v3.CreateDBAASServiceValkeyRequest{
 		Plan:                  data.Plan.ValueString(),
 		TerminationProtection: data.TerminationProtection.ValueBoolPointer(),
@@ -184,7 +184,7 @@ func (r *Resource) createValkey(ctx context.Context, data *ResourceModel, diagno
 
 // readValkey function handles Valkey specific part of database resource Read logic.
 // It is used in the dedicated Read action but also as a finishing step of Create, Update and Import.
-func (r *Resource) readValkey(ctx context.Context, data *ResourceModel, diagnostics *diag.Diagnostics) {
+func (r *ServiceResource) readValkey(ctx context.Context, data *ServiceResourceModel, diagnostics *diag.Diagnostics) {
 	client, err := utils.SwitchClientZone(ctx, r.clientV3, v3.ZoneName(data.Zone.ValueString()))
 	if err != nil {
 		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to init client, got error: %s", err))
@@ -197,11 +197,6 @@ func (r *Resource) readValkey(ctx context.Context, data *ResourceModel, diagnost
 		return
 	}
 	data.CA = types.StringValue(caCert.Certificate)
-
-	if err != nil {
-		diagnostics.AddError("Client Error", fmt.Sprintf("couldn't create client error: %s", err))
-		return
-	}
 
 	res, err := client.GetDBAASServiceValkey(ctx, data.Id.ValueString())
 
@@ -257,7 +252,7 @@ func (r *Resource) readValkey(ctx context.Context, data *ResourceModel, diagnost
 }
 
 // updateValkey function handles Valkey specific part of database resource Update logic.
-func (r *Resource) updateValkey(ctx context.Context, stateData *ResourceModel, planData *ResourceModel, diagnostics *diag.Diagnostics) {
+func (r *ServiceResource) updateValkey(ctx context.Context, stateData *ServiceResourceModel, planData *ServiceResourceModel, diagnostics *diag.Diagnostics) {
 	var updated bool
 	client, err := utils.SwitchClientZone(ctx, r.clientV3, v3.ZoneName(stateData.Zone.ValueString()))
 
