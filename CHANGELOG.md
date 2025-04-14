@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.64.1
+
 FEATURES:
 - sks_cluster: enable_kube_proxy parameter #412
 - dbaas support for mysql,pg database, and deprecate `exoscale_database` in favour of `exoscale_dbaas` #410
