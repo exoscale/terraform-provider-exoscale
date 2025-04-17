@@ -3,10 +3,13 @@ package exoscale
 import (
 	"context"
 	"fmt"
+	"os"
 	"testing"
 
 	egoscale "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
+	v3 "github.com/exoscale/egoscale/v3"
+	"github.com/exoscale/egoscale/v3/credentials"
 )
 
 func Test_in(t *testing.T) {
@@ -211,4 +214,18 @@ func GetTemplateIDByName(templateName string) (*string, error) {
 	}
 
 	return nil, fmt.Errorf("unable to find template: %s", templateName)
+}
+
+// backported from testutils.go for cyclical import reasons
+func APIClientV3() (*v3.Client, error) {
+	creds := credentials.NewStaticCredentials(
+		os.Getenv("EXOSCALE_API_KEY"),
+		os.Getenv("EXOSCALE_API_SECRET"),
+	)
+
+	client, err := v3.NewClient(creds)
+	if err != nil {
+		return nil, err
+	}
+	return client, nil
 }

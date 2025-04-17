@@ -15,6 +15,7 @@ import (
 
 	egoscale "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
+	v3 "github.com/exoscale/egoscale/v3"
 )
 
 var (
@@ -180,7 +181,7 @@ resource "exoscale_sks_nodepool" "test" {
 func TestAccResourceSKSNodepool(t *testing.T) {
 	var (
 		r           = "exoscale_sks_nodepool.test"
-		sksCluster  egoscale.SKSCluster
+		sksCluster  v3.SKSCluster
 		sksNodepool egoscale.SKSNodepool
 	)
 
@@ -305,11 +306,11 @@ func TestAccResourceSKSNodepool(t *testing.T) {
 				// Import
 				ResourceName: r,
 				ImportStateIdFunc: func(
-					sksCluster *egoscale.SKSCluster,
+					sksCluster *v3.SKSCluster,
 					sksNodepool *egoscale.SKSNodepool,
 				) resource.ImportStateIdFunc {
 					return func(*terraform.State) (string, error) {
-						return fmt.Sprintf("%s/%s@%s", *sksCluster.ID, *sksNodepool.ID, testAccResourceSKSClusterLocalZone), nil
+						return fmt.Sprintf("%s/%s@%s", sksCluster.ID.String(), *sksNodepool.ID, testAccResourceSKSClusterLocalZone), nil
 					}
 				}(&sksCluster, &sksNodepool),
 				ImportState:       true,
