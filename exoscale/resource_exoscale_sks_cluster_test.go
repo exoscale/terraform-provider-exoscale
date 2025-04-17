@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -13,8 +12,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/stretchr/testify/assert"
 
-	egoscale "github.com/exoscale/egoscale/v2"
-	exoapi "github.com/exoscale/egoscale/v2/api"
+	egoscale "github.com/exoscale/egoscale/v3"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
 )
 
 var (
@@ -32,6 +31,7 @@ var (
 	testAccResourceSKSClusterOIDCUsernamePrefix     = acctest.RandString(10)
 	testAccResourceSKSClusterDescription            = acctest.RandString(10)
 	testAccResourceSKSClusterDescriptionUpdated     = testAccResourceSKSClusterDescription + "-updated"
+	testAccResourceSKSClusterFeatureGate            = "GracefulNodeShutdown"
 
 	testAccResourceSKSClusterConfigCreate = fmt.Sprintf(`
 locals {
@@ -48,6 +48,7 @@ resource "exoscale_sks_cluster" "test" {
   labels = {
     test = "%s"
   }
+  feature_gates = ["%s"]
 
   enable_kube_proxy = true
 
@@ -83,6 +84,7 @@ resource "exoscale_sks_nodepool" "test" {
 		testAccResourceSKSClusterName,
 		testAccResourceSKSClusterDescription,
 		testAccResourceSKSClusterLabelValue,
+		testAccResourceSKSClusterFeatureGate,
 		testAccResourceSKSClusterOIDCClientID,
 		testAccResourceSKSClusterOIDCGroupsClaim,
 		testAccResourceSKSClusterOIDCGroupsPrefix,
@@ -108,6 +110,7 @@ resource "exoscale_sks_cluster" "test" {
   labels = {
     test = "%s"
   }
+  feature_gates = []
 
   enable_kube_proxy = true
 
@@ -144,8 +147,8 @@ resource "exoscale_sks_cluster" "test" {
   zone = local.zone
   name = "%s"
   auto_upgrade = false
-
-	version = "%s"
+  enable_kube_proxy = true
+  version = "%s"
 
   timeouts {
     create = "10m"
@@ -159,30 +162,28 @@ func TestAccResourceSKSCluster(t *testing.T) {
 		sksCluster egoscale.SKSCluster
 	)
 
-	client, err := egoscale.NewClient(
-		os.Getenv("EXOSCALE_API_KEY"),
-		os.Getenv("EXOSCALE_API_SECRET"),
-		egoscale.ClientOptCond(func() bool {
-			if v := os.Getenv("EXOSCALE_TRACE"); v != "" {
-				return true
-			}
-			return false
-		}, egoscale.ClientOptWithTrace()))
+	defaultClient, err := APIClientV3()
 	if err != nil {
 		t.Fatalf("unable to initialize Exoscale client: %s", err)
 	}
-	clientctx := exoapi.WithEndpoint(
-		context.Background(),
-		exoapi.NewReqEndpoint(os.Getenv("EXOSCALE_API_ENVIRONMENT"), testAccResourceSKSClusterLocalZone),
+	ctx := context.Background()
+	client, err := utils.SwitchClientZone(
+		ctx,
+		defaultClient,
+		egoscale.ZoneName(testAccResourceSKSClusterLocalZone),
 	)
+	if err != nil {
+		t.Fatalf("unable to initialize Exoscale client: %s", err)
+	}
 
-	versions, err := client.ListSKSClusterVersions(clientctx)
-	if err != nil || len(versions) == 0 {
-		if len(versions) == 0 {
-			t.Fatal("no version returned by the API")
-		}
+	versionsResponse, err := client.ListSKSClusterVersions(ctx)
+	if err != nil {
 		t.Fatalf("unable to retrieve SKS versions: %s", err)
 	}
+	if versionsResponse == nil || len(versionsResponse.SKSClusterVersions) == 0 {
+		t.Fatal("no version returned by the API")
+	}
+	versions := versionsResponse.SKSClusterVersions
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
@@ -199,34 +200,37 @@ func TestAccResourceSKSCluster(t *testing.T) {
 
 						latestVersion := versions[0]
 
-						a.Equal([]string{sksClusterAddonExoscaleCCM}, *sksCluster.AddOns)
+						a.Equal([]string{sksClusterAddonExoscaleCCM}, sksCluster.Addons)
 						a.True(defaultBool(sksCluster.AutoUpgrade, false))
-						a.Equal(defaultSKSClusterCNI, *sksCluster.CNI)
-						a.Equal(testAccResourceSKSClusterDescription, *sksCluster.Description)
-						a.Equal(testAccResourceSKSClusterLabelValue, (*sksCluster.Labels)["test"])
-						a.Equal(testAccResourceSKSClusterName, *sksCluster.Name)
-						a.Equal(defaultSKSClusterServiceLevel, *sksCluster.ServiceLevel)
-						a.Equal(latestVersion, *sksCluster.Version)
-
+						a.Equal(defaultSKSClusterCNI, string(sksCluster.Cni))
+						a.Equal(testAccResourceSKSClusterDescription, sksCluster.Description)
+						a.Equal(testAccResourceSKSClusterLabelValue, sksCluster.Labels["test"])
+						a.Equal(testAccResourceSKSClusterName, sksCluster.Name)
+						a.Equal(defaultSKSClusterServiceLevel, string(sksCluster.Level))
+						a.Equal(latestVersion, sksCluster.Version)
+						a.Len(sksCluster.FeatureGates, 1)
+						a.Equal(testAccResourceSKSClusterFeatureGate, sksCluster.FeatureGates[0])
 						return nil
 					},
 					checkResourceState(r, checkResourceStateValidateAttributes(testAttrs{
-						resSKSClusterAttrAggregationLayerCA: validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Aggregation CA must be a PEM certificate")),
-						resSKSClusterAttrAutoUpgrade:        validateString("true"),
-						resSKSClusterAttrCNI:                validateString(defaultSKSClusterCNI),
-						resSKSClusterAttrControlPlaneCA:     validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Control-plane CA must be a PEM certificate")),
-						resSKSClusterAttrCreatedAt:          validation.ToDiagFunc(validation.NoZeroValues),
-						resSKSClusterAttrDescription:        validateString(testAccResourceSKSClusterDescription),
-						resSKSClusterAttrEndpoint:           validation.ToDiagFunc(validation.IsURLWithHTTPS),
-						resSKSClusterAttrExoscaleCCM:        validateString("true"),
-						resSKSClusterAttrKubeletCA:          validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Kubelet CA must be a PEM certificate")),
-						resSKSClusterAttrMetricsServer:      validateString("false"),
-						resSKSClusterAttrExoscaleCSI:        validateString("false"),
-						resSKSClusterAttrLabels + ".test":   validateString(testAccResourceSKSClusterLabelValue),
-						resSKSClusterAttrName:               validateString(testAccResourceSKSClusterName),
-						resSKSClusterAttrServiceLevel:       validateString(defaultSKSClusterServiceLevel),
-						resSKSClusterAttrState:              validation.ToDiagFunc(validation.NoZeroValues),
-						resSKSClusterAttrVersion:            validation.ToDiagFunc(validation.NoZeroValues),
+						resSKSClusterAttrAggregationLayerCA:  validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Aggregation CA must be a PEM certificate")),
+						resSKSClusterAttrAutoUpgrade:         validateString("true"),
+						resSKSClusterAttrCNI:                 validateString(defaultSKSClusterCNI),
+						resSKSClusterAttrControlPlaneCA:      validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Control-plane CA must be a PEM certificate")),
+						resSKSClusterAttrCreatedAt:           validation.ToDiagFunc(validation.NoZeroValues),
+						resSKSClusterAttrDescription:         validateString(testAccResourceSKSClusterDescription),
+						resSKSClusterAttrEndpoint:            validation.ToDiagFunc(validation.IsURLWithHTTPS),
+						resSKSClusterAttrEnableKubeProxy:     validateString("true"),
+						resSKSClusterAttrExoscaleCCM:         validateString("true"),
+						resSKSClusterAttrFeatureGates + ".#": validateString("1"),
+						resSKSClusterAttrKubeletCA:           validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Kubelet CA must be a PEM certificate")),
+						resSKSClusterAttrMetricsServer:       validateString("false"),
+						resSKSClusterAttrExoscaleCSI:         validateString("false"),
+						resSKSClusterAttrLabels + ".test":    validateString(testAccResourceSKSClusterLabelValue),
+						resSKSClusterAttrName:                validateString(testAccResourceSKSClusterName),
+						resSKSClusterAttrServiceLevel:        validateString(defaultSKSClusterServiceLevel),
+						resSKSClusterAttrState:               validation.ToDiagFunc(validation.NoZeroValues),
+						resSKSClusterAttrVersion:             validation.ToDiagFunc(validation.NoZeroValues),
 					})),
 				),
 			},
@@ -235,22 +239,29 @@ func TestAccResourceSKSCluster(t *testing.T) {
 				Config: testAccResourceSKSClusterConfigUpdate,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckResourceSKSClusterExists(r, &sksCluster),
+					func(s *terraform.State) error {
+						a := assert.New(t)
+
+						a.Len(sksCluster.FeatureGates, 0)
+						return nil
+					},
 					checkResourceState(r, checkResourceStateValidateAttributes(testAttrs{
-						resSKSClusterAttrAggregationLayerCA: validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Aggregation CA must be a PEM certificate")),
-						resSKSClusterAttrAutoUpgrade:        validateString("true"),
-						resSKSClusterAttrCNI:                validateString(defaultSKSClusterCNI),
-						resSKSClusterAttrControlPlaneCA:     validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Control-plane CA must be a PEM certificate")),
-						resSKSClusterAttrCreatedAt:          validation.ToDiagFunc(validation.NoZeroValues),
-						resSKSClusterAttrDescription:        validateString(testAccResourceSKSClusterDescriptionUpdated),
-						resSKSClusterAttrEndpoint:           validation.ToDiagFunc(validation.IsURLWithHTTPS),
-						resSKSClusterAttrExoscaleCCM:        validateString("true"),
-						resSKSClusterAttrKubeletCA:          validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Kubelet CA must be a PEM certificate")),
-						resSKSClusterAttrMetricsServer:      validateString("false"),
-						resSKSClusterAttrExoscaleCSI:        validateString("true"),
-						resSKSClusterAttrLabels + ".test":   validateString(testAccResourceSKSClusterLabelValueUpdated),
-						resSKSClusterAttrName:               validateString(testAccResourceSKSClusterNameUpdated),
-						resSKSClusterAttrServiceLevel:       validateString(defaultSKSClusterServiceLevel),
-						resSKSClusterAttrState:              validation.ToDiagFunc(validation.NoZeroValues),
+						resSKSClusterAttrAggregationLayerCA:  validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Aggregation CA must be a PEM certificate")),
+						resSKSClusterAttrAutoUpgrade:         validateString("true"),
+						resSKSClusterAttrCNI:                 validateString(defaultSKSClusterCNI),
+						resSKSClusterAttrControlPlaneCA:      validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Control-plane CA must be a PEM certificate")),
+						resSKSClusterAttrCreatedAt:           validation.ToDiagFunc(validation.NoZeroValues),
+						resSKSClusterAttrDescription:         validateString(testAccResourceSKSClusterDescriptionUpdated),
+						resSKSClusterAttrEndpoint:            validation.ToDiagFunc(validation.IsURLWithHTTPS),
+						resSKSClusterAttrExoscaleCCM:         validateString("true"),
+						resSKSClusterAttrFeatureGates + ".#": validateString("0"),
+						resSKSClusterAttrKubeletCA:           validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Kubelet CA must be a PEM certificate")),
+						resSKSClusterAttrMetricsServer:       validateString("false"),
+						resSKSClusterAttrExoscaleCSI:         validateString("true"),
+						resSKSClusterAttrLabels + ".test":    validateString(testAccResourceSKSClusterLabelValueUpdated),
+						resSKSClusterAttrName:                validateString(testAccResourceSKSClusterNameUpdated),
+						resSKSClusterAttrServiceLevel:        validateString(defaultSKSClusterServiceLevel),
+						resSKSClusterAttrState:               validation.ToDiagFunc(validation.NoZeroValues),
 					})),
 				),
 			},
@@ -259,7 +270,7 @@ func TestAccResourceSKSCluster(t *testing.T) {
 				ResourceName: r,
 				ImportStateIdFunc: func(sksCluster *egoscale.SKSCluster) resource.ImportStateIdFunc {
 					return func(*terraform.State) (string, error) {
-						return fmt.Sprintf("%s@%s", *sksCluster.ID, testAccResourceSKSClusterLocalZone), nil
+						return fmt.Sprintf("%s@%s", sksCluster.ID, testAccResourceSKSClusterLocalZone), nil
 					}
 				}(&sksCluster),
 				ImportState:       true,
@@ -318,8 +329,8 @@ func TestAccResourceSKSCluster(t *testing.T) {
 					func(s *terraform.State) error {
 						a := assert.New(t)
 
-						a.Equal(testAccResourceSKSClusterName, *sksCluster.Name)
-						a.Equal(versions[1], *sksCluster.Version)
+						a.Equal(testAccResourceSKSClusterName, sksCluster.Name)
+						a.Equal(versions[1], sksCluster.Version)
 						return nil
 					},
 					checkResourceState(r, checkResourceStateValidateAttributes(testAttrs{
@@ -338,8 +349,8 @@ func TestAccResourceSKSCluster(t *testing.T) {
 					func(s *terraform.State) error {
 						a := assert.New(t)
 
-						a.Equal(testAccResourceSKSClusterName, *sksCluster.Name)
-						a.Equal(versions[0], *sksCluster.Version)
+						a.Equal(testAccResourceSKSClusterName, sksCluster.Name)
+						a.Equal(versions[0], sksCluster.Version)
 						return nil
 					},
 					checkResourceState(r, checkResourceStateValidateAttributes(testAttrs{
@@ -365,13 +376,21 @@ func testAccCheckResourceSKSClusterExists(r string, sksCluster *egoscale.SKSClus
 			return errors.New("resource ID not set")
 		}
 
-		client := getClient(testAccProvider.Meta())
-
-		ctx := exoapi.WithEndpoint(
-			context.Background(),
-			exoapi.NewReqEndpoint(testEnvironment, testAccResourceSKSClusterLocalZone),
+		defaultClient, err := APIClientV3()
+		if err != nil {
+			return fmt.Errorf("unable to initialize Exoscale client: %s", err)
+		}
+		ctx := context.Background()
+		client, err := utils.SwitchClientZone(
+			ctx,
+			defaultClient,
+			egoscale.ZoneName(testAccResourceSKSClusterLocalZone),
 		)
-		res, err := client.GetSKSCluster(ctx, testAccResourceSKSClusterLocalZone, rs.Primary.ID)
+		if err != nil {
+			return fmt.Errorf("unable to initialize Exoscale client: %s", err)
+		}
+
+		res, err := client.GetSKSCluster(ctx, egoscale.UUID(rs.Primary.ID))
 		if err != nil {
 			return err
 		}
@@ -383,18 +402,25 @@ func testAccCheckResourceSKSClusterExists(r string, sksCluster *egoscale.SKSClus
 
 func testAccCheckResourceSKSClusterDestroy(sksCluster *egoscale.SKSCluster) resource.TestCheckFunc {
 	return func(_ *terraform.State) error {
-		client := getClient(testAccProvider.Meta())
-		ctx := exoapi.WithEndpoint(
-			context.Background(),
-			exoapi.NewReqEndpoint(testEnvironment, testAccResourceSKSClusterLocalZone),
-		)
-
-		_, err := client.GetSKSCluster(ctx, testAccResourceSKSClusterLocalZone, *sksCluster.ID)
+		defaultClient, err := APIClientV3()
 		if err != nil {
-			if errors.Is(err, exoapi.ErrNotFound) {
+			return fmt.Errorf("unable to initialize Exoscale client: %s", err)
+		}
+		ctx := context.Background()
+		client, err := utils.SwitchClientZone(
+			ctx,
+			defaultClient,
+			egoscale.ZoneName(testAccResourceSKSClusterLocalZone),
+		)
+		if err != nil {
+			return fmt.Errorf("unable to initialize Exoscale client: %s", err)
+		}
+
+		_, err = client.GetSKSCluster(ctx, sksCluster.ID)
+		if err != nil {
+			if errors.Is(err, egoscale.ErrNotFound) {
 				return nil
 			}
-
 			return err
 		}
 

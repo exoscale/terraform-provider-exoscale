@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/stretchr/testify/require"
 
-	egoscale "github.com/exoscale/egoscale/v2"
+	v3 "github.com/exoscale/egoscale/v3"
 )
 
 var (
@@ -55,7 +55,7 @@ resource "exoscale_sks_kubeconfig" "test_admin" {
 func TestAccResourceSKSKubeconfig(t *testing.T) {
 	var (
 		r             = "exoscale_sks_kubeconfig.test_admin"
-		sksCluster    egoscale.SKSCluster
+		sksCluster    v3.SKSCluster
 		sksKubeconfig string
 	)
 
