@@ -36,7 +36,6 @@ const (
 
 var securityGroupRuleProtocols = []string{
 	"AH",
-	"ALL",
 	"ESP",
 	"GRE",
 	"ICMP",
@@ -120,7 +119,7 @@ func resourceSecurityGroupRule() *schema.Resource {
 				ValidateFunc: validation.StringInSlice(securityGroupRuleProtocols, true),
 				// Ignore case differences
 				DiffSuppressFunc: suppressCaseDiff,
-				Description:      "The network protocol to match (`TCP`, `UDP`, `ICMP`, `ICMPv6`, `AH`, `ESP`, `GRE`, `IPIP` or `ALL`)",
+				Description:      "The network protocol to match (`TCP`, `UDP`, `ICMP`, `ICMPv6`, `AH`, `ESP`, `GRE` or `IPIP`)",
 			},
 			resSecurityGroupRuleAttrPublicSecurityGroup: {
 				Type:        schema.TypeString,
