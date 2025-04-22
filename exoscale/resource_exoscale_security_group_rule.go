@@ -36,7 +36,7 @@ const (
 
 var securityGroupRuleProtocols = []string{
 	"AH",
-	// Even though public API don't support creating ALL rules. Some customer might have terraform
+	// Even though public API doesn't support creating ALL rules. Some customer might have terraform
 	// code that references such rule that was created via obwald. So we need to keep support for it
 	// to not break customers.
 	"ALL",
