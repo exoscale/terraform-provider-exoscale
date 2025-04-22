@@ -36,6 +36,10 @@ const (
 
 var securityGroupRuleProtocols = []string{
 	"AH",
+	// Even though public API don't support creating ALL rules. Some customer might have terraform
+	// code that references such rule that was created via obwald. So we need to keep support for it
+	// to not break customers.
+	"ALL",
 	"ESP",
 	"GRE",
 	"ICMP",
@@ -119,7 +123,7 @@ func resourceSecurityGroupRule() *schema.Resource {
 				ValidateFunc: validation.StringInSlice(securityGroupRuleProtocols, true),
 				// Ignore case differences
 				DiffSuppressFunc: suppressCaseDiff,
-				Description:      "The network protocol to match (`TCP`, `UDP`, `ICMP`, `ICMPv6`, `AH`, `ESP`, `GRE` or `IPIP`)",
+				Description:      "The network protocol to match (`TCP`, `UDP`, `ICMP`, `ICMPv6`, `AH`, `ESP`, `GRE`, `IPIP` or `ALL`)",
 			},
 			resSecurityGroupRuleAttrPublicSecurityGroup: {
 				Type:        schema.TypeString,
