@@ -31,7 +31,7 @@ PACKAGE := github.com/exoscale/terraform-provider-exoscale
 PROJECT_URL = https://$(PACKAGE)
 GO_BUILD_EXTRA_ARGS = -v -trimpath
 GOLANGCI_LINT_CONFIG = .golangci.yml
-EXTRA_ARGS := -parallel=3 -count=1 -failfast
+EXTRA_ARGS := -parallel=1 -count=1 -failfast
 
 go.mk/init.mk:
 include go.mk/init.mk
