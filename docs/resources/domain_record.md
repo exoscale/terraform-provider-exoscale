@@ -43,7 +43,7 @@ directory for complete configuration examples.
 
 ### Required
 
-- `content` (String) The record value.
+- `content` (String) The record value. Format follows specific record type. For example SRV record format would be `<weight> <port> <target>`
 - `domain` (String) ❗ The parent [exoscale_domain](./domain.md) to attach the record to.
 - `name` (String) The record name, Leave blank (`""`) to create a root record (similar to using `@` in a DNS zone file).
 - `record_type` (String) ❗ The record type (`A`, `AAAA`, `ALIAS`, `CAA`, `CNAME`, `HINFO`, `MX`, `NAPTR`, `NS`, `POOL`, `SPF`, `SRV`, `SSHFP`, `TXT`, `URL`).

@@ -27,17 +27,17 @@ resource "exoscale_database" "my_database" {
     ]
 
     valkey_settings = jsonencode({
-      io_threads = 1
-      acl_channels_default = "allchannels"
-      lfu_decay_time = 5
-      lfu_log_factor = 7
-      maxmemory_policy = "volatile-ttl"
-      notify_keyspace_events = "AKE"
-      number_of_databases = 11
-      persistence = "off"
+      io_threads                        = 1
+      acl_channels_default              = "allchannels"
+      lfu_decay_time                    = 5
+      lfu_log_factor                    = 7
+      maxmemory_policy                  = "volatile-ttl"
+      notify_keyspace_events            = "AKE"
+      number_of_databases               = 11
+      persistence                       = "off"
       pubsub_client_output_buffer_limit = 150
-      ssl = true
-      timeout = 250
+      ssl                               = true
+      timeout                           = 250
     })
 
   }
