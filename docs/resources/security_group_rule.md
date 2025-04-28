@@ -44,7 +44,7 @@ directory for complete configuration examples.
 - `end_port` (Number) ❗ A `TCP`/`UDP` port range to match.
 - `icmp_code` (Number) ❗ An ICMP/ICMPv6 [type/code](https://en.wikipedia.org/wiki/Internet_Control_Message_Protocol#Control_messages) to match.
 - `icmp_type` (Number) ❗ An ICMP/ICMPv6 [type/code](https://en.wikipedia.org/wiki/Internet_Control_Message_Protocol#Control_messages) to match.
-- `protocol` (String) ❗ The network protocol to match (`TCP`, `UDP`, `ICMP`, `ICMPv6`, `AH`, `ESP`, `GRE`, `IPIP` or `ALL`)
+- `protocol` (String) ❗ The network protocol to match (`TCP`, `UDP`, `ICMP`, `ICMPv6`, `AH`, `ESP`, `GRE` or  `IPIP`)
 - `public_security_group` (String) ❗ An (`INGRESS`) source / (`EGRESS`) destination public security group name to match (conflicts with `cidr`/`user_security_group`/`user_security_group_id`).
 - `security_group` (String, Deprecated) ❗ The parent security group name. Please use the `security_group_id` argument along the [exoscale_security_group](../data-sources/security_group.md) data source instead.
 - `security_group_id` (String) ❗ The parent [exoscale_security_group](./security_group.md) ID.
