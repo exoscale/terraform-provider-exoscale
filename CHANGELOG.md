@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+IMPROVEMENTS:
+-  compute_instance: make disk_size a required field #419
+
 ## 0.64.1
 
 FEATURES:

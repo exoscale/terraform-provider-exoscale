@@ -47,8 +47,7 @@ func Resource() *schema.Resource {
 		AttrDiskSize: {
 			Description:  "The instance disk size (GiB; at least `10`). Can not be decreased after creation. **WARNING**: updating this attribute stops/restarts the instance.",
 			Type:         schema.TypeInt,
-			Computed:     true,
-			Optional:     true,
+			Required:     true,
 			ValidateFunc: validation.IntAtLeast(10),
 		},
 		AttrElasticIPIDs: {
