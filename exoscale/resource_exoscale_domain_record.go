@@ -53,7 +53,7 @@ Corresponding data source: [exoscale_domain_record](../data-sources/domain_recor
 			"content": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "The record value. Format follows specific record type. For example SRV record format would be '<weight> <port> <target>'",
+				Description: "The record value. Format follows specific record type. For example SRV record format would be `<weight> <port> <target>`",
 			},
 			"content_normalized": {
 				Type:        schema.TypeString,
