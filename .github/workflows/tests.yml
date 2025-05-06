@@ -31,18 +31,36 @@ jobs:
       - run: make go.mk
       - uses: ./go.mk/.github/actions/setup
       - uses: ./go.mk/.github/actions/pre-check
-      - name: Run tests
+      - name: Run tests with default arguments
+        if: github.event.inputs.go_test_extra_args == ''
         run: |
-          # Debug environment variables
-          echo "INPUT_GO_TEST_EXTRA_ARGS: $INPUT_GO_TEST_EXTRA_ARGS"
-
-          if [ -n "$INPUT_GO_TEST_EXTRA_ARGS" ]; then
-            export GO_TEST_EXTRA_ARGS="$INPUT_GO_TEST_EXTRA_ARGS"
-            echo "Setting GO_TEST_EXTRA_ARGS to: $GO_TEST_EXTRA_ARGS"
-            make test-verbose test-acc
-          else
-            make test-verbose test-acc
-          fi
+          echo "Running with default arguments"
+          make test-verbose test-acc
         env:
           EXOSCALE_API_KEY: ${{ secrets.EXOSCALE_API_KEY }}
           EXOSCALE_API_SECRET: ${{ secrets.EXOSCALE_API_SECRET }}
+      - name: Run tests with custom arguments
+        if: github.event.inputs.go_test_extra_args != ''
+        run: |
+          echo "Input args: '${{ github.event.inputs.go_test_extra_args }}'"
+          # Debug environment before setting
+          echo "Environment vars before:"
+          env | grep GO_TEST
+
+          # Set environment variable
+          export GO_TEST_EXTRA_ARGS="${{ github.event.inputs.go_test_extra_args }}"
+
+          # Debug environment after setting
+          echo "Environment vars after:"
+          env | grep GO_TEST
+
+          # Print make variables to see what make sees
+          echo "Make sees:"
+          make -pn | grep GO_TEST_EXTRA_ARGS
+
+          # Run the actual command
+          make test-verbose test-acc
+        env:
+          EXOSCALE_API_KEY: ${{ secrets.EXOSCALE_API_KEY }}
+          EXOSCALE_API_SECRET: ${{ secrets.EXOSCALE_API_SECRET }}
+          GO_TEST_EXTRA_ARGS: ${{ github.event.inputs.go_test_extra_args }}
