@@ -33,14 +33,16 @@ jobs:
 
       - uses: ./go.mk/.github/actions/pre-check
 
-      - name: Run tests
-        run: |
-          if [ "${{ github.event.inputs.go_test_extra_args }}" != "" ]; then
-            export GO_TEST_EXTRA_ARGS="${{ github.event.inputs.go_test_extra_args }}"
-            make test-verbose test-acc
-          else
-            make test-verbose test-acc
-          fi
+      - name: Run tests with default arguments
+        if: github.event.inputs.go_test_extra_args == ''
+        run: make test-verbose test-acc
         env:
           EXOSCALE_API_KEY: ${{ secrets.EXOSCALE_API_KEY }}
           EXOSCALE_API_SECRET: ${{ secrets.EXOSCALE_API_SECRET }}
+      - name: Run tests with custom arguments
+        if: github.event.inputs.go_test_extra_args != ''
+        run: make test-verbose test-acc
+        env:
+          EXOSCALE_API_KEY: ${{ secrets.EXOSCALE_API_KEY }}
+          EXOSCALE_API_SECRET: ${{ secrets.EXOSCALE_API_SECRET }}
+          GO_TEST_EXTRA_ARGS: ${{ github.event.inputs.go_test_extra_args }}
