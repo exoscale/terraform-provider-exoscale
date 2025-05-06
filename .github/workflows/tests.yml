@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       go_test_extra_args:
-        description: 'Extra arguments to pass to Go tests (e.g. -run "^Test(?!.*(Database|SOS)).*")'
+        description: 'Extra arguments to pass to Go tests (e.g. -run="^Test(?!.*(Database|SOS)).*")'
         required: false
         type: string
         default: ''
@@ -30,19 +30,19 @@ jobs:
       - uses: actions/checkout@v3
       - run: make go.mk
       - uses: ./go.mk/.github/actions/setup
-
       - uses: ./go.mk/.github/actions/pre-check
+      - name: Run tests
+        run: |
+          # Debug environment variables
+          echo "INPUT_GO_TEST_EXTRA_ARGS: $INPUT_GO_TEST_EXTRA_ARGS"
 
-      - name: Run tests with default arguments
-        if: github.event.inputs.go_test_extra_args == ''
-        run: make test-verbose test-acc
+          if [ -n "$INPUT_GO_TEST_EXTRA_ARGS" ]; then
+            export GO_TEST_EXTRA_ARGS="$INPUT_GO_TEST_EXTRA_ARGS"
+            echo "Setting GO_TEST_EXTRA_ARGS to: $GO_TEST_EXTRA_ARGS"
+            make test-verbose test-acc
+          else
+            make test-verbose test-acc
+          fi
         env:
           EXOSCALE_API_KEY: ${{ secrets.EXOSCALE_API_KEY }}
           EXOSCALE_API_SECRET: ${{ secrets.EXOSCALE_API_SECRET }}
-      - name: Run tests with custom arguments
-        if: github.event.inputs.go_test_extra_args != ''
-        run: make test-verbose test-acc
-        env:
-          EXOSCALE_API_KEY: ${{ secrets.EXOSCALE_API_KEY }}
-          EXOSCALE_API_SECRET: ${{ secrets.EXOSCALE_API_SECRET }}
-          GO_TEST_EXTRA_ARGS: ${{ github.event.inputs.go_test_extra_args }}
