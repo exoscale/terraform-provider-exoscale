@@ -3,6 +3,12 @@ name: run-acceptance-tests
 
 on:
   workflow_dispatch:
+    inputs:
+      go_test_extra_args:
+        description: 'Extra arguments to pass to Go tests (e.g. -run "^Test(?!.*(Database|SOS)).*")'
+        required: false
+        type: string
+        default: ''
   push:
     branches:
     - '**'
@@ -28,7 +34,13 @@ jobs:
       - uses: ./go.mk/.github/actions/pre-check
 
       - name: Run tests
-        run: make test-verbose test-acc
+        run: |
+          if [ "${{ github.event.inputs.go_test_extra_args }}" != "" ]; then
+            export GO_TEST_EXTRA_ARGS="${{ github.event.inputs.go_test_extra_args }}"
+            make test-verbose test-acc
+          else
+            make test-verbose test-acc
+          fi
         env:
           EXOSCALE_API_KEY: ${{ secrets.EXOSCALE_API_KEY }}
           EXOSCALE_API_SECRET: ${{ secrets.EXOSCALE_API_SECRET }}
