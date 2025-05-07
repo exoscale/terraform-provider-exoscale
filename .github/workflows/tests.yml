@@ -3,6 +3,12 @@ name: run-acceptance-tests
 
 on:
   workflow_dispatch:
+    inputs:
+      test_run_pattern:
+        description: 'Extra run arguments to pass to Go tests (e.g. "^Test.*Database.*")'
+        required: false
+        type: string
+        default: ''
   push:
     branches:
     - '**'
@@ -24,11 +30,18 @@ jobs:
       - uses: actions/checkout@v3
       - run: make go.mk
       - uses: ./go.mk/.github/actions/setup
-
       - uses: ./go.mk/.github/actions/pre-check
-
-      - name: Run tests
-        run: make test-verbose test-acc
+      - name: Run tests with default arguments
+        if: github.event.inputs.test_run_pattern == ''
+        run: |
+          make test-verbose test-acc
+        env:
+          EXOSCALE_API_KEY: ${{ secrets.EXOSCALE_API_KEY }}
+          EXOSCALE_API_SECRET: ${{ secrets.EXOSCALE_API_SECRET }}
+      - name: Run tests with custom arguments
+        if: github.event.inputs.test_run_pattern != ''
+        run: |
+          make test-verbose test-acc EXTRA_ARGS="-parallel=3 -count=1 -failfast -run=${{ github.event.inputs.test_run_pattern }}"
         env:
           EXOSCALE_API_KEY: ${{ secrets.EXOSCALE_API_KEY }}
           EXOSCALE_API_SECRET: ${{ secrets.EXOSCALE_API_SECRET }}
