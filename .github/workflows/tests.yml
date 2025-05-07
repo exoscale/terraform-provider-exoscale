@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       test_run_pattern:
-        description: 'Extra arguments to pass to Go tests (e.g. -run="^Test(?!.*(Database|SOS)).*")'
+        description: 'Extra run arguments to pass to Go tests (e.g. "^Test.*Database.*")'
         required: false
         type: string
         default: ''
@@ -45,4 +45,3 @@ jobs:
         env:
           EXOSCALE_API_KEY: ${{ secrets.EXOSCALE_API_KEY }}
           EXOSCALE_API_SECRET: ${{ secrets.EXOSCALE_API_SECRET }}
-          GO_TEST_EXTRA_ARGS: ${{ github.event.inputs.test_run_pattern }}
