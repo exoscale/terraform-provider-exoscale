@@ -18,7 +18,7 @@ var (
 	dsListDiskSize     = "10"
 	dsListInstanceType = "standard.tiny"
 	dsListName         = acctest.RandomWithPrefix(testutils.Prefix)
-	dsListZone         = "at-vie-1"
+	dsListZone         = "ch-gva-2"
 )
 
 var dsListConfig = fmt.Sprintf(`
