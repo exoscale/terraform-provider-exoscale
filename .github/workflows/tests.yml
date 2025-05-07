@@ -4,7 +4,7 @@ name: run-acceptance-tests
 on:
   workflow_dispatch:
     inputs:
-      go_test_extra_args:
+      test_run_pattern:
         description: 'Extra arguments to pass to Go tests (e.g. -run="^Test(?!.*(Database|SOS)).*")'
         required: false
         type: string
@@ -32,23 +32,18 @@ jobs:
       - uses: ./go.mk/.github/actions/setup
       - uses: ./go.mk/.github/actions/pre-check
       - name: Run tests with default arguments
-        if: github.event.inputs.go_test_extra_args == ''
+        if: github.event.inputs.test_run_pattern == ''
         run: |
           make test-verbose test-acc
         env:
           EXOSCALE_API_KEY: ${{ secrets.EXOSCALE_API_KEY }}
           EXOSCALE_API_SECRET: ${{ secrets.EXOSCALE_API_SECRET }}
       - name: Run tests with custom arguments
-        if: github.event.inputs.go_test_extra_args != ''
+        if: github.event.inputs.test_run_pattern != ''
         run: |
-          cat > run_test.sh << 'EOL'
-          #!/bin/bash
-          make test-verbose test-acc GO_TEST_EXTRA_ARGS="$1"
-          EOL
-
-          chmod +x run_test.sh
-          ./run_test.sh "${{ github.event.inputs.go_test_extra_args }}"
+          export EXTRA_ARGS="-parallel=3 -count=1 -failfast -run=${{ github.event.inputs.test_run_pattern }}"
+          make -n test-verbose test-acc
         env:
           EXOSCALE_API_KEY: ${{ secrets.EXOSCALE_API_KEY }}
           EXOSCALE_API_SECRET: ${{ secrets.EXOSCALE_API_SECRET }}
-          GO_TEST_EXTRA_ARGS: ${{ github.event.inputs.go_test_extra_args }}
+          GO_TEST_EXTRA_ARGS: ${{ github.event.inputs.test_run_pattern }}
