@@ -41,8 +41,7 @@ jobs:
       - name: Run tests with custom arguments
         if: github.event.inputs.test_run_pattern != ''
         run: |
-          export EXTRA_ARGS="-parallel=3 -count=1 -failfast -run=${{ github.event.inputs.test_run_pattern }}"
-          make -n test-verbose test-acc
+          make test-verbose test-acc EXTRA_ARGS="-parallel=3 -count=1 -failfast -run=${{ github.event.inputs.test_run_pattern }}"
         env:
           EXOSCALE_API_KEY: ${{ secrets.EXOSCALE_API_KEY }}
           EXOSCALE_API_SECRET: ${{ secrets.EXOSCALE_API_SECRET }}
