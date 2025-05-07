@@ -34,7 +34,6 @@ jobs:
       - name: Run tests with default arguments
         if: github.event.inputs.go_test_extra_args == ''
         run: |
-          echo "Running with default arguments"
           make test-verbose test-acc
         env:
           EXOSCALE_API_KEY: ${{ secrets.EXOSCALE_API_KEY }}
@@ -43,23 +42,7 @@ jobs:
         if: github.event.inputs.go_test_extra_args != ''
         run: |
           echo "Input args: '${{ github.event.inputs.go_test_extra_args }}'"
-          # Debug environment before setting
-          echo "Environment vars before:"
-          env | grep GO_TEST
-
-          # Set environment variable
-          export GO_TEST_EXTRA_ARGS="${{ github.event.inputs.go_test_extra_args }}"
-
-          # Debug environment after setting
-          echo "Environment vars after:"
-          env | grep GO_TEST
-
-          # Print make variables to see what make sees
-          echo "Make sees:"
-          make -pn | grep GO_TEST_EXTRA_ARGS
-
-          # Run the actual command
-          make test-verbose test-acc
+          make test-verbose test-acc GO_TEST_EXTRA_ARGS="${{ github.event.inputs.go_test_extra_args }}"
         env:
           EXOSCALE_API_KEY: ${{ secrets.EXOSCALE_API_KEY }}
           EXOSCALE_API_SECRET: ${{ secrets.EXOSCALE_API_SECRET }}
