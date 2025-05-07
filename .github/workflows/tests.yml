@@ -41,8 +41,8 @@ jobs:
       - name: Run tests with custom arguments
         if: github.event.inputs.go_test_extra_args != ''
         run: |
-          echo "Input args: '${{ github.event.inputs.go_test_extra_args }}'"
-          make test-verbose test-acc GO_TEST_EXTRA_ARGS="${{ github.event.inputs.go_test_extra_args }}"
+          echo "${{ github.event.inputs.go_test_extra_args }}" > args.txt
+          make test-verbose test-acc GO_TEST_EXTRA_ARGS="$(cat args.txt)"
         env:
           EXOSCALE_API_KEY: ${{ secrets.EXOSCALE_API_KEY }}
           EXOSCALE_API_SECRET: ${{ secrets.EXOSCALE_API_SECRET }}
