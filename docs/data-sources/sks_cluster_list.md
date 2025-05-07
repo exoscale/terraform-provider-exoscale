@@ -60,6 +60,7 @@ Read-Only:
 - `endpoint` (String)
 - `exoscale_ccm` (Boolean)
 - `exoscale_csi` (Boolean)
+- `feature_gates` (Set of String)
 - `id` (String)
 - `kubelet_ca` (String)
 - `labels` (Map of String)
