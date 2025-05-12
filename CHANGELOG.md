@@ -6,6 +6,10 @@ IMPROVEMENTS:
 - compute_instance: make disk_size a required field #419
 - docs: note that domain_record.content format depnds on record type #429
 
+BUG FIXES:
+
+- Block storage: don't error on remove resource deleted #432
+
 ## 0.64.1
 
 FEATURES:
