@@ -35,6 +35,7 @@ const (
 	resSKSClusterAttrEndpoint           = "endpoint"
 	resSKSClusterAttrExoscaleCCM        = "exoscale_ccm"
 	resSKSClusterAttrExoscaleCSI        = "exoscale_csi"
+	resSKSClusterAttrFeatureGates       = "feature_gates"
 	resSKSClusterAttrKubeletCA          = "kubelet_ca"
 	resSKSClusterAttrLabels             = "labels"
 	resSKSClusterAttrMetricsServer      = "metrics_server"
@@ -104,6 +105,7 @@ func resourceSKSCluster() *schema.Resource {
 		resSKSClusterAttrEnableKubeProxy: {
 			Type:        schema.TypeBool,
 			Optional:    true,
+			Computed:    true,
 			Description: "Indicates whether to deploy the Kubernetes network proxy. (may only be set at creation time)",
 			ForceNew:    true,
 		},
@@ -117,6 +119,13 @@ func resourceSKSCluster() *schema.Resource {
 			Optional:    true,
 			Default:     true,
 			Description: "Deploy the Exoscale [Cloud Controller Manager](https://github.com/exoscale/exoscale-cloud-controller-manager/) in the control plane (boolean; default: `true`; may only be set at creation time).",
+		},
+		resSKSClusterAttrFeatureGates: {
+			Type:        schema.TypeSet,
+			Optional:    true,
+			Set:         schema.HashString,
+			Elem:        &schema.Schema{Type: schema.TypeString},
+			Description: "Feature gates options for the cluster.",
 		},
 		resSKSClusterAttrKubeletCA: {
 			Type:        schema.TypeString,
@@ -298,6 +307,16 @@ func resourceSKSClusterCreate(ctx context.Context, d *schema.ResourceData, meta 
 		v := enableKubeProxy.(bool)
 		createReq.EnableKubeProxy = &v
 	}
+
+	featureGates := make([]string, 0)
+	if featureGatesSet, ok := d.Get(resSKSClusterAttrFeatureGates).(*schema.Set); ok {
+		featureGates = make([]string, featureGatesSet.Len())
+		for i, fg := range featureGatesSet.List() {
+			featureGates[i] = fg.(string)
+		}
+	}
+
+	createReq.FeatureGates = featureGates
 
 	if v, ok := d.GetOk(resSKSClusterAttrCNI); ok {
 		createReq.Cni = v3.CreateSKSClusterRequestCni(v.(string))
@@ -506,6 +525,12 @@ func resourceSKSClusterUpdate(ctx context.Context, d *schema.ResourceData, meta 
 	var updated bool
 	updateReq := v3.UpdateSKSClusterRequest{}
 
+	if d.HasChange(resSKSClusterAttrFeatureGates) {
+		featureGates := schemaSetToStringArray(d.Get(resSKSClusterAttrFeatureGates).(*schema.Set))
+		updateReq.FeatureGates = featureGates
+		updated = true
+	}
+
 	if d.HasChange(resSKSClusterAttrAutoUpgrade) {
 		autoUpgrade := d.Get(resSKSClusterAttrAutoUpgrade).(bool)
 		updateReq.AutoUpgrade = &autoUpgrade
@@ -688,6 +713,14 @@ func resourceSKSClusterApply(_ context.Context, d *schema.ResourceData, sksClust
 	}
 
 	if err := d.Set(resSKSClusterAttrVersion, sksCluster.Version); err != nil {
+		return err
+	}
+
+	if err := d.Set(resSKSClusterAttrEnableKubeProxy, defaultBool(sksCluster.EnableKubeProxy, true)); err != nil {
+		return err
+	}
+
+	if err := d.Set(resSKSClusterAttrFeatureGates, sksCluster.FeatureGates); err != nil {
 		return err
 	}
 
