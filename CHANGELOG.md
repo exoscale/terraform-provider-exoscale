@@ -6,6 +6,7 @@ IMPROVEMENTS:
 - compute_instance: make disk_size a required field #419
 - docs: note that domain_record.content format depnds on record type #429
 - sks-cluster: support for feature-gates #431
+- Bump go version in go.mod #433
 
 BUG FIXES:
 
