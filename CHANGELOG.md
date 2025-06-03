@@ -7,6 +7,7 @@ IMPROVEMENTS:
 - docs: note that domain_record.content format depnds on record type #429
 - sks-cluster: support for feature-gates #431
 - Bump go version in go.mod #433
+- Move DNS management to egoscale v3 #434
 
 BUG FIXES:
 
