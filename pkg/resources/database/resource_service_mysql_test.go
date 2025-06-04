@@ -21,6 +21,7 @@ import (
 	exoapi "github.com/exoscale/egoscale/v2/api"
 	"github.com/exoscale/egoscale/v2/oapi"
 
+	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/database"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/testutils"
 )
 
@@ -357,7 +358,7 @@ func CheckExistsMysql(name string, data *TemplateModelMysql) error {
 
 func CheckExistsMysqlUser(service, username string, data *TemplateModelMysqlUser) error {
 	// wait to allow Aiven to apply change
-	time.Sleep(5 * time.Second)
+	time.Sleep(database.SERVICE_READY_DELAY)
 
 	client, err := testutils.APIClient()
 	if err != nil {
@@ -394,7 +395,7 @@ func CheckExistsMysqlUser(service, username string, data *TemplateModelMysqlUser
 
 func CheckExistsMysqlDatabase(service, databaseName string, data *TemplateModelMysqlDb) error {
 	// wait to allow Aiven to apply change
-	time.Sleep(5 * time.Second)
+	time.Sleep(database.SERVICE_READY_DELAY)
 
 	client, err := testutils.APIClient()
 	if err != nil {
