@@ -81,7 +81,7 @@ func testResourcePg(t *testing.T) {
 		Plan:                  "hobbyist-2",
 		Zone:                  testutils.TestZoneName,
 		TerminationProtection: false,
-		Version:               "13",
+		Version:               "15",
 	}
 
 	userFullResourceName := "exoscale_dbaas_pg_user.test_user"
