@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 	"text/template"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -347,24 +348,32 @@ func CheckExistsPgUser(service, username string, data *TemplateModelPgUser) erro
 	}
 
 	ctx := exoapi.WithEndpoint(context.Background(), exoapi.NewReqEndpoint(testutils.TestEnvironment(), testutils.TestZoneName))
-
-	res, err := client.GetDbaasServicePgWithResponse(ctx, oapi.DbaasServiceName(service))
-	if err != nil {
-		return err
-	}
-	if res.StatusCode() != http.StatusOK {
-		return fmt.Errorf("API request error: unexpected status %s", res.Status())
-	}
-	svc := res.JSON200
-
 	serviceUsernames := make([]string, 0)
-	if svc.Users != nil {
-		for _, u := range *svc.Users {
-			serviceUsernames = append(serviceUsernames, u.Username)
-			if u.Username == username {
-				return nil
+
+	ch := make(chan any, 1)
+	go func() {
+		time.Sleep(60 * time.Second)
+		ch <- "timeout!"
+	}()
+	for len(ch) == 0 {
+		res, err := client.GetDbaasServicePgWithResponse(ctx, oapi.DbaasServiceName(service))
+		if err != nil {
+			return err
+		}
+		if res.StatusCode() != http.StatusOK {
+			return fmt.Errorf("API request error: unexpected status %s", res.Status())
+		}
+		svc := res.JSON200
+
+		if svc.Users != nil {
+			for _, u := range *svc.Users {
+				serviceUsernames = append(serviceUsernames, u.Username)
+				if u.Username == username {
+					return nil
+				}
 			}
 		}
+		time.Sleep(10 * time.Second)
 	}
 
 	return fmt.Errorf("could not find user %s for service %s, found %v", username, service, serviceUsernames)
@@ -378,24 +387,33 @@ func CheckExistsPgDatabase(service, databaseName string, data *TemplateModelPgDb
 	}
 
 	ctx := exoapi.WithEndpoint(context.Background(), exoapi.NewReqEndpoint(testutils.TestEnvironment(), testutils.TestZoneName))
-
-	res, err := client.GetDbaasServicePgWithResponse(ctx, oapi.DbaasServiceName(service))
-	if err != nil {
-		return err
-	}
-	if res.StatusCode() != http.StatusOK {
-		return fmt.Errorf("API request error: unexpected status %s", res.Status())
-	}
-	svc := res.JSON200
-
 	serviceDbs := make([]string, 0)
-	if svc.Databases != nil {
-		for _, db := range *svc.Databases {
-			serviceDbs = append(serviceDbs, string(db))
-			if string(db) == databaseName {
-				return nil
+
+	ch := make(chan any, 1)
+	go func() {
+		time.Sleep(60 * time.Second)
+		ch <- "timeout!"
+	}()
+	for len(ch) == 0 {
+
+		res, err := client.GetDbaasServicePgWithResponse(ctx, oapi.DbaasServiceName(service))
+		if err != nil {
+			return err
+		}
+		if res.StatusCode() != http.StatusOK {
+			return fmt.Errorf("API request error: unexpected status %s", res.Status())
+		}
+		svc := res.JSON200
+
+		if svc.Databases != nil {
+			for _, db := range *svc.Databases {
+				serviceDbs = append(serviceDbs, string(db))
+				if string(db) == databaseName {
+					return nil
+				}
 			}
 		}
+		time.Sleep(10 * time.Second)
 	}
 
 	return fmt.Errorf("could not find database %s for service %s, found %v", databaseName, service, serviceDbs)
