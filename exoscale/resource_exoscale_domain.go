@@ -5,8 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	exo "github.com/exoscale/egoscale/v2"
-	exoapi "github.com/exoscale/egoscale/v2/api"
+	v3 "github.com/exoscale/egoscale/v3"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/general"
 
@@ -121,24 +120,43 @@ func resourceDomainCreate(ctx context.Context, d *schema.ResourceData, meta inte
 	})
 
 	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), defaultZone))
 	defer cancel()
 
-	client := getClient(meta)
+	client, err := config.GetClientV3WithZone(ctx, meta, defaultZone)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
 	domainName := d.Get("name").(string)
-	domain, err := client.CreateDNSDomain(ctx, defaultZone, &exo.DNSDomain{UnicodeName: &domainName})
+	o, err := client.CreateDNSDomain(ctx, v3.CreateDNSDomainRequest{UnicodeName: domainName})
 	if err != nil {
 		return diag.Errorf("unable to create domain: %s", err)
 	}
 
-	d.SetId(*domain.ID)
+	// bug in the api: the spec advertises we return a domain when we return an operation
+	_, err = client.Wait(ctx, &v3.Operation{
+		ID: o.ID,
+	}, v3.OperationStateSuccess)
+	if err != nil {
+		return diag.Errorf("unable to create domain: %s", err)
+	}
+
+	domains, err := client.ListDNSDomains(ctx)
+	if err != nil {
+		return diag.Errorf("unable to retrieve domain after creation: %s", err)
+	}
+	domain, err := domains.FindDNSDomain(domainName)
+	if err != nil {
+		return diag.Errorf("unable to retrieve domain after creation: %s", err)
+	}
+
+	d.SetId(domain.ID.String())
 
 	tflog.Debug(ctx, "create finished successfully", map[string]interface{}{
 		"id": resourceDomainIDString(d),
 	})
 
-	err = resourceDomainApply(d, domain)
+	err = resourceDomainApply(d, &domain)
 	if err != nil {
 		return diag.Errorf("%s", err)
 	}
@@ -148,14 +166,16 @@ func resourceDomainCreate(ctx context.Context, d *schema.ResourceData, meta inte
 
 func resourceDomainExists(d *schema.ResourceData, meta interface{}) (bool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), defaultZone))
 	defer cancel()
 
-	client := getClient(meta)
-
-	_, err := client.GetDNSDomain(ctx, defaultZone, d.Id())
+	client, err := config.GetClientV3WithZone(ctx, meta, defaultZone)
 	if err != nil {
-		if errors.Is(err, exoapi.ErrNotFound) {
+		return false, err
+	}
+
+	_, err = client.GetDNSDomain(ctx, v3.UUID(d.Id()))
+	if err != nil {
+		if errors.Is(err, v3.ErrNotFound) {
 			return false, nil
 		}
 		return false, err
@@ -170,12 +190,14 @@ func resourceDomainRead(ctx context.Context, d *schema.ResourceData, meta interf
 	})
 
 	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), defaultZone))
 	defer cancel()
 
-	client := getClient(meta)
+	client, err := config.GetClientV3WithZone(ctx, meta, defaultZone)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
-	domain, err := client.GetDNSDomain(ctx, defaultZone, d.Id())
+	domain, err := client.GetDNSDomain(ctx, v3.UUID(d.Id()))
 	if err != nil {
 		return diag.Errorf("error retrieving domain: %s", err)
 	}
@@ -198,17 +220,23 @@ func resourceDomainDelete(ctx context.Context, d *schema.ResourceData, meta inte
 	})
 
 	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), defaultZone))
 	defer cancel()
 
-	client := getClient(meta)
+	client, err := config.GetClientV3WithZone(ctx, meta, defaultZone)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
-	domain, err := client.GetDNSDomain(ctx, defaultZone, d.Id())
+	domain, err := client.GetDNSDomain(ctx, v3.UUID(d.Id()))
 	if err != nil {
 		return diag.Errorf("error retrieving domain: %s", err)
 	}
 
-	err = client.DeleteDNSDomain(ctx, defaultZone, domain)
+	op, err := client.DeleteDNSDomain(ctx, domain.ID)
+	if err != nil {
+		return diag.Errorf("error deleting domain: %s", err)
+	}
+	_, err = client.Wait(ctx, op, v3.OperationStateSuccess)
 	if err != nil {
 		return diag.Errorf("error deleting domain: %s", err)
 	}
@@ -222,12 +250,14 @@ func resourceDomainDelete(ctx context.Context, d *schema.ResourceData, meta inte
 
 func resourceDomainImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), defaultZone))
 	defer cancel()
 
-	client := getClient(meta)
+	client, err := config.GetClientV3WithZone(ctx, meta, defaultZone)
+	if err != nil {
+		return nil, err
+	}
 
-	domain, err := client.GetDNSDomain(ctx, defaultZone, d.Id())
+	domain, err := client.GetDNSDomain(ctx, v3.UUID(d.Id()))
 	if err != nil {
 		return nil, err
 	}
@@ -239,8 +269,8 @@ func resourceDomainImport(ctx context.Context, d *schema.ResourceData, meta inte
 	return []*schema.ResourceData{d}, nil
 }
 
-func resourceDomainApply(d *schema.ResourceData, domain *exo.DNSDomain) error {
-	d.SetId(*domain.ID)
+func resourceDomainApply(d *schema.ResourceData, domain *v3.DNSDomain) error {
+	d.SetId(domain.ID.String())
 	if err := d.Set("name", domain.UnicodeName); err != nil {
 		return err
 	}

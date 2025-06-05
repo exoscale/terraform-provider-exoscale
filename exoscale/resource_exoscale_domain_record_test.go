@@ -6,8 +6,7 @@ import (
 	"fmt"
 	"testing"
 
-	exo "github.com/exoscale/egoscale/v2"
-	exoapi "github.com/exoscale/egoscale/v2/api"
+	v3 "github.com/exoscale/egoscale/v3"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -103,9 +102,9 @@ resource "exoscale_domain_record" "txt" {
 )
 
 func TestAccResourceDomainRecord(t *testing.T) {
-	dr := exo.DNSDomainRecord{}
-	domain := exo.DNSDomain{}
-	record := exo.DNSDomainRecord{}
+	dr := v3.DNSDomainRecord{}
+	domain := v3.DNSDomain{}
+	record := v3.DNSDomainRecord{}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
@@ -172,7 +171,7 @@ func TestAccResourceDomainRecord(t *testing.T) {
 	})
 }
 
-func testAccCheckResourceDomainRecordExists(n string, domain *exo.DNSDomain, record *exo.DNSDomainRecord) resource.TestCheckFunc {
+func testAccCheckResourceDomainRecordExists(n string, domain *v3.DNSDomain, record *v3.DNSDomainRecord) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -183,8 +182,11 @@ func testAccCheckResourceDomainRecordExists(n string, domain *exo.DNSDomain, rec
 			return errors.New("resource ID not set")
 		}
 
-		client := getClient(testAccProvider.Meta())
-		r, err := client.GetDNSDomainRecord(context.TODO(), defaultZone, *domain.ID, rs.Primary.ID)
+		client, err := APIClientV3()
+		if err != nil {
+			return fmt.Errorf("unable to initialize Exoscale client: %s", err)
+		}
+		r, err := client.GetDNSDomainRecord(context.TODO(), domain.ID, v3.UUID(rs.Primary.ID))
 		if err != nil {
 			return err
 		}
@@ -195,9 +197,9 @@ func testAccCheckResourceDomainRecordExists(n string, domain *exo.DNSDomain, rec
 	}
 }
 
-func testAccCheckResourceDomainRecord(record *exo.DNSDomainRecord) resource.TestCheckFunc {
+func testAccCheckResourceDomainRecord(record *v3.DNSDomainRecord) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		if *record.TTL == 0 {
+		if record.Ttl == 0 {
 			return errors.New("TTL is zero")
 		}
 
@@ -217,16 +219,19 @@ func testAccCheckResourceDomainRecordAttributes(n string, expected testAttrs) re
 }
 
 func testAccCheckResourceDomainRecordDestroy(s *terraform.State) error {
-	client := getClient(testAccProvider.Meta())
+	client, err := APIClientV3()
+	if err != nil {
+		return fmt.Errorf("unable to initialize Exoscale client: %s", err)
+	}
 
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "exoscale_domain_record" {
 			continue
 		}
 
-		d, err := client.GetDNSDomainRecord(context.TODO(), defaultZone, rs.Primary.Attributes["id"], rs.Primary.ID)
+		d, err := client.GetDNSDomainRecord(context.TODO(), v3.UUID(rs.Primary.Attributes["id"]), v3.UUID(rs.Primary.ID))
 		if err != nil {
-			if errors.Is(err, exoapi.ErrNotFound) {
+			if errors.Is(err, v3.ErrNotFound) {
 				return nil
 			}
 			return err
