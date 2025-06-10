@@ -6,8 +6,7 @@ import (
 	"fmt"
 	"testing"
 
-	exo "github.com/exoscale/egoscale/v2"
-	exoapi "github.com/exoscale/egoscale/v2/api"
+	v3 "github.com/exoscale/egoscale/v3"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -27,7 +26,7 @@ resource "exoscale_domain" "exo" {
 )
 
 func TestAccResourceDomain(t *testing.T) {
-	domain := exo.DNSDomain{}
+	domain := v3.DNSDomain{}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
@@ -60,7 +59,7 @@ func TestAccResourceDomain(t *testing.T) {
 	})
 }
 
-func testAccCheckResourceDomainExists(n string, domain *exo.DNSDomain) resource.TestCheckFunc {
+func testAccCheckResourceDomainExists(n string, domain *v3.DNSDomain) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -71,8 +70,11 @@ func testAccCheckResourceDomainExists(n string, domain *exo.DNSDomain) resource.
 			return errors.New("resource ID not set")
 		}
 
-		client := getClient(testAccProvider.Meta())
-		d, err := client.GetDNSDomain(context.TODO(), defaultZone, rs.Primary.ID)
+		client, err := APIClientV3()
+		if err != nil {
+			return fmt.Errorf("unable to initialize Exoscale client: %s", err)
+		}
+		d, err := client.GetDNSDomain(context.TODO(), v3.UUID(rs.Primary.ID))
 		if err != nil {
 			return err
 		}
@@ -98,16 +100,19 @@ func testAccCheckResourceDomainAttributes(expected testAttrs) resource.TestCheck
 }
 
 func testAccCheckResourceDomainDestroy(s *terraform.State) error {
-	client := getClient(testAccProvider.Meta())
+	client, err := APIClientV3()
+	if err != nil {
+		return fmt.Errorf("unable to initialize Exoscale client: %s", err)
+	}
 
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "exoscale_domain" {
 			continue
 		}
 
-		d, err := client.GetDNSDomain(context.TODO(), defaultZone, rs.Primary.Attributes["id"])
+		d, err := client.GetDNSDomain(context.TODO(), v3.UUID(rs.Primary.Attributes["id"]))
 		if err != nil {
-			if errors.Is(err, exoapi.ErrNotFound) {
+			if errors.Is(err, v3.ErrNotFound) {
 				return nil
 			}
 			return err

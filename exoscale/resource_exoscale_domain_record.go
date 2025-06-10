@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	exo "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
+	v3 "github.com/exoscale/egoscale/v3"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/general"
 
@@ -172,34 +172,37 @@ func resourceDomainRecordCreate(ctx context.Context, d *schema.ResourceData, met
 	})
 
 	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), defaultZone))
 	defer cancel()
 
-	client := getClient(meta)
+	client, err := config.GetClientV3WithZone(ctx, meta, defaultZone)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
 	name := d.Get("name").(string)
+	domainId := v3.UUID(d.Get("domain").(string))
 	content := d.Get("content").(string)
 	rtype := d.Get("record_type").(string)
-	var ttl *int64
-	if t := int64(d.Get("ttl").(int)); t > 0 {
-		ttl = &t
-	}
-	var prio *int64
-	if t := int64(d.Get("prio").(int)); t > 0 {
-		prio = &t
-	}
-	record, err := client.CreateDNSDomainRecord(ctx, defaultZone, d.Get("domain").(string), &exo.DNSDomainRecord{
-		Name:     &name,
-		Content:  &content,
-		Type:     &rtype,
-		TTL:      ttl,
-		Priority: prio,
-	})
+	ttl := int64(d.Get("ttl").(int))
+	prio := int64(d.Get("prio").(int))
+	op, err := client.CreateDNSDomainRecord(ctx,
+		domainId, v3.CreateDNSDomainRecordRequest{
+			Name:     name,
+			Content:  content,
+			Type:     v3.CreateDNSDomainRecordRequestType(rtype),
+			Ttl:      ttl,
+			Priority: prio,
+		})
 	if err != nil {
 		return diag.Errorf("error creating domain record: %q", err)
 	}
 
-	d.SetId(*record.ID)
+	op, err = client.Wait(ctx, op, v3.OperationStateSuccess)
+	if err != nil {
+		return diag.Errorf("error creating domain record: %q", err)
+	}
+
+	d.SetId(op.Reference.ID.String())
 
 	tflog.Debug(ctx, "create finished successfully", map[string]interface{}{
 		"id": resourceDomainIDString(d),
@@ -210,15 +213,17 @@ func resourceDomainRecordCreate(ctx context.Context, d *schema.ResourceData, met
 
 func resourceDomainRecordExists(d *schema.ResourceData, meta interface{}) (bool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), defaultZone))
 	defer cancel()
 
-	client := getClient(meta)
+	client, err := config.GetClientV3WithZone(ctx, meta, defaultZone)
+	if err != nil {
+		return false, err
+	}
 
-	domainID := d.Get("domain").(string)
+	domainID := v3.UUID(d.Get("domain").(string))
 
 	if domainID != "" {
-		_, err := client.GetDNSDomainRecord(ctx, defaultZone, domainID, d.Id())
+		_, err := client.GetDNSDomainRecord(ctx, domainID, v3.UUID(d.Id()))
 		if err != nil {
 			if errors.Is(err, exoapi.ErrNotFound) {
 				return false, nil
@@ -235,26 +240,28 @@ func resourceDomainRecordExists(d *schema.ResourceData, meta interface{}) (bool,
 		"id": resourceDomainIDString(d),
 	})
 
-	domains, err := client.ListDNSDomains(ctx, defaultZone)
+	domains, err := client.ListDNSDomains(ctx)
 	if err != nil {
 		return false, err
 	}
 
-	for _, domain := range domains {
-		records, err := client.ListDNSDomainRecords(ctx, defaultZone, *domain.ID)
+	for _, domain := range domains.DNSDomains {
+		records, err := client.ListDNSDomainRecords(ctx, domain.ID)
 		if err != nil {
 			return false, err
 		}
-
-		for _, record := range records {
-			if *record.ID == d.Id() {
-				tflog.Debug(ctx, "found record domain", map[string]interface{}{
-					"id":          resourceDomainIDString(d),
-					"domain_name": *domain.UnicodeName,
-				})
-				return true, nil
+		_, err = records.FindDNSDomainRecord(d.Id())
+		if err != nil {
+			if errors.Is(err, v3.ErrNotFound) {
+				continue
 			}
+			return false, err
 		}
+		tflog.Debug(ctx, "found record domain", map[string]interface{}{
+			"id":          resourceDomainIDString(d),
+			"domain_name": domain.UnicodeName,
+		})
+		return true, nil
 	}
 
 	return false, nil
@@ -266,20 +273,22 @@ func resourceDomainRecordRead(ctx context.Context, d *schema.ResourceData, meta 
 	})
 
 	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), defaultZone))
 	defer cancel()
 
-	client := getClient(meta)
+	client, err := config.GetClientV3WithZone(ctx, meta, defaultZone)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
-	domainID := d.Get("domain").(string)
+	domainID := v3.UUID(d.Get("domain").(string))
 
 	if domainID != "" {
-		domain, err := client.GetDNSDomain(ctx, defaultZone, domainID)
+		domain, err := client.GetDNSDomain(ctx, domainID)
 		if err != nil {
 			return diag.Errorf("error retrieving domain: %s", err)
 		}
 
-		record, err := client.GetDNSDomainRecord(ctx, defaultZone, domainID, d.Id())
+		record, err := client.GetDNSDomainRecord(ctx, domainID, v3.UUID(d.Id()))
 		if err != nil {
 			return diag.Errorf("error retrieving domain record: %s", err)
 		}
@@ -288,20 +297,20 @@ func resourceDomainRecordRead(ctx context.Context, d *schema.ResourceData, meta 
 			"id": resourceDomainIDString(d),
 		})
 
-		if contentNormalized := d.Get("content_normalized").(string); record.Content != nil &&
+		if contentNormalized := d.Get("content_normalized").(string); record.Content != "" &&
 			contentNormalized != "" && // skip create
-			contentNormalized != *record.Content {
+			contentNormalized != record.Content {
 			// If the record content has changed, we need to update the record in the remote
 			tflog.Debug(ctx, "DNSimple Zone Record content changed", map[string]interface{}{
 				"state":  contentNormalized,
-				"remote": *record.Content,
+				"remote": record.Content,
 			})
 			if err := d.Set("content", record.Content); err != nil {
 				return diag.Errorf("error setting domain content: %s", err)
 			}
 		}
 
-		err = resourceDomainRecordApply(d, *domain.UnicodeName, record)
+		err = resourceDomainRecordApply(d, domain.UnicodeName, *record)
 		if err != nil {
 			return diag.Errorf("%s", err)
 		}
@@ -315,40 +324,45 @@ func resourceDomainRecordRead(ctx context.Context, d *schema.ResourceData, meta 
 		"id": resourceDomainIDString(d),
 	})
 
-	domains, err := client.ListDNSDomains(ctx, defaultZone)
+	domains, err := client.ListDNSDomains(ctx)
 	if err != nil {
 		return diag.Errorf("error retrieving domains: %s", err)
 	}
 
-	for _, domain := range domains {
-		records, err := client.ListDNSDomainRecords(ctx, defaultZone, *domain.ID)
+	for _, domain := range domains.DNSDomains {
+		records, err := client.ListDNSDomainRecords(ctx, domain.ID)
 		if err != nil {
 			return diag.Errorf("error retrieving domain records: %s", err)
 		}
 
-		for _, record := range records {
-			if *record.ID == d.Id() {
-				if err := d.Set("domain", domain.ID); err != nil {
-					return diag.Errorf("%s", err)
-				}
-
-				tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
-					"id": resourceDomainIDString(d),
-				})
-
-				// For import we need to set 'content' now
-				if err := d.Set("content", record.Content); err != nil {
-					return diag.Errorf("error setting domain content: %s", err)
-				}
-
-				err = resourceDomainRecordApply(d, *domain.UnicodeName, &record)
-				if err != nil {
-					return diag.Errorf("%s", err)
-				}
-
-				return nil
+		record, err := records.FindDNSDomainRecord(d.Id())
+		if err != nil {
+			if errors.Is(err, v3.ErrNotFound) {
+				continue
 			}
+			return diag.Errorf("error FindDNSDomain domain records: %s", err)
+
 		}
+
+		if err := d.Set("domain", domain.ID); err != nil {
+			return diag.Errorf("%s", err)
+		}
+
+		tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
+			"id": resourceDomainIDString(d),
+		})
+
+		// For import we need to set 'content' now
+		if err := d.Set("content", record.Content); err != nil {
+			return diag.Errorf("error setting domain content: %s", err)
+		}
+
+		err = resourceDomainRecordApply(d, domain.UnicodeName, record)
+		if err != nil {
+			return diag.Errorf("%s", err)
+		}
+
+		return nil
 	}
 
 	return diag.Errorf("domain record %s not found", d.Id())
@@ -360,31 +374,30 @@ func resourceDomainRecordUpdate(ctx context.Context, d *schema.ResourceData, met
 	})
 
 	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), defaultZone))
 	defer cancel()
 
-	client := getClient(meta)
+	client, err := config.GetClientV3WithZone(ctx, meta, defaultZone)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
+	domainID := v3.UUID(d.Get("domain").(string))
 	name := d.Get("name").(string)
 	content := d.Get("content").(string)
-	rtype := d.Get("record_type").(string)
-	var ttl *int64
-	if t := int64(d.Get("ttl").(int)); t > 0 {
-		ttl = &t
-	}
-	var prio *int64
-	if t := int64(d.Get("prio").(int)); t > 0 {
-		prio = &t
-	}
+	ttl := int64(d.Get("ttl").(int))
+	prio := int64(d.Get("prio").(int))
 	id := d.Id()
-	err := client.UpdateDNSDomainRecord(ctx, defaultZone, d.Get("domain").(string), &exo.DNSDomainRecord{
-		ID:       &id,
-		Name:     &name,
-		Content:  &content,
-		Type:     &rtype,
-		TTL:      ttl,
+	op, err := client.UpdateDNSDomainRecord(ctx, domainID, v3.UUID(id), v3.UpdateDNSDomainRecordRequest{
+		Name:     name,
+		Content:  content,
+		Ttl:      ttl,
 		Priority: prio,
 	})
+	if err != nil {
+		return diag.Errorf("error updating domain record: %s", err)
+	}
+
+	_, err = client.Wait(ctx, op, v3.OperationStateSuccess)
 	if err != nil {
 		return diag.Errorf("error updating domain record: %s", err)
 	}
@@ -393,19 +406,17 @@ func resourceDomainRecordUpdate(ctx context.Context, d *schema.ResourceData, met
 		"id": resourceDomainIDString(d),
 	})
 
-	domainID := d.Get("domain").(string)
-
-	domain, err := client.GetDNSDomain(ctx, defaultZone, domainID)
+	domain, err := client.GetDNSDomain(ctx, domainID)
 	if err != nil {
 		return diag.Errorf("error retrieving domain: %s", err)
 	}
 
-	record, err := client.GetDNSDomainRecord(ctx, defaultZone, domainID, d.Id())
+	record, err := client.GetDNSDomainRecord(ctx, domainID, v3.UUID(d.Id()))
 	if err != nil {
 		return diag.Errorf("error retrieving domain record: %s", err)
 	}
 
-	err = resourceDomainRecordApply(d, *domain.UnicodeName, record) // FIXME: use resourceDomainRecordRead()
+	err = resourceDomainRecordApply(d, domain.UnicodeName, *record) // FIXME: use resourceDomainRecordRead()
 	if err != nil {
 		return diag.Errorf("%s", err)
 	}
@@ -419,17 +430,25 @@ func resourceDomainRecordDelete(ctx context.Context, d *schema.ResourceData, met
 	})
 
 	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), defaultZone))
 	defer cancel()
 
-	client := getClient(meta)
+	client, err := config.GetClientV3WithZone(ctx, meta, defaultZone)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
-	record, err := client.GetDNSDomainRecord(ctx, defaultZone, d.Get("domain").(string), d.Id())
+	domainID := v3.UUID(d.Get("domain").(string))
+
+	record, err := client.GetDNSDomainRecord(ctx, domainID, v3.UUID(d.Id()))
 	if err != nil {
 		return diag.Errorf("error retrieving domain record: %s", err)
 	}
 
-	err = client.DeleteDNSDomainRecord(ctx, defaultZone, d.Get("domain").(string), record)
+	op, err := client.DeleteDNSDomainRecord(ctx, domainID, record.ID)
+	if err != nil {
+		return diag.Errorf("error deleting domain record: %s", err)
+	}
+	_, err = client.Wait(ctx, op, v3.OperationStateSuccess)
 	if err != nil {
 		return diag.Errorf("error deleting domain record: %s", err)
 	}
@@ -441,8 +460,8 @@ func resourceDomainRecordDelete(ctx context.Context, d *schema.ResourceData, met
 	return nil
 }
 
-func resourceDomainRecordApply(d *schema.ResourceData, domainName string, record *exo.DNSDomainRecord) error {
-	d.SetId(*record.ID)
+func resourceDomainRecordApply(d *schema.ResourceData, domainName string, record v3.DNSDomainRecord) error {
+	d.SetId(string(record.ID))
 	if err := d.Set("name", record.Name); err != nil {
 		return err
 	}
@@ -452,7 +471,7 @@ func resourceDomainRecordApply(d *schema.ResourceData, domainName string, record
 	if err := d.Set("record_type", record.Type); err != nil {
 		return err
 	}
-	if err := d.Set("ttl", record.TTL); err != nil {
+	if err := d.Set("ttl", record.Ttl); err != nil {
 		return err
 	}
 	if err := d.Set("prio", record.Priority); err != nil {
@@ -460,8 +479,8 @@ func resourceDomainRecordApply(d *schema.ResourceData, domainName string, record
 	}
 
 	hostname := domainName
-	if record.Name != nil && *record.Name != "" {
-		hostname = fmt.Sprintf("%s.%s", *record.Name, domainName)
+	if record.Name != "" {
+		hostname = fmt.Sprintf("%s.%s", record.Name, domainName)
 	}
 
 	if err := d.Set("hostname", hostname); err != nil {

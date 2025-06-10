@@ -7,8 +7,8 @@ import (
 	"regexp"
 	"strings"
 
-	exo "github.com/exoscale/egoscale/v2"
-	exoapi "github.com/exoscale/egoscale/v2/api"
+	v3 "github.com/exoscale/egoscale/v3"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/general"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -120,21 +120,23 @@ func dataSourceDomainRecordRead(ctx context.Context, d *schema.ResourceData, met
 	})
 
 	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), defaultZone))
 	defer cancel()
 
-	client := getClient(meta)
+	client, err := config.GetClientV3WithZone(ctx, meta, defaultZone)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
 	domainName := d.Get("domain").(string)
-	var domain *exo.DNSDomain
+	var domain *v3.DNSDomain
 
-	domains, err := client.ListDNSDomains(ctx, defaultZone)
+	domains, err := client.ListDNSDomains(ctx)
 	if err != nil {
 		return diag.Errorf("error retrieving domain list: %s", err)
 	}
 
-	for _, item := range domains {
-		if *item.UnicodeName == domainName {
+	for _, item := range domains.DNSDomains {
+		if item.UnicodeName == domainName {
 			t := item
 			domain = &t
 			break
@@ -156,49 +158,49 @@ func dataSourceDomainRecordRead(ctx context.Context, d *schema.ResourceData, met
 	rtype := filter["record_type"].(string)
 	cregex := filter["content_regex"].(string)
 
-	var records []exo.DNSDomainRecord
+	var records []v3.DNSDomainRecord
 	var ids []string
 
 	switch {
 	case id != "":
-		record, err := client.GetDNSDomainRecord(ctx, defaultZone, *domain.ID, id)
+		record, err := client.GetDNSDomainRecord(ctx, domain.ID, v3.UUID(id))
 		if err != nil {
 			return diag.Errorf("error retrieving domain record: %s", err)
 		}
 		records = append(records, *record)
-		ids = append(ids, *record.ID)
+		ids = append(ids, record.ID.String())
 	case name != "" || rtype != "":
-		r, err := client.ListDNSDomainRecords(ctx, defaultZone, *domain.ID)
+		r, err := client.ListDNSDomainRecords(ctx, domain.ID)
 		if err != nil {
 			return diag.Errorf("error retrieving domain record list: %s", err)
 		}
-		for _, record := range r {
-			if name != "" && *record.Name != name {
+		for _, record := range r.DNSDomainRecords {
+			if name != "" && record.Name != name {
 				continue
 			}
-			if rtype != "" && *record.Type != rtype {
+			if rtype != "" && record.Type != v3.DNSDomainRecordType(rtype) {
 				continue
 			}
 			t := record
 			records = append(records, t)
-			ids = append(ids, *record.ID)
+			ids = append(ids, record.ID.String())
 		}
 	case cregex != "":
 		regexp, err := regexp.Compile(cregex)
 		if err != nil {
 			return diag.Errorf("error parsing regex: %s", err)
 		}
-		r, err := client.ListDNSDomainRecords(ctx, defaultZone, *domain.ID)
+		r, err := client.ListDNSDomainRecords(ctx, domain.ID)
 		if err != nil {
 			return diag.Errorf("error retrieving domain record list: %s", err)
 		}
-		for _, record := range r {
-			if !regexp.MatchString(*record.Content) {
+		for _, record := range r.DNSDomainRecords {
+			if !regexp.MatchString(record.Content) {
 				continue
 			}
 			t := record
 			records = append(records, t)
-			ids = append(ids, *record.ID)
+			ids = append(ids, record.ID.String())
 		}
 	}
 
@@ -213,11 +215,11 @@ func dataSourceDomainRecordRead(ctx context.Context, d *schema.ResourceData, met
 	for i, r := range records {
 		recordsDetails[i] = map[string]interface{}{
 			"id":          r.ID,
-			"domain":      *domain.ID,
+			"domain":      domain.ID,
 			"name":        r.Name,
 			"content":     r.Content,
 			"record_type": r.Type,
-			"ttl":         r.TTL,
+			"ttl":         r.Ttl,
 			"prio":        r.Priority,
 		}
 	}

@@ -356,8 +356,6 @@ func CheckExistsMysql(name string, data *TemplateModelMysql) error {
 }
 
 func CheckExistsMysqlUser(service, username string, data *TemplateModelMysqlUser) error {
-	// wait to allow Aiven to apply change
-	time.Sleep(5 * time.Second)
 
 	client, err := testutils.APIClient()
 	if err != nil {
@@ -365,36 +363,44 @@ func CheckExistsMysqlUser(service, username string, data *TemplateModelMysqlUser
 	}
 
 	ctx := exoapi.WithEndpoint(context.Background(), exoapi.NewReqEndpoint(testutils.TestEnvironment(), testutils.TestZoneName))
-
-	res, err := client.GetDbaasServiceMysqlWithResponse(ctx, oapi.DbaasServiceName(service))
-	if err != nil {
-		return err
-	}
-	if res.StatusCode() != http.StatusOK {
-		return fmt.Errorf("API request error: unexpected status %s", res.Status())
-	}
-	svc := res.JSON200
-
 	serviceUsernames := make([]string, 0)
-	if svc.Users != nil {
-		for _, u := range *svc.Users {
-			if u.Username != nil {
-				serviceUsernames = append(serviceUsernames, *u.Username)
-				if *u.Username == username {
-					if *u.Authentication == data.Authentication {
-						return nil
+
+	ch := make(chan any, 1)
+	go func() {
+		time.Sleep(60 * time.Second)
+		ch <- "timeout!"
+	}()
+	for len(ch) == 0 {
+
+		res, err := client.GetDbaasServiceMysqlWithResponse(ctx, oapi.DbaasServiceName(service))
+		if err != nil {
+			return err
+		}
+		if res.StatusCode() != http.StatusOK {
+			return fmt.Errorf("API request error: unexpected status %s", res.Status())
+		}
+		svc := res.JSON200
+
+		if svc.Users != nil {
+			for _, u := range *svc.Users {
+				if u.Username != nil {
+					serviceUsernames = append(serviceUsernames, *u.Username)
+					if *u.Username == username {
+						if *u.Authentication == data.Authentication {
+							return nil
+						}
 					}
 				}
 			}
 		}
+
+		time.Sleep(10 * time.Second)
 	}
 
 	return fmt.Errorf("could not find user %s for service %s, found %v", username, service, serviceUsernames)
 }
 
 func CheckExistsMysqlDatabase(service, databaseName string, data *TemplateModelMysqlDb) error {
-	// wait to allow Aiven to apply change
-	time.Sleep(5 * time.Second)
 
 	client, err := testutils.APIClient()
 	if err != nil {
@@ -402,25 +408,35 @@ func CheckExistsMysqlDatabase(service, databaseName string, data *TemplateModelM
 	}
 
 	ctx := exoapi.WithEndpoint(context.Background(), exoapi.NewReqEndpoint(testutils.TestEnvironment(), testutils.TestZoneName))
-
-	res, err := client.GetDbaasServiceMysqlWithResponse(ctx, oapi.DbaasServiceName(service))
-	if err != nil {
-		return err
-	}
-	if res.StatusCode() != http.StatusOK {
-		return fmt.Errorf("API request error: unexpected status %s", res.Status())
-	}
-	svc := res.JSON200
-
 	serviceDbs := make([]string, 0)
-	if svc.Databases != nil {
 
-		for _, db := range *svc.Databases {
-			serviceDbs = append(serviceDbs, string(db))
-			if string(db) == databaseName {
-				return nil
+	ch := make(chan any, 1)
+	go func() {
+		time.Sleep(60 * time.Second)
+		ch <- "timeout!"
+	}()
+
+	for len(ch) == 0 {
+		res, err := client.GetDbaasServiceMysqlWithResponse(ctx, oapi.DbaasServiceName(service))
+		if err != nil {
+			return err
+		}
+		if res.StatusCode() != http.StatusOK {
+			return fmt.Errorf("API request error: unexpected status %s", res.Status())
+		}
+		svc := res.JSON200
+
+		if svc.Databases != nil {
+
+			for _, db := range *svc.Databases {
+				serviceDbs = append(serviceDbs, string(db))
+				if string(db) == databaseName {
+					return nil
+				}
 			}
 		}
+
+		time.Sleep(10 * time.Second)
 	}
 
 	return fmt.Errorf("could not find database %s for service %s, found %v", databaseName, service, serviceDbs)
