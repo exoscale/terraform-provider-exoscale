@@ -27,7 +27,7 @@ const (
 	Prefix                         = "test-terraform-exoscale"
 	TestUsername                   = "test-exo-username"
 	TestDescription                = "Created by the terraform-exoscale provider"
-	TestZoneName                   = "bg-sof-1"
+	TestZoneName                   = "ch-gva-2"
 	TestInstanceTemplateName       = "Linux Ubuntu 20.04 LTS 64-bit"
 	TestInstanceTemplateUsername   = "ubuntu"
 	TestInstanceTemplateFilter     = "featured"
