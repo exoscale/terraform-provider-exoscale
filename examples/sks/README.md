@@ -1,7 +1,7 @@
 # Scalable Kubernetes Service (SKS)
 
 This example demonstrates how to instantiate a
-[Scalable Kubernetes Service (SKS) Cluster](https://community.exoscale.com/documentation/sks/),
+[Scalable Kubernetes Service (SKS) Cluster](https://community.exoscale.com/product/compute/containers/),
 using the `exoscale_sks` and `exoscale_sks_nodepool` resource.
 
 Please refer to the [main.tf](./main.tf) Terraform configuration file.

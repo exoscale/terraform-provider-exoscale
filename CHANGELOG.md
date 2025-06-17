@@ -8,6 +8,7 @@ IMPROVEMENTS:
 - sks-cluster: support for feature-gates #431
 - Bump go version in go.mod #433
 - Move DNS management to egoscale v3 #434
+- doc: fix broken links to community docs #440 
 
 BUG FIXES:
 

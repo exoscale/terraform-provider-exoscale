@@ -3,12 +3,12 @@
 page_title: "exoscale_sos_bucket_policy Data Source - terraform-provider-exoscale"
 subcategory: ""
 description: |-
-  Fetch Exoscale SOS Bucket Policies https://community.exoscale.com/documentation/storage/bucketpolicy/.
+  Fetch Exoscale SOS Bucket Policies https://community.exoscale.com/product/storage/object-storage/how-to/bucketpolicy/.
 ---
 
 # exoscale_sos_bucket_policy (Data Source)
 
-Fetch Exoscale [SOS Bucket Policies](https://community.exoscale.com/documentation/storage/bucketpolicy/).
+Fetch Exoscale [SOS Bucket Policies](https://community.exoscale.com/product/storage/object-storage/how-to/bucketpolicy/).
 
 
 

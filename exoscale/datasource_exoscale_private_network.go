@@ -25,7 +25,7 @@ const (
 
 func dataSourcePrivateNetwork() *schema.Resource {
 	return &schema.Resource{
-		Description: `Fetch Exoscale [Private Networks](https://community.exoscale.com/documentation/compute/private-networks/) data.
+		Description: `Fetch Exoscale [Private Networks](https://community.exoscale.com/product/networking/private-network/) data.
 
 Corresponding resource: [exoscale_private_network](../resources/private_network.md).`,
 		Schema: map[string]*schema.Schema{

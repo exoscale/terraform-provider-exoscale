@@ -3,13 +3,13 @@
 page_title: "exoscale_block_storage_volume_snapshot Resource - terraform-provider-exoscale"
 subcategory: ""
 description: |-
-  Manage Exoscale Block Storage https://community.exoscale.com/documentation/block-storage/ Volume Snapshot.
+  Manage Exoscale Block Storage https://community.exoscale.com/product/storage/block-storage/ Volume Snapshot.
   Block Storage offers persistent externally attached volumes for your workloads.
 ---
 
 # exoscale_block_storage_volume_snapshot (Resource)
 
-Manage [Exoscale Block Storage](https://community.exoscale.com/documentation/block-storage/) Volume Snapshot.
+Manage [Exoscale Block Storage](https://community.exoscale.com/product/storage/block-storage/) Volume Snapshot.
 
 Block Storage offers persistent externally attached volumes for your workloads.
 

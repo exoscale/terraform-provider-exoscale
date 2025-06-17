@@ -1,9 +1,9 @@
 # IAM API Key SOS
 
 This example demonstrates how to provision
-[IAM](https://community.exoscale.com/documentation/iam/iam-api-key-roles-policies)
+[IAM](https://community.exoscale.com/product/iam/)
 Roles and API Keys using `exoscale_iam_role` and `exoscale_iam_api_key` resources.
-
+product
 In our configuration we will define 2 Roles:
 - Read-Write access for 2 different buckets,
 - Read-Only access for one specific bucket.

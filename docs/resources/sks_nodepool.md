@@ -7,7 +7,7 @@ description: |-
 
 # exoscale_sks_nodepool (Resource)
 
-Manage Exoscale [Scalable Kubernetes Service (SKS)](https://community.exoscale.com/documentation/sks/) Node Pools.
+Manage Exoscale [Scalable Kubernetes Service (SKS)](https://community.exoscale.com/product/compute/containers/) Node Pools.
 
 ## Example Usage
 

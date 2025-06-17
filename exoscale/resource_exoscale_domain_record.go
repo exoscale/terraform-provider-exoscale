@@ -28,7 +28,7 @@ func resourceDomainRecordIDString(d general.ResourceIDStringer) string {
 
 func resourceDomainRecord() *schema.Resource {
 	return &schema.Resource{
-		Description: `Manage Exoscale [DNS](https://community.exoscale.com/documentation/dns/) Domain Records.
+		Description: `Manage Exoscale [DNS](https://community.exoscale.com/product/networking/dns/) Domain Records.
 
 Corresponding data source: [exoscale_domain_record](../data-sources/domain_record.md).`,
 		Schema: map[string]*schema.Schema{

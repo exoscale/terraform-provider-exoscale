@@ -158,7 +158,7 @@ func resourceNLBService() *schema.Resource {
 	return &schema.Resource{
 		Schema: s,
 
-		Description: `Manage Exoscale [Network Load Balancer (NLB)](https://community.exoscale.com/documentation/compute/network-load-balancer/) Services.`,
+		Description: `Manage Exoscale [Network Load Balancer (NLB)](https://community.exoscale.com/product/networking/nlb/) Services.`,
 
 		CreateContext: resourceNLBServiceCreate,
 		ReadContext:   resourceNLBServiceRead,

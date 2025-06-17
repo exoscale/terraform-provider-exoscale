@@ -1,8 +1,8 @@
 # Network Load Balancer (NLB)
 
 This example demonstrates how to setup and associate a
-[Network Load Balancer (NLB)](https://community.exoscale.com/documentation/compute/network-load-balancer/)
-to your [Instance Pools](https://community.exoscale.com/documentation/compute/instance-pools/),
+[Network Load Balancer (NLB)](https://community.exoscale.com/product/networking/nlb/)
+to your [Instance Pools](https://community.exoscale.com/product/compute/instances/how-to/instance-pools/),
 using the `exoscale_nlb` and `exoscale_nlb_service` resources.
 
 Please refer to the [main.tf](./main.tf) Terraform configuration file.

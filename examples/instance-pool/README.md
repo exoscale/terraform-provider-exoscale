@@ -1,7 +1,7 @@
 # Instance Pool
 
 This example demonstrates how to setup an
-[Instance Pool](https://community.exoscale.com/documentation/compute/instance-pools/),
+[Instance Pool](https://community.exoscale.com/product/compute/instances/how-to/instance-pools/),
 using the `exoscale_instance_pool` resource.
 
 Please refer to the [main.tf](./main.tf) Terraform configuration file.

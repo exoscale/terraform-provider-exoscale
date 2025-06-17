@@ -18,7 +18,7 @@ import (
 	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
 )
 
-const DataSourceSnapshotDescription = `Fetch [Exoscale Block Storage](https://community.exoscale.com/documentation/block-storage/) Snapshot.
+const DataSourceSnapshotDescription = `Fetch [Exoscale Block Storage](https://community.exoscale.com/product/storage/block-storage/) Snapshot.
 
 Block Storage offers persistent externally attached volumes for your workloads.
 

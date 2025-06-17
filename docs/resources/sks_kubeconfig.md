@@ -7,7 +7,7 @@ description: |-
 
 # exoscale_sks_kubeconfig (Resource)
 
-Manage Exoscale [Scalable Kubernetes Service (SKS)](https://community.exoscale.com/documentation/sks/) Credentials (*Kubeconfig*).
+Manage Exoscale [Scalable Kubernetes Service (SKS)](https://community.exoscale.com/product/compute/containers/) Credentials (*Kubeconfig*).
 
 !> **WARNING:** This resource stores sensitive information in your Terraform state. Please be sure to correctly understand implications and how to mitigate potential risks before using it.
 

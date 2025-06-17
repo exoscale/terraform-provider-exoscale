@@ -3,13 +3,13 @@
 page_title: "exoscale_elastic_ip Data Source - terraform-provider-exoscale"
 subcategory: ""
 description: |-
-  Fetch Exoscale Elastic IPs (EIP) https://community.exoscale.com/documentation/compute/eip/ data.
+  Fetch Exoscale Elastic IPs (EIP) https://community.exoscale.com/product/networking/eip/ data.
   Corresponding resource: exoscaleelasticip ../resources/elastic_ip.md.
 ---
 
 # exoscale_elastic_ip (Data Source)
 
-Fetch Exoscale [Elastic IPs (EIP)](https://community.exoscale.com/documentation/compute/eip/) data.
+Fetch Exoscale [Elastic IPs (EIP)](https://community.exoscale.com/product/networking/eip/) data.
 
 Corresponding resource: [exoscale_elastic_ip](../resources/elastic_ip.md).
 

@@ -168,7 +168,7 @@ func DataSourceSchema() map[string]*schema.Schema {
 
 func DataSource() *schema.Resource {
 	return &schema.Resource{
-		Description: `Fetch Exoscale [Instance Pools](https://community.exoscale.com/documentation/compute/instance-pools/) data.
+		Description: `Fetch Exoscale [Instance Pools](https://community.exoscale.com/product/compute/instances/how-to/instance-pools/) data.
 
 Corresponding resource: [exoscale_instance_pool](../resources/instance_pool.md).`,
 		Schema: func() map[string]*schema.Schema {

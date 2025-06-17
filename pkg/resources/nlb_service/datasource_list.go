@@ -105,7 +105,7 @@ func (d *NLBServiceListDataSource) Metadata(ctx context.Context, req datasource.
 
 func (d *NLBServiceListDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: `Fetch Exoscale [Network Load Balancers (NLB)](https://community.exoscale.com/documentation/compute/network-load-balancer/) Services.
+		Description: `Fetch Exoscale [Network Load Balancers (NLB)](https://community.exoscale.com/product/networking/nlb/) Services.
 
 Corresponding resource: [exoscale_nlb](../resources/nlb.md).`,
 		Attributes: map[string]schema.Attribute{

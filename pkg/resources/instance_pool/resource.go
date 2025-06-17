@@ -204,7 +204,7 @@ func Resource() *schema.Resource {
 	}
 
 	return &schema.Resource{
-		Description: `Manage Exoscale [Instance Pools](https://community.exoscale.com/documentation/compute/instance-pools/).
+		Description: `Manage Exoscale [Instance Pools](https://community.exoscale.com/product/compute/instances/how-to/instance-pools/).
 
 Corresponding data sources: [exoscale_instance_pool](../data-sources/instance_pool.md), [exoscale_instance_pool_list](../data-sources/instance_pool_list.md).`,
 		Schema: s,

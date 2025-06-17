@@ -3,13 +3,13 @@
 page_title: "exoscale_nlb Data Source - terraform-provider-exoscale"
 subcategory: ""
 description: |-
-  Fetch Exoscale Network Load Balancers (NLB) https://community.exoscale.com/documentation/compute/network-load-balancer/ data.
+  Fetch Exoscale Network Load Balancers (NLB) https://community.exoscale.com/product/networking/nlb/ data.
   Corresponding resource: exoscale_nlb ../resources/nlb.md.
 ---
 
 # exoscale_nlb (Data Source)
 
-Fetch Exoscale [Network Load Balancers (NLB)](https://community.exoscale.com/documentation/compute/network-load-balancer/) data.
+Fetch Exoscale [Network Load Balancers (NLB)](https://community.exoscale.com/product/networking/nlb/) data.
 
 Corresponding resource: [exoscale_nlb](../resources/nlb.md).
 

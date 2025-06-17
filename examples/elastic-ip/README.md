@@ -1,7 +1,7 @@
 # Elastic IP (EIP)
 
 This example demonstrates how to setup and associate an
-[Elastic IP (EIP)](https://community.exoscale.com/documentation/compute/eip/)
+[Elastic IP (EIP)](https://community.exoscale.com/product/networking/eip/)
 to your compute instances, using the `exoscale_elastic_ip` resource.
 
 Please refer to the [main.tf](./main.tf) Terraform configuration file.

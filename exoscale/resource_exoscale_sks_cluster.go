@@ -242,7 +242,7 @@ func resourceSKSCluster() *schema.Resource {
 	return &schema.Resource{
 		Schema: s,
 
-		Description: `Manage Exoscale [Scalable Kubernetes Service (SKS)](https://community.exoscale.com/documentation/sks/) Clusters.`,
+		Description: `Manage Exoscale [Scalable Kubernetes Service (SKS)](https://community.exoscale.com/product/compute/containers/) Clusters.`,
 
 		CreateContext: resourceSKSClusterCreate,
 		ReadContext:   resourceSKSClusterRead,

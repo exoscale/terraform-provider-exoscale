@@ -1,7 +1,7 @@
 # IAM API Key Compute
 
 This example demonstrates how to provision
-[IAM](https://community.exoscale.com/documentation/iam/iam-api-key-roles-policies)
+[IAM](https://community.exoscale.com/product/iam/)
 Roles and API Keys using `exoscale_iam_role` and `exoscale_iam_api_key` resources.
 
 In our configuration we will restrict access to Compute service to only allow deploying private instances.

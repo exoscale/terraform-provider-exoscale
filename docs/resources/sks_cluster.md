@@ -2,12 +2,12 @@
 page_title: "exoscale_sks_cluster Resource - terraform-provider-exoscale"
 subcategory: ""
 description: |-
-  Manage Exoscale Scalable Kubernetes Service (SKS) https://community.exoscale.com/documentation/sks/ Clusters.
+  Manage Exoscale Scalable Kubernetes Service (SKS) https://community.exoscale.com/product/compute/containers/ Clusters.
 ---
 
 # exoscale_sks_cluster (Resource)
 
-Manage Exoscale [Scalable Kubernetes Service (SKS)](https://community.exoscale.com/documentation/sks/) Clusters.
+Manage Exoscale [Scalable Kubernetes Service (SKS)](https://community.exoscale.com/product/compute/containers/) Clusters.
 
 ## Example Usage
 

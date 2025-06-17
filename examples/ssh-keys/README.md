@@ -1,7 +1,7 @@
 # Secure Shell (SSH) Keys
 
 This example demonstrates how to setup
-[Secure Shell (SSH) keys](https://community.exoscale.com/documentation/compute/ssh-keypairs/)
+[Secure Shell (SSH) keys](https://community.exoscale.com/product/compute/instances/how-to/ssh-keypairs/)
 to access your compute instances, using the `exoscale_ssh_key` resource.
 
 Please refer to the [main.tf](./main.tf) Terraform configuration file.

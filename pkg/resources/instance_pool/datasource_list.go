@@ -19,7 +19,7 @@ import (
 
 func DataSourceList() *schema.Resource {
 	return &schema.Resource{
-		Description: `List Exoscale [Instance Pools](https://community.exoscale.com/documentation/compute/instance-pools/).
+		Description: `List Exoscale [Instance Pools](https://community.exoscale.com/product/compute/instances/how-to/instance-pools/).
 
 Corresponding resource: [exoscale_instance_pool](../resources/instance_pool.md).`,
 		Schema: map[string]*schema.Schema{

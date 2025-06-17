@@ -55,7 +55,7 @@ func resourceSecurityGroupRuleIDString(d general.ResourceIDStringer) string {
 
 func resourceSecurityGroupRule() *schema.Resource {
 	return &schema.Resource{
-		Description: "Manage Exoscale [Security Group](https://community.exoscale.com/documentation/compute/security-groups/) Rules.",
+		Description: "Manage Exoscale [Security Group](https://community.exoscale.com/product/networking/security-group/) Rules.",
 		Schema: map[string]*schema.Schema{
 			resSecurityGroupRuleAttrDescription: {
 				Type:        schema.TypeString,

@@ -7,7 +7,7 @@ description: |-
 
 # exoscale_security_group (Resource)
 
-Manage Exoscale [Security Groups](https://community.exoscale.com/documentation/compute/security-groups/).
+Manage Exoscale [Security Groups](https://community.exoscale.com/product/networking/security-group/).
 
 Corresponding data source: [exoscale_security_group](../data-sources/security_group.md).
 

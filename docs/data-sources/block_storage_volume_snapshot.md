@@ -3,14 +3,14 @@
 page_title: "exoscale_block_storage_volume_snapshot Data Source - terraform-provider-exoscale"
 subcategory: ""
 description: |-
-  Fetch Exoscale Block Storage https://community.exoscale.com/documentation/block-storage/ Snapshot.
+  Fetch Exoscale Block Storage https://community.exoscale.com/product/storage/block-storage/ Snapshot.
   Block Storage offers persistent externally attached volumes for your workloads.
   Corresponding resource: exoscaleblockstorage_snapshot ../resources/block_storage_volume_snapshot.md.
 ---
 
 # exoscale_block_storage_volume_snapshot (Data Source)
 
-Fetch [Exoscale Block Storage](https://community.exoscale.com/documentation/block-storage/) Snapshot.
+Fetch [Exoscale Block Storage](https://community.exoscale.com/product/storage/block-storage/) Snapshot.
 
 Block Storage offers persistent externally attached volumes for your workloads.
 
