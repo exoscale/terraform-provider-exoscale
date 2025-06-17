@@ -3,13 +3,13 @@
 page_title: "exoscale_instance_pool Data Source - terraform-provider-exoscale"
 subcategory: ""
 description: |-
-  Fetch Exoscale Instance Pools https://community.exoscale.com/documentation/compute/instance-pools/ data.
+  Fetch Exoscale Instance Pools https://community.exoscale.com/product/compute/instances/how-to/instance-pools/ data.
   Corresponding resource: exoscaleinstancepool ../resources/instance_pool.md.
 ---
 
 # exoscale_instance_pool (Data Source)
 
-Fetch Exoscale [Instance Pools](https://community.exoscale.com/documentation/compute/instance-pools/) data.
+Fetch Exoscale [Instance Pools](https://community.exoscale.com/product/compute/instances/how-to/instance-pools/) data.
 
 Corresponding resource: [exoscale_instance_pool](../resources/instance_pool.md).
 

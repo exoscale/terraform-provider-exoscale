@@ -24,7 +24,7 @@ import (
 	"github.com/exoscale/terraform-provider-exoscale/pkg/sos"
 )
 
-const ResourceSOSBucketPolicyDescription = "Manage Exoscale [SOS Bucket Policies](https://community.exoscale.com/documentation/storage/bucketpolicy/).\n"
+const ResourceSOSBucketPolicyDescription = "Manage Exoscale [SOS Bucket Policies](https://community.exoscale.com/product/storage/object-storage/how-to/bucketpolicy/).\n"
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &ResourceSOSBucketPolicy{}

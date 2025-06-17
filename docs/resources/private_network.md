@@ -7,7 +7,7 @@ description: |-
 
 # exoscale_private_network (Resource)
 
-Manage Exoscale [Private Networks](https://community.exoscale.com/documentation/compute/private-networks/).
+Manage Exoscale [Private Networks](https://community.exoscale.com/product/networking/private-network/).
 
 Corresponding data source: [exoscale_private_network](../data-sources/private_network.md).
 

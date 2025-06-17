@@ -15,7 +15,7 @@ import (
 
 func DataSource() *schema.Resource {
 	return &schema.Resource{
-		Description: `Fetch Exoscale [Anti-Affinity Groups](https://community.exoscale.com/documentation/compute/anti-affinity-groups/) data.
+		Description: `Fetch Exoscale [Anti-Affinity Groups](https://community.exoscale.com/product/compute/instances/how-to/anti-affinity/) data.
 
 Corresponding resource: [exoscale_anti_affinity_group](../resources/anti_affinity_group.md).`,
 		Schema: map[string]*schema.Schema{

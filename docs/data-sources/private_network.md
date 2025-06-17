@@ -3,13 +3,13 @@
 page_title: "exoscale_private_network Data Source - terraform-provider-exoscale"
 subcategory: ""
 description: |-
-  Fetch Exoscale Private Networks https://community.exoscale.com/documentation/compute/private-networks/ data.
+  Fetch Exoscale Private Networks https://community.exoscale.com/product/networking/private-network/ data.
   Corresponding resource: exoscaleprivatenetwork ../resources/private_network.md.
 ---
 
 # exoscale_private_network (Data Source)
 
-Fetch Exoscale [Private Networks](https://community.exoscale.com/documentation/compute/private-networks/) data.
+Fetch Exoscale [Private Networks](https://community.exoscale.com/product/networking/private-network/) data.
 
 Corresponding resource: [exoscale_private_network](../resources/private_network.md).
 

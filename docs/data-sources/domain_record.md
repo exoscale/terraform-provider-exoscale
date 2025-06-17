@@ -3,13 +3,13 @@
 page_title: "exoscale_domain_record Data Source - terraform-provider-exoscale"
 subcategory: ""
 description: |-
-  Fetch Exoscale DNS https://community.exoscale.com/documentation/dns/ Domain Records data.
+  Fetch Exoscale DNS https://community.exoscale.com/product/networking/dns/ Domain Records data.
   Corresponding resource: exoscaledomainrecord ../resources/domain_record.md.
 ---
 
 # exoscale_domain_record (Data Source)
 
-Fetch Exoscale [DNS](https://community.exoscale.com/documentation/dns/) Domain Records data.
+Fetch Exoscale [DNS](https://community.exoscale.com/product/networking/dns/) Domain Records data.
 
 Corresponding resource: [exoscale_domain_record](../resources/domain_record.md).
 

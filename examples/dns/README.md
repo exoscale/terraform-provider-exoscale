@@ -1,7 +1,7 @@
 # Domain Name Service (DNS)
 
 This example demonstrates how to manage
-[Domain Name Service (DNS)](https://community.exoscale.com/documentation/dns/)
+[Domain Name Service (DNS)](https://community.exoscale.com/product/networking/dns/)
 and point Resource Records (RR) to compute instances, using `exoscale_domain` and
 `exoscale_domain_record` resources.
 

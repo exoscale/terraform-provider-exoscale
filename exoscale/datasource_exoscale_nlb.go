@@ -22,7 +22,7 @@ const (
 
 func dataSourceNLB() *schema.Resource {
 	return &schema.Resource{
-		Description: `Fetch Exoscale [Network Load Balancers (NLB)](https://community.exoscale.com/documentation/compute/network-load-balancer/) data.
+		Description: `Fetch Exoscale [Network Load Balancers (NLB)](https://community.exoscale.com/product/networking/nlb/) data.
 
 Corresponding resource: [exoscale_nlb](../resources/nlb.md).`,
 		Schema: map[string]*schema.Schema{

@@ -3,12 +3,12 @@
 page_title: "exoscale_nlb_service Resource - terraform-provider-exoscale"
 subcategory: ""
 description: |-
-  Manage Exoscale Network Load Balancer (NLB) https://community.exoscale.com/documentation/compute/network-load-balancer/ Services.
+  Manage Exoscale Network Load Balancer (NLB) https://community.exoscale.com/product/networking/nlb/ Services.
 ---
 
 # exoscale_nlb_service (Resource)
 
-Manage Exoscale [Network Load Balancer (NLB)](https://community.exoscale.com/documentation/compute/network-load-balancer/) Services.
+Manage Exoscale [Network Load Balancer (NLB)](https://community.exoscale.com/product/networking/nlb/) Services.
 
 ## Example Usage
 

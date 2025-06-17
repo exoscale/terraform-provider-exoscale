@@ -3,13 +3,13 @@
 page_title: "exoscale_security_group Data Source - terraform-provider-exoscale"
 subcategory: ""
 description: |-
-  Fetch Exoscale Security Groups https://community.exoscale.com/documentation/compute/security-groups/ data.
+  Fetch Exoscale Security Groups https://community.exoscale.com/product/networking/security-group/ data.
   Corresponding resource: exoscalesecuritygroup ../resources/security_group.md.
 ---
 
 # exoscale_security_group (Data Source)
 
-Fetch Exoscale [Security Groups](https://community.exoscale.com/documentation/compute/security-groups/) data.
+Fetch Exoscale [Security Groups](https://community.exoscale.com/product/networking/security-group/) data.
 
 Corresponding resource: [exoscale_security_group](../resources/security_group.md).
 
