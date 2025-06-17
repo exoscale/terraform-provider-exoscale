@@ -335,9 +335,14 @@ func rCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 	}
 
 	instanceId := op.Reference.ID
+	d.SetId(string(instanceId))
 
 	if isDestroyProtected, ok := d.GetOk(AttrDestroyProtected); ok && isDestroyProtected.(bool) {
-		_, err := clientV3.AddInstanceProtection(ctx, instanceId)
+		op, err := clientV3.AddInstanceProtection(ctx, instanceId)
+		if err != nil {
+			return diag.Errorf("unable to make instance %s destroy protected: %s", instanceId, err)
+		}
+		_, err = clientV3.Wait(ctx, op, v3.OperationStateSuccess)
 		if err != nil {
 			return diag.Errorf("unable to make instance %s destroy protected: %s", instanceId, err)
 		}
@@ -444,8 +449,6 @@ func rCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 			return diag.Errorf("unable to stop instance: %s", err)
 		}
 	}
-
-	d.SetId(string(instanceId))
 
 	tflog.Debug(ctx, "create finished successfully", map[string]interface{}{
 		"id": utils.IDString(d, Name),

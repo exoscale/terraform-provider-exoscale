@@ -12,6 +12,7 @@ IMPROVEMENTS:
 BUG FIXES:
 
 - Block storage: don't error on remove resource deleted #432
+- Instance: set id before attempting post-creation operations #439
 
 ## 0.64.1
 
