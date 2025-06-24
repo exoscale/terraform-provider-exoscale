@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.64.2
+
 IMPROVEMENTS:
 - compute_instance: make disk_size a required field #419
 - docs: note that domain_record.content format depnds on record type #429
