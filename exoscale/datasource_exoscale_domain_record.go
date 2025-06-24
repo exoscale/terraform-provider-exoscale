@@ -21,7 +21,7 @@ func dataSourceDomainRecord() *schema.Resource {
 	return &schema.Resource{
 		ReadContext: dataSourceDomainRecordRead,
 
-		Description: `Fetch Exoscale [DNS](https://community.exoscale.com/documentation/dns/) Domain Records data.
+		Description: `Fetch Exoscale [DNS](https://community.exoscale.com/product/networking/dns/) Domain Records data.
 
 Corresponding resource: [exoscale_domain_record](../resources/domain_record.md).`,
 

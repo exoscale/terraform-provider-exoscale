@@ -1,6 +1,6 @@
 # SOS Bucket Policies
 
-This example demonstrates how to manage Exoscale [SOS Bucket Policies](https://community.exoscale.com/documentation/storage/bucketpolicy/).
+This example demonstrates how to manage Exoscale [SOS Bucket Policies](https://community.exoscale.com/product/storage/object-storage/how-to/bucketpolicy/).
 
 ```console
 terraform init

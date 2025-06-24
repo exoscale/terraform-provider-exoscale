@@ -3,13 +3,13 @@
 page_title: "exoscale_domain_record Resource - terraform-provider-exoscale"
 subcategory: ""
 description: |-
-  Manage Exoscale DNS https://community.exoscale.com/documentation/dns/ Domain Records.
+  Manage Exoscale DNS https://community.exoscale.com/product/networking/dns/ Domain Records.
   Corresponding data source: exoscaledomainrecord ../data-sources/domain_record.md.
 ---
 
 # exoscale_domain_record (Resource)
 
-Manage Exoscale [DNS](https://community.exoscale.com/documentation/dns/) Domain Records.
+Manage Exoscale [DNS](https://community.exoscale.com/product/networking/dns/) Domain Records.
 
 Corresponding data source: [exoscale_domain_record](../data-sources/domain_record.md).
 

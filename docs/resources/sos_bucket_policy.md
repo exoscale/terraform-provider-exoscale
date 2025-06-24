@@ -3,12 +3,12 @@
 page_title: "exoscale_sos_bucket_policy Resource - terraform-provider-exoscale"
 subcategory: ""
 description: |-
-  Manage Exoscale SOS Bucket Policies https://community.exoscale.com/documentation/storage/bucketpolicy/.
+  Manage Exoscale SOS Bucket Policies https://community.exoscale.com/product/storage/object-storage/how-to/bucketpolicy/.
 ---
 
 # exoscale_sos_bucket_policy (Resource)
 
-Manage Exoscale [SOS Bucket Policies](https://community.exoscale.com/documentation/storage/bucketpolicy/).
+Manage Exoscale [SOS Bucket Policies](https://community.exoscale.com/product/storage/object-storage/how-to/bucketpolicy/).
 
 
 

@@ -3,12 +3,12 @@
 page_title: "exoscale_security_group_rule Resource - terraform-provider-exoscale"
 subcategory: ""
 description: |-
-  Manage Exoscale Security Group https://community.exoscale.com/documentation/compute/security-groups/ Rules.
+  Manage Exoscale Security Group https://community.exoscale.com/product/networking/security-group/ Rules.
 ---
 
 # exoscale_security_group_rule (Resource)
 
-Manage Exoscale [Security Group](https://community.exoscale.com/documentation/compute/security-groups/) Rules.
+Manage Exoscale [Security Group](https://community.exoscale.com/product/networking/security-group/) Rules.
 
 ## Example Usage
 

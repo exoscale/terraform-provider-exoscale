@@ -18,7 +18,7 @@ const (
 
 func dataSourceSecurityGroup() *schema.Resource {
 	return &schema.Resource{
-		Description: `Fetch Exoscale [Security Groups](https://community.exoscale.com/documentation/compute/security-groups/) data.
+		Description: `Fetch Exoscale [Security Groups](https://community.exoscale.com/product/networking/security-group/) data.
 
 Corresponding resource: [exoscale_security_group](../resources/security_group.md).`,
 		Schema: map[string]*schema.Schema{

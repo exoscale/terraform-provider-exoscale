@@ -1,7 +1,7 @@
 # Managed Private Network
 
 This example demonstrates how to setup and associate a
-[(Managed) Private Network](https://community.exoscale.com/documentation/compute/private-networks/)
+[(Managed) Private Network](https://community.exoscale.com/product/networking/private-network/)
 to your compute instances, using the `exoscale_private_network` resource.
 
 Please refer to the [main.tf](./main.tf) Terraform configuration file.

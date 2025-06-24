@@ -25,7 +25,7 @@ import (
 	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
 )
 
-const ResourceSnapshotDescription = `Manage [Exoscale Block Storage](https://community.exoscale.com/documentation/block-storage/) Volume Snapshot.
+const ResourceSnapshotDescription = `Manage [Exoscale Block Storage](https://community.exoscale.com/product/storage/block-storage/) Volume Snapshot.
 
 Block Storage offers persistent externally attached volumes for your workloads.
 `

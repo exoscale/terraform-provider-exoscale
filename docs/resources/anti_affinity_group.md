@@ -3,13 +3,13 @@
 page_title: "exoscale_anti_affinity_group Resource - terraform-provider-exoscale"
 subcategory: ""
 description: |-
-  Manage Exoscale Anti-Affinity Groups https://community.exoscale.com/documentation/compute/anti-affinity-groups/.
+  Manage Exoscale Anti-Affinity Groups https://community.exoscale.com/product/compute/instances/how-to/anti-affinity/.
   Corresponding data source: exoscaleantiaffinity_group ../data-sources/anti_affinity_group.md.
 ---
 
 # exoscale_anti_affinity_group (Resource)
 
-Manage Exoscale [Anti-Affinity Groups](https://community.exoscale.com/documentation/compute/anti-affinity-groups/).
+Manage Exoscale [Anti-Affinity Groups](https://community.exoscale.com/product/compute/instances/how-to/anti-affinity/).
 
 Corresponding data source: [exoscale_anti_affinity_group](../data-sources/anti_affinity_group.md).
 

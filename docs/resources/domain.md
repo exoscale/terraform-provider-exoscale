@@ -7,7 +7,7 @@ description: |-
 
 # exoscale_domain (Resource)
 
-Manage Exoscale [DNS](https://community.exoscale.com/documentation/dns/) Domains.
+Manage Exoscale [DNS](https://community.exoscale.com/product/networking/dns/) Domains.
 
 Corresponding data source: [exoscale_domain](../data-sources/domain.md).
 
