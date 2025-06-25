@@ -465,7 +465,7 @@ type ListBlockStorageVolumesOpt func(url.Values)
 
 func ListBlockStorageVolumesWithInstanceID(instanceID UUID) ListBlockStorageVolumesOpt {
 	return func(q url.Values) {
-		q.Add("instanceID", fmt.Sprint(instanceID))
+		q.Add("instance-id", fmt.Sprint(instanceID))
 	}
 }
 
@@ -3465,13 +3465,13 @@ type CreateDBAASServiceKafkaRequest struct {
 	// Allow clients to connect to kafka_connect from the public internet for service nodes that are in a project VPC or another type of private network
 	KafkaConnectEnabled *bool `json:"kafka-connect-enabled,omitempty"`
 	// Kafka Connect configuration values
-	KafkaConnectSettings JSONSchemaKafkaConnect `json:"kafka-connect-settings,omitempty"`
+	KafkaConnectSettings *JSONSchemaKafkaConnect `json:"kafka-connect-settings,omitempty"`
 	// Enable Kafka-REST service
 	KafkaRestEnabled *bool `json:"kafka-rest-enabled,omitempty"`
 	// Kafka REST configuration
-	KafkaRestSettings JSONSchemaKafkaRest `json:"kafka-rest-settings,omitempty"`
+	KafkaRestSettings *JSONSchemaKafkaRest `json:"kafka-rest-settings,omitempty"`
 	// Kafka broker configuration values
-	KafkaSettings JSONSchemaKafka `json:"kafka-settings,omitempty"`
+	KafkaSettings *JSONSchemaKafka `json:"kafka-settings,omitempty"`
 	// Automatic maintenance settings
 	Maintenance *CreateDBAASServiceKafkaRequestMaintenance `json:"maintenance,omitempty"`
 	// Subscription plan
@@ -3479,7 +3479,7 @@ type CreateDBAASServiceKafkaRequest struct {
 	// Enable Schema-Registry service
 	SchemaRegistryEnabled *bool `json:"schema-registry-enabled,omitempty"`
 	// Schema Registry configuration
-	SchemaRegistrySettings JSONSchemaSchemaRegistry `json:"schema-registry-settings,omitempty"`
+	SchemaRegistrySettings *JSONSchemaSchemaRegistry `json:"schema-registry-settings,omitempty"`
 	// Service is protected against termination and powering off
 	TerminationProtection *bool `json:"termination-protection,omitempty"`
 	// Kafka major version
@@ -3574,13 +3574,13 @@ type UpdateDBAASServiceKafkaRequest struct {
 	// Allow clients to connect to kafka_connect from the public internet for service nodes that are in a project VPC or another type of private network
 	KafkaConnectEnabled *bool `json:"kafka-connect-enabled,omitempty"`
 	// Kafka Connect configuration values
-	KafkaConnectSettings JSONSchemaKafkaConnect `json:"kafka-connect-settings,omitempty"`
+	KafkaConnectSettings *JSONSchemaKafkaConnect `json:"kafka-connect-settings,omitempty"`
 	// Enable Kafka-REST service
 	KafkaRestEnabled *bool `json:"kafka-rest-enabled,omitempty"`
 	// Kafka REST configuration
-	KafkaRestSettings JSONSchemaKafkaRest `json:"kafka-rest-settings,omitempty"`
+	KafkaRestSettings *JSONSchemaKafkaRest `json:"kafka-rest-settings,omitempty"`
 	// Kafka broker configuration values
-	KafkaSettings JSONSchemaKafka `json:"kafka-settings,omitempty"`
+	KafkaSettings *JSONSchemaKafka `json:"kafka-settings,omitempty"`
 	// Automatic maintenance settings
 	Maintenance *UpdateDBAASServiceKafkaRequestMaintenance `json:"maintenance,omitempty"`
 	// Subscription plan
@@ -3588,7 +3588,7 @@ type UpdateDBAASServiceKafkaRequest struct {
 	// Enable Schema-Registry service
 	SchemaRegistryEnabled *bool `json:"schema-registry-enabled,omitempty"`
 	// Schema Registry configuration
-	SchemaRegistrySettings JSONSchemaSchemaRegistry `json:"schema-registry-settings,omitempty"`
+	SchemaRegistrySettings *JSONSchemaSchemaRegistry `json:"schema-registry-settings,omitempty"`
 	// Service is protected against termination and powering off
 	TerminationProtection *bool `json:"termination-protection,omitempty"`
 	// Kafka major version
@@ -4378,7 +4378,7 @@ type CreateDBAASServiceMysqlRequest struct {
 	// Migrate data from existing server
 	Migration *CreateDBAASServiceMysqlRequestMigration `json:"migration,omitempty"`
 	// mysql.conf configuration values
-	MysqlSettings JSONSchemaMysql `json:"mysql-settings,omitempty"`
+	MysqlSettings *JSONSchemaMysql `json:"mysql-settings,omitempty"`
 	// Subscription plan
 	Plan string `json:"plan" validate:"required,gte=1,lte=128"`
 	// ISO time of a backup to recover from for services that support arbitrary times
@@ -4498,7 +4498,7 @@ type UpdateDBAASServiceMysqlRequest struct {
 	// Migrate data from existing server
 	Migration *UpdateDBAASServiceMysqlRequestMigration `json:"migration,omitempty"`
 	// mysql.conf configuration values
-	MysqlSettings JSONSchemaMysql `json:"mysql-settings,omitempty"`
+	MysqlSettings *JSONSchemaMysql `json:"mysql-settings,omitempty"`
 	// Subscription plan
 	Plan string `json:"plan,omitempty" validate:"omitempty,gte=1,lte=128"`
 	// Service is protected against termination and powering off
@@ -5149,7 +5149,7 @@ type CreateDBAASServiceOpensearchRequest struct {
 	// OpenSearch Dashboards settings
 	OpensearchDashboards *CreateDBAASServiceOpensearchRequestOpensearchDashboards `json:"opensearch-dashboards,omitempty"`
 	// OpenSearch settings
-	OpensearchSettings JSONSchemaOpensearch `json:"opensearch-settings,omitempty"`
+	OpensearchSettings *JSONSchemaOpensearch `json:"opensearch-settings,omitempty"`
 	// Subscription plan
 	Plan string `json:"plan" validate:"required,gte=1,lte=128"`
 	// Name of a backup to recover from for services that support backup names
@@ -5284,7 +5284,7 @@ type UpdateDBAASServiceOpensearchRequest struct {
 	// OpenSearch Dashboards settings
 	OpensearchDashboards *UpdateDBAASServiceOpensearchRequestOpensearchDashboards `json:"opensearch-dashboards,omitempty"`
 	// OpenSearch settings
-	OpensearchSettings JSONSchemaOpensearch `json:"opensearch-settings,omitempty"`
+	OpensearchSettings *JSONSchemaOpensearch `json:"opensearch-settings,omitempty"`
 	// Subscription plan
 	Plan string `json:"plan,omitempty" validate:"omitempty,gte=1,lte=128"`
 	// Service is protected against termination and powering off
@@ -5847,7 +5847,7 @@ type CreateDBAASServicePGRequest struct {
 	// Migrate data from existing server
 	Migration *CreateDBAASServicePGRequestMigration `json:"migration,omitempty"`
 	// postgresql.conf configuration values
-	PGSettings JSONSchemaPG `json:"pg-settings,omitempty"`
+	PGSettings *JSONSchemaPG `json:"pg-settings,omitempty"`
 	// System-wide settings for pgbouncer.
 	PgbouncerSettings *JSONSchemaPgbouncer `json:"pgbouncer-settings,omitempty"`
 	// System-wide settings for pglookout.
@@ -5976,7 +5976,7 @@ type UpdateDBAASServicePGRequest struct {
 	// Migrate data from existing server
 	Migration *UpdateDBAASServicePGRequestMigration `json:"migration,omitempty"`
 	// postgresql.conf configuration values
-	PGSettings JSONSchemaPG `json:"pg-settings,omitempty"`
+	PGSettings *JSONSchemaPG `json:"pg-settings,omitempty"`
 	// System-wide settings for pgbouncer.
 	PgbouncerSettings *JSONSchemaPgbouncer `json:"pgbouncer-settings,omitempty"`
 	// System-wide settings for pglookout.
@@ -9057,7 +9057,7 @@ type CreateDNSDomainRequest struct {
 }
 
 // Create DNS domain
-func (c Client) CreateDNSDomain(ctx context.Context, req CreateDNSDomainRequest) (*DNSDomain, error) {
+func (c Client) CreateDNSDomain(ctx context.Context, req CreateDNSDomainRequest) (*Operation, error) {
 	path := "/dns-domain"
 
 	body, err := prepareJSONBody(req)
@@ -9099,7 +9099,7 @@ func (c Client) CreateDNSDomain(ctx context.Context, req CreateDNSDomainRequest)
 		return nil, fmt.Errorf("CreateDNSDomain: http response: %w", err)
 	}
 
-	bodyresp := &DNSDomain{}
+	bodyresp := &Operation{}
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
 		return nil, fmt.Errorf("CreateDNSDomain: prepare Json response: %w", err)
 	}
@@ -10674,19 +10674,19 @@ type ListInstancesOpt func(url.Values)
 
 func ListInstancesWithManagerID(managerID UUID) ListInstancesOpt {
 	return func(q url.Values) {
-		q.Add("managerID", fmt.Sprint(managerID))
+		q.Add("manager-id", fmt.Sprint(managerID))
 	}
 }
 
 func ListInstancesWithManagerType(managerType ListInstancesManagerType) ListInstancesOpt {
 	return func(q url.Values) {
-		q.Add("managerType", fmt.Sprint(managerType))
+		q.Add("manager-type", fmt.Sprint(managerType))
 	}
 }
 
 func ListInstancesWithIPAddress(ipAddress string) ListInstancesOpt {
 	return func(q url.Values) {
-		q.Add("ipAddress", fmt.Sprint(ipAddress))
+		q.Add("ip-address", fmt.Sprint(ipAddress))
 	}
 }
 
@@ -10759,7 +10759,7 @@ type CreateInstanceRequest struct {
 	// Instance name
 	Name               string             `json:"name,omitempty" validate:"omitempty,gte=1,lte=255"`
 	PublicIPAssignment PublicIPAssignment `json:"public-ip-assignment,omitempty"`
-	// [Beta] Enable secure boot
+	// Enable secure boot
 	SecurebootEnabled *bool `json:"secureboot-enabled,omitempty"`
 	// Instance Security Groups
 	SecurityGroups []SecurityGroup `json:"security-groups,omitempty"`
@@ -10769,7 +10769,7 @@ type CreateInstanceRequest struct {
 	SSHKeys []SSHKey `json:"ssh-keys,omitempty"`
 	// Instance template
 	Template *Template `json:"template" validate:"required"`
-	// [Beta] Enable Trusted Platform Module (TPM)
+	// Enable Trusted Platform Module (TPM)
 	TpmEnabled *bool `json:"tpm-enabled,omitempty"`
 	// Instance Cloud-init user-data (base64 encoded)
 	UserData string `json:"user-data,omitempty" validate:"omitempty,gte=1,lte=32768"`
@@ -11743,7 +11743,7 @@ func (c Client) CreateSnapshot(ctx context.Context, id UUID) (*Operation, error)
 	return bodyresp, nil
 }
 
-// [Beta] Enable tpm for the instance.
+// Enable tpm for the instance.
 func (c Client) EnableTpm(ctx context.Context, id UUID) (*Operation, error) {
 	path := fmt.Sprintf("/instance/%v:enable-tpm", id)
 
@@ -14166,8 +14166,8 @@ const (
 
 // ICMP details (default: -1 (ANY))
 type AddRuleToSecurityGroupRequestICMP struct {
-	Code int64 `json:"code,omitempty" validate:"omitempty,gte=-1,lte=254"`
-	Type int64 `json:"type,omitempty" validate:"omitempty,gte=-1,lte=254"`
+	Code *int64 `json:"code,omitempty" validate:"omitempty,gte=-1,lte=254"`
+	Type *int64 `json:"type,omitempty" validate:"omitempty,gte=-1,lte=254"`
 }
 
 type AddRuleToSecurityGroupRequestProtocol string
@@ -14620,6 +14620,8 @@ type CreateSKSClusterRequest struct {
 	Level CreateSKSClusterRequestLevel `json:"level" validate:"required"`
 	// Cluster name
 	Name string `json:"name" validate:"required,gte=1,lte=255"`
+	// Cluster networking configuration.
+	Networking *Networking `json:"networking,omitempty"`
 	// SKS Cluster OpenID config map
 	Oidc *SKSOidc `json:"oidc,omitempty"`
 	// Control plane Kubernetes version
@@ -14784,7 +14786,7 @@ type ListSKSClusterVersionsOpt func(url.Values)
 
 func ListSKSClusterVersionsWithIncludeDeprecated(includeDeprecated string) ListSKSClusterVersionsOpt {
 	return func(q url.Values) {
-		q.Add("includeDeprecated", fmt.Sprint(includeDeprecated))
+		q.Add("include-deprecated", fmt.Sprint(includeDeprecated))
 	}
 }
 
