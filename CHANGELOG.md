@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 0.64.3
+
+IMPROVEMENTS:
+- config: Add support for hr-zag-1 zone #442
+
 ## 0.64.2
 
 IMPROVEMENTS:
