@@ -5,7 +5,7 @@ locals {
 
 resource "exoscale_private_network" "my_private_network" {
   zone = local.my_zone
-  name = "test-private-network"
+  name = "my-private-network"
 
   netmask  = "255.255.252.0"
   start_ip = "172.16.0.20"
