@@ -12,4 +12,4 @@ variable "database_username" {
 
 variable "database_password" {
   default =  "database_password_here"
-}%
+}
