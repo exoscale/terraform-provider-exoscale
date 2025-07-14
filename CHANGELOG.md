@@ -4,7 +4,7 @@
 
 BREAKING CHANGES:
 
-- database: remove all redis resources
+- database: remove all redis resources #451
 
 ## 0.64.3
 
