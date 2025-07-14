@@ -5,7 +5,6 @@ var (
 		"kafka",
 		"mysql",
 		"pg",
-		"redis",
 		"valkey",
 		"opensearch",
 		"grafana",
