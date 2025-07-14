@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+BREAKING CHANGES:
+
+- database: remove all redis resources
+
 ## 0.64.3
 
 IMPROVEMENTS:
