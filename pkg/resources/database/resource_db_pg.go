@@ -189,7 +189,7 @@ func (p *PGDatabaseResource) Update(ctx context.Context, req resource.UpdateRequ
 
 // ReadResource reads resource from remote and populate the model accordingly
 func (data PGDatabaseResourceModel) ReadResource(ctx context.Context, client *v3.Client, diagnostics *diag.Diagnostics) {
-	svc, err := client.GetDBAASServicePG(ctx, data.Service.ValueString())
+	svc, err := waitForDBAASServiceReadyForFn(ctx, client.GetDBAASServicePG, data.Service.ValueString(), func(t *v3.DBAASServicePG) bool { return t.State == v3.EnumServiceStateRunning })
 	if err != nil {
 		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read service pg, got error: %s", err))
 		return
