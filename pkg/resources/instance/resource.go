@@ -284,6 +284,16 @@ func rCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 		instanceRequest.PublicIPAssignment = v3.PublicIPAssignment(t)
 	}
 
+	if enableTPM, ok := d.GetOk(AttrEnableTPM); ok {
+		tpmEnabledBool := enableTPM.(bool)
+		instanceRequest.TpmEnabled = &tpmEnabledBool
+	}
+
+	if enableSecureBoot, ok := d.GetOk(AttrEnableSecureBoot); ok {
+		secureBootEnabledBool := enableSecureBoot.(bool)
+		instanceRequest.SecurebootEnabled = &secureBootEnabledBool
+	}
+
 	if l, ok := d.GetOk(AttrLabels); ok {
 		labels := make(map[string]string)
 		for k, v := range l.(map[string]interface{}) {

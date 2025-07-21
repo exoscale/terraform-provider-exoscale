@@ -25,6 +25,7 @@ IMPROVEMENTS:
 
 IMPROVEMENTS:
 - compute_instance: make disk_size a required field #419
+- compute_instance: support for tpm_enalbed and secure_boot_enabled flags #FIXME
 - docs: note that domain_record.content format depnds on record type #429
 - sks-cluster: support for feature-gates #431
 - Bump go version in go.mod #433
