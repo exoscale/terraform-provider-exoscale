@@ -173,7 +173,9 @@ func (p *MysqlDatabaseResource) Update(ctx context.Context, req resource.UpdateR
 
 // ReadResource reads resource from remote and populate the model accordingly
 func (data MysqlDatabaseResourceModel) ReadResource(ctx context.Context, client *v3.Client, diagnostics *diag.Diagnostics) {
-	svc, err := client.GetDBAASServiceMysql(ctx, data.Service.ValueString())
+	svc, err := waitForDBAASServiceReadyForFn(ctx, client.GetDBAASServiceMysql, data.Service.ValueString(), func(t *v3.DBAASServiceMysql) bool {
+		return t.State == v3.EnumServiceStateRunning && len(t.Databases) > 0
+	})
 	if err != nil {
 		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read service mysql, got error: %s", err))
 		return

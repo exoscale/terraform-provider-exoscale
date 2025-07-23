@@ -219,7 +219,9 @@ func (data *MysqlUserResourceModel) DeleteResource(ctx context.Context, client *
 
 func (data *MysqlUserResourceModel) ReadResource(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics) {
 
-	svc, err := client.GetDBAASServiceMysql(ctx, data.Service.ValueString())
+	svc, err := waitForDBAASServiceReadyForFn(ctx, client.GetDBAASServiceMysql, data.Service.ValueString(), func(t *exoscale.DBAASServiceMysql) bool {
+		return t.State == exoscale.EnumServiceStateRunning && len(t.Users) > 0
+	})
 	if err != nil {
 		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read service mysql user, got error: %s", err))
 		return

@@ -215,7 +215,10 @@ func (data *PGUserResourceModel) DeleteResource(ctx context.Context, client *v3.
 
 func (data *PGUserResourceModel) ReadResource(ctx context.Context, client *v3.Client, diagnostics *diag.Diagnostics) {
 
-	svc, err := client.GetDBAASServicePG(ctx, data.Service.ValueString())
+	svc, err := waitForDBAASServiceReadyForFn(ctx, client.GetDBAASServicePG, data.Service.ValueString(), func(t *v3.DBAASServicePG) bool {
+		return t.State == v3.EnumServiceStateRunning && len(t.Users) > 0
+	})
+
 	if err != nil {
 		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read service pg user, got error: %s", err))
 		return
@@ -248,7 +251,9 @@ func (data *PGUserResourceModel) UpdateResource(ctx context.Context, client *v3.
 }
 
 func (data *PGUserResourceModel) WaitForService(ctx context.Context, client *v3.Client, diagnostics *diag.Diagnostics) {
-	_, err := waitForDBAASServiceReadyForFn(ctx, client.GetDBAASServicePG, data.Service.ValueString(), func(t *v3.DBAASServicePG) bool { return t.State == v3.EnumServiceStateRunning })
+	_, err := waitForDBAASServiceReadyForFn(ctx, client.GetDBAASServicePG, data.Service.ValueString(), func(t *v3.DBAASServicePG) bool {
+		return t.State == v3.EnumServiceStateRunning && len(t.Users) > 0
+	})
 
 	time.Sleep(SERVICE_READY_DELAY)
 	if err != nil {

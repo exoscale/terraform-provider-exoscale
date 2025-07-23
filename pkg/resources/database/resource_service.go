@@ -62,7 +62,6 @@ type ServiceResourceModel struct {
 
 	Pg         *ResourcePgModel         `tfsdk:"pg"`
 	Mysql      *ResourceMysqlModel      `tfsdk:"mysql"`
-	Redis      *ResourceRedisModel      `tfsdk:"redis"`
 	Valkey     *ResourceValkeyModel     `tfsdk:"valkey"`
 	Kafka      *ResourceKafkaModel      `tfsdk:"kafka"`
 	Opensearch *ResourceOpensearchModel `tfsdk:"opensearch"`
@@ -177,7 +176,7 @@ func (r *ServiceResource) Schema(ctx context.Context, req resource.SchemaRequest
 				Default:             booldefault.StaticBool(true),
 			},
 			"type": schema.StringAttribute{
-				MarkdownDescription: "❗ The type of the database service (`kafka`, `mysql`, `opensearch`, `pg`, `redis`, `valkey`, `grafana`).",
+				MarkdownDescription: "❗ The type of the database service (`kafka`, `mysql`, `opensearch`, `pg`, `valkey`, `grafana`).",
 				Required:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -207,7 +206,6 @@ func (r *ServiceResource) Schema(ctx context.Context, req resource.SchemaRequest
 			"mysql":      ResourceMysqlSchema,
 			"opensearch": ResourceOpensearchSchema,
 			"pg":         ResourcePgSchema,
-			"redis":      ResourceRedisSchema,
 			"valkey":     ResourceValkeySchema,
 			"timeouts":   timeouts.BlockAll(ctx),
 		},
@@ -274,9 +272,9 @@ func (r *ServiceResource) UpgradeState(ctx context.Context) map[int64]resource.S
 							Attributes: ResourcePgSchema.Attributes,
 						},
 					},
-					"redis": schema.ListNestedBlock{
+					"valkey": schema.ListNestedBlock{
 						NestedObject: schema.NestedBlockObject{
-							Attributes: ResourceRedisSchema.Attributes,
+							Attributes: ResourceValkeySchema.Attributes,
 						},
 					},
 					"timeouts": timeouts.BlockAll(ctx),
@@ -306,7 +304,7 @@ func (r *ServiceResource) UpgradeState(ctx context.Context) map[int64]resource.S
 					Zone                  types.String              `tfsdk:"zone"`
 					Pg                    []ResourcePgModel         `tfsdk:"pg"`
 					Mysql                 []ResourceMysqlModel      `tfsdk:"mysql"`
-					Redis                 []ResourceRedisModel      `tfsdk:"redis"`
+					Valkey                []ResourceValkeyModel     `tfsdk:"valkey"`
 					Kafka                 []ResourceKafkaModel      `tfsdk:"kafka"`
 					Opensearch            []ResourceOpensearchModel `tfsdk:"opensearch"`
 					Grafana               []ResourceGrafanaModel    `tfsdk:"grafana"`
@@ -343,8 +341,8 @@ func (r *ServiceResource) UpgradeState(ctx context.Context) map[int64]resource.S
 				if len(priorState.Mysql) > 0 {
 					upgradedStateData.Mysql = &priorState.Mysql[0]
 				}
-				if len(priorState.Redis) > 0 {
-					upgradedStateData.Redis = &priorState.Redis[0]
+				if len(priorState.Valkey) > 0 {
+					upgradedStateData.Valkey = &priorState.Valkey[0]
 				}
 				if len(priorState.Kafka) > 0 {
 					upgradedStateData.Kafka = &priorState.Kafka[0]
@@ -420,8 +418,6 @@ func (r *ServiceResource) Create(ctx context.Context, req resource.CreateRequest
 		r.createPg(ctx, &data, &resp.Diagnostics)
 	case "mysql":
 		r.createMysql(ctx, &data, &resp.Diagnostics)
-	case "redis":
-		r.createRedis(ctx, &data, &resp.Diagnostics)
 	case "valkey":
 		r.createValkey(ctx, &data, &resp.Diagnostics)
 	case "kafka":
@@ -469,8 +465,6 @@ func (r *ServiceResource) Read(ctx context.Context, req resource.ReadRequest, re
 		r.readPg(ctx, &data, &resp.Diagnostics)
 	case "mysql":
 		r.readMysql(ctx, &data, &resp.Diagnostics)
-	case "redis":
-		r.readRedis(ctx, &data, &resp.Diagnostics)
 	case "valkey":
 		r.readValkey(ctx, &data, &resp.Diagnostics)
 	case "kafka":
@@ -519,8 +513,6 @@ func (r *ServiceResource) Update(ctx context.Context, req resource.UpdateRequest
 		r.updatePg(ctx, &stateData, &planData, &resp.Diagnostics)
 	case "mysql":
 		r.updateMysql(ctx, &stateData, &planData, &resp.Diagnostics)
-	case "redis":
-		r.updateRedis(ctx, &stateData, &planData, &resp.Diagnostics)
 	case "valkey":
 		r.updateValkey(ctx, &stateData, &planData, &resp.Diagnostics)
 	case "kafka":

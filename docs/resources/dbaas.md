@@ -19,7 +19,7 @@ Manage Exoscale [Database Services (DBaaS)](https://community.exoscale.com/docum
 
 - `name` (String) ❗ The name of the database service.
 - `plan` (String) The plan of the database service (use the [Exoscale CLI](https://github.com/exoscale/cli/) - `exo dbaas type show <TYPE> --plans` - for reference).
-- `type` (String) ❗ The type of the database service (`kafka`, `mysql`, `opensearch`, `pg`, `redis`, `valkey`, `grafana`).
+- `type` (String) ❗ The type of the database service (`kafka`, `mysql`, `opensearch`, `pg`, `valkey`, `grafana`).
 - `zone` (String) ❗ The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.
 
 ### Optional
@@ -31,7 +31,6 @@ Manage Exoscale [Database Services (DBaaS)](https://community.exoscale.com/docum
 - `mysql` (Block, Optional) *mysql* database service type specific arguments. Structure is documented below. (see [below for nested schema](#nestedblock--mysql))
 - `opensearch` (Block, Optional) *opensearch* database service type specific arguments. Structure is documented below. (see [below for nested schema](#nestedblock--opensearch))
 - `pg` (Block, Optional) *pg* database service type specific arguments. Structure is documented below. (see [below for nested schema](#nestedblock--pg))
-- `redis` (Block, Optional) *redis* database service type specific arguments. Structure is documented below. (see [below for nested schema](#nestedblock--redis))
 - `termination_protection` (Boolean) The database service protection boolean flag against termination/power-off.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `valkey` (Block, Optional) *valkey* database service type specific arguments. Structure is documented below. (see [below for nested schema](#nestedblock--valkey))
@@ -148,15 +147,6 @@ Optional:
 - `pgbouncer_settings` (String) PgBouncer configuration settings in JSON format (`exo dbaas type show pg --settings=pgbouncer` for reference).
 - `pglookout_settings` (String) pglookout configuration settings in JSON format (`exo dbaas type show pg --settings=pglookout` for reference).
 - `version` (String) PostgreSQL major version (`exo dbaas type show pg` for reference; may only be set at creation time).
-
-
-<a id="nestedblock--redis"></a>
-### Nested Schema for `redis`
-
-Optional:
-
-- `ip_filter` (Set of String) A list of CIDR blocks to allow incoming connections from.
-- `redis_settings` (String) Redis configuration settings in JSON format (`exo dbaas type show redis --settings=redis` for reference).
 
 
 <a id="nestedblock--timeouts"></a>
