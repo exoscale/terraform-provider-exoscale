@@ -20,7 +20,7 @@ func TestBlockStorage(t *testing.T) {
 
 	testdataSpec := testutils.TestdataSpec{
 		ID:   time.Now().UnixNano(),
-		Zone: "at-vie-1", // to be replaced by global testutils.TestZoneName when BS reaches GA.
+		Zone: "ch-gva-2", // to be replaced by global testutils.TestZoneName when BS reaches GA.
 	}
 
 	resource.Test(t, resource.TestCase{
