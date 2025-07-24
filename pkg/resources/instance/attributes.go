@@ -11,6 +11,8 @@ const (
 	AttrDestroyProtected      = "destroy_protected"
 	AttrDiskSize              = "disk_size"
 	AttrElasticIPIDs          = "elastic_ip_ids"
+	AttrEnableSecureBoot      = "enable_secure_boot"
+	AttrEnableTPM             = "enable_tpm"
 	AttrID                    = "id"
 	AttrIPv6                  = "ipv6"
 	AttrIPv6Address           = "ipv6_address"

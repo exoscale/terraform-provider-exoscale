@@ -57,6 +57,18 @@ func Resource() *schema.Resource {
 			Set:         schema.HashString,
 			Elem:        &schema.Schema{Type: schema.TypeString},
 		},
+		AttrEnableSecureBoot: {
+			Description: "Enable secure boot on the instancs (boolean; default: `false`).",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Default:     false,
+		},
+		AttrEnableTPM: {
+			Description: "Enable TPM on the instance (boolean; default: `false`).",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Default:     false,
+		},
 		AttrIPv6: {
 			Description: "Enable IPv6 on the instance (boolean; default: `false`).",
 			Type:        schema.TypeBool,
@@ -282,6 +294,16 @@ func rCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 	} else {
 		t := "inet4"
 		instanceRequest.PublicIPAssignment = v3.PublicIPAssignment(t)
+	}
+
+	if enableTPM, ok := d.GetOk(AttrEnableTPM); ok {
+		tpmEnabledBool := enableTPM.(bool)
+		instanceRequest.TpmEnabled = &tpmEnabledBool
+	}
+
+	if enableSecureBoot, ok := d.GetOk(AttrEnableSecureBoot); ok {
+		secureBootEnabledBool := enableSecureBoot.(bool)
+		instanceRequest.SecurebootEnabled = &secureBootEnabledBool
 	}
 
 	if l, ok := d.GetOk(AttrLabels); ok {

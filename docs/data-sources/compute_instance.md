@@ -48,6 +48,8 @@ directory for complete configuration examples.
 - `deploy_target_id` (String) A deploy target ID.
 - `disk_size` (Number) The instance disk size (GiB).
 - `elastic_ip_ids` (Set of String) The list of attached [exoscale_elastic_ip](../resources/elastic_ip.md) (IDs).
+- `enable_secure_boot` (Boolean) Whether secure boot is enabled on the instance.
+- `enable_tpm` (Boolean) Whether TPM is enabled on the instance.
 - `ipv6` (Boolean) Whether IPv6 is enabled on the instance.
 - `ipv6_address` (String) The instance (main network interface) IPv6 address (if enabled).
 - `labels` (Map of String) A map of key/value labels.
