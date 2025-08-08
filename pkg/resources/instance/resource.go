@@ -58,13 +58,13 @@ func Resource() *schema.Resource {
 			Elem:        &schema.Schema{Type: schema.TypeString},
 		},
 		AttrEnableSecureBoot: {
-			Description: "Enable secure boot on the instancs (boolean; default: `false`).",
+			Description: "Enable secure boot on the instance (boolean; default: `false`). Can not be changed after instance is created.",
 			Type:        schema.TypeBool,
 			Optional:    true,
-			Default:     false,
+			ForceNew:    true,
 		},
 		AttrEnableTPM: {
-			Description: "Enable TPM on the instance (boolean; default: `false`).",
+			Description: "Enable TPM on the instance (boolean; default: `false`). Can not be disabled after the creation. **WARNING**: updating this attribute stops/restarts the instance.",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Default:     false,
@@ -797,11 +797,11 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 			}
 		}
 	}
-
 	if d.HasChanges(
 		AttrState,
 		AttrDiskSize,
 		AttrType,
+		AttrEnableTPM,
 	) {
 		// Check if size is below current size to prevent uneeded stop as API will prevent the scale operation
 		if d.HasChange(AttrDiskSize) &&
@@ -809,10 +809,11 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 			return diag.Errorf("unable to scale down the disk size, use size > %v", instance.DiskSize)
 		}
 
-		// Compute instance scaling/disk resizing API operations requires the instance to be stopped.
+		// Compute instance scaling/disk resizing/tpm enabling API operations requires the instance to be stopped.
 		if d.Get(AttrState) == "stopped" ||
 			d.HasChange(AttrDiskSize) ||
-			d.HasChange(AttrType) {
+			d.HasChange(AttrType) ||
+			d.HasChange(AttrEnableTPM) {
 			op, err := client.StopInstance(ctx, instance.ID)
 			if err != nil {
 				return diag.Errorf("unable to stop instance: %s", err)
@@ -849,6 +850,20 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 			}
 			if _, err = client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
 				return diag.Errorf("unable to scale instance: %s", err)
+			}
+		}
+
+		if d.HasChange(AttrEnableTPM) {
+			if d.Get(AttrEnableTPM).(bool) {
+				op, err := client.EnableTpm(ctx, instance.ID)
+				if err != nil {
+					return diag.Errorf("unable to enable TPM: %s", err)
+				}
+				if _, err = client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
+					return diag.Errorf("unable to enable TPM: %s", err)
+				}
+			} else {
+				return diag.Errorf("TPM can't be disabled: %s", err)
 			}
 		}
 
@@ -1097,6 +1112,18 @@ func rApply( //nolint:gocyclo
 
 	if instance.Template != nil {
 		if err := d.Set(AttrTemplateID, instance.Template.ID.String()); err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
+	if instance.SecurebootEnabled != nil {
+		if err := d.Set(AttrEnableSecureBoot, instance.SecurebootEnabled); err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
+	if instance.TpmEnabled != nil {
+		if err := d.Set(AttrEnableTPM, instance.TpmEnabled); err != nil {
 			return diag.FromErr(err)
 		}
 	}
