@@ -21,7 +21,7 @@ var (
 	dsListSSHKeyName              = acctest.RandomWithPrefix(testutils.Prefix)
 	dsListReverseDNS              = "tf-provider-rdns-test.exoscale.com"
 	dsListType                    = "standard.tiny"
-	dsListZone                    = "at-vie-2"
+	dsListZone                    = "ch-gva-2"
 
 	dsListConfig = fmt.Sprintf(`
 locals {
