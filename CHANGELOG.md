@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+IMPROVEMENTS:
+
+- Bump egoscale 3.1.25 (retryable HTTP client for v3) #454
+
 ## 0.65.0
 
 BREAKING CHANGES:
