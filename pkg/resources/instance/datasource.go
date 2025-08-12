@@ -54,7 +54,7 @@ func DataSourceSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		AttrEnableTPM: {
-			Description: "Indicates if the instance has tpm enabled.",
+			Description: "Indicates if the instance has TPM enabled.",
 			Type:        schema.TypeBool,
 			Computed:    true,
 		},

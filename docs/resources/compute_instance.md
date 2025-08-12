@@ -55,8 +55,8 @@ directory for complete configuration examples.
 - `deploy_target_id` (String) ❗ A deploy target ID.
 - `destroy_protected` (Boolean) Mark the instance as protected, the Exoscale API will refuse to delete the instance until the protection is removed (boolean; default: `false`).
 - `elastic_ip_ids` (Set of String) A list of [exoscale_elastic_ip](./elastic_ip.md) (IDs) to attach to the instance.
-- `enable_secure_boot` (Boolean) Indicates whether secure boot is enabled for the instance.
-- `enable_tpm` (Boolean) Indicates whether tpm is enabled for the instance.
+- `enable_secure_boot` (Boolean) Indicates whether secure boot is enabled on the instance.
+- `enable_tpm` (Boolean) Indicates whether TPM is enabled on the instance.
 - `ipv6` (Boolean) Enable IPv6 on the instance (boolean; default: `false`).
 - `labels` (Map of String) A map of key/value labels.
 - `network_interface` (Block Set) Private network interfaces (may be specified multiple times). Structure is documented below. (see [below for nested schema](#nestedblock--network_interface))

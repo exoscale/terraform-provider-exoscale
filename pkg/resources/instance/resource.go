@@ -58,13 +58,13 @@ func Resource() *schema.Resource {
 			Elem:        &schema.Schema{Type: schema.TypeString},
 		},
 		AttrEnableSecureBoot: {
-			Description: "Enable secure boot on the instance (boolean; default: `false`). Can not be changed after instance is created.",
+			Description: "Enable secure boot on the instance (boolean; default: `false`). Can not be changed after the creation.",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			ForceNew:    true,
 		},
 		AttrEnableTPM: {
-			Description: "Enable TPM on the instance (boolean; default: `false`). Can not be disabled after the creation. **WARNING**: updating this attribute stops/restarts the instance.",
+			Description: "Enable TPM on the instance (boolean; default: `false`). Can not be disabled after the creation. **WARNING**: enabling this attribute stops/restarts the instance.",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Default:     false,
@@ -809,11 +809,11 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 			return diag.Errorf("unable to scale down the disk size, use size > %v", instance.DiskSize)
 		}
 
-		// Compute instance scaling/disk resizing/tpm enabling API operations requires the instance to be stopped.
+		// Compute instance scaling/disk resizing/TPM enabling API operations requires the instance to be stopped.
 		if d.Get(AttrState) == "stopped" ||
 			d.HasChange(AttrDiskSize) ||
 			d.HasChange(AttrType) ||
-			d.HasChange(AttrEnableTPM) {
+			(d.HasChange(AttrEnableTPM) && d.Get(AttrEnableTPM).(bool)) {
 			op, err := client.StopInstance(ctx, instance.ID)
 			if err != nil {
 				return diag.Errorf("unable to stop instance: %s", err)
@@ -863,7 +863,7 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 					return diag.Errorf("unable to enable TPM: %s", err)
 				}
 			} else {
-				return diag.Errorf("TPM can't be disabled: %s", err)
+				return diag.Errorf("TPM can't be disabled")
 			}
 		}
 
