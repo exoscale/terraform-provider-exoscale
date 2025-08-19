@@ -857,7 +857,7 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 			if d.Get(AttrEnableTPM).(bool) {
 				op, err := client.EnableTpm(ctx, instance.ID)
 				if err != nil {
-					return diag.Errorf("unable to enable TPM: %s", err)
+					return diag.Errorf("failed to enable TPM: %s", err)
 				}
 				if _, err = client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
 					return diag.Errorf("failed to enable TPM: %s", err)
