@@ -87,6 +87,11 @@ resource "exoscale_instance_pool" "test" {
 data "exoscale_instance_pool" "by-id" {
   zone = exoscale_instance_pool.test.zone
   id   = exoscale_instance_pool.test.id
+}
+
+data "exoscale_instance_pool" "by-name" {
+  zone = exoscale_instance_pool.test.zone
+  name   = exoscale_instance_pool.test.name
 }`,
 					testutils.TestZoneName,
 					dsTemplateName,
@@ -104,6 +109,28 @@ data "exoscale_instance_pool" "by-id" {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					dsCheckAttrs("data.exoscale_instance_pool.by-id", testutils.TestAttrs{
+						"anti_affinity_group_ids.#": testutils.ValidateString("1"),
+						"anti_affinity_group_ids.0": validation.ToDiagFunc(validation.IsUUID),
+						"description":               testutils.ValidateString(dsDescription),
+						"disk_size":                 testutils.ValidateString(dsDiskSize),
+						"instance_type":             utils.ValidateComputeInstanceType,
+						"instance_prefix":           testutils.ValidateString(dsInstancePrefix),
+						"key_pair":                  testutils.ValidateString(dsKeyPair),
+						"labels.test":               testutils.ValidateString(dsLabelValue),
+						"id":                        validation.ToDiagFunc(validation.IsUUID),
+						"name":                      testutils.ValidateString(dsName),
+						"network_ids.#":             testutils.ValidateString("1"),
+						"network_ids.0":             validation.ToDiagFunc(validation.IsUUID),
+						"size":                      testutils.ValidateString(dsSize),
+						// NOTE: state is unreliable atm, improvement suggested in 54808
+						// "state":                testutils.ValidateString("running"),
+						"template_id":    validation.ToDiagFunc(validation.IsUUID),
+						"user_data":      testutils.ValidateString(dsUserData),
+						"instances.#":    testutils.ValidateString("2"),
+						"instances.0.id": validation.ToDiagFunc(validation.IsUUID),
+						"instances.1.id": validation.ToDiagFunc(validation.IsUUID),
+					}),
+					dsCheckAttrs("data.exoscale_instance_pool.by-name", testutils.TestAttrs{
 						"anti_affinity_group_ids.#": testutils.ValidateString("1"),
 						"anti_affinity_group_ids.0": validation.ToDiagFunc(validation.IsUUID),
 						"description":               testutils.ValidateString(dsDescription),
