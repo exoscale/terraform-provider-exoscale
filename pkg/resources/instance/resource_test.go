@@ -46,7 +46,7 @@ locals {
 
 data "exoscale_template" "ubuntu" {
   zone = local.zone
-  name = "Linux Ubuntu 20.04 LTS 64-bit"
+  name = "Linux Ubuntu 22.04 LTS 64-bit"
 }
 
 data "exoscale_security_group" "default" {
@@ -128,7 +128,7 @@ locals {
 
 data "exoscale_template" "ubuntu" {
   zone = local.zone
-  name = "Linux Ubuntu 20.04 LTS 64-bit"
+  name = "Linux Ubuntu 22.04 LTS 64-bit"
 }
 
 data "exoscale_security_group" "default" {
@@ -203,7 +203,7 @@ locals {
 
 data "exoscale_template" "ubuntu" {
   zone = local.zone
-  name = "Linux Ubuntu 20.04 LTS 64-bit"
+  name = "Linux Ubuntu 22.04 LTS 64-bit"
 }
 
 data "exoscale_security_group" "default" {
@@ -277,7 +277,7 @@ locals {
 
 data "exoscale_template" "ubuntu" {
   zone = local.zone
-  name = "Linux Ubuntu 20.04 LTS 64-bit"
+  name = "Linux Ubuntu 22.04 LTS 64-bit"
 }
 
 data "exoscale_security_group" "default" {
@@ -350,7 +350,7 @@ locals {
 
 data "exoscale_template" "ubuntu" {
   zone = local.zone
-  name = "Linux Ubuntu 20.04 LTS 64-bit"
+  name = "Linux Ubuntu 22.04 LTS 64-bit"
 }
 
 data "exoscale_security_group" "default" {
@@ -396,7 +396,7 @@ locals {
 
 data "exoscale_template" "ubuntu" {
   zone = local.zone
-  name = "Linux Ubuntu 20.04 LTS 64-bit"
+  name = "Linux Ubuntu 22.04 LTS 64-bit"
 }
 
 data "exoscale_security_group" "default" {

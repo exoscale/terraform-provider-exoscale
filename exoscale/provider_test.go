@@ -20,7 +20,7 @@ const (
 	testPrefix                     = "test-terraform-exoscale"
 	testDescription                = "Created by the terraform-exoscale provider"
 	testZoneName                   = "bg-sof-1"
-	testInstanceTemplateName       = "Linux Ubuntu 20.04 LTS 64-bit"
+	testInstanceTemplateName       = "Linux Ubuntu 22.04 LTS 64-bit"
 	testInstanceTemplateUsername   = "ubuntu"
 	testInstanceTemplateFilter     = "featured"
 	testInstanceTemplateVisibility = "public"

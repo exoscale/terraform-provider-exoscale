@@ -6,6 +6,10 @@ IMPROVEMENTS:
 
 - Bump egoscale 3.1.25 (retryable HTTP client for v3) #454
 
+BUG FIXES:
+
+- Fix regression in instance_pool ds when matching by name #455
+
 ## 0.65.0
 
 BREAKING CHANGES:

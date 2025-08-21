@@ -222,21 +222,20 @@ func dsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.
 			ctx,
 			v3.UUID(id.(string)),
 		)
+		if err != nil {
+			return diag.FromErr(err)
+		}
 	} else {
 		rep, err := client.ListInstancePools(ctx)
-		if err == nil {
+		if err != nil {
 			return diag.FromErr(err)
 		}
 
 		p, err := rep.FindInstancePool(name.(string))
-		if err == nil {
+		if err != nil {
 			return diag.FromErr(err)
 		}
 		pool = &p
-	}
-
-	if err != nil {
-		return diag.FromErr(err)
 	}
 
 	d.SetId(pool.ID.String())
@@ -277,7 +276,7 @@ func dsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.
 			}
 
 			instancesData[k] = map[string]interface{}{
-				AttrInstanceID:              id,
+				AttrInstanceID:              i.ID,
 				AttrInstanceIPv6Address:     ipv6,
 				AttrInstanceName:            instance.Name,
 				AttrInstancePublicIPAddress: publicIp,
