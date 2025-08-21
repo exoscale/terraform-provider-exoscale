@@ -83,7 +83,7 @@ resource "exoscale_compute_instance" "test" {
   disk_size               = %d
   template_id             = data.exoscale_template.ubuntu.id
   ipv6                    = true
-  enable_tpm			  = true
+  enable_tpm			  = false
   enable_secure_boot	  = true
   anti_affinity_group_ids = [exoscale_anti_affinity_group.test.id]
   security_group_ids      = [
@@ -244,8 +244,6 @@ resource "exoscale_compute_instance" "test" {
   disk_size               = %d
   template_id             = data.exoscale_template.ubuntu.id
   ipv6                    = true
-  enable_tpm			  = true
-  enable_secure_boot	  = true
   anti_affinity_group_ids = [exoscale_anti_affinity_group.test.id]
   security_group_ids      = [data.exoscale_security_group.default.id]
   elastic_ip_ids          = []
@@ -320,8 +318,6 @@ resource "exoscale_compute_instance" "test" {
   disk_size               = %d
   template_id             = data.exoscale_template.ubuntu.id
   ipv6                    = true
-  enable_tpm			  = true
-  enable_secure_boot	  = true
   anti_affinity_group_ids = [exoscale_anti_affinity_group.test.id]
   security_group_ids      = [data.exoscale_security_group.default.id]
   elastic_ip_ids          = []
@@ -441,74 +437,6 @@ resource "exoscale_compute_instance" "test" {
 		rType,
 		rDiskSize,
 	)
-
-	// TPM test configurations
-	rConfigCreateWithoutTPM = fmt.Sprintf(`
-locals {
-  zone = "%s"
-}
-
-data "exoscale_template" "ubuntu" {
-  zone = local.zone
-  name = "Linux Ubuntu 22.04 LTS 64-bit"
-}
-
-data "exoscale_security_group" "default" {
-  name = "default"
-}
-
-resource "exoscale_compute_instance" "test" {
-  zone               = local.zone
-  name               = "%s"
-  type               = "%s"
-  disk_size          = %d
-  template_id        = data.exoscale_template.ubuntu.id
-  security_group_ids = [data.exoscale_security_group.default.id]
-
-  timeouts {
-    delete = "10m"
-  }
-}
-`,
-		testutils.TestZoneName,
-		rName,
-		rType,
-		rDiskSize,
-	)
-
-	rConfigEnableTPM = fmt.Sprintf(`
-locals {
-  zone = "%s"
-}
-
-data "exoscale_template" "ubuntu" {
-  zone = local.zone
-  name = "Linux Ubuntu 22.04 LTS 64-bit"
-}
-
-data "exoscale_security_group" "default" {
-  name = "default"
-}
-
-resource "exoscale_compute_instance" "test" {
-  zone               = local.zone
-  name               = "%s"
-  type               = "%s"
-  disk_size          = %d
-  template_id        = data.exoscale_template.ubuntu.id
-  security_group_ids = [data.exoscale_security_group.default.id]
-  enable_tpm         = true
-
-  timeouts {
-    delete = "10m"
-  }
-}
-`,
-		testutils.TestZoneName,
-		rName,
-		rType,
-		rDiskSize,
-	)
 )
 
 func testResource(t *testing.T) {
@@ -592,7 +520,7 @@ func testResource(t *testing.T) {
 						instance.AttrElasticIPIDs + ".#":         testutils.ValidateString("1"),
 						instance.AttrIPv6:                        testutils.ValidateString("true"),
 						instance.AttrIPv6Address:                 validation.ToDiagFunc(validation.IsIPv6Address),
-						instance.AttrEnableTPM:                   testutils.ValidateString("true"),
+						instance.AttrEnableTPM:                   testutils.ValidateString("false"),
 						instance.AttrEnableSecureBoot:            testutils.ValidateString("true"),
 						instance.AttrLabels + ".test":            testutils.ValidateString(rLabelValue),
 						instance.AttrName:                        testutils.ValidateString(rName),
@@ -648,6 +576,7 @@ func testResource(t *testing.T) {
 						instance.AttrDiskSize:                testutils.ValidateString(fmt.Sprint(rDiskSizeUpdated)),
 						instance.AttrLabels + ".test":        testutils.ValidateString(rLabelValueUpdated),
 						instance.AttrName:                    testutils.ValidateString(rNameUpdated),
+						instance.AttrEnableTPM:               testutils.ValidateString("true"),
 						instance.AttrSecurityGroupIDs + ".#": testutils.ValidateString("1"),
 						instance.AttrState:                   testutils.ValidateString("stopped"),
 						instance.AttrReverseDNS:              testutils.ValidateString(rReverseDNSUpdated),
@@ -826,33 +755,6 @@ func testResource(t *testing.T) {
 						instance.AttrType:                               testutils.ValidateString(rType),
 						instance.AttrZone:                               testutils.ValidateString(testutils.TestZoneName),
 					})),
-				),
-			},
-		},
-	})
-
-	// Test for enabling TPM on existing instance
-	testInstance = v3.Instance{}
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testutils.AccPreCheck(t) },
-		ProviderFactories: testutils.Providers(),
-		CheckDestroy:      testutils.CheckInstanceDestroyV3(&testInstance),
-		Steps: []resource.TestStep{
-			{
-				// Create instance without TPM
-				Config: rConfigCreateWithoutTPM,
-				Check: resource.ComposeTestCheckFunc(
-					testutils.CheckInstanceExistsV3(r, &testInstance),
-					resource.TestCheckResourceAttr(r, instance.AttrEnableTPM, "false"),
-				),
-			},
-			{
-				// Enable TPM on existing instance
-				Config: rConfigEnableTPM,
-				Check: resource.ComposeTestCheckFunc(
-					testutils.CheckInstanceExistsV3(r, &testInstance),
-					resource.TestCheckResourceAttr(r, instance.AttrEnableTPM, "true"),
 				),
 			},
 		},
