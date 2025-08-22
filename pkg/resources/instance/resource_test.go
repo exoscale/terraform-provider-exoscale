@@ -83,6 +83,8 @@ resource "exoscale_compute_instance" "test" {
   disk_size               = %d
   template_id             = data.exoscale_template.ubuntu.id
   ipv6                    = true
+  enable_tpm			  = false
+  enable_secure_boot	  = true
   anti_affinity_group_ids = [exoscale_anti_affinity_group.test.id]
   security_group_ids      = [
     data.exoscale_security_group.default.id,
@@ -165,6 +167,8 @@ resource "exoscale_compute_instance" "test" {
   disk_size               = %d
   template_id             = data.exoscale_template.ubuntu.id
   ipv6                    = true
+  enable_tpm			  = true
+  enable_secure_boot	  = true
   anti_affinity_group_ids = [exoscale_anti_affinity_group.test.id]
   security_group_ids      = [data.exoscale_security_group.default.id]
   elastic_ip_ids          = []
@@ -516,6 +520,8 @@ func testResource(t *testing.T) {
 						instance.AttrElasticIPIDs + ".#":         testutils.ValidateString("1"),
 						instance.AttrIPv6:                        testutils.ValidateString("true"),
 						instance.AttrIPv6Address:                 validation.ToDiagFunc(validation.IsIPv6Address),
+						instance.AttrEnableTPM:                   testutils.ValidateString("false"),
+						instance.AttrEnableSecureBoot:            testutils.ValidateString("true"),
 						instance.AttrLabels + ".test":            testutils.ValidateString(rLabelValue),
 						instance.AttrName:                        testutils.ValidateString(rName),
 						instance.AttrMACAddress:                  validation.ToDiagFunc(validation.NoZeroValues),
@@ -570,6 +576,7 @@ func testResource(t *testing.T) {
 						instance.AttrDiskSize:                testutils.ValidateString(fmt.Sprint(rDiskSizeUpdated)),
 						instance.AttrLabels + ".test":        testutils.ValidateString(rLabelValueUpdated),
 						instance.AttrName:                    testutils.ValidateString(rNameUpdated),
+						instance.AttrEnableTPM:               testutils.ValidateString("true"),
 						instance.AttrSecurityGroupIDs + ".#": testutils.ValidateString("1"),
 						instance.AttrState:                   testutils.ValidateString("stopped"),
 						instance.AttrReverseDNS:              testutils.ValidateString(rReverseDNSUpdated),

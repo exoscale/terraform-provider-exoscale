@@ -25,11 +25,12 @@ IMPROVEMENTS:
 
 IMPROVEMENTS:
 - compute_instance: make disk_size a required field #419
+- compute_instance: support for tpm_enalbed and secure_boot_enabled flags #452
 - docs: note that domain_record.content format depnds on record type #429
 - sks-cluster: support for feature-gates #431
 - Bump go version in go.mod #433
 - Move DNS management to egoscale v3 #434
-- doc: fix broken links to community docs #440 
+- doc: fix broken links to community docs #440
 
 BUG FIXES:
 

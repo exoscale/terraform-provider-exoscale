@@ -80,6 +80,8 @@ Read-Only:
 - `deploy_target_id` (String)
 - `disk_size` (Number)
 - `elastic_ip_ids` (Set of String)
+- `enabled_secure_boot` (Boolean)
+- `enabled_tpm` (Boolean)
 - `id` (String)
 - `ipv6` (Boolean)
 - `ipv6_address` (String)

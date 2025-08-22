@@ -48,6 +48,16 @@ func DataSourceSchema() map[string]*schema.Schema {
 			Set:         schema.HashString,
 			Elem:        &schema.Schema{Type: schema.TypeString},
 		},
+		AttrEnableSecureBoot: {
+			Description: "Indicates if the instance has secure boot enabled.",
+			Type:        schema.TypeBool,
+			Computed:    true,
+		},
+		AttrEnableTPM: {
+			Description: "Indicates if the instance has TPM enabled.",
+			Type:        schema.TypeBool,
+			Computed:    true,
+		},
 		AttrID: {
 			Description: "The compute instance ID to match (conflicts with `name`).",
 			Type:        schema.TypeString,
@@ -274,6 +284,8 @@ func dsBuildData(instance *v3.Instance, zone string) (map[string]interface{}, er
 	data[AttrName] = instance.Name
 	data[AttrState] = instance.State
 	data[AttrZone] = zone
+	data[AttrEnableSecureBoot] = instance.SecurebootEnabled
+	data[AttrEnableTPM] = instance.TpmEnabled
 
 	data[AttrIPv6] = func() bool { return instance.PublicIPAssignment == v3.PublicIPAssignmentDual }()
 
