@@ -22,6 +22,7 @@ IMPROVEMENTS:
 BUG FIXES:
 
 - Fix regression in instance_pool ds when matching by name #455
+- Fix bug in SKS: `enable_kube_proxy` is always `true` #457
 
 ## 0.65.0
 
