@@ -40,6 +40,7 @@ resource "exoscale_security_group_rule" "kubelet" {
   user_security_group_id = exoscale_security_group.my_sks_security_group.id
 }
 
+# mandatory rules for Calico CNI (default)
 resource "exoscale_security_group_rule" "calico_vxlan" {
   security_group_id = exoscale_security_group.my_sks_security_group.id
   description       = "VXLAN (Calico)"
@@ -50,6 +51,40 @@ resource "exoscale_security_group_rule" "calico_vxlan" {
   # (beetwen worker nodes only)
   user_security_group_id = exoscale_security_group.my_sks_security_group.id
 }
+
+# mandatory rules for Cilium CNI (default)
+# resource "exoscale_security_group_rule" "cilium_icmp_health" {
+#   security_group_id = exoscale_security_group.my_sks_security_group.id
+#   description       = "Cilium ICMP healthcheck"
+#   type              = "INGRESS"
+#   protocol          = "ICMP"
+#   icmp_type         = 8
+#   icmp_code         = 0
+#   # (beetwen worker nodes only)
+#   user_security_group_id = exoscale_security_group.my_sks_security_group.id
+# }
+
+# resource "exoscale_security_group_rule" "cilium_vxlan" {
+#   security_group_id = exoscale_security_group.my_sks_security_group.id
+#   description       = "VXLan (Cilium)"
+#   type              = "INGRESS"
+#   protocol          = "UDP"
+#   start_port        = 8472
+#   end_port          = 8472
+#   # (beetwen worker nodes only)
+#   user_security_group_id = exoscale_security_group.my_sks_security_group.id
+# }
+
+# resource "exoscale_security_group_rule" "cilium_udp_health" {
+#   security_group_id = exoscale_security_group.my_sks_security_group.id
+#   description       = "Cilium UDP healthcheck"
+#   type              = "INGRESS"
+#   protocol          = "UDP"
+#   start_port        = 4240
+#   end_port          = 4240
+#   # (beetwen worker nodes only)
+#   user_security_group_id = exoscale_security_group.my_sks_security_group.id
+# }
 
 resource "exoscale_security_group_rule" "nodeport_tcp" {
   security_group_id = exoscale_security_group.my_sks_security_group.id
