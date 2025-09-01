@@ -15,8 +15,12 @@ import (
 
 	egoscale "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
+
+	v3 "github.com/exoscale/egoscale/v3"
+
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/general"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
 )
 
 const (
@@ -445,13 +449,74 @@ func resourceElasticIPDelete(ctx context.Context, d *schema.ResourceData, meta i
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
-	client := getClient(meta)
+	defaultClientV3, err := config.GetClientV3(meta)
+	client, err := utils.SwitchClientZone(
+		ctx,
+		defaultClientV3,
+		v3.ZoneName(zone),
+	)
 
-	elasticIPID := d.Id()
-	if err := client.DeleteElasticIPReverseDNS(ctx, zone, elasticIPID); err != nil && !errors.Is(err, exoapi.ErrNotFound) {
+	listInstancesResponse, err := client.ListInstances(
+		ctx,
+	)
+	if err != nil {
 		return diag.FromErr(err)
 	}
-	if err := client.DeleteElasticIP(ctx, zone, &egoscale.ElasticIP{ID: &elasticIPID}); err != nil {
+
+	elasticIPID := d.Id()
+
+	// detach instances
+	for _, inst := range listInstancesResponse.Instances {
+		instance, err := client.GetInstance(ctx, inst.ID)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		if instance.ElasticIPS == nil {
+			continue
+		}
+
+		for _, eip := range instance.ElasticIPS {
+			if eip.ID != v3.UUID(elasticIPID) {
+				continue
+			}
+
+			tflog.Debug(ctx, "Found instance with matching ElasticIP, detaching...",
+				map[string]interface{}{
+					"instance_id": instance.ID,
+					"elastic_ip":  elasticIPID,
+				})
+
+			op, err := client.DetachInstanceFromElasticIP(
+				ctx,
+				v3.UUID(elasticIPID),
+				v3.DetachInstanceFromElasticIPRequest{
+					Instance: &v3.InstanceTarget{ID: instance.ID},
+				},
+			)
+			if err != nil {
+				return diag.FromErr(err)
+			}
+
+			if _, err = client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
+				return diag.FromErr(err)
+			}
+		}
+	}
+
+	op, err := client.DeleteReverseDNSElasticIP(ctx, v3.UUID(elasticIPID))
+
+	if err != nil && !errors.Is(err, v3.ErrNotFound) {
+		return diag.FromErr(err)
+	}
+
+	if op != nil {
+		if _, err := client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
+	if _, err := client.DeleteElasticIP(ctx, v3.UUID(elasticIPID)); err != nil {
 		return diag.FromErr(err)
 	}
 
