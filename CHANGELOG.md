@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+IMPROVEMENTS:
+
+- Add example rules for sks cilium CNI
+
 ## 0.65.1
 
 IMPROVEMENTS:
