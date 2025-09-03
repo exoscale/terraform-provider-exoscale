@@ -17,6 +17,9 @@ resource "exoscale_sks_cluster" "my_sks_cluster" {
   name         = "my-sks-cluster"
   auto_upgrade = true
   exoscale_csi = true
+  # The default cni is "calico", use the Cilium security group rules provided below if
+  # you change the cni to "cilium"
+  # cni = "cilium"
 }
 
 # (ad-hoc anti-affinity group)
