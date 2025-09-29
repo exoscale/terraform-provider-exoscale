@@ -476,6 +476,7 @@ func TestAccResourceSKSClusterSKSClusterWithAudit(t *testing.T) {
 
 						a.Equal(versions[0], sksCluster.Version)
 						a.Equal(testAccResourceSKSClusterName, sksCluster.Name)
+						a.Equal(testAccResourceSKSClusterDescription, sksCluster.Description)
 
 						// Verify audit is enabled in the API response
 						assert.NotNil(t, sksCluster.Audit)
