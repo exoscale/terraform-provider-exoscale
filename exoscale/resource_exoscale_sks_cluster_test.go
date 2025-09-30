@@ -179,8 +179,8 @@ resource "exoscale_sks_cluster" "test" {
 
   audit {
     enabled = true
-    remote_url = "%s"
-	init_backoff = "%s"
+    endpoint = "%s"
+	initial_backoff = "%s"
 	bearer_token = "%s"
 }
 
@@ -247,7 +247,7 @@ resource "exoscale_sks_cluster" "test" {
 
   audit {
     enabled = true
-    remote_url = "%s"
+    endpoint = "%s"
     bearer_token = "%s"
   }
 
@@ -307,7 +307,7 @@ func TestAccResourceSKSCluster(t *testing.T) {
 						resSKSClusterAttrControlPlaneCA:      validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Control-plane CA must be a PEM certificate")),
 						resSKSClusterAttrCreatedAt:           validation.ToDiagFunc(validation.NoZeroValues),
 						resSKSClusterAttrDescription:         validateString(testAccResourceSKSClusterDescription),
-						resSKSClusterAttrEndpoint:            validation.ToDiagFunc(validation.IsURLWithHTTPS),
+						resSKSClusterAttrEndpoint:            validation.ToDiagFunc(isDNSName),
 						resSKSClusterAttrEnableKubeProxy:     validateString("true"),
 						resSKSClusterAttrExoscaleCCM:         validateString("true"),
 						resSKSClusterAttrFeatureGates + ".#": validateString("1"),
@@ -340,7 +340,7 @@ func TestAccResourceSKSCluster(t *testing.T) {
 						resSKSClusterAttrControlPlaneCA:      validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Control-plane CA must be a PEM certificate")),
 						resSKSClusterAttrCreatedAt:           validation.ToDiagFunc(validation.NoZeroValues),
 						resSKSClusterAttrDescription:         validateString(testAccResourceSKSClusterDescriptionUpdated),
-						resSKSClusterAttrEndpoint:            validation.ToDiagFunc(validation.IsURLWithHTTPS),
+						resSKSClusterAttrEndpoint:            validation.ToDiagFunc(isDNSName),
 						resSKSClusterAttrExoscaleCCM:         validateString("true"),
 						resSKSClusterAttrFeatureGates + ".#": validateString("0"),
 						resSKSClusterAttrKubeletCA:           validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Kubelet CA must be a PEM certificate")),
@@ -385,7 +385,7 @@ func TestAccResourceSKSCluster(t *testing.T) {
 							resSKSClusterAttrControlPlaneCA:     validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Control-plane CA must be a PEM certificate")),
 							resSKSClusterAttrCreatedAt:          validation.ToDiagFunc(validation.NoZeroValues),
 							resSKSClusterAttrDescription:        validateString(testAccResourceSKSClusterDescriptionUpdated),
-							resSKSClusterAttrEndpoint:           validation.ToDiagFunc(validation.IsURLWithHTTPS),
+							resSKSClusterAttrEndpoint:           validation.ToDiagFunc(isDNSName),
 							resSKSClusterAttrExoscaleCCM:        validateString("true"),
 							resSKSClusterAttrKubeletCA:          validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Kubelet CA must be a PEM certificate")),
 							resSKSClusterAttrMetricsServer:      validateString("false"),
