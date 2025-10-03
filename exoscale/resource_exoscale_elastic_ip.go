@@ -438,6 +438,25 @@ func resourceElasticIPUpdate(ctx context.Context, d *schema.ResourceData, meta i
 	return resourceElasticIPRead(ctx, d, meta)
 }
 
+func matchElasticIP(inst *v3.Instance, id v3.UUID) bool {
+	for _, eip := range inst.ElasticIPS {
+		if eip.ID == id {
+			return true
+		}
+	}
+	return false
+}
+
+func detachElasticIP(ctx context.Context, client *v3.Client, id v3.UUID, inst *v3.Instance) (*v3.Operation, error) {
+	return client.DetachInstanceFromElasticIP(
+		ctx,
+		id,
+		v3.DetachInstanceFromElasticIPRequest{
+			Instance: &v3.InstanceTarget{ID: inst.ID},
+		},
+	)
+}
+
 func resourceElasticIPDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	tflog.Debug(ctx, "beginning delete", map[string]interface{}{
 		"id": resourceElasticIPIDString(d),
@@ -450,78 +469,35 @@ func resourceElasticIPDelete(ctx context.Context, d *schema.ResourceData, meta i
 	defer cancel()
 
 	defaultClientV3, err := config.GetClientV3(meta)
-	client, err := utils.SwitchClientZone(
-		ctx,
-		defaultClientV3,
-		v3.ZoneName(zone),
-	)
-
-	listInstancesResponse, err := client.ListInstances(
-		ctx,
-	)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	client, err := utils.SwitchClientZone(ctx, defaultClientV3, v3.ZoneName(zone))
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	elasticIPID := d.Id()
-
-	// detach instances
-	for _, inst := range listInstancesResponse.Instances {
-		instance, err := client.GetInstance(ctx, inst.ID)
-		if err != nil {
-			return diag.FromErr(err)
-		}
-
-		if instance.ElasticIPS == nil {
-			continue
-		}
-
-		for _, eip := range instance.ElasticIPS {
-			if eip.ID != v3.UUID(elasticIPID) {
-				continue
-			}
-
-			tflog.Debug(ctx, "Found instance with matching ElasticIP, detaching...",
-				map[string]interface{}{
-					"instance_id": instance.ID,
-					"elastic_ip":  elasticIPID,
-				})
-
-			op, err := client.DetachInstanceFromElasticIP(
-				ctx,
-				v3.UUID(elasticIPID),
-				v3.DetachInstanceFromElasticIPRequest{
-					Instance: &v3.InstanceTarget{ID: instance.ID},
-				},
-			)
-			if err != nil {
-				return diag.FromErr(err)
-			}
-
-			if _, err = client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
-				return diag.FromErr(err)
-			}
-		}
+	elasticIPID := v3.UUID(d.Id())
+	if diags := detachMatchingResource(ctx, client, "ElasticIP", elasticIPID, matchElasticIP, detachElasticIP); diags != nil {
+		return diags
 	}
 
-	op, err := client.DeleteReverseDNSElasticIP(ctx, v3.UUID(elasticIPID))
-
+	op, err := client.DeleteReverseDNSElasticIP(ctx, elasticIPID)
 	if err != nil && !errors.Is(err, v3.ErrNotFound) {
 		return diag.FromErr(err)
 	}
-
 	if op != nil {
 		if _, err := client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
 			return diag.FromErr(err)
 		}
 	}
 
-	if _, err := client.DeleteElasticIP(ctx, v3.UUID(elasticIPID)); err != nil {
+	if _, err := client.DeleteElasticIP(ctx, elasticIPID); err != nil {
 		return diag.FromErr(err)
 	}
 
 	tflog.Debug(ctx, "delete finished successfully", map[string]interface{}{
-		"id": resourceDomainIDString(d),
+		"id": resourceElasticIPIDString(d),
 	})
 
 	return nil

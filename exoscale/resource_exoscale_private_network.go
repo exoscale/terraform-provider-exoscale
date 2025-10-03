@@ -260,6 +260,25 @@ func resourcePrivateNetworkUpdate(ctx context.Context, d *schema.ResourceData, m
 	return resourcePrivateNetworkRead(ctx, d, meta)
 }
 
+func matchPrivateNetwork(inst *v3.Instance, id v3.UUID) bool {
+	for _, pn := range inst.PrivateNetworks {
+		if pn.ID == id {
+			return true
+		}
+	}
+	return false
+}
+
+func detachPrivateNetwork(ctx context.Context, client *v3.Client, id v3.UUID, inst *v3.Instance) (*v3.Operation, error) {
+	return client.DetachInstanceFromPrivateNetwork(
+		ctx,
+		id,
+		v3.DetachInstanceFromPrivateNetworkRequest{
+			Instance: &v3.Instance{ID: inst.ID},
+		},
+	)
+}
+
 func resourcePrivateNetworkDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	tflog.Debug(ctx, "beginning delete", map[string]interface{}{
 		"id": resourcePrivateNetworkIDString(d),
@@ -272,65 +291,22 @@ func resourcePrivateNetworkDelete(ctx context.Context, d *schema.ResourceData, m
 	defer cancel()
 
 	defaultClientV3, err := config.GetClientV3(meta)
-	client, err := utils.SwitchClientZone(
-		ctx,
-		defaultClientV3,
-		v3.ZoneName(zone),
-	)
-
-	listInstancesResponse, err := client.ListInstances(
-		ctx,
-	)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	client, err := utils.SwitchClientZone(ctx, defaultClientV3, v3.ZoneName(zone))
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	// detach instances
-	for _, inst := range listInstancesResponse.Instances {
-		// fetch full instance details
-		instance, err := client.GetInstance(ctx, inst.ID)
-		if err != nil {
-			return diag.FromErr(err)
-		}
-
-		if instance.PrivateNetworks == nil {
-			continue
-		}
-
-		for _, sg := range instance.PrivateNetworks {
-			if sg.ID != v3.UUID(d.Id()) {
-				continue
-			}
-
-			tflog.Debug(ctx, "Found instance with matching Private Network, detaching...",
-				map[string]interface{}{
-					"instance_id":        instance.ID,
-					"private_network_id": d.Id(),
-				})
-
-			op, err := client.DetachInstanceFromPrivateNetwork(
-				ctx,
-				v3.UUID(d.Id()),
-				v3.DetachInstanceFromPrivateNetworkRequest{
-					Instance: &v3.Instance{ID: instance.ID},
-				},
-			)
-			if err != nil {
-				return diag.FromErr(err)
-			}
-
-			if _, err = client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
-				return diag.FromErr(err)
-			}
-		}
+	if diags := detachMatchingResource(ctx, client, "PrivateNetwork", v3.UUID(d.Id()), matchPrivateNetwork, detachPrivateNetwork); diags != nil {
+		return diags
 	}
 
 	op, err := client.DeletePrivateNetwork(ctx, v3.UUID(d.Id()))
-
 	if err != nil && !errors.Is(err, v3.ErrNotFound) {
 		return diag.FromErr(err)
 	}
-
 	if op != nil {
 		if _, err := client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
 			return diag.FromErr(err)

@@ -25,7 +25,6 @@ const (
 	resSecurityGroupAttrDescription     = "description"
 	resSecurityGroupAttrExternalSources = "external_sources"
 	resSecurityGroupAttrName            = "name"
-	resSecurityGroupAttrZone            = "zone"
 )
 
 func resourceSecurityGroupIDString(d general.ResourceIDStringer) string {
@@ -249,7 +248,7 @@ func matchSecurityGroup(inst *v3.Instance, id v3.UUID) bool {
 	return false
 }
 
-func detachSecurityGroup(client *v3.Client, ctx context.Context, id v3.UUID, inst *v3.Instance) (*v3.Operation, error) {
+func detachSecurityGroup(ctx context.Context, client *v3.Client, id v3.UUID, inst *v3.Instance) (*v3.Operation, error) {
 	return client.DetachInstanceFromSecurityGroup(
 		ctx,
 		id,
@@ -260,85 +259,33 @@ func detachSecurityGroup(client *v3.Client, ctx context.Context, id v3.UUID, ins
 }
 
 func resourceSecurityGroupDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning delete", map[string]interface{}{
-		"id": resourceSecurityGroupIDString(d),
-	})
-
-	zone := d.Get(resSecurityGroupAttrZone).(string)
-
+	zone := defaultZone
 	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutDelete))
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
 	defaultClientV3, err := config.GetClientV3(meta)
-	client, err := utils.SwitchClientZone(
-		ctx,
-		defaultClientV3,
-		v3.ZoneName(zone),
-	)
-
-	listInstancesResponse, err := client.ListInstances(
-		ctx,
-	)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	client, err := utils.SwitchClientZone(ctx, defaultClientV3, v3.ZoneName(zone))
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	// detach instances
-	for _, inst := range listInstancesResponse.Instances {
-		// fetch full instance details
-		instance, err := client.GetInstance(ctx, inst.ID)
-		if err != nil {
-			return diag.FromErr(err)
-		}
-
-		if instance.SecurityGroups == nil {
-			continue
-		}
-
-		for _, sg := range instance.SecurityGroups {
-			if sg.ID != v3.UUID(d.Id()) {
-				continue
-			}
-
-			tflog.Debug(ctx, "Found instance with matching Security Group, detaching...",
-				map[string]interface{}{
-					"instance_id":       instance.ID,
-					"security_group_id": d.Id(),
-				})
-
-			op, err := client.DetachInstanceFromSecurityGroup(
-				ctx,
-				v3.UUID(d.Id()),
-				v3.DetachInstanceFromSecurityGroupRequest{
-					Instance: &v3.Instance{ID: instance.ID},
-				},
-			)
-			if err != nil {
-				return diag.FromErr(err)
-			}
-
-			if _, err = client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
-				return diag.FromErr(err)
-			}
-		}
+	if diags := detachMatchingResource(ctx, client, "SecurityGroup", v3.UUID(d.Id()), matchSecurityGroup, detachSecurityGroup); diags != nil {
+		return diags
 	}
 
 	op, err := client.DeleteSecurityGroup(ctx, v3.UUID(d.Id()))
-
 	if err != nil && !errors.Is(err, v3.ErrNotFound) {
 		return diag.FromErr(err)
 	}
-
 	if op != nil {
 		if _, err := client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
 			return diag.FromErr(err)
 		}
 	}
-
-	tflog.Debug(ctx, "delete finished successfully", map[string]interface{}{
-		"id": resourceSecurityGroupIDString(d),
-	})
 
 	return nil
 }
