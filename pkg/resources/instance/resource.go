@@ -159,6 +159,7 @@ func Resource() *schema.Resource {
 			Optional:      true,
 			Deprecated:    "Use ssh_keys instead",
 			ConflictsWith: []string{AttrSSHKeys},
+			ForceNew:      true,
 		},
 		AttrSSHKeys: {
 			Description: "The list of [exoscale_ssh_key](./ssh_key.md) (name) to authorize in the instance (may only be set at creation time).",
@@ -166,6 +167,7 @@ func Resource() *schema.Resource {
 			Optional:    true,
 			Set:         schema.HashString,
 			Elem:        &schema.Schema{Type: schema.TypeString},
+			ForceNew:    true,
 		},
 		AttrSecurityGroupIDs: {
 			Description: "A list of [exoscale_security_group](./security_group.md) (IDs) to attach to the instance.",
