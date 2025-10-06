@@ -210,15 +210,10 @@ data "exoscale_template" "ubuntu" {
   name = "Linux Ubuntu 22.04 LTS 64-bit"
 }
 
-resource "exoscale_anti_affinity_group" "test" {
-  name = "%s"
-}
-
 resource "exoscale_ssh_key" "test" {
   name       = "%s"
   public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ/FXzAnsaRwP74Mji68Vt6+iz4mmCkC7QpUmPT4zKvf test"
 }
-
 
 resource "exoscale_compute_instance" "test" {
   zone                    = local.zone
@@ -229,7 +224,6 @@ resource "exoscale_compute_instance" "test" {
   ipv6                    = true
   enable_tpm			  = false
   enable_secure_boot	  = true
-  anti_affinity_group_ids = [exoscale_anti_affinity_group.test.id]
   user_data               = "%s"
   ssh_key                 = exoscale_ssh_key.test.name
 	state                   = "%s"
@@ -245,7 +239,6 @@ resource "exoscale_compute_instance" "test" {
 }
 `,
 		testutils.TestZoneName,
-		rAntiAffinityGroupName,
 		rSSHKeyName,
 		rName,
 		rType,
@@ -772,6 +765,26 @@ func testResource(t *testing.T) {
 					)
 				},
 			},
+			{
+				// Detaching resources
+				Config: rConfigDetachResources,
+				Check: resource.ComposeTestCheckFunc(
+					testutils.CheckInstanceExistsV3(r, &testInstance),
+					func(s *terraform.State) error {
+						a := require.New(t)
+
+						a.Empty(testInstance.ElasticIPS)
+						a.Empty(testInstance.AntiAffinityGroups)
+						a.Empty(testInstance.PrivateNetworks)
+						a.Empty(testInstance.SecurityGroups)
+						a.Len(testInstance.AntiAffinityGroups, 0)
+						a.Len(testInstance.SecurityGroups, 0)
+						a.Len(testInstance.ElasticIPS, 0)
+						a.Len(testInstance.PrivateNetworks, 0)
+						return nil
+					},
+				),
+			},
 		},
 	})
 
@@ -811,35 +824,6 @@ func testResource(t *testing.T) {
 						instance.AttrType:                               testutils.ValidateString(rType),
 						instance.AttrZone:                               testutils.ValidateString(testutils.TestZoneName),
 					})),
-				),
-			},
-		},
-	})
-
-	// Test for detaching resources
-	testInstance = v3.Instance{}
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testutils.AccPreCheck(t) },
-		ProviderFactories: testutils.Providers(),
-		CheckDestroy:      testutils.CheckInstanceDestroyV3(&testInstance),
-		Steps: []resource.TestStep{
-			{
-				Config: rConfigDetachResources,
-				Check: resource.ComposeTestCheckFunc(
-					testutils.CheckInstanceExistsV3(r, &testInstance),
-					func(s *terraform.State) error {
-						a := require.New(t)
-
-						a.Equal(rDiskSize, testInstance.DiskSize)
-						a.Equal(testutils.TestInstanceTypeIDTiny, testInstance.InstanceType.ID.String())
-						a.Equal(rName, testInstance.Name)
-						a.Empty(testInstance.SecurityGroups)
-						a.Empty(testInstance.PrivateNetworks)
-						a.Empty(testInstance.ElasticIPS)
-
-						return nil
-					},
 				),
 			},
 		},
