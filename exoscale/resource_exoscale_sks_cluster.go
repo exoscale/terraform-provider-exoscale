@@ -95,7 +95,7 @@ func resourceSKSCluster() *schema.Resource {
 					},
 					resSKSClusterAttrAuditEndpoint: {
 						Type:        schema.TypeString,
-						Required:    true,
+						Optional:    true, // Checked at runtime
 						Description: "The Endpoint URL for the Webserver responsible of processing Audit events",
 					},
 					resSKSClusterAttrAuditInitBackoff: {
@@ -395,17 +395,17 @@ func resourceSKSClusterCreate(ctx context.Context, d *schema.ResourceData, meta 
 	createReq.Version = version
 
 	// Audit
-	if v, ok := d.GetOk(resSKSClusterAttrAuditEnabled); ok && v.(bool) {
+	if v, ok := d.GetOk(resSKSClusterAttrAudit(resSKSClusterAttrAuditEnabled)); ok && v.(bool) {
 		if v, ok := d.GetOk(resSKSClusterAttrAudit(resSKSClusterAttrAuditEndpoint)); ok {
 			createReq.Audit = &v3.SKSAuditCreate{
-				Endpoint: v.(v3.SKSAuditEndpoint),
+				Endpoint: v3.SKSAuditEndpoint(v.(string)),
 			}
 
 			if v, ok := d.GetOk(resSKSClusterAttrAudit(resSKSClusterAttrAuditBearerToken)); ok {
-				createReq.Audit.BearerToken = v.(v3.SKSAuditBearerToken)
+				createReq.Audit.BearerToken = v3.SKSAuditBearerToken(v.(string))
 			}
 			if v, ok := d.GetOk(resSKSClusterAttrAudit(resSKSClusterAttrAuditInitBackoff)); ok {
-				createReq.Audit.InitialBackoff = v.(v3.SKSAuditInitialBackoff)
+				createReq.Audit.InitialBackoff = v3.SKSAuditInitialBackoff(v.(string))
 			}
 		}
 	}
@@ -629,28 +629,30 @@ func resourceSKSClusterUpdate(ctx context.Context, d *schema.ResourceData, meta 
 		}
 	}
 
-	if d.HasChange(resSKSClusterAttrAuditEndpoint) || d.HasChange(resSKSClusterAttrAuditEnabled) ||
-		d.HasChange(resSKSClusterAttrAuditBearerToken) || d.HasChange(resSKSClusterAttrAuditInitBackoff) {
+	if d.HasChange(resSKSClusterAttrAudit(resSKSClusterAttrAuditEndpoint)) ||
+		d.HasChange(resSKSClusterAttrAudit(resSKSClusterAttrAuditEnabled)) ||
+		d.HasChange(resSKSClusterAttrAudit(resSKSClusterAttrAuditBearerToken)) ||
+		d.HasChange(resSKSClusterAttrAudit(resSKSClusterAttrAuditInitBackoff)) {
 		enableAudit := false
-		if v, ok := d.GetOk(resSKSClusterAttrAuditEnabled); ok {
+		if v, ok := d.GetOk(resSKSClusterAttrAudit(resSKSClusterAttrAuditEnabled)); ok {
 			enableAudit = v.(bool)
 		}
 
 		updateReq.Audit = &v3.SKSAuditUpdate{
 			Enabled:  &enableAudit,
-			Endpoint: v3.SKSAuditEndpoint(d.Get(resSKSClusterAttrAuditEndpoint).(string)),
+			Endpoint: v3.SKSAuditEndpoint(d.Get(resSKSClusterAttrAudit(resSKSClusterAttrAuditEndpoint)).(string)),
 		}
 
 		if enableAudit && updateReq.Audit.Endpoint == "" {
 			return diag.Errorf("cannot enable audit without setting an endpoint")
 		}
 
-		if v, ok := d.GetOk(resSKSClusterAttrAuditBearerToken); ok {
-			updateReq.Audit.BearerToken = v.(v3.SKSAuditBearerToken)
+		if v, ok := d.GetOk(resSKSClusterAttrAudit(resSKSClusterAttrAuditBearerToken)); ok {
+			updateReq.Audit.BearerToken = v3.SKSAuditBearerToken(v.(string))
 		}
 
-		if v, ok := d.GetOk(resSKSClusterAttrAuditInitBackoff); ok {
-			updateReq.Audit.InitialBackoff = v.(v3.SKSAuditInitialBackoff)
+		if v, ok := d.GetOk(resSKSClusterAttrAudit(resSKSClusterAttrAuditInitBackoff)); ok {
+			updateReq.Audit.InitialBackoff = v3.SKSAuditInitialBackoff(v.(string))
 		}
 
 		updated = true
