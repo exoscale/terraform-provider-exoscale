@@ -6,6 +6,10 @@ IMPROVEMENTS:
 
 - Add example rules for sks cilium CNI
 
+BUG FIXES:
+
+- Update the database opensearch test to use latest major version #462
+
 ## 0.65.1
 
 IMPROVEMENTS:
