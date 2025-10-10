@@ -89,7 +89,7 @@ func testResourceOpensearch(t *testing.T) {
 		Plan:                  "hobbyist-2",
 		Zone:                  testutils.TestZoneName,
 		TerminationProtection: false,
-		Version:               "1",
+		Version:               "2",
 	}
 
 	userFullResourceName := "exoscale_dbaas_opensearch_user.test_user"
@@ -337,7 +337,7 @@ func CheckExistsOpensearch(name string, data *TemplateModelOpensearch) error {
 		}
 	}
 
-	if data.Version != *service.Version {
+	if !strings.HasPrefix(*service.Version, data.Version+".") { // we only choose major version, so we only check prefix
 		return fmt.Errorf("opensearch.version: expected %q, got %q", data.Version, *service.Version)
 	}
 
