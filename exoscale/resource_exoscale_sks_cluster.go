@@ -17,8 +17,9 @@ import (
 )
 
 const (
-	defaultSKSClusterCNI          = "calico"
-	defaultSKSClusterServiceLevel = "pro"
+	defaultSKSClusterCNI              = "calico"
+	defaultSKSClusterServiceLevel     = "pro"
+	defaultSKSClusterAuditInitBackoff = "10s"
 
 	sksClusterAddonExoscaleCCM = "exoscale-cloud-controller"
 	sksClusterAddonExoscaleCSI = "exoscale-container-storage-interface"
@@ -26,6 +27,10 @@ const (
 
 	resSKSClusterAttrAddons             = "addons"
 	resSKSClusterAttrAggregationLayerCA = "aggregation_ca"
+	resSKSClusterAttrAuditBearerToken   = "bearer_token"
+	resSKSClusterAttrAuditEnabled       = "enabled"
+	resSKSClusterAttrAuditEndpoint      = "endpoint"
+	resSKSClusterAttrAuditInitBackoff   = "initial_backoff"
 	resSKSClusterAttrAutoUpgrade        = "auto_upgrade"
 	resSKSClusterAttrCNI                = "cni"
 	resSKSClusterAttrControlPlaneCA     = "control_plane_ca"
@@ -75,6 +80,38 @@ func resourceSKSCluster() *schema.Resource {
 			Type:        schema.TypeString,
 			Computed:    true,
 			Description: "The CA certificate (in PEM format) for TLS communications between the control plane and the aggregation layer (e.g. `metrics-server`).",
+		},
+		"audit": {
+			Type:        schema.TypeList,
+			MaxItems:    1,
+			Optional:    true,
+			Description: "Parameters for Kubernetes Audit configuration (may only be enabled at creation time)",
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					resSKSClusterAttrAuditEnabled: {
+						Type:        schema.TypeBool,
+						Optional:    true,
+						Description: "Whether to run the APIServer with the configured Kubernetes Audit",
+					},
+					resSKSClusterAttrAuditEndpoint: {
+						Type:        schema.TypeString,
+						Required:    true,
+						Description: "The Endpoint URL for the Webserver responsible of processing Audit events",
+					},
+					resSKSClusterAttrAuditInitBackoff: {
+						Type:        schema.TypeString,
+						Optional:    true,
+						Default:     defaultSKSClusterAuditInitBackoff,
+						Description: "The Initial Backoff to wait before sending data to the remote server (default '10s')",
+					},
+					resSKSClusterAttrAuditBearerToken: {
+						Type:        schema.TypeString,
+						Optional:    true,
+						Sensitive:   true,
+						Description: "The optional bearer token to include in the request header",
+					},
+				},
+			},
 		},
 		resSKSClusterAttrAutoUpgrade: {
 			Type:        schema.TypeBool,
@@ -357,6 +394,22 @@ func resourceSKSClusterCreate(ctx context.Context, d *schema.ResourceData, meta 
 	}
 	createReq.Version = version
 
+	// Audit
+	if v, ok := d.GetOk(resSKSClusterAttrAuditEnabled); ok && v.(bool) {
+		if v, ok := d.GetOk(resSKSClusterAttrAudit(resSKSClusterAttrAuditEndpoint)); ok {
+			createReq.Audit = &v3.SKSAuditCreate{
+				Endpoint: v.(v3.SKSAuditEndpoint),
+			}
+
+			if v, ok := d.GetOk(resSKSClusterAttrAudit(resSKSClusterAttrAuditBearerToken)); ok {
+				createReq.Audit.BearerToken = v.(v3.SKSAuditBearerToken)
+			}
+			if v, ok := d.GetOk(resSKSClusterAttrAudit(resSKSClusterAttrAuditInitBackoff)); ok {
+				createReq.Audit.InitialBackoff = v.(v3.SKSAuditInitialBackoff)
+			}
+		}
+	}
+
 	if v, ok := d.GetOk(resSKSClusterAttrOIDC(resSKSClusterAttrOIDCClientID)); ok {
 		createReq.Oidc = &v3.SKSOidc{
 			ClientID: v.(string),
@@ -576,6 +629,33 @@ func resourceSKSClusterUpdate(ctx context.Context, d *schema.ResourceData, meta 
 		}
 	}
 
+	if d.HasChange(resSKSClusterAttrAuditEndpoint) || d.HasChange(resSKSClusterAttrAuditEnabled) ||
+		d.HasChange(resSKSClusterAttrAuditBearerToken) || d.HasChange(resSKSClusterAttrAuditInitBackoff) {
+		enableAudit := false
+		if v, ok := d.GetOk(resSKSClusterAttrAuditEnabled); ok {
+			enableAudit = v.(bool)
+		}
+
+		updateReq.Audit = &v3.SKSAuditUpdate{
+			Enabled:  &enableAudit,
+			Endpoint: v3.SKSAuditEndpoint(d.Get(resSKSClusterAttrAuditEndpoint).(string)),
+		}
+
+		if enableAudit && updateReq.Audit.Endpoint == "" {
+			return diag.Errorf("cannot enable audit without setting an endpoint")
+		}
+
+		if v, ok := d.GetOk(resSKSClusterAttrAuditBearerToken); ok {
+			updateReq.Audit.BearerToken = v.(v3.SKSAuditBearerToken)
+		}
+
+		if v, ok := d.GetOk(resSKSClusterAttrAuditInitBackoff); ok {
+			updateReq.Audit.InitialBackoff = v.(v3.SKSAuditInitialBackoff)
+		}
+
+		updated = true
+	}
+
 	if updated {
 		// due to a bug it's possible for the update operation
 		// to remain in pending state forever
@@ -730,6 +810,10 @@ func resourceSKSClusterApply(_ context.Context, d *schema.ResourceData, sksClust
 // resSKSClusterAttrOIDC returns a sks_cluster resource attribute key formatted for an "oidc {}" block.
 func resSKSClusterAttrOIDC(a string) string {
 	return fmt.Sprintf("oidc.0.%s", a)
+}
+
+func resSKSClusterAttrAudit(a string) string {
+	return fmt.Sprintf("audit.0.%s", a)
 }
 
 type SKSClusterCertificates struct {

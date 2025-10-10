@@ -32,6 +32,13 @@ var (
 	testAccResourceSKSClusterDescription            = acctest.RandString(10)
 	testAccResourceSKSClusterDescriptionUpdated     = testAccResourceSKSClusterDescription + "-updated"
 	testAccResourceSKSClusterFeatureGate            = "GracefulNodeShutdown"
+	// Only in audit testing scenario
+	testAccResourceSKSClusterAuditInitBackoff = "30s"
+	testAccResourceSKSClusterAuditRemoteURL   = "https://audit.example.exoscale.net"
+	testAccResourceSKSClusterAuditBearerToken = "supersecretbearertoken"
+	// For re-enable audit test with new URL
+	testAccResourceSKSClusterAuditRemoteURLUpdated   = "https://audit-updated.example.exoscale.net"
+	testAccResourceSKSClusterAuditBearerTokenUpdated = "newsupersecretbearertoken"
 
 	testAccResourceSKSClusterConfigCreate = fmt.Sprintf(`
 locals {
@@ -154,6 +161,108 @@ resource "exoscale_sks_cluster" "test" {
     create = "10m"
   }
 }`
+	testAccRessourceSKSClusterCreateWithAudit = fmt.Sprintf(`
+locals {
+  zone = "%s"
+}
+
+resource "exoscale_sks_cluster" "test" {
+  zone = local.zone
+  name = "%s"
+  description = "%s"
+  exoscale_ccm = true
+  metrics_server = false
+  auto_upgrade = true
+  labels = {
+    test = "%s"
+  }
+
+  audit {
+    enabled = true
+    endpoint = "%s"
+	initial_backoff = "%s"
+	bearer_token = "%s"
+}
+
+  timeouts {
+    create = "10m"
+  }
+}
+`,
+		testAccResourceSKSClusterLocalZone,
+		testAccResourceSKSClusterName,
+		testAccResourceSKSClusterDescription,
+		testAccResourceSKSClusterLabelValue,
+		testAccResourceSKSClusterAuditRemoteURL,
+		testAccResourceSKSClusterAuditInitBackoff,
+		testAccResourceSKSClusterAuditBearerToken,
+	)
+
+	testAccRessourceSKSClusterUpdateDisableAudit = fmt.Sprintf(`
+locals {
+  zone = "%s"
+}
+
+resource "exoscale_sks_cluster" "test" {
+  zone = local.zone
+  name = "%s"
+  description = "%s"
+  exoscale_ccm = true
+  metrics_server = false
+  auto_upgrade = true
+  labels = {
+    test = "%s"
+  }
+
+  audit {
+    enabled = false
+  }
+
+  timeouts {
+    create = "10m"
+  }
+}
+`,
+		testAccResourceSKSClusterLocalZone,
+		testAccResourceSKSClusterName,
+		testAccResourceSKSClusterDescription,
+		testAccResourceSKSClusterLabelValue,
+	)
+
+	testAccRessourceSKSClusterReEnableAuditWithNewURL = fmt.Sprintf(`
+locals {
+  zone = "%s"
+}
+
+resource "exoscale_sks_cluster" "test" {
+  zone = local.zone
+  name = "%s"
+  description = "%s"
+  exoscale_ccm = true
+  metrics_server = false
+  auto_upgrade = true
+  labels = {
+    test = "%s"
+  }
+
+  audit {
+    enabled = true
+    endpoint = "%s"
+    bearer_token = "%s"
+  }
+
+  timeouts {
+    create = "10m"
+  }
+}
+`,
+		testAccResourceSKSClusterLocalZone,
+		testAccResourceSKSClusterName,
+		testAccResourceSKSClusterDescription,
+		testAccResourceSKSClusterLabelValue,
+		testAccResourceSKSClusterAuditRemoteURLUpdated,
+		testAccResourceSKSClusterAuditBearerTokenUpdated,
+	)
 )
 
 func TestAccResourceSKSCluster(t *testing.T) {
@@ -162,28 +271,7 @@ func TestAccResourceSKSCluster(t *testing.T) {
 		sksCluster egoscale.SKSCluster
 	)
 
-	defaultClient, err := APIClientV3()
-	if err != nil {
-		t.Fatalf("unable to initialize Exoscale client: %s", err)
-	}
-	ctx := context.Background()
-	client, err := utils.SwitchClientZone(
-		ctx,
-		defaultClient,
-		egoscale.ZoneName(testAccResourceSKSClusterLocalZone),
-	)
-	if err != nil {
-		t.Fatalf("unable to initialize Exoscale client: %s", err)
-	}
-
-	versionsResponse, err := client.ListSKSClusterVersions(ctx)
-	if err != nil {
-		t.Fatalf("unable to retrieve SKS versions: %s", err)
-	}
-	if versionsResponse == nil || len(versionsResponse.SKSClusterVersions) == 0 {
-		t.Fatal("no version returned by the API")
-	}
-	versions := versionsResponse.SKSClusterVersions
+	versions := testGetSKSClusterVersions(t)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
@@ -219,7 +307,7 @@ func TestAccResourceSKSCluster(t *testing.T) {
 						resSKSClusterAttrControlPlaneCA:      validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Control-plane CA must be a PEM certificate")),
 						resSKSClusterAttrCreatedAt:           validation.ToDiagFunc(validation.NoZeroValues),
 						resSKSClusterAttrDescription:         validateString(testAccResourceSKSClusterDescription),
-						resSKSClusterAttrEndpoint:            validation.ToDiagFunc(validation.IsURLWithHTTPS),
+						resSKSClusterAttrEndpoint:            validation.ToDiagFunc(isDNSName),
 						resSKSClusterAttrEnableKubeProxy:     validateString("true"),
 						resSKSClusterAttrExoscaleCCM:         validateString("true"),
 						resSKSClusterAttrFeatureGates + ".#": validateString("1"),
@@ -252,7 +340,7 @@ func TestAccResourceSKSCluster(t *testing.T) {
 						resSKSClusterAttrControlPlaneCA:      validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Control-plane CA must be a PEM certificate")),
 						resSKSClusterAttrCreatedAt:           validation.ToDiagFunc(validation.NoZeroValues),
 						resSKSClusterAttrDescription:         validateString(testAccResourceSKSClusterDescriptionUpdated),
-						resSKSClusterAttrEndpoint:            validation.ToDiagFunc(validation.IsURLWithHTTPS),
+						resSKSClusterAttrEndpoint:            validation.ToDiagFunc(isDNSName),
 						resSKSClusterAttrExoscaleCCM:         validateString("true"),
 						resSKSClusterAttrFeatureGates + ".#": validateString("0"),
 						resSKSClusterAttrKubeletCA:           validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Kubelet CA must be a PEM certificate")),
@@ -297,7 +385,7 @@ func TestAccResourceSKSCluster(t *testing.T) {
 							resSKSClusterAttrControlPlaneCA:     validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Control-plane CA must be a PEM certificate")),
 							resSKSClusterAttrCreatedAt:          validation.ToDiagFunc(validation.NoZeroValues),
 							resSKSClusterAttrDescription:        validateString(testAccResourceSKSClusterDescriptionUpdated),
-							resSKSClusterAttrEndpoint:           validation.ToDiagFunc(validation.IsURLWithHTTPS),
+							resSKSClusterAttrEndpoint:           validation.ToDiagFunc(isDNSName),
 							resSKSClusterAttrExoscaleCCM:        validateString("true"),
 							resSKSClusterAttrKubeletCA:          validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Kubelet CA must be a PEM certificate")),
 							resSKSClusterAttrMetricsServer:      validateString("false"),
@@ -365,6 +453,155 @@ func TestAccResourceSKSCluster(t *testing.T) {
 	})
 }
 
+func TestAccResourceSKSClusterSKSClusterWithAudit(t *testing.T) {
+	var (
+		r          = "exoscale_sks_cluster.test-with-audit"
+		sksCluster egoscale.SKSCluster
+	)
+
+	versions := testGetSKSClusterVersions(t)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviders,
+		CheckDestroy:      testAccCheckResourceSKSClusterDestroy(&sksCluster),
+		Steps: []resource.TestStep{
+			{
+				// Create cluster with audit enabled
+				Config: testAccRessourceSKSClusterCreateWithAudit,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckResourceSKSClusterExists(r, &sksCluster),
+					func(s *terraform.State) error {
+						a := assert.New(t)
+
+						a.Equal(versions[0], sksCluster.Version)
+						a.Equal(testAccResourceSKSClusterName, sksCluster.Name)
+						a.Equal(testAccResourceSKSClusterDescription, sksCluster.Description)
+
+						// Verify audit is enabled in the API response
+						assert.NotNil(t, sksCluster.Audit)
+						if sksCluster.Audit != nil {
+							a.True(*sksCluster.Audit.Enabled)
+							a.Equal(testAccResourceSKSClusterAuditRemoteURL, string(sksCluster.Audit.Endpoint))
+							a.Equal(testAccResourceSKSClusterAuditInitBackoff, string(sksCluster.Audit.InitialBackoff))
+						} else {
+							t.Error("Audit should not be nil when audit is enabled")
+						}
+
+						return nil
+					},
+					checkResourceState(r, checkResourceStateValidateAttributes(testAttrs{
+						resSKSClusterAttrName:                                     validateString(testAccResourceSKSClusterName),
+						resSKSClusterAttrDescription:                              validateString(testAccResourceSKSClusterDescription),
+						resSKSClusterAttrAutoUpgrade:                              validateString("true"),
+						resSKSClusterAttrExoscaleCCM:                              validateString("true"),
+						resSKSClusterAttrMetricsServer:                            validateString("false"),
+						resSKSClusterAttrLabels + ".test":                         validateString(testAccResourceSKSClusterLabelValue),
+						resSKSClusterAttrAudit(resSKSClusterAttrAuditEnabled):     validateString("true"),
+						resSKSClusterAttrAudit(resSKSClusterAttrAuditEndpoint):    validateString(testAccResourceSKSClusterAuditRemoteURL),
+						resSKSClusterAttrAudit(resSKSClusterAttrAuditInitBackoff): validateString(testAccResourceSKSClusterAuditInitBackoff),
+						resSKSClusterAttrAudit(resSKSClusterAttrAuditBearerToken): validateString(testAccResourceSKSClusterAuditBearerToken),
+					})),
+				),
+			},
+			{
+				// Update cluster to disable audit
+				Config: testAccRessourceSKSClusterUpdateDisableAudit,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckResourceSKSClusterExists(r, &sksCluster),
+					func(s *terraform.State) error {
+						a := assert.New(t)
+
+						a.Equal(versions[0], sksCluster.Version)
+						a.Equal(testAccResourceSKSClusterName, sksCluster.Name)
+
+						// Verify audit is disabled in the API response
+						assert.NotNil(t, sksCluster.Audit)
+						if sksCluster.Audit != nil {
+							a.False(*sksCluster.Audit.Enabled)
+						}
+
+						return nil
+					},
+					checkResourceState(r, checkResourceStateValidateAttributes(testAttrs{
+						resSKSClusterAttrName:                                 validateString(testAccResourceSKSClusterName),
+						resSKSClusterAttrDescription:                          validateString(testAccResourceSKSClusterDescription),
+						resSKSClusterAttrAutoUpgrade:                          validateString("true"),
+						resSKSClusterAttrExoscaleCCM:                          validateString("true"),
+						resSKSClusterAttrMetricsServer:                        validateString("false"),
+						resSKSClusterAttrLabels + ".test":                     validateString(testAccResourceSKSClusterLabelValue),
+						resSKSClusterAttrAudit(resSKSClusterAttrAuditEnabled): validateString("false"),
+					})),
+				),
+			},
+			{
+				// Re-enable audit with new URL and default backoff
+				Config: testAccRessourceSKSClusterReEnableAuditWithNewURL,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckResourceSKSClusterExists(r, &sksCluster),
+					func(s *terraform.State) error {
+						a := assert.New(t)
+
+						a.Equal(versions[0], sksCluster.Version)
+						a.Equal(testAccResourceSKSClusterName, sksCluster.Name)
+
+						// Verify audit is enabled again with new URL
+						assert.NotNil(t, sksCluster.Audit)
+						if sksCluster.Audit != nil {
+							a.True(*sksCluster.Audit.Enabled)
+							a.Equal(testAccResourceSKSClusterAuditRemoteURLUpdated, string(sksCluster.Audit.Endpoint))
+							// Backoff should use default value when not specified in config
+							a.NotEmpty(string(sksCluster.Audit.InitialBackoff))
+						} else {
+							t.Error("Audit should not be nil when audit is re-enabled")
+						}
+
+						return nil
+					},
+					checkResourceState(r, checkResourceStateValidateAttributes(testAttrs{
+						resSKSClusterAttrName:                                     validateString(testAccResourceSKSClusterName),
+						resSKSClusterAttrDescription:                              validateString(testAccResourceSKSClusterDescription),
+						resSKSClusterAttrAutoUpgrade:                              validateString("true"),
+						resSKSClusterAttrExoscaleCCM:                              validateString("true"),
+						resSKSClusterAttrMetricsServer:                            validateString("false"),
+						resSKSClusterAttrLabels + ".test":                         validateString(testAccResourceSKSClusterLabelValue),
+						resSKSClusterAttrAudit(resSKSClusterAttrAuditEnabled):     validateString("true"),
+						resSKSClusterAttrAudit(resSKSClusterAttrAuditEndpoint):    validateString(testAccResourceSKSClusterAuditRemoteURLUpdated),
+						resSKSClusterAttrAudit(resSKSClusterAttrAuditInitBackoff): validateString(defaultSKSClusterAuditInitBackoff),
+						resSKSClusterAttrAudit(resSKSClusterAttrAuditBearerToken): validateString(testAccResourceSKSClusterAuditBearerTokenUpdated),
+					})),
+				),
+			},
+		},
+	})
+}
+
+func testGetSKSClusterVersions(t *testing.T) []string {
+	defaultClient, err := APIClientV3()
+	if err != nil {
+		t.Fatalf("unable to initialize Exoscale client: %s", err)
+	}
+	ctx := context.Background()
+	client, err := utils.SwitchClientZone(
+		ctx,
+		defaultClient,
+		egoscale.ZoneName(testAccResourceSKSClusterLocalZone),
+	)
+	if err != nil {
+		t.Fatalf("unable to initialize Exoscale client: %s", err)
+	}
+
+	versionsResponse, err := client.ListSKSClusterVersions(ctx)
+	if err != nil {
+		t.Fatalf("unable to retrieve SKS versions: %s", err)
+	}
+	if versionsResponse == nil || len(versionsResponse.SKSClusterVersions) == 0 {
+		t.Fatal("no version returned by the API")
+	}
+	versions := versionsResponse.SKSClusterVersions
+
+	return versions
+}
 func testAccCheckResourceSKSClusterExists(r string, sksCluster *egoscale.SKSCluster) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[r]

@@ -2,6 +2,8 @@ package exoscale
 
 import (
 	"fmt"
+	"net"
+	"regexp"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -106,4 +108,73 @@ func parseIAMAccessKeyResource(v string) (*egoscale.IAMAccessKeyResource, error)
 	}
 
 	return &iamAccessKeyResource, nil
+}
+
+// validDNSNameRegex represents a valid DNS name pattern
+// Based on RFC 1123 and RFC 952 standards
+var validDNSNameRegex = regexp.MustCompile(`^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?)*$`)
+
+func isDNSName(i interface{}, k string) ([]string, []error) {
+	v, ok := i.(string)
+	if !ok {
+		return nil, []error{fmt.Errorf("expected type of %q to be string", k)}
+	}
+
+	if err := validateDNSName(v); err != nil {
+		return nil, []error{fmt.Errorf("expected %q to be a valid DNS name: %s", k, err)}
+	}
+
+	return nil, nil
+}
+
+// validateDNSName validates a DNS name according to RFC standards
+func validateDNSName(name string) error {
+	if name == "" {
+		return fmt.Errorf("DNS name cannot be empty")
+	}
+
+	// Check maximum length (253 characters for FQDN)
+	if len(name) > 253 {
+		return fmt.Errorf("DNS name too long: maximum 253 characters allowed")
+	}
+
+	// Remove trailing dot if present (FQDN)
+	name = strings.TrimSuffix(name, ".")
+
+	// Check if it's a valid hostname using Go's net package
+	if net.ParseIP(name) != nil {
+		return fmt.Errorf("DNS name cannot be an IP address")
+	}
+
+	// Validate format using regex
+	if !validDNSNameRegex.MatchString(name) {
+		return fmt.Errorf("invalid DNS name format")
+	}
+
+	// Check each label individually
+	labels := strings.Split(name, ".")
+	for _, label := range labels {
+		if err := validateDNSLabel(label); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// validateDNSLabel validates a single DNS label
+func validateDNSLabel(label string) error {
+	if label == "" {
+		return fmt.Errorf("DNS label cannot be empty")
+	}
+
+	if len(label) > 63 {
+		return fmt.Errorf("DNS label too long: maximum 63 characters allowed")
+	}
+
+	if strings.HasPrefix(label, "-") || strings.HasSuffix(label, "-") {
+		return fmt.Errorf("DNS label cannot start or end with hyphen")
+	}
+
+	return nil
 }

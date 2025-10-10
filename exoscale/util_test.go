@@ -216,6 +216,67 @@ func GetTemplateIDByName(templateName string) (*string, error) {
 	return nil, fmt.Errorf("unable to find template: %s", templateName)
 }
 
+func TestIsDNSName(t *testing.T) {
+	validNames := []string{
+		"example.com",
+		"sub.example.com",
+		"test-domain.org",
+		"a.b.c.d.example.net",
+		"localhost",
+		"example.com.", // FQDN with trailing dot
+		"1host.com",    // starts with number
+		"host1.com",    // ends with number
+		"996b5d08-a6d3-49eb-9b26-c8021ce2b024.sks-ch-gva-2.exo.io", // UUID label
+	}
+
+	invalidNames := []string{
+		"",             // empty
+		"-example.com", // starts with hyphen
+		"example-.com", // label ends with hyphen
+		"192.168.1.1",  // IP address
+		"example..com", // double dot
+		"ex@mple.com",  // invalid character
+		"verylonglabelverylonglabelverylonglabelverylonglabelverylonglabel.com", // label too long (>63 chars)
+	}
+
+	// Test valid names
+	for _, name := range validNames {
+		t.Run(fmt.Sprintf("valid_%s", name), func(t *testing.T) {
+			warnings, errs := isDNSName(name, "test_field")
+			if len(errs) != 0 {
+				t.Errorf("Expected no errors for valid DNS name %s, got: %v", name, errs)
+			}
+			if len(warnings) != 0 {
+				t.Errorf("Expected no warnings for valid DNS name %s, got: %v", name, warnings)
+			}
+		})
+	}
+
+	// Test invalid names
+	for _, name := range invalidNames {
+		t.Run(fmt.Sprintf("invalid_%s", name), func(t *testing.T) {
+			warnings, errs := isDNSName(name, "test_field")
+			if len(errs) == 0 {
+				t.Errorf("Expected errors for invalid DNS name %s, got none", name)
+			}
+			if len(warnings) != 0 {
+				t.Errorf("Expected no warnings for invalid DNS name %s, got: %v", name, warnings)
+			}
+		})
+	}
+
+	// Test non-string input
+	t.Run("non_string_input", func(t *testing.T) {
+		warnings, errs := isDNSName(123, "test_field")
+		if len(errs) == 0 {
+			t.Error("Expected error for non-string input, got none")
+		}
+		if len(warnings) != 0 {
+			t.Errorf("Expected no warnings for non-string input, got: %v", warnings)
+		}
+	})
+}
+
 // backported from testutils.go for cyclical import reasons
 func APIClientV3() (*v3.Client, error) {
 	creds := credentials.NewStaticCredentials(
