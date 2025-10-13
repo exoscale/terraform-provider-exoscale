@@ -166,7 +166,7 @@ locals {
   zone = "%s"
 }
 
-resource "exoscale_sks_cluster" "test" {
+resource "exoscale_sks_cluster" "test-with-audit" {
   zone = local.zone
   name = "%s"
   description = "%s"
@@ -182,7 +182,7 @@ resource "exoscale_sks_cluster" "test" {
     endpoint = "%s"
 	initial_backoff = "%s"
 	bearer_token = "%s"
-}
+  }
 
   timeouts {
     create = "10m"
@@ -203,7 +203,7 @@ locals {
   zone = "%s"
 }
 
-resource "exoscale_sks_cluster" "test" {
+resource "exoscale_sks_cluster" "test-with-audit" {
   zone = local.zone
   name = "%s"
   description = "%s"
@@ -234,7 +234,7 @@ locals {
   zone = "%s"
 }
 
-resource "exoscale_sks_cluster" "test" {
+resource "exoscale_sks_cluster" "test-with-audit" {
   zone = local.zone
   name = "%s"
   description = "%s"
@@ -481,7 +481,9 @@ func TestAccResourceSKSClusterSKSClusterWithAudit(t *testing.T) {
 						// Verify audit is enabled in the API response
 						assert.NotNil(t, sksCluster.Audit)
 						if sksCluster.Audit != nil {
-							a.True(*sksCluster.Audit.Enabled)
+							if a.NotNil(sksCluster.Audit.Enabled) {
+								a.True(*sksCluster.Audit.Enabled)
+							}
 							a.Equal(testAccResourceSKSClusterAuditRemoteURL, string(sksCluster.Audit.Endpoint))
 							a.Equal(testAccResourceSKSClusterAuditInitBackoff, string(sksCluster.Audit.InitialBackoff))
 						} else {
@@ -516,8 +518,7 @@ func TestAccResourceSKSClusterSKSClusterWithAudit(t *testing.T) {
 						a.Equal(testAccResourceSKSClusterName, sksCluster.Name)
 
 						// Verify audit is disabled in the API response
-						assert.NotNil(t, sksCluster.Audit)
-						if sksCluster.Audit != nil {
+						if assert.NotNil(t, sksCluster.Audit) {
 							a.False(*sksCluster.Audit.Enabled)
 						}
 
