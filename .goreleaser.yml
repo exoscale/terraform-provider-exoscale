@@ -1,3 +1,5 @@
+version: 2
+
 builds:
   - env:
       - CGO_ENABLED=0
@@ -23,7 +25,7 @@ builds:
         goarch: '386'
 
 archives:
-  - format: zip
+  - formats: [ 'zip' ]
     name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
 
 checksum:
@@ -41,4 +43,4 @@ release:
     name: terraform-provider-exoscale
 
 changelog:
-  skip: true
+  disable: true
