@@ -11,6 +11,7 @@ IMPROVEMENTS:
 BUG FIXES:
 
 - Update the database opensearch test to use latest major version #462
+- Make instance.ssh_key(s) force resource replace #461
 
 ## 0.65.1
 
