@@ -340,8 +340,8 @@ func resourceSKSClusterCreate(ctx context.Context, d *schema.ResourceData, meta 
 		createReq.AutoUpgrade = &autoUpgrade
 	}
 
-	if enableKubeProxy, isSet := d.GetOk(resSKSClusterAttrEnableKubeProxy); isSet {
-		v := enableKubeProxy.(bool)
+	if !d.GetRawConfig().GetAttr(resSKSClusterAttrEnableKubeProxy).IsNull() {
+		v := d.Get(resSKSClusterAttrEnableKubeProxy).(bool)
 		createReq.EnableKubeProxy = &v
 	}
 
