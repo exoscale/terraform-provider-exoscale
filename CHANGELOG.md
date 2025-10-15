@@ -12,6 +12,7 @@ BUG FIXES:
 
 - Update the database opensearch test to use latest major version #462
 - Make instance.ssh_key(s) force resource replace #461
+- Fix bug in SKS: `enable_kube_proxy` is always `true` #457
 
 ## 0.65.1
 
@@ -22,7 +23,6 @@ IMPROVEMENTS:
 BUG FIXES:
 
 - Fix regression in instance_pool ds when matching by name #455
-- Fix bug in SKS: `enable_kube_proxy` is always `true` #457
 
 ## 0.65.0
 
