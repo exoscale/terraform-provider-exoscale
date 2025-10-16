@@ -699,12 +699,27 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 				op, err := client.DetachInstanceFromElasticIP(
 					ctx,
 					v3.UUID(id.(string)),
-					v3.DetachInstanceFromElasticIPRequest{Instance: &v3.InstanceTarget{ID: instance.ID}},
+					v3.DetachInstanceFromElasticIPRequest{
+						Instance: &v3.InstanceTarget{ID: instance.ID},
+					},
 				)
 				if err != nil {
+					if errors.Is(err, v3.ErrNotFound) {
+						tflog.Debug(ctx, "ElasticIP already detached, ignoring", map[string]interface{}{
+							"id": id.(string),
+						})
+						continue
+					}
 					return diag.FromErr(err)
 				}
+
 				if _, err = client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
+					if errors.Is(err, v3.ErrNotFound) {
+						tflog.Debug(ctx, "ElasticIP detach operation already gone, ignoring", map[string]interface{}{
+							"id": id.(string),
+						})
+						continue
+					}
 					return diag.FromErr(err)
 				}
 			}
@@ -729,9 +744,22 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 					v3.DetachInstanceFromPrivateNetworkRequest{Instance: &v3.Instance{ID: instance.ID}},
 				)
 				if err != nil {
+					if errors.Is(err, v3.ErrNotFound) {
+						tflog.Debug(ctx, "Private Network already detached, ignoring", map[string]interface{}{
+							"id": nif.NetworkID,
+						})
+						continue
+					}
 					return diag.FromErr(err)
 				}
+
 				if _, err = client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
+					if errors.Is(err, v3.ErrNotFound) {
+						tflog.Debug(ctx, "Private Network detach operation already gone, ignoring", map[string]interface{}{
+							"id": nif.NetworkID,
+						})
+						continue
+					}
 					return diag.FromErr(err)
 				}
 			}
@@ -791,9 +819,22 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 					v3.DetachInstanceFromSecurityGroupRequest{Instance: &v3.Instance{ID: instance.ID}},
 				)
 				if err != nil {
+					if errors.Is(err, v3.ErrNotFound) {
+						tflog.Debug(ctx, "Security Group already detached, ignoring", map[string]interface{}{
+							"id": id.(string),
+						})
+						continue
+					}
 					return diag.FromErr(err)
 				}
+
 				if _, err = client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
+					if errors.Is(err, v3.ErrNotFound) {
+						tflog.Debug(ctx, "Security Group detach operation already gone, ignoring", map[string]interface{}{
+							"id": id.(string),
+						})
+						continue
+					}
 					return diag.FromErr(err)
 				}
 			}

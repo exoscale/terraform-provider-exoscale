@@ -15,8 +15,12 @@ import (
 
 	egoscale "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
+
+	v3 "github.com/exoscale/egoscale/v3"
+
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/general"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
 )
 
 const (
@@ -434,6 +438,25 @@ func resourceElasticIPUpdate(ctx context.Context, d *schema.ResourceData, meta i
 	return resourceElasticIPRead(ctx, d, meta)
 }
 
+func matchElasticIP(inst *v3.Instance, id v3.UUID) bool {
+	for _, eip := range inst.ElasticIPS {
+		if eip.ID == id {
+			return true
+		}
+	}
+	return false
+}
+
+func detachElasticIP(ctx context.Context, client *v3.Client, id v3.UUID, inst *v3.Instance) (*v3.Operation, error) {
+	return client.DetachInstanceFromElasticIP(
+		ctx,
+		id,
+		v3.DetachInstanceFromElasticIPRequest{
+			Instance: &v3.InstanceTarget{ID: inst.ID},
+		},
+	)
+}
+
 func resourceElasticIPDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	tflog.Debug(ctx, "beginning delete", map[string]interface{}{
 		"id": resourceElasticIPIDString(d),
@@ -445,18 +468,36 @@ func resourceElasticIPDelete(ctx context.Context, d *schema.ResourceData, meta i
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
-	client := getClient(meta)
-
-	elasticIPID := d.Id()
-	if err := client.DeleteElasticIPReverseDNS(ctx, zone, elasticIPID); err != nil && !errors.Is(err, exoapi.ErrNotFound) {
+	defaultClientV3, err := config.GetClientV3(meta)
+	if err != nil {
 		return diag.FromErr(err)
 	}
-	if err := client.DeleteElasticIP(ctx, zone, &egoscale.ElasticIP{ID: &elasticIPID}); err != nil {
+	client, err := utils.SwitchClientZone(ctx, defaultClientV3, v3.ZoneName(zone))
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	elasticIPID := v3.UUID(d.Id())
+	if diags := detachMatchingResource(ctx, client, "ElasticIP", elasticIPID, matchElasticIP, detachElasticIP); diags != nil {
+		return diags
+	}
+
+	op, err := client.DeleteReverseDNSElasticIP(ctx, elasticIPID)
+	if err != nil && !errors.Is(err, v3.ErrNotFound) {
+		return diag.FromErr(err)
+	}
+	if op != nil {
+		if _, err := client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
+	if _, err := client.DeleteElasticIP(ctx, elasticIPID); err != nil {
 		return diag.FromErr(err)
 	}
 
 	tflog.Debug(ctx, "delete finished successfully", map[string]interface{}{
-		"id": resourceDomainIDString(d),
+		"id": resourceElasticIPIDString(d),
 	})
 
 	return nil
