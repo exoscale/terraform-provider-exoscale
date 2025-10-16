@@ -210,6 +210,10 @@ data "exoscale_template" "ubuntu" {
   name = "Linux Ubuntu 22.04 LTS 64-bit"
 }
 
+data "exoscale_security_group" "default" {
+  name = "default"
+}
+
 resource "exoscale_ssh_key" "test" {
   name       = "%s"
   public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ/FXzAnsaRwP74Mji68Vt6+iz4mmCkC7QpUmPT4zKvf test"
@@ -224,6 +228,7 @@ resource "exoscale_compute_instance" "test" {
   ipv6                    = true
   enable_tpm			  = false
   enable_secure_boot	  = true
+  security_group_ids      = [data.exoscale_security_group.default.id]
   user_data               = "%s"
   ssh_key                 = exoscale_ssh_key.test.name
 	state                   = "%s"
@@ -773,16 +778,22 @@ func testResource(t *testing.T) {
 					func(s *terraform.State) error {
 						a := require.New(t)
 
+						defaultSecurityGroupID, err := testutils.AttrFromState(s, "data.exoscale_security_group.default", "id")
+						a.NoError(err, "unable to retrieve default Security Group ID from state")
+
 						a.Empty(testInstance.ElasticIPS)
 						a.Empty(testInstance.AntiAffinityGroups)
 						a.Empty(testInstance.PrivateNetworks)
-						a.Empty(testInstance.SecurityGroups)
 						a.Len(testInstance.AntiAffinityGroups, 0)
-						a.Len(testInstance.SecurityGroups, 0)
+						a.Len(testInstance.SecurityGroups, 1) // default SG
+						a.ElementsMatch([]string{defaultSecurityGroupID}, []string{testInstance.SecurityGroups[0].ID.String()})
 						a.Len(testInstance.ElasticIPS, 0)
 						a.Len(testInstance.PrivateNetworks, 0)
 						return nil
 					},
+					testutils.CheckResourceState(r, testutils.CheckResourceStateValidateAttributes(testutils.TestAttrs{
+						instance.AttrSecurityGroupIDs + ".#": testutils.ValidateString("1"),
+					})),
 				),
 			},
 		},
