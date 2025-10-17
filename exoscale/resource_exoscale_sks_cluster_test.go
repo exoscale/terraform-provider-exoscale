@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -663,5 +664,175 @@ func testAccCheckResourceSKSClusterDestroy(sksCluster *egoscale.SKSCluster) reso
 		}
 
 		return errors.New("SKS cluster still exists")
+	}
+}
+
+// Unit tests for addon helper functions
+
+func TestAddonsSetToSlice(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    []interface{}
+		expected []string
+	}{
+		{
+			name:     "empty set",
+			input:    []interface{}{},
+			expected: []string{},
+		},
+		{
+			name:     "single addon",
+			input:    []interface{}{"addon1"},
+			expected: []string{"addon1"},
+		},
+		{
+			name:     "multiple addons",
+			input:    []interface{}{"addon1", "addon2", "addon3"},
+			expected: []string{"addon1", "addon2", "addon3"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Create a schema.Set from the input
+			set := &schema.Set{F: schema.HashString}
+			for _, v := range tt.input {
+				set.Add(v)
+			}
+
+			result := addonsSetToSlice(set)
+
+			assert.Len(t, result, len(tt.expected))
+			// Convert result to map for easier comparison (order doesn't matter in a set)
+			resultMap := make(map[string]bool)
+			for _, v := range result {
+				resultMap[v] = true
+			}
+			for _, expected := range tt.expected {
+				assert.True(t, resultMap[expected], "expected addon %s not found in result", expected)
+			}
+		})
+	}
+}
+
+func TestAppendAddonToSet(t *testing.T) {
+	tests := []struct {
+		name          string
+		initialAddons []interface{}
+		addonToAdd    string
+		expected      []string
+	}{
+		{
+			name:          "add to empty set",
+			initialAddons: []interface{}{},
+			addonToAdd:    "new-addon",
+			expected:      []string{"new-addon"},
+		},
+		{
+			name:          "add to existing set",
+			initialAddons: []interface{}{"addon1", "addon2"},
+			addonToAdd:    "addon3",
+			expected:      []string{"addon1", "addon2", "addon3"},
+		},
+		{
+			name:          "add duplicate addon",
+			initialAddons: []interface{}{"addon1", "addon2"},
+			addonToAdd:    "addon1",
+			expected:      []string{"addon1", "addon2", "addon1"}, // Note: duplicates allowed in slice
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Create a schema.Set from the initial addons
+			set := &schema.Set{F: schema.HashString}
+			for _, v := range tt.initialAddons {
+				set.Add(v)
+			}
+
+			result := appendAddonToSet(set, tt.addonToAdd)
+
+			assert.Len(t, result, len(tt.expected))
+			// Verify the new addon is present
+			found := false
+			for _, addon := range result {
+				if addon == tt.addonToAdd {
+					found = true
+					break
+				}
+			}
+			assert.True(t, found, "addon %s should be in the result", tt.addonToAdd)
+		})
+	}
+}
+
+func TestRemoveAddonFromSet(t *testing.T) {
+	tests := []struct {
+		name             string
+		initialAddons    []interface{}
+		addonToRemove    string
+		expectedCount    int
+		shouldContain    []string
+		shouldNotContain string
+	}{
+		{
+			name:             "remove from empty set",
+			initialAddons:    []interface{}{},
+			addonToRemove:    "addon1",
+			expectedCount:    0,
+			shouldContain:    []string{},
+			shouldNotContain: "addon1",
+		},
+		{
+			name:             "remove existing addon",
+			initialAddons:    []interface{}{"addon1", "addon2", "addon3"},
+			addonToRemove:    "addon2",
+			expectedCount:    2,
+			shouldContain:    []string{"addon1", "addon3"},
+			shouldNotContain: "addon2",
+		},
+		{
+			name:             "remove non-existent addon",
+			initialAddons:    []interface{}{"addon1", "addon2"},
+			addonToRemove:    "addon3",
+			expectedCount:    2,
+			shouldContain:    []string{"addon1", "addon2"},
+			shouldNotContain: "addon3",
+		},
+		{
+			name:             "remove last addon",
+			initialAddons:    []interface{}{"addon1"},
+			addonToRemove:    "addon1",
+			expectedCount:    0,
+			shouldContain:    []string{},
+			shouldNotContain: "addon1",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Create a schema.Set from the initial addons
+			set := &schema.Set{F: schema.HashString}
+			for _, v := range tt.initialAddons {
+				set.Add(v)
+			}
+
+			result := removeAddonFromSet(set, tt.addonToRemove)
+
+			assert.Len(t, result, tt.expectedCount, "expected %d addons, got %d", tt.expectedCount, len(result))
+
+			// Verify expected addons are present
+			resultMap := make(map[string]bool)
+			for _, addon := range result {
+				resultMap[addon] = true
+			}
+
+			for _, expected := range tt.shouldContain {
+				assert.True(t, resultMap[expected], "expected addon %s not found in result", expected)
+			}
+
+			// Verify removed addon is not present
+			assert.False(t, resultMap[tt.shouldNotContain], "addon %s should not be in result", tt.shouldNotContain)
+		})
 	}
 }
