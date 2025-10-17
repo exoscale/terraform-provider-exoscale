@@ -17,6 +17,7 @@ IMPROVEMENTS:
 - Add example rules for sks cilium CNI
 - Bump egoscale and fix breaking change #465
 - Bump go.mk #464
+- Add Karpenter support for SKS
 
 BUG FIXES:
 
