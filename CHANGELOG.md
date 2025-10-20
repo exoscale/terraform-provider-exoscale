@@ -1,9 +1,11 @@
 # Changelog
 
-## Unreleased
+## 0.66.0
 
 IMPROVEMENTS:
 
+- Add support for Kubernetes Audit #458
+- compute_instance: support for tpm_enalbed and secure_boot_enabled flags #452
 - Add example rules for sks cilium CNI
 - Bump egoscale and fix breaking change #465
 - Bump go.mk #464
@@ -39,7 +41,6 @@ IMPROVEMENTS:
 
 IMPROVEMENTS:
 - compute_instance: make disk_size a required field #419
-- compute_instance: support for tpm_enalbed and secure_boot_enabled flags #452
 - docs: note that domain_record.content format depnds on record type #429
 - sks-cluster: support for feature-gates #431
 - Bump go version in go.mod #433
