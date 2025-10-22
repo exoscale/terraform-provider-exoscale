@@ -204,24 +204,27 @@ func detachMatchingResource(
 			return diag.FromErr(err)
 		}
 
-		if match(inst, resourceID) {
-			tflog.Debug(ctx,
-				fmt.Sprintf("Found instance with matching %s, detaching...", resourceType),
-				map[string]interface{}{
-					"instance_id": inst.ID,
-					"resource_id": resourceID,
-				},
-			)
+		if !match(inst, resourceID) {
+			continue
+		}
 
-			op, err := detach(ctx, client, resourceID, inst)
-			if err != nil {
-				return diag.FromErr(err)
-			}
+		tflog.Debug(ctx,
+			fmt.Sprintf("Found instance with matching %s, detaching...", resourceType),
+			map[string]interface{}{
+				"instance_id": inst.ID,
+				"resource_id": resourceID,
+			},
+		)
 
-			if _, err = client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
-				return diag.FromErr(err)
-			}
+		op, err := detach(ctx, client, resourceID, inst)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		if _, err = client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
+			return diag.FromErr(err)
 		}
 	}
+
 	return nil
 }
