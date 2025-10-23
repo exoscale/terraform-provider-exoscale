@@ -12,8 +12,12 @@ import (
 
 	egoscale "github.com/exoscale/egoscale/v2"
 	exoapi "github.com/exoscale/egoscale/v2/api"
+
+	v3 "github.com/exoscale/egoscale/v3"
+
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/general"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
 )
 
 const (
@@ -256,6 +260,25 @@ func resourcePrivateNetworkUpdate(ctx context.Context, d *schema.ResourceData, m
 	return resourcePrivateNetworkRead(ctx, d, meta)
 }
 
+func matchPrivateNetwork(inst *v3.Instance, id v3.UUID) bool {
+	for _, pn := range inst.PrivateNetworks {
+		if pn.ID == id {
+			return true
+		}
+	}
+	return false
+}
+
+func detachPrivateNetwork(ctx context.Context, client *v3.Client, id v3.UUID, inst *v3.Instance) (*v3.Operation, error) {
+	return client.DetachInstanceFromPrivateNetwork(
+		ctx,
+		id,
+		v3.DetachInstanceFromPrivateNetworkRequest{
+			Instance: &v3.Instance{ID: inst.ID},
+		},
+	)
+}
+
 func resourcePrivateNetworkDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	tflog.Debug(ctx, "beginning delete", map[string]interface{}{
 		"id": resourcePrivateNetworkIDString(d),
@@ -267,11 +290,27 @@ func resourcePrivateNetworkDelete(ctx context.Context, d *schema.ResourceData, m
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
-	client := getClient(meta)
-
-	privateNetworkID := d.Id()
-	if err := client.DeletePrivateNetwork(ctx, zone, &egoscale.PrivateNetwork{ID: &privateNetworkID}); err != nil {
+	defaultClientV3, err := config.GetClientV3(meta)
+	if err != nil {
 		return diag.FromErr(err)
+	}
+	client, err := utils.SwitchClientZone(ctx, defaultClientV3, v3.ZoneName(zone))
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	if diags := detachMatchingResource(ctx, client, "PrivateNetwork", v3.UUID(d.Id()), matchPrivateNetwork, detachPrivateNetwork); diags != nil {
+		return diags
+	}
+
+	op, err := client.DeletePrivateNetwork(ctx, v3.UUID(d.Id()))
+	if err != nil && !errors.Is(err, v3.ErrNotFound) {
+		return diag.FromErr(err)
+	}
+	if op != nil {
+		if _, err := client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
 	tflog.Debug(ctx, "delete finished successfully", map[string]interface{}{
