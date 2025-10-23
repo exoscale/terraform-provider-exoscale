@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+IMPROVEMENTS:
+
+BUG FIXES:
+
+- Fix bug with resouce detachment prior to deletion #460
+
 ## 0.66.0
 
 IMPROVEMENTS:
@@ -15,7 +23,6 @@ BUG FIXES:
 - Update the database opensearch test to use latest major version #462
 - Make instance.ssh_key(s) force resource replace #461
 - Fix bug in SKS: `enable_kube_proxy` is always `true` #457
-- Fix bug with resouce detachment prior to deletion #460
 
 ## 0.65.1
 
