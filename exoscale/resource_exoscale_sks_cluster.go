@@ -679,6 +679,52 @@ func resourceSKSClusterUpdate(ctx context.Context, d *schema.ResourceData, meta 
 		updated = true
 	}
 
+	// Configure OIDC update if any OIDC field is changed
+	if d.HasChange(resSKSClusterAttrOIDC(resSKSClusterAttrOIDCClientID)) ||
+		d.HasChange(resSKSClusterAttrOIDC(resSKSClusterAttrOIDCGroupsClaim)) ||
+		d.HasChange(resSKSClusterAttrOIDC(resSKSClusterAttrOIDCGroupsPrefix)) ||
+		d.HasChange(resSKSClusterAttrOIDC(resSKSClusterAttrOIDCIssuerURL)) ||
+		d.HasChange(resSKSClusterAttrOIDC(resSKSClusterAttrOIDCRequiredClaim)) ||
+		d.HasChange(resSKSClusterAttrOIDC(resSKSClusterAttrOIDCUsernameClaim)) ||
+		d.HasChange(resSKSClusterAttrOIDC(resSKSClusterAttrOIDCUsernamePrefix)) {
+
+		updateReq.Oidc = &v3.SKSOidc{}
+
+		if v, ok := d.GetOk(resSKSClusterAttrOIDC(resSKSClusterAttrOIDCClientID)); ok {
+			updateReq.Oidc.ClientID = v.(string)
+		}
+
+		if v, ok := d.GetOk(resSKSClusterAttrOIDC(resSKSClusterAttrOIDCGroupsClaim)); ok {
+			updateReq.Oidc.GroupsClaim = v.(string)
+		}
+
+		if v, ok := d.GetOk(resSKSClusterAttrOIDC(resSKSClusterAttrOIDCGroupsPrefix)); ok {
+			updateReq.Oidc.GroupsPrefix = v.(string)
+		}
+
+		if v, ok := d.GetOk(resSKSClusterAttrOIDC(resSKSClusterAttrOIDCIssuerURL)); ok {
+			updateReq.Oidc.IssuerURL = v.(string)
+		}
+
+		if c, ok := d.GetOk(resSKSClusterAttrOIDC(resSKSClusterAttrOIDCRequiredClaim)); ok {
+			claims := make(map[string]string)
+			for k, v := range c.(map[string]interface{}) {
+				claims[k] = v.(string)
+			}
+			updateReq.Oidc.RequiredClaim = claims
+		}
+
+		if v, ok := d.GetOk(resSKSClusterAttrOIDC(resSKSClusterAttrOIDCUsernameClaim)); ok {
+			updateReq.Oidc.UsernameClaim = v.(string)
+		}
+
+		if v, ok := d.GetOk(resSKSClusterAttrOIDC(resSKSClusterAttrOIDCUsernamePrefix)); ok {
+			updateReq.Oidc.UsernamePrefix = v.(string)
+		}
+
+		updated = true
+	}
+
 	if updated {
 		// due to a bug it's possible for the update operation
 		// to remain in pending state forever

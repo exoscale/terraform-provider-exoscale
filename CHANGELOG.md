@@ -18,6 +18,7 @@ IMPROVEMENTS:
 IMPROVEMENTS:
 
 - Add Karpenter support for SKS
+- sks-cluster: support for updating OIDC #467
 
 BUG FIXES:
 
