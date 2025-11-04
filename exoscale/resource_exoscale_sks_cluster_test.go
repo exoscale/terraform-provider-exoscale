@@ -33,6 +33,16 @@ var (
 	testAccResourceSKSClusterDescription            = acctest.RandString(10)
 	testAccResourceSKSClusterDescriptionUpdated     = testAccResourceSKSClusterDescription + "-updated"
 	testAccResourceSKSClusterFeatureGate            = "GracefulNodeShutdown"
+
+	// For OIDC update testing
+	testAccResourceSKSClusterOIDCClientIDUpdated           = testAccResourceSKSClusterOIDCClientID + "-updated"
+	testAccResourceSKSClusterOIDCGroupsClaimUpdated        = testAccResourceSKSClusterOIDCGroupsClaim + "-updated"
+	testAccResourceSKSClusterOIDCGroupsPrefixUpdated       = testAccResourceSKSClusterOIDCGroupsPrefix + "-updated"
+	testAccResourceSKSClusterOIDCIssuerURLUpdated          = "https://id-updated.example.net"
+	testAccResourceSKSClusterOIDCRequiredClaimValueUpdated = testAccResourceSKSClusterOIDCRequiredClaimValue + "-updated"
+	testAccResourceSKSClusterOIDCUsernameClaimUpdated      = testAccResourceSKSClusterOIDCUsernameClaim + "-updated"
+	testAccResourceSKSClusterOIDCUsernamePrefixUpdated     = testAccResourceSKSClusterOIDCUsernamePrefix + "-updated"
+
 	// Only in audit testing scenario
 	testAccResourceSKSClusterAuditInitBackoff = "30s"
 	testAccResourceSKSClusterAuditRemoteURL   = "https://audit.example.exoscale.net"
@@ -185,6 +195,18 @@ resource "exoscale_sks_cluster" "test-with-audit" {
 	bearer_token = "%s"
   }
 
+  enable_kube_proxy = true
+
+  oidc {
+    client_id  = "%s"
+    groups_claim = "%s"
+    groups_prefix = "%s"
+    issuer_url = "%s"
+    required_claim = { test = "%s" }
+    username_claim = "%s"
+    username_prefix = "%s"
+  }
+
   timeouts {
     create = "10m"
   }
@@ -197,6 +219,13 @@ resource "exoscale_sks_cluster" "test-with-audit" {
 		testAccResourceSKSClusterAuditRemoteURL,
 		testAccResourceSKSClusterAuditInitBackoff,
 		testAccResourceSKSClusterAuditBearerToken,
+		testAccResourceSKSClusterOIDCClientIDUpdated,
+		testAccResourceSKSClusterOIDCGroupsClaimUpdated,
+		testAccResourceSKSClusterOIDCGroupsPrefixUpdated,
+		testAccResourceSKSClusterOIDCIssuerURLUpdated,
+		testAccResourceSKSClusterOIDCRequiredClaimValueUpdated,
+		testAccResourceSKSClusterOIDCUsernameClaimUpdated,
+		testAccResourceSKSClusterOIDCUsernamePrefixUpdated,
 	)
 
 	testAccRessourceSKSClusterUpdateDisableAudit = fmt.Sprintf(`
@@ -438,6 +467,27 @@ func TestAccResourceSKSCluster(t *testing.T) {
 						resSKSClusterAttrName:                validateString(testAccResourceSKSClusterNameUpdated),
 						resSKSClusterAttrServiceLevel:        validateString(defaultSKSClusterServiceLevel),
 						resSKSClusterAttrState:               validation.ToDiagFunc(validation.NoZeroValues),
+
+						resSKSClusterAttrOIDC(resSKSClusterAttrOIDCClientID):       validateString(testAccResourceSKSClusterOIDCClientIDUpdated),
+						resSKSClusterAttrOIDC(resSKSClusterAttrOIDCGroupsClaim):    validateString(testAccResourceSKSClusterOIDCGroupsClaimUpdated),
+						resSKSClusterAttrOIDC(resSKSClusterAttrOIDCGroupsPrefix):   validateString(testAccResourceSKSClusterOIDCGroupsPrefixUpdated),
+						resSKSClusterAttrOIDC(resSKSClusterAttrOIDCIssuerURL):      validateString(testAccResourceSKSClusterOIDCIssuerURLUpdated),
+						resSKSClusterAttrOIDC(resSKSClusterAttrOIDCUsernameClaim):  validateString(testAccResourceSKSClusterOIDCUsernameClaimUpdated),
+						resSKSClusterAttrOIDC(resSKSClusterAttrOIDCUsernamePrefix): validateString(testAccResourceSKSClusterOIDCUsernamePrefixUpdated),
+					})),
+				),
+			},
+			{
+				// Update again (remove OIDC and add CSI)
+				Config: testAccResourceSKSClusterConfigUpdate,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckResourceSKSClusterExists(r, &sksCluster),
+					checkResourceState(r, checkResourceStateValidateAttributes(testAttrs{
+						resSKSClusterAttrExoscaleCSI:      validateString("true"),
+						resSKSClusterAttrLabels + ".test": validateString(testAccResourceSKSClusterLabelValueUpdated),
+						resSKSClusterAttrName:             validateString(testAccResourceSKSClusterNameUpdated),
+						resSKSClusterAttrServiceLevel:     validateString(defaultSKSClusterServiceLevel),
+						resSKSClusterAttrState:            validation.ToDiagFunc(validation.NoZeroValues),
 					})),
 				),
 			},
@@ -823,6 +873,7 @@ func testGetSKSClusterVersions(t *testing.T) []string {
 
 	return versions
 }
+
 func testAccCheckResourceSKSClusterExists(r string, sksCluster *egoscale.SKSCluster) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[r]
