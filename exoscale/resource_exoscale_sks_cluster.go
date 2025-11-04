@@ -679,7 +679,6 @@ func resourceSKSClusterUpdate(ctx context.Context, d *schema.ResourceData, meta 
 		updated = true
 	}
 
-	// Configure OIDC update if any OIDC field is changed
 	if d.HasChange(resSKSClusterAttrOIDC(resSKSClusterAttrOIDCClientID)) ||
 		d.HasChange(resSKSClusterAttrOIDC(resSKSClusterAttrOIDCGroupsClaim)) ||
 		d.HasChange(resSKSClusterAttrOIDC(resSKSClusterAttrOIDCGroupsPrefix)) ||
