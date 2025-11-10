@@ -24,6 +24,7 @@ const (
 	sksClusterAddonExoscaleCCM = "exoscale-cloud-controller"
 	sksClusterAddonExoscaleCSI = "exoscale-container-storage-interface"
 	sksClusterAddonMS          = "metrics-server"
+	sksClusterAddonKarpenter   = "karpenter"
 
 	resSKSClusterAttrAddons             = "addons"
 	resSKSClusterAttrAggregationLayerCA = "aggregation_ca"
@@ -37,6 +38,7 @@ const (
 	resSKSClusterAttrCreatedAt          = "created_at"
 	resSKSClusterAttrDescription        = "description"
 	resSKSClusterAttrEnableKubeProxy    = "enable_kube_proxy"
+	resSKSClusterAttrEnableKarpenter    = "enable_karpenter"
 	resSKSClusterAttrEndpoint           = "endpoint"
 	resSKSClusterAttrExoscaleCCM        = "exoscale_ccm"
 	resSKSClusterAttrExoscaleCSI        = "exoscale_csi"
@@ -145,6 +147,12 @@ func resourceSKSCluster() *schema.Resource {
 			Computed:    true,
 			Description: "Indicates whether to deploy the Kubernetes network proxy. (may only be set at creation time)",
 			ForceNew:    true,
+		},
+		resSKSClusterAttrEnableKarpenter: {
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Computed:    true,
+			Description: "Indicates whether to deploy Karpenter for cluster autoscaling.",
 		},
 		resSKSClusterAttrEndpoint: {
 			Type:        schema.TypeString,
@@ -331,6 +339,9 @@ func resourceSKSClusterCreate(ctx context.Context, d *schema.ResourceData, meta 
 	}
 	if enableCSI := d.Get(resSKSClusterAttrExoscaleCSI).(bool); enableCSI && !in(addOns, sksClusterAddonExoscaleCSI) {
 		addOns = append(addOns, sksClusterAddonExoscaleCSI)
+	}
+	if enableKarpenter := d.Get(resSKSClusterAttrEnableKarpenter).(bool); enableKarpenter && !in(addOns, sksClusterAddonKarpenter) {
+		addOns = append(addOns, sksClusterAddonKarpenter)
 	}
 	if len(addOns) > 0 {
 		createReq.Addons = &addOns
@@ -619,11 +630,21 @@ func resourceSKSClusterUpdate(ctx context.Context, d *schema.ResourceData, meta 
 
 		addons := d.Get(resSKSClusterAttrAddons).(*schema.Set)
 		if enableCSI && !addons.Contains(sksClusterAddonExoscaleCSI) {
-			addonStrings := make(v3.SKSClusterAddons, 0, addons.Len())
-			for _, v := range addons.List() {
-				addonStrings = append(addonStrings, v.(string))
-			}
-			addonStrings = append(addonStrings, sksClusterAddonExoscaleCSI)
+			addonStrings := appendAddonToSet(addons, sksClusterAddonExoscaleCSI)
+			updateReq.Addons = &addonStrings
+			updated = true
+		}
+	}
+
+	if d.HasChange(resSKSClusterAttrEnableKarpenter) {
+		enableKarpenter := d.Get(resSKSClusterAttrEnableKarpenter).(bool)
+		addons := d.Get(resSKSClusterAttrAddons).(*schema.Set)
+		if enableKarpenter && !addons.Contains(sksClusterAddonKarpenter) {
+			addonStrings := appendAddonToSet(addons, sksClusterAddonKarpenter)
+			updateReq.Addons = &addonStrings
+			updated = true
+		} else if !enableKarpenter && addons.Contains(sksClusterAddonKarpenter) {
+			addonStrings := removeAddonFromSet(addons, sksClusterAddonKarpenter)
 			updateReq.Addons = &addonStrings
 			updated = true
 		}
@@ -816,6 +837,33 @@ func resSKSClusterAttrOIDC(a string) string {
 
 func resSKSClusterAttrAudit(a string) string {
 	return fmt.Sprintf("audit.0.%s", a)
+}
+
+// addonsSetToSlice converts a schema.Set of addons to v3.SKSClusterAddons
+func addonsSetToSlice(addons *schema.Set) v3.SKSClusterAddons {
+	addonStrings := make(v3.SKSClusterAddons, 0, addons.Len())
+	for _, v := range addons.List() {
+		addonStrings = append(addonStrings, v.(string))
+	}
+	return addonStrings
+}
+
+// appendAddonToSet returns a new SKSClusterAddons slice with the specified addon added
+func appendAddonToSet(addons *schema.Set, addon string) v3.SKSClusterAddons {
+	addonStrings := addonsSetToSlice(addons)
+	addonStrings = append(addonStrings, addon)
+	return addonStrings
+}
+
+// removeAddonFromSet returns a new SKSClusterAddons slice with the specified addon removed
+func removeAddonFromSet(addons *schema.Set, addon string) v3.SKSClusterAddons {
+	addonStrings := make(v3.SKSClusterAddons, 0, addons.Len())
+	for _, v := range addons.List() {
+		if v.(string) != addon {
+			addonStrings = append(addonStrings, v.(string))
+		}
+	}
+	return addonStrings
 }
 
 type SKSClusterCertificates struct {
