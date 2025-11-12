@@ -19,6 +19,10 @@ FEATURES:
 - dbaas: fix for PG scale issue #477
 - Bump egoscale & fix breaking change #468
 
+FEATURES:
+
+- sks-cluster: support for updating OIDC #467
+
 ## 0.67.1
 
 IMPROVEMENTS:
