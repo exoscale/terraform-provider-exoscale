@@ -9,8 +9,13 @@ IMPROVEMENTS:
 - feat: make instance pool state computed only #486 
 
 BUG FIXES:
+
 - fix: prevent uuid parse error while refresh block storage volume #479
 - fix(block storage): remove source if not existing during read #480
+
+FEATURES:
+
+- sks-cluster: support for updating OIDC #467
 
 ## 0.67.1
 
@@ -23,7 +28,6 @@ IMPROVEMENTS:
 IMPROVEMENTS:
 
 - Add Karpenter support for SKS
-- sks-cluster: support for updating OIDC #467
 
 BUG FIXES:
 
