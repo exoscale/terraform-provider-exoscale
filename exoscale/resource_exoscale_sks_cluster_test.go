@@ -376,7 +376,7 @@ func TestAccResourceSKSCluster(t *testing.T) {
 
 						latestVersion := versions[0]
 
-						a.Equal(&egoscale.SKSClusterAddons{sksClusterAddonExoscaleCCM}, sksCluster.Addons)
+						a.Equal([]string{sksClusterAddonExoscaleCCM}, sksCluster.Addons)
 						a.True(defaultBool(sksCluster.AutoUpgrade, false))
 						a.Equal(defaultSKSClusterCNI, string(sksCluster.Cni))
 						a.Equal(testAccResourceSKSClusterDescription, sksCluster.Description)
