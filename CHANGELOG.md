@@ -1,5 +1,13 @@
 # Changelog
 
+## UNRELEASED
+
+## 0.67.1
+
+IMPROVEMENTS:
+
+- regenerate the documentation
+
 ## 0.67.0
 
 IMPROVEMENTS:
