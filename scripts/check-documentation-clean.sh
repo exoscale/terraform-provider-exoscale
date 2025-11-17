@@ -1,4 +1,6 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
+
+set -euo pipefail
 
 go generate
 if [ -z "$(git status --untracked-files=no --porcelain)" ]; then
