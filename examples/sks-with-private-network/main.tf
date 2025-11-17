@@ -18,9 +18,9 @@ resource "exoscale_sks_cluster" "my_sks_cluster" {
 }
 
 resource "exoscale_sks_nodepool" "my_sks_nodepool" {
-  cluster_id          = exoscale_sks_cluster.my_sks_cluster.id
-  zone                = exoscale_sks_cluster.my_sks_cluster.zone
-  name                = "my-sks-nodepool"
+  cluster_id = exoscale_sks_cluster.my_sks_cluster.id
+  zone       = exoscale_sks_cluster.my_sks_cluster.zone
+  name       = "my-sks-nodepool"
 
   instance_type       = "standard.medium"
   size                = 3

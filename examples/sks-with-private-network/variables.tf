@@ -3,5 +3,5 @@ variable "exoscale_api_key" {
 }
 
 variable "exoscale_secret_key" {
-  default =  "api_secret_key_value_here"
+  default = "api_secret_key_value_here"
 }
