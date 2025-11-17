@@ -55,16 +55,16 @@ directory for complete configuration examples.
 - `deploy_target_id` (String) ❗ A deploy target ID.
 - `destroy_protected` (Boolean) Mark the instance as protected, the Exoscale API will refuse to delete the instance until the protection is removed (boolean; default: `false`).
 - `elastic_ip_ids` (Set of String) A list of [exoscale_elastic_ip](./elastic_ip.md) (IDs) to attach to the instance.
-- `enable_secure_boot` (Boolean) Indicates whether secure boot is enabled on the instance.
-- `enable_tpm` (Boolean) Indicates whether TPM is enabled on the instance.
+- `enable_secure_boot` (Boolean) ❗ Enable secure boot on the instance (boolean; default: `false`). Can not be changed after the creation.
+- `enable_tpm` (Boolean) Enable TPM on the instance (boolean; default: `false`). Can not be disabled after the creation. **WARNING**: enabling this attribute stops/restarts the instance.
 - `ipv6` (Boolean) Enable IPv6 on the instance (boolean; default: `false`).
 - `labels` (Map of String) A map of key/value labels.
 - `network_interface` (Block Set) Private network interfaces (may be specified multiple times). Structure is documented below. (see [below for nested schema](#nestedblock--network_interface))
 - `private` (Boolean) Whether the instance is private (no public IP addresses; default: false)
 - `reverse_dns` (String) Domain name for reverse DNS record.
 - `security_group_ids` (Set of String) A list of [exoscale_security_group](./security_group.md) (IDs) to attach to the instance.
-- `ssh_key` (String, Deprecated) The [exoscale_ssh_key](./ssh_key.md) (name) to authorize in the instance (may only be set at creation time).
-- `ssh_keys` (Set of String) The list of [exoscale_ssh_key](./ssh_key.md) (name) to authorize in the instance (may only be set at creation time).
+- `ssh_key` (String, Deprecated) ❗ The [exoscale_ssh_key](./ssh_key.md) (name) to authorize in the instance (may only be set at creation time).
+- `ssh_keys` (Set of String) ❗ The list of [exoscale_ssh_key](./ssh_key.md) (name) to authorize in the instance (may only be set at creation time).
 - `state` (String) The instance state (`running` or `stopped`; default: `running`).
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `user_data` (String) [cloud-init](https://cloudinit.readthedocs.io/) configuration.

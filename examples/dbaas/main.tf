@@ -9,9 +9,9 @@ resource "exoscale_dbaas" "postgres" {
   type = "pg"
   zone = local.my_zone
   pg {
-    admin_username = "${var.database_username}"
-    admin_password = "${var.database_password}"
-    ip_filter = ["0.0.0.0/0"]
-    version = "16"
+    admin_username = var.database_username
+    admin_password = var.database_password
+    ip_filter      = ["0.0.0.0/0"]
+    version        = "16"
   }
 }

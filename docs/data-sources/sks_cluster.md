@@ -23,11 +23,13 @@ description: |-
 
 - `addons` (Set of String, Deprecated)
 - `aggregation_ca` (String) The CA certificate (in PEM format) for TLS communications between the control plane and the aggregation layer (e.g. `metrics-server`).
+- `audit` (Block List, Max: 1) Parameters for Kubernetes Audit configuration (may only be enabled at creation time) (see [below for nested schema](#nestedblock--audit))
 - `auto_upgrade` (Boolean) Enable automatic upgrading of the control plane version.
 - `cni` (String) The CNI plugin that is to be used. Available options are "calico" or "cilium". Defaults to "calico". Setting empty string will result in a cluster with no CNI.
 - `control_plane_ca` (String) The CA certificate (in PEM format) for TLS communications between control plane components.
 - `created_at` (String) The cluster creation date.
 - `description` (String) A free-form text describing the cluster.
+- `enable_karpenter` (Boolean) Indicates whether to deploy Karpenter for cluster autoscaling.
 - `enable_kube_proxy` (Boolean) ❗ Indicates whether to deploy the Kubernetes network proxy. (may only be set at creation time)
 - `endpoint` (String) The cluster API endpoint.
 - `exoscale_ccm` (Boolean) Deploy the Exoscale [Cloud Controller Manager](https://github.com/exoscale/exoscale-cloud-controller-manager/) in the control plane (boolean; default: `true`; may only be set at creation time).
@@ -46,6 +48,17 @@ description: |-
 ### Read-Only
 
 - `id` (String) The ID of this resource.
+
+<a id="nestedblock--audit"></a>
+### Nested Schema for `audit`
+
+Optional:
+
+- `bearer_token` (String, Sensitive) The optional bearer token to include in the request header
+- `enabled` (Boolean) Whether to run the APIServer with the configured Kubernetes Audit
+- `endpoint` (String) The Endpoint URL for the Webserver responsible of processing Audit events
+- `initial_backoff` (String) The Initial Backoff to wait before sending data to the remote server (default '10s')
+
 
 <a id="nestedblock--oidc"></a>
 ### Nested Schema for `oidc`

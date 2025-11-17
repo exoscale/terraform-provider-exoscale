@@ -27,6 +27,7 @@ description: |-
 - `control_plane_ca` (String) Match against this string. If you supply a string that begins and ends with a "/" it will be matched as a regex.
 - `created_at` (String) Match against this string. If you supply a string that begins and ends with a "/" it will be matched as a regex.
 - `description` (String) Match against this string. If you supply a string that begins and ends with a "/" it will be matched as a regex.
+- `enable_karpenter` (Boolean) Match against this bool
 - `enable_kube_proxy` (Boolean) Match against this bool
 - `endpoint` (String) Match against this string. If you supply a string that begins and ends with a "/" it will be matched as a regex.
 - `exoscale_ccm` (Boolean) Match against this bool
@@ -51,11 +52,13 @@ Read-Only:
 
 - `addons` (Set of String)
 - `aggregation_ca` (String)
+- `audit` (List of Object) (see [below for nested schema](#nestedobjatt--clusters--audit))
 - `auto_upgrade` (Boolean)
 - `cni` (String)
 - `control_plane_ca` (String)
 - `created_at` (String)
 - `description` (String)
+- `enable_karpenter` (Boolean)
 - `enable_kube_proxy` (Boolean)
 - `endpoint` (String)
 - `exoscale_ccm` (Boolean)
@@ -72,6 +75,17 @@ Read-Only:
 - `state` (String)
 - `version` (String)
 - `zone` (String)
+
+<a id="nestedobjatt--clusters--audit"></a>
+### Nested Schema for `clusters.audit`
+
+Read-Only:
+
+- `bearer_token` (String)
+- `enabled` (Boolean)
+- `endpoint` (String)
+- `initial_backoff` (String)
+
 
 <a id="nestedobjatt--clusters--oidc"></a>
 ### Nested Schema for `clusters.oidc`

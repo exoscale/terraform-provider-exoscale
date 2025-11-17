@@ -38,9 +38,11 @@ directory for complete configuration examples.
 ### Optional
 
 - `addons` (Set of String, Deprecated)
+- `audit` (Block List, Max: 1) Parameters for Kubernetes Audit configuration (may only be enabled at creation time) (see [below for nested schema](#nestedblock--audit))
 - `auto_upgrade` (Boolean) Enable automatic upgrading of the control plane version.
 - `cni` (String) The CNI plugin that is to be used. Available options are "calico" or "cilium". Defaults to "calico". Setting empty string will result in a cluster with no CNI.
 - `description` (String) A free-form text describing the cluster.
+- `enable_karpenter` (Boolean) Indicates whether to deploy Karpenter for cluster autoscaling.
 - `enable_kube_proxy` (Boolean) ❗ Indicates whether to deploy the Kubernetes network proxy. (may only be set at creation time)
 - `exoscale_ccm` (Boolean) Deploy the Exoscale [Cloud Controller Manager](https://github.com/exoscale/exoscale-cloud-controller-manager/) in the control plane (boolean; default: `true`; may only be set at creation time).
 - `exoscale_csi` (Boolean) Deploy the Exoscale [Container Storage Interface](https://github.com/exoscale/exoscale-csi-driver/) on worker nodes (boolean; default: `false`; requires the CCM to be enabled).
@@ -62,6 +64,17 @@ directory for complete configuration examples.
 - `kubelet_ca` (String) The CA certificate (in PEM format) for TLS communications between kubelets and the control plane.
 - `nodepools` (Set of String) The list of [exoscale_sks_nodepool](./sks_nodepool.md) (IDs) attached to the cluster.
 - `state` (String) The cluster state.
+
+<a id="nestedblock--audit"></a>
+### Nested Schema for `audit`
+
+Optional:
+
+- `bearer_token` (String, Sensitive) The optional bearer token to include in the request header
+- `enabled` (Boolean) Whether to run the APIServer with the configured Kubernetes Audit
+- `endpoint` (String) The Endpoint URL for the Webserver responsible of processing Audit events
+- `initial_backoff` (String) The Initial Backoff to wait before sending data to the remote server (default '10s')
+
 
 <a id="nestedblock--oidc"></a>
 ### Nested Schema for `oidc`

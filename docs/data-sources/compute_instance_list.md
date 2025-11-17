@@ -51,6 +51,8 @@ directory for complete configuration examples.
 - `created_at` (String) Match against this string. If you supply a string that begins and ends with a "/" it will be matched as a regex.
 - `deploy_target_id` (String) Match against this string. If you supply a string that begins and ends with a "/" it will be matched as a regex.
 - `disk_size` (Number) Match against this int
+- `enable_secure_boot` (Boolean) Match against this bool
+- `enable_tpm` (Boolean) Match against this bool
 - `id` (String) Match against this string. If you supply a string that begins and ends with a "/" it will be matched as a regex.
 - `ipv6` (Boolean) Match against this bool
 - `ipv6_address` (String) Match against this string. If you supply a string that begins and ends with a "/" it will be matched as a regex.
@@ -80,8 +82,8 @@ Read-Only:
 - `deploy_target_id` (String)
 - `disk_size` (Number)
 - `elastic_ip_ids` (Set of String)
-- `enabled_secure_boot` (Boolean)
-- `enabled_tpm` (Boolean)
+- `enable_secure_boot` (Boolean)
+- `enable_tpm` (Boolean)
 - `id` (String)
 - `ipv6` (Boolean)
 - `ipv6_address` (String)
