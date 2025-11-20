@@ -2,6 +2,10 @@
 
 ## UNRELEASED
 
+IMPROVEMENTS:
+
+- sks-cluster: support for updating OIDC #467
+
 ## 0.67.1
 
 IMPROVEMENTS:
