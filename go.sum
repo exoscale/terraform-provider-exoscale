@@ -104,8 +104,8 @@ github.com/emirpasic/gods v1.18.1 h1:FXtiHYKDGKCW2KzwZKx0iC0PQmdlorYgdFG9jPXJ1Bc
 github.com/emirpasic/gods v1.18.1/go.mod h1:8tpGGwCnJ5H4r6BWwaV6OrWmMoPhUl5jm/FMNAnJvWQ=
 github.com/exoscale/egoscale v0.102.4 h1:GBKsZMIOzwBfSu+4ZmWka3Ejf2JLiaBDHp4CQUgvp2E=
 github.com/exoscale/egoscale v0.102.4/go.mod h1:ROSmPtle0wvf91iLZb09++N/9BH2Jo9XxIpAEumvocA=
-github.com/exoscale/egoscale/v3 v3.1.28 h1:m4sPeZSXc1P3D/6ZZFzqqgA8y+jQXTit/zDEY0Kts8U=
-github.com/exoscale/egoscale/v3 v3.1.28/go.mod h1:0iY8OxgHJCS5TKqDNhwOW95JBKCnBZl3YGU4Yt+NqkU=
+github.com/exoscale/egoscale/v3 v3.1.31 h1:/dySEUSAxU+hlAS/eLxAoY8ZYmtOtaoL1P+lDwH7ojY=
+github.com/exoscale/egoscale/v3 v3.1.31/go.mod h1:0iY8OxgHJCS5TKqDNhwOW95JBKCnBZl3YGU4Yt+NqkU=
 github.com/fatih/color v1.7.0/go.mod h1:Zm6kSWBoL9eyXnKyktHP6abPY2pDugNf5KwzbycvMj4=
 github.com/fatih/color v1.13.0/go.mod h1:kLAiJbzzSOZDVNGyDpeOxJ47H46qBXwg5ILebYFFOfk=
 github.com/fatih/color v1.18.0 h1:S8gINlzdQ840/4pfAwic/ZE0djQEH3wM94VfqLTZcOM=
