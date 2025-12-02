@@ -646,11 +646,6 @@ func resourceSKSClusterUpdate(ctx context.Context, d *schema.ResourceData, meta 
 		} else if !enableKarpenter && addons.Contains(sksClusterAddonKarpenter) {
 			addonStrings := removeAddonFromSet(addons, sksClusterAddonKarpenter)
 			updateReq.Addons = addonStrings
-			for _, v := range addons.List() {
-				addonStrings = append(addonStrings, v.(string))
-			}
-			addonStrings = append(addonStrings, sksClusterAddonExoscaleCSI)
-			updateReq.Addons = addonStrings
 			updated = true
 		}
 	}
