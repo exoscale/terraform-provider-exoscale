@@ -324,7 +324,7 @@ func resourceSKSClusterCreate(ctx context.Context, d *schema.ResourceData, meta 
 
 	createReq := v3.CreateSKSClusterRequest{}
 
-	addOns := v3.SKSClusterAddons{}
+	addOns := []string{}
 	if addonsSet, ok := d.Get(resSKSClusterAttrAddons).(*schema.Set); ok && addonsSet.Len() > 0 {
 		addOns = make([]string, addonsSet.Len())
 		for i, a := range addonsSet.List() {
@@ -344,7 +344,7 @@ func resourceSKSClusterCreate(ctx context.Context, d *schema.ResourceData, meta 
 		addOns = append(addOns, sksClusterAddonKarpenter)
 	}
 	if len(addOns) > 0 {
-		createReq.Addons = &addOns
+		createReq.Addons = addOns
 	}
 
 	if autoUpgrade := d.Get(resSKSClusterAttrAutoUpgrade).(bool); autoUpgrade {
@@ -631,7 +631,7 @@ func resourceSKSClusterUpdate(ctx context.Context, d *schema.ResourceData, meta 
 		addons := d.Get(resSKSClusterAttrAddons).(*schema.Set)
 		if enableCSI && !addons.Contains(sksClusterAddonExoscaleCSI) {
 			addonStrings := appendAddonToSet(addons, sksClusterAddonExoscaleCSI)
-			updateReq.Addons = &addonStrings
+			updateReq.Addons = addonStrings
 			updated = true
 		}
 	}
@@ -641,11 +641,11 @@ func resourceSKSClusterUpdate(ctx context.Context, d *schema.ResourceData, meta 
 		addons := d.Get(resSKSClusterAttrAddons).(*schema.Set)
 		if enableKarpenter && !addons.Contains(sksClusterAddonKarpenter) {
 			addonStrings := appendAddonToSet(addons, sksClusterAddonKarpenter)
-			updateReq.Addons = &addonStrings
+			updateReq.Addons = addonStrings
 			updated = true
 		} else if !enableKarpenter && addons.Contains(sksClusterAddonKarpenter) {
 			addonStrings := removeAddonFromSet(addons, sksClusterAddonKarpenter)
-			updateReq.Addons = &addonStrings
+			updateReq.Addons = addonStrings
 			updated = true
 		}
 	}
@@ -741,20 +741,20 @@ func resourceSKSClusterDelete(ctx context.Context, d *schema.ResourceData, meta 
 }
 
 func resourceSKSClusterApply(_ context.Context, d *schema.ResourceData, sksCluster *v3.SKSCluster, certificates *SKSClusterCertificates) error {
-	if sksCluster.Addons != nil && len(*sksCluster.Addons) > 0 {
+	if len(sksCluster.Addons) > 0 {
 		if err := d.Set(resSKSClusterAttrAddons, sksCluster.Addons); err != nil {
 			return err
 		}
 
-		if err := d.Set(resSKSClusterAttrExoscaleCCM, in(*sksCluster.Addons, sksClusterAddonExoscaleCCM)); err != nil {
+		if err := d.Set(resSKSClusterAttrExoscaleCCM, in(sksCluster.Addons, sksClusterAddonExoscaleCCM)); err != nil {
 			return err
 		}
 
-		if err := d.Set(resSKSClusterAttrMetricsServer, in(*sksCluster.Addons, sksClusterAddonMS)); err != nil {
+		if err := d.Set(resSKSClusterAttrMetricsServer, in(sksCluster.Addons, sksClusterAddonMS)); err != nil {
 			return err
 		}
 
-		if err := d.Set(resSKSClusterAttrExoscaleCSI, in(*sksCluster.Addons, sksClusterAddonExoscaleCSI)); err != nil {
+		if err := d.Set(resSKSClusterAttrExoscaleCSI, in(sksCluster.Addons, sksClusterAddonExoscaleCSI)); err != nil {
 			return err
 		}
 	}
@@ -840,8 +840,8 @@ func resSKSClusterAttrAudit(a string) string {
 }
 
 // addonsSetToSlice converts a schema.Set of addons to v3.SKSClusterAddons
-func addonsSetToSlice(addons *schema.Set) v3.SKSClusterAddons {
-	addonStrings := make(v3.SKSClusterAddons, 0, addons.Len())
+func addonsSetToSlice(addons *schema.Set) []string {
+	addonStrings := make([]string, 0, addons.Len())
 	for _, v := range addons.List() {
 		addonStrings = append(addonStrings, v.(string))
 	}
@@ -849,15 +849,15 @@ func addonsSetToSlice(addons *schema.Set) v3.SKSClusterAddons {
 }
 
 // appendAddonToSet returns a new SKSClusterAddons slice with the specified addon added
-func appendAddonToSet(addons *schema.Set, addon string) v3.SKSClusterAddons {
+func appendAddonToSet(addons *schema.Set, addon string) []string {
 	addonStrings := addonsSetToSlice(addons)
 	addonStrings = append(addonStrings, addon)
 	return addonStrings
 }
 
 // removeAddonFromSet returns a new SKSClusterAddons slice with the specified addon removed
-func removeAddonFromSet(addons *schema.Set, addon string) v3.SKSClusterAddons {
-	addonStrings := make(v3.SKSClusterAddons, 0, addons.Len())
+func removeAddonFromSet(addons *schema.Set, addon string) []string {
+	addonStrings := make([]string, 0, addons.Len())
 	for _, v := range addons.List() {
 		if v.(string) != addon {
 			addonStrings = append(addonStrings, v.(string))

@@ -376,7 +376,7 @@ func TestAccResourceSKSCluster(t *testing.T) {
 
 						latestVersion := versions[0]
 
-						a.Equal(&egoscale.SKSClusterAddons{sksClusterAddonExoscaleCCM}, sksCluster.Addons)
+						a.Equal([]string{sksClusterAddonExoscaleCCM}, sksCluster.Addons)
 						a.True(defaultBool(sksCluster.AutoUpgrade, false))
 						a.Equal(defaultSKSClusterCNI, string(sksCluster.Cni))
 						a.Equal(testAccResourceSKSClusterDescription, sksCluster.Description)
@@ -694,7 +694,7 @@ func TestAccResourceSKSClusterWithKarpenter(t *testing.T) {
 						assert.NotNil(t, sksCluster.Addons)
 						if sksCluster.Addons != nil {
 							found := false
-							for _, addon := range *sksCluster.Addons {
+							for _, addon := range sksCluster.Addons {
 								if addon == sksClusterAddonKarpenter {
 									found = true
 									break
@@ -732,7 +732,7 @@ func TestAccResourceSKSClusterWithKarpenter(t *testing.T) {
 						// Verify Karpenter addon is not present in the API response
 						if assert.NotNil(t, sksCluster.Addons) {
 							found := false
-							for _, addon := range *sksCluster.Addons {
+							for _, addon := range sksCluster.Addons {
 								if addon == sksClusterAddonKarpenter {
 									found = true
 									break
@@ -769,7 +769,7 @@ func TestAccResourceSKSClusterWithKarpenter(t *testing.T) {
 						assert.NotNil(t, sksCluster.Addons)
 						if sksCluster.Addons != nil {
 							found := false
-							for _, addon := range *sksCluster.Addons {
+							for _, addon := range sksCluster.Addons {
 								if addon == sksClusterAddonKarpenter {
 									found = true
 									break

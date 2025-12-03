@@ -38,7 +38,8 @@ func TestSOSBucketPolicy(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		ExternalProviders: map[string]resource.ExternalProvider{
 			"aws": resource.ExternalProvider{
-				Source: "hashicorp/aws",
+				Source:            "hashicorp/aws",
+				VersionConstraint: "6.22.0",
 			},
 		},
 		PreCheck:                 func() { testutils.AccPreCheck(t) },
