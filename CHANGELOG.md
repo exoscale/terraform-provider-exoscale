@@ -17,6 +17,10 @@ FEATURES:
 
 - sks-cluster: support for updating OIDC #467
 
+FEATURES:
+
+- Bump egoscale & fix breaking change #468
+
 ## 0.67.1
 
 IMPROVEMENTS:
