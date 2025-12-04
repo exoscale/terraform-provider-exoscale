@@ -527,10 +527,10 @@ func (r *ServiceResource) Update(ctx context.Context, req resource.UpdateRequest
 	}
 
 	// Save updated data into Terraform state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &planData)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &stateData)...)
 
-	tflog.Trace(ctx, "resource updated", map[string]interface{}{
-		"id": planData.Id,
+	tflog.Trace(ctx, "resource updated", map[string]any{
+		"id": stateData.Id,
 	})
 }
 

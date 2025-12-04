@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -189,17 +190,37 @@ func (r *ServiceResource) createPg(ctx context.Context, data *ServiceResourceMod
 		return
 	}
 
-	res, err := r.client.GetDbaasServicePgWithResponse(ctx, oapi.DbaasServiceName(data.Id.ValueString()))
-	if err != nil {
-		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database service pg, got error: %s", err))
-		return
+	tflog.Info(ctx, "DB Service created, waiting for the service to be in 'running' state")
+	apiService := &oapi.DbaasServicePg{}
+pooling:
+	for {
+		select {
+		case <-ctx.Done():
+			diagnostics.AddError("Error", ctx.Err().Error())
+			return
+		default:
+			res, err := r.client.GetDbaasServicePgWithResponse(ctx, oapi.DbaasServiceName(data.Id.ValueString()))
+			if err != nil {
+				diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database service pg, got error: %s", err))
+				return
+			}
+			if res.StatusCode() != http.StatusOK {
+				diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database service pg, unexpected status: %s", res.Status()))
+				return
+			}
+			if res.JSON200.State != nil {
+				if *res.JSON200.State == oapi.EnumServiceStatePoweroff {
+					diagnostics.AddError("Client Error", fmt.Sprintf("Unexpected service state: %s", *res.JSON200.State))
+					return
+				}
+				if *res.JSON200.State == oapi.EnumServiceStateRunning {
+					apiService = res.JSON200
+					break pooling
+				}
+			}
+			time.Sleep(time.Second * 2)
+		}
 	}
-	if res.StatusCode() != http.StatusOK {
-		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database service pg, unexpected status: %s", res.Status()))
-		return
-	}
-
-	apiService := res.JSON200
 
 	// Set computed attributes.
 	caCert, err := r.client.GetDatabaseCACertificate(ctx, data.Zone.ValueString())
@@ -475,16 +496,20 @@ func (r *ServiceResource) updatePg(ctx context.Context, stateData *ServiceResour
 			Dow:  oapi.UpdateDbaasServicePgJSONBodyMaintenanceDow(planData.MaintenanceDOW.ValueString()),
 			Time: planData.MaintenanceTime.ValueString(),
 		}
+		stateData.MaintenanceDOW = planData.MaintenanceDOW
+		stateData.MaintenanceTime = planData.MaintenanceTime
 		updated = true
 	}
 
 	if !planData.Plan.Equal(stateData.Plan) {
 		service.Plan = planData.Plan.ValueStringPointer()
+		stateData.Plan = planData.Plan
 		updated = true
 	}
 
 	if !planData.TerminationProtection.Equal(stateData.TerminationProtection) {
 		service.TerminationProtection = planData.TerminationProtection.ValueBoolPointer()
+		stateData.TerminationProtection = planData.TerminationProtection
 		updated = true
 	}
 
@@ -493,7 +518,7 @@ func (r *ServiceResource) updatePg(ctx context.Context, stateData *ServiceResour
 			stateData.Pg = &ResourcePgModel{}
 		}
 
-		if !planData.Pg.BackupSchedule.Equal(stateData.Pg.BackupSchedule) {
+		if !planData.Pg.BackupSchedule.IsUnknown() && !planData.Pg.BackupSchedule.Equal(stateData.Pg.BackupSchedule) {
 			bh, bm, err := parseBackupSchedule(planData.Pg.BackupSchedule.ValueString())
 			if err != nil {
 				diagnostics.AddError("Validation error", fmt.Sprintf("Unable to parse backup schedule, got error: %s", err))
@@ -507,6 +532,7 @@ func (r *ServiceResource) updatePg(ctx context.Context, stateData *ServiceResour
 				BackupHour:   &bh,
 				BackupMinute: &bm,
 			}
+			stateData.Pg.BackupSchedule = planData.Pg.BackupSchedule
 			updated = true
 		}
 
@@ -520,6 +546,7 @@ func (r *ServiceResource) updatePg(ctx context.Context, stateData *ServiceResour
 				}
 			}
 			service.IpFilter = &obj
+			stateData.Pg.IpFilter = planData.Pg.IpFilter
 			updated = true
 		}
 
@@ -542,6 +569,7 @@ func (r *ServiceResource) updatePg(ctx context.Context, stateData *ServiceResour
 				}
 				service.PgSettings = &obj
 			}
+			stateData.Pg.Settings = planData.Pg.Settings
 			updated = true
 		}
 
@@ -554,6 +582,7 @@ func (r *ServiceResource) updatePg(ctx context.Context, stateData *ServiceResour
 				}
 				service.PgbouncerSettings = &obj
 			}
+			stateData.Pg.PgbouncerSettings = planData.Pg.PgbouncerSettings
 			updated = true
 		}
 
@@ -566,12 +595,17 @@ func (r *ServiceResource) updatePg(ctx context.Context, stateData *ServiceResour
 				}
 				service.PglookoutSettings = &obj
 			}
+			stateData.Pg.PglookoutSettings = planData.Pg.PglookoutSettings
 			updated = true
 		}
+	}
 
+	if !updated {
+		tflog.Info(ctx, "no updates detected", map[string]interface{}{})
+	} else {
 		// Aiven would overwrite the backup schedule with random value if we don't specify it explicitly every time.
-		if service.BackupSchedule == nil {
-			bh, bm, err := parseBackupSchedule(planData.Pg.BackupSchedule.ValueString())
+		if service.BackupSchedule == nil && !stateData.Pg.BackupSchedule.IsUnknown() {
+			bh, bm, err := parseBackupSchedule(stateData.Pg.BackupSchedule.ValueString())
 			if err != nil {
 				diagnostics.AddError("Validation error", fmt.Sprintf("Unable to parse backup schedule, got error: %s", err))
 				return
@@ -585,11 +619,7 @@ func (r *ServiceResource) updatePg(ctx context.Context, stateData *ServiceResour
 				BackupMinute: &bm,
 			}
 		}
-	}
 
-	if !updated {
-		tflog.Info(ctx, "no updates detected", map[string]interface{}{})
-	} else {
 		res, err := r.client.UpdateDbaasServicePgWithResponse(
 			ctx,
 			oapi.DbaasServiceName(planData.Id.ValueString()),
@@ -605,5 +635,38 @@ func (r *ServiceResource) updatePg(ctx context.Context, stateData *ServiceResour
 		}
 	}
 
-	r.readPg(ctx, planData, diagnostics)
+	apiService := &oapi.DbaasServicePg{}
+	res, err := r.client.GetDbaasServicePgWithResponse(ctx, oapi.DbaasServiceName(stateData.Id.ValueString()))
+	if err != nil {
+		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database service pg, got error: %s", err))
+		return
+	}
+	if res.StatusCode() != http.StatusOK {
+		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database service pg, unexpected status: %s", res.Status()))
+		return
+	}
+	apiService = res.JSON200
+
+	// Updating computed attributes
+	stateData.NodeCPUs = types.Int64PointerValue(apiService.NodeCpuCount)
+	stateData.NodeMemory = types.Int64PointerValue(apiService.NodeMemory)
+	stateData.Nodes = types.Int64PointerValue(apiService.NodeCount)
+	stateData.State = types.StringPointerValue((*string)(apiService.State))
+	if apiService.UpdatedAt != nil {
+		stateData.UpdatedAt = types.StringValue(apiService.UpdatedAt.String())
+	}
+	if stateData.TerminationProtection.IsUnknown() {
+		stateData.TerminationProtection = types.BoolPointerValue(apiService.TerminationProtection)
+	}
+	if stateData.Pg.IpFilter.IsUnknown() {
+		stateData.Pg.IpFilter = types.SetNull(types.StringType)
+		if apiService.IpFilter != nil {
+			v, dg := types.SetValueFrom(ctx, types.StringType, *apiService.IpFilter)
+			if dg.HasError() {
+				diagnostics.Append(dg...)
+				return
+			}
+			stateData.Pg.IpFilter = v
+		}
+	}
 }
