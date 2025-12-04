@@ -4,6 +4,7 @@
 
 IMPROVEMENTS:
 
+- dbaas: fix for PG scale issue #477
 - Bump egoscale & fix breaking change #468
 
 ## 0.67.1
