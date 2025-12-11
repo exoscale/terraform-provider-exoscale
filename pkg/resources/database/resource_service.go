@@ -511,6 +511,9 @@ func (r *ServiceResource) Update(ctx context.Context, req resource.UpdateRequest
 	switch planData.Type.ValueString() {
 	case "pg":
 		r.updatePg(ctx, &stateData, &planData, &resp.Diagnostics)
+		// Pg update changed merge planData into stateData (which is then merged instead of planData).
+		// NOTE: This should be ported in the future to all other services.
+		resp.Diagnostics.Append(resp.State.Set(ctx, &stateData)...)
 	case "mysql":
 		r.updateMysql(ctx, &stateData, &planData, &resp.Diagnostics)
 	case "valkey":
@@ -526,11 +529,13 @@ func (r *ServiceResource) Update(ctx context.Context, req resource.UpdateRequest
 		return
 	}
 
-	// Save updated data into Terraform state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &planData)...)
+	// Save updated data into Terraform state (except Pg, see note above)
+	if planData.Type.ValueString() != "pg" {
+		resp.Diagnostics.Append(resp.State.Set(ctx, &planData)...)
+	}
 
-	tflog.Trace(ctx, "resource updated", map[string]interface{}{
-		"id": planData.Id,
+	tflog.Trace(ctx, "resource updated", map[string]any{
+		"id": stateData.Id,
 	})
 }
 

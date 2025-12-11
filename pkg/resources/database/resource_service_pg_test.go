@@ -156,6 +156,24 @@ func testResourcePg(t *testing.T) {
 	}
 	configUpdate := buf.String()
 
+	serviceDataScale := serviceDataUpdate
+	serviceDataScale.Plan = "startup-4"
+
+	buf = &bytes.Buffer{}
+	err = serviceTpl.Execute(buf, &serviceDataScale)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = userTpl.Execute(buf, &userDataUpdate)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = dbTpl.Execute(buf, &dbDataUpdate)
+	if err != nil {
+		t.Fatal(err)
+	}
+	configScale := buf.String()
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testutils.AccPreCheck(t) },
 		CheckDestroy:             CheckServiceDestroy("pg", serviceDataBase.Name),
@@ -248,6 +266,21 @@ func testResourcePg(t *testing.T) {
 						if err != nil {
 							return err
 						}
+						return nil
+					},
+				),
+			},
+			{
+				// Scale
+				Config: configScale,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					// Service
+					func(s *terraform.State) error {
+						err := CheckExistsPg(serviceDataBase.Name, &serviceDataScale)
+						if err != nil {
+							return err
+						}
+
 						return nil
 					},
 				),
