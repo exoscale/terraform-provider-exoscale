@@ -9,6 +9,7 @@ IMPROVEMENTS:
 
 BUG FIXES:
 - fix: prevent uuid parse error while refresh block storage volume #479
+- fix(block storage): remove source if not existing during read #480
 
 ## 0.67.1
 
