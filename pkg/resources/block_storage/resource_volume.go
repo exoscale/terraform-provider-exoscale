@@ -320,9 +320,9 @@ func (r *ResourceVolume) Read(ctx context.Context, req resource.ReadRequest, res
 	}
 
 	// Read remote state.
-	// Check if ID is empty (resource doesn't exist yet or was just created)
+	// Check if ID is empty (resource doesn't exist yet)
 	if state.ID.ValueString() == "" {
-		// Resource doesn't exist yet, nothing to read
+		resp.State.RemoveResource(ctx)
 		return
 	}
 
