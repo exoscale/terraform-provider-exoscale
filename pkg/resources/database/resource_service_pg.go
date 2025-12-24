@@ -602,54 +602,56 @@ func (r *ServiceResource) updatePg(ctx context.Context, stateData *ServiceResour
 
 	if !updated {
 		tflog.Info(ctx, "no updates detected", map[string]interface{}{})
-	} else {
-		// Aiven would overwrite the backup schedule with random value if we don't specify it explicitly every time.
-		if service.BackupSchedule == nil && !stateData.Pg.BackupSchedule.IsUnknown() {
-			bh, bm, err := parseBackupSchedule(stateData.Pg.BackupSchedule.ValueString())
-			if err != nil {
-				diagnostics.AddError("Validation error", fmt.Sprintf("Unable to parse backup schedule, got error: %s", err))
-				return
-			}
+		return
+	}
 
-			service.BackupSchedule = &struct {
-				BackupHour   *int64 `json:"backup-hour,omitempty"`
-				BackupMinute *int64 `json:"backup-minute,omitempty"`
-			}{
-				BackupHour:   &bh,
-				BackupMinute: &bm,
-			}
-		}
-
-		res, err := r.client.UpdateDbaasServicePgWithResponse(
-			ctx,
-			oapi.DbaasServiceName(planData.Id.ValueString()),
-			service,
-		)
+	// Aiven would overwrite the backup schedule with random value if we don't specify it explicitly every time.
+	if service.BackupSchedule == nil && !stateData.Pg.BackupSchedule.IsUnknown() {
+		bh, bm, err := parseBackupSchedule(stateData.Pg.BackupSchedule.ValueString())
 		if err != nil {
-			diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create database service pg, got error: %s", err))
+			diagnostics.AddError("Validation error", fmt.Sprintf("Unable to parse backup schedule, got error: %s", err))
 			return
 		}
-		if res.StatusCode() != http.StatusOK {
-			diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create database service pg, unexpected status: %s", res.Status()))
-			return
+
+		service.BackupSchedule = &struct {
+			BackupHour   *int64 `json:"backup-hour,omitempty"`
+			BackupMinute *int64 `json:"backup-minute,omitempty"`
+		}{
+			BackupHour:   &bh,
+			BackupMinute: &bm,
 		}
+	}
+
+	if res, err := r.client.UpdateDbaasServicePgWithResponse(
+		ctx,
+		oapi.DbaasServiceName(planData.Id.ValueString()),
+		service,
+	); err != nil {
+		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create database service pg, got error: %s", err))
+		return
+	} else if res.StatusCode() != http.StatusOK {
+		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create database service pg, unexpected status: %s", res.Status()))
+		return
 	}
 
 	apiService := &oapi.DbaasServicePg{}
-	res, err := r.client.GetDbaasServicePgWithResponse(ctx, oapi.DbaasServiceName(stateData.Id.ValueString()))
-	if err != nil {
+	if res, err := r.client.GetDbaasServicePgWithResponse(
+		ctx,
+		oapi.DbaasServiceName(stateData.Id.ValueString()),
+	); err != nil {
 		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database service pg, got error: %s", err))
 		return
-	}
-	if res.StatusCode() != http.StatusOK {
+	} else if res.StatusCode() != http.StatusOK {
 		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database service pg, unexpected status: %s", res.Status()))
 		return
+	} else {
+		apiService = res.JSON200
 	}
-	apiService = res.JSON200
 
 	// Updating computed attributes
 	stateData.NodeCPUs = types.Int64PointerValue(apiService.NodeCpuCount)
 	stateData.NodeMemory = types.Int64PointerValue(apiService.NodeMemory)
+	stateData.DiskSize = types.Int64PointerValue(apiService.DiskSize)
 	stateData.Nodes = types.Int64PointerValue(apiService.NodeCount)
 	stateData.State = types.StringPointerValue((*string)(apiService.State))
 	if apiService.UpdatedAt != nil {
@@ -658,7 +660,7 @@ func (r *ServiceResource) updatePg(ctx context.Context, stateData *ServiceResour
 	if stateData.TerminationProtection.IsUnknown() {
 		stateData.TerminationProtection = types.BoolPointerValue(apiService.TerminationProtection)
 	}
-	if stateData.Pg.IpFilter.IsUnknown() {
+	if stateData.Pg != nil && stateData.Pg.IpFilter.IsUnknown() {
 		stateData.Pg.IpFilter = types.SetNull(types.StringType)
 		if apiService.IpFilter != nil {
 			v, dg := types.SetValueFrom(ctx, types.StringType, *apiService.IpFilter)
