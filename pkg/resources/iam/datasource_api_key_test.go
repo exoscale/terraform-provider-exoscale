@@ -23,6 +23,9 @@ func testDataSourceAPIKey(t *testing.T) {
 		ResourceName: "test",
 		Name:         "test",
 		Description:  "Foo Bar",
+		Policy: &testutils.ResourceIAMOrgPolicyModel{
+			DefaultServiceStrategy: "allow",
+		},
 	}
 
 	buf := &bytes.Buffer{}
