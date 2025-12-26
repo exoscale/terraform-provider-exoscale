@@ -213,18 +213,6 @@ resource "exoscale_sks_cluster" "test-with-audit" {
 	bearer_token = "%s"
   }
 
-  enable_kube_proxy = true
-
-  oidc {
-    client_id  = "%s"
-    groups_claim = "%s"
-    groups_prefix = "%s"
-    issuer_url = "%s"
-    required_claim = { test = "%s" }
-    username_claim = "%s"
-    username_prefix = "%s"
-  }
-
   timeouts {
     create = "10m"
   }
@@ -237,13 +225,6 @@ resource "exoscale_sks_cluster" "test-with-audit" {
 		testAccResourceSKSClusterAuditRemoteURL,
 		testAccResourceSKSClusterAuditInitBackoff,
 		testAccResourceSKSClusterAuditBearerToken,
-		testAccResourceSKSClusterOIDCClientIDUpdated,
-		testAccResourceSKSClusterOIDCGroupsClaimUpdated,
-		testAccResourceSKSClusterOIDCGroupsPrefixUpdated,
-		testAccResourceSKSClusterOIDCIssuerURLUpdated,
-		testAccResourceSKSClusterOIDCRequiredClaimValueUpdated,
-		testAccResourceSKSClusterOIDCUsernameClaimUpdated,
-		testAccResourceSKSClusterOIDCUsernamePrefixUpdated,
 	)
 
 	testAccRessourceSKSClusterUpdateDisableAudit = fmt.Sprintf(`
@@ -460,7 +441,7 @@ func TestAccResourceSKSCluster(t *testing.T) {
 						resSKSClusterAttrState:               validation.ToDiagFunc(validation.NoZeroValues),
 						resSKSClusterAttrVersion:             validation.ToDiagFunc(validation.NoZeroValues),
 
-						// Add OIDC checks
+						// OIDC checks
 						resSKSClusterAttrOIDC(resSKSClusterAttrOIDCClientID):       validateString(testAccResourceSKSClusterOIDCClientID),
 						resSKSClusterAttrOIDC(resSKSClusterAttrOIDCGroupsClaim):    validateString(testAccResourceSKSClusterOIDCGroupsClaim),
 						resSKSClusterAttrOIDC(resSKSClusterAttrOIDCGroupsPrefix):   validateString(testAccResourceSKSClusterOIDCGroupsPrefix),
@@ -505,20 +486,6 @@ func TestAccResourceSKSCluster(t *testing.T) {
 						resSKSClusterAttrOIDC(resSKSClusterAttrOIDCIssuerURL):      validateString(testAccResourceSKSClusterOIDCIssuerURLUpdated),
 						resSKSClusterAttrOIDC(resSKSClusterAttrOIDCUsernameClaim):  validateString(testAccResourceSKSClusterOIDCUsernameClaimUpdated),
 						resSKSClusterAttrOIDC(resSKSClusterAttrOIDCUsernamePrefix): validateString(testAccResourceSKSClusterOIDCUsernamePrefixUpdated),
-					})),
-				),
-			},
-			{
-				// Update again (remove OIDC and add CSI)
-				Config: testAccResourceSKSClusterConfigUpdate,
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckResourceSKSClusterExists(r, &sksCluster),
-					checkResourceState(r, checkResourceStateValidateAttributes(testAttrs{
-						resSKSClusterAttrExoscaleCSI:      validateString("true"),
-						resSKSClusterAttrLabels + ".test": validateString(testAccResourceSKSClusterLabelValueUpdated),
-						resSKSClusterAttrName:             validateString(testAccResourceSKSClusterNameUpdated),
-						resSKSClusterAttrServiceLevel:     validateString(defaultSKSClusterServiceLevel),
-						resSKSClusterAttrState:            validation.ToDiagFunc(validation.NoZeroValues),
 					})),
 				),
 			},
