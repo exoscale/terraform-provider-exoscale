@@ -2,6 +2,10 @@
 
 ## UNRELEASED
 
+FEATURES:
+
+- dbaas: add support for Thanos service type
+
 IMPROVEMENTS:
 
 - dbaas: fix for PG scale issue #477
