@@ -41,11 +41,11 @@ func testResourceThanos(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	fullResourceName := "exoscale_database.test"
+	fullResourceName := "exoscale_dbaas.test"
 	dataBase := TemplateModelThanos{
 		ResourceName:          "test",
 		Name:                  acctest.RandomWithPrefix(testutils.Prefix),
-		Plan:                  "hobbyist-2",
+		Plan:                  "startup-4",
 		Zone:                  testutils.TestZoneName,
 		TerminationProtection: false,
 	}
