@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -354,6 +355,11 @@ resource "exoscale_sks_cluster" "test-with-karpenter" {
 )
 
 func TestAccResourceSKSCluster(t *testing.T) {
+	if os.Getenv(resource.EnvTfAcc) == "" {
+		t.Skipf("Acceptance tests skipped unless env '%s' set", resource.EnvTfAcc)
+		return
+	}
+
 	var (
 		r          = "exoscale_sks_cluster.test"
 		sksCluster egoscale.SKSCluster
@@ -542,6 +548,11 @@ func TestAccResourceSKSCluster(t *testing.T) {
 }
 
 func TestAccResourceSKSClusterSKSClusterWithAudit(t *testing.T) {
+	if os.Getenv(resource.EnvTfAcc) == "" {
+		t.Skipf("Acceptance tests skipped unless env '%s' set", resource.EnvTfAcc)
+		return
+	}
+
 	var (
 		r          = "exoscale_sks_cluster.test-with-audit"
 		sksCluster egoscale.SKSCluster
@@ -666,6 +677,11 @@ func TestAccResourceSKSClusterSKSClusterWithAudit(t *testing.T) {
 }
 
 func TestAccResourceSKSClusterWithKarpenter(t *testing.T) {
+	if os.Getenv(resource.EnvTfAcc) == "" {
+		t.Skipf("Acceptance tests skipped unless env '%s' set", resource.EnvTfAcc)
+		return
+	}
+
 	var (
 		r          = "exoscale_sks_cluster.test-with-karpenter"
 		sksCluster egoscale.SKSCluster
@@ -823,6 +839,7 @@ func testGetSKSClusterVersions(t *testing.T) []string {
 
 	return versions
 }
+
 func testAccCheckResourceSKSClusterExists(r string, sksCluster *egoscale.SKSCluster) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[r]
