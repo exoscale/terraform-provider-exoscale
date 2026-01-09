@@ -63,7 +63,6 @@ directory for complete configuration examples.
 - `network_ids` (Set of String) A list of [exoscale_private_network](./private_network.md) (IDs).
 - `security_group_ids` (Set of String) A list of [exoscale_security_group](./security_group.md) (IDs).
 - `service_offering` (String, Deprecated) The managed instances type. Please use the `instance_type` argument instead.
-- `state` (String)
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `user_data` (String) [cloud-init](http://cloudinit.readthedocs.io/) configuration to apply to the managed instances.
 - `virtual_machines` (Set of String, Deprecated) The list of managed instances (IDs). Please use the `instances.*.id` attribute instead.
@@ -71,6 +70,7 @@ directory for complete configuration examples.
 ### Read-Only
 
 - `id` (String) The ID of this resource.
+- `state` (String)
 
 <a id="nestedblock--instances"></a>
 ### Nested Schema for `instances`

@@ -144,7 +144,6 @@ func Resource() *schema.Resource {
 		},
 		AttrState: {
 			Type:     schema.TypeString,
-			Optional: true,
 			Computed: true,
 		},
 		AttrTemplateID: {
@@ -454,8 +453,6 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 	updateRequest.AntiAffinityGroups = utils.AntiAffinityGroupIDsToAntiAffinityGroups(set.List())
 	if d.HasChange(AttrAffinityGroupIDs) {
 		updated = true
-	} else {
-
 	}
 
 	// We need to explicitely specify the AntiaffinityGroups on
