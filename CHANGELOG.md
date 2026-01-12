@@ -6,6 +6,7 @@ IMPROVEMENTS:
 
 - dbaas: fix for PG scale issue #477
 - Bump egoscale & fix breaking change #468
+- feat: make instance pool state computed only #486 
 
 BUG FIXES:
 - fix: prevent uuid parse error while refresh block storage volume #479
