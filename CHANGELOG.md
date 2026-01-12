@@ -6,7 +6,7 @@ IMPROVEMENTS:
 
 - dbaas: fix for PG scale issue #477
 - Bump egoscale & fix breaking change #468
-- feat: make instance pool state computed only #486 
+- feat: make instance pool state computed only #486
 
 BUG FIXES:
 
@@ -16,8 +16,6 @@ BUG FIXES:
 FEATURES:
 
 - sks-cluster: support for updating OIDC #467
-- dbaas: fix for PG scale issue #477
-- Bump egoscale & fix breaking change #468
 
 ## 0.67.1
 
