@@ -363,7 +363,6 @@ func (r *ServiceResource) updateValkey(ctx context.Context, stateData *ServiceRe
 
 	// Update all computed attributes
 	stateData.State = types.StringValue(string(res.State))
-	stateData.DiskSize = types.Int64PointerValue(&res.DiskSize)
 	stateData.NodeCPUs = types.Int64PointerValue(&res.NodeCPUCount)
 	stateData.Nodes = types.Int64PointerValue(&res.NodeCount)
 	stateData.NodeMemory = types.Int64PointerValue(&res.NodeMemory)
