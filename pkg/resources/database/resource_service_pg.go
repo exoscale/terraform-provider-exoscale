@@ -651,7 +651,6 @@ func (r *ServiceResource) updatePg(ctx context.Context, stateData *ServiceResour
 	// Updating computed attributes
 	stateData.NodeCPUs = types.Int64PointerValue(apiService.NodeCpuCount)
 	stateData.NodeMemory = types.Int64PointerValue(apiService.NodeMemory)
-	stateData.DiskSize = types.Int64PointerValue(apiService.DiskSize)
 	stateData.Nodes = types.Int64PointerValue(apiService.NodeCount)
 	stateData.State = types.StringPointerValue((*string)(apiService.State))
 	if apiService.UpdatedAt != nil {
