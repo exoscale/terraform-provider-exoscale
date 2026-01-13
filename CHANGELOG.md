@@ -8,6 +8,7 @@ IMPROVEMENTS:
 - Bump egoscale & fix breaking change #468
 - feat: make instance pool state computed only #486
 - feat: make sks computed cert sensitive #487
+- Fix valkey and mysql update #482
 
 BUG FIXES:
 
