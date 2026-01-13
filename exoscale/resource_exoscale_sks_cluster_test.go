@@ -34,6 +34,16 @@ var (
 	testAccResourceSKSClusterDescription            = acctest.RandString(10)
 	testAccResourceSKSClusterDescriptionUpdated     = testAccResourceSKSClusterDescription + "-updated"
 	testAccResourceSKSClusterFeatureGate            = "GracefulNodeShutdown"
+
+	// For OIDC update testing
+	testAccResourceSKSClusterOIDCClientIDUpdated           = testAccResourceSKSClusterOIDCClientID + "-updated"
+	testAccResourceSKSClusterOIDCGroupsClaimUpdated        = testAccResourceSKSClusterOIDCGroupsClaim + "-updated"
+	testAccResourceSKSClusterOIDCGroupsPrefixUpdated       = testAccResourceSKSClusterOIDCGroupsPrefix + "-updated"
+	testAccResourceSKSClusterOIDCIssuerURLUpdated          = "https://id-updated.example.net"
+	testAccResourceSKSClusterOIDCRequiredClaimValueUpdated = testAccResourceSKSClusterOIDCRequiredClaimValue + "-updated"
+	testAccResourceSKSClusterOIDCUsernameClaimUpdated      = testAccResourceSKSClusterOIDCUsernameClaim + "-updated"
+	testAccResourceSKSClusterOIDCUsernamePrefixUpdated     = testAccResourceSKSClusterOIDCUsernamePrefix + "-updated"
+
 	// Only in audit testing scenario
 	testAccResourceSKSClusterAuditInitBackoff = "30s"
 	testAccResourceSKSClusterAuditRemoteURL   = "https://audit.example.exoscale.net"
@@ -123,6 +133,16 @@ resource "exoscale_sks_cluster" "test" {
 
   enable_kube_proxy = true
 
+  oidc {
+    client_id  = "%s"
+    groups_claim = "%s"
+    groups_prefix = "%s"
+    issuer_url = "%s"
+    required_claim = { test = "%s" }
+    username_claim = "%s"
+    username_prefix = "%s"
+  }
+
   timeouts {
     create = "10m"
   }
@@ -145,6 +165,13 @@ resource "exoscale_sks_nodepool" "test" {
 		testAccResourceSKSClusterNameUpdated,
 		testAccResourceSKSClusterDescriptionUpdated,
 		testAccResourceSKSClusterLabelValueUpdated,
+		testAccResourceSKSClusterOIDCClientIDUpdated,
+		testAccResourceSKSClusterOIDCGroupsClaimUpdated,
+		testAccResourceSKSClusterOIDCGroupsPrefixUpdated,
+		testAccResourceSKSClusterOIDCIssuerURLUpdated,
+		testAccResourceSKSClusterOIDCRequiredClaimValueUpdated,
+		testAccResourceSKSClusterOIDCUsernameClaimUpdated,
+		testAccResourceSKSClusterOIDCUsernamePrefixUpdated,
 	)
 
 	testAccResourceSKSClusterConfig2Format = `
@@ -413,6 +440,14 @@ func TestAccResourceSKSCluster(t *testing.T) {
 						resSKSClusterAttrServiceLevel:        validateString(defaultSKSClusterServiceLevel),
 						resSKSClusterAttrState:               validation.ToDiagFunc(validation.NoZeroValues),
 						resSKSClusterAttrVersion:             validation.ToDiagFunc(validation.NoZeroValues),
+
+						// OIDC checks
+						resSKSClusterAttrOIDC(resSKSClusterAttrOIDCClientID):       validateString(testAccResourceSKSClusterOIDCClientID),
+						resSKSClusterAttrOIDC(resSKSClusterAttrOIDCGroupsClaim):    validateString(testAccResourceSKSClusterOIDCGroupsClaim),
+						resSKSClusterAttrOIDC(resSKSClusterAttrOIDCGroupsPrefix):   validateString(testAccResourceSKSClusterOIDCGroupsPrefix),
+						resSKSClusterAttrOIDC(resSKSClusterAttrOIDCIssuerURL):      validateString(testAccResourceSKSClusterOIDCIssuerURL),
+						resSKSClusterAttrOIDC(resSKSClusterAttrOIDCUsernameClaim):  validateString(testAccResourceSKSClusterOIDCUsernameClaim),
+						resSKSClusterAttrOIDC(resSKSClusterAttrOIDCUsernamePrefix): validateString(testAccResourceSKSClusterOIDCUsernamePrefix),
 					})),
 				),
 			},
@@ -444,6 +479,13 @@ func TestAccResourceSKSCluster(t *testing.T) {
 						resSKSClusterAttrName:                validateString(testAccResourceSKSClusterNameUpdated),
 						resSKSClusterAttrServiceLevel:        validateString(defaultSKSClusterServiceLevel),
 						resSKSClusterAttrState:               validation.ToDiagFunc(validation.NoZeroValues),
+
+						resSKSClusterAttrOIDC(resSKSClusterAttrOIDCClientID):       validateString(testAccResourceSKSClusterOIDCClientIDUpdated),
+						resSKSClusterAttrOIDC(resSKSClusterAttrOIDCGroupsClaim):    validateString(testAccResourceSKSClusterOIDCGroupsClaimUpdated),
+						resSKSClusterAttrOIDC(resSKSClusterAttrOIDCGroupsPrefix):   validateString(testAccResourceSKSClusterOIDCGroupsPrefixUpdated),
+						resSKSClusterAttrOIDC(resSKSClusterAttrOIDCIssuerURL):      validateString(testAccResourceSKSClusterOIDCIssuerURLUpdated),
+						resSKSClusterAttrOIDC(resSKSClusterAttrOIDCUsernameClaim):  validateString(testAccResourceSKSClusterOIDCUsernameClaimUpdated),
+						resSKSClusterAttrOIDC(resSKSClusterAttrOIDCUsernamePrefix): validateString(testAccResourceSKSClusterOIDCUsernamePrefixUpdated),
 					})),
 				),
 			},
