@@ -56,12 +56,12 @@ directory for complete configuration examples.
 
 ### Read-Only
 
-- `aggregation_ca` (String) The CA certificate (in PEM format) for TLS communications between the control plane and the aggregation layer (e.g. `metrics-server`).
-- `control_plane_ca` (String) The CA certificate (in PEM format) for TLS communications between control plane components.
+- `aggregation_ca` (String, Sensitive) The CA certificate (in PEM format) for TLS communications between the control plane and the aggregation layer (e.g. `metrics-server`).
+- `control_plane_ca` (String, Sensitive) The CA certificate (in PEM format) for TLS communications between control plane components.
 - `created_at` (String) The cluster creation date.
 - `endpoint` (String) The cluster API endpoint.
 - `id` (String) The SKS cluster ID.
-- `kubelet_ca` (String) The CA certificate (in PEM format) for TLS communications between kubelets and the control plane.
+- `kubelet_ca` (String, Sensitive) The CA certificate (in PEM format) for TLS communications between kubelets and the control plane.
 - `nodepools` (Set of String) The list of [exoscale_sks_nodepool](./sks_nodepool.md) (IDs) attached to the cluster.
 - `state` (String) The cluster state.
 
