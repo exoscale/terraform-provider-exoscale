@@ -7,6 +7,7 @@ IMPROVEMENTS:
 - dbaas: fix for PG scale issue #477
 - Bump egoscale & fix breaking change #468
 - feat: make instance pool state computed only #486
+- feat: make sks computed cert sensitive #487
 
 BUG FIXES:
 
