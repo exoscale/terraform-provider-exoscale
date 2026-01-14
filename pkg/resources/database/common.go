@@ -8,5 +8,6 @@ var (
 		"valkey",
 		"opensearch",
 		"grafana",
+		"thanos",
 	}
 )

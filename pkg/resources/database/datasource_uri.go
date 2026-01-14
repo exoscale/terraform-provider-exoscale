@@ -110,7 +110,7 @@ func (d *DataSourceURI) Schema(
 				Required:            true,
 			},
 			"type": schema.StringAttribute{
-				MarkdownDescription: "The type of the database service (`kafka`, `mysql`, `opensearch`, `pg`, `valkey`, `grafana`).",
+				MarkdownDescription: "The type of the database service (`kafka`, `mysql`, `opensearch`, `pg`, `valkey`, `grafana`, `thanos`).",
 				Required:            true,
 				Validators: []validator.String{
 					stringvalidator.OneOf(ServicesList...),
@@ -558,6 +558,28 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 		}
 
 		params["password"] = creds.Password
+	case "thanos":
+		res, err := waitForDBAASService(
+			ctx,
+			client.GetDBAASServiceThanos,
+			data.Name.ValueString(),
+			func(s *exoscale.DBAASServiceThanos) string { return string(s.State) },
+		)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Client Error",
+				fmt.Sprintf("Unable to read Database Service Thanos: %s", err),
+			)
+			return
+		}
+
+		// Thanos uses ConnectionInfo.QueryFrontendURI as the primary URI
+		if res.ConnectionInfo != nil && res.ConnectionInfo.QueryFrontendURI != "" {
+			uri = res.ConnectionInfo.QueryFrontendURI
+		}
+		params = res.URIParams
+		data.Schema = types.StringValue("https")
+		// Thanos doesn't have user/password authentication
 	}
 
 	data.URI = types.StringValue(uri)

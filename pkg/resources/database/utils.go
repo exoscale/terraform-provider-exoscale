@@ -23,7 +23,7 @@ import (
 // Some services need a few seconds after becoming ready for API to stabilize
 // so we enforce a sleep.
 // Any additional delays are to be added in this file after this one
-const SERVICE_READY_DELAY = time.Second * 10
+const SERVICE_READY_DELAY = time.Second * 30
 
 // validateSettings validates user-provided JSON-formatted
 // Database Service settings against a reference JSON Schema.
