@@ -22,11 +22,11 @@ description: |-
 ### Optional
 
 - `addons` (Set of String, Deprecated)
-- `aggregation_ca` (String) The CA certificate (in PEM format) for TLS communications between the control plane and the aggregation layer (e.g. `metrics-server`).
+- `aggregation_ca` (String, Sensitive) The CA certificate (in PEM format) for TLS communications between the control plane and the aggregation layer (e.g. `metrics-server`).
 - `audit` (Block List, Max: 1) Parameters for Kubernetes Audit configuration (may only be enabled at creation time) (see [below for nested schema](#nestedblock--audit))
 - `auto_upgrade` (Boolean) Enable automatic upgrading of the control plane version.
 - `cni` (String) The CNI plugin that is to be used. Available options are "calico" or "cilium". Defaults to "calico". Setting empty string will result in a cluster with no CNI.
-- `control_plane_ca` (String) The CA certificate (in PEM format) for TLS communications between control plane components.
+- `control_plane_ca` (String, Sensitive) The CA certificate (in PEM format) for TLS communications between control plane components.
 - `created_at` (String) The cluster creation date.
 - `description` (String) A free-form text describing the cluster.
 - `enable_karpenter` (Boolean) Indicates whether to deploy Karpenter for cluster autoscaling.
@@ -35,7 +35,7 @@ description: |-
 - `exoscale_ccm` (Boolean) Deploy the Exoscale [Cloud Controller Manager](https://github.com/exoscale/exoscale-cloud-controller-manager/) in the control plane (boolean; default: `true`; may only be set at creation time).
 - `exoscale_csi` (Boolean) Deploy the Exoscale [Container Storage Interface](https://github.com/exoscale/exoscale-csi-driver/) on worker nodes (boolean; default: `false`; requires the CCM to be enabled).
 - `feature_gates` (Set of String) Feature gates options for the cluster.
-- `kubelet_ca` (String) The CA certificate (in PEM format) for TLS communications between kubelets and the control plane.
+- `kubelet_ca` (String, Sensitive) The CA certificate (in PEM format) for TLS communications between kubelets and the control plane.
 - `labels` (Map of String) A map of key/value labels.
 - `metrics_server` (Boolean) Deploy the [Kubernetes Metrics Server](https://github.com/kubernetes-sigs/metrics-server/) in the control plane (boolean; default: `true`; may only be set at creation time).
 - `name` (String)

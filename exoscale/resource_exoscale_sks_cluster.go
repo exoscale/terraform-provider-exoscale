@@ -82,6 +82,7 @@ func resourceSKSCluster() *schema.Resource {
 			Type:        schema.TypeString,
 			Computed:    true,
 			Description: "The CA certificate (in PEM format) for TLS communications between the control plane and the aggregation layer (e.g. `metrics-server`).",
+			Sensitive:   true,
 		},
 		"audit": {
 			Type:        schema.TypeList,
@@ -129,6 +130,7 @@ func resourceSKSCluster() *schema.Resource {
 		resSKSClusterAttrControlPlaneCA: {
 			Type:        schema.TypeString,
 			Computed:    true,
+			Sensitive:   true,
 			Description: "The CA certificate (in PEM format) for TLS communications between control plane components.",
 		},
 		resSKSClusterAttrCreatedAt: {
@@ -175,6 +177,7 @@ func resourceSKSCluster() *schema.Resource {
 		resSKSClusterAttrKubeletCA: {
 			Type:        schema.TypeString,
 			Computed:    true,
+			Sensitive:   true,
 			Description: "The CA certificate (in PEM format) for TLS communications between kubelets and the control plane.",
 		},
 		resSKSClusterAttrMetricsServer: {
