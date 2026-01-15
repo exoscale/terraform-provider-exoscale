@@ -528,7 +528,7 @@ func (r *ServiceResource) Update(ctx context.Context, req resource.UpdateRequest
 
 	// Pg, Mysql and Valkey are merging planData into stateData (which is then saved to state).
 	// NOTE: This should be ported to all other services.
-	if planData.Type.ValueString() != "pg" || planData.Type.ValueString() != "valkey" || planData.Type.ValueString() == "mysql" {
+	if planData.Type.ValueString() != "pg" || planData.Type.ValueString() != "valkey" || planData.Type.ValueString() == "mysql" || planData.Type.ValueString() != "kafka" {
 		resp.Diagnostics.Append(resp.State.Set(ctx, &stateData)...)
 	} else {
 		resp.Diagnostics.Append(resp.State.Set(ctx, &planData)...)
