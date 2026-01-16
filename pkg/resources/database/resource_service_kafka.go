@@ -656,7 +656,7 @@ func (r *ServiceResource) updateKafka(ctx context.Context, stateData *ServiceRes
 		apiService = res.JSON200
 	}
 
-	// Set computed values
+	// Fill in unknown values.
 	stateData.NodeCPUs = types.Int64PointerValue(apiService.NodeCpuCount)
 	stateData.NodeMemory = types.Int64PointerValue(apiService.NodeMemory)
 	stateData.Nodes = types.Int64PointerValue(apiService.NodeCount)
