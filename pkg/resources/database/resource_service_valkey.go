@@ -123,7 +123,7 @@ func (r *ServiceResource) createValkey(ctx context.Context, data *ServiceResourc
 		return
 	}
 
-	// Set computed attributes
+	// Fill in unknown values.
 	apiService := res
 	caCert, err := client.GetDBAASCACertificate(ctx)
 	if err != nil {
@@ -355,27 +355,25 @@ func (r *ServiceResource) updateValkey(ctx context.Context, stateData *ServiceRe
 	}
 
 	// Get the current state after update
-	res, err := client.GetDBAASServiceValkey(ctx, planData.Id.ValueString())
+	apiService, err := client.GetDBAASServiceValkey(ctx, planData.Id.ValueString())
 	if err != nil {
 		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database service valkey, got error: %s", err))
 		return
 	}
 
-	// Update all computed attributes
-	stateData.State = types.StringValue(string(res.State))
-	stateData.NodeCPUs = types.Int64PointerValue(&res.NodeCPUCount)
-	stateData.Nodes = types.Int64PointerValue(&res.NodeCount)
-	stateData.NodeMemory = types.Int64PointerValue(&res.NodeMemory)
-	stateData.UpdatedAt = types.StringValue(res.UpdatedAT.String())
-	stateData.TerminationProtection = types.BoolPointerValue(res.TerminationProtection)
-
-	// Update maintenance settings
-	if res.Maintenance != nil {
+	// Fill in unknown values.
+	stateData.State = types.StringValue(string(apiService.State))
+	stateData.NodeCPUs = types.Int64PointerValue(&apiService.NodeCPUCount)
+	stateData.Nodes = types.Int64PointerValue(&apiService.NodeCount)
+	stateData.NodeMemory = types.Int64PointerValue(&apiService.NodeMemory)
+	stateData.UpdatedAt = types.StringValue(apiService.UpdatedAT.String())
+	stateData.TerminationProtection = types.BoolPointerValue(apiService.TerminationProtection)
+	if apiService.Maintenance != nil {
 		if !stateData.MaintenanceDOW.IsUnknown() {
-			stateData.MaintenanceDOW = types.StringValue(string(res.Maintenance.Dow))
+			stateData.MaintenanceDOW = types.StringValue(string(apiService.Maintenance.Dow))
 		}
 		if !stateData.MaintenanceTime.IsUnknown() {
-			stateData.MaintenanceTime = types.StringValue(res.Maintenance.Time)
+			stateData.MaintenanceTime = types.StringValue(apiService.Maintenance.Time)
 		}
 	} else {
 		if !stateData.MaintenanceDOW.IsUnknown() {
@@ -383,6 +381,33 @@ func (r *ServiceResource) updateValkey(ctx context.Context, stateData *ServiceRe
 		}
 		if !stateData.MaintenanceTime.IsUnknown() {
 			stateData.MaintenanceTime = types.StringNull()
+		}
+	}
+
+	if stateData.Valkey == nil {
+		return
+	}
+
+	if stateData.Valkey.IPFilter.IsUnknown() {
+		stateData.Valkey.IPFilter = types.SetNull(types.StringType)
+		if apiService.IPFilter != nil {
+			v, dg := types.SetValueFrom(ctx, types.StringType, apiService.IPFilter)
+			if dg.HasError() {
+				diagnostics.Append(dg...)
+				return
+			}
+			stateData.Valkey.IPFilter = v
+		}
+	}
+	if stateData.Valkey.Settings.IsUnknown() {
+		stateData.Valkey.Settings = types.StringNull()
+		if apiService.ValkeySettings != nil {
+			settings, err := json.Marshal(*apiService.ValkeySettings)
+			if err != nil {
+				diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
+				return
+			}
+			stateData.Valkey.Settings = types.StringValue(string(settings))
 		}
 	}
 }
