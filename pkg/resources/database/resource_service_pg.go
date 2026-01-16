@@ -222,7 +222,7 @@ pooling:
 		}
 	}
 
-	// Set computed attributes.
+	// Fill in unknown values.
 	caCert, err := r.client.GetDatabaseCACertificate(ctx, data.Zone.ValueString())
 	if err != nil {
 		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to get CA Certificate: %s", err))
@@ -408,7 +408,7 @@ func (r *ServiceResource) readPg(ctx context.Context, data *ServiceResourceModel
 			data.Pg.Settings = types.StringValue(string(settings))
 		}
 	} else if data.Pg.Settings.ValueString() != "" {
-		var userSettings map[string]interface{}
+		var userSettings map[string]any
 
 		if err := json.Unmarshal([]byte(data.Pg.Settings.ValueString()), &userSettings); err != nil {
 			diagnostics.AddError("Validation error", fmt.Sprintf("unable to unmarshal JSON: %s", err))
@@ -436,7 +436,7 @@ func (r *ServiceResource) readPg(ctx context.Context, data *ServiceResourceModel
 			data.Pg.PgbouncerSettings = types.StringValue(string(settings))
 		}
 	} else if data.Pg.PgbouncerSettings.ValueString() != "" {
-		var userSettings map[string]interface{}
+		var userSettings map[string]any
 
 		if err := json.Unmarshal([]byte(data.Pg.PgbouncerSettings.ValueString()), &userSettings); err != nil {
 			diagnostics.AddError("Validation error", fmt.Sprintf("unable to unmarshal JSON: %s", err))
@@ -464,7 +464,7 @@ func (r *ServiceResource) readPg(ctx context.Context, data *ServiceResourceModel
 			data.Pg.PglookoutSettings = types.StringValue(string(settings))
 		}
 	} else if data.Pg.PglookoutSettings.ValueString() != "" {
-		var userSettings map[string]interface{}
+		var userSettings map[string]any
 
 		if err := json.Unmarshal([]byte(data.Pg.PglookoutSettings.ValueString()), &userSettings); err != nil {
 			diagnostics.AddError("Validation error", fmt.Sprintf("unable to unmarshal JSON: %s", err))
@@ -601,7 +601,7 @@ func (r *ServiceResource) updatePg(ctx context.Context, stateData *ServiceResour
 	}
 
 	if !updated {
-		tflog.Info(ctx, "no updates detected", map[string]interface{}{})
+		tflog.Info(ctx, "no updates detected", map[string]any{})
 		return
 	}
 
@@ -648,7 +648,7 @@ func (r *ServiceResource) updatePg(ctx context.Context, stateData *ServiceResour
 		apiService = res.JSON200
 	}
 
-	// Updating computed attributes
+	// Fill in unknown values.
 	stateData.NodeCPUs = types.Int64PointerValue(apiService.NodeCpuCount)
 	stateData.NodeMemory = types.Int64PointerValue(apiService.NodeMemory)
 	stateData.Nodes = types.Int64PointerValue(apiService.NodeCount)
@@ -659,7 +659,12 @@ func (r *ServiceResource) updatePg(ctx context.Context, stateData *ServiceResour
 	if stateData.TerminationProtection.IsUnknown() {
 		stateData.TerminationProtection = types.BoolPointerValue(apiService.TerminationProtection)
 	}
-	if stateData.Pg != nil && stateData.Pg.IpFilter.IsUnknown() {
+
+	if stateData.Pg == nil {
+		return
+	}
+
+	if stateData.Pg.IpFilter.IsUnknown() {
 		stateData.Pg.IpFilter = types.SetNull(types.StringType)
 		if apiService.IpFilter != nil {
 			v, dg := types.SetValueFrom(ctx, types.StringType, *apiService.IpFilter)
@@ -668,6 +673,49 @@ func (r *ServiceResource) updatePg(ctx context.Context, stateData *ServiceResour
 				return
 			}
 			stateData.Pg.IpFilter = v
+		}
+	}
+
+	if stateData.Pg.Version.IsUnknown() {
+		stateData.Pg.Version = types.StringNull()
+		if apiService.Version != nil {
+			stateData.Pg.Version = types.StringValue(strings.SplitN(*apiService.Version, ".", 2)[0])
+		}
+	}
+
+	if stateData.Pg.Settings.IsUnknown() {
+		stateData.Pg.Settings = types.StringNull()
+		if apiService.PgSettings != nil {
+			settings, err := json.Marshal(*apiService.PgSettings)
+			if err != nil {
+				diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
+				return
+			}
+			stateData.Pg.Settings = types.StringValue(string(settings))
+		}
+	}
+
+	if stateData.Pg.PgbouncerSettings.IsUnknown() {
+		stateData.Pg.PgbouncerSettings = types.StringNull()
+		if apiService.PgbouncerSettings != nil {
+			settings, err := json.Marshal(*apiService.PgbouncerSettings)
+			if err != nil {
+				diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
+				return
+			}
+			stateData.Pg.PgbouncerSettings = types.StringValue(string(settings))
+		}
+	}
+
+	if stateData.Pg.PglookoutSettings.IsUnknown() {
+		stateData.Pg.PglookoutSettings = types.StringNull()
+		if apiService.PglookoutSettings != nil {
+			settings, err := json.Marshal(*apiService.PglookoutSettings)
+			if err != nil {
+				diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
+				return
+			}
+			stateData.Pg.PglookoutSettings = types.StringValue(string(settings))
 		}
 	}
 }

@@ -434,7 +434,7 @@ func (r *ServiceResource) Create(ctx context.Context, req resource.CreateRequest
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 
-	tflog.Trace(ctx, "resource created", map[string]interface{}{
+	tflog.Trace(ctx, "resource created", map[string]any{
 		"id": data.Id,
 	})
 }
@@ -481,7 +481,7 @@ func (r *ServiceResource) Read(ctx context.Context, req resource.ReadRequest, re
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 
-	tflog.Trace(ctx, "resource read done", map[string]interface{}{
+	tflog.Trace(ctx, "resource read done", map[string]any{
 		"id": data.Id,
 	})
 }
@@ -526,13 +526,7 @@ func (r *ServiceResource) Update(ctx context.Context, req resource.UpdateRequest
 		return
 	}
 
-	// Pg, Mysql and Valkey are merging planData into stateData (which is then saved to state).
-	// NOTE: This should be ported to all other services.
-	if planData.Type.ValueString() != "pg" || planData.Type.ValueString() != "valkey" || planData.Type.ValueString() == "mysql" || planData.Type.ValueString() != "kafka" {
-		resp.Diagnostics.Append(resp.State.Set(ctx, &stateData)...)
-	} else {
-		resp.Diagnostics.Append(resp.State.Set(ctx, &planData)...)
-	}
+	resp.Diagnostics.Append(resp.State.Set(ctx, &stateData)...)
 
 	tflog.Trace(ctx, "resource updated", map[string]any{
 		"id": stateData.Id,
@@ -565,7 +559,7 @@ func (r *ServiceResource) Delete(ctx context.Context, req resource.DeleteRequest
 		return
 	}
 
-	tflog.Trace(ctx, "resource deleted", map[string]interface{}{
+	tflog.Trace(ctx, "resource deleted", map[string]any{
 		"id": data.Id,
 	})
 }
@@ -614,7 +608,7 @@ func (r *ServiceResource) ImportState(ctx context.Context, req resource.ImportSt
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 
-	tflog.Trace(ctx, "resource imported", map[string]interface{}{
+	tflog.Trace(ctx, "resource imported", map[string]any{
 		"id": data.Id,
 	})
 }
