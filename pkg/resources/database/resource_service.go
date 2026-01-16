@@ -434,7 +434,7 @@ func (r *ServiceResource) Create(ctx context.Context, req resource.CreateRequest
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 
-	tflog.Trace(ctx, "resource created", map[string]interface{}{
+	tflog.Trace(ctx, "resource created", map[string]any{
 		"id": data.Id,
 	})
 }
@@ -481,7 +481,7 @@ func (r *ServiceResource) Read(ctx context.Context, req resource.ReadRequest, re
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 
-	tflog.Trace(ctx, "resource read done", map[string]interface{}{
+	tflog.Trace(ctx, "resource read done", map[string]any{
 		"id": data.Id,
 	})
 }
@@ -511,9 +511,6 @@ func (r *ServiceResource) Update(ctx context.Context, req resource.UpdateRequest
 	switch planData.Type.ValueString() {
 	case "pg":
 		r.updatePg(ctx, &stateData, &planData, &resp.Diagnostics)
-		// Pg update changed merge planData into stateData (which is then merged instead of planData).
-		// NOTE: This should be ported in the future to all other services.
-		resp.Diagnostics.Append(resp.State.Set(ctx, &stateData)...)
 	case "mysql":
 		r.updateMysql(ctx, &stateData, &planData, &resp.Diagnostics)
 	case "valkey":
@@ -529,10 +526,7 @@ func (r *ServiceResource) Update(ctx context.Context, req resource.UpdateRequest
 		return
 	}
 
-	// Save updated data into Terraform state (except Pg, see note above)
-	if planData.Type.ValueString() != "pg" {
-		resp.Diagnostics.Append(resp.State.Set(ctx, &planData)...)
-	}
+	resp.Diagnostics.Append(resp.State.Set(ctx, &stateData)...)
 
 	tflog.Trace(ctx, "resource updated", map[string]any{
 		"id": stateData.Id,
@@ -565,7 +559,7 @@ func (r *ServiceResource) Delete(ctx context.Context, req resource.DeleteRequest
 		return
 	}
 
-	tflog.Trace(ctx, "resource deleted", map[string]interface{}{
+	tflog.Trace(ctx, "resource deleted", map[string]any{
 		"id": data.Id,
 	})
 }
@@ -614,7 +608,7 @@ func (r *ServiceResource) ImportState(ctx context.Context, req resource.ImportSt
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 
-	tflog.Trace(ctx, "resource imported", map[string]interface{}{
+	tflog.Trace(ctx, "resource imported", map[string]any{
 		"id": data.Id,
 	})
 }

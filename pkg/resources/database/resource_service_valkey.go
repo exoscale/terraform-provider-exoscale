@@ -123,7 +123,7 @@ func (r *ServiceResource) createValkey(ctx context.Context, data *ServiceResourc
 		return
 	}
 
-	// Set computed attributes
+	// Fill in unknown values.
 	apiService := res
 	caCert, err := client.GetDBAASCACertificate(ctx)
 	if err != nil {
@@ -254,6 +254,7 @@ func (r *ServiceResource) readValkey(ctx context.Context, data *ServiceResourceM
 // updateValkey function handles Valkey specific part of database resource Update logic.
 func (r *ServiceResource) updateValkey(ctx context.Context, stateData *ServiceResourceModel, planData *ServiceResourceModel, diagnostics *diag.Diagnostics) {
 	var updated bool
+
 	client, err := utils.SwitchClientZone(ctx, r.clientV3, v3.ZoneName(stateData.Zone.ValueString()))
 
 	if err != nil {
@@ -269,16 +270,20 @@ func (r *ServiceResource) updateValkey(ctx context.Context, stateData *ServiceRe
 			Dow:  v3.UpdateDBAASServiceValkeyRequestMaintenanceDow(planData.MaintenanceDOW.ValueString()),
 			Time: planData.MaintenanceTime.ValueString(),
 		}
+		stateData.MaintenanceDOW = planData.MaintenanceDOW
+		stateData.MaintenanceTime = planData.MaintenanceTime
 		updated = true
 	}
 
 	if !planData.Plan.Equal(stateData.Plan) {
 		service.Plan = planData.Plan.ValueString()
+		stateData.Plan = planData.Plan
 		updated = true
 	}
 
 	if !planData.TerminationProtection.Equal(stateData.TerminationProtection) {
 		service.TerminationProtection = planData.TerminationProtection.ValueBoolPointer()
+		stateData.TerminationProtection = planData.TerminationProtection
 		updated = true
 	}
 
@@ -297,6 +302,7 @@ func (r *ServiceResource) updateValkey(ctx context.Context, stateData *ServiceRe
 				}
 			}
 			service.IPFilter = ips
+			stateData.Valkey.IPFilter = planData.Valkey.IPFilter
 			updated = true
 		}
 
@@ -329,81 +335,79 @@ func (r *ServiceResource) updateValkey(ctx context.Context, stateData *ServiceRe
 					Timeout:                       getSettingFloat64(settings, "timeout"),
 				}
 			}
+			stateData.Valkey.Settings = planData.Valkey.Settings
 			updated = true
 		}
 	}
 
 	if !updated {
 		tflog.Info(ctx, "no updates detected", map[string]interface{}{})
+		return
+	}
+
+	if _, err := client.UpdateDBAASServiceValkey(
+		ctx,
+		planData.Id.ValueString(),
+		service,
+	); err != nil {
+		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create database service valkey, got error: %s", err))
+		return
+	}
+
+	// Get the current state after update
+	apiService, err := client.GetDBAASServiceValkey(ctx, planData.Id.ValueString())
+	if err != nil {
+		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database service valkey, got error: %s", err))
+		return
+	}
+
+	// Fill in unknown values.
+	stateData.State = types.StringValue(string(apiService.State))
+	stateData.NodeCPUs = types.Int64PointerValue(&apiService.NodeCPUCount)
+	stateData.Nodes = types.Int64PointerValue(&apiService.NodeCount)
+	stateData.NodeMemory = types.Int64PointerValue(&apiService.NodeMemory)
+	stateData.UpdatedAt = types.StringValue(apiService.UpdatedAT.String())
+	stateData.TerminationProtection = types.BoolPointerValue(apiService.TerminationProtection)
+	if apiService.Maintenance != nil {
+		if !stateData.MaintenanceDOW.IsUnknown() {
+			stateData.MaintenanceDOW = types.StringValue(string(apiService.Maintenance.Dow))
+		}
+		if !stateData.MaintenanceTime.IsUnknown() {
+			stateData.MaintenanceTime = types.StringValue(apiService.Maintenance.Time)
+		}
 	} else {
-		_, err := client.UpdateDBAASServiceValkey(
-			ctx,
-			planData.Id.ValueString(),
-			service,
-		)
-		if err != nil {
-			diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create database service valkey, got error: %s", err))
-			return
+		if !stateData.MaintenanceDOW.IsUnknown() {
+			stateData.MaintenanceDOW = types.StringNull()
 		}
-
-		// Get the current state after update
-		res, err := client.GetDBAASServiceValkey(ctx, planData.Id.ValueString())
-		if err != nil {
-			diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database service valkey, got error: %s", err))
-			return
+		if !stateData.MaintenanceTime.IsUnknown() {
+			stateData.MaintenanceTime = types.StringNull()
 		}
+	}
 
-		// Update all computed attributes
-		planData.State = types.StringValue(string(res.State))
-		planData.DiskSize = types.Int64PointerValue(&res.DiskSize)
-		planData.NodeCPUs = types.Int64PointerValue(&res.NodeCPUCount)
-		planData.Nodes = types.Int64PointerValue(&res.NodeCount)
-		planData.NodeMemory = types.Int64PointerValue(&res.NodeMemory)
-		planData.UpdatedAt = types.StringValue(res.UpdatedAT.String())
-		planData.TerminationProtection = types.BoolPointerValue(res.TerminationProtection)
+	if stateData.Valkey == nil {
+		return
+	}
 
-		// Update maintenance settings
-		if res.Maintenance != nil {
-			if !planData.MaintenanceDOW.IsUnknown() {
-				planData.MaintenanceDOW = types.StringValue(string(res.Maintenance.Dow))
+	if stateData.Valkey.IPFilter.IsUnknown() {
+		stateData.Valkey.IPFilter = types.SetNull(types.StringType)
+		if apiService.IPFilter != nil {
+			v, dg := types.SetValueFrom(ctx, types.StringType, apiService.IPFilter)
+			if dg.HasError() {
+				diagnostics.Append(dg...)
+				return
 			}
-			if !planData.MaintenanceTime.IsUnknown() {
-				planData.MaintenanceTime = types.StringValue(res.Maintenance.Time)
-			}
-		} else {
-			if !planData.MaintenanceDOW.IsUnknown() {
-				planData.MaintenanceDOW = types.StringNull()
-			}
-			if !planData.MaintenanceTime.IsUnknown() {
-				planData.MaintenanceTime = types.StringNull()
-			}
+			stateData.Valkey.IPFilter = v
 		}
-
-		// Update Valkey specific settings
-		if planData.Valkey != nil {
-			// Update IP filter
-			if res.IPFilter != nil && !planData.Valkey.IPFilter.IsUnknown() {
-				v, dg := types.SetValueFrom(ctx, types.StringType, res.IPFilter)
-				if dg.HasError() {
-					diagnostics.Append(dg...)
-					return
-				}
-				planData.Valkey.IPFilter = v
-			} else if !planData.Valkey.IPFilter.IsUnknown() {
-				planData.Valkey.IPFilter = types.SetNull(types.StringType)
+	}
+	if stateData.Valkey.Settings.IsUnknown() {
+		stateData.Valkey.Settings = types.StringNull()
+		if apiService.ValkeySettings != nil {
+			settings, err := json.Marshal(*apiService.ValkeySettings)
+			if err != nil {
+				diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
+				return
 			}
-
-			// Update Valkey settings
-			if res.ValkeySettings != nil && !planData.Valkey.Settings.IsUnknown() {
-				settings, err := json.Marshal(*res.ValkeySettings)
-				if err != nil {
-					diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
-					return
-				}
-				planData.Valkey.Settings = types.StringValue(string(settings))
-			} else if !planData.Valkey.Settings.IsUnknown() {
-				planData.Valkey.Settings = types.StringNull()
-			}
+			stateData.Valkey.Settings = types.StringValue(string(settings))
 		}
 	}
 }

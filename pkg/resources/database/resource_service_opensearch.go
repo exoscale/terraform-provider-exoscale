@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -297,7 +298,99 @@ func (r *ServiceResource) createOpensearch(ctx context.Context, data *ServiceRes
 		return
 	}
 
-	r.readOpensearch(ctx, data, diagnostics)
+	tflog.Info(ctx, "DB Service created, waiting for the service to be in 'running' state")
+
+	apiService := &oapi.DbaasServiceOpensearch{}
+pooling:
+	for {
+		select {
+		case <-ctx.Done():
+			diagnostics.AddError("Error", ctx.Err().Error())
+			return
+		default:
+			res, err := r.client.GetDbaasServiceOpensearchWithResponse(ctx, oapi.DbaasServiceName(data.Id.ValueString()))
+			if err != nil {
+				diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database service mysql, got error: %s", err))
+				return
+			}
+			if res.StatusCode() != http.StatusOK {
+				diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database service mysql, unexpected status: %s", res.Status()))
+				return
+			}
+			if res.JSON200.State != nil {
+				if *res.JSON200.State == oapi.EnumServiceStatePoweroff {
+					diagnostics.AddError("Client Error", fmt.Sprintf("Unexpected service state: %s", *res.JSON200.State))
+					return
+				}
+				if *res.JSON200.State == oapi.EnumServiceStateRunning {
+					apiService = res.JSON200
+					break pooling
+				}
+			}
+			time.Sleep(time.Second * 2)
+		}
+	}
+
+	// Fill in unknown values.
+	caCert, err := r.client.GetDatabaseCACertificate(ctx, data.Zone.ValueString())
+	if err != nil {
+		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to get CA Certificate: %s", err))
+		return
+	}
+	data.CA = types.StringValue(caCert)
+
+	data.CreatedAt = types.StringValue(apiService.CreatedAt.String())
+	data.DiskSize = types.Int64PointerValue(apiService.DiskSize)
+	data.NodeCPUs = types.Int64PointerValue(apiService.NodeCpuCount)
+	data.NodeMemory = types.Int64PointerValue(apiService.NodeMemory)
+	data.Nodes = types.Int64PointerValue(apiService.NodeCount)
+	data.State = types.StringPointerValue((*string)(apiService.State))
+	data.UpdatedAt = types.StringValue(apiService.UpdatedAt.String())
+
+	if data.TerminationProtection.IsUnknown() {
+		data.TerminationProtection = types.BoolPointerValue(apiService.TerminationProtection)
+	}
+
+	if data.MaintenanceDOW.IsUnknown() && data.MaintenanceTime.IsUnknown() {
+		data.MaintenanceDOW = types.StringNull()
+		data.MaintenanceTime = types.StringNull()
+		if apiService.Maintenance != nil {
+			data.MaintenanceDOW = types.StringValue(string(apiService.Maintenance.Dow))
+			data.MaintenanceTime = types.StringValue(apiService.Maintenance.Time)
+		}
+	}
+
+	if data.Opensearch.IpFilter.IsUnknown() {
+		data.Opensearch.IpFilter = types.SetNull(types.StringType)
+		if apiService.IpFilter != nil {
+			v, dg := types.SetValueFrom(ctx, types.StringType, *apiService.IpFilter)
+			if dg.HasError() {
+				diagnostics.Append(dg...)
+				return
+			}
+
+			data.Opensearch.IpFilter = v
+		}
+	}
+
+	if data.Opensearch.Version.IsUnknown() {
+		data.Opensearch.Version = types.StringNull()
+		if apiService.Version != nil {
+			data.Opensearch.Version = types.StringValue(strings.SplitN(*apiService.Version, ".", 2)[0])
+		}
+	}
+
+	if data.Opensearch.Settings.IsUnknown() {
+		data.Opensearch.Settings = types.StringNull()
+		if apiService.OpensearchSettings != nil {
+			settings, err := json.Marshal(*apiService.OpensearchSettings)
+			if err != nil {
+				diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
+				return
+			}
+			data.Opensearch.Settings = types.StringValue(string(settings))
+		}
+	}
 }
 
 // readOpensearch function handles OpenSearch specific part of database resource Read logic.
@@ -440,16 +533,20 @@ func (r *ServiceResource) updateOpensearch(ctx context.Context, stateData *Servi
 			Dow:  oapi.UpdateDbaasServiceOpensearchJSONBodyMaintenanceDow(planData.MaintenanceDOW.ValueString()),
 			Time: planData.MaintenanceTime.ValueString(),
 		}
+		stateData.MaintenanceDOW = planData.MaintenanceDOW
+		stateData.MaintenanceTime = planData.MaintenanceTime
 		updated = true
 	}
 
 	if !planData.Plan.Equal(stateData.Plan) {
 		service.Plan = planData.Plan.ValueStringPointer()
+		stateData.Plan = planData.Plan
 		updated = true
 	}
 
 	if !planData.TerminationProtection.Equal(stateData.TerminationProtection) {
 		service.TerminationProtection = planData.TerminationProtection.ValueBoolPointer()
+		stateData.TerminationProtection = planData.TerminationProtection
 		updated = true
 	}
 
@@ -468,6 +565,7 @@ func (r *ServiceResource) updateOpensearch(ctx context.Context, stateData *Servi
 				}
 			}
 			service.IpFilter = &obj
+			stateData.Opensearch.IpFilter = planData.Opensearch.IpFilter
 			updated = true
 		}
 
@@ -490,6 +588,7 @@ func (r *ServiceResource) updateOpensearch(ctx context.Context, stateData *Servi
 			}
 
 			service.IndexPatterns = &patterns
+			stateData.Opensearch.IndexPatterns = planData.Opensearch.IndexPatterns
 			updated = true
 		}
 
@@ -501,14 +600,17 @@ func (r *ServiceResource) updateOpensearch(ctx context.Context, stateData *Servi
 			}{}
 			if !planData.Opensearch.IndexTemplate.MappingNestedObjectsLimit.Equal(stateData.Opensearch.IndexTemplate.MappingNestedObjectsLimit) {
 				service.IndexTemplate.MappingNestedObjectsLimit = planData.Opensearch.IndexTemplate.MappingNestedObjectsLimit.ValueInt64Pointer()
+				stateData.Opensearch.IndexTemplate.MappingNestedObjectsLimit = planData.Opensearch.IndexTemplate.MappingNestedObjectsLimit
 				updated = true
 			}
 			if !planData.Opensearch.IndexTemplate.NumberOfReplicas.Equal(stateData.Opensearch.IndexTemplate.NumberOfReplicas) {
 				service.IndexTemplate.NumberOfReplicas = planData.Opensearch.IndexTemplate.NumberOfReplicas.ValueInt64Pointer()
+				stateData.Opensearch.IndexTemplate.NumberOfReplicas = planData.Opensearch.IndexTemplate.NumberOfReplicas
 				updated = true
 			}
 			if !planData.Opensearch.IndexTemplate.NumberOfShards.Equal(stateData.Opensearch.IndexTemplate.NumberOfShards) {
 				service.IndexTemplate.NumberOfShards = planData.Opensearch.IndexTemplate.NumberOfShards.ValueInt64Pointer()
+				stateData.Opensearch.IndexTemplate.NumberOfShards = planData.Opensearch.IndexTemplate.NumberOfShards
 				updated = true
 			}
 		}
@@ -521,17 +623,24 @@ func (r *ServiceResource) updateOpensearch(ctx context.Context, stateData *Servi
 			}{}
 			if !planData.Opensearch.Dashboards.Enabled.Equal(stateData.Opensearch.Dashboards.Enabled) {
 				service.OpensearchDashboards.Enabled = planData.Opensearch.Dashboards.Enabled.ValueBoolPointer()
+				stateData.Opensearch.Dashboards.Enabled = planData.Opensearch.Dashboards.Enabled
+				updated = true
 			}
 			if !planData.Opensearch.Dashboards.MaxOldSpaceSize.Equal(stateData.Opensearch.Dashboards.MaxOldSpaceSize) {
 				service.OpensearchDashboards.MaxOldSpaceSize = planData.Opensearch.Dashboards.MaxOldSpaceSize.ValueInt64Pointer()
+				stateData.Opensearch.Dashboards.MaxOldSpaceSize = planData.Opensearch.Dashboards.MaxOldSpaceSize
+				updated = true
 			}
 			if !planData.Opensearch.Dashboards.RequestTimeout.Equal(stateData.Opensearch.Dashboards.RequestTimeout) {
 				service.OpensearchDashboards.OpensearchRequestTimeout = planData.Opensearch.Dashboards.RequestTimeout.ValueInt64Pointer()
+				stateData.Opensearch.Dashboards.RequestTimeout = planData.Opensearch.Dashboards.RequestTimeout
+				updated = true
 			}
 		}
 
 		if !planData.Opensearch.KeepIndexRefreshInterval.IsNull() && !planData.Opensearch.KeepIndexRefreshInterval.Equal(stateData.Opensearch.KeepIndexRefreshInterval) {
 			service.KeepIndexRefreshInterval = planData.Opensearch.KeepIndexRefreshInterval.ValueBoolPointer()
+			stateData.Opensearch.KeepIndexRefreshInterval = planData.Opensearch.KeepIndexRefreshInterval
 			updated = true
 		}
 
@@ -554,27 +663,86 @@ func (r *ServiceResource) updateOpensearch(ctx context.Context, stateData *Servi
 				}
 				service.OpensearchSettings = &obj
 			}
+			stateData.Opensearch.Settings = planData.Opensearch.Settings
 			updated = true
 		}
 	}
 
 	if !updated {
-		tflog.Info(ctx, "no updates detected", map[string]interface{}{})
+		tflog.Info(ctx, "no updates detected", map[string]any{})
+		return
+	}
+	res, err := r.client.UpdateDbaasServiceOpensearchWithResponse(
+		ctx,
+		oapi.DbaasServiceName(planData.Id.ValueString()),
+		service,
+	)
+	if err != nil {
+		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update database service opensearch, got error: %s", err))
+		return
+	}
+	if res.StatusCode() != http.StatusOK {
+		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update database service opensearch, unexpected status: %s", res.Status()))
+		return
+	}
+
+	apiService := &oapi.DbaasServiceOpensearch{}
+	if res, err := r.client.GetDbaasServiceOpensearchWithResponse(
+		ctx,
+		oapi.DbaasServiceName(stateData.Id.ValueString()),
+	); err != nil {
+		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database service opensearch, got error: %s", err))
+		return
+	} else if res.StatusCode() != http.StatusOK {
+		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database service opensearch, unexpected status: %s", res.Status()))
+		return
 	} else {
-		res, err := r.client.UpdateDbaasServiceOpensearchWithResponse(
-			ctx,
-			oapi.DbaasServiceName(planData.Id.ValueString()),
-			service,
-		)
-		if err != nil {
-			diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update database service opensearch, got error: %s", err))
-			return
+		apiService = res.JSON200
+	}
+
+	// Fill in unknown values.
+	stateData.NodeCPUs = types.Int64PointerValue(apiService.NodeCpuCount)
+	stateData.NodeMemory = types.Int64PointerValue(apiService.NodeMemory)
+	stateData.Nodes = types.Int64PointerValue(apiService.NodeCount)
+	stateData.State = types.StringPointerValue((*string)(apiService.State))
+	if apiService.UpdatedAt != nil {
+		stateData.UpdatedAt = types.StringValue(apiService.UpdatedAt.String())
+	}
+	if stateData.TerminationProtection.IsUnknown() {
+		stateData.TerminationProtection = types.BoolPointerValue(apiService.TerminationProtection)
+	}
+
+	if stateData.Opensearch == nil {
+		return
+	}
+
+	if stateData.Opensearch.IpFilter.IsUnknown() {
+		stateData.Opensearch.IpFilter = types.SetNull(types.StringType)
+		if apiService.IpFilter != nil {
+			v, dg := types.SetValueFrom(ctx, types.StringType, *apiService.IpFilter)
+			if dg.HasError() {
+				diagnostics.Append(dg...)
+				return
+			}
+			stateData.Opensearch.IpFilter = v
 		}
-		if res.StatusCode() != http.StatusOK {
-			diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update database service opensearch, unexpected status: %s", res.Status()))
-			return
+	}
+	if stateData.Opensearch.Version.IsUnknown() {
+		stateData.Opensearch.Version = types.StringNull()
+		if apiService.Version != nil {
+			stateData.Opensearch.Version = types.StringValue(strings.SplitN(*apiService.Version, ".", 2)[0])
 		}
 	}
 
-	r.readOpensearch(ctx, planData, diagnostics)
+	if stateData.Opensearch.Settings.IsUnknown() {
+		stateData.Opensearch.Settings = types.StringNull()
+		if apiService.OpensearchSettings != nil {
+			settings, err := json.Marshal(*apiService.OpensearchSettings)
+			if err != nil {
+				diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
+				return
+			}
+			stateData.Opensearch.Settings = types.StringValue(string(settings))
+		}
+	}
 }
