@@ -57,10 +57,6 @@ resource "exoscale_dbaas" {{ .ResourceName }} {
     keep_index_refresh_interval = {{ .KeepIndexRefreshInterval }}
     {{- end }}
 
-    {{- if .MaxIndexCount }}
-    max_index_count = {{ .MaxIndexCount }}
-    {{- end }}
-
     {{- if .IpFilter }}
     ip_filter = [
     {{- range $k,$v := .IpFilter }}
