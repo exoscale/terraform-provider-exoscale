@@ -194,7 +194,7 @@ pooling:
 		}
 	}
 
-	// Setting values for `Unknown` attributes.
+	// Fill in unknown values.
 	caCert, err := r.client.GetDatabaseCACertificate(ctx, data.Zone.ValueString())
 	if err != nil {
 		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to get CA Certificate: %s", err))
@@ -491,7 +491,7 @@ func (r *ServiceResource) updateMysql(ctx context.Context, stateData *ServiceRes
 		apiService = res.JSON200
 	}
 
-	// Updating computed attributes
+	// Fill in unknown values.
 	stateData.NodeCPUs = types.Int64PointerValue(apiService.NodeCpuCount)
 	stateData.NodeMemory = types.Int64PointerValue(apiService.NodeMemory)
 	stateData.Nodes = types.Int64PointerValue(apiService.NodeCount)
@@ -502,7 +502,12 @@ func (r *ServiceResource) updateMysql(ctx context.Context, stateData *ServiceRes
 	if stateData.TerminationProtection.IsUnknown() {
 		stateData.TerminationProtection = types.BoolPointerValue(apiService.TerminationProtection)
 	}
-	if stateData.Mysql != nil && stateData.Mysql.IpFilter.IsUnknown() {
+
+	if stateData.Mysql == nil {
+		return
+	}
+
+	if stateData.Mysql.IpFilter.IsUnknown() {
 		stateData.Mysql.IpFilter = types.SetNull(types.StringType)
 		if apiService.IpFilter != nil {
 			v, dg := types.SetValueFrom(ctx, types.StringType, *apiService.IpFilter)
@@ -511,6 +516,24 @@ func (r *ServiceResource) updateMysql(ctx context.Context, stateData *ServiceRes
 				return
 			}
 			stateData.Mysql.IpFilter = v
+		}
+	}
+	if stateData.Mysql.Version.IsUnknown() {
+		stateData.Mysql.Version = types.StringNull()
+		if apiService.Version != nil {
+			stateData.Mysql.Version = types.StringValue(strings.SplitN(*apiService.Version, ".", 2)[0])
+		}
+	}
+
+	if stateData.Mysql.Settings.IsUnknown() {
+		stateData.Mysql.Settings = types.StringNull()
+		if apiService.MysqlSettings != nil {
+			settings, err := json.Marshal(*apiService.MysqlSettings)
+			if err != nil {
+				diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
+				return
+			}
+			stateData.Mysql.Settings = types.StringValue(string(settings))
 		}
 	}
 }
