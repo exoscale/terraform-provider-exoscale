@@ -1,6 +1,6 @@
 # Changelog
 
-## UNRELEASED
+## 0.67.2
 
 IMPROVEMENTS:
 
