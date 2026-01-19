@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -103,9 +104,6 @@ func (r *ServiceResource) createKafka(ctx context.Context, data *ServiceResource
 	service := oapi.CreateDbaasServiceKafkaJSONRequestBody{
 		Plan:                  data.Plan.ValueString(),
 		TerminationProtection: data.TerminationProtection.ValueBoolPointer(),
-		KafkaConnectEnabled:   data.Kafka.EnableKafkaConnect.ValueBoolPointer(),
-		KafkaRestEnabled:      data.Kafka.EnableKafkaREST.ValueBoolPointer(),
-		SchemaRegistryEnabled: data.Kafka.EnableSchemaRegistry.ValueBoolPointer(),
 	}
 
 	if !data.MaintenanceDOW.IsUnknown() && !data.MaintenanceTime.IsUnknown() {
@@ -118,77 +116,83 @@ func (r *ServiceResource) createKafka(ctx context.Context, data *ServiceResource
 		}
 	}
 
-	if !data.Kafka.Version.IsUnknown() {
-		service.Version = data.Kafka.Version.ValueStringPointer()
-	}
+	if data.Kafka != nil {
+		service.KafkaConnectEnabled = data.Kafka.EnableKafkaConnect.ValueBoolPointer()
+		service.KafkaRestEnabled = data.Kafka.EnableKafkaREST.ValueBoolPointer()
+		service.SchemaRegistryEnabled = data.Kafka.EnableSchemaRegistry.ValueBoolPointer()
 
-	if !data.Kafka.EnableCertAuth.IsUnknown() || !data.Kafka.EnableSASLAuth.IsUnknown() {
-		service.AuthenticationMethods = &struct {
-			Certificate *bool `json:"certificate,omitempty"`
-			Sasl        *bool `json:"sasl,omitempty"`
-		}{
-			Certificate: data.Kafka.EnableCertAuth.ValueBoolPointer(),
-			Sasl:        data.Kafka.EnableSASLAuth.ValueBoolPointer(),
+		if !data.Kafka.Version.IsUnknown() {
+			service.Version = data.Kafka.Version.ValueStringPointer()
 		}
-	}
 
-	if !data.Kafka.IpFilter.IsUnknown() {
-		obj := []string{}
-		if len(data.Kafka.IpFilter.Elements()) > 0 {
-			dg := data.Kafka.IpFilter.ElementsAs(ctx, &obj, false)
-			if dg.HasError() {
-				diagnostics.Append(dg...)
-				return
+		if !data.Kafka.EnableCertAuth.IsUnknown() || !data.Kafka.EnableSASLAuth.IsUnknown() {
+			service.AuthenticationMethods = &struct {
+				Certificate *bool `json:"certificate,omitempty"`
+				Sasl        *bool `json:"sasl,omitempty"`
+			}{
+				Certificate: data.Kafka.EnableCertAuth.ValueBoolPointer(),
+				Sasl:        data.Kafka.EnableSASLAuth.ValueBoolPointer(),
 			}
 		}
 
-		service.IpFilter = &obj
-	}
+		if !data.Kafka.IpFilter.IsUnknown() {
+			obj := []string{}
+			if len(data.Kafka.IpFilter.Elements()) > 0 {
+				dg := data.Kafka.IpFilter.ElementsAs(ctx, &obj, false)
+				if dg.HasError() {
+					diagnostics.Append(dg...)
+					return
+				}
+			}
 
-	settingsSchema, err := r.client.GetDbaasSettingsKafkaWithResponse(ctx)
-	if err != nil {
-		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database settings schema, got error: %s", err))
-		return
-	}
-	if settingsSchema.StatusCode() != http.StatusOK {
-		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database settings schema, unexpected status: %s", settingsSchema.Status()))
-		return
-	}
+			service.IpFilter = &obj
+		}
 
-	if !data.Kafka.Settings.IsUnknown() {
-		obj, err := validateSettings(data.Kafka.Settings.ValueString(), settingsSchema.JSON200.Settings.Kafka)
+		settingsSchema, err := r.client.GetDbaasSettingsKafkaWithResponse(ctx)
 		if err != nil {
-			diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
+			diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database settings schema, got error: %s", err))
 			return
 		}
-		service.KafkaSettings = &obj
-	}
-
-	if !data.Kafka.ConnectSettings.IsUnknown() {
-		obj, err := validateSettings(data.Kafka.ConnectSettings.ValueString(), settingsSchema.JSON200.Settings.KafkaConnect)
-		if err != nil {
-			diagnostics.AddError("Validation error", fmt.Sprintf("invalid Kafka Connect settings: %s", err))
+		if settingsSchema.StatusCode() != http.StatusOK {
+			diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database settings schema, unexpected status: %s", settingsSchema.Status()))
 			return
 		}
-		service.KafkaConnectSettings = &obj
-	}
 
-	if !data.Kafka.RestSettings.IsUnknown() {
-		obj, err := validateSettings(data.Kafka.RestSettings.ValueString(), settingsSchema.JSON200.Settings.KafkaRest)
-		if err != nil {
-			diagnostics.AddError("Validation error", fmt.Sprintf("invalid Kafka REST settings: %s", err))
-			return
+		if !data.Kafka.Settings.IsUnknown() {
+			obj, err := validateSettings(data.Kafka.Settings.ValueString(), settingsSchema.JSON200.Settings.Kafka)
+			if err != nil {
+				diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
+				return
+			}
+			service.KafkaSettings = &obj
 		}
-		service.KafkaRestSettings = &obj
-	}
 
-	if !data.Kafka.SchemaRegistrySettings.IsUnknown() {
-		obj, err := validateSettings(data.Kafka.SchemaRegistrySettings.ValueString(), settingsSchema.JSON200.Settings.SchemaRegistry)
-		if err != nil {
-			diagnostics.AddError("Validation error", fmt.Sprintf("invalid Schema Registry settings: %s", err))
-			return
+		if !data.Kafka.ConnectSettings.IsUnknown() {
+			obj, err := validateSettings(data.Kafka.ConnectSettings.ValueString(), settingsSchema.JSON200.Settings.KafkaConnect)
+			if err != nil {
+				diagnostics.AddError("Validation error", fmt.Sprintf("invalid Kafka Connect settings: %s", err))
+				return
+			}
+			service.KafkaConnectSettings = &obj
 		}
-		service.SchemaRegistrySettings = &obj
+
+		if !data.Kafka.RestSettings.IsUnknown() {
+			obj, err := validateSettings(data.Kafka.RestSettings.ValueString(), settingsSchema.JSON200.Settings.KafkaRest)
+			if err != nil {
+				diagnostics.AddError("Validation error", fmt.Sprintf("invalid Kafka REST settings: %s", err))
+				return
+			}
+			service.KafkaRestSettings = &obj
+		}
+
+		if !data.Kafka.SchemaRegistrySettings.IsUnknown() {
+			obj, err := validateSettings(data.Kafka.SchemaRegistrySettings.ValueString(), settingsSchema.JSON200.Settings.SchemaRegistry)
+			if err != nil {
+				diagnostics.AddError("Validation error", fmt.Sprintf("invalid Schema Registry settings: %s", err))
+				return
+			}
+			service.SchemaRegistrySettings = &obj
+		}
 	}
 
 	res, err := r.client.CreateDbaasServiceKafkaWithResponse(
@@ -205,7 +209,159 @@ func (r *ServiceResource) createKafka(ctx context.Context, data *ServiceResource
 		return
 	}
 
-	r.readKafka(ctx, data, diagnostics)
+	tflog.Info(ctx, "DB Service created, waiting for the service to be in 'running' state")
+
+	apiService := &oapi.DbaasServiceKafka{}
+pooling:
+	for {
+		select {
+		case <-ctx.Done():
+			diagnostics.AddError("Error", ctx.Err().Error())
+			return
+		default:
+			res, err := r.client.GetDbaasServiceKafkaWithResponse(ctx, oapi.DbaasServiceName(data.Id.ValueString()))
+			if err != nil {
+				diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database service kafka, got error: %s", err))
+				return
+			}
+			if res.StatusCode() != http.StatusOK {
+				diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database service kafka, unexpected status: %s", res.Status()))
+				return
+			}
+			if res.JSON200.State != nil {
+				if *res.JSON200.State == oapi.EnumServiceStatePoweroff {
+					diagnostics.AddError("Client Error", fmt.Sprintf("Unexpected service state: %s", *res.JSON200.State))
+					return
+				}
+				if *res.JSON200.State == oapi.EnumServiceStateRunning {
+					apiService = res.JSON200
+					break pooling
+				}
+			}
+			time.Sleep(time.Second * 2)
+		}
+	}
+
+	// Fill in unknown values.
+	caCert, err := r.client.GetDatabaseCACertificate(ctx, data.Zone.ValueString())
+	if err != nil {
+		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to get CA Certificate: %s", err))
+		return
+	}
+	data.CA = types.StringValue(caCert)
+
+	data.CreatedAt = types.StringValue(apiService.CreatedAt.String())
+	data.DiskSize = types.Int64PointerValue(apiService.DiskSize)
+	data.NodeCPUs = types.Int64PointerValue(apiService.NodeCpuCount)
+	data.NodeMemory = types.Int64PointerValue(apiService.NodeMemory)
+	data.Nodes = types.Int64PointerValue(apiService.NodeCount)
+	data.State = types.StringPointerValue((*string)(apiService.State))
+	data.UpdatedAt = types.StringValue(apiService.UpdatedAt.String())
+
+	if data.TerminationProtection.IsUnknown() {
+		data.TerminationProtection = types.BoolPointerValue(apiService.TerminationProtection)
+	}
+
+	if data.MaintenanceDOW.IsUnknown() && data.MaintenanceTime.IsUnknown() {
+		data.MaintenanceDOW = types.StringNull()
+		data.MaintenanceTime = types.StringNull()
+		if apiService.Maintenance != nil {
+			data.MaintenanceDOW = types.StringValue(string(apiService.Maintenance.Dow))
+			data.MaintenanceTime = types.StringValue(apiService.Maintenance.Time)
+		}
+	}
+
+	if data.Kafka != nil {
+		if data.Kafka.EnableKafkaConnect.IsUnknown() {
+			data.Kafka.EnableKafkaConnect = types.BoolPointerValue(apiService.KafkaConnectEnabled)
+		}
+		if data.Kafka.EnableKafkaREST.IsUnknown() {
+			data.Kafka.EnableKafkaREST = types.BoolPointerValue(apiService.KafkaRestEnabled)
+		}
+		if data.Kafka.EnableSchemaRegistry.IsUnknown() {
+			data.Kafka.EnableSchemaRegistry = types.BoolPointerValue(apiService.SchemaRegistryEnabled)
+		}
+		if data.Kafka.EnableSASLAuth.IsUnknown() {
+			data.Kafka.EnableSASLAuth = types.BoolNull()
+			if apiService.AuthenticationMethods != nil {
+				data.Kafka.EnableSASLAuth = types.BoolPointerValue(apiService.AuthenticationMethods.Sasl)
+			}
+		}
+		if data.Kafka.EnableCertAuth.IsUnknown() {
+			data.Kafka.EnableCertAuth = types.BoolNull()
+			if apiService.AuthenticationMethods != nil {
+				data.Kafka.EnableCertAuth = types.BoolPointerValue(apiService.AuthenticationMethods.Certificate)
+			}
+		}
+		if data.Kafka.IpFilter.IsUnknown() {
+			data.Kafka.IpFilter = types.SetNull(types.StringType)
+			if apiService.IpFilter != nil {
+				v, dg := types.SetValueFrom(ctx, types.StringType, *apiService.IpFilter)
+				if dg.HasError() {
+					diagnostics.Append(dg...)
+					return
+				}
+
+				data.Kafka.IpFilter = v
+			}
+		}
+
+		if data.Kafka.Version.IsUnknown() {
+			data.Kafka.Version = types.StringNull()
+			if apiService.Version != nil {
+				version := strings.SplitN(*apiService.Version, ".", 3)
+				data.Kafka.Version = types.StringValue(version[0] + "." + version[1])
+			}
+		}
+
+		if data.Kafka.Settings.IsUnknown() {
+			data.Kafka.Settings = types.StringNull()
+			if apiService.KafkaSettings != nil {
+				settings, err := json.Marshal(*apiService.KafkaSettings)
+				if err != nil {
+					diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
+					return
+				}
+				data.Kafka.Settings = types.StringValue(string(settings))
+			}
+		}
+
+		if data.Kafka.ConnectSettings.IsUnknown() {
+			data.Kafka.ConnectSettings = types.StringNull()
+			if apiService.KafkaConnectSettings != nil {
+				settings, err := json.Marshal(*apiService.KafkaConnectSettings)
+				if err != nil {
+					diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
+					return
+				}
+				data.Kafka.ConnectSettings = types.StringValue(string(settings))
+			}
+		}
+
+		if data.Kafka.RestSettings.IsUnknown() {
+			data.Kafka.RestSettings = types.StringNull()
+			if apiService.KafkaRestSettings != nil {
+				settings, err := json.Marshal(*apiService.KafkaRestSettings)
+				if err != nil {
+					diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
+					return
+				}
+				data.Kafka.RestSettings = types.StringValue(string(settings))
+			}
+		}
+
+		if data.Kafka.SchemaRegistrySettings.IsUnknown() {
+			data.Kafka.SchemaRegistrySettings = types.StringNull()
+			if apiService.SchemaRegistrySettings != nil {
+				settings, err := json.Marshal(*apiService.SchemaRegistrySettings)
+				if err != nil {
+					diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
+					return
+				}
+				data.Kafka.SchemaRegistrySettings = types.StringValue(string(settings))
+			}
+		}
+	}
 }
 
 // readKafka function handles Kafka specific part of database resource Read logic.
@@ -337,16 +493,20 @@ func (r *ServiceResource) updateKafka(ctx context.Context, stateData *ServiceRes
 			Dow:  oapi.UpdateDbaasServiceKafkaJSONBodyMaintenanceDow(planData.MaintenanceDOW.ValueString()),
 			Time: planData.MaintenanceTime.ValueString(),
 		}
+		stateData.MaintenanceDOW = planData.MaintenanceDOW
+		stateData.MaintenanceTime = planData.MaintenanceTime
 		updated = true
 	}
 
 	if !planData.Plan.Equal(stateData.Plan) {
 		service.Plan = planData.Plan.ValueStringPointer()
+		stateData.Plan = planData.Plan
 		updated = true
 	}
 
 	if !planData.TerminationProtection.Equal(stateData.TerminationProtection) {
 		service.TerminationProtection = planData.TerminationProtection.ValueBoolPointer()
+		stateData.TerminationProtection = planData.TerminationProtection
 		updated = true
 	}
 
@@ -365,21 +525,25 @@ func (r *ServiceResource) updateKafka(ctx context.Context, stateData *ServiceRes
 				}
 			}
 			service.IpFilter = &obj
+			stateData.Kafka.IpFilter = planData.Kafka.IpFilter
 			updated = true
 		}
 
 		if !planData.Kafka.EnableKafkaConnect.Equal(stateData.Kafka.EnableKafkaConnect) {
 			service.KafkaConnectEnabled = planData.Kafka.EnableKafkaConnect.ValueBoolPointer()
+			stateData.Kafka.EnableKafkaConnect = planData.Kafka.EnableKafkaConnect
 			updated = true
 		}
 
 		if !planData.Kafka.EnableKafkaREST.Equal(stateData.Kafka.EnableKafkaREST) {
 			service.KafkaRestEnabled = planData.Kafka.EnableKafkaREST.ValueBoolPointer()
+			stateData.Kafka.EnableKafkaREST = planData.Kafka.EnableKafkaREST
 			updated = true
 		}
 
 		if !planData.Kafka.EnableSchemaRegistry.Equal(stateData.Kafka.EnableSchemaRegistry) {
 			service.SchemaRegistryEnabled = planData.Kafka.EnableSchemaRegistry.ValueBoolPointer()
+			stateData.Kafka.EnableSchemaRegistry = planData.Kafka.EnableSchemaRegistry
 			updated = true
 		}
 
@@ -391,6 +555,8 @@ func (r *ServiceResource) updateKafka(ctx context.Context, stateData *ServiceRes
 				Certificate: planData.Kafka.EnableCertAuth.ValueBoolPointer(),
 				Sasl:        planData.Kafka.EnableSASLAuth.ValueBoolPointer(),
 			}
+			stateData.Kafka.EnableCertAuth = planData.Kafka.EnableCertAuth
+			stateData.Kafka.EnableSASLAuth = planData.Kafka.EnableSASLAuth
 			updated = true
 		}
 
@@ -413,6 +579,7 @@ func (r *ServiceResource) updateKafka(ctx context.Context, stateData *ServiceRes
 				}
 				service.KafkaSettings = &obj
 			}
+			stateData.Kafka.Settings = planData.Kafka.Settings
 			updated = true
 		}
 
@@ -425,6 +592,7 @@ func (r *ServiceResource) updateKafka(ctx context.Context, stateData *ServiceRes
 				}
 				service.KafkaConnectSettings = &obj
 			}
+			stateData.Kafka.ConnectSettings = planData.Kafka.ConnectSettings
 			updated = true
 		}
 
@@ -437,6 +605,7 @@ func (r *ServiceResource) updateKafka(ctx context.Context, stateData *ServiceRes
 				}
 				service.KafkaRestSettings = &obj
 			}
+			stateData.Kafka.RestSettings = planData.Kafka.RestSettings
 			updated = true
 		}
 
@@ -449,27 +618,137 @@ func (r *ServiceResource) updateKafka(ctx context.Context, stateData *ServiceRes
 				}
 				service.SchemaRegistrySettings = &obj
 			}
+			stateData.Kafka.SchemaRegistrySettings = planData.Kafka.SchemaRegistrySettings
 			updated = true
 		}
 	}
 
 	if !updated {
-		tflog.Info(ctx, "no updates detected", map[string]interface{}{})
-	} else {
-		res, err := r.client.UpdateDbaasServiceKafkaWithResponse(
-			ctx,
-			oapi.DbaasServiceName(planData.Id.ValueString()),
-			service,
-		)
-		if err != nil {
-			diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create database service kafka, got error: %s", err))
-			return
-		}
-		if res.StatusCode() != http.StatusOK {
-			diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create database service kafka, unexpected status: %s", res.Status()))
-			return
-		}
+		tflog.Info(ctx, "no updates detected", map[string]any{})
+		return
 	}
 
-	r.readKafka(ctx, planData, diagnostics)
+	res, err := r.client.UpdateDbaasServiceKafkaWithResponse(
+		ctx,
+		oapi.DbaasServiceName(planData.Id.ValueString()),
+		service,
+	)
+	if err != nil {
+		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create database service kafka, got error: %s", err))
+		return
+	}
+	if res.StatusCode() != http.StatusOK {
+		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create database service kafka, unexpected status: %s", res.Status()))
+		return
+	}
+
+	apiService := &oapi.DbaasServiceKafka{}
+	if res, err := r.client.GetDbaasServiceKafkaWithResponse(
+		ctx,
+		oapi.DbaasServiceName(stateData.Id.ValueString()),
+	); err != nil {
+		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database service kafka, got error: %s", err))
+		return
+	} else if res.StatusCode() != http.StatusOK {
+		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database service kafka, unexpected status: %s", res.Status()))
+		return
+	} else {
+		apiService = res.JSON200
+	}
+
+	// Fill in unknown values.
+	stateData.NodeCPUs = types.Int64PointerValue(apiService.NodeCpuCount)
+	stateData.NodeMemory = types.Int64PointerValue(apiService.NodeMemory)
+	stateData.Nodes = types.Int64PointerValue(apiService.NodeCount)
+	stateData.State = types.StringPointerValue((*string)(apiService.State))
+	if apiService.UpdatedAt != nil {
+		stateData.UpdatedAt = types.StringValue(apiService.UpdatedAt.String())
+	}
+	if stateData.TerminationProtection.IsUnknown() {
+		stateData.TerminationProtection = types.BoolPointerValue(apiService.TerminationProtection)
+	}
+
+	if stateData.Kafka == nil {
+		return
+	}
+
+	if stateData.Kafka.Version.IsUnknown() {
+		stateData.Kafka.Version = types.StringPointerValue(apiService.Version)
+	}
+	if stateData.Kafka.EnableKafkaConnect.IsUnknown() {
+		stateData.Kafka.EnableKafkaConnect = types.BoolPointerValue(apiService.KafkaConnectEnabled)
+	}
+	if stateData.Kafka.EnableKafkaREST.IsUnknown() {
+		stateData.Kafka.EnableKafkaREST = types.BoolPointerValue(apiService.KafkaRestEnabled)
+	}
+	if stateData.Kafka.EnableSchemaRegistry.IsUnknown() {
+		stateData.Kafka.EnableSchemaRegistry = types.BoolPointerValue(apiService.SchemaRegistryEnabled)
+	}
+	if stateData.Kafka.EnableSASLAuth.IsUnknown() {
+		stateData.Kafka.EnableSASLAuth = types.BoolNull()
+		if apiService.AuthenticationMethods != nil {
+			stateData.Kafka.EnableSASLAuth = types.BoolPointerValue(apiService.AuthenticationMethods.Sasl)
+		}
+	}
+	if stateData.Kafka.EnableCertAuth.IsUnknown() {
+		stateData.Kafka.EnableCertAuth = types.BoolNull()
+		if apiService.AuthenticationMethods != nil {
+			stateData.Kafka.EnableCertAuth = types.BoolPointerValue(apiService.AuthenticationMethods.Certificate)
+		}
+	}
+	if stateData.Kafka.IpFilter.IsUnknown() {
+		stateData.Kafka.IpFilter = types.SetNull(types.StringType)
+		if apiService.IpFilter != nil {
+			v, dg := types.SetValueFrom(ctx, types.StringType, *apiService.IpFilter)
+			if dg.HasError() {
+				diagnostics.Append(dg...)
+				return
+			}
+			stateData.Kafka.IpFilter = v
+		}
+	}
+	if stateData.Kafka.Settings.IsUnknown() {
+		stateData.Kafka.Settings = types.StringNull()
+		if apiService.KafkaSettings != nil {
+			settings, err := json.Marshal(*apiService.KafkaSettings)
+			if err != nil {
+				diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
+				return
+			}
+			stateData.Kafka.Settings = types.StringValue(string(settings))
+		}
+	}
+	if stateData.Kafka.ConnectSettings.IsUnknown() {
+		stateData.Kafka.ConnectSettings = types.StringNull()
+		if apiService.KafkaConnectSettings != nil {
+			settings, err := json.Marshal(*apiService.KafkaConnectSettings)
+			if err != nil {
+				diagnostics.AddError("Validation error", fmt.Sprintf("invalid KafkaConnectSettings: %s", err))
+				return
+			}
+			stateData.Kafka.ConnectSettings = types.StringValue(string(settings))
+		}
+	}
+	if stateData.Kafka.RestSettings.IsUnknown() {
+		stateData.Kafka.RestSettings = types.StringNull()
+		if apiService.KafkaRestSettings != nil {
+			settings, err := json.Marshal(*apiService.KafkaRestSettings)
+			if err != nil {
+				diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
+				return
+			}
+			stateData.Kafka.RestSettings = types.StringValue(string(settings))
+		}
+	}
+	if stateData.Kafka.SchemaRegistrySettings.IsUnknown() {
+		stateData.Kafka.SchemaRegistrySettings = types.StringNull()
+		if apiService.SchemaRegistrySettings != nil {
+			settings, err := json.Marshal(*apiService.SchemaRegistrySettings)
+			if err != nil {
+				diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
+				return
+			}
+			stateData.Kafka.SchemaRegistrySettings = types.StringValue(string(settings))
+		}
+	}
 }

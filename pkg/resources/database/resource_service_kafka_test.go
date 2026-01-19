@@ -366,7 +366,8 @@ func CheckExistsKafka(name string, data *TemplateModelKafka) error {
 		}
 	}
 
-	if data.Version != *service.Version {
+	version := strings.SplitN(*service.Version, ".", 3)
+	if data.Version != version[0]+"."+version[1] {
 		return fmt.Errorf("kafka.version: expected %q, got %q", data.Version, *service.Version)
 	}
 

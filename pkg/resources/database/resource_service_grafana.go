@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -107,7 +108,91 @@ func (r *ServiceResource) createGrafana(ctx context.Context, data *ServiceResour
 		return
 	}
 
-	r.readGrafana(ctx, data, diagnostics)
+	tflog.Info(ctx, "DB Service created, waiting for the service to be in 'running' state")
+	apiService := &oapi.DbaasServiceGrafana{}
+pooling:
+	for {
+		select {
+		case <-ctx.Done():
+			diagnostics.AddError("Error", ctx.Err().Error())
+			return
+		default:
+			res, err := r.client.GetDbaasServiceGrafanaWithResponse(ctx, oapi.DbaasServiceName(data.Id.ValueString()))
+			if err != nil {
+				diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database service grafana, got error: %s", err))
+				return
+			}
+			if res.StatusCode() != http.StatusOK {
+				diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database service grafana, unexpected status: %s", res.Status()))
+				return
+			}
+			if res.JSON200.State != nil {
+				if *res.JSON200.State == oapi.EnumServiceStatePoweroff {
+					diagnostics.AddError("Client Error", fmt.Sprintf("Unexpected service state: %s", *res.JSON200.State))
+					return
+				}
+				if *res.JSON200.State == oapi.EnumServiceStateRunning {
+					apiService = res.JSON200
+					break pooling
+				}
+			}
+			time.Sleep(time.Second * 2)
+		}
+	}
+
+	// Fill in unknown values.
+	caCert, err := r.client.GetDatabaseCACertificate(ctx, data.Zone.ValueString())
+	if err != nil {
+		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to get CA Certificate: %s", err))
+		return
+	}
+	data.CA = types.StringValue(caCert)
+
+	data.CreatedAt = types.StringValue(apiService.CreatedAt.String())
+	data.DiskSize = types.Int64PointerValue(apiService.DiskSize)
+	data.NodeCPUs = types.Int64PointerValue(apiService.NodeCpuCount)
+	data.NodeMemory = types.Int64PointerValue(apiService.NodeMemory)
+	data.Nodes = types.Int64PointerValue(apiService.NodeCount)
+	data.State = types.StringPointerValue((*string)(apiService.State))
+	data.UpdatedAt = types.StringValue(apiService.UpdatedAt.String())
+
+	if data.TerminationProtection.IsUnknown() {
+		data.TerminationProtection = types.BoolPointerValue(apiService.TerminationProtection)
+	}
+
+	if data.MaintenanceDOW.IsUnknown() && data.MaintenanceTime.IsUnknown() {
+		data.MaintenanceDOW = types.StringNull()
+		data.MaintenanceTime = types.StringNull()
+		if apiService.Maintenance != nil {
+			data.MaintenanceDOW = types.StringValue(string(apiService.Maintenance.Dow))
+			data.MaintenanceTime = types.StringValue(apiService.Maintenance.Time)
+		}
+	}
+
+	if data.Grafana.IpFilter.IsUnknown() {
+		data.Grafana.IpFilter = types.SetNull(types.StringType)
+		if apiService.IpFilter != nil {
+			v, dg := types.SetValueFrom(ctx, types.StringType, *apiService.IpFilter)
+			if dg.HasError() {
+				diagnostics.Append(dg...)
+				return
+			}
+
+			data.Grafana.IpFilter = v
+		}
+	}
+
+	if data.Grafana.Settings.IsUnknown() {
+		data.Grafana.Settings = types.StringNull()
+		if apiService.GrafanaSettings != nil {
+			settings, err := json.Marshal(*apiService.GrafanaSettings)
+			if err != nil {
+				diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
+				return
+			}
+			data.Grafana.Settings = types.StringValue(string(settings))
+		}
+	}
 }
 
 // readGrafana function handles Grafana specific part of database resource Read logic.
@@ -193,15 +278,19 @@ func (r *ServiceResource) updateGrafana(ctx context.Context, stateData *ServiceR
 			Dow:  oapi.UpdateDbaasServiceGrafanaJSONBodyMaintenanceDow(planData.MaintenanceDOW.ValueString()),
 			Time: planData.MaintenanceTime.ValueString(),
 		}
+		stateData.MaintenanceDOW = planData.MaintenanceDOW
+		stateData.MaintenanceTime = planData.MaintenanceTime
 		updated = true
 	}
 
 	if !planData.Plan.Equal(stateData.Plan) {
 		service.Plan = planData.Plan.ValueStringPointer()
+		stateData.Plan = planData.Plan
 		updated = true
 	}
 
 	if !planData.TerminationProtection.Equal(stateData.TerminationProtection) {
+		stateData.TerminationProtection = planData.TerminationProtection
 		service.TerminationProtection = planData.TerminationProtection.ValueBoolPointer()
 		updated = true
 	}
@@ -221,6 +310,7 @@ func (r *ServiceResource) updateGrafana(ctx context.Context, stateData *ServiceR
 				}
 			}
 			service.IpFilter = &obj
+			stateData.Grafana.IpFilter = planData.Grafana.IpFilter
 			updated = true
 		}
 
@@ -243,27 +333,81 @@ func (r *ServiceResource) updateGrafana(ctx context.Context, stateData *ServiceR
 				}
 				service.GrafanaSettings = &obj
 			}
+			stateData.Grafana.Settings = planData.Grafana.Settings
 			updated = true
 		}
 	}
 
 	if !updated {
-		tflog.Info(ctx, "no updates detected", map[string]interface{}{})
+		tflog.Info(ctx, "no updates detected", map[string]any{})
+		return
+	}
+
+	res, err := r.client.UpdateDbaasServiceGrafanaWithResponse(
+		ctx,
+		oapi.DbaasServiceName(planData.Id.ValueString()),
+		service,
+	)
+	if err != nil {
+		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update database service grafana, got error: %s", err))
+		return
+	}
+	if res.StatusCode() != http.StatusOK {
+		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update database service grafana, unexpected status: %s", res.Status()))
+		return
+	}
+
+	apiService := &oapi.DbaasServiceGrafana{}
+	if res, err := r.client.GetDbaasServiceGrafanaWithResponse(
+		ctx,
+		oapi.DbaasServiceName(stateData.Id.ValueString()),
+	); err != nil {
+		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database service pg, got error: %s", err))
+		return
+	} else if res.StatusCode() != http.StatusOK {
+		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database service pg, unexpected status: %s", res.Status()))
+		return
 	} else {
-		res, err := r.client.UpdateDbaasServiceGrafanaWithResponse(
-			ctx,
-			oapi.DbaasServiceName(planData.Id.ValueString()),
-			service,
-		)
-		if err != nil {
-			diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update database service grafana, got error: %s", err))
-			return
-		}
-		if res.StatusCode() != http.StatusOK {
-			diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update database service grafana, unexpected status: %s", res.Status()))
-			return
+		apiService = res.JSON200
+	}
+
+	// Fill in unknown values.
+	stateData.NodeCPUs = types.Int64PointerValue(apiService.NodeCpuCount)
+	stateData.NodeMemory = types.Int64PointerValue(apiService.NodeMemory)
+	stateData.Nodes = types.Int64PointerValue(apiService.NodeCount)
+	stateData.State = types.StringPointerValue((*string)(apiService.State))
+	if apiService.UpdatedAt != nil {
+		stateData.UpdatedAt = types.StringValue(apiService.UpdatedAt.String())
+	}
+	if stateData.TerminationProtection.IsUnknown() {
+		stateData.TerminationProtection = types.BoolPointerValue(apiService.TerminationProtection)
+	}
+
+	if stateData.Grafana == nil {
+		return
+	}
+
+	if stateData.Grafana.IpFilter.IsUnknown() {
+		stateData.Grafana.IpFilter = types.SetNull(types.StringType)
+		if apiService.IpFilter != nil {
+			v, dg := types.SetValueFrom(ctx, types.StringType, *apiService.IpFilter)
+			if dg.HasError() {
+				diagnostics.Append(dg...)
+				return
+			}
+			stateData.Grafana.IpFilter = v
 		}
 	}
 
-	r.readGrafana(ctx, planData, diagnostics)
+	if stateData.Grafana.Settings.IsUnknown() {
+		stateData.Grafana.Settings = types.StringNull()
+		if apiService.GrafanaSettings != nil {
+			settings, err := json.Marshal(*apiService.GrafanaSettings)
+			if err != nil {
+				diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
+				return
+			}
+			stateData.Grafana.Settings = types.StringValue(string(settings))
+		}
+	}
 }

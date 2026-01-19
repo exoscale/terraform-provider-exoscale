@@ -41,7 +41,6 @@ type TemplateModelOpensearch struct {
 	IndexTemplate            *TemplateModelOpensearchIndexTemplate
 	Dashboards               *TemplateModelOpensearchDashboards
 	KeepIndexRefreshInterval bool
-	MaxIndexCount            string
 	OpensearchSettings       string
 	Version                  string
 }
@@ -111,7 +110,6 @@ func testResourceOpensearch(t *testing.T) {
 	serviceDataCreate.Dashboards = &TemplateModelOpensearchDashboards{true, 129, 30001}
 	serviceDataCreate.KeepIndexRefreshInterval = true
 	serviceDataCreate.IpFilter = []string{"0.0.0.0/0"}
-	serviceDataCreate.MaxIndexCount = "4"
 
 	userDataCreate := userDataBase
 
@@ -136,7 +134,6 @@ func testResourceOpensearch(t *testing.T) {
 	serviceDataUpdate.IndexTemplate = &TemplateModelOpensearchIndexTemplate{5, 4, 3}
 	serviceDataUpdate.Dashboards = &TemplateModelOpensearchDashboards{true, 132, 30006}
 	serviceDataUpdate.KeepIndexRefreshInterval = true
-	serviceDataUpdate.MaxIndexCount = "0"
 	serviceDataUpdate.IpFilter = []string{"1.1.1.1/32"}
 	serviceDataUpdate.IpFilter = nil
 
