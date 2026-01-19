@@ -66,6 +66,7 @@ type ServiceResourceModel struct {
 	Kafka      *ResourceKafkaModel      `tfsdk:"kafka"`
 	Opensearch *ResourceOpensearchModel `tfsdk:"opensearch"`
 	Grafana    *ResourceGrafanaModel    `tfsdk:"grafana"`
+	Thanos     *ResourceThanosModel     `tfsdk:"thanos"`
 
 	Timeouts timeouts.Value `tfsdk:"timeouts"`
 }
@@ -176,7 +177,7 @@ func (r *ServiceResource) Schema(ctx context.Context, req resource.SchemaRequest
 				Default:             booldefault.StaticBool(true),
 			},
 			"type": schema.StringAttribute{
-				MarkdownDescription: "❗ The type of the database service (`kafka`, `mysql`, `opensearch`, `pg`, `valkey`, `grafana`).",
+				MarkdownDescription: "❗ The type of the database service (`kafka`, `mysql`, `opensearch`, `pg`, `valkey`, `grafana`, `thanos`).",
 				Required:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -207,6 +208,7 @@ func (r *ServiceResource) Schema(ctx context.Context, req resource.SchemaRequest
 			"opensearch": ResourceOpensearchSchema,
 			"pg":         ResourcePgSchema,
 			"valkey":     ResourceValkeySchema,
+			"thanos":     ResourceThanosSchema,
 			"timeouts":   timeouts.BlockAll(ctx),
 		},
 		Version: 1,
@@ -277,6 +279,11 @@ func (r *ServiceResource) UpgradeState(ctx context.Context) map[int64]resource.S
 							Attributes: ResourceValkeySchema.Attributes,
 						},
 					},
+					"thanos": schema.ListNestedBlock{
+						NestedObject: schema.NestedBlockObject{
+							Attributes: ResourceThanosSchema.Attributes,
+						},
+					},
 					"timeouts": timeouts.BlockAll(ctx),
 				},
 			},
@@ -308,6 +315,7 @@ func (r *ServiceResource) UpgradeState(ctx context.Context) map[int64]resource.S
 					Kafka                 []ResourceKafkaModel      `tfsdk:"kafka"`
 					Opensearch            []ResourceOpensearchModel `tfsdk:"opensearch"`
 					Grafana               []ResourceGrafanaModel    `tfsdk:"grafana"`
+					Thanos                []ResourceThanosModel     `tfsdk:"thanos"`
 					Timeouts              timeouts.Value            `tfsdk:"timeouts"`
 				}{}
 
@@ -352,6 +360,9 @@ func (r *ServiceResource) UpgradeState(ctx context.Context) map[int64]resource.S
 				}
 				if len(priorState.Grafana) > 0 {
 					upgradedStateData.Grafana = &priorState.Grafana[0]
+				}
+				if len(priorState.Thanos) > 0 {
+					upgradedStateData.Thanos = &priorState.Thanos[0]
 				}
 
 				resp.Diagnostics.Append(resp.State.Set(ctx, upgradedStateData)...)
@@ -426,6 +437,8 @@ func (r *ServiceResource) Create(ctx context.Context, req resource.CreateRequest
 		r.createOpensearch(ctx, &data, &resp.Diagnostics)
 	case "grafana":
 		r.createGrafana(ctx, &data, &resp.Diagnostics)
+	case "thanos":
+		r.createThanos(ctx, &data, &resp.Diagnostics)
 	}
 	if resp.Diagnostics.HasError() {
 		return
@@ -473,6 +486,8 @@ func (r *ServiceResource) Read(ctx context.Context, req resource.ReadRequest, re
 		r.readOpensearch(ctx, &data, &resp.Diagnostics)
 	case "grafana":
 		r.readGrafana(ctx, &data, &resp.Diagnostics)
+	case "thanos":
+		r.readThanos(ctx, &data, &resp.Diagnostics)
 	}
 	if resp.Diagnostics.HasError() {
 		return
@@ -521,6 +536,8 @@ func (r *ServiceResource) Update(ctx context.Context, req resource.UpdateRequest
 		r.updateOpensearch(ctx, &stateData, &planData, &resp.Diagnostics)
 	case "grafana":
 		r.updateGrafana(ctx, &stateData, &planData, &resp.Diagnostics)
+	case "thanos":
+		r.updateThanos(ctx, &stateData, &planData, &resp.Diagnostics)
 	}
 	if resp.Diagnostics.HasError() {
 		return
