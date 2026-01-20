@@ -54,7 +54,8 @@ type ResourceOpensearchDashboardsModel struct {
 	RequestTimeout  types.Int64 `tfsdk:"request_timeout"`
 }
 
-var ResourceOpensearchSchema = schema.SingleNestedBlock{
+var ResourceOpensearchSchema = schema.SingleNestedAttribute{
+	Optional:            true,
 	MarkdownDescription: "*opensearch* database service type specific arguments. Structure is documented below.",
 	Attributes: map[string]schema.Attribute{
 		"fork_from_service": schema.StringAttribute{
@@ -102,11 +103,10 @@ var ResourceOpensearchSchema = schema.SingleNestedBlock{
 				stringplanmodifier.RequiresReplaceIfConfigured(),
 			},
 		},
-	},
-	Blocks: map[string]schema.Block{
-		"index_pattern": schema.ListNestedBlock{
+		"index_pattern": schema.ListNestedAttribute{
 			MarkdownDescription: "(can be used multiple times) Allows you to create glob style patterns and set a max number of indexes matching this pattern you want to keep. Creating indexes exceeding this value will cause the oldest one to get deleted. You could for example create a pattern looking like 'logs.?' and then create index logs.1, logs.2 etc, it will delete logs.1 once you create logs.6. Do note 'logs.?' does not apply to logs.10. Note: Setting max_index_count to 0 will do nothing and the pattern gets ignored.",
-			NestedObject: schema.NestedBlockObject{
+			Optional:            true,
+			NestedObject: schema.NestedAttributeObject{
 				Attributes: map[string]schema.Attribute{
 					"max_index_count": schema.Int64Attribute{
 						MarkdownDescription: "Maximum number of indexes to keep before deleting the oldest one (Minimum value is `0`)",
@@ -123,8 +123,9 @@ var ResourceOpensearchSchema = schema.SingleNestedBlock{
 				},
 			},
 		},
-		"index_template": schema.SingleNestedBlock{
+		"index_template": schema.SingleNestedAttribute{
 			MarkdownDescription: "Template settings for all new indexes",
+			Optional:            true,
 			Attributes: map[string]schema.Attribute{
 				"mapping_nested_objects_limit": schema.Int64Attribute{
 					MarkdownDescription: "The maximum number of nested JSON objects that a single document can contain across all nested types. This limit helps to prevent out of memory errors when a document contains too many nested objects. (Default is 10000. Minimum value is `0`, maximum value is `100000`.)",
@@ -140,8 +141,9 @@ var ResourceOpensearchSchema = schema.SingleNestedBlock{
 				},
 			},
 		},
-		"dashboards": schema.SingleNestedBlock{
+		"dashboards": schema.SingleNestedAttribute{
 			MarkdownDescription: "OpenSearch Dashboards settings",
+			Optional:            true,
 			Attributes: map[string]schema.Attribute{
 				"enabled": schema.BoolAttribute{
 					MarkdownDescription: "Enable or disable OpenSearch Dashboards (default: true).",

@@ -22,7 +22,8 @@ type ResourceValkeyModel struct {
 	Settings types.String `tfsdk:"valkey_settings"`
 }
 
-var ResourceValkeySchema = schema.SingleNestedBlock{
+var ResourceValkeySchema = schema.SingleNestedAttribute{
+	Optional:            true,
 	MarkdownDescription: "*valkey* database service type specific arguments. Structure is documented below.",
 	Attributes: map[string]schema.Attribute{
 		"ip_filter": schema.SetAttribute{

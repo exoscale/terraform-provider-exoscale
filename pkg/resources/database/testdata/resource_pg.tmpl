@@ -12,7 +12,7 @@ resource "exoscale_dbaas" {{ .ResourceName }} {
   maintenance_time = "{{ .MaintenanceTime }}"
   {{- end }}
   termination_protection = {{- .TerminationProtection }}
-  pg {
+  pg = {
     {{- if .AdminPassword }}
     admin_password = "{{ .AdminPassword }}"
     {{- end }}

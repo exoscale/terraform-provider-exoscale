@@ -199,15 +199,15 @@ func (r *ServiceResource) Schema(ctx context.Context, req resource.SchemaRequest
 					stringvalidator.OneOf(config.Zones...),
 				},
 			},
-		},
-		Blocks: map[string]schema.Block{
 			"grafana":    ResourceGrafanaSchema,
 			"kafka":      ResourceKafkaSchema,
 			"mysql":      ResourceMysqlSchema,
 			"opensearch": ResourceOpensearchSchema,
 			"pg":         ResourcePgSchema,
 			"valkey":     ResourceValkeySchema,
-			"timeouts":   timeouts.BlockAll(ctx),
+		},
+		Blocks: map[string]schema.Block{
+			"timeouts": timeouts.BlockAll(ctx),
 		},
 		Version: 1,
 	}
@@ -220,144 +220,6 @@ func (r *ServiceResource) Configure(ctx context.Context, req resource.ConfigureR
 	r.clientV3 = req.ProviderData.(*providerConfig.ExoscaleProviderConfig).ClientV3
 	r.client = req.ProviderData.(*providerConfig.ExoscaleProviderConfig).ClientV2
 	r.env = req.ProviderData.(*providerConfig.ExoscaleProviderConfig).Environment
-}
-
-func (r *ServiceResource) UpgradeState(ctx context.Context) map[int64]resource.StateUpgrader {
-	return map[int64]resource.StateUpgrader{
-		// SDKv2 to Framework migration requires state upgrade in database blocks
-		// to remove array from database blocks.
-		0: {
-			PriorSchema: &schema.Schema{
-				Attributes: map[string]schema.Attribute{
-					"id":                     schema.StringAttribute{Computed: true},
-					"created_at":             schema.StringAttribute{Computed: true},
-					"disk_size":              schema.Int64Attribute{Computed: true},
-					"maintenance_dow":        schema.StringAttribute{Computed: true, Optional: true},
-					"maintenance_time":       schema.StringAttribute{Computed: true, Optional: true},
-					"name":                   schema.StringAttribute{Required: true},
-					"node_cpus":              schema.Int64Attribute{Computed: true},
-					"node_memory":            schema.Int64Attribute{Computed: true},
-					"nodes":                  schema.Int64Attribute{Computed: true},
-					"plan":                   schema.StringAttribute{Required: true},
-					"state":                  schema.StringAttribute{Computed: true},
-					"ca_certificate":         schema.StringAttribute{Computed: true},
-					"termination_protection": schema.BoolAttribute{Computed: true, Optional: true},
-					"type":                   schema.StringAttribute{Required: true},
-					"updated_at":             schema.StringAttribute{Computed: true},
-					"zone":                   schema.StringAttribute{Required: true},
-				},
-				Blocks: map[string]schema.Block{
-					"grafana": schema.ListNestedBlock{
-						NestedObject: schema.NestedBlockObject{
-							Attributes: ResourceGrafanaSchema.Attributes,
-						},
-					},
-					"kafka": schema.ListNestedBlock{
-						NestedObject: schema.NestedBlockObject{
-							Attributes: ResourceKafkaSchema.Attributes,
-						},
-					},
-					"mysql": schema.ListNestedBlock{
-						NestedObject: schema.NestedBlockObject{
-							Attributes: ResourceMysqlSchema.Attributes,
-						},
-					},
-					"opensearch": schema.ListNestedBlock{
-						NestedObject: schema.NestedBlockObject{
-							Attributes: ResourceOpensearchSchema.Attributes,
-						},
-					},
-					"pg": schema.ListNestedBlock{
-						NestedObject: schema.NestedBlockObject{
-							Attributes: ResourcePgSchema.Attributes,
-						},
-					},
-					"valkey": schema.ListNestedBlock{
-						NestedObject: schema.NestedBlockObject{
-							Attributes: ResourceValkeySchema.Attributes,
-						},
-					},
-					"timeouts": timeouts.BlockAll(ctx),
-				},
-			},
-			StateUpgrader: func(
-				ctx context.Context,
-				req resource.UpgradeStateRequest,
-				resp *resource.UpgradeStateResponse,
-			) {
-				priorState := struct {
-					Id                    types.String              `tfsdk:"id"`
-					CreatedAt             types.String              `tfsdk:"created_at"`
-					DiskSize              types.Int64               `tfsdk:"disk_size"`
-					MaintenanceDOW        types.String              `tfsdk:"maintenance_dow"`
-					MaintenanceTime       types.String              `tfsdk:"maintenance_time"`
-					Name                  types.String              `tfsdk:"name"`
-					NodeCPUs              types.Int64               `tfsdk:"node_cpus"`
-					NodeMemory            types.Int64               `tfsdk:"node_memory"`
-					Nodes                 types.Int64               `tfsdk:"nodes"`
-					Plan                  types.String              `tfsdk:"plan"`
-					State                 types.String              `tfsdk:"state"`
-					CA                    types.String              `tfsdk:"ca_certificate"`
-					TerminationProtection types.Bool                `tfsdk:"termination_protection"`
-					Type                  types.String              `tfsdk:"type"`
-					UpdatedAt             types.String              `tfsdk:"updated_at"`
-					Zone                  types.String              `tfsdk:"zone"`
-					Pg                    []ResourcePgModel         `tfsdk:"pg"`
-					Mysql                 []ResourceMysqlModel      `tfsdk:"mysql"`
-					Valkey                []ResourceValkeyModel     `tfsdk:"valkey"`
-					Kafka                 []ResourceKafkaModel      `tfsdk:"kafka"`
-					Opensearch            []ResourceOpensearchModel `tfsdk:"opensearch"`
-					Grafana               []ResourceGrafanaModel    `tfsdk:"grafana"`
-					Timeouts              timeouts.Value            `tfsdk:"timeouts"`
-				}{}
-
-				resp.Diagnostics.Append(req.State.Get(ctx, &priorState)...)
-				if resp.Diagnostics.HasError() {
-					return
-				}
-
-				upgradedStateData := ServiceResourceModel{
-					Id:                    priorState.Id,
-					CreatedAt:             priorState.CreatedAt,
-					DiskSize:              priorState.DiskSize,
-					MaintenanceDOW:        priorState.MaintenanceDOW,
-					MaintenanceTime:       priorState.MaintenanceTime,
-					Name:                  priorState.Name,
-					NodeCPUs:              priorState.NodeCPUs,
-					NodeMemory:            priorState.NodeMemory,
-					Nodes:                 priorState.Nodes,
-					Plan:                  priorState.Plan,
-					State:                 priorState.State,
-					CA:                    priorState.CA,
-					TerminationProtection: priorState.TerminationProtection,
-					Type:                  priorState.Type,
-					UpdatedAt:             priorState.UpdatedAt,
-					Zone:                  priorState.Zone,
-					Timeouts:              priorState.Timeouts,
-				}
-				if len(priorState.Pg) > 0 {
-					upgradedStateData.Pg = &priorState.Pg[0]
-				}
-				if len(priorState.Mysql) > 0 {
-					upgradedStateData.Mysql = &priorState.Mysql[0]
-				}
-				if len(priorState.Valkey) > 0 {
-					upgradedStateData.Valkey = &priorState.Valkey[0]
-				}
-				if len(priorState.Kafka) > 0 {
-					upgradedStateData.Kafka = &priorState.Kafka[0]
-				}
-				if len(priorState.Opensearch) > 0 {
-					upgradedStateData.Opensearch = &priorState.Opensearch[0]
-				}
-				if len(priorState.Grafana) > 0 {
-					upgradedStateData.Grafana = &priorState.Grafana[0]
-				}
-
-				resp.Diagnostics.Append(resp.State.Set(ctx, upgradedStateData)...)
-			},
-		},
-	}
 }
 
 func (r *ServiceResource) ValidateConfig(
@@ -440,6 +302,7 @@ func (r *ServiceResource) Create(ctx context.Context, req resource.CreateRequest
 }
 
 func (r *ServiceResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	tflog.Debug(ctx, "beginning read")
 	var data ServiceResourceModel
 
 	// Read Terraform prior state data into the model
@@ -460,9 +323,10 @@ func (r *ServiceResource) Read(ctx context.Context, req resource.ReadRequest, re
 	data.Id = data.Name
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(r.env, data.Zone.ValueString()))
 
+	var clearState bool
 	switch data.Type.ValueString() {
 	case "pg":
-		r.readPg(ctx, &data, &resp.Diagnostics)
+		clearState = r.readPg(ctx, &data, &resp.Diagnostics)
 	case "mysql":
 		r.readMysql(ctx, &data, &resp.Diagnostics)
 	case "valkey":
@@ -478,9 +342,13 @@ func (r *ServiceResource) Read(ctx context.Context, req resource.ReadRequest, re
 		return
 	}
 
-	// Save updated data into Terraform state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
-
+	if clearState {
+		// Delete resource because it does not exits
+		resp.State.RemoveResource(ctx)
+	} else {
+		// Save updated data into Terraform state
+		resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	}
 	tflog.Trace(ctx, "resource read done", map[string]any{
 		"id": data.Id,
 	})
@@ -647,10 +515,6 @@ func (d *DeprecatedServiceResource) Update(ctx context.Context, req resource.Upd
 
 func (r *DeprecatedServiceResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	r.Resource.Configure(ctx, req, resp)
-}
-
-func (r *DeprecatedServiceResource) UpgradeState(ctx context.Context) map[int64]resource.StateUpgrader {
-	return r.Resource.UpgradeState(ctx)
 }
 
 func (r *DeprecatedServiceResource) ValidateConfig(
