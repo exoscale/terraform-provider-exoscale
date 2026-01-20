@@ -12,7 +12,7 @@ resource "exoscale_dbaas" {{ .ResourceName }} {
   maintenance_time = "{{ .MaintenanceTime }}"
   {{- end }}
   termination_protection = {{- .TerminationProtection }}
-  opensearch {
+  opensearch = {
     {{- if .ForkFromService }}
     fork_from_service = "{{ .ForkFromService }}"
     {{- end }}
@@ -22,17 +22,19 @@ resource "exoscale_dbaas" {{ .ResourceName }} {
     {{- end }}
 
     {{- if .IndexPatterns }}
-    {{- range $k,$v := .IndexPatterns }}
-    index_pattern {
-      max_index_count = {{ $v.MaxIndexCount }}
-      pattern = "{{ $v.MaxIndexCount }}"
-      sorting_algorithm = "{{ $v.SortingAlgorithm }}"
-    }
-    {{- end }}
+    index_pattern = [
+      {{- range $k,$v := .IndexPatterns }}
+      {{if $k}},{{end}}{
+        max_index_count = {{ $v.MaxIndexCount }}
+        pattern = "{{ $v.MaxIndexCount }}"
+        sorting_algorithm = "{{ $v.SortingAlgorithm }}"
+      }
+      {{- end }}
+    ]
     {{- end }}
 
     {{- if .IndexTemplate }}
-    index_template {
+    index_template = {
       mapping_nested_objects_limit = {{ .IndexTemplate.MappingNestedObjectsLimit }}
       number_of_replicas = {{ .IndexTemplate.NumberOfReplicas }}
       number_of_shards = {{ .IndexTemplate.NumberOfShards }}
@@ -40,7 +42,7 @@ resource "exoscale_dbaas" {{ .ResourceName }} {
     {{- end }}
 
     {{- if .Dashboards }}
-    dashboards {
+    dashboards = {
      enabled = {{ .Dashboards.Enabled }}
 
      {{- if .Dashboards.MaxOldSpaceSize }}

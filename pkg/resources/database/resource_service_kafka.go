@@ -34,7 +34,8 @@ type ResourceKafkaModel struct {
 	Version                types.String `tfsdk:"version"`
 }
 
-var ResourceKafkaSchema = schema.SingleNestedBlock{
+var ResourceKafkaSchema = schema.SingleNestedAttribute{
+	Optional:            true,
 	MarkdownDescription: "*kafka* database service type specific arguments. Structure is documented below.",
 	Attributes: map[string]schema.Attribute{
 		"enable_cert_auth": schema.BoolAttribute{

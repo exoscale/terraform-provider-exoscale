@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -15,6 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
+	apiv2 "github.com/exoscale/egoscale/v2/api"
 	"github.com/exoscale/egoscale/v2/oapi"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/validators"
@@ -31,7 +33,8 @@ type ResourcePgModel struct {
 	PglookoutSettings types.String `tfsdk:"pglookout_settings"`
 }
 
-var ResourcePgSchema = schema.SingleNestedBlock{
+var ResourcePgSchema = schema.SingleNestedAttribute{
+	Optional:            true,
 	MarkdownDescription: "*pg* database service type specific arguments. Structure is documented below.",
 	Attributes: map[string]schema.Attribute{
 		"admin_password": schema.StringAttribute{
@@ -122,7 +125,7 @@ func (r *ServiceResource) createPg(ctx context.Context, data *ServiceResourceMod
 
 			service.IpFilter = &obj
 		}
-		if !data.Pg.BackupSchedule.IsUnknown() {
+		if !data.Pg.BackupSchedule.IsNull() && !data.Pg.BackupSchedule.IsUnknown() {
 			bh, bm, err := parseBackupSchedule(data.Pg.BackupSchedule.ValueString())
 			if err != nil {
 				diagnostics.AddError("Validation error", fmt.Sprintf("Unable to parse backup schedule, got error: %s", err))
@@ -323,23 +326,27 @@ pooling:
 
 // readPg function handles PostgreSQL specific part of database resource Read logic.
 // It is used in the dedicated Read action but also as a finishing step of Create, Update and Import.
-func (r *ServiceResource) readPg(ctx context.Context, data *ServiceResourceModel, diagnostics *diag.Diagnostics) {
-	caCert, err := r.client.GetDatabaseCACertificate(ctx, data.Zone.ValueString())
-	if err != nil {
-		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to get CA Certificate: %s", err))
-		return
-	}
-	data.CA = types.StringValue(caCert)
+func (r *ServiceResource) readPg(ctx context.Context, data *ServiceResourceModel, diagnostics *diag.Diagnostics) (clearState bool) {
 
 	res, err := r.client.GetDbaasServicePgWithResponse(ctx, oapi.DbaasServiceName(data.Id.ValueString()))
 	if err != nil {
+		if errors.Is(err, apiv2.ErrNotFound) {
+			return true
+		}
 		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database service pg, got error: %s", err))
 		return
 	}
 	if res.StatusCode() != http.StatusOK {
 		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database service pg, unexpected status: %s", res.Status()))
-		return
+		return false
 	}
+
+	caCert, err := r.client.GetDatabaseCACertificate(ctx, data.Zone.ValueString())
+	if err != nil {
+		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to get CA Certificate: %s", err))
+		return false
+	}
+	data.CA = types.StringValue(caCert)
 
 	apiService := res.JSON200
 
@@ -381,7 +388,7 @@ func (r *ServiceResource) readPg(ctx context.Context, data *ServiceResourceModel
 		v, dg := types.SetValueFrom(ctx, types.StringType, *apiService.IpFilter)
 		if dg.HasError() {
 			diagnostics.Append(dg...)
-			return
+			return false
 		}
 
 		data.Pg.IpFilter = v
@@ -402,7 +409,7 @@ func (r *ServiceResource) readPg(ctx context.Context, data *ServiceResourceModel
 			settings, err := json.Marshal(*apiService.PgSettings)
 			if err != nil {
 				diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
-				return
+				return false
 			}
 
 			data.Pg.Settings = types.StringValue(string(settings))
@@ -412,14 +419,14 @@ func (r *ServiceResource) readPg(ctx context.Context, data *ServiceResourceModel
 
 		if err := json.Unmarshal([]byte(data.Pg.Settings.ValueString()), &userSettings); err != nil {
 			diagnostics.AddError("Validation error", fmt.Sprintf("unable to unmarshal JSON: %s", err))
-			return
+			return false
 		}
 
 		PartialSettingsPatch(userSettings, *apiService.PgSettings)
 		settings, err := json.Marshal(userSettings)
 		if err != nil {
 			diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
-			return
+			return false
 		}
 		data.Pg.Settings = types.StringValue(string(settings))
 	}
@@ -430,7 +437,7 @@ func (r *ServiceResource) readPg(ctx context.Context, data *ServiceResourceModel
 			settings, err := json.Marshal(*apiService.PgbouncerSettings)
 			if err != nil {
 				diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
-				return
+				return false
 			}
 
 			data.Pg.PgbouncerSettings = types.StringValue(string(settings))
@@ -440,14 +447,14 @@ func (r *ServiceResource) readPg(ctx context.Context, data *ServiceResourceModel
 
 		if err := json.Unmarshal([]byte(data.Pg.PgbouncerSettings.ValueString()), &userSettings); err != nil {
 			diagnostics.AddError("Validation error", fmt.Sprintf("unable to unmarshal JSON: %s", err))
-			return
+			return false
 		}
 
 		PartialSettingsPatch(userSettings, *apiService.PgbouncerSettings)
 		settings, err := json.Marshal(userSettings)
 		if err != nil {
 			diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
-			return
+			return false
 		}
 		data.Pg.PgbouncerSettings = types.StringValue(string(settings))
 	}
@@ -458,7 +465,7 @@ func (r *ServiceResource) readPg(ctx context.Context, data *ServiceResourceModel
 			settings, err := json.Marshal(*apiService.PglookoutSettings)
 			if err != nil {
 				diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
-				return
+				return false
 			}
 
 			data.Pg.PglookoutSettings = types.StringValue(string(settings))
@@ -468,17 +475,19 @@ func (r *ServiceResource) readPg(ctx context.Context, data *ServiceResourceModel
 
 		if err := json.Unmarshal([]byte(data.Pg.PglookoutSettings.ValueString()), &userSettings); err != nil {
 			diagnostics.AddError("Validation error", fmt.Sprintf("unable to unmarshal JSON: %s", err))
-			return
+			return false
 		}
 
 		PartialSettingsPatch(userSettings, *apiService.PglookoutSettings)
 		settings, err := json.Marshal(userSettings)
 		if err != nil {
 			diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
-			return
+			return false
 		}
 		data.Pg.PglookoutSettings = types.StringValue(string(settings))
 	}
+
+	return false
 }
 
 // updatePg function handles PostgreSQL specific part of database resource Update logic.

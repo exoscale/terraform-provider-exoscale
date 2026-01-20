@@ -29,7 +29,8 @@ type ResourceMysqlModel struct {
 	Version        types.String `tfsdk:"version"`
 }
 
-var ResourceMysqlSchema = schema.SingleNestedBlock{
+var ResourceMysqlSchema = schema.SingleNestedAttribute{
+	Optional:            true,
 	MarkdownDescription: "*mysql* database service type specific arguments. Structure is documented below.",
 	Attributes: map[string]schema.Attribute{
 		"admin_password": schema.StringAttribute{

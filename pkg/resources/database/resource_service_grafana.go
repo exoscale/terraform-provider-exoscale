@@ -24,7 +24,8 @@ type ResourceGrafanaModel struct {
 	Settings types.String `tfsdk:"grafana_settings"`
 }
 
-var ResourceGrafanaSchema = schema.SingleNestedBlock{
+var ResourceGrafanaSchema = schema.SingleNestedAttribute{
+	Optional:            true,
 	MarkdownDescription: "*grafana* database service type specific arguments. Structure is documented below.",
 	Attributes: map[string]schema.Attribute{
 		"ip_filter": schema.SetAttribute{
