@@ -165,6 +165,7 @@ func (r *ServiceResource) Schema(ctx context.Context, req resource.SchemaRequest
 			"ca_certificate": schema.StringAttribute{
 				MarkdownDescription: "CA Certificate required to reach a DBaaS service through a TLS-protected connection.",
 				Computed:            true,
+				Sensitive:           true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},

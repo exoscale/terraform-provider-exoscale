@@ -37,7 +37,7 @@ Manage Exoscale [Database Services (DBaaS)](https://community.exoscale.com/docum
 
 ### Read-Only
 
-- `ca_certificate` (String) CA Certificate required to reach a DBaaS service through a TLS-protected connection.
+- `ca_certificate` (String, Sensitive) CA Certificate required to reach a DBaaS service through a TLS-protected connection.
 - `created_at` (String) The creation date of the database service.
 - `disk_size` (Number) The disk size of the database service.
 - `id` (String) The ID of this resource.
