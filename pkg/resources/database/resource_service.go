@@ -475,7 +475,7 @@ func (r *ServiceResource) Read(ctx context.Context, req resource.ReadRequest, re
 	case "opensearch":
 		r.readOpensearch(ctx, &data, &resp.Diagnostics)
 	case "grafana":
-		r.readGrafana(ctx, &data, &resp.Diagnostics)
+		clearState = r.readGrafana(ctx, &data, &resp.Diagnostics)
 	}
 	if resp.Diagnostics.HasError() {
 		return
