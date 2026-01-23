@@ -467,7 +467,7 @@ func (r *ServiceResource) Read(ctx context.Context, req resource.ReadRequest, re
 	case "pg":
 		clearState = r.readPg(ctx, &data, &resp.Diagnostics)
 	case "mysql":
-		r.readMysql(ctx, &data, &resp.Diagnostics)
+		clearState = r.readMysql(ctx, &data, &resp.Diagnostics)
 	case "valkey":
 		r.readValkey(ctx, &data, &resp.Diagnostics)
 	case "kafka":
