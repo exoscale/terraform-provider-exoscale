@@ -471,7 +471,7 @@ func (r *ServiceResource) Read(ctx context.Context, req resource.ReadRequest, re
 	case "valkey":
 		r.readValkey(ctx, &data, &resp.Diagnostics)
 	case "kafka":
-		r.readKafka(ctx, &data, &resp.Diagnostics)
+		clearState = r.readKafka(ctx, &data, &resp.Diagnostics)
 	case "opensearch":
 		r.readOpensearch(ctx, &data, &resp.Diagnostics)
 	case "grafana":
