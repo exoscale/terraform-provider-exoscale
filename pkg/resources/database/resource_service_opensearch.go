@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -17,6 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
+	apiv2 "github.com/exoscale/egoscale/v2/api"
 	"github.com/exoscale/egoscale/v2/oapi"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/validators"
@@ -398,25 +400,28 @@ pooling:
 // readOpensearch function handles OpenSearch specific part of database resource Read logic.
 // It is used in the dedicated Read action but also as a finishing step of Create, Update and Import.
 // NOTE: For optional but not computed attributes we only read remote value if they are defined in the plan.
-func (r *ServiceResource) readOpensearch(ctx context.Context, data *ServiceResourceModel, diagnostics *diag.Diagnostics) {
-	caCert, err := r.client.GetDatabaseCACertificate(ctx, data.Zone.ValueString())
-	if err != nil {
-		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to get CA Certificate: %s", err))
-		return
-	}
-	data.CA = types.StringValue(caCert)
+func (r *ServiceResource) readOpensearch(ctx context.Context, data *ServiceResourceModel, diagnostics *diag.Diagnostics) (clearState bool) {
 
 	res, err := r.client.GetDbaasServiceOpensearchWithResponse(ctx, oapi.DbaasServiceName(data.Id.ValueString()))
 	if err != nil {
+		if errors.Is(err, apiv2.ErrNotFound) {
+			return true
+		}
 		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database service opensearch, got error: %s", err))
-		return
+		return false
 	}
 	if res.StatusCode() != http.StatusOK {
 		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database service opensearch, unexpected status: %s", res.Status()))
-		return
+		return false
 	}
-
 	apiService := res.JSON200
+
+	caCert, err := r.client.GetDatabaseCACertificate(ctx, data.Zone.ValueString())
+	if err != nil {
+		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to get CA Certificate: %s", err))
+		return false
+	}
+	data.CA = types.StringValue(caCert)
 
 	data.CreatedAt = types.StringValue(apiService.CreatedAt.String())
 	data.DiskSize = types.Int64PointerValue(apiService.DiskSize)
@@ -454,7 +459,7 @@ func (r *ServiceResource) readOpensearch(ctx context.Context, data *ServiceResou
 		v, dg := types.SetValueFrom(ctx, types.StringType, *apiService.IpFilter)
 		if dg.HasError() {
 			diagnostics.Append(dg...)
-			return
+			return false
 		}
 
 		data.Opensearch.IpFilter = v
@@ -514,10 +519,12 @@ func (r *ServiceResource) readOpensearch(ctx context.Context, data *ServiceResou
 		settings, err := json.Marshal(*apiService.OpensearchSettings)
 		if err != nil {
 			diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
-			return
+			return false
 		}
 		data.Opensearch.Settings = types.StringValue(string(settings))
 	}
+
+	return false
 }
 
 // updateOpensearch function handles OpenSearch specific part of database resource Update logic.

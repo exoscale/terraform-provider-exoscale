@@ -473,7 +473,7 @@ func (r *ServiceResource) Read(ctx context.Context, req resource.ReadRequest, re
 	case "kafka":
 		clearState = r.readKafka(ctx, &data, &resp.Diagnostics)
 	case "opensearch":
-		r.readOpensearch(ctx, &data, &resp.Diagnostics)
+		clearState = r.readOpensearch(ctx, &data, &resp.Diagnostics)
 	case "grafana":
 		clearState = r.readGrafana(ctx, &data, &resp.Diagnostics)
 	}
