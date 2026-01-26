@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+FEATURES:
+
+- instance_pool: add `private` attribute
+
 ## 0.67.2
 
 IMPROVEMENTS:
