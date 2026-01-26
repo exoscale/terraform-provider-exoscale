@@ -113,6 +113,12 @@ func Resource() *schema.Resource {
 			Set:         schema.HashString,
 			Elem:        &schema.Schema{Type: schema.TypeString},
 		},
+		AttrPrivate: {
+			Description: "Whether the managed instances are private (no public IP addresses; default: `false`). Note: once set to `true`, cannot be changed.",
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Default:     false,
+		},
 		AttrSecurityGroupIDs: {
 			Description: "A list of [exoscale_security_group](./security_group.md) (IDs).",
 			Type:        schema.TypeSet,
@@ -352,6 +358,15 @@ func rCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 
 	enableIPv6 := d.Get(AttrIPv6).(bool)
 	createPoolRequest.Ipv6Enabled = &enableIPv6
+
+	// Set PublicIPAssignment based on private/ipv6 settings
+	if privateInstance := d.Get(AttrPrivate).(bool); privateInstance {
+		createPoolRequest.PublicIPAssignment = v3.CreateInstancePoolRequestPublicIPAssignmentNone
+	} else if enableIPv6 {
+		createPoolRequest.PublicIPAssignment = v3.CreateInstancePoolRequestPublicIPAssignmentDual
+	} else {
+		createPoolRequest.PublicIPAssignment = v3.CreateInstancePoolRequestPublicIPAssignmentInet4
+	}
 
 	if v := d.Get(AttrUserData).(string); v != "" {
 		userData, _, err := utils.EncodeUserData(v)
@@ -708,6 +723,12 @@ func rApply(ctx context.Context, client *v3.Client, d *schema.ResourceData, pool
 	}
 
 	if err := d.Set(AttrIPv6, utils.DefaultBool(pool.Ipv6Enabled, false)); err != nil {
+		return diag.FromErr(err)
+	}
+
+	// Set private attribute based on PublicIPAssignment
+	isPrivate := pool.PublicIPAssignment == v3.PublicIPAssignmentNone
+	if err := d.Set(AttrPrivate, isPrivate); err != nil {
 		return diag.FromErr(err)
 	}
 

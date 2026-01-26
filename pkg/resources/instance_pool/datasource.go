@@ -97,6 +97,11 @@ func DataSourceSchema() map[string]*schema.Schema {
 			Set:         schema.HashString,
 			Elem:        &schema.Schema{Type: schema.TypeString},
 		},
+		AttrPrivate: {
+			Description: "Whether the managed instances are private (no public IP addresses).",
+			Type:        schema.TypeBool,
+			Computed:    true,
+		},
 		AttrSecurityGroupIDs: {
 			Description: "The list of attached [exoscale_security_group](../resources/security_group.md) (IDs).",
 			Type:        schema.TypeSet,
@@ -312,6 +317,7 @@ func dsBuildData(pool *v3.InstancePool, zone string) (map[string]interface{}, er
 	data[AttrID] = pool.ID
 	data[AttrInstancePrefix] = utils.DefaultString(&pool.InstancePrefix, "")
 	data[AttrIPv6] = utils.DefaultBool(pool.Ipv6Enabled, false)
+	data[AttrPrivate] = pool.PublicIPAssignment == v3.PublicIPAssignmentNone
 	if pool.SSHKey != nil {
 		data[AttrKeyPair] = pool.SSHKey.Name
 	}
