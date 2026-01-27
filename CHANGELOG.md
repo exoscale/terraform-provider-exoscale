@@ -1,5 +1,19 @@
 # Changelog
 
+## UNRELEASED
+
+IMPROVEMENTS:
+
+- chores(dbaas): make database ca_certificate sensitive #488
+
+
+BUG FIXES:
+
+- fix(dbaas): improve terraform refresh #488
+
+
+FEATURES:
+
 ## 0.67.2
 
 IMPROVEMENTS:
