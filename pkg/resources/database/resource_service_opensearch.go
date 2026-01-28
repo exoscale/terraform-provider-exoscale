@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -17,6 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
+	apiv2 "github.com/exoscale/egoscale/v2/api"
 	"github.com/exoscale/egoscale/v2/oapi"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/validators"
@@ -54,7 +56,8 @@ type ResourceOpensearchDashboardsModel struct {
 	RequestTimeout  types.Int64 `tfsdk:"request_timeout"`
 }
 
-var ResourceOpensearchSchema = schema.SingleNestedBlock{
+var ResourceOpensearchSchema = schema.SingleNestedAttribute{
+	Optional:            true,
 	MarkdownDescription: "*opensearch* database service type specific arguments. Structure is documented below.",
 	Attributes: map[string]schema.Attribute{
 		"fork_from_service": schema.StringAttribute{
@@ -102,11 +105,10 @@ var ResourceOpensearchSchema = schema.SingleNestedBlock{
 				stringplanmodifier.RequiresReplaceIfConfigured(),
 			},
 		},
-	},
-	Blocks: map[string]schema.Block{
-		"index_pattern": schema.ListNestedBlock{
+		"index_pattern": schema.ListNestedAttribute{
 			MarkdownDescription: "(can be used multiple times) Allows you to create glob style patterns and set a max number of indexes matching this pattern you want to keep. Creating indexes exceeding this value will cause the oldest one to get deleted. You could for example create a pattern looking like 'logs.?' and then create index logs.1, logs.2 etc, it will delete logs.1 once you create logs.6. Do note 'logs.?' does not apply to logs.10. Note: Setting max_index_count to 0 will do nothing and the pattern gets ignored.",
-			NestedObject: schema.NestedBlockObject{
+			Optional:            true,
+			NestedObject: schema.NestedAttributeObject{
 				Attributes: map[string]schema.Attribute{
 					"max_index_count": schema.Int64Attribute{
 						MarkdownDescription: "Maximum number of indexes to keep before deleting the oldest one (Minimum value is `0`)",
@@ -123,8 +125,9 @@ var ResourceOpensearchSchema = schema.SingleNestedBlock{
 				},
 			},
 		},
-		"index_template": schema.SingleNestedBlock{
+		"index_template": schema.SingleNestedAttribute{
 			MarkdownDescription: "Template settings for all new indexes",
+			Optional:            true,
 			Attributes: map[string]schema.Attribute{
 				"mapping_nested_objects_limit": schema.Int64Attribute{
 					MarkdownDescription: "The maximum number of nested JSON objects that a single document can contain across all nested types. This limit helps to prevent out of memory errors when a document contains too many nested objects. (Default is 10000. Minimum value is `0`, maximum value is `100000`.)",
@@ -140,8 +143,9 @@ var ResourceOpensearchSchema = schema.SingleNestedBlock{
 				},
 			},
 		},
-		"dashboards": schema.SingleNestedBlock{
+		"dashboards": schema.SingleNestedAttribute{
 			MarkdownDescription: "OpenSearch Dashboards settings",
+			Optional:            true,
 			Attributes: map[string]schema.Attribute{
 				"enabled": schema.BoolAttribute{
 					MarkdownDescription: "Enable or disable OpenSearch Dashboards (default: true).",
@@ -396,25 +400,28 @@ pooling:
 // readOpensearch function handles OpenSearch specific part of database resource Read logic.
 // It is used in the dedicated Read action but also as a finishing step of Create, Update and Import.
 // NOTE: For optional but not computed attributes we only read remote value if they are defined in the plan.
-func (r *ServiceResource) readOpensearch(ctx context.Context, data *ServiceResourceModel, diagnostics *diag.Diagnostics) {
-	caCert, err := r.client.GetDatabaseCACertificate(ctx, data.Zone.ValueString())
-	if err != nil {
-		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to get CA Certificate: %s", err))
-		return
-	}
-	data.CA = types.StringValue(caCert)
+func (r *ServiceResource) readOpensearch(ctx context.Context, data *ServiceResourceModel, diagnostics *diag.Diagnostics) (clearState bool) {
 
 	res, err := r.client.GetDbaasServiceOpensearchWithResponse(ctx, oapi.DbaasServiceName(data.Id.ValueString()))
 	if err != nil {
+		if errors.Is(err, apiv2.ErrNotFound) {
+			return true
+		}
 		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database service opensearch, got error: %s", err))
-		return
+		return false
 	}
 	if res.StatusCode() != http.StatusOK {
 		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database service opensearch, unexpected status: %s", res.Status()))
-		return
+		return false
 	}
-
 	apiService := res.JSON200
+
+	caCert, err := r.client.GetDatabaseCACertificate(ctx, data.Zone.ValueString())
+	if err != nil {
+		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to get CA Certificate: %s", err))
+		return false
+	}
+	data.CA = types.StringValue(caCert)
 
 	data.CreatedAt = types.StringValue(apiService.CreatedAt.String())
 	data.DiskSize = types.Int64PointerValue(apiService.DiskSize)
@@ -452,7 +459,7 @@ func (r *ServiceResource) readOpensearch(ctx context.Context, data *ServiceResou
 		v, dg := types.SetValueFrom(ctx, types.StringType, *apiService.IpFilter)
 		if dg.HasError() {
 			diagnostics.Append(dg...)
-			return
+			return false
 		}
 
 		data.Opensearch.IpFilter = v
@@ -512,10 +519,12 @@ func (r *ServiceResource) readOpensearch(ctx context.Context, data *ServiceResou
 		settings, err := json.Marshal(*apiService.OpensearchSettings)
 		if err != nil {
 			diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
-			return
+			return false
 		}
 		data.Opensearch.Settings = types.StringValue(string(settings))
 	}
+
+	return false
 }
 
 // updateOpensearch function handles OpenSearch specific part of database resource Update logic.
