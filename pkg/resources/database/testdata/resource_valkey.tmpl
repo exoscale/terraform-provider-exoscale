@@ -12,7 +12,7 @@ resource "exoscale_database" {{ .ResourceName }} {
   maintenance_time = "{{ .MaintenanceTime }}"
   {{- end }}
   termination_protection = {{- .TerminationProtection }}
-  valkey {
+  valkey = {
     {{- if .IpFilter }}
     ip_filter = [
     {{- range $k,$v := .IpFilter }}

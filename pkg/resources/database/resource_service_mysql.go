@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -15,6 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
+	apiv2 "github.com/exoscale/egoscale/v2/api"
 	"github.com/exoscale/egoscale/v2/oapi"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/validators"
@@ -29,7 +31,8 @@ type ResourceMysqlModel struct {
 	Version        types.String `tfsdk:"version"`
 }
 
-var ResourceMysqlSchema = schema.SingleNestedBlock{
+var ResourceMysqlSchema = schema.SingleNestedAttribute{
+	Optional:            true,
 	MarkdownDescription: "*mysql* database service type specific arguments. Structure is documented below.",
 	Attributes: map[string]schema.Attribute{
 		"admin_password": schema.StringAttribute{
@@ -270,25 +273,28 @@ pooling:
 }
 
 // readMysql function handles MySQL specific part of database resource Read logic.
-func (r *ServiceResource) readMysql(ctx context.Context, data *ServiceResourceModel, diagnostics *diag.Diagnostics) {
-	caCert, err := r.client.GetDatabaseCACertificate(ctx, data.Zone.ValueString())
-	if err != nil {
-		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to get CA Certificate: %s", err))
-		return
-	}
-	data.CA = types.StringValue(caCert)
+func (r *ServiceResource) readMysql(ctx context.Context, data *ServiceResourceModel, diagnostics *diag.Diagnostics) (clearState bool) {
 
 	res, err := r.client.GetDbaasServiceMysqlWithResponse(ctx, oapi.DbaasServiceName(data.Id.ValueString()))
 	if err != nil {
+		if errors.Is(err, apiv2.ErrNotFound) {
+			return true
+		}
 		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database service mysql, got error: %s", err))
-		return
+		return false
 	}
 	if res.StatusCode() != http.StatusOK {
 		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database service mysql, unexpected status: %s", res.Status()))
-		return
+		return false
 	}
-
 	apiService := res.JSON200
+
+	caCert, err := r.client.GetDatabaseCACertificate(ctx, data.Zone.ValueString())
+	if err != nil {
+		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to get CA Certificate: %s", err))
+		return false
+	}
+	data.CA = types.StringValue(caCert)
 
 	data.CreatedAt = types.StringValue(apiService.CreatedAt.String())
 	data.DiskSize = types.Int64PointerValue(apiService.DiskSize)
@@ -326,7 +332,7 @@ func (r *ServiceResource) readMysql(ctx context.Context, data *ServiceResourceMo
 		v, dg := types.SetValueFrom(ctx, types.StringType, *apiService.IpFilter)
 		if dg.HasError() {
 			diagnostics.Append(dg...)
-			return
+			return false
 		}
 
 		data.Mysql.IpFilter = v
@@ -342,10 +348,12 @@ func (r *ServiceResource) readMysql(ctx context.Context, data *ServiceResourceMo
 		settings, err := json.Marshal(*apiService.MysqlSettings)
 		if err != nil {
 			diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
-			return
+			return false
 		}
 		data.Mysql.Settings = types.StringValue(string(settings))
 	}
+
+	return false
 }
 
 // updateMysql function handles MySQL specific part of database resource Update logic.

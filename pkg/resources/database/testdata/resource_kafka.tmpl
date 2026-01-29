@@ -12,7 +12,7 @@ resource "exoscale_dbaas" {{ .ResourceName }} {
   maintenance_time = "{{ .MaintenanceTime }}"
   {{- end }}
   termination_protection = {{- .TerminationProtection }}
-  kafka {
+  kafka = {
     {{- if .EnableCertAuth }}
     enable_cert_auth = {{ .EnableCertAuth }}
     {{- end }}

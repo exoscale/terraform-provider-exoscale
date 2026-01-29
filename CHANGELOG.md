@@ -1,5 +1,21 @@
 # Changelog
 
+## UNRELEASED
+
+IMPROVEMENTS:
+
+- chores(dbaas): make database ca_certificate sensitive #488
+
+
+BUG FIXES:
+
+- fix(dbaas): improve terraform refresh #488
+
+BREAKING CHANGES:
+- update dbaas schema, check the [migration guide](docs/guides/migration-of-dbaas-from-v0_67_x-to-v0_68_x.md) #488
+
+FEATURES:
+
 ## 0.67.2
 
 IMPROVEMENTS:

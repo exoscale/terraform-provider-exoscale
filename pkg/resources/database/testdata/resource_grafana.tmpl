@@ -12,7 +12,7 @@ resource "exoscale_dbaas" {{ .ResourceName }} {
   maintenance_time = "{{ .MaintenanceTime }}"
   {{- end }}
   termination_protection = {{- .TerminationProtection }}
-  grafana {
+  grafana = {
     {{- if .IpFilter }}
     ip_filter = [
     {{- range $k,$v := .IpFilter }}

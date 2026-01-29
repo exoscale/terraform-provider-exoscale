@@ -165,6 +165,7 @@ func (r *ServiceResource) Schema(ctx context.Context, req resource.SchemaRequest
 			"ca_certificate": schema.StringAttribute{
 				MarkdownDescription: "CA Certificate required to reach a DBaaS service through a TLS-protected connection.",
 				Computed:            true,
+				Sensitive:           true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
@@ -199,15 +200,15 @@ func (r *ServiceResource) Schema(ctx context.Context, req resource.SchemaRequest
 					stringvalidator.OneOf(config.Zones...),
 				},
 			},
-		},
-		Blocks: map[string]schema.Block{
 			"grafana":    ResourceGrafanaSchema,
 			"kafka":      ResourceKafkaSchema,
 			"mysql":      ResourceMysqlSchema,
 			"opensearch": ResourceOpensearchSchema,
 			"pg":         ResourcePgSchema,
 			"valkey":     ResourceValkeySchema,
-			"timeouts":   timeouts.BlockAll(ctx),
+		},
+		Blocks: map[string]schema.Block{
+			"timeouts": timeouts.BlockAll(ctx),
 		},
 		Version: 1,
 	}
@@ -440,6 +441,7 @@ func (r *ServiceResource) Create(ctx context.Context, req resource.CreateRequest
 }
 
 func (r *ServiceResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	tflog.Debug(ctx, "beginning read")
 	var data ServiceResourceModel
 
 	// Read Terraform prior state data into the model
@@ -460,27 +462,32 @@ func (r *ServiceResource) Read(ctx context.Context, req resource.ReadRequest, re
 	data.Id = data.Name
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(r.env, data.Zone.ValueString()))
 
+	var clearState bool
 	switch data.Type.ValueString() {
 	case "pg":
-		r.readPg(ctx, &data, &resp.Diagnostics)
+		clearState = r.readPg(ctx, &data, &resp.Diagnostics)
 	case "mysql":
-		r.readMysql(ctx, &data, &resp.Diagnostics)
+		clearState = r.readMysql(ctx, &data, &resp.Diagnostics)
 	case "valkey":
-		r.readValkey(ctx, &data, &resp.Diagnostics)
+		clearState = r.readValkey(ctx, &data, &resp.Diagnostics)
 	case "kafka":
-		r.readKafka(ctx, &data, &resp.Diagnostics)
+		clearState = r.readKafka(ctx, &data, &resp.Diagnostics)
 	case "opensearch":
-		r.readOpensearch(ctx, &data, &resp.Diagnostics)
+		clearState = r.readOpensearch(ctx, &data, &resp.Diagnostics)
 	case "grafana":
-		r.readGrafana(ctx, &data, &resp.Diagnostics)
+		clearState = r.readGrafana(ctx, &data, &resp.Diagnostics)
 	}
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Save updated data into Terraform state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
-
+	if clearState {
+		// Delete resource because it does not exits
+		resp.State.RemoveResource(ctx)
+	} else {
+		// Save updated data into Terraform state
+		resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	}
 	tflog.Trace(ctx, "resource read done", map[string]any{
 		"id": data.Id,
 	})

@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -15,6 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
+	apiv2 "github.com/exoscale/egoscale/v2/api"
 	"github.com/exoscale/egoscale/v2/oapi"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/validators"
@@ -34,7 +36,8 @@ type ResourceKafkaModel struct {
 	Version                types.String `tfsdk:"version"`
 }
 
-var ResourceKafkaSchema = schema.SingleNestedBlock{
+var ResourceKafkaSchema = schema.SingleNestedAttribute{
+	Optional:            true,
 	MarkdownDescription: "*kafka* database service type specific arguments. Structure is documented below.",
 	Attributes: map[string]schema.Attribute{
 		"enable_cert_auth": schema.BoolAttribute{
@@ -366,25 +369,28 @@ pooling:
 
 // readKafka function handles Kafka specific part of database resource Read logic.
 // It is used in the dedicated Read action but also as a finishing step of Create, Update and Import.
-func (r *ServiceResource) readKafka(ctx context.Context, data *ServiceResourceModel, diagnostics *diag.Diagnostics) {
-	caCert, err := r.client.GetDatabaseCACertificate(ctx, data.Zone.ValueString())
-	if err != nil {
-		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to get CA Certificate: %s", err))
-		return
-	}
-	data.CA = types.StringValue(caCert)
+func (r *ServiceResource) readKafka(ctx context.Context, data *ServiceResourceModel, diagnostics *diag.Diagnostics) (clearState bool) {
 
 	res, err := r.client.GetDbaasServiceKafkaWithResponse(ctx, oapi.DbaasServiceName(data.Id.ValueString()))
 	if err != nil {
+		if errors.Is(err, apiv2.ErrNotFound) {
+			return true
+		}
 		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database service kafka, got error: %s", err))
-		return
+		return false
 	}
 	if res.StatusCode() != http.StatusOK {
 		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database service kafka, unexpected status: %s", res.Status()))
-		return
+		return false
 	}
-
 	apiService := res.JSON200
+
+	caCert, err := r.client.GetDatabaseCACertificate(ctx, data.Zone.ValueString())
+	if err != nil {
+		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to get CA Certificate: %s", err))
+		return false
+	}
+	data.CA = types.StringValue(caCert)
 
 	data.CreatedAt = types.StringValue(apiService.CreatedAt.String())
 	data.DiskSize = types.Int64PointerValue(apiService.DiskSize)
@@ -425,7 +431,7 @@ func (r *ServiceResource) readKafka(ctx context.Context, data *ServiceResourceMo
 		v, dg := types.SetValueFrom(ctx, types.StringType, *apiService.IpFilter)
 		if dg.HasError() {
 			diagnostics.Append(dg...)
-			return
+			return false
 		}
 
 		data.Kafka.IpFilter = v
@@ -442,7 +448,7 @@ func (r *ServiceResource) readKafka(ctx context.Context, data *ServiceResourceMo
 		settings, err := json.Marshal(*apiService.KafkaSettings)
 		if err != nil {
 			diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
-			return
+			return false
 		}
 		data.Kafka.Settings = types.StringValue(string(settings))
 	}
@@ -452,7 +458,7 @@ func (r *ServiceResource) readKafka(ctx context.Context, data *ServiceResourceMo
 		settings, err := json.Marshal(*apiService.KafkaConnectSettings)
 		if err != nil {
 			diagnostics.AddError("Validation error", fmt.Sprintf("invalid Kafka Connect settings: %s", err))
-			return
+			return false
 		}
 		data.Kafka.ConnectSettings = types.StringValue(string(settings))
 	}
@@ -462,7 +468,7 @@ func (r *ServiceResource) readKafka(ctx context.Context, data *ServiceResourceMo
 		settings, err := json.Marshal(*apiService.KafkaRestSettings)
 		if err != nil {
 			diagnostics.AddError("Validation error", fmt.Sprintf("invalid Kafka REST settings: %s", err))
-			return
+			return false
 		}
 		data.Kafka.RestSettings = types.StringValue(string(settings))
 	}
@@ -472,10 +478,12 @@ func (r *ServiceResource) readKafka(ctx context.Context, data *ServiceResourceMo
 		settings, err := json.Marshal(*apiService.SchemaRegistrySettings)
 		if err != nil {
 			diagnostics.AddError("Validation error", fmt.Sprintf("invalid Schema Registry settings: %s", err))
-			return
+			return false
 		}
 		data.Kafka.SchemaRegistrySettings = types.StringValue(string(settings))
 	}
+
+	return false
 }
 
 // updateKafka function handles Kafka specific part of database resource Update logic.

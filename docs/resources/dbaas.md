@@ -24,20 +24,20 @@ Manage Exoscale [Database Services (DBaaS)](https://community.exoscale.com/docum
 
 ### Optional
 
-- `grafana` (Block, Optional) *grafana* database service type specific arguments. Structure is documented below. (see [below for nested schema](#nestedblock--grafana))
-- `kafka` (Block, Optional) *kafka* database service type specific arguments. Structure is documented below. (see [below for nested schema](#nestedblock--kafka))
+- `grafana` (Attributes) *grafana* database service type specific arguments. Structure is documented below. (see [below for nested schema](#nestedatt--grafana))
+- `kafka` (Attributes) *kafka* database service type specific arguments. Structure is documented below. (see [below for nested schema](#nestedatt--kafka))
 - `maintenance_dow` (String) The day of week to perform the automated database service maintenance (`never`, `monday`, `tuesday`, `wednesday`, `thursday`, `friday`, `saturday`, `sunday`).
 - `maintenance_time` (String) The time of day to perform the automated database service maintenance (`HH:MM:SS`)
-- `mysql` (Block, Optional) *mysql* database service type specific arguments. Structure is documented below. (see [below for nested schema](#nestedblock--mysql))
-- `opensearch` (Block, Optional) *opensearch* database service type specific arguments. Structure is documented below. (see [below for nested schema](#nestedblock--opensearch))
-- `pg` (Block, Optional) *pg* database service type specific arguments. Structure is documented below. (see [below for nested schema](#nestedblock--pg))
+- `mysql` (Attributes) *mysql* database service type specific arguments. Structure is documented below. (see [below for nested schema](#nestedatt--mysql))
+- `opensearch` (Attributes) *opensearch* database service type specific arguments. Structure is documented below. (see [below for nested schema](#nestedatt--opensearch))
+- `pg` (Attributes) *pg* database service type specific arguments. Structure is documented below. (see [below for nested schema](#nestedatt--pg))
 - `termination_protection` (Boolean) The database service protection boolean flag against termination/power-off.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- `valkey` (Block, Optional) *valkey* database service type specific arguments. Structure is documented below. (see [below for nested schema](#nestedblock--valkey))
+- `valkey` (Attributes) *valkey* database service type specific arguments. Structure is documented below. (see [below for nested schema](#nestedatt--valkey))
 
 ### Read-Only
 
-- `ca_certificate` (String) CA Certificate required to reach a DBaaS service through a TLS-protected connection.
+- `ca_certificate` (String, Sensitive) CA Certificate required to reach a DBaaS service through a TLS-protected connection.
 - `created_at` (String) The creation date of the database service.
 - `disk_size` (Number) The disk size of the database service.
 - `id` (String) The ID of this resource.
@@ -47,7 +47,7 @@ Manage Exoscale [Database Services (DBaaS)](https://community.exoscale.com/docum
 - `state` (String) The current state of the database service.
 - `updated_at` (String) The date of the latest database service update.
 
-<a id="nestedblock--grafana"></a>
+<a id="nestedatt--grafana"></a>
 ### Nested Schema for `grafana`
 
 Optional:
@@ -56,7 +56,7 @@ Optional:
 - `ip_filter` (Set of String) A list of CIDR blocks to allow incoming connections from.
 
 
-<a id="nestedblock--kafka"></a>
+<a id="nestedatt--kafka"></a>
 ### Nested Schema for `kafka`
 
 Optional:
@@ -74,7 +74,7 @@ Optional:
 - `version` (String) Kafka major version (`exo dbaas type show kafka` for reference; may only be set at creation time).
 
 
-<a id="nestedblock--mysql"></a>
+<a id="nestedatt--mysql"></a>
 ### Nested Schema for `mysql`
 
 Optional:
@@ -87,15 +87,15 @@ Optional:
 - `version` (String) MySQL major version (`exo dbaas type show mysql` for reference; may only be set at creation time).
 
 
-<a id="nestedblock--opensearch"></a>
+<a id="nestedatt--opensearch"></a>
 ### Nested Schema for `opensearch`
 
 Optional:
 
-- `dashboards` (Block, Optional) OpenSearch Dashboards settings (see [below for nested schema](#nestedblock--opensearch--dashboards))
+- `dashboards` (Attributes) OpenSearch Dashboards settings (see [below for nested schema](#nestedatt--opensearch--dashboards))
 - `fork_from_service` (String) ❗ Service name
-- `index_pattern` (Block List) (can be used multiple times) Allows you to create glob style patterns and set a max number of indexes matching this pattern you want to keep. Creating indexes exceeding this value will cause the oldest one to get deleted. You could for example create a pattern looking like 'logs.?' and then create index logs.1, logs.2 etc, it will delete logs.1 once you create logs.6. Do note 'logs.?' does not apply to logs.10. Note: Setting max_index_count to 0 will do nothing and the pattern gets ignored. (see [below for nested schema](#nestedblock--opensearch--index_pattern))
-- `index_template` (Block, Optional) Template settings for all new indexes (see [below for nested schema](#nestedblock--opensearch--index_template))
+- `index_pattern` (Attributes List) (can be used multiple times) Allows you to create glob style patterns and set a max number of indexes matching this pattern you want to keep. Creating indexes exceeding this value will cause the oldest one to get deleted. You could for example create a pattern looking like 'logs.?' and then create index logs.1, logs.2 etc, it will delete logs.1 once you create logs.6. Do note 'logs.?' does not apply to logs.10. Note: Setting max_index_count to 0 will do nothing and the pattern gets ignored. (see [below for nested schema](#nestedatt--opensearch--index_pattern))
+- `index_template` (Attributes) Template settings for all new indexes (see [below for nested schema](#nestedatt--opensearch--index_template))
 - `ip_filter` (Set of String) Allow incoming connections from this list of CIDR address block, e.g. `["10.20.0.0/16"]
 - `keep_index_refresh_interval` (Boolean) Aiven automation resets index.refresh_interval to default value for every index to be sure that indices are always visible to search. If it doesn't fit your case, you can disable this by setting up this flag to true.
 - `max_index_count` (Number, Deprecated) Maximum number of indexes to keep (Minimum value is `0`)
@@ -103,7 +103,7 @@ Optional:
 - `settings` (String) OpenSearch-specific settings, in json. e.g.`jsonencode({thread_pool_search_size: 64})`. Use `exo x get-dbaas-settings-opensearch` to get a list of available settings.
 - `version` (String) ❗ OpenSearch major version (`exo dbaas type show opensearch` for reference)
 
-<a id="nestedblock--opensearch--dashboards"></a>
+<a id="nestedatt--opensearch--dashboards"></a>
 ### Nested Schema for `opensearch.dashboards`
 
 Optional:
@@ -113,7 +113,7 @@ Optional:
 - `request_timeout` (Number) Timeout in milliseconds for requests made by OpenSearch Dashboards towards OpenSearch (default: 30000)
 
 
-<a id="nestedblock--opensearch--index_pattern"></a>
+<a id="nestedatt--opensearch--index_pattern"></a>
 ### Nested Schema for `opensearch.index_pattern`
 
 Optional:
@@ -123,7 +123,7 @@ Optional:
 - `sorting_algorithm` (String) `alphabetical` or `creation_date`.
 
 
-<a id="nestedblock--opensearch--index_template"></a>
+<a id="nestedatt--opensearch--index_template"></a>
 ### Nested Schema for `opensearch.index_template`
 
 Optional:
@@ -134,7 +134,7 @@ Optional:
 
 
 
-<a id="nestedblock--pg"></a>
+<a id="nestedatt--pg"></a>
 ### Nested Schema for `pg`
 
 Optional:
@@ -160,7 +160,7 @@ Optional:
 - `update` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours).
 
 
-<a id="nestedblock--valkey"></a>
+<a id="nestedatt--valkey"></a>
 ### Nested Schema for `valkey`
 
 Optional:
