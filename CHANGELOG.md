@@ -10,6 +10,7 @@ IMPROVEMENTS:
 BUG FIXES:
 
 - fix(dbaas): improve terraform refresh #488
+- dbaas: handle correctly terraform refresh for db and user #490
 
 BREAKING CHANGES:
 - update dbaas schema, check the [migration guide](docs/guides/migration-of-dbaas-from-v0_67_x-to-v0_68_x.md) #488
