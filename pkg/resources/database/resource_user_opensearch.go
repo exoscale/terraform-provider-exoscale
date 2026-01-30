@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -192,12 +193,16 @@ func (data *OpensearchUserResourceModel) DeleteResource(ctx context.Context, cli
 
 }
 
-func (data *OpensearchUserResourceModel) ReadResource(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics) {
+func (data *OpensearchUserResourceModel) ReadResource(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics) (clearState bool) {
 
 	svc, err := client.GetDBAASServiceOpensearch(ctx, data.Service.ValueString())
 	if err != nil {
+		if errors.Is(err, exoscale.ErrNotFound) {
+			return true
+		}
+		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read service pg user, got error: %s", err))
 		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read service opensearch user, got error: %s", err))
-		return
+		return false
 	}
 
 	for _, user := range svc.Users {
@@ -207,15 +212,16 @@ func (data *OpensearchUserResourceModel) ReadResource(ctx context.Context, clien
 			pass, err := client.RevealDBAASOpensearchUserPassword(ctx, data.Service.ValueString(), data.Username.ValueString())
 			if err != nil {
 				diagnostics.AddError("Client Error", fmt.Sprintf("Unable to reveal pg user password, got error: %s", err))
-				return
+				return false
 			}
 
 			data.Password = basetypes.NewStringValue(pass.Password)
 
-			return
+			return false
 		}
 	}
-	diagnostics.AddError("Client Error", "Unable to read user for the service")
+
+	return true
 }
 
 func (data *OpensearchUserResourceModel) UpdateResource(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics) {

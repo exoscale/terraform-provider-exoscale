@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -172,21 +173,25 @@ func (p *MysqlDatabaseResource) Update(ctx context.Context, req resource.UpdateR
 }
 
 // ReadResource reads resource from remote and populate the model accordingly
-func (data MysqlDatabaseResourceModel) ReadResource(ctx context.Context, client *v3.Client, diagnostics *diag.Diagnostics) {
+func (data MysqlDatabaseResourceModel) ReadResource(ctx context.Context, client *v3.Client, diagnostics *diag.Diagnostics) (clearState bool) {
 	svc, err := waitForDBAASServiceReadyForFn(ctx, client.GetDBAASServiceMysql, data.Service.ValueString(), func(t *v3.DBAASServiceMysql) bool {
 		return t.State == v3.EnumServiceStateRunning && len(t.Databases) > 0
 	})
 	if err != nil {
+		if errors.Is(err, v3.ErrNotFound) {
+			return true
+		}
 		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read service mysql, got error: %s", err))
-		return
+		return false
 	}
 
 	for _, db := range svc.Databases {
 		if string(db) == data.DatabaseName.ValueString() {
-			return
+			return false
 		}
 	}
-	diagnostics.AddError("Client Error", "Unable to find database for the service")
+
+	return true
 }
 
 // CreateResource creates the resource according to the model, and then

@@ -129,7 +129,7 @@ func getSettingBool(settings map[string]interface{}, key string) bool {
 // ResourceModelInterface defines necessary functions for interacting with resources through abstraction
 type ResourceModelInterface interface {
 	// ReadResource reads resource from remote and populate the model accordingly
-	ReadResource(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics)
+	ReadResource(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics) (clearState bool)
 	// CreateResource creates the resource according to the model, and then
 	// update computed fields if applicable
 	CreateResource(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics)
@@ -185,14 +185,18 @@ func ReadResource[T ResourceModelInterface](ctx context.Context, req resource.Re
 		return
 	}
 
-	data.ReadResource(ctx, client, &resp.Diagnostics)
-
+	clearState := data.ReadResource(ctx, client, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Save updated data into Terraform state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	if clearState {
+		// Delete resource because it does not exits
+		resp.State.RemoveResource(ctx)
+	} else {
+		// Save updated data into Terraform state
+		resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	}
 
 	tflog.Trace(ctx, "resource read done", map[string]interface{}{
 		"id": data.GetID(),

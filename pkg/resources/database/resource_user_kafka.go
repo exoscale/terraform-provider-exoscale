@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -214,12 +215,15 @@ func (data *KafkaUserResourceModel) DeleteResource(ctx context.Context, client *
 
 }
 
-func (data *KafkaUserResourceModel) ReadResource(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics) {
+func (data *KafkaUserResourceModel) ReadResource(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics) (clearState bool) {
 
 	svc, err := client.GetDBAASServiceKafka(ctx, data.Service.ValueString())
 	if err != nil {
+		if errors.Is(err, exoscale.ErrNotFound) {
+			return true
+		}
 		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read service kafka user, got error: %s", err))
-		return
+		return false
 	}
 
 	for _, user := range svc.Users {
@@ -229,7 +233,7 @@ func (data *KafkaUserResourceModel) ReadResource(ctx context.Context, client *ex
 			pass, err := client.RevealDBAASKafkaUserPassword(ctx, data.Service.ValueString(), data.Username.ValueString())
 			if err != nil {
 				diagnostics.AddError("Client Error", fmt.Sprintf("Unable to reveal pg user password, got error: %s", err))
-				return
+				return false
 			}
 
 			data.Password = basetypes.NewStringValue(pass.Password)
@@ -237,10 +241,11 @@ func (data *KafkaUserResourceModel) ReadResource(ctx context.Context, client *ex
 			data.AccessKey = basetypes.NewStringValue(pass.AccessKey)
 			data.AccessCertExpiry = basetypes.NewStringValue(pass.AccessCertExpiry.String())
 
-			return
+			return false
 		}
 	}
-	diagnostics.AddError("Client Error", "Unable to read user for the service")
+
+	return true
 }
 
 func (data *KafkaUserResourceModel) UpdateResource(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics) {
