@@ -3,13 +3,16 @@
 page_title: "exoscale_security_group Data Source - terraform-provider-exoscale"
 subcategory: ""
 description: |-
-  Fetch Exoscale Security Groups https://community.exoscale.com/product/networking/security-group/ data.
+  Fetch Exoscale Security Groups https://community.exoscale.com/product/compute/instances/quick-start/#firewall-rules---security-groups.
+  Security Groups are firewall rules. Each Security Group may be attached to one or many compute instances.
   Corresponding resource: exoscalesecuritygroup ../resources/security_group.md.
 ---
 
 # exoscale_security_group (Data Source)
 
-Fetch Exoscale [Security Groups](https://community.exoscale.com/product/networking/security-group/) data.
+Fetch [Exoscale Security Groups](https://community.exoscale.com/product/compute/instances/quick-start/#firewall-rules---security-groups).
+
+Security Groups are firewall rules. Each Security Group may be attached to one or many compute instances.
 
 Corresponding resource: [exoscale_security_group](../resources/security_group.md).
 
@@ -33,11 +36,20 @@ directory for complete configuration examples.
 
 ### Optional
 
-- `id` (String) The security group ID to match (conflicts with `name`)
-- `name` (String) The name to match (conflicts with `id`)
+- `id` (String) The ID of the Security Group (required if `name` is not set).
+- `name` (String) The name of the Security Group (required if `id` is not set).
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
-- `external_sources` (Set of String) The list of external network sources, in [CIDR](https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing#CIDR_notation) notation.
+- `description` (String) A free-form text describing the the Security Group.
+- `external_sources` (Set of String) A list of external network sources, in [CIDR](https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing#CIDR_notation) notation.
+
+<a id="nestedblock--timeouts"></a>
+### Nested Schema for `timeouts`
+
+Optional:
+
+- `read` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
 
 

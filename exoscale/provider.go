@@ -94,7 +94,6 @@ func Provider() *schema.Provider {
 			"exoscale_instance_pool_list":    instance_pool.DataSourceList(),
 			"exoscale_nlb":                   dataSourceNLB(),
 			"exoscale_private_network":       dataSourcePrivateNetwork(),
-			"exoscale_security_group":        dataSourceSecurityGroup(),
 			"exoscale_template":              dataSourceTemplate(),
 			dsSKSClusterIdentifier:           dataSourceSKSCluster(),
 			dsSKSClustersListIdentifier:      dataSourceSKSClusterList(),

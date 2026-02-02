@@ -3,3 +3,6 @@ resource "exoscale_security_group" "test_sg" {
   description = "updated description"
 }
 
+data "exoscale_security_group" "test_sg" {
+  id = exoscale_security_group.test_sg.id
+}

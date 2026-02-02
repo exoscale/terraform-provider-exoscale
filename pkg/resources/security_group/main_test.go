@@ -15,6 +15,8 @@ func TestSecurityGroup(t *testing.T) {
 	t.Parallel()
 
 	sg := "exoscale_security_group.test_sg"
+	sgDS := "data.exoscale_security_group.test_sg"
+	sgDSByName := "data.exoscale_security_group.test_sg_by_name"
 
 	testdataSpec := testutils.TestdataSpec{
 		ID:   time.Now().UnixNano(),
@@ -25,7 +27,7 @@ func TestSecurityGroup(t *testing.T) {
 		PreCheck:                 func() { testutils.AccPreCheck(t) },
 		ProtoV6ProviderFactories: testutils.TestAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
-			// 1 Create SG
+			// 1 Create SG and 2 data sources (match by id and name)
 			{
 				Config: testutils.ParseTestdataConfig(
 					"./testdata/001.sg_create.tf.tmpl",
@@ -43,9 +45,23 @@ func TestSecurityGroup(t *testing.T) {
 						"test security group",
 					),
 					resource.TestCheckNoResourceAttr(sg, "external_sources"),
+					resource.TestCheckResourceAttrPair(
+						sg,
+						"description",
+						sgDS,
+						"description",
+					),
+					resource.TestCheckNoResourceAttr(sgDS, "external_sources"),
+					resource.TestCheckResourceAttrPair(
+						sg,
+						"description",
+						sgDSByName,
+						"description",
+					),
+					resource.TestCheckNoResourceAttr(sgDSByName, "external_sources"),
 				),
 			},
-			// 2 Update SG description
+			// 2 Update SG description (with single single ds by name)
 			{
 				Config: testutils.ParseTestdataConfig(
 					"./testdata/002.sg_update_description.tf.tmpl",
@@ -56,6 +72,12 @@ func TestSecurityGroup(t *testing.T) {
 						sg,
 						"description",
 						"updated description",
+					),
+					resource.TestCheckResourceAttrPair(
+						sg,
+						"description",
+						sgDS,
+						"description",
 					),
 				),
 			},
@@ -81,6 +103,12 @@ func TestSecurityGroup(t *testing.T) {
 						"external_sources.*",
 						"192.168.2.1/32",
 					),
+					resource.TestCheckResourceAttrPair(
+						sg,
+						"external_sources",
+						sgDS,
+						"external_sources",
+					),
 				),
 			},
 			// 4 Remove SG external source
@@ -99,6 +127,12 @@ func TestSecurityGroup(t *testing.T) {
 						sg,
 						"external_sources.*",
 						"192.168.1.1/32",
+					),
+					resource.TestCheckResourceAttrPair(
+						sg,
+						"external_sources",
+						sgDS,
+						"external_sources",
 					),
 				),
 			},

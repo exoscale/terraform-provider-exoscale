@@ -4,3 +4,6 @@ resource "exoscale_security_group" "test_sg" {
   external_sources = ["192.168.1.1/32", "192.168.2.1/32"]
 }
 
+data "exoscale_security_group" "test_sg" {
+  id = exoscale_security_group.test_sg.id
+}

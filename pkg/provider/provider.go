@@ -213,6 +213,7 @@ func (p *ExoscaleProvider) DataSources(ctx context.Context) []func() datasource.
 			return &nlb_service.NLBServiceListDataSource{}
 		},
 		sos_bucket_policy.NewDataSourceSOSBucketPolicy,
+		security_group.NewDataSource,
 	}
 }
 
