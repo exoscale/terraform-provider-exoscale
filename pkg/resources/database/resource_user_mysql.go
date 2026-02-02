@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -217,14 +218,17 @@ func (data *MysqlUserResourceModel) DeleteResource(ctx context.Context, client *
 
 }
 
-func (data *MysqlUserResourceModel) ReadResource(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics) {
+func (data *MysqlUserResourceModel) ReadResource(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics) (clearState bool) {
 
 	svc, err := waitForDBAASServiceReadyForFn(ctx, client.GetDBAASServiceMysql, data.Service.ValueString(), func(t *exoscale.DBAASServiceMysql) bool {
 		return t.State == exoscale.EnumServiceStateRunning && len(t.Users) > 0
 	})
 	if err != nil {
+		if errors.Is(err, exoscale.ErrNotFound) {
+			return true
+		}
 		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read service mysql user, got error: %s", err))
-		return
+		return false
 	}
 
 	for _, user := range svc.Users {
@@ -235,15 +239,16 @@ func (data *MysqlUserResourceModel) ReadResource(ctx context.Context, client *ex
 			pass, err := client.RevealDBAASMysqlUserPassword(ctx, data.Service.ValueString(), data.Username.ValueString())
 			if err != nil {
 				diagnostics.AddError("Client Error", fmt.Sprintf("Unable to reveal pg user password, got error: %s", err))
-				return
+				return false
 			}
 
 			data.Password = basetypes.NewStringValue(pass.Password)
 
-			return
+			return false
 		}
 	}
-	diagnostics.AddError("Client Error", "Unable to read user for the service")
+
+	return true
 }
 
 func (data *MysqlUserResourceModel) UpdateResource(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics) {
