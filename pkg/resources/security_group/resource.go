@@ -100,7 +100,7 @@ func (r *Resource) Schema(
 			},
 			"description": schema.StringAttribute{
 				Description:         "security group description",
-				MarkdownDescription: "❗ A free-form text describing the the Security Groupi.",
+				MarkdownDescription: "❗ A free-form text describing the the Security Group.",
 				Optional:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
