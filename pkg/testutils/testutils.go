@@ -44,6 +44,10 @@ type TestdataSpec struct {
 	Zone string
 }
 
+func ResourceName(id int64) string {
+	return fmt.Sprintf("terraform-provider-test-%d", id)
+}
+
 // ParseTestdataConfig loads configuration template and replaces Zone and test ID placeholders.
 // To reduce some error handling boilerplate funcion panics on failure to parse the template.
 func ParseTestdataConfig(path string, spec *TestdataSpec) string {
