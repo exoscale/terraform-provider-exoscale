@@ -17,6 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
@@ -185,9 +186,21 @@ func (r *Resource) Create(
 	state.ID = types.StringValue(op.Reference.ID.String())
 	state.Name = plan.Name
 	state.Description = plan.Description
+	if !plan.ExternalSources.IsNull() { // start with empty set to avoid error
+		dg := diag.Diagnostics{}
+		state.ExternalSources, dg = types.SetValue(types.StringType, []attr.Value{})
+		if dg.HasError() {
+			resp.Diagnostics.Append(dg...)
+			return
+		}
 
-	// Save state now (before external_sources is set).
-	// This prevents orphaning a resource in case of an error later.
+	}
+
+	tflog.Info(
+		ctx,
+		"SG created, saving state before syncing external sources",
+		map[string]any{},
+	)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 
 	if resp.Diagnostics.HasError() || plan.ExternalSources.IsNull() {
@@ -204,7 +217,7 @@ func (r *Resource) Create(
 	for _, cidr := range cidrs {
 		op, err := r.client.AddExternalSourceToSecurityGroup(
 			ctx,
-			exoscale.UUID(state.ID.String()),
+			exoscale.UUID(state.ID.ValueString()),
 			exoscale.AddExternalSourceToSecurityGroupRequest{
 				Cidr: cidr,
 			},
@@ -236,7 +249,11 @@ func (r *Resource) Create(
 			return
 		}
 
-		// Saving state after each operation makes sure state is in sync after error.
+		tflog.Info(
+			ctx,
+			"external source added to SG, saving state",
+			map[string]any{"cidr": cidr},
+		)
 		resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 		if resp.Diagnostics.HasError() {
 			return
@@ -397,7 +414,11 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 				return
 			}
 
-			// Save state to allow recovery on error.
+			tflog.Info(
+				ctx,
+				"SG updated, saving state before syncing external sources",
+				map[string]any{},
+			)
 			var deletedKey int
 			for key, elem := range stateElems {
 				if elem.String() == deleted.String() {
@@ -413,6 +434,11 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 				return
 			}
 
+			tflog.Info(
+				ctx,
+				"external source removed from SG, saving state",
+				map[string]any{"cidr": deleted.(basetypes.StringValue).ValueString()},
+			)
 			resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 			if resp.Diagnostics.HasError() {
 				return
@@ -445,7 +471,11 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 				return
 			}
 
-			// Save state to allow recovery on error.
+			tflog.Info(
+				ctx,
+				"external source added to SG, saving state",
+				map[string]any{"cidr": added.(basetypes.StringValue).ValueString()},
+			)
 			stateElems = append(stateElems, added)
 			dg := diag.Diagnostics{}
 			state.ExternalSources, dg = types.SetValue(types.StringType, stateElems)
