@@ -85,10 +85,11 @@ func Resource() *schema.Resource {
 			DiffSuppressFunc: utils.SuppressCaseDiff,
 		},
 		AttrIPv6: {
-			Description: "Enable IPv6 on managed instances (boolean; default: `false`).",
-			Type:        schema.TypeBool,
-			Optional:    true,
-			Default:     false,
+			Description:   "Enable IPv6 for instances in the pool (boolean; default: false). Conflicts with `private`.",
+			Type:          schema.TypeBool,
+			Optional:      true,
+			Default:       false,
+			ConflictsWith: []string{AttrPrivate},
 		},
 		AttrKeyPair: {
 			Description: "The [exoscale_ssh_key](./ssh_key.md) (name) to authorize in the managed instances.",
@@ -199,6 +200,14 @@ func Resource() *schema.Resource {
 			Type:        schema.TypeString,
 			Required:    true,
 			ForceNew:    true,
+		},
+		AttrPrivate: {
+			Description:   "Whether the instance pool is private (no public IP addresses; default: false). Cannot be changed after creation. Conflicts with `ipv6`.",
+			Type:          schema.TypeBool,
+			Optional:      true,
+			Default:       false,
+			ForceNew:      true,
+			ConflictsWith: []string{AttrIPv6},
 		},
 	}
 
@@ -350,8 +359,31 @@ func rCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 		createPoolRequest.ElasticIPS = utils.ElasticIPIDsToElasticIPs(set.List())
 	}
 
-	enableIPv6 := d.Get(AttrIPv6).(bool)
-	createPoolRequest.Ipv6Enabled = &enableIPv6
+	// Handle public IP assignment based on private and ipv6 settings
+	if privateInstance, ok := d.GetOk(AttrPrivate); ok {
+		privateInstanceBool := privateInstance.(bool)
+		if privateInstanceBool {
+			createPoolRequest.PublicIPAssignment = v3.CreateInstancePoolRequestPublicIPAssignmentNone
+		} else if enableIPv6, ok := d.GetOk(AttrIPv6); ok {
+			ipv6EnabledBool := enableIPv6.(bool)
+			if ipv6EnabledBool {
+				createPoolRequest.PublicIPAssignment = v3.CreateInstancePoolRequestPublicIPAssignmentDual
+			} else {
+				createPoolRequest.PublicIPAssignment = v3.CreateInstancePoolRequestPublicIPAssignmentInet4
+			}
+		} else {
+			createPoolRequest.PublicIPAssignment = v3.CreateInstancePoolRequestPublicIPAssignmentInet4
+		}
+	} else if enableIPv6, ok := d.GetOk(AttrIPv6); ok {
+		ipv6EnabledBool := enableIPv6.(bool)
+		if ipv6EnabledBool {
+			createPoolRequest.PublicIPAssignment = v3.CreateInstancePoolRequestPublicIPAssignmentDual
+		} else {
+			createPoolRequest.PublicIPAssignment = v3.CreateInstancePoolRequestPublicIPAssignmentInet4
+		}
+	} else {
+		createPoolRequest.PublicIPAssignment = v3.CreateInstancePoolRequestPublicIPAssignmentInet4
+	}
 
 	if v := d.Get(AttrUserData).(string); v != "" {
 		userData, _, err := utils.EncodeUserData(v)
@@ -503,10 +535,18 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 		updated = true
 	}
 
+	// Handle public IP assignment based on ipv6 setting
+	// Note: private is ForceNew so it won't change (and can't be updated to 'none' anyway)
 	if d.HasChange(AttrIPv6) {
-		v := d.Get(AttrIPv6).(bool)
-		updateRequest.Ipv6Enabled = &v
-		updated = true
+		// Only update if not private, as private instances cannot change public IP assignment
+		if privateInstance := d.Get(AttrPrivate).(bool); !privateInstance {
+			if enableIPv6 := d.Get(AttrIPv6).(bool); enableIPv6 {
+				updateRequest.PublicIPAssignment = v3.UpdateInstancePoolRequestPublicIPAssignmentDual
+			} else {
+				updateRequest.PublicIPAssignment = v3.UpdateInstancePoolRequestPublicIPAssignmentInet4
+			}
+			updated = true
+		}
 	}
 
 	// We need to explicitely specify the SSHKey on
@@ -707,8 +747,29 @@ func rApply(ctx context.Context, client *v3.Client, d *schema.ResourceData, pool
 		return diag.FromErr(err)
 	}
 
-	if err := d.Set(AttrIPv6, utils.DefaultBool(pool.Ipv6Enabled, false)); err != nil {
-		return diag.FromErr(err)
+	// Set private and ipv6 based on PublicIPAssignment
+	if pool.PublicIPAssignment == v3.PublicIPAssignmentNone {
+		if err := d.Set(AttrPrivate, true); err != nil {
+			return diag.FromErr(err)
+		}
+		if err := d.Set(AttrIPv6, false); err != nil {
+			return diag.FromErr(err)
+		}
+	} else if pool.PublicIPAssignment == v3.PublicIPAssignmentDual {
+		if err := d.Set(AttrPrivate, false); err != nil {
+			return diag.FromErr(err)
+		}
+		if err := d.Set(AttrIPv6, true); err != nil {
+			return diag.FromErr(err)
+		}
+	} else {
+		// inet4 or empty
+		if err := d.Set(AttrPrivate, false); err != nil {
+			return diag.FromErr(err)
+		}
+		if err := d.Set(AttrIPv6, false); err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
 	if pool.SSHKey != nil {
