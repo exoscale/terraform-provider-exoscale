@@ -113,7 +113,6 @@ func Provider() *schema.Provider {
 			"exoscale_nlb":                 resourceNLB(),
 			"exoscale_nlb_service":         resourceNLBService(),
 			"exoscale_private_network":     resourcePrivateNetwork(),
-			"exoscale_security_group":      resourceSecurityGroup(),
 			"exoscale_security_group_rule": resourceSecurityGroupRule(),
 			"exoscale_sks_cluster":         resourceSKSCluster(),
 			"exoscale_sks_kubeconfig":      resourceSKSKubeconfig(),
