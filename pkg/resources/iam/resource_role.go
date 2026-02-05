@@ -2,6 +2,7 @@ package iam
 
 import (
 	"context"
+	"errors"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -342,13 +343,18 @@ func (r *ResourceRole) Read(ctx context.Context, req resource.ReadRequest, resp 
 
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(r.env, config.DefaultZone))
 
-	r.read(ctx, &resp.Diagnostics, &data)
+	clearState := r.read(ctx, &resp.Diagnostics, &data)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Save updated data into Terraform state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	if clearState {
+		// Delete resource because it does not exist
+		resp.State.RemoveResource(ctx)
+	} else {
+		// Save updated data into Terraform state
+		resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	}
 
 	tflog.Trace(ctx, "resource read done", map[string]interface{}{
 		"id": data.ID,
@@ -587,15 +593,18 @@ func (r *ResourceRole) read(
 	ctx context.Context,
 	d *diag.Diagnostics,
 	data *ResourceRoleModel,
-) {
+) (clearState bool) {
 
 	role, err := r.client.GetIAMRole(ctx, config.DefaultZone, data.ID.ValueString())
 	if err != nil {
+		if errors.Is(err, exoapi.ErrNotFound) {
+			return true
+		}
 		d.AddError(
 			"Unable to get IAM Role",
 			err.Error(),
 		)
-		return
+		return false
 	}
 
 	// Althogh name will not change after resource creation, it can be empty after import.
@@ -615,7 +624,7 @@ func (r *ResourceRole) read(
 		)
 		if dg.HasError() {
 			d.Append(dg...)
-			return
+			return false
 		}
 
 		data.Labels = t
@@ -630,7 +639,7 @@ func (r *ResourceRole) read(
 		)
 		if dg.HasError() {
 			d.Append(dg...)
-			return
+			return false
 		}
 
 		data.Permissions = t
@@ -666,7 +675,7 @@ func (r *ResourceRole) read(
 			)
 			if dg.HasError() {
 				d.Append(dg...)
-				return
+				return false
 			}
 			serviceModel.Rules = t
 
@@ -682,7 +691,7 @@ func (r *ResourceRole) read(
 		)
 		if dg.HasError() {
 			d.Append(dg...)
-			return
+			return false
 		}
 
 		policy.Services = t
@@ -696,8 +705,10 @@ func (r *ResourceRole) read(
 
 	if dg.HasError() {
 		d.Append(dg...)
-		return
+		return false
 	}
 
 	data.Policy = p
+
+	return false
 }

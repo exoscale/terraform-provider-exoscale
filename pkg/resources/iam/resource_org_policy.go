@@ -270,6 +270,9 @@ func (r *ResourceOrgPolicy) read(
 		for name, service := range policy.Services {
 			serviceModel := PolicyServiceModel{
 				Type: types.StringPointerValue(service.Type),
+				Rules: types.ListNull(types.ObjectType{
+					AttrTypes: PolicyServiceRuleModel{}.Types(),
+				}),
 			}
 
 			if len(service.Rules) > 0 {
