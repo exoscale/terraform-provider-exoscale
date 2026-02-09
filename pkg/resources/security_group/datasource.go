@@ -80,6 +80,11 @@ func (d *DataSource) Schema(
 				Description:         "security group name",
 				MarkdownDescription: "The name of the Security Group (required if `id` is not set).",
 				Optional:            true,
+				Validators: []validator.String{
+					stringvalidator.ExactlyOneOf(path.Expressions{
+						path.MatchRoot("id"),
+					}...),
+				},
 			},
 			"description": schema.StringAttribute{
 				Description:         "security group description",
@@ -178,7 +183,6 @@ func (d *DataSource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 		return
 	}
 
-	state.Name = types.StringValue(sg.Name)
 	state.Description = types.StringValue(sg.Description)
 
 	state.ExternalSources = types.SetNull(types.StringType)

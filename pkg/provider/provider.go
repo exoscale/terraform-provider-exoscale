@@ -234,6 +234,7 @@ func (p *ExoscaleProvider) Resources(ctx context.Context) []func() resource.Reso
 		block_storage.NewResourceSnapshot,
 		sos_bucket_policy.NewResourceSOSBucketPolicy,
 		security_group.NewResource,
+		security_group.NewResourceRule,
 	}
 }
 

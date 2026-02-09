@@ -35,13 +35,14 @@ Corresponding data source: [exoscale_security_group](../data_sources/security_gr
 var _ resource.Resource = &Resource{}
 var _ resource.ResourceWithImportState = &Resource{}
 
-type Resource struct {
-	client *exoscale.Client
-}
+// ResourceModel defines the resource data model.
+type ResourceModel struct {
+	ID              types.String `tfsdk:"id"`
+	Name            types.String `tfsdk:"name"`
+	Description     types.String `tfsdk:"description"`
+	ExternalSources types.Set    `tfsdk:"external_sources"`
 
-// NewResource creates instance of Resource.
-func NewResource() resource.Resource {
-	return &Resource{}
+	Timeouts timeouts.Value `tfsdk:"timeouts"`
 }
 
 func NewResourceModel() ResourceModel {
@@ -54,14 +55,13 @@ func NewResourceModel() ResourceModel {
 	}
 }
 
-// ResourceModel defines the resource data model.
-type ResourceModel struct {
-	ID              types.String `tfsdk:"id"`
-	Name            types.String `tfsdk:"name"`
-	Description     types.String `tfsdk:"description"`
-	ExternalSources types.Set    `tfsdk:"external_sources"`
+type Resource struct {
+	client *exoscale.Client
+}
 
-	Timeouts timeouts.Value `tfsdk:"timeouts"`
+// NewResource creates instance of Resource.
+func NewResource() resource.Resource {
+	return &Resource{}
 }
 
 // Metadata specifies resource name.
@@ -103,8 +103,10 @@ func (r *Resource) Schema(
 				Description:         "security group description",
 				MarkdownDescription: "❗ A free-form text describing the the Security Group.",
 				Optional:            true,
+				Computed:            true,
 				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
+					stringplanmodifier.RequiresReplaceIfConfigured(),
+					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"external_sources": schema.SetAttribute{
@@ -140,13 +142,11 @@ func (r *Resource) Create(
 	resp *resource.CreateResponse,
 ) {
 	var plan ResourceModel
-	state := NewResourceModel()
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	state.Timeouts = plan.Timeouts
 
 	timeout, diags := plan.Timeouts.Create(ctx, config.DefaultTimeout)
 	resp.Diagnostics.Append(diags...)
@@ -156,16 +156,12 @@ func (r *Resource) Create(
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	sg := exoscale.CreateSecurityGroupRequest{
-		Name: plan.Name.ValueString(),
-	}
-	if !plan.Description.IsNull() {
-		sg.Description = plan.Description.ValueString()
-	}
-
 	op, err := r.client.CreateSecurityGroup(
 		ctx,
-		sg,
+		exoscale.CreateSecurityGroupRequest{
+			Name:        plan.Name.ValueString(),
+			Description: plan.Description.ValueString(),
+		},
 	)
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -183,17 +179,21 @@ func (r *Resource) Create(
 		return
 	}
 
-	state.ID = types.StringValue(op.Reference.ID.String())
-	state.Name = plan.Name
-	state.Description = plan.Description
-	if !plan.ExternalSources.IsNull() { // start with empty set to avoid error
-		dg := diag.Diagnostics{}
-		state.ExternalSources, dg = types.SetValue(types.StringType, []attr.Value{})
-		if dg.HasError() {
+	plan.ID = types.StringValue(op.Reference.ID.String())
+	if plan.Description.IsUnknown() {
+		plan.Description = types.StringNull()
+	}
+
+	var planElems []attr.Value
+	if !plan.ExternalSources.IsNull() {
+		// Start with empty set, we will add one item at a time.
+		planElems = plan.ExternalSources.Elements()
+		if set, dg := types.SetValue(types.StringType, []attr.Value{}); dg.HasError() {
 			resp.Diagnostics.Append(dg...)
 			return
+		} else {
+			plan.ExternalSources = set
 		}
-
 	}
 
 	tflog.Info(
@@ -201,23 +201,17 @@ func (r *Resource) Create(
 		"SG created, saving state before syncing external sources",
 		map[string]any{},
 	)
-	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
-
-	if resp.Diagnostics.HasError() || plan.ExternalSources.IsNull() {
-		return
-	}
-
-	var cidrs []string
-	resp.Diagnostics.Append(plan.ExternalSources.ElementsAs(ctx, &cidrs, false)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	setElems := []attr.Value{}
-	for _, cidr := range cidrs {
+	stateElems := []attr.Value{}
+	for _, elem := range planElems {
+		cidr := elem.(basetypes.StringValue).ValueString()
 		op, err := r.client.AddExternalSourceToSecurityGroup(
 			ctx,
-			exoscale.UUID(state.ID.ValueString()),
+			exoscale.UUID(plan.ID.ValueString()),
 			exoscale.AddExternalSourceToSecurityGroupRequest{
 				Cidr: cidr,
 			},
@@ -241,9 +235,9 @@ func (r *Resource) Create(
 			return
 		}
 
-		setElems = append(setElems, types.StringValue((cidr)))
+		stateElems = append(stateElems, elem)
 		dg := diag.Diagnostics{}
-		state.ExternalSources, dg = types.SetValue(types.StringType, setElems)
+		plan.ExternalSources, dg = types.SetValue(types.StringType, stateElems)
 		if dg.HasError() {
 			resp.Diagnostics.Append(dg...)
 			return
@@ -254,7 +248,7 @@ func (r *Resource) Create(
 			"external source added to SG, saving state",
 			map[string]any{"cidr": cidr},
 		)
-		resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+		resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 		if resp.Diagnostics.HasError() {
 			return
 		}
@@ -282,8 +276,12 @@ func (r *Resource) Read(
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	// If ID is empty (resource doesn't exist), we can remove it from state
 	if state.ID.ValueString() == "" {
+		tflog.Info(
+			ctx,
+			"sg has no ID, deleting from state to report drift",
+			map[string]any{},
+		)
 		resp.State.RemoveResource(ctx)
 		return
 	}
@@ -300,8 +298,11 @@ func (r *Resource) Read(
 	sg, err := r.client.GetSecurityGroup(ctx, id)
 	if err != nil {
 		if errors.Is(err, exoscale.ErrNotFound) {
-			// Resource doesn't exist anymore because it was deleted manually.
-			// We must remove it from the state so terraform can report the drift.
+			tflog.Info(
+				ctx,
+				"sg not found, deleting from state to report drift",
+				map[string]any{},
+			)
 			resp.State.RemoveResource(ctx)
 		} else {
 			resp.Diagnostics.AddError(
@@ -314,9 +315,7 @@ func (r *Resource) Read(
 	}
 
 	state.Name = types.StringValue(sg.Name)
-	if !state.Description.IsNull() {
-		state.Description = types.StringValue(sg.Description)
-	}
+	state.Description = types.StringValue(sg.Description)
 
 	if !state.ExternalSources.IsNull() {
 		state.ExternalSources = types.SetNull(types.StringType)
@@ -357,7 +356,9 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 
 	// Only ExternalSources are update-able and also Optional.
 	// When `Null` in plan, we don't sync the remote and can exit early.
-	if plan.ExternalSources.IsNull() {
+	// We also exit if unchainded as a safeguard.
+	if plan.ExternalSources.IsNull() ||
+		plan.ExternalSources.Equal(state.ExternalSources) {
 		state.ExternalSources = plan.ExternalSources
 		resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 		return
@@ -372,122 +373,120 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 		return
 	}
 
-	if !plan.ExternalSources.Equal(state.ExternalSources) {
-		stateElems := state.ExternalSources.Elements()
-		planElems := plan.ExternalSources.Elements()
-		if len(stateElems) == 0 && len(planElems) == 0 { // unset in state, empty in plan
-			state.ExternalSources = plan.ExternalSources
-			resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
-			return
-		}
+	stateElems := state.ExternalSources.Elements()
+	planElems := plan.ExternalSources.Elements()
+	if len(stateElems) == 0 && len(planElems) == 0 { // unset in state, empty in plan
+		state.ExternalSources = plan.ExternalSources
+		resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+		return
+	}
 
-		newElems, delElems := diffExternalSources(stateElems, planElems)
+	newElems, delElems := diffExternalSources(stateElems, planElems)
 
-		for _, deleted := range delElems {
-			op, err := r.client.RemoveExternalSourceFromSecurityGroup(
-				ctx,
-				id,
-				exoscale.RemoveExternalSourceFromSecurityGroupRequest{
-					Cidr: deleted.(basetypes.StringValue).ValueString(),
-				},
-			)
-			if err != nil {
-				if !errors.Is(err, exoscale.ErrNotFound) { // proceed on 404
-					resp.Diagnostics.AddError(
-						fmt.Sprintf(
-							"API returned error when removing external source %q",
-							deleted.String(),
-						),
-						err.Error(),
-					)
-					return
-				}
-			} else if _, err := r.client.Wait(
-				ctx,
-				op,
-				exoscale.OperationStateSuccess,
-			); err != nil {
-				resp.Diagnostics.AddError(
-					"remove external source operation failed",
-					err.Error(),
-				)
-				return
-			}
-
-			tflog.Info(
-				ctx,
-				"SG updated, saving state before syncing external sources",
-				map[string]any{},
-			)
-			var deletedKey int
-			for key, elem := range stateElems {
-				if elem.String() == deleted.String() {
-					deletedKey = key
-					break
-				}
-			}
-			stateElems = slices.Delete(stateElems, deletedKey, deletedKey+1)
-			dg := diag.Diagnostics{}
-			state.ExternalSources, dg = types.SetValue(types.StringType, stateElems)
-			if dg.HasError() {
-				resp.Diagnostics.Append(dg...)
-				return
-			}
-
-			tflog.Info(
-				ctx,
-				"external source removed from SG, saving state",
-				map[string]any{"cidr": deleted.(basetypes.StringValue).ValueString()},
-			)
-			resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
-			if resp.Diagnostics.HasError() {
-				return
-			}
-		}
-
-		for _, added := range newElems {
-			op, err := r.client.AddExternalSourceToSecurityGroup(
-				ctx,
-				id,
-				exoscale.AddExternalSourceToSecurityGroupRequest{
-					Cidr: added.(basetypes.StringValue).ValueString(),
-				},
-			)
-			if err != nil {
+	for _, deleted := range delElems {
+		op, err := r.client.RemoveExternalSourceFromSecurityGroup(
+			ctx,
+			id,
+			exoscale.RemoveExternalSourceFromSecurityGroupRequest{
+				Cidr: deleted.(basetypes.StringValue).ValueString(),
+			},
+		)
+		if err != nil {
+			if !errors.Is(err, exoscale.ErrNotFound) { // proceed on 404
 				resp.Diagnostics.AddError(
 					fmt.Sprintf(
-						"API returned error when adding external source %q",
-						added.String(),
+						"API returned error when removing external source %q",
+						deleted.String(),
 					),
 					err.Error(),
 				)
 				return
 			}
-			if _, err := r.client.Wait(ctx, op, exoscale.OperationStateSuccess); err != nil {
-				resp.Diagnostics.AddError(
-					"add external source operation failed",
-					err.Error(),
-				)
-				return
-			}
-
-			tflog.Info(
-				ctx,
-				"external source added to SG, saving state",
-				map[string]any{"cidr": added.(basetypes.StringValue).ValueString()},
+		} else if _, err := r.client.Wait(
+			ctx,
+			op,
+			exoscale.OperationStateSuccess,
+		); err != nil {
+			resp.Diagnostics.AddError(
+				"remove external source operation failed",
+				err.Error(),
 			)
-			stateElems = append(stateElems, added)
-			dg := diag.Diagnostics{}
-			state.ExternalSources, dg = types.SetValue(types.StringType, stateElems)
-			if dg.HasError() {
-				resp.Diagnostics.Append(dg...)
-				return
-			}
+			return
+		}
 
-			resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
-			if resp.Diagnostics.HasError() {
-				return
+		tflog.Info(
+			ctx,
+			"SG updated, saving state before syncing external sources",
+			map[string]any{},
+		)
+		var deletedKey int
+		for key, elem := range stateElems {
+			if elem.String() == deleted.String() {
+				deletedKey = key
+				break
 			}
+		}
+		stateElems = slices.Delete(stateElems, deletedKey, deletedKey+1)
+		dg := diag.Diagnostics{}
+		state.ExternalSources, dg = types.SetValue(types.StringType, stateElems)
+		if dg.HasError() {
+			resp.Diagnostics.Append(dg...)
+			return
+		}
+
+		tflog.Info(
+			ctx,
+			"external source removed from SG, saving state",
+			map[string]any{"cidr": deleted.(basetypes.StringValue).ValueString()},
+		)
+		resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+	}
+
+	for _, added := range newElems {
+		op, err := r.client.AddExternalSourceToSecurityGroup(
+			ctx,
+			id,
+			exoscale.AddExternalSourceToSecurityGroupRequest{
+				Cidr: added.(basetypes.StringValue).ValueString(),
+			},
+		)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				fmt.Sprintf(
+					"API returned error when adding external source %q",
+					added.String(),
+				),
+				err.Error(),
+			)
+			return
+		}
+		if _, err := r.client.Wait(ctx, op, exoscale.OperationStateSuccess); err != nil {
+			resp.Diagnostics.AddError(
+				"add external source operation failed",
+				err.Error(),
+			)
+			return
+		}
+
+		tflog.Info(
+			ctx,
+			"external source added to SG, saving state",
+			map[string]any{"cidr": added.(basetypes.StringValue).ValueString()},
+		)
+		stateElems = append(stateElems, added)
+		dg := diag.Diagnostics{}
+		state.ExternalSources, dg = types.SetValue(types.StringType, stateElems)
+		if dg.HasError() {
+			resp.Diagnostics.Append(dg...)
+			return
+		}
+
+		resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+		if resp.Diagnostics.HasError() {
+			return
 		}
 	}
 }
@@ -524,10 +523,20 @@ func (r *Resource) Delete(
 
 	op, err := r.client.DeleteSecurityGroup(ctx, id)
 	if err != nil {
+		if errors.Is(err, exoscale.ErrNotFound) {
+			tflog.Info(
+				ctx,
+				"delete sg returned 404, nothing to do",
+				map[string]any{},
+			)
+			return
+		}
+
 		resp.Diagnostics.AddError(
 			"API returned error when deleting security group",
 			err.Error(),
 		)
+
 		return
 	}
 
@@ -547,22 +556,7 @@ func (r *Resource) ImportState(
 	req resource.ImportStateRequest,
 	resp *resource.ImportStateResponse,
 ) {
-	state := NewResourceModel()
-
-	// Set timeouts (quirk https://github.com/hashicorp/terraform-plugin-framework-timeouts/issues/46)
-	var timeouts timeouts.Value
-	resp.Diagnostics.Append(
-		resp.State.GetAttribute(ctx, path.Root("timeouts"), &timeouts)...,
-	)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-	state.Timeouts = timeouts
-
-	state.ID = types.StringValue(req.ID)
-
-	// Save state into Terraform state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
 // diffExternalSources finds newly added and deleted external sources during update.

@@ -15,8 +15,12 @@ func TestSecurityGroup(t *testing.T) {
 	t.Parallel()
 
 	sg := "exoscale_security_group.test_sg"
+	sgAux := "exoscale_security_group.test_sg_aux"
 	sgDS := "data.exoscale_security_group.test_sg"
 	sgDSByName := "data.exoscale_security_group.test_sg_by_name"
+	rule1 := "exoscale_security_group_rule.test_rule_1"
+	rule2 := "exoscale_security_group_rule.test_rule_2"
+	rule3 := "exoscale_security_group_rule.test_rule_3"
 
 	testdataSpec := testutils.TestdataSpec{
 		ID:   time.Now().UnixNano(),
@@ -61,10 +65,12 @@ func TestSecurityGroup(t *testing.T) {
 					resource.TestCheckNoResourceAttr(sgDSByName, "external_sources"),
 				),
 			},
-			// 2 Update SG description (with single single ds by name)
+			// 2 Update SG, remove DS by name
+			// - update description
+			// - add external sources
 			{
 				Config: testutils.ParseTestdataConfig(
-					"./testdata/002.sg_update_description.tf.tmpl",
+					"./testdata/002.sg_update.tf.tmpl",
 					&testdataSpec,
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
@@ -79,15 +85,6 @@ func TestSecurityGroup(t *testing.T) {
 						sgDS,
 						"description",
 					),
-				),
-			},
-			// 3 Add SG external sources
-			{
-				Config: testutils.ParseTestdataConfig(
-					"./testdata/003.sg_add_external_sources.tf.tmpl",
-					&testdataSpec,
-				),
-				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(
 						sg,
 						"external_sources.#",
@@ -111,10 +108,10 @@ func TestSecurityGroup(t *testing.T) {
 					),
 				),
 			},
-			// 4 Remove SG external source
+			// 3 Remove SG external source
 			{
 				Config: testutils.ParseTestdataConfig(
-					"./testdata/004.sg_remove_external_source.tf.tmpl",
+					"./testdata/003.remove_external_source.tf.tmpl",
 					&testdataSpec,
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
@@ -136,18 +133,119 @@ func TestSecurityGroup(t *testing.T) {
 					),
 				),
 			},
-			// Import
+			// 4 Add rules
+			// - rule 1 (cidr & ports)
+			// - rule 2 (public sg & icmp)
+			// - add aux SG and rule 3 with user sg and default flow direction
 			{
-				ResourceName: sg,
+				Config: testutils.ParseTestdataConfig(
+					"./testdata/004.add_rules.tf.tmpl",
+					&testdataSpec,
+				),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						rule1,
+						"cidr",
+						"1.1.1.1/32",
+					),
+					resource.TestCheckResourceAttr(
+						rule1,
+						"description",
+						"test",
+					),
+					resource.TestCheckResourceAttr(
+						rule1,
+						"type",
+						"INGRESS",
+					),
+					resource.TestCheckResourceAttr(
+						rule1,
+						"protocol",
+						"UDP",
+					),
+					resource.TestCheckResourceAttr(
+						rule1,
+						"start_port",
+						"8080",
+					),
+					resource.TestCheckResourceAttr(
+						rule1,
+						"end_port",
+						"8081",
+					),
+					resource.TestCheckResourceAttr(
+						rule2,
+						"public_security_group",
+						"public-sks-apiservers",
+					),
+					resource.TestCheckResourceAttr(
+						rule2,
+						"type",
+						"EGRESS",
+					),
+					resource.TestCheckResourceAttr(
+						rule2,
+						"protocol",
+						"ICMP",
+					),
+					resource.TestCheckResourceAttr(
+						rule2,
+						"icmp_type",
+						"8",
+					),
+					resource.TestCheckResourceAttr(
+						rule2,
+						"icmp_code",
+						"0",
+					),
+					resource.TestCheckResourceAttrPair(
+						sgAux,
+						"id",
+						rule3,
+						"user_security_group_id",
+					),
+					resource.TestCheckResourceAttr(
+						rule3,
+						"type",
+						"INGRESS",
+					),
+					resource.TestCheckResourceAttr(
+						rule3,
+						"protocol",
+						"TCP",
+					),
+					resource.TestCheckResourceAttr(
+						rule3,
+						"start_port",
+						"8080",
+					),
+					resource.TestCheckResourceAttr(
+						rule3,
+						"end_port",
+						"8081",
+					),
+				),
+			},
+			// Import SG
+			{
+				ResourceName: rule1,
 				ImportStateIdFunc: func() resource.ImportStateIdFunc {
 					return func(s *terraform.State) (string, error) {
 						return fmt.Sprintf(
-							"%s",
+							"%s@%s",
 							s.RootModule().Resources[sg].Primary.ID,
+							s.RootModule().Resources[rule1].Primary.ID,
 						), nil
 					}
 				}(),
-				ImportState: true,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					// type and protocol are case insensitive,
+					// refresh after import cannot ignore case as state is empty
+					"type",
+					"protocol",
+				},
 			},
 		},
 	})

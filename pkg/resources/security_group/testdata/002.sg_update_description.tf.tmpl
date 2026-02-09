@@ -1,8 +1,0 @@
-resource "exoscale_security_group" "test_sg" {
-  name = "terraform-provider-test-{{ .ID }}"
-  description = "updated description"
-}
-
-data "exoscale_security_group" "test_sg" {
-  id = exoscale_security_group.test_sg.id
-}
