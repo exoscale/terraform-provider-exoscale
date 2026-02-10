@@ -4,8 +4,17 @@
 
 IMPROVEMENTS:
 
-- chores(dbaas): make database ca_certificate sensitive #488
+BUG FIXES:
 
+BREAKING CHANGES:
+
+FEATURES:
+
+## 0.68.0
+
+IMPROVEMENTS:
+
+- chores(dbaas): make database ca_certificate sensitive #488
 
 BUG FIXES:
 
