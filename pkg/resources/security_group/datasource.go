@@ -192,7 +192,7 @@ func (d *DataSource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 			setElems = append(setElems, types.StringValue((cidr)))
 		}
 
-		dg := diag.Diagnostics{}
+		var dg diag.Diagnostics
 		state.ExternalSources, dg = types.SetValue(types.StringType, setElems)
 		if dg.HasError() {
 			resp.Diagnostics.Append(dg...)

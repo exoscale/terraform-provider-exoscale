@@ -236,7 +236,7 @@ func (r *Resource) Create(
 		}
 
 		stateElems = append(stateElems, elem)
-		dg := diag.Diagnostics{}
+		var dg diag.Diagnostics
 		plan.ExternalSources, dg = types.SetValue(types.StringType, stateElems)
 		if dg.HasError() {
 			resp.Diagnostics.Append(dg...)
@@ -325,7 +325,7 @@ func (r *Resource) Read(
 			setElems = append(setElems, types.StringValue((cidr)))
 		}
 
-		dg := diag.Diagnostics{}
+		var dg diag.Diagnostics
 		state.ExternalSources, dg = types.SetValue(types.StringType, setElems)
 		if dg.HasError() {
 			resp.Diagnostics.Append(dg...)
@@ -427,7 +427,7 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 			}
 		}
 		stateElems = slices.Delete(stateElems, deletedKey, deletedKey+1)
-		dg := diag.Diagnostics{}
+		var dg diag.Diagnostics
 		state.ExternalSources, dg = types.SetValue(types.StringType, stateElems)
 		if dg.HasError() {
 			resp.Diagnostics.Append(dg...)
@@ -477,7 +477,7 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 			map[string]any{"cidr": added.(basetypes.StringValue).ValueString()},
 		)
 		stateElems = append(stateElems, added)
-		dg := diag.Diagnostics{}
+		var dg diag.Diagnostics
 		state.ExternalSources, dg = types.SetValue(types.StringType, stateElems)
 		if dg.HasError() {
 			resp.Diagnostics.Append(dg...)
