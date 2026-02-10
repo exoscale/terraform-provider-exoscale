@@ -28,6 +28,7 @@ var (
 	rLabelValueUpdated           = rLabelValue + "-updated"
 	rName                        = acctest.RandomWithPrefix(testutils.Prefix)
 	rNameUpdated                 = rName + "-updated"
+	rNamePrivate                 = acctest.RandomWithPrefix(testutils.Prefix)
 	rInstancePrefix              = "test"
 	rNetwork                     = acctest.RandomWithPrefix(testutils.Prefix)
 	rInstanceType                = "standard.tiny"
@@ -100,7 +101,7 @@ locals {
 
 data "exoscale_template" "debian" {
   zone = local.zone
-  name = "Linux Debian 12 (Bookworm) 64-bit"
+  name = "Linux Ubuntu 24.04 LTS 64-bit"
 }
 
 resource "exoscale_private_network" "test" {
@@ -152,6 +153,61 @@ resource "exoscale_instance_pool" "test" {
 		rDiskSizeUpdated,
 		rUserDataUpdated,
 		rLabelValueUpdated,
+	)
+
+	rConfigPrivate = fmt.Sprintf(`
+locals {
+  zone = "%s"
+}
+
+data "exoscale_template" "ubuntu" {
+  zone = local.zone
+  name = "Linux Ubuntu 22.04 LTS 64-bit"
+}
+
+resource "exoscale_private_network" "test_private" {
+  zone = local.zone
+  name = "%s-net"
+}
+
+resource "exoscale_instance_pool" "test_private" {
+  zone = local.zone
+  name = "%s"
+  description = "Private instance pool test"
+  template_id = data.exoscale_template.ubuntu.id
+  instance_type = "%s"
+  size = %d
+  disk_size = %d
+  private = true
+  network_ids = [exoscale_private_network.test_private.id]
+  user_data = <<-EOT
+    #cloud-config
+    write_files:
+      - path: /etc/netplan/eth1.yaml
+        content: |
+          network:
+            version: 2
+            ethernets:
+              eth1:
+                dhcp4: true
+
+    runcmd:
+      - [ netplan, apply ]
+  EOT
+
+  depends_on = [exoscale_private_network.test_private]
+
+  timeouts {
+    delete = "10m"
+  }
+}
+`,
+		testutils.TestZoneName,
+		rNamePrivate,
+		rNamePrivate,
+		rInstanceType,
+		rSize,
+		rDiskSize,
 	)
 )
 
@@ -313,6 +369,61 @@ func testResource(t *testing.T) {
 						}(s),
 					)
 				},
+			},
+		},
+	})
+}
+
+func testResourcePrivate(t *testing.T) {
+	var (
+		r            = "exoscale_instance_pool.test_private"
+		instancePool v3.InstancePool
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testutils.AccPreCheck(t) },
+		ProviderFactories: testutils.Providers(),
+		CheckDestroy:      testutils.CheckInstancePoolDestroy(&instancePool),
+		Steps: []resource.TestStep{
+			{
+				// Create private instance pool
+				Config: rConfigPrivate,
+				Check: resource.ComposeTestCheckFunc(
+					testutils.CheckInstancePoolExists(r, &instancePool),
+					func(s *terraform.State) error {
+						a := require.New(t)
+
+						templateID, err := testutils.AttrFromState(s, "data.exoscale_template.ubuntu", "id")
+						a.NoError(err, "unable to retrieve template ID from state")
+
+						a.Equal(rDiskSize, instancePool.DiskSize)
+						a.Len(instancePool.Instances, int(rSize))
+						a.Equal(testutils.TestInstanceTypeIDTiny, instancePool.InstanceType.ID.String())
+						a.Equal(rNamePrivate, instancePool.Name)
+						a.Len(instancePool.PrivateNetworks, 1)
+						a.Equal(rSize, instancePool.Size)
+						a.Equal(templateID, instancePool.Template.ID.String())
+						
+						// Verify PublicIPAssignment is "none" for private pools
+						a.Equal(v3.PublicIPAssignmentNone, instancePool.PublicIPAssignment)
+
+						return nil
+					},
+					testutils.CheckResourceState(r, testutils.CheckResourceStateValidateAttributes(testutils.TestAttrs{
+						instance_pool.AttrDescription:            testutils.ValidateString("Private instance pool test"),
+						instance_pool.AttrDiskSize:               testutils.ValidateString(fmt.Sprint(rDiskSize)),
+						instance_pool.AttrInstanceType:           testutils.ValidateString(rInstanceType),
+						instance_pool.AttrName:                   testutils.ValidateString(rNamePrivate),
+						instance_pool.AttrNetworkIDs + ".#":      testutils.ValidateString("1"),
+						instance_pool.AttrPrivate:                testutils.ValidateString("true"),
+						instance_pool.AttrSize:                   testutils.ValidateString(fmt.Sprint(rSize)),
+						instance_pool.AttrState:                  validation.ToDiagFunc(validation.NoZeroValues),
+						instance_pool.AttrTemplateID:             validation.ToDiagFunc(validation.IsUUID),
+						instance_pool.AttrVirtualMachines + ".#": testutils.ValidateString(fmt.Sprint(rSize)),
+						instance_pool.AttrInstances + ".#":       testutils.ValidateString(fmt.Sprint(rSize)),
+						instance_pool.AttrZone:                   testutils.ValidateString(testutils.TestZoneName),
+					})),
+				),
 			},
 		},
 	})

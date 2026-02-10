@@ -28,6 +28,8 @@ BREAKING CHANGES:
 
 FEATURES:
 
+- resource/exoscale_instance_pool: Add `private` attribute to support private instance pools (no public IP addresses)
+
 ## 0.67.2
 
 IMPROVEMENTS:
