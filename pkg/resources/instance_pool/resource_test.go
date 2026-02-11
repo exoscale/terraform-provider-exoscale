@@ -162,9 +162,9 @@ func testResource(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testutils.AccPreCheck(t) },
-		ProviderFactories: testutils.Providers(),
-		CheckDestroy:      testutils.CheckInstancePoolDestroy(&instancePool),
+		PreCheck:                 func() { testutils.AccPreCheck(t) },
+		ProtoV6ProviderFactories: testutils.TestAccProtoV6ProviderFactories,
+		CheckDestroy:             testutils.CheckInstancePoolDestroy(&instancePool),
 		Steps: []resource.TestStep{
 			{
 				// Create

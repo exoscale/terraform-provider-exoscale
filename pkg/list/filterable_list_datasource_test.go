@@ -11,8 +11,8 @@ import (
 
 func TestFilterableListDataSource(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testutils.AccPreCheck(t) },
-		ProviderFactories: testutils.Providers(),
+		PreCheck:                 func() { testutils.AccPreCheck(t) },
+		ProtoV6ProviderFactories: testutils.TestAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: `

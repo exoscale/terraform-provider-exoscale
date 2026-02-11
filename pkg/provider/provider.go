@@ -3,19 +3,24 @@ package provider
 import (
 	"context"
 	"fmt"
+	"log"
+	"net/http"
 	"os"
+	"runtime/debug"
+	"time"
 
+	retryablehttp "github.com/hashicorp/go-retryablehttp"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/logging"
 
 	exov2 "github.com/exoscale/egoscale/v2"
 	exov3 "github.com/exoscale/egoscale/v3"
 	"github.com/exoscale/egoscale/v3/credentials"
 
-	"github.com/exoscale/terraform-provider-exoscale/exoscale"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/block_storage"
@@ -25,9 +30,12 @@ import (
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/security_group"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/sos_bucket_policy"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/zones"
+	"github.com/exoscale/terraform-provider-exoscale/version"
 )
 
 const (
+	DefaultEnvironment = "api"
+
 	KeyAttrName         = "key"
 	SecretAttrName      = "secret"
 	EnvironmentAttrName = "environment"
@@ -119,7 +127,7 @@ func (p *ExoscaleProvider) Configure(ctx context.Context, req provider.Configure
 	if data.Environment.IsNull() {
 		environment = providerConfig.GetMultiEnvDefault([]string{
 			"EXOSCALE_API_ENVIRONMENT",
-		}, exoscale.DefaultEnvironment)
+		}, DefaultEnvironment)
 	} else {
 		environment = data.Environment.ValueString()
 	}
@@ -146,17 +154,29 @@ func (p *ExoscaleProvider) Configure(ctx context.Context, req provider.Configure
 		timeout = data.Timeout.ValueFloat64()
 	}
 
-	exov2.UserAgent = exoscale.UserAgent
+	exov2.UserAgent = UserAgent
 
 	baseConfig := providerConfig.BaseConfig{
 		Key:         key,
 		Secret:      secret,
-		Timeout:     exoscale.ConvertTimeout(timeout),
+		Timeout:     time.Duration(int64(timeout) * int64(time.Second)),
 		Environment: environment,
 		SOSEndpoint: sosEndpoint,
 	}
 
-	clv2, err := exoscale.CreateClient(&baseConfig)
+	clv2, err := exov2.NewClient(
+		baseConfig.Key,
+		baseConfig.Secret,
+		exov2.ClientOptWithTimeout(baseConfig.Timeout),
+		exov2.ClientOptWithHTTPClient(func() *http.Client {
+			rc := retryablehttp.NewClient()
+			rc.Logger = LeveledTFLogger{Verbose: logging.IsDebugOrHigher()}
+			hc := rc.StandardClient()
+			if logging.IsDebugOrHigher() {
+				hc.Transport = logging.NewSubsystemLoggingHTTPTransport("exoscale", hc.Transport)
+			}
+			return hc
+		}()))
 	if err != nil {
 		resp.Diagnostics.AddError(err.Error(), "")
 
@@ -173,7 +193,7 @@ func (p *ExoscaleProvider) Configure(ctx context.Context, req provider.Configure
 
 	opts := []exov3.ClientOpt{}
 	if ep := os.Getenv("EXOSCALE_API_ENDPOINT"); ep != "" {
-		opts = append(opts, exov3.ClientOptWithEndpoint(exov3.Endpoint(ep)), exov3.ClientOptWithUserAgent(exoscale.UserAgent))
+		opts = append(opts, exov3.ClientOptWithEndpoint(exov3.Endpoint(ep)), exov3.ClientOptWithUserAgent(UserAgent))
 	}
 
 	clv3, err := exov3.NewClient(creds, opts...)
@@ -242,4 +262,44 @@ func New() func() provider.Provider {
 	return func() provider.Provider {
 		return &ExoscaleProvider{}
 	}
+}
+
+var UserAgent = fmt.Sprintf("Exoscale-Terraform-Provider/%s (%s) Terraform-SDK/%s Terraform-framework/%s %s",
+	version.Version,
+	version.Commit,
+	getModVersion("github.com/hashicorp/terraform-plugin-sdk/v2"),
+	getModVersion("github.com/hashicorp/terraform-plugin-framework"),
+	exov2.UserAgent)
+
+func getModVersion(module string) string {
+	// Read Build info
+	bi, ok := debug.ReadBuildInfo()
+	if ok {
+		for _, mod := range bi.Deps {
+			if mod.Path == module {
+				return mod.Version
+			}
+		}
+	}
+	return "err"
+}
+
+// LeveledTFLogger is a thin wrapper around stdlib.log that satisfies retryablehttp.LeveledLogger interface.
+type LeveledTFLogger struct {
+	Verbose bool
+}
+
+func (l LeveledTFLogger) Error(msg string, keysAndValues ...any) {
+	log.Println("[ERROR]", msg, keysAndValues)
+}
+func (l LeveledTFLogger) Info(msg string, keysAndValues ...any) {
+	log.Println("[INFO]", msg, keysAndValues)
+}
+func (l LeveledTFLogger) Debug(msg string, keysAndValues ...any) {
+	if l.Verbose {
+		log.Println("[DEBUG]", msg, keysAndValues)
+	}
+}
+func (l LeveledTFLogger) Warn(msg string, keysAndValues ...any) {
+	log.Println("[WARN]", msg, keysAndValues)
 }
