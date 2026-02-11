@@ -70,6 +70,7 @@ func (d *DataSource) Schema(
 				Description:         "security group ID",
 				MarkdownDescription: "The ID of the Security Group (required if `name` is not set).",
 				Optional:            true,
+				Computed:            true,
 				Validators: []validator.String{
 					stringvalidator.ExactlyOneOf(path.Expressions{
 						path.MatchRoot("name"),
@@ -80,6 +81,7 @@ func (d *DataSource) Schema(
 				Description:         "security group name",
 				MarkdownDescription: "The name of the Security Group (required if `id` is not set).",
 				Optional:            true,
+				Computed:            true,
 				Validators: []validator.String{
 					stringvalidator.ExactlyOneOf(path.Expressions{
 						path.MatchRoot("id"),
@@ -161,6 +163,7 @@ func (d *DataSource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 			return
 		}
 		sg = &t
+		state.ID = types.StringValue(sg.ID.String())
 	} else if !state.ID.IsNull() {
 		id, err := exoscale.ParseUUID(state.ID.ValueString())
 		if err != nil {
@@ -179,6 +182,7 @@ func (d *DataSource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 
 			return
 		}
+		state.Name = types.StringValue(sg.Name)
 	} else { // validation must prevents this, exit as a safe guard
 		return
 	}
