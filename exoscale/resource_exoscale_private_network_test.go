@@ -82,9 +82,9 @@ func TestAccResourcePrivateNetwork(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviders,
-		CheckDestroy:      testAccCheckResourcePrivateNetworkDestroy(&privateNetwork),
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckResourcePrivateNetworkDestroy(&privateNetwork),
 		Steps: []resource.TestStep{
 			{
 				// Create

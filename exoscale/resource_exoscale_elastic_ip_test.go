@@ -198,9 +198,9 @@ func TestAccResourceElasticIP(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviders,
-		CheckDestroy:      testAccCheckResourceElasticIPDestroy(&elasticIP4),
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckResourceElasticIPDestroy(&elasticIP4),
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -360,9 +360,9 @@ func TestAccResourceElasticIP(t *testing.T) {
 	})
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviders,
-		CheckDestroy:      testAccCheckResourceElasticIPDestroy(&elasticIP6),
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckResourceElasticIPDestroy(&elasticIP6),
 		Steps: []resource.TestStep{
 			{
 				// Create

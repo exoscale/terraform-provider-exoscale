@@ -208,9 +208,9 @@ func TestAccResourceNLBService(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviders,
-		CheckDestroy:      testAccCheckResourceNLBServiceDestroy(r),
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckResourceNLBServiceDestroy(r),
 		Steps: []resource.TestStep{
 			{
 				// Create

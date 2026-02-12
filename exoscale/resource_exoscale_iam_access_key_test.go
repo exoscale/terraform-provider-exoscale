@@ -39,9 +39,9 @@ func TestAccResourceIAMAccessKey(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviders,
-		CheckDestroy:      testAccCheckResourceIAMAccessKeyDestroy(&iamAccessKey),
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckResourceIAMAccessKeyDestroy(&iamAccessKey),
 		Steps: []resource.TestStep{
 			{
 				// Create

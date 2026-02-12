@@ -107,9 +107,9 @@ func TestAccResourceDomainRecord(t *testing.T) {
 	record := v3.DNSDomainRecord{}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviders,
-		CheckDestroy:      testAccCheckResourceDomainRecordDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckResourceDomainRecordDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccResourceDomainRecordConfigCreate,

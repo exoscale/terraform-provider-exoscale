@@ -186,9 +186,9 @@ func TestAccResourceSKSNodepool(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviders,
-		CheckDestroy:      testAccCheckResourceSKSNodepoolDestroy(r),
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckResourceSKSNodepoolDestroy(r),
 		Steps: []resource.TestStep{
 			{
 				// Create
