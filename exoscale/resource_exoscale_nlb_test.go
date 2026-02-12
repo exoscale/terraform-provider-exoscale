@@ -314,6 +314,9 @@ func testAccCheckResourceNLBDestroy(nlb *egoscale.NetworkLoadBalancer) resource.
 			os.Getenv("EXOSCALE_API_KEY"),
 			os.Getenv("EXOSCALE_API_SECRET"),
 		)
+		if err != nil {
+			return err
+		}
 		ctx := exoapi.WithEndpoint(
 			context.Background(),
 			exoapi.NewReqEndpoint(testEnvironment, testZoneName),
