@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -285,7 +286,13 @@ func testAccCheckResourceNLBExists(r string, nlb *egoscale.NetworkLoadBalancer) 
 			return errors.New("resource ID not set")
 		}
 
-		client := getClient(testAccProvider.Meta())
+		client, err := egoscale.NewClient(
+			os.Getenv("EXOSCALE_API_KEY"),
+			os.Getenv("EXOSCALE_API_SECRET"),
+		)
+		if err != nil {
+			return err
+		}
 		ctx := exoapi.WithEndpoint(
 			context.Background(),
 			exoapi.NewReqEndpoint(testEnvironment, testZoneName),
@@ -303,13 +310,16 @@ func testAccCheckResourceNLBExists(r string, nlb *egoscale.NetworkLoadBalancer) 
 
 func testAccCheckResourceNLBDestroy(nlb *egoscale.NetworkLoadBalancer) resource.TestCheckFunc {
 	return func(_ *terraform.State) error {
-		client := getClient(testAccProvider.Meta())
+		client, err := egoscale.NewClient(
+			os.Getenv("EXOSCALE_API_KEY"),
+			os.Getenv("EXOSCALE_API_SECRET"),
+		)
 		ctx := exoapi.WithEndpoint(
 			context.Background(),
 			exoapi.NewReqEndpoint(testEnvironment, testZoneName),
 		)
 
-		_, err := client.GetNetworkLoadBalancer(ctx, testZoneName, *nlb.ID)
+		_, err = client.GetNetworkLoadBalancer(ctx, testZoneName, *nlb.ID)
 		if err != nil {
 			if errors.Is(err, exoapi.ErrNotFound) {
 				return nil

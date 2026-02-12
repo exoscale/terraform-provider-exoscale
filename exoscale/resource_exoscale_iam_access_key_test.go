@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -79,7 +80,13 @@ func testAccCheckResourceIAMAccessKeyExists(r string, iamAccessKey *egoscale.IAM
 			return errors.New("resource ID not set")
 		}
 
-		client := getClient(testAccProvider.Meta())
+		client, err := egoscale.NewClient(
+			os.Getenv("EXOSCALE_API_KEY"),
+			os.Getenv("EXOSCALE_API_SECRET"),
+		)
+		if err != nil {
+			return err
+		}
 
 		ctx := exoapi.WithEndpoint(context.Background(), exoapi.NewReqEndpoint(testEnvironment, testZoneName))
 		res, err := client.GetIAMAccessKey(ctx, testZoneName, rs.Primary.ID)
@@ -94,10 +101,16 @@ func testAccCheckResourceIAMAccessKeyExists(r string, iamAccessKey *egoscale.IAM
 
 func testAccCheckResourceIAMAccessKeyDestroy(iamAccessKey *egoscale.IAMAccessKey) resource.TestCheckFunc {
 	return func(_ *terraform.State) error {
-		client := getClient(testAccProvider.Meta())
+		client, err := egoscale.NewClient(
+			os.Getenv("EXOSCALE_API_KEY"),
+			os.Getenv("EXOSCALE_API_SECRET"),
+		)
+		if err != nil {
+			return err
+		}
 		ctx := exoapi.WithEndpoint(context.Background(), exoapi.NewReqEndpoint(testEnvironment, testZoneName))
 
-		_, err := client.GetIAMAccessKey(ctx, testZoneName, *iamAccessKey.Key)
+		_, err = client.GetIAMAccessKey(ctx, testZoneName, *iamAccessKey.Key)
 		if err != nil {
 			if errors.Is(err, exoapi.ErrNotFound) {
 				return nil

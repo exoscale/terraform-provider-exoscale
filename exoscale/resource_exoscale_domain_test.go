@@ -29,9 +29,9 @@ func TestAccResourceDomain(t *testing.T) {
 	domain := v3.DNSDomain{}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: TestAccProtoV6ProviderFactories,
-		CheckDestroy:             testAccCheckResourceDomainDestroy,
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviders,
+		CheckDestroy:      testAccCheckResourceDomainDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDNSDomainCreate,
