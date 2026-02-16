@@ -228,6 +228,20 @@ func TestSecurityGroup(t *testing.T) {
 			},
 			// Import SG
 			{
+				ResourceName: sg,
+				ImportStateIdFunc: func() resource.ImportStateIdFunc {
+					return func(s *terraform.State) (string, error) {
+						return s.RootModule().Resources[sg].Primary.ID, nil
+					}
+				}(),
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"external_sources",
+				},
+			},
+			// Import SG rule
+			{
 				ResourceName: rule1,
 				ImportStateIdFunc: func() resource.ImportStateIdFunc {
 					return func(s *terraform.State) (string, error) {
