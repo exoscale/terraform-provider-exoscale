@@ -395,9 +395,9 @@ func TestAccResourceSKSCluster(t *testing.T) {
 	versions := testGetSKSClusterVersions(t)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviders,
-		CheckDestroy:      testAccCheckResourceSKSClusterDestroy(&sksCluster),
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckResourceSKSClusterDestroy(&sksCluster),
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -541,9 +541,9 @@ func TestAccResourceSKSCluster(t *testing.T) {
 	// Test cluster Upgrade
 	sksCluster = egoscale.SKSCluster{}
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviders,
-		CheckDestroy:      testAccCheckResourceSKSClusterDestroy(&sksCluster),
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckResourceSKSClusterDestroy(&sksCluster),
 		Steps: []resource.TestStep{
 			{
 				// Create old version cluster
@@ -603,9 +603,9 @@ func TestAccResourceSKSClusterSKSClusterWithAudit(t *testing.T) {
 	versions := testGetSKSClusterVersions(t)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviders,
-		CheckDestroy:      testAccCheckResourceSKSClusterDestroy(&sksCluster),
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckResourceSKSClusterDestroy(&sksCluster),
 		Steps: []resource.TestStep{
 			{
 				// Create cluster with audit enabled
@@ -732,9 +732,9 @@ func TestAccResourceSKSClusterWithKarpenter(t *testing.T) {
 	versions := testGetSKSClusterVersions(t)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviders,
-		CheckDestroy:      testAccCheckResourceSKSClusterDestroy(&sksCluster),
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckResourceSKSClusterDestroy(&sksCluster),
 		Steps: []resource.TestStep{
 			{
 				// Create cluster with Karpenter enabled

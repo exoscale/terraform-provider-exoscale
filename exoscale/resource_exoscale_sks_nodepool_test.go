@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"testing"
 	"time"
 
@@ -186,9 +187,9 @@ func TestAccResourceSKSNodepool(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviders,
-		CheckDestroy:      testAccCheckResourceSKSNodepoolDestroy(r),
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckResourceSKSNodepoolDestroy(r),
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -375,7 +376,13 @@ func testAccCheckResourceSKSNodepoolExists(r string, sksNodepool *egoscale.SKSNo
 			return fmt.Errorf("resource attribute %q not set", resSKSNodepoolAttrClusterID)
 		}
 
-		client := getClient(testAccProvider.Meta())
+		client, err := egoscale.NewClient(
+			os.Getenv("EXOSCALE_API_KEY"),
+			os.Getenv("EXOSCALE_API_SECRET"),
+		)
+		if err != nil {
+			return err
+		}
 		ctx := exoapi.WithEndpoint(
 			context.Background(),
 			exoapi.NewReqEndpoint(testEnvironment, testAccResourceSKSClusterLocalZone),
@@ -431,7 +438,13 @@ func testAccCheckResourceSKSNodepoolDestroy(r string) resource.TestCheckFunc {
 			return fmt.Errorf("resource attribute %q not set", resSKSNodepoolAttrClusterID)
 		}
 
-		client := getClient(testAccProvider.Meta())
+		client, err := egoscale.NewClient(
+			os.Getenv("EXOSCALE_API_KEY"),
+			os.Getenv("EXOSCALE_API_SECRET"),
+		)
+		if err != nil {
+			return err
+		}
 		ctx := exoapi.WithEndpoint(
 			context.Background(),
 			exoapi.NewReqEndpoint(testEnvironment, testAccResourceSKSClusterLocalZone),
