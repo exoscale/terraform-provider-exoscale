@@ -3,12 +3,15 @@
 page_title: "exoscale_security_group_rule Resource - terraform-provider-exoscale"
 subcategory: ""
 description: |-
-  Manage Exoscale Security Group https://community.exoscale.com/product/networking/security-group/ Rules.
+  Manage Exoscale Security Groups https://community.exoscale.com/product/compute/instances/quick-start/#firewall-rules---security-groups rules.
+  Parent resource: exoscalesecuritygroup_rule ./security_group.md.
 ---
 
 # exoscale_security_group_rule (Resource)
 
-Manage Exoscale [Security Group](https://community.exoscale.com/product/networking/security-group/) Rules.
+Manage [Exoscale Security Groups](https://community.exoscale.com/product/compute/instances/quick-start/#firewall-rules---security-groups) rules.
+
+Parent resource: [exoscale_security_group_rule](./security_group.md).
 
 ## Example Usage
 
@@ -35,36 +38,35 @@ directory for complete configuration examples.
 
 ### Required
 
+- `security_group_id` (String) ❗ The parent [exoscale_security_group](./security_group.md) ID.
 - `type` (String) ❗ The traffic direction to match (`INGRESS` or `EGRESS`).
 
 ### Optional
 
-- `cidr` (String) ❗ An (`INGRESS`) source / (`EGRESS`) destination IP subnet (in [CIDR notation](https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing#CIDR_notation)) to match (conflicts with `public_security_group`/`user_security_group`/`user_security_group_id`).
-- `description` (String) ❗ A free-form text describing the security group rule.
-- `end_port` (Number) ❗ A `TCP`/`UDP` port range to match.
-- `icmp_code` (Number) ❗ An ICMP/ICMPv6 [type/code](https://en.wikipedia.org/wiki/Internet_Control_Message_Protocol#Control_messages) to match.
-- `icmp_type` (Number) ❗ An ICMP/ICMPv6 [type/code](https://en.wikipedia.org/wiki/Internet_Control_Message_Protocol#Control_messages) to match.
-- `protocol` (String) ❗ The network protocol to match (`TCP`, `UDP`, `ICMP`, `ICMPv6`, `AH`, `ESP`, `GRE`, `IPIP` or `ALL`)
-- `public_security_group` (String) ❗ An (`INGRESS`) source / (`EGRESS`) destination public security group name to match (conflicts with `cidr`/`user_security_group`/`user_security_group_id`).
-- `security_group` (String, Deprecated) ❗ The parent security group name. Please use the `security_group_id` argument along the [exoscale_security_group](../data-sources/security_group.md) data source instead.
-- `security_group_id` (String) ❗ The parent [exoscale_security_group](./security_group.md) ID.
-- `start_port` (Number) ❗ A `TCP`/`UDP` port range to match.
+- `cidr` (String) ❗ An (`INGRESS`) source / (`EGRESS`) destination IP subnet (in [CIDR notation](https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing#CIDR_notation)) to match (conflicts with `public_security_group`/`user_security_group_id`).
+- `description` (String) ❗ A free-form text describing the the Security Group rule.
+- `end_port` (Number) ❗The end port number in the `TCP`/`UDP` port range to match (conflicts with `icmp_type`/`icmp_code`).
+- `icmp_code` (Number) ❗An ICMP/ICMPv6 [code](https://en.wikipedia.org/wiki/Internet_Control_Message_Protocol#Control_messages) to match.
+- `icmp_type` (Number) ❗An ICMP/ICMPv6 [type](https://en.wikipedia.org/wiki/Internet_Control_Message_Protocol#Control_messages) to match.
+- `protocol` (String) ❗ The network protocol to match (`TCP`, `UDP`, `ICMP`, `ICMPv6`, `AH`, `ESP`, `GRE` or `IPIP`)
+- `public_security_group` (String) ❗ An (`INGRESS`) source / (`EGRESS`) destination public security group name to match (conflicts with `cidr`/`user_security_group_id`).
+- `start_port` (Number) ❗A start port number in the `TCP`/`UDP` port range to match (conflicts with `icmp_type`/`icmp_code`).
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- `user_security_group` (String, Deprecated) ❗ An (`INGRESS`) source / (`EGRESS`) destination security group name to match (conflicts with `cidr`/`public_security_group`/`user_security_group_id`). Please use the `user_security_group_id` argument along the [exoscale_security_group](../data-sources/security_group.md) data source instead.
-- `user_security_group_id` (String) ❗ An (`INGRESS`) source / (`EGRESS`) destination security group ID to match (conflicts with `cidr`/`public_security_group`/`user_security_group)`).
+- `user_security_group_id` (String) ❗ An (`INGRESS`) source / (`EGRESS`) user security group ID to match (conflicts with `cidr`/`public_security_group`).
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
+- `id` (String) The ID of the Security Group rule.
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
 
 Optional:
 
-- `create` (String)
-- `delete` (String)
-- `read` (String)
+- `create` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours).
+- `delete` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Setting a timeout for a Delete operation is only applicable if changes are saved into state before the destroy operation occurs.
+- `read` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
+- `update` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours).
 
 -> The symbol ❗ in an attribute indicates that modifying it, will force the creation of a new resource.
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -198,9 +199,9 @@ func TestAccResourceElasticIP(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviders,
-		CheckDestroy:      testAccCheckResourceElasticIPDestroy(&elasticIP4),
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckResourceElasticIPDestroy(&elasticIP4),
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -360,9 +361,9 @@ func TestAccResourceElasticIP(t *testing.T) {
 	})
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviders,
-		CheckDestroy:      testAccCheckResourceElasticIPDestroy(&elasticIP6),
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckResourceElasticIPDestroy(&elasticIP6),
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -447,7 +448,13 @@ func testAccCheckResourceElasticIPExists(r string, elasticIP *egoscale.ElasticIP
 			return errors.New("resource ID not set")
 		}
 
-		client := getClient(testAccProvider.Meta())
+		client, err := egoscale.NewClient(
+			os.Getenv("EXOSCALE_API_KEY"),
+			os.Getenv("EXOSCALE_API_SECRET"),
+		)
+		if err != nil {
+			return err
+		}
 
 		ctx := exoapi.WithEndpoint(context.Background(), exoapi.NewReqEndpoint(testEnvironment, testZoneName))
 		res, err := client.GetElasticIP(ctx, testZoneName, rs.Primary.ID)
@@ -462,10 +469,19 @@ func testAccCheckResourceElasticIPExists(r string, elasticIP *egoscale.ElasticIP
 
 func testAccCheckResourceElasticIPDestroy(elasticIP *egoscale.ElasticIP) resource.TestCheckFunc {
 	return func(_ *terraform.State) error {
-		client := getClient(testAccProvider.Meta())
-		ctx := exoapi.WithEndpoint(context.Background(), exoapi.NewReqEndpoint(testEnvironment, testZoneName))
+		client, err := egoscale.NewClient(
+			os.Getenv("EXOSCALE_API_KEY"),
+			os.Getenv("EXOSCALE_API_SECRET"),
+		)
+		if err != nil {
+			return err
+		}
+		ctx := exoapi.WithEndpoint(
+			context.Background(),
+			exoapi.NewReqEndpoint(testEnvironment, testAccResourceSKSClusterLocalZone),
+		)
 
-		_, err := client.GetElasticIP(ctx, testZoneName, *elasticIP.ID)
+		_, err = client.GetElasticIP(ctx, testZoneName, *elasticIP.ID)
 		if err != nil {
 			if errors.Is(err, exoapi.ErrNotFound) {
 				return nil

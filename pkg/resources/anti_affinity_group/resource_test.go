@@ -37,9 +37,9 @@ func testResource(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testutils.AccPreCheck(t) },
-		ProviderFactories: testutils.Providers(),
-		CheckDestroy:      testutils.CheckAntiAffinityGroupDestroy(&res),
+		PreCheck:                 func() { testutils.AccPreCheck(t) },
+		ProtoV6ProviderFactories: testutils.TestAccProtoV6ProviderFactories,
+		CheckDestroy:             testutils.CheckAntiAffinityGroupDestroy(&res),
 		Steps: []resource.TestStep{
 			{
 				// Create

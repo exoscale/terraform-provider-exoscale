@@ -27,7 +27,7 @@ import (
 // to be suffixed with "@ZONE" (e.g. "c01af84d-6ac6-4784-98bb-127c98be8258@ch-gva-2").
 // Upon successful execution, the returned resource state contains the ID of the
 // resource and the "zone" attribute set to the value parsed from the import ID.
-func ZonedStateContextFunc(_ context.Context, d *schema.ResourceData, _ interface{}) ([]*schema.ResourceData, error) {
+func ZonedStateContextFunc(_ context.Context, d *schema.ResourceData, _ any) ([]*schema.ResourceData, error) {
 	parts := strings.SplitN(d.Id(), "@", 2)
 	if len(parts) != 2 {
 		return nil, fmt.Errorf(`invalid ID %q, expected format "<ID>@<ZONE>"`, d.Id())
@@ -220,7 +220,7 @@ func ValidateZone() schema.SchemaValidateDiagFunc {
 }
 
 // ValidateComputeInstanceType validates that the given field contains a valid Exoscale Compute instance type.
-func ValidateComputeInstanceType(v interface{}, _ cty.Path) diag.Diagnostics {
+func ValidateComputeInstanceType(v any, _ cty.Path) diag.Diagnostics {
 	value, ok := v.(string)
 	if !ok {
 		return diag.Errorf("expected field %q type to be string", v)
@@ -234,7 +234,7 @@ func ValidateComputeInstanceType(v interface{}, _ cty.Path) diag.Diagnostics {
 }
 
 // ValidateComputeUserData validates that the given field contains a valid data.
-func ValidateComputeUserData(v interface{}, _ cty.Path) diag.Diagnostics {
+func ValidateComputeUserData(v any, _ cty.Path) diag.Diagnostics {
 	value, ok := v.(string)
 	if !ok {
 		return diag.Errorf("expected field %q type to be string", v)
@@ -249,7 +249,7 @@ func ValidateComputeUserData(v interface{}, _ cty.Path) diag.Diagnostics {
 }
 
 // ValidateLowercaseString validates that the given fields contains only lowercase characters
-func ValidateLowercaseString(val interface{}, key string) (warns []string, errs []error) {
+func ValidateLowercaseString(val any, key string) (warns []string, errs []error) {
 	v := val.(string)
 	if strings.ContainsAny(v, "ABCDEFGHIJKLMNOPQRSTUVWXYZ") {
 		errs = append(errs, fmt.Errorf("%q must be lowercase, got: %q", key, v))
@@ -313,7 +313,7 @@ func AntiAffiniGroupsToAntiAffinityGroupIDs(aags []exov3.AntiAffinityGroup) (ls 
 	return
 }
 
-func AntiAffinityGroupIDsToAntiAffinityGroups(ids []interface{}) (ls []exov3.AntiAffinityGroup) {
+func AntiAffinityGroupIDsToAntiAffinityGroups(ids []any) (ls []exov3.AntiAffinityGroup) {
 	ls = make([]exov3.AntiAffinityGroup, len(ids))
 	for i, id := range ids {
 		ls[i] = exov3.AntiAffinityGroup{
@@ -331,7 +331,7 @@ func PrivateNetworksToPrivateNetworkIDs(privnets []exov3.PrivateNetwork) (ls []s
 	return
 }
 
-func PrivateNetworkIDsToPrivateNetworks(ids []interface{}) (ls []exov3.PrivateNetwork) {
+func PrivateNetworkIDsToPrivateNetworks(ids []any) (ls []exov3.PrivateNetwork) {
 	ls = make([]exov3.PrivateNetwork, len(ids))
 	for i, id := range ids {
 		ls[i] = exov3.PrivateNetwork{
@@ -349,7 +349,7 @@ func SecurityGroupsToSecurityGroupIDs(sgs []exov3.SecurityGroup) (ls []string) {
 	return
 }
 
-func SecurityGroupIDsToSecurityGroups(ids []interface{}) (ls []exov3.SecurityGroup) {
+func SecurityGroupIDsToSecurityGroups(ids []any) (ls []exov3.SecurityGroup) {
 	ls = make([]exov3.SecurityGroup, len(ids))
 	for i, id := range ids {
 		ls[i] = exov3.SecurityGroup{
@@ -367,7 +367,7 @@ func ElasticIPsToElasticIPIDs(eips []exov3.ElasticIP) (ls []string) {
 	return
 }
 
-func ElasticIPIDsToElasticIPs(ids []interface{}) (ls []exov3.ElasticIP) {
+func ElasticIPIDsToElasticIPs(ids []any) (ls []exov3.ElasticIP) {
 	ls = make([]exov3.ElasticIP, len(ids))
 	for i, id := range ids {
 		ls[i] = exov3.ElasticIP{

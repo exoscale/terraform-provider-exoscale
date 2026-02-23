@@ -4,6 +4,8 @@
 
 IMPROVEMENTS:
 
+- Migrate Security Group resource to framework #493
+
 BUG FIXES:
 
 BREAKING CHANGES:

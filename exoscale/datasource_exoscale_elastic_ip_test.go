@@ -121,8 +121,8 @@ resource "exoscale_elastic_ip" "test6" {
 
 func TestAccDataSourceElasticIP(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testAccProviders,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: TestAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config:      ` data "exoscale_elastic_ip" "test" { zone = "lolnope" }`,

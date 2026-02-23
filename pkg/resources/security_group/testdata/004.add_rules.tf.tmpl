@@ -1,0 +1,40 @@
+resource "exoscale_security_group" "test_sg" {
+  name = "terraform-provider-test-{{ .ID }}"
+  description = "updated description"
+  external_sources = ["192.168.1.1/32"]
+}
+
+data "exoscale_security_group" "test_sg" {
+  id = exoscale_security_group.test_sg.id
+}
+
+resource "exoscale_security_group" "test_sg_aux" {
+  name = "terraform-provider-test-{{ .ID }}-aux"
+}
+
+resource "exoscale_security_group_rule" "test_rule_1" {
+  security_group_id = exoscale_security_group.test_sg.id
+  cidr              = "1.1.1.1/32"
+  description       = "test"
+  type              = "INGRESS"
+  protocol          = "UDP"
+  start_port        = 8080
+  end_port          = 8081
+}
+
+resource "exoscale_security_group_rule" "test_rule_2" {
+  security_group_id = exoscale_security_group.test_sg.id
+  public_security_group = "public-sks-apiservers"
+  type                  = "EGRESS"
+  protocol              = "ICMP"
+  icmp_type             = 8
+  icmp_code             = 0
+}
+
+resource "exoscale_security_group_rule" "test_rule_3" {
+  security_group_id = exoscale_security_group.test_sg.id
+  user_security_group_id = exoscale_security_group.test_sg_aux.id
+  type                   = "INGRESS"
+  start_port             = 8080
+  end_port               = 8081
+}

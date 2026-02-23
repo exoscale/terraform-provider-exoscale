@@ -2,7 +2,10 @@
 page_title: "exoscale_security_group Resource - terraform-provider-exoscale"
 subcategory: ""
 description: |-
-  Manage Exoscale Security Groups.
+  Manage Exoscale Security Groups https://community.exoscale.com/product/compute/instances/quick-start/#firewall-rules---security-groups.
+  Security Groups are firewall rules. Each Security Group may be attached to one or many compute instances.
+  Individual firewall rules are configured using linked resource: exoscalesecuritygroup_rule ./security_group_rule.md.
+  Corresponding data source: exoscalesecuritygroup ../data_sources/security_group.md.
 ---
 
 # exoscale_security_group (Resource)
@@ -29,26 +32,27 @@ directory for complete configuration examples.
 
 ### Required
 
-- `name` (String) ❗ The security group name.
+- `name` (String) ❗ The name of the Security Group.
 
 ### Optional
 
-- `description` (String) ❗ A free-form text describing the group.
+- `description` (String) ❗ A free-form text describing the the Security Group.
 - `external_sources` (Set of String) A list of external network sources, in [CIDR](https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing#CIDR_notation) notation.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
+- `id` (String) The ID of the Security Group.
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
 
 Optional:
 
-- `create` (String)
-- `delete` (String)
-- `read` (String)
+- `create` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours).
+- `delete` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Setting a timeout for a Delete operation is only applicable if changes are saved into state before the destroy operation occurs.
+- `read` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
+- `update` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours).
 
 -> The symbol ❗ in an attribute indicates that modifying it, will force the creation of a new resource.
 

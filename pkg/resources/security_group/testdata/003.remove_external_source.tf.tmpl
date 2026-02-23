@@ -1,0 +1,9 @@
+resource "exoscale_security_group" "test_sg" {
+  name = "terraform-provider-test-{{ .ID }}"
+  description = "updated description"
+  external_sources = ["192.168.1.1/32"]
+}
+
+data "exoscale_security_group" "test_sg" {
+  id = exoscale_security_group.test_sg.id
+}

@@ -8,7 +8,12 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/exoscale/terraform-provider-exoscale/pkg/provider"
 	"github.com/hashicorp/go-cty/cty"
+	"github.com/hashicorp/terraform-plugin-framework/providerserver"
+	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
+	"github.com/hashicorp/terraform-plugin-mux/tf5to6server"
+	"github.com/hashicorp/terraform-plugin-mux/tf6muxserver"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -249,4 +254,28 @@ func Test_zonedStateContextFunc(t *testing.T) {
 			}
 		})
 	}
+}
+
+var TestAccProtoV6ProviderFactories = map[string]func() (tfprotov6.ProviderServer, error){
+	"exoscale": func() (tfprotov6.ProviderServer, error) {
+		ctx := context.Background()
+		upgradedProvider, err := tf5to6server.UpgradeServer(
+			ctx,
+			Provider().GRPCProvider,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		newProvider := providerserver.NewProtocol6(&provider.ExoscaleProvider{})
+
+		providers := []func() tfprotov6.ProviderServer{
+			func() tfprotov6.ProviderServer {
+				return upgradedProvider
+			},
+			newProvider,
+		}
+
+		return tf6muxserver.NewMuxServer(ctx, providers...)
+	},
 }
