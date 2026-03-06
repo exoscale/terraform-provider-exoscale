@@ -63,6 +63,8 @@ type TemplateModelKafkaUser struct {
 }
 
 func testResourceKafka(t *testing.T) {
+	t.Parallel()
+
 	serviceTpl, err := template.ParseFiles("testdata/resource_kafka.tmpl")
 	if err != nil {
 		t.Fatal(err)

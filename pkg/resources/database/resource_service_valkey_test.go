@@ -36,6 +36,8 @@ type TemplateModelValkey struct {
 }
 
 func testResourceValkey(t *testing.T) {
+	t.Parallel()
+
 	tpl, err := template.ParseFiles("testdata/resource_valkey.tmpl")
 	if err != nil {
 		t.Fatal(err)

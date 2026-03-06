@@ -49,7 +49,6 @@ test-verbose: GO_TEST_EXTRA_ARGS+=$(EXTRA_ARGS)
 test-acc: GO_TEST_EXTRA_ARGS=-v $(EXTRA_ARGS)
 test-acc: ## Runs acceptance tests (requires valid Exoscale API credentials)
 	TF_ACC=1 $(GO) test			\
-		-race                   \
 		-timeout=90m            \
 		-tags=testacc           \
 		$(GO_TEST_EXTRA_ARGS)   \

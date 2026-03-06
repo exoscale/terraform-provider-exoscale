@@ -18,6 +18,8 @@ import (
 )
 
 func TestDatabase(t *testing.T) {
+	t.Parallel()
+
 	t.Run("ResourcePg", testResourcePg)
 	t.Run("ResourceMysql", testResourceMysql)
 	t.Run("ResourceValkey", testResourceValkey)
