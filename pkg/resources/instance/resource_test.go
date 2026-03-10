@@ -494,6 +494,8 @@ resource "exoscale_compute_instance" "test" {
 )
 
 func testResource(t *testing.T) {
+	t.Parallel()
+
 	var (
 		r                     = "exoscale_compute_instance.test"
 		testInstance          v3.Instance

@@ -156,6 +156,8 @@ resource "exoscale_instance_pool" "test" {
 )
 
 func testResource(t *testing.T) {
+	t.Parallel()
+
 	var (
 		r            = "exoscale_instance_pool.test"
 		instancePool v3.InstancePool

@@ -224,18 +224,16 @@ func (data MysqlDatabaseResourceModel) CreateResource(ctx context.Context, clien
 		return
 	}
 
-	svc, err := client.GetDBAASServiceMysql(ctx, data.Service.ValueString())
-	if err != nil {
-		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database service pg, got error: %s", err))
-		return
-	}
-
-	for _, db := range svc.Databases {
-		if string(db) == data.DatabaseName.ValueString() {
-			return
+	if _, err := waitForDBAASServiceReadyForFn(ctx, client.GetDBAASServiceMysql, data.Service.ValueString(), func(t *v3.DBAASServiceMysql) bool {
+		for _, db := range t.Databases {
+			if string(db) == data.DatabaseName.ValueString() {
+				return true
+			}
 		}
+		return false
+	}); err != nil {
+		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database service mysql, got error: %s", err))
 	}
-	diagnostics.AddError("Client Error", "Unable to find newly created database for the service")
 }
 
 // DeleteResource deletes the resource

@@ -12,6 +12,8 @@ import (
 )
 
 func TestBlockStorage(t *testing.T) {
+	t.Parallel()
+
 	volumeResourceName := "exoscale_block_storage_volume.test_volume"
 	volumeDataSourceName := "data." + volumeResourceName
 	snapshotResourceName := "exoscale_block_storage_volume_snapshot.test_snapshot"
@@ -52,7 +54,7 @@ func TestBlockStorage(t *testing.T) {
 					resource.TestCheckNoResourceAttr(volumeDataSourceName, "instance"),
 				),
 			},
-			// // 2 Update volume name only
+			// 2 Update volume name only
 			{
 				Config: testutils.ParseTestdataConfig("./testdata/002.volume_rename.tf.tmpl", &testdataSpec),
 				Check: resource.ComposeAggregateTestCheckFunc(
