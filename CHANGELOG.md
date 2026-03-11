@@ -12,6 +12,8 @@ BREAKING CHANGES:
 
 FEATURES:
 
+- dbaas: add missing PostgreSQL configuration options (`shared_buffers_percentage`, `synchronous_replication`, `timescaledb`, `variant`, `work_mem`) #499
+
 ## 0.68.0
 
 IMPROVEMENTS:
