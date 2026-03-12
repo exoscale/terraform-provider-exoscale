@@ -8,6 +8,8 @@ IMPROVEMENTS:
 
 BUG FIXES:
 
+- doc(dbaas): update examples to use new syntax #502
+
 BREAKING CHANGES:
 
 FEATURES:
