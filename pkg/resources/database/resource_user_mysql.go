@@ -242,10 +242,6 @@ func (data *MysqlUserResourceModel) ReadResource(ctx context.Context, client *ex
 		if errors.Is(err, exoscale.ErrNotFound) {
 			return true
 		}
-		if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
-			// Timed out waiting for the database to appear → treat as deleted
-			return true
-		}
 		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read service mysql user, got error: %s", err))
 		return false
 	}
