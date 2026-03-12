@@ -5,6 +5,7 @@
 IMPROVEMENTS:
 
 - Migrate Security Group resource to framework #493
+- Add parallel testing in pkg package #500
 
 BUG FIXES:
 
