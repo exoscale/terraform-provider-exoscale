@@ -10,7 +10,7 @@ resource "exoscale_database" "my_database" {
 
   termination_protection = true
 
-  pg {
+  pg = {
     version = "13"
 
     backup_schedule = "04:00"

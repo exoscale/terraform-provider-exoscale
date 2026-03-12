@@ -20,7 +20,7 @@ resource "exoscale_database" "my_database" {
 
   termination_protection = false
 
-  valkey {
+  valkey = {
     ip_filter = [
       "${data.http.myip.response_body}/32",
       "2.2.3.5/32"
