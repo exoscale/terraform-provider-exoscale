@@ -7,12 +7,18 @@ import (
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/testutils"
 
+	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 func testResourceRole(t *testing.T) {
-	fullResourceName := "exoscale_iam_role.test"
+	t.Parallel()
+
+	var (
+		roleName         string = acctest.RandomWithPrefix(testutils.Prefix + "-role")
+		fullResourceName string = "exoscale_iam_role.test"
+	)
 
 	tpl, err := template.ParseFiles("../../testutils/testdata/resource_iam_role.tmpl")
 	if err != nil {
@@ -21,7 +27,7 @@ func testResourceRole(t *testing.T) {
 
 	data := testutils.ResourceIAMRole{
 		ResourceName: "test",
-		Name:         "test",
+		Name:         roleName,
 		Description:  "foo bar",
 		Editable:     true,
 		Labels:       map[string]string{"foo": "bar"},
@@ -92,7 +98,7 @@ func testResourceRole(t *testing.T) {
 			{
 				Config: configCreate,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(fullResourceName, "name", "test"),
+					resource.TestCheckResourceAttr(fullResourceName, "name", roleName),
 					resource.TestCheckResourceAttr(fullResourceName, "description", "foo bar"),
 					resource.TestCheckResourceAttr(fullResourceName, "editable", "true"),
 					resource.TestCheckResourceAttr(fullResourceName, "labels.foo", "bar"),

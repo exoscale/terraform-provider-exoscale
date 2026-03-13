@@ -174,10 +174,17 @@ func (p *MysqlDatabaseResource) Update(ctx context.Context, req resource.UpdateR
 
 // ReadResource reads resource from remote and populate the model accordingly
 func (data MysqlDatabaseResourceModel) ReadResource(ctx context.Context, client *v3.Client, diagnostics *diag.Diagnostics) (clearState bool) {
-	svc, err := waitForDBAASServiceReadyForFn(ctx, client.GetDBAASServiceMysql, data.Service.ValueString(), func(t *v3.DBAASServiceMysql) bool {
-		return t.State == v3.EnumServiceStateRunning && len(t.Databases) > 0
-	})
-	if err != nil {
+	if _, err := waitForDBAASServiceReadyForFn(ctx, client.GetDBAASServiceMysql, data.Service.ValueString(), func(t *v3.DBAASServiceMysql) bool {
+		if t.State != v3.EnumServiceStateRunning {
+			return false
+		}
+		for _, db := range t.Databases {
+			if string(db) == data.DatabaseName.ValueString() {
+				return true
+			}
+		}
+		return false
+	}); err != nil {
 		if errors.Is(err, v3.ErrNotFound) {
 			return true
 		}
@@ -185,13 +192,7 @@ func (data MysqlDatabaseResourceModel) ReadResource(ctx context.Context, client 
 		return false
 	}
 
-	for _, db := range svc.Databases {
-		if string(db) == data.DatabaseName.ValueString() {
-			return false
-		}
-	}
-
-	return true
+	return false
 }
 
 // CreateResource creates the resource according to the model, and then
@@ -219,18 +220,16 @@ func (data MysqlDatabaseResourceModel) CreateResource(ctx context.Context, clien
 		return
 	}
 
-	svc, err := client.GetDBAASServiceMysql(ctx, data.Service.ValueString())
-	if err != nil {
-		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database service pg, got error: %s", err))
-		return
-	}
-
-	for _, db := range svc.Databases {
-		if string(db) == data.DatabaseName.ValueString() {
-			return
+	if _, err := waitForDBAASServiceReadyForFn(ctx, client.GetDBAASServiceMysql, data.Service.ValueString(), func(t *v3.DBAASServiceMysql) bool {
+		for _, db := range t.Databases {
+			if string(db) == data.DatabaseName.ValueString() {
+				return true
+			}
 		}
+		return false
+	}); err != nil {
+		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database service mysql, got error: %s", err))
 	}
-	diagnostics.AddError("Client Error", "Unable to find newly created database for the service")
 }
 
 // DeleteResource deletes the resource
@@ -262,7 +261,7 @@ func (MysqlDatabaseResourceModel) UpdateResource(ctx context.Context, client *v3
 
 func (data MysqlDatabaseResourceModel) WaitForService(ctx context.Context, client *v3.Client, diagnostics *diag.Diagnostics) {
 	_, err := waitForDBAASServiceReadyForFn(ctx, client.GetDBAASServiceMysql, data.Service.ValueString(), func(t *v3.DBAASServiceMysql) bool {
-		return t.State == v3.EnumServiceStateRunning && len(t.Databases) > 0
+		return t.State == v3.EnumServiceStateRunning
 	})
 
 	time.Sleep(SERVICE_READY_DELAY)

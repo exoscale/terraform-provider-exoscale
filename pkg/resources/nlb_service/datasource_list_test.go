@@ -13,6 +13,8 @@ import (
 )
 
 func testListDataSource(t *testing.T) {
+	t.Parallel()
+
 	buf := &bytes.Buffer{}
 
 	// template testdata
@@ -113,39 +115,7 @@ func testListDataSource(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { testutils.AccPreCheck(t) },
-		ProtoV6ProviderFactories: testutils.TestAccProtoV6ProviderFactories,
-		Steps: []resource.TestStep{
-			{
-				Config: configBase + buf.String(),
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(fullResourceName, "zone", model.Zone),
-					resource.TestCheckResourceAttr(fullResourceName, "services.#", "1"),
-					resource.TestCheckResourceAttr(
-						fullResourceName,
-						"services.0.port",
-						fmt.Sprintf("%d", nlbServiceModel.Port),
-					),
-					resource.TestCheckResourceAttr(
-						fullResourceName,
-						"services.0.target_port",
-						fmt.Sprintf("%d", nlbServiceModel.TargetPort),
-					),
-					resource.TestCheckResourceAttr(
-						fullResourceName,
-						"services.0.name",
-						nlbServiceModel.Name,
-					),
-					resource.TestCheckResourceAttr(
-						fullResourceName,
-						"services.0.healthcheck.port",
-						fmt.Sprintf("%d", nlbServiceModel.HealthcheckPort),
-					),
-				),
-			},
-		},
-	})
+	configByName := configBase + buf.String()
 
 	// datasource by id
 	buf = &bytes.Buffer{}
@@ -155,36 +125,45 @@ func testListDataSource(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	configByID := configBase + buf.String()
+
+	checks := resource.ComposeAggregateTestCheckFunc(
+		resource.TestCheckResourceAttr(fullResourceName, "zone", model.Zone),
+		resource.TestCheckResourceAttr(fullResourceName, "services.#", "1"),
+		resource.TestCheckResourceAttr(
+			fullResourceName,
+			"services.0.port",
+			fmt.Sprintf("%d", nlbServiceModel.Port),
+		),
+		resource.TestCheckResourceAttr(
+			fullResourceName,
+			"services.0.target_port",
+			fmt.Sprintf("%d", nlbServiceModel.TargetPort),
+		),
+		resource.TestCheckResourceAttr(
+			fullResourceName,
+			"services.0.name",
+			nlbServiceModel.Name,
+		),
+		resource.TestCheckResourceAttr(
+			fullResourceName,
+			"services.0.healthcheck.port",
+			fmt.Sprintf("%d", nlbServiceModel.HealthcheckPort),
+		),
+	)
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testutils.AccPreCheck(t) },
 		ProtoV6ProviderFactories: testutils.TestAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: configBase + buf.String(),
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(fullResourceName, "zone", model.Zone),
-					resource.TestCheckResourceAttr(fullResourceName, "services.#", "1"),
-					resource.TestCheckResourceAttr(
-						fullResourceName,
-						"services.0.port",
-						fmt.Sprintf("%d", nlbServiceModel.Port),
-					),
-					resource.TestCheckResourceAttr(
-						fullResourceName,
-						"services.0.target_port",
-						fmt.Sprintf("%d", nlbServiceModel.TargetPort),
-					),
-					resource.TestCheckResourceAttr(
-						fullResourceName,
-						"services.0.name",
-						nlbServiceModel.Name,
-					),
-					resource.TestCheckResourceAttr(
-						fullResourceName,
-						"services.0.healthcheck.port",
-						fmt.Sprintf("%d", nlbServiceModel.HealthcheckPort),
-					),
-				),
+				Config: configByName,
+				Check:  checks,
+			},
+			{
+				Config: configByID,
+				Check:  checks,
 			},
 		},
 	})

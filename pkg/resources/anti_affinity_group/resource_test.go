@@ -31,6 +31,8 @@ resource "exoscale_anti_affinity_group" "test" {
 )
 
 func testResource(t *testing.T) {
+	t.Parallel()
+
 	var (
 		r   = aagroup.Name + ".test"
 		res egoscale.AntiAffinityGroup

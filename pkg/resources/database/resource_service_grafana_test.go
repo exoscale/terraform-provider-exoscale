@@ -39,6 +39,8 @@ type TemplateModelGrafana struct {
 }
 
 func testResourceGrafana(t *testing.T) {
+	t.Parallel()
+
 	tpl, err := template.ParseFiles("testdata/resource_grafana.tmpl")
 	if err != nil {
 		t.Fatal(err)

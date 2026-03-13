@@ -6,6 +6,8 @@ import (
 )
 
 func TestComputeInstanceListFilterString(t *testing.T) {
+	t.Parallel()
+
 	attributeToMatch := "my-test-attr"
 	valueToMatch := "string-to-match"
 
@@ -26,6 +28,8 @@ func TestComputeInstanceListFilterString(t *testing.T) {
 }
 
 func TestComputeInstanceListFilterRegex(t *testing.T) {
+	t.Parallel()
+
 	attributeToMatch := "my-test-attr"
 	valueToMatch := "string-123-to-match-by-regex"
 
@@ -46,6 +50,8 @@ func TestComputeInstanceListFilterRegex(t *testing.T) {
 }
 
 func TestComputeInstanceListFilterLabelsExactly(t *testing.T) {
+	t.Parallel()
+
 	labelToMatch := "my-label"
 
 	dataToFilter := map[string]interface{}{
@@ -69,6 +75,8 @@ func TestComputeInstanceListFilterLabelsExactly(t *testing.T) {
 }
 
 func TestComputeInstanceListFilterLabelsRegex(t *testing.T) {
+	t.Parallel()
+
 	labelToMatch := "my-label"
 
 	dataToFilter := map[string]interface{}{

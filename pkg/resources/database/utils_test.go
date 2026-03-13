@@ -8,6 +8,8 @@ import (
 )
 
 func TestPartialSettingsPatch(t *testing.T) {
+	t.Parallel()
+
 	type testCaseInput struct {
 		data  map[string]interface{}
 		patch map[string]interface{}

@@ -65,6 +65,8 @@ type TemplateModelMysqlDb struct {
 }
 
 func testResourceMysql(t *testing.T) {
+	t.Parallel()
+
 	serviceTpl, err := template.ParseFiles("testdata/resource_mysql.tmpl")
 	if err != nil {
 		t.Fatal(err)

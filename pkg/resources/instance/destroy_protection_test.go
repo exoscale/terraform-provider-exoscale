@@ -94,6 +94,8 @@ func checkResourceDoesNotExist(name string) func(s *terraform.State) error {
 }
 
 func testExplicitDestroyProtection(t *testing.T) {
+	t.Parallel()
+
 	instanceName := acctest.RandomWithPrefix(testutils.Prefix)
 
 	resource.Test(t, resource.TestCase{
@@ -148,6 +150,8 @@ func testExplicitDestroyProtection(t *testing.T) {
 }
 
 func testDefaultDestroyProtection(t *testing.T) {
+	t.Parallel()
+
 	instanceName := acctest.RandomWithPrefix(testutils.Prefix)
 
 	resource.Test(t, resource.TestCase{

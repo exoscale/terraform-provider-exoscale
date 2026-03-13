@@ -21,6 +21,8 @@ type DataSourceURIModel struct {
 }
 
 func testDataSourceURI(t *testing.T) {
+	t.Parallel()
+
 	tplData, err := template.ParseFiles("testdata/datasource.tmpl")
 	if err != nil {
 		t.Fatal(err)
