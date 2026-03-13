@@ -12,8 +12,12 @@ import (
 )
 
 func testResourceOrgPolicy(t *testing.T) {
-	fullResourceName := "exoscale_iam_org_policy.test"
-	expression := acctest.RandomWithPrefix(testutils.Prefix)
+	t.Parallel()
+
+	var (
+		fullResourceName string = "exoscale_iam_org_policy.test"
+		orgPolicyExpName string = acctest.RandomWithPrefix(testutils.Prefix + "-org-policy-expr")
+	)
 
 	tpl, err := template.ParseFiles("../../testutils/testdata/resource_iam_org_policy.tmpl")
 	if err != nil {
@@ -29,7 +33,7 @@ func testResourceOrgPolicy(t *testing.T) {
 				Rules: []testutils.ResourceIAMPolicyServiceRules{
 					{
 						Action:     "deny",
-						Expression: expression,
+						Expression: orgPolicyExpName,
 					},
 				},
 			},
@@ -64,7 +68,7 @@ func testResourceOrgPolicy(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "services.sos.type", "rules"),
 					resource.TestCheckResourceAttr(fullResourceName, "services.sos.rules.#", "1"),
 					resource.TestCheckResourceAttr(fullResourceName, "services.sos.rules.0.action", "deny"),
-					resource.TestCheckResourceAttr(fullResourceName, "services.sos.rules.0.expression", expression),
+					resource.TestCheckResourceAttr(fullResourceName, "services.sos.rules.0.expression", orgPolicyExpName),
 				),
 			},
 			// Update (reverts to default org policy)

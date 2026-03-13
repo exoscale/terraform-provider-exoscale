@@ -171,7 +171,14 @@ func (data *MysqlUserResourceModel) CreateResource(ctx context.Context, client *
 		return
 	}
 
-	svc, err := client.GetDBAASServiceMysql(ctx, data.Service.ValueString())
+	svc, err := waitForDBAASServiceReadyForFn(ctx, client.GetDBAASServiceMysql, data.Service.ValueString(), func(t *exoscale.DBAASServiceMysql) bool {
+		for _, user := range t.Users {
+			if user.Username == data.Username.ValueString() {
+				return true
+			}
+		}
+		return false
+	})
 	if err != nil {
 		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database service mysql, got error: %s", err))
 		return
@@ -221,7 +228,15 @@ func (data *MysqlUserResourceModel) DeleteResource(ctx context.Context, client *
 func (data *MysqlUserResourceModel) ReadResource(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics) (clearState bool) {
 
 	svc, err := waitForDBAASServiceReadyForFn(ctx, client.GetDBAASServiceMysql, data.Service.ValueString(), func(t *exoscale.DBAASServiceMysql) bool {
-		return t.State == exoscale.EnumServiceStateRunning && len(t.Users) > 0
+		if t.State != exoscale.EnumServiceStateRunning {
+			return false
+		}
+		for _, user := range t.Users {
+			if user.Username == data.Username.ValueString() {
+				return true
+			}
+		}
+		return false
 	})
 	if err != nil {
 		if errors.Is(err, exoscale.ErrNotFound) {

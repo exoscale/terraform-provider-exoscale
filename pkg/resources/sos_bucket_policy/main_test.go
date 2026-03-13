@@ -15,6 +15,8 @@ import (
 )
 
 func TestSOSBucketPolicy(t *testing.T) {
+	t.Parallel()
+
 	policyResourceName := "exoscale_sos_bucket_policy.test_policy"
 	policyDataSourceName := "data." + policyResourceName
 

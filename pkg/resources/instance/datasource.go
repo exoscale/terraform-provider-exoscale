@@ -224,11 +224,21 @@ func dsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.
 		}(),
 	)
 	if err != nil {
+		if errors.Is(err, v3.ErrNotFound) {
+			// Instance no longer exists, remove from state.
+			d.SetId("")
+			return nil
+		}
 		return diag.Errorf("unable to retrieve instance: %s", err)
 	}
 
 	instance, err := client.GetInstance(ctx, instanceListResp.ID)
 	if err != nil {
+		if errors.Is(err, v3.ErrNotFound) {
+			// Instance no longer exists, remove from state.
+			d.SetId("")
+			return nil
+		}
 		return diag.Errorf("unable to retrieve instance: %s", err)
 	}
 

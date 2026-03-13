@@ -9,6 +9,8 @@ import (
 )
 
 func testDataSourceOrgPolicy(t *testing.T) {
+	t.Parallel()
+
 	fullResourceName := "data.exoscale_iam_org_policy.test"
 
 	resource.Test(t, resource.TestCase{

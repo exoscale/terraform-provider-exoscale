@@ -19,7 +19,7 @@ var (
 	dsListDiskSize          int64 = 10
 	dsListName                    = acctest.RandomWithPrefix(testutils.Prefix)
 	dsListSSHKeyName              = acctest.RandomWithPrefix(testutils.Prefix)
-	dsListReverseDNS              = "tf-provider-rdns-test.exoscale.com"
+	dsListReverseDNS              = "tf-provider-rdns-list-test.exoscale.com"
 	dsListType                    = "standard.tiny"
 	dsListZone                    = "at-vie-2"
 
@@ -63,6 +63,8 @@ resource "exoscale_compute_instance" "test" {
 )
 
 func testListDataSource(t *testing.T) {
+	t.Parallel()
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testutils.AccPreCheck(t) },
 		ProtoV6ProviderFactories: testutils.TestAccProtoV6ProviderFactories,

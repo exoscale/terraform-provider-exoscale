@@ -61,6 +61,8 @@ type TemplateModelPgDb struct {
 }
 
 func testResourcePg(t *testing.T) {
+	t.Parallel()
+
 	serviceTpl, err := template.ParseFiles("testdata/resource_pg.tmpl")
 	if err != nil {
 		t.Fatal(err)

@@ -72,6 +72,8 @@ type TemplateModelOpensearchUser struct {
 }
 
 func testResourceOpensearch(t *testing.T) {
+	t.Parallel()
+
 	serviceTpl, err := template.ParseFiles("testdata/resource_opensearch.tmpl")
 	if err != nil {
 		t.Fatal(err)
