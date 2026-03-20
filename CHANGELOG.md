@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+IMPROVEMENTS:
+
+- sks: add Kubelet Image GC update support for nodepools #506
+
 ## 0.69.1
 
 BREAKING CHANGES:
