@@ -590,6 +590,27 @@ func resourceSKSNodepoolUpdate(ctx context.Context, d *schema.ResourceData, meta
 		updated = true
 	}
 
+	if d.HasChange(resSKSNodepoolAttrKubeletGC) {
+		kubeletGc := d.Get(resSKSNodepoolAttrKubeletGC).(*schema.Set).List()[0].(map[string]interface{})
+		sksNodepoolKubeletGc := new(v3.KubeletImageGC)
+		if val, ok := kubeletGc[resSKSNodepoolAttrKubeletGCMinAge]; ok {
+			sksNodepoolKubeletGcMinAge := val.(string)
+			sksNodepoolKubeletGc.MinAge = sksNodepoolKubeletGcMinAge
+		}
+		if val, ok := kubeletGc[resSKSNodepoolAttrKubeletGCLowThreshold]; ok {
+			sksNodepoolKubeletGcLowThreshold := val.(int)
+			sksNodepoolKubeletGcLowThresholdInt64 := int64(sksNodepoolKubeletGcLowThreshold)
+			sksNodepoolKubeletGc.LowThreshold = sksNodepoolKubeletGcLowThresholdInt64
+		}
+		if val, ok := kubeletGc[resSKSNodepoolAttrKubeletGCHighThreshold]; ok {
+			sksNodepoolKubeletGcHighThreshold := val.(int)
+			sksNodepoolKubeletGcHighThresholdInt64 := int64(sksNodepoolKubeletGcHighThreshold)
+			sksNodepoolKubeletGc.HighThreshold = sksNodepoolKubeletGcHighThresholdInt64
+		}
+		sksNodepoolUpdate.KubeletImageGC = sksNodepoolKubeletGc
+		updated = true
+	}
+
 	if d.HasChange(resSKSNodepoolAttrTaints) {
 		taints := make(v3.SKSNodepoolTaints)
 		for k, v := range d.Get(resSKSNodepoolAttrTaints).(map[string]interface{}) {
@@ -801,6 +822,27 @@ func resourceSKSNodepoolApply(
 
 	if err := d.Set(resSKSNodepoolAttrState, sksNodepool.State); err != nil {
 		return err
+	}
+
+	if sksNodepool.KubeletImageGC != nil {
+		kubeletGc := d.Get(resSKSNodepoolAttrKubeletGC).(*schema.Set)
+		if err := d.Set(resSKSNodepoolAttrKubeletGC, schema.NewSet(kubeletGc.F, []interface{}{
+			func() map[string]interface{} {
+				i := map[string]interface{}{}
+				if sksNodepool.KubeletImageGC.MinAge != "" {
+					i[resSKSNodepoolAttrKubeletGCMinAge] = sksNodepool.KubeletImageGC.MinAge
+				}
+				if sksNodepool.KubeletImageGC.HighThreshold != 0 {
+					i[resSKSNodepoolAttrKubeletGCHighThreshold] = int(sksNodepool.KubeletImageGC.HighThreshold)
+				}
+				if sksNodepool.KubeletImageGC.LowThreshold != 0 {
+					i[resSKSNodepoolAttrKubeletGCLowThreshold] = int(sksNodepool.KubeletImageGC.LowThreshold)
+				}
+				return i
+			}(),
+		})); err != nil {
+			return err
+		}
 	}
 
 	if sksNodepool.Taints != nil {
