@@ -31,6 +31,8 @@ data "exoscale_template" "test" {
 )
 
 func TestAccDataSourceTemplate(t *testing.T) {
+	t.Parallel()
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: TestAccProtoV6ProviderFactories,

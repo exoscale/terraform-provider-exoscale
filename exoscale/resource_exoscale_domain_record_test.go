@@ -102,6 +102,8 @@ resource "exoscale_domain_record" "txt" {
 )
 
 func TestAccResourceDomainRecord(t *testing.T) {
+	t.Parallel()
+
 	dr := v3.DNSDomainRecord{}
 	domain := v3.DNSDomain{}
 	record := v3.DNSDomainRecord{}

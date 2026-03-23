@@ -13,6 +13,8 @@ import (
 )
 
 func Test_in(t *testing.T) {
+	t.Parallel()
+
 	type args struct {
 		list []string
 		v    string
@@ -70,6 +72,8 @@ func Test_in(t *testing.T) {
 }
 
 func Test_defaultString(t *testing.T) {
+	t.Parallel()
+
 	type args struct {
 		v   *string
 		def string
@@ -113,6 +117,8 @@ func Test_defaultString(t *testing.T) {
 }
 
 func Test_defaultInt64(t *testing.T) {
+	t.Parallel()
+
 	type args struct {
 		v   *int64
 		def int64
@@ -156,6 +162,8 @@ func Test_defaultInt64(t *testing.T) {
 }
 
 func Test_defaultBool(t *testing.T) {
+	t.Parallel()
+
 	type args struct {
 		v   *bool
 		def bool
@@ -223,6 +231,8 @@ func GetTemplateIDByName(templateName string) (*string, error) {
 }
 
 func TestIsDNSName(t *testing.T) {
+	t.Parallel()
+
 	validNames := []string{
 		"example.com",
 		"sub.example.com",

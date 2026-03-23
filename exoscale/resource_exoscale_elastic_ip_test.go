@@ -190,6 +190,8 @@ resource "exoscale_elastic_ip" "test6" {
 )
 
 func TestAccResourceElasticIP(t *testing.T) {
+	t.Parallel()
+
 	var (
 		r4          = "exoscale_elastic_ip.test4"
 		r6          = "exoscale_elastic_ip.test6"

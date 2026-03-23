@@ -38,6 +38,8 @@ resource "exoscale_ssh_key" "test" {
 )
 
 func TestAccResourceSSHKey(t *testing.T) {
+	t.Parallel()
+
 	var (
 		r      = "exoscale_ssh_key.test"
 		sshKey egoscale.SSHKey

@@ -77,6 +77,8 @@ resource "exoscale_private_network" "test" {
 )
 
 func TestAccResourcePrivateNetwork(t *testing.T) {
+	t.Parallel()
+
 	var (
 		r              = "exoscale_private_network.test"
 		privateNetwork egoscale.PrivateNetwork

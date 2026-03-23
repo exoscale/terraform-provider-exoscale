@@ -20,6 +20,7 @@ import (
 )
 
 var (
+	testAccResourceSKSClusterNameNodePoolTest                   = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceSKSNodepoolAntiAffinityGroupName             = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceSKSNodepoolDescription                       = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceSKSNodepoolDescriptionUpdated                = testAccResourceSKSNodepoolDescription + "-updated"
@@ -84,7 +85,7 @@ resource "exoscale_sks_nodepool" "test" {
 }
 `,
 		testAccResourceSKSClusterLocalZone,
-		testAccResourceSKSClusterName,
+		testAccResourceSKSClusterNameNodePoolTest,
 		testAccResourceSKSNodepoolName,
 		testAccResourceSKSNodepoolDescription,
 		testAccResourceSKSNodepoolInstanceType,
@@ -161,7 +162,7 @@ resource "exoscale_sks_nodepool" "test" {
 		testAccResourceSKSClusterLocalZone,
 		testAccResourceSKSNodepoolAntiAffinityGroupName,
 		testAccResourceSKSNodepoolPrivateNetworkName,
-		testAccResourceSKSClusterName,
+		testAccResourceSKSClusterNameNodePoolTest,
 		testAccResourceSKSNodepoolNameUpdated,
 		testAccResourceSKSNodepoolDescriptionUpdated,
 		testAccResourceSKSNodepoolInstanceTypeUpdated,
@@ -180,6 +181,8 @@ resource "exoscale_sks_nodepool" "test" {
 )
 
 func TestAccResourceSKSNodepool(t *testing.T) {
+	t.Parallel()
+
 	var (
 		r           = "exoscale_sks_nodepool.test"
 		sksCluster  v3.SKSCluster

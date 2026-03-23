@@ -170,6 +170,8 @@ resource "exoscale_nlb_service" "test" {
 )
 
 func TestAccResourceNLB(t *testing.T) {
+	t.Parallel()
+
 	var (
 		r   = "exoscale_nlb.test"
 		nlb egoscale.NetworkLoadBalancer

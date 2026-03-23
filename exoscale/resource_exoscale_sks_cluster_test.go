@@ -23,6 +23,8 @@ var (
 	testAccResourceSKSClusterLabelValue             = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceSKSClusterLabelValueUpdated      = testAccResourceSKSClusterLabelValue + "-updated"
 	testAccResourceSKSClusterName                   = acctest.RandomWithPrefix(testPrefix)
+	testAccResourceSKSClusterNameWithAudit          = acctest.RandomWithPrefix(testPrefix)
+	testAccResourceSKSClusterNameWithKarpenter      = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceSKSClusterNameUpdated            = testAccResourceSKSClusterName + "-updated"
 	testAccResourceSKSClusterOIDCClientID           = acctest.RandString(10)
 	testAccResourceSKSClusterOIDCGroupsClaim        = acctest.RandString(10)
@@ -219,7 +221,7 @@ resource "exoscale_sks_cluster" "test-with-audit" {
 }
 `,
 		testAccResourceSKSClusterLocalZone,
-		testAccResourceSKSClusterName,
+		testAccResourceSKSClusterNameWithAudit,
 		testAccResourceSKSClusterDescription,
 		testAccResourceSKSClusterLabelValue,
 		testAccResourceSKSClusterAuditRemoteURL,
@@ -253,7 +255,7 @@ resource "exoscale_sks_cluster" "test-with-audit" {
 }
 `,
 		testAccResourceSKSClusterLocalZone,
-		testAccResourceSKSClusterName,
+		testAccResourceSKSClusterNameWithAudit,
 		testAccResourceSKSClusterDescription,
 		testAccResourceSKSClusterLabelValue,
 	)
@@ -286,7 +288,7 @@ resource "exoscale_sks_cluster" "test-with-audit" {
 }
 `,
 		testAccResourceSKSClusterLocalZone,
-		testAccResourceSKSClusterName,
+		testAccResourceSKSClusterNameWithAudit,
 		testAccResourceSKSClusterDescription,
 		testAccResourceSKSClusterLabelValue,
 		testAccResourceSKSClusterAuditRemoteURLUpdated,
@@ -317,7 +319,7 @@ resource "exoscale_sks_cluster" "test-with-karpenter" {
 }
 `,
 		testAccResourceSKSClusterLocalZone,
-		testAccResourceSKSClusterName,
+		testAccResourceSKSClusterNameWithKarpenter,
 		testAccResourceSKSClusterDescription,
 		testAccResourceSKSClusterLabelValue,
 	)
@@ -346,7 +348,7 @@ resource "exoscale_sks_cluster" "test-with-karpenter" {
 }
 `,
 		testAccResourceSKSClusterLocalZone,
-		testAccResourceSKSClusterName,
+		testAccResourceSKSClusterNameWithKarpenter,
 		testAccResourceSKSClusterDescription,
 		testAccResourceSKSClusterLabelValue,
 	)
@@ -375,13 +377,15 @@ resource "exoscale_sks_cluster" "test-with-karpenter" {
 }
 `,
 		testAccResourceSKSClusterLocalZone,
-		testAccResourceSKSClusterName,
+		testAccResourceSKSClusterNameWithKarpenter,
 		testAccResourceSKSClusterDescription,
 		testAccResourceSKSClusterLabelValue,
 	)
 )
 
 func TestAccResourceSKSCluster(t *testing.T) {
+	t.Parallel()
+
 	if os.Getenv(resource.EnvTfAcc) == "" {
 		t.Skipf("Acceptance tests skipped unless env '%s' set", resource.EnvTfAcc)
 		return
@@ -590,6 +594,8 @@ func TestAccResourceSKSCluster(t *testing.T) {
 }
 
 func TestAccResourceSKSClusterSKSClusterWithAudit(t *testing.T) {
+	t.Parallel()
+
 	if os.Getenv(resource.EnvTfAcc) == "" {
 		t.Skipf("Acceptance tests skipped unless env '%s' set", resource.EnvTfAcc)
 		return
@@ -616,7 +622,7 @@ func TestAccResourceSKSClusterSKSClusterWithAudit(t *testing.T) {
 						a := assert.New(t)
 
 						a.Equal(versions[0], sksCluster.Version)
-						a.Equal(testAccResourceSKSClusterName, sksCluster.Name)
+						a.Equal(testAccResourceSKSClusterNameWithAudit, sksCluster.Name)
 						a.Equal(testAccResourceSKSClusterDescription, sksCluster.Description)
 
 						// Verify audit is enabled in the API response
@@ -634,7 +640,7 @@ func TestAccResourceSKSClusterSKSClusterWithAudit(t *testing.T) {
 						return nil
 					},
 					checkResourceState(r, checkResourceStateValidateAttributes(testAttrs{
-						resSKSClusterAttrName:                                     validateString(testAccResourceSKSClusterName),
+						resSKSClusterAttrName:                                     validateString(testAccResourceSKSClusterNameWithAudit),
 						resSKSClusterAttrDescription:                              validateString(testAccResourceSKSClusterDescription),
 						resSKSClusterAttrAutoUpgrade:                              validateString("true"),
 						resSKSClusterAttrExoscaleCCM:                              validateString("true"),
@@ -656,7 +662,7 @@ func TestAccResourceSKSClusterSKSClusterWithAudit(t *testing.T) {
 						a := assert.New(t)
 
 						a.Equal(versions[0], sksCluster.Version)
-						a.Equal(testAccResourceSKSClusterName, sksCluster.Name)
+						a.Equal(testAccResourceSKSClusterNameWithAudit, sksCluster.Name)
 
 						// Verify audit is disabled in the API response
 						if assert.NotNil(t, sksCluster.Audit) {
@@ -666,7 +672,7 @@ func TestAccResourceSKSClusterSKSClusterWithAudit(t *testing.T) {
 						return nil
 					},
 					checkResourceState(r, checkResourceStateValidateAttributes(testAttrs{
-						resSKSClusterAttrName:                                 validateString(testAccResourceSKSClusterName),
+						resSKSClusterAttrName:                                 validateString(testAccResourceSKSClusterNameWithAudit),
 						resSKSClusterAttrDescription:                          validateString(testAccResourceSKSClusterDescription),
 						resSKSClusterAttrAutoUpgrade:                          validateString("true"),
 						resSKSClusterAttrExoscaleCCM:                          validateString("true"),
@@ -685,7 +691,7 @@ func TestAccResourceSKSClusterSKSClusterWithAudit(t *testing.T) {
 						a := assert.New(t)
 
 						a.Equal(versions[0], sksCluster.Version)
-						a.Equal(testAccResourceSKSClusterName, sksCluster.Name)
+						a.Equal(testAccResourceSKSClusterNameWithAudit, sksCluster.Name)
 
 						// Verify audit is enabled again with new URL
 						assert.NotNil(t, sksCluster.Audit)
@@ -701,7 +707,7 @@ func TestAccResourceSKSClusterSKSClusterWithAudit(t *testing.T) {
 						return nil
 					},
 					checkResourceState(r, checkResourceStateValidateAttributes(testAttrs{
-						resSKSClusterAttrName:                                     validateString(testAccResourceSKSClusterName),
+						resSKSClusterAttrName:                                     validateString(testAccResourceSKSClusterNameWithAudit),
 						resSKSClusterAttrDescription:                              validateString(testAccResourceSKSClusterDescription),
 						resSKSClusterAttrAutoUpgrade:                              validateString("true"),
 						resSKSClusterAttrExoscaleCCM:                              validateString("true"),
@@ -719,6 +725,8 @@ func TestAccResourceSKSClusterSKSClusterWithAudit(t *testing.T) {
 }
 
 func TestAccResourceSKSClusterWithKarpenter(t *testing.T) {
+	t.Parallel()
+
 	if os.Getenv(resource.EnvTfAcc) == "" {
 		t.Skipf("Acceptance tests skipped unless env '%s' set", resource.EnvTfAcc)
 		return
@@ -745,7 +753,7 @@ func TestAccResourceSKSClusterWithKarpenter(t *testing.T) {
 						a := assert.New(t)
 
 						a.Equal(versions[0], sksCluster.Version)
-						a.Equal(testAccResourceSKSClusterName, sksCluster.Name)
+						a.Equal(testAccResourceSKSClusterNameWithKarpenter, sksCluster.Name)
 						a.Equal(testAccResourceSKSClusterDescription, sksCluster.Description)
 
 						// Verify Karpenter addon is present in the API response
@@ -766,7 +774,7 @@ func TestAccResourceSKSClusterWithKarpenter(t *testing.T) {
 						return nil
 					},
 					checkResourceState(r, checkResourceStateValidateAttributes(testAttrs{
-						resSKSClusterAttrName:             validateString(testAccResourceSKSClusterName),
+						resSKSClusterAttrName:             validateString(testAccResourceSKSClusterNameWithKarpenter),
 						resSKSClusterAttrDescription:      validateString(testAccResourceSKSClusterDescription),
 						resSKSClusterAttrAutoUpgrade:      validateString("true"),
 						resSKSClusterAttrExoscaleCCM:      validateString("true"),
@@ -785,7 +793,7 @@ func TestAccResourceSKSClusterWithKarpenter(t *testing.T) {
 						a := assert.New(t)
 
 						a.Equal(versions[0], sksCluster.Version)
-						a.Equal(testAccResourceSKSClusterName, sksCluster.Name)
+						a.Equal(testAccResourceSKSClusterNameWithKarpenter, sksCluster.Name)
 
 						// Verify Karpenter addon is not present in the API response
 						if assert.NotNil(t, sksCluster.Addons) {
@@ -802,7 +810,7 @@ func TestAccResourceSKSClusterWithKarpenter(t *testing.T) {
 						return nil
 					},
 					checkResourceState(r, checkResourceStateValidateAttributes(testAttrs{
-						resSKSClusterAttrName:             validateString(testAccResourceSKSClusterName),
+						resSKSClusterAttrName:             validateString(testAccResourceSKSClusterNameWithKarpenter),
 						resSKSClusterAttrDescription:      validateString(testAccResourceSKSClusterDescription),
 						resSKSClusterAttrAutoUpgrade:      validateString("true"),
 						resSKSClusterAttrExoscaleCCM:      validateString("true"),
@@ -821,7 +829,7 @@ func TestAccResourceSKSClusterWithKarpenter(t *testing.T) {
 						a := assert.New(t)
 
 						a.Equal(versions[0], sksCluster.Version)
-						a.Equal(testAccResourceSKSClusterName, sksCluster.Name)
+						a.Equal(testAccResourceSKSClusterNameWithKarpenter, sksCluster.Name)
 
 						// Verify Karpenter addon is present again in the API response
 						assert.NotNil(t, sksCluster.Addons)
@@ -841,7 +849,7 @@ func TestAccResourceSKSClusterWithKarpenter(t *testing.T) {
 						return nil
 					},
 					checkResourceState(r, checkResourceStateValidateAttributes(testAttrs{
-						resSKSClusterAttrName:             validateString(testAccResourceSKSClusterName),
+						resSKSClusterAttrName:             validateString(testAccResourceSKSClusterNameWithKarpenter),
 						resSKSClusterAttrDescription:      validateString(testAccResourceSKSClusterDescription),
 						resSKSClusterAttrAutoUpgrade:      validateString("true"),
 						resSKSClusterAttrExoscaleCCM:      validateString("true"),
@@ -948,6 +956,8 @@ func testAccCheckResourceSKSClusterDestroy(sksCluster *egoscale.SKSCluster) reso
 // Unit tests for addon helper functions
 
 func TestAddonsSetToSlice(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name     string
 		input    []interface{}
@@ -994,6 +1004,8 @@ func TestAddonsSetToSlice(t *testing.T) {
 }
 
 func TestAppendAddonToSet(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name          string
 		initialAddons []interface{}
@@ -1045,6 +1057,8 @@ func TestAppendAddonToSet(t *testing.T) {
 }
 
 func TestRemoveAddonFromSet(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name             string
 		initialAddons    []interface{}
