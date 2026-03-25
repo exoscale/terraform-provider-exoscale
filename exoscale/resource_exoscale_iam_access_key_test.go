@@ -34,6 +34,8 @@ resource "exoscale_iam_access_key" "test" {
 )
 
 func TestAccResourceIAMAccessKey(t *testing.T) {
+	t.Parallel()
+
 	var (
 		r            = "exoscale_iam_access_key.test"
 		iamAccessKey egoscale.IAMAccessKey

@@ -120,6 +120,8 @@ resource "exoscale_elastic_ip" "test6" {
 )
 
 func TestAccDataSourceElasticIP(t *testing.T) {
+	t.Parallel()
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: TestAccProtoV6ProviderFactories,

@@ -61,6 +61,8 @@ func init() {
 }
 
 func TestProvider(t *testing.T) {
+	t.Parallel()
+
 	if err := Provider().InternalValidate(); err != nil {
 		t.Fatalf("err: %s", err)
 	}
@@ -152,6 +154,8 @@ func attrFromState(s *terraform.State, r, a string) (string, error) {
 }
 
 func TestCheckResourceAttributes(t *testing.T) {
+	t.Parallel()
+
 	type testCase struct {
 		desc        string
 		want        testAttrs
@@ -194,6 +198,8 @@ func TestCheckResourceAttributes(t *testing.T) {
 }
 
 func Test_zonedStateContextFunc(t *testing.T) {
+	t.Parallel()
+
 	type args struct {
 		d *schema.ResourceData
 	}

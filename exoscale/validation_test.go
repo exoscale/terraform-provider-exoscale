@@ -8,6 +8,8 @@ import (
 )
 
 func Test_validateString(t *testing.T) {
+	t.Parallel()
+
 	type args struct {
 		s    string
 		i    interface{}
@@ -58,6 +60,8 @@ func Test_validateString(t *testing.T) {
 }
 
 func Test_validatePortRange(t *testing.T) {
+	t.Parallel()
+
 	type args struct {
 		i interface{}
 		k string
@@ -111,6 +115,8 @@ func Test_validatePortRange(t *testing.T) {
 }
 
 func Test_validateComputeInstanceType(t *testing.T) {
+	t.Parallel()
+
 	type args struct {
 		i    interface{}
 		path cty.Path

@@ -128,6 +128,8 @@ resource "exoscale_sks_nodepool" "my_sks_nodepool_2" {
 )
 
 func TestAccSKSDataSources(t *testing.T) {
+	t.Parallel()
+
 	type testCase struct {
 		Config               string
 		DataSourceIdentifier string

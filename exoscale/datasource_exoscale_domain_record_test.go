@@ -63,6 +63,8 @@ resource "exoscale_domain_record" "mx2" {
 )
 
 func TestAccDataSourceDomainRecord(t *testing.T) {
+	t.Parallel()
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviders,

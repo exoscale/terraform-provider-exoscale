@@ -26,6 +26,8 @@ resource "exoscale_domain" "exo" {
 )
 
 func TestAccResourceDomain(t *testing.T) {
+	t.Parallel()
+
 	domain := v3.DNSDomain{}
 
 	resource.Test(t, resource.TestCase{

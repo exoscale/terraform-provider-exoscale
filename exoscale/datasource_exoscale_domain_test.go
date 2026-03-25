@@ -13,6 +13,8 @@ import (
 var testAccDataSourceDomainName = acctest.RandomWithPrefix(testPrefix) + ".net"
 
 func TestAccDataSourceDomain(t *testing.T) {
+	t.Parallel()
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: testAccProviders,

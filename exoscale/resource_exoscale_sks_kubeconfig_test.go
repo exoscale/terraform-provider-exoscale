@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/stretchr/testify/require"
@@ -14,6 +15,7 @@ import (
 )
 
 var (
+	testAccResourceSKSClusterNameKubeconfig             = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceSKSKubeconfigAttrEarlyRenewalSeconds = int64(600)
 	testAccResourceSKSKubeconfigAttrGroup               = "kube-group"
 	testAccResourceSKSKubeconfigAttrTTLSeconds          = int64(3600)
@@ -44,7 +46,7 @@ resource "exoscale_sks_kubeconfig" "test_admin" {
 }
 `,
 		testAccResourceSKSClusterLocalZone,
-		testAccResourceSKSClusterName,
+		testAccResourceSKSClusterNameKubeconfig,
 		testAccResourceSKSKubeconfigAttrTTLSeconds,
 		testAccResourceSKSKubeconfigAttrEarlyRenewalSeconds,
 		testAccResourceSKSKubeconfigAttrUser,
@@ -53,6 +55,8 @@ resource "exoscale_sks_kubeconfig" "test_admin" {
 )
 
 func TestAccResourceSKSKubeconfig(t *testing.T) {
+	t.Parallel()
+
 	var (
 		r             = "exoscale_sks_kubeconfig.test_admin"
 		sksCluster    v3.SKSCluster
