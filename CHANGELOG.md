@@ -16,6 +16,8 @@ BREAKING CHANGES:
 
 FEATURES:
 
+- feat: call crossplane generation after a new release #509
+
 ## 0.68.0
 
 IMPROVEMENTS:
