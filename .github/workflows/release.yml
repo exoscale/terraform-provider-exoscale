@@ -40,3 +40,11 @@ jobs:
       - uses: ./go.mk/.github/actions/release
         with:
           release_github_token: ${{ secrets.GITHUB_TOKEN }}
+
+  crossplane-provider:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.EXOSCALE_BUILD_GH_TOKEN }}
+    steps:
+      - name: Generate crossplane provider
+        run: gh workflow run generate-code.yaml -R exoscale/provider-exoscale -f terraform_provider_version=${GITHUB_REF_NAME#v}
