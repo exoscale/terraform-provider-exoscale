@@ -1,0 +1,18 @@
+resource "exoscale_dbaas_pg_connection_pool" {{ .ResourceName }} {
+  name = "{{ .Name }}"
+  database_name = {{ .DatabaseName }}
+  service = {{ .Service }}
+  zone = "{{ .Zone }}"
+
+  {{- if .Username }}
+  username = {{ .Username }}
+  {{- end }}
+
+  {{- if .Mode }}
+  mode = "{{ .Mode }}"
+  {{- end }}
+
+  {{- if .Size }}
+  size = {{ .Size }}
+  {{- end }}
+}
