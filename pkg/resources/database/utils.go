@@ -374,7 +374,7 @@ func DeleteResource[T ResourceModelInterface](ctx context.Context, req resource.
 		return
 	}
 
-	data.DeleteResource(ctx, client, &diags)
+	data.DeleteResource(ctx, client, &resp.Diagnostics)
 
 	if resp.Diagnostics.HasError() {
 		return
