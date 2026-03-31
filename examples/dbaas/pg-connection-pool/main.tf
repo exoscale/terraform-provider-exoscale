@@ -48,7 +48,12 @@ resource "exoscale_dbaas" "pg" {
     version   = var.pg_version
 
     pgbouncer_settings = jsonencode({
-      min_pool_size = 10
+      autodb_pool_mode          = "transaction"
+      max_prepared_statements   = 29
+      min_pool_size             = 10
+      server_idle_timeout       = 500
+      server_lifetime           = 3555
+      server_reset_query_always = false
     })
   }
 }
