@@ -283,6 +283,8 @@ func testResourcePg(t *testing.T) {
 						}
 
 						return nil
+					},
+					// Connection pool
 					resource.TestCheckResourceAttrSet(poolFullResourceName, "connection_uri"),
 					func(s *terraform.State) error {
 						return CheckExistsPgConnectionPool(serviceDataBase.Name, poolDataCreateExpected.Name, &poolDataCreateExpected)
