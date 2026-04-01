@@ -193,6 +193,26 @@ func (data *PGUserResourceModel) CreateResource(ctx context.Context, client *v3.
 }
 
 func (data *PGUserResourceModel) DeleteResource(ctx context.Context, client *v3.Client, diagnostics *diag.Diagnostics) {
+	blockingPools, err := getPGConnectionPoolsUsingUsername(ctx, client, data.Service.ValueString(), data.Username.ValueString())
+	if err != nil {
+		diagnostics.AddError(
+			"Client Error",
+			fmt.Sprintf("unable to check connection pool references for service user %q: %s", data.Username.ValueString(), err.Error()),
+		)
+		return
+	}
+
+	if len(blockingPools) > 0 {
+		diagnostics.AddError(
+			"Client Error",
+			fmt.Sprintf(
+				"service user %q is referenced by connection pool(s) %s; delete or update the connection pool(s) first",
+				data.Username.ValueString(),
+				formatPGConnectionPoolReferences(blockingPools),
+			),
+		)
+		return
+	}
 
 	op, err := client.DeleteDBAASPostgresUser(ctx, data.Service.ValueString(), data.Username.ValueString())
 	if err != nil {

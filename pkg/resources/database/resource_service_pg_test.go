@@ -305,12 +305,18 @@ func testResourcePg(t *testing.T) {
 						return nil
 					},
 
+					// Connection pool
+					resource.TestCheckResourceAttrSet(poolFullResourceName, "connection_uri"),
+					func(s *terraform.State) error {
+						return CheckExistsPgConnectionPool(serviceDataBase.Name, poolDataUpdateExpected.Name, &poolDataUpdateExpected)
+					},
+
 					// User
 					func(s *terraform.State) error {
-						// Check the old user was deleted
-						err := CheckExistsPgUser(serviceDataBase.Name, userDataBase.Username, &userDataUpdate)
-						if err == nil {
-							return fmt.Errorf("expected to not find user %s", userDataBase.Username)
+						// Check the old user was deleted after the connection pool replacement.
+						err := CheckNotExistsPgUser(serviceDataBase.Name, userDataBase.Username)
+						if err != nil {
+							return err
 						}
 
 						// Check the new user exists
@@ -324,10 +330,10 @@ func testResourcePg(t *testing.T) {
 
 					// Database
 					func(s *terraform.State) error {
-						// Check the old database was deleted
-						err := CheckExistsPgDatabase(serviceDataBase.Name, dbDataBase.DatabaseName, &dbDataUpdate)
-						if err == nil {
-							return fmt.Errorf("expected to not find database %s", dbDataBase.DatabaseName)
+						// Check the old database was deleted after the connection pool replacement.
+						err := CheckNotExistsPgDatabase(serviceDataBase.Name, dbDataBase.DatabaseName)
+						if err != nil {
+							return err
 						}
 
 						// Check the new user exists
@@ -336,9 +342,6 @@ func testResourcePg(t *testing.T) {
 							return err
 						}
 						return nil
-					},
-					func(s *terraform.State) error {
-						return CheckExistsPgConnectionPool(serviceDataBase.Name, poolDataUpdateExpected.Name, &poolDataUpdateExpected)
 					},
 				),
 			},
@@ -494,6 +497,51 @@ func CheckExistsPgUser(service, username string, data *TemplateModelPgUser) erro
 	return fmt.Errorf("could not find user %s for service %s, found %v", username, service, serviceUsernames)
 }
 
+func CheckNotExistsPgUser(service, username string) error {
+	client, err := testutils.APIClient()
+	if err != nil {
+		return err
+	}
+
+	ctx := exoapi.WithEndpoint(context.Background(), exoapi.NewReqEndpoint(testutils.TestEnvironment(), testutils.TestZoneName))
+	serviceUsernames := make([]string, 0)
+
+	ch := make(chan any, 1)
+	go func() {
+		time.Sleep(60 * time.Second)
+		ch <- "timeout!"
+	}()
+	for len(ch) == 0 {
+		res, err := client.GetDbaasServicePgWithResponse(ctx, oapi.DbaasServiceName(service))
+		if err != nil {
+			return err
+		}
+		if res.StatusCode() != http.StatusOK {
+			return fmt.Errorf("API request error: unexpected status %s", res.Status())
+		}
+		svc := res.JSON200
+
+		serviceUsernames = serviceUsernames[:0]
+		found := false
+		if svc.Users != nil {
+			for _, u := range *svc.Users {
+				serviceUsernames = append(serviceUsernames, u.Username)
+				if u.Username == username {
+					found = true
+				}
+			}
+		}
+
+		if !found {
+			return nil
+		}
+
+		time.Sleep(10 * time.Second)
+	}
+
+	return fmt.Errorf("could still find user %s for service %s, found %v", username, service, serviceUsernames)
+}
+
 func CheckExistsPgDatabase(service, databaseName string, data *TemplateModelPgDb) error {
 
 	client, err := testutils.APIClient()
@@ -532,6 +580,51 @@ func CheckExistsPgDatabase(service, databaseName string, data *TemplateModelPgDb
 	}
 
 	return fmt.Errorf("could not find database %s for service %s, found %v", databaseName, service, serviceDbs)
+}
+
+func CheckNotExistsPgDatabase(service, databaseName string) error {
+	client, err := testutils.APIClient()
+	if err != nil {
+		return err
+	}
+
+	ctx := exoapi.WithEndpoint(context.Background(), exoapi.NewReqEndpoint(testutils.TestEnvironment(), testutils.TestZoneName))
+	serviceDbs := make([]string, 0)
+
+	ch := make(chan any, 1)
+	go func() {
+		time.Sleep(60 * time.Second)
+		ch <- "timeout!"
+	}()
+	for len(ch) == 0 {
+		res, err := client.GetDbaasServicePgWithResponse(ctx, oapi.DbaasServiceName(service))
+		if err != nil {
+			return err
+		}
+		if res.StatusCode() != http.StatusOK {
+			return fmt.Errorf("API request error: unexpected status %s", res.Status())
+		}
+		svc := res.JSON200
+
+		serviceDbs = serviceDbs[:0]
+		found := false
+		if svc.Databases != nil {
+			for _, db := range *svc.Databases {
+				serviceDbs = append(serviceDbs, string(db))
+				if string(db) == databaseName {
+					found = true
+				}
+			}
+		}
+
+		if !found {
+			return nil
+		}
+
+		time.Sleep(10 * time.Second)
+	}
+
+	return fmt.Errorf("could still find database %s for service %s, found %v", databaseName, service, serviceDbs)
 }
 
 func CheckExistsPgConnectionPool(service, poolName string, data *TemplateModelPgConnectionPool) error {

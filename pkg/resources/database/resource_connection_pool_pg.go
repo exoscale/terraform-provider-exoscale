@@ -89,12 +89,16 @@ func (r *PGConnectionPoolResource) Schema(ctx context.Context, req resource.Sche
 			"database_name": schema.StringAttribute{
 				MarkdownDescription: "The PostgreSQL database name targeted by this pool.",
 				Required:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"username": schema.StringAttribute{
 				MarkdownDescription: "The PostgreSQL username used by this pool.",
 				Optional:            true,
 				Computed:            true,
 				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplaceIfConfigured(),
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
