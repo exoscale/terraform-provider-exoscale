@@ -23,12 +23,13 @@ import (
 )
 
 type ResourceMysqlModel struct {
-	AdminPassword  types.String `tfsdk:"admin_password"`
-	AdminUsername  types.String `tfsdk:"admin_username"`
-	BackupSchedule types.String `tfsdk:"backup_schedule"`
-	IpFilter       types.Set    `tfsdk:"ip_filter"`
-	Settings       types.String `tfsdk:"mysql_settings"`
-	Version        types.String `tfsdk:"version"`
+	AdminPassword  types.String                    `tfsdk:"admin_password"`
+	AdminUsername  types.String                    `tfsdk:"admin_username"`
+	BackupSchedule types.String                    `tfsdk:"backup_schedule"`
+	IpFilter       types.Set                       `tfsdk:"ip_filter"`
+	Settings       types.String                    `tfsdk:"mysql_settings"`
+	Version        types.String                    `tfsdk:"version"`
+	Integrations   []ResourceDbaasIntegrationModel `tfsdk:"integrations"`
 }
 
 var ResourceMysqlSchema = schema.SingleNestedAttribute{
@@ -68,6 +69,7 @@ var ResourceMysqlSchema = schema.SingleNestedAttribute{
 			Optional:            true,
 			Computed:            true,
 		},
+		"integrations": ResourceDbaasIntegrationsSchema,
 	},
 }
 
@@ -147,6 +149,28 @@ func (r *ServiceResource) createMysql(ctx context.Context, data *ServiceResource
 				return
 			}
 			service.MysqlSettings = &obj
+		}
+
+		if len(data.Mysql.Integrations) > 0 {
+			integrations := make([]struct {
+				DestService   *oapi.DbaasServiceName                               `json:"dest-service,omitempty"`
+				Settings      *map[string]interface{}                              `json:"settings,omitempty"`
+				SourceService *oapi.DbaasServiceName                               `json:"source-service,omitempty"`
+				Type          oapi.CreateDbaasServiceMysqlJSONBodyIntegrationsType `json:"type"`
+			}, 0, len(data.Mysql.Integrations))
+			for _, integration := range data.Mysql.Integrations {
+				source := oapi.DbaasServiceName(integration.SourceService.ValueString())
+				integrations = append(integrations, struct {
+					DestService   *oapi.DbaasServiceName                               `json:"dest-service,omitempty"`
+					Settings      *map[string]interface{}                              `json:"settings,omitempty"`
+					SourceService *oapi.DbaasServiceName                               `json:"source-service,omitempty"`
+					Type          oapi.CreateDbaasServiceMysqlJSONBodyIntegrationsType `json:"type"`
+				}{
+					SourceService: &source,
+					Type:          oapi.CreateDbaasServiceMysqlJSONBodyIntegrationsType(integration.Type.ValueString()),
+				})
+			}
+			service.Integrations = &integrations
 		}
 	}
 
@@ -351,6 +375,22 @@ func (r *ServiceResource) readMysql(ctx context.Context, data *ServiceResourceMo
 			return false
 		}
 		data.Mysql.Settings = types.StringValue(string(settings))
+	}
+
+	// Only surface integrations where the current service is the destination,
+	// so that Terraform state reflects exactly what the resource's config
+	// declares (i.e. integrations the user asked to create for this service).
+	data.Mysql.Integrations = nil
+	if apiService.Integrations != nil {
+		for _, integration := range *apiService.Integrations {
+			if integration.Dest == nil || *integration.Dest != data.Id.ValueString() {
+				continue
+			}
+			data.Mysql.Integrations = append(data.Mysql.Integrations, ResourceDbaasIntegrationModel{
+				Type:          types.StringPointerValue(integration.Type),
+				SourceService: types.StringPointerValue(integration.Source),
+			})
+		}
 	}
 
 	return false

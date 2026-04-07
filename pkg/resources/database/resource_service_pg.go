@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -23,14 +24,23 @@ import (
 )
 
 type ResourcePgModel struct {
-	AdminPassword     types.String `tfsdk:"admin_password"`
-	AdminUsername     types.String `tfsdk:"admin_username"`
-	BackupSchedule    types.String `tfsdk:"backup_schedule"`
-	IpFilter          types.Set    `tfsdk:"ip_filter"`
-	Settings          types.String `tfsdk:"pg_settings"`
-	Version           types.String `tfsdk:"version"`
-	PgbouncerSettings types.String `tfsdk:"pgbouncer_settings"`
-	PglookoutSettings types.String `tfsdk:"pglookout_settings"`
+	AdminPassword     types.String                    `tfsdk:"admin_password"`
+	AdminUsername     types.String                    `tfsdk:"admin_username"`
+	BackupSchedule    types.String                    `tfsdk:"backup_schedule"`
+	IpFilter          types.Set                       `tfsdk:"ip_filter"`
+	Settings          types.String                    `tfsdk:"pg_settings"`
+	Version           types.String                    `tfsdk:"version"`
+	PgbouncerSettings types.String                    `tfsdk:"pgbouncer_settings"`
+	PglookoutSettings types.String                    `tfsdk:"pglookout_settings"`
+	Integrations      []ResourceDbaasIntegrationModel `tfsdk:"integrations"`
+}
+
+// ResourceDbaasIntegrationModel describes a DBaaS service integration enabled
+// at creation time (e.g. a `read_replica` integration pointing at a source
+// service).
+type ResourceDbaasIntegrationModel struct {
+	Type          types.String `tfsdk:"type"`
+	SourceService types.String `tfsdk:"source_service"`
 }
 
 var ResourcePgSchema = schema.SingleNestedAttribute{
@@ -79,6 +89,31 @@ var ResourcePgSchema = schema.SingleNestedAttribute{
 			MarkdownDescription: "pglookout configuration settings in JSON format (`exo dbaas type show pg --settings=pglookout` for reference).",
 			Optional:            true,
 			Computed:            true,
+		},
+		"integrations": ResourceDbaasIntegrationsSchema,
+	},
+}
+
+// ResourceDbaasIntegrationsSchema describes the `integrations` nested
+// attribute exposed on database service resources that support it. An
+// integration is configured at service creation time and cannot be updated
+// in place, therefore changing it forces resource replacement.
+var ResourceDbaasIntegrationsSchema = schema.ListNestedAttribute{
+	MarkdownDescription: "❗ Service integrations enabled when the service is created. At the moment only integrations where the current service is the destination are supported (e.g. a `read_replica` integration pointing at a source service). Updating this list forces the service to be recreated.",
+	Optional:            true,
+	PlanModifiers: []planmodifier.List{
+		listRequiresReplace(),
+	},
+	NestedObject: schema.NestedAttributeObject{
+		Attributes: map[string]schema.Attribute{
+			"type": schema.StringAttribute{
+				MarkdownDescription: "❗ Integration type (e.g. `read_replica`).",
+				Required:            true,
+			},
+			"source_service": schema.StringAttribute{
+				MarkdownDescription: "❗ Name of the source service to integrate with.",
+				Required:            true,
+			},
 		},
 	},
 }
@@ -176,6 +211,28 @@ func (r *ServiceResource) createPg(ctx context.Context, data *ServiceResourceMod
 				return
 			}
 			service.PglookoutSettings = &obj
+		}
+
+		if len(data.Pg.Integrations) > 0 {
+			integrations := make([]struct {
+				DestService   *oapi.DbaasServiceName                            `json:"dest-service,omitempty"`
+				Settings      *map[string]interface{}                           `json:"settings,omitempty"`
+				SourceService *oapi.DbaasServiceName                            `json:"source-service,omitempty"`
+				Type          oapi.CreateDbaasServicePgJSONBodyIntegrationsType `json:"type"`
+			}, 0, len(data.Pg.Integrations))
+			for _, integration := range data.Pg.Integrations {
+				source := oapi.DbaasServiceName(integration.SourceService.ValueString())
+				integrations = append(integrations, struct {
+					DestService   *oapi.DbaasServiceName                            `json:"dest-service,omitempty"`
+					Settings      *map[string]interface{}                           `json:"settings,omitempty"`
+					SourceService *oapi.DbaasServiceName                            `json:"source-service,omitempty"`
+					Type          oapi.CreateDbaasServicePgJSONBodyIntegrationsType `json:"type"`
+				}{
+					SourceService: &source,
+					Type:          oapi.CreateDbaasServicePgJSONBodyIntegrationsType(integration.Type.ValueString()),
+				})
+			}
+			service.Integrations = &integrations
 		}
 	}
 
@@ -485,6 +542,22 @@ func (r *ServiceResource) readPg(ctx context.Context, data *ServiceResourceModel
 			return false
 		}
 		data.Pg.PglookoutSettings = types.StringValue(string(settings))
+	}
+
+	// Only surface integrations where the current service is the destination,
+	// so that Terraform state reflects exactly what the resource's config
+	// declares (i.e. integrations the user asked to create for this service).
+	data.Pg.Integrations = nil
+	if apiService.Integrations != nil {
+		for _, integration := range *apiService.Integrations {
+			if integration.Dest == nil || *integration.Dest != data.Id.ValueString() {
+				continue
+			}
+			data.Pg.Integrations = append(data.Pg.Integrations, ResourceDbaasIntegrationModel{
+				Type:          types.StringPointerValue(integration.Type),
+				SourceService: types.StringPointerValue(integration.Source),
+			})
+		}
 	}
 
 	return false

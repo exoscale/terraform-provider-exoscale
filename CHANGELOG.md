@@ -17,6 +17,7 @@ BREAKING CHANGES:
 FEATURES:
 
 - feat: call crossplane generation after a new release #509
+- feat(dbaas): support `integrations` attribute on pg and mysql services to declare read replicas at creation time #511
 
 ## 0.68.0
 

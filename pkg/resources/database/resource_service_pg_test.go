@@ -42,6 +42,16 @@ type TemplateModelPg struct {
 	PgbouncerSettings string
 	PglookoutSettings string
 	Version           string
+
+	Integrations []TemplateModelPgIntegration
+}
+
+type TemplateModelPgIntegration struct {
+	Type string
+	// SourceService is rendered as-is into the terraform config, so it may be
+	// either a quoted string literal ("foo") or a resource reference
+	// (exoscale_dbaas.primary.name).
+	SourceService string
 }
 
 type TemplateModelPgUser struct {
@@ -452,4 +462,111 @@ func CheckExistsPgDatabase(service, databaseName string, data *TemplateModelPgDb
 	}
 
 	return fmt.Errorf("could not find database %s for service %s, found %v", databaseName, service, serviceDbs)
+}
+
+// testResourcePgIntegrations exercises creating a PG service that is declared
+// as a read replica of another PG service via the `integrations` attribute.
+func testResourcePgIntegrations(t *testing.T) {
+	t.Parallel()
+
+	serviceTpl, err := template.ParseFiles("testdata/resource_pg.tmpl")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	primary := TemplateModelPg{
+		ResourceName:          "primary",
+		Name:                  acctest.RandomWithPrefix(testutils.Prefix),
+		Plan:                  "hobbyist-2",
+		Zone:                  testutils.TestZoneName,
+		TerminationProtection: false,
+		Version:               "15",
+	}
+	replica := TemplateModelPg{
+		ResourceName:          "replica",
+		Name:                  acctest.RandomWithPrefix(testutils.Prefix),
+		Plan:                  "hobbyist-2",
+		Zone:                  testutils.TestZoneName,
+		TerminationProtection: false,
+		Version:               "15",
+		Integrations: []TemplateModelPgIntegration{
+			{
+				Type:          "read_replica",
+				SourceService: "exoscale_dbaas.primary.name",
+			},
+		},
+	}
+
+	buf := &bytes.Buffer{}
+	if err := serviceTpl.Execute(buf, &primary); err != nil {
+		t.Fatal(err)
+	}
+	if err := serviceTpl.Execute(buf, &replica); err != nil {
+		t.Fatal(err)
+	}
+	configCreate := buf.String()
+
+	primaryFullResourceName := "exoscale_dbaas.primary"
+	replicaFullResourceName := "exoscale_dbaas.replica"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() { testutils.AccPreCheck(t) },
+		CheckDestroy: resource.ComposeAggregateTestCheckFunc(
+			CheckServiceDestroy("pg", primary.Name),
+			CheckServiceDestroy("pg", replica.Name),
+		),
+		ProtoV6ProviderFactories: testutils.TestAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: configCreate,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet(primaryFullResourceName, "created_at"),
+					resource.TestCheckResourceAttrSet(replicaFullResourceName, "created_at"),
+					resource.TestCheckResourceAttr(replicaFullResourceName, "pg.integrations.#", "1"),
+					resource.TestCheckResourceAttr(replicaFullResourceName, "pg.integrations.0.type", "read_replica"),
+					resource.TestCheckResourceAttrPair(
+						replicaFullResourceName, "pg.integrations.0.source_service",
+						primaryFullResourceName, "name",
+					),
+					func(s *terraform.State) error {
+						return CheckPgIntegrationExists(replica.Name, primary.Name, "read_replica")
+					},
+				),
+			},
+		},
+	})
+}
+
+// CheckPgIntegrationExists verifies that the DBaaS API reports an integration
+// of the given type between source and dest (dest being the service currently
+// declared with the integration in its spec).
+func CheckPgIntegrationExists(dest, source, integrationType string) error {
+	client, err := testutils.APIClient()
+	if err != nil {
+		return err
+	}
+
+	ctx := exoapi.WithEndpoint(context.Background(), exoapi.NewReqEndpoint(testutils.TestEnvironment(), testutils.TestZoneName))
+
+	res, err := client.GetDbaasServicePgWithResponse(ctx, oapi.DbaasServiceName(dest))
+	if err != nil {
+		return err
+	}
+	if res.StatusCode() != http.StatusOK {
+		return fmt.Errorf("API request error: unexpected status %s", res.Status())
+	}
+	service := res.JSON200
+
+	if service.Integrations == nil {
+		return fmt.Errorf("no integrations reported for service %q", dest)
+	}
+	for _, integration := range *service.Integrations {
+		if integration.Dest == nil || integration.Source == nil || integration.Type == nil {
+			continue
+		}
+		if *integration.Dest == dest && *integration.Source == source && *integration.Type == integrationType {
+			return nil
+		}
+	}
+	return fmt.Errorf("integration %q from %q to %q not found on service %q", integrationType, source, dest, dest)
 }

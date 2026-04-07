@@ -48,5 +48,16 @@ resource "exoscale_dbaas" {{ .ResourceName }} {
     {{- if .Version }}
     version = "{{ .Version }}"
     {{- end }}
+
+    {{- if .Integrations }}
+    integrations = [
+    {{- range $k, $v := .Integrations }}
+      {
+        type           = "{{ $v.Type }}"
+        source_service = {{ $v.SourceService }}
+      },
+    {{- end }}
+    ]
+    {{- end }}
   }
 }
