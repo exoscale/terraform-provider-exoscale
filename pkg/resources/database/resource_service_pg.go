@@ -18,7 +18,9 @@ import (
 
 	apiv2 "github.com/exoscale/egoscale/v2/api"
 	"github.com/exoscale/egoscale/v2/oapi"
+	v3 "github.com/exoscale/egoscale/v3"
 
+	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/validators"
 )
 
@@ -89,6 +91,7 @@ func (r *ServiceResource) createPg(ctx context.Context, data *ServiceResourceMod
 		Plan:                  data.Plan.ValueString(),
 		TerminationProtection: data.TerminationProtection.ValueBoolPointer(),
 	}
+	var pgbouncerSettings *v3.JSONSchemaPgbouncer
 
 	if !data.MaintenanceDOW.IsUnknown() && !data.MaintenanceTime.IsUnknown() {
 		service.Maintenance = &struct {
@@ -161,12 +164,23 @@ func (r *ServiceResource) createPg(ctx context.Context, data *ServiceResourceMod
 		}
 
 		if !data.Pg.PgbouncerSettings.IsUnknown() {
-			obj, err := validateSettings(data.Pg.PgbouncerSettings.ValueString(), settingsSchema.JSON200.Settings.Pgbouncer)
+			settings, err := validateSettings(data.Pg.PgbouncerSettings.ValueString(), settingsSchema.JSON200.Settings.Pgbouncer)
 			if err != nil {
 				diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
 				return
 			}
-			service.PgbouncerSettings = &obj
+
+			typedSettings, err := json.Marshal(settings)
+			if err != nil {
+				diagnostics.AddError("Validation error", fmt.Sprintf("unable to marshal pgbouncer settings: %s", err))
+				return
+			}
+
+			pgbouncerSettings = &v3.JSONSchemaPgbouncer{}
+			if err := json.Unmarshal(typedSettings, pgbouncerSettings); err != nil {
+				diagnostics.AddError("Validation error", fmt.Sprintf("unable to read pgbouncer settings: %s", err))
+				return
+			}
 		}
 
 		if !data.Pg.PglookoutSettings.IsUnknown() {
@@ -222,6 +236,62 @@ pooling:
 				}
 			}
 			time.Sleep(time.Second * 2)
+		}
+	}
+
+	if pgbouncerSettings != nil {
+		clientV3, err := utils.SwitchClientZone(ctx, r.clientV3, v3.ZoneName(data.Zone.ValueString()))
+		if err != nil {
+			diagnostics.AddError("Client Error", fmt.Sprintf("Unable to init client, got error: %s", err))
+			return
+		}
+
+		op, err := clientV3.UpdateDBAASServicePG(
+			ctx,
+			data.Id.ValueString(),
+			v3.UpdateDBAASServicePGRequest{
+				PgbouncerSettings: pgbouncerSettings,
+			},
+		)
+		if err != nil {
+			diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update database service pg, got error: %s", err))
+			return
+		}
+
+		if _, err := clientV3.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
+			diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update database service pg, got error: %s", err))
+			return
+		}
+
+		tflog.Info(ctx, "DB Service updated with pgbouncer settings, waiting for the service to be in 'running' state")
+	poolingAfterUpdate:
+		for {
+			select {
+			case <-ctx.Done():
+				diagnostics.AddError("Error", ctx.Err().Error())
+				return
+			default:
+				res, err := r.client.GetDbaasServicePgWithResponse(ctx, oapi.DbaasServiceName(data.Id.ValueString()))
+				if err != nil {
+					diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database service pg, got error: %s", err))
+					return
+				}
+				if res.StatusCode() != http.StatusOK {
+					diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database service pg, unexpected status: %s", res.Status()))
+					return
+				}
+				if res.JSON200.State != nil {
+					if *res.JSON200.State == oapi.EnumServiceStatePoweroff {
+						diagnostics.AddError("Client Error", fmt.Sprintf("Unexpected service state: %s", *res.JSON200.State))
+						return
+					}
+					if *res.JSON200.State == oapi.EnumServiceStateRunning {
+						apiService = res.JSON200
+						break poolingAfterUpdate
+					}
+				}
+				time.Sleep(time.Second * 2)
+			}
 		}
 	}
 

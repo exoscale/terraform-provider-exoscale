@@ -17,6 +17,7 @@ BREAKING CHANGES:
 FEATURES:
 
 - feat: call crossplane generation after a new release #509
+- feat: added Postgres (pgbouncer) connection pools resource to DBaaS #510
 
 ## 0.68.0
 
