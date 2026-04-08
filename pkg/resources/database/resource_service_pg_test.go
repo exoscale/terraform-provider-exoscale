@@ -116,12 +116,10 @@ func testResourcePg(t *testing.T) {
 	serviceDataCreate.PgSettings = strconv.Quote(`{"timezone":"Europe/Zurich"}`)
 	serviceDataCreate.PgbouncerSettings = strconv.Quote(`{"min_pool_size":10}`)
 	serviceDataCreate.SharedBuffersPercentage = 25
+	serviceDataCreate.SynchronousReplication = "off"
 	serviceDataCreate.WorkMem = 4
 
 	testSyncReplication := os.Getenv("EXOSCALE_TEST_PG_SYNC_REPLICATION") == "1"
-	if testSyncReplication {
-		serviceDataCreate.SynchronousReplication = "off"
-	}
 
 	userDataCreate := userDataBase
 	dbDataCreate := dbDataBase
@@ -212,13 +210,8 @@ func testResourcePg(t *testing.T) {
 					resource.TestCheckResourceAttrSet(serviceFullResourceName, "ca_certificate"),
 					resource.TestCheckResourceAttrSet(serviceFullResourceName, "updated_at"),
 					resource.TestCheckResourceAttr(serviceFullResourceName, "pg.shared_buffers_percentage", "25"),
+					resource.TestCheckResourceAttr(serviceFullResourceName, "pg.synchronous_replication", "off"),
 					resource.TestCheckResourceAttr(serviceFullResourceName, "pg.work_mem", "4"),
-					func(s *terraform.State) error {
-						if testSyncReplication {
-							return resource.TestCheckResourceAttr(serviceFullResourceName, "pg.synchronous_replication", "off")(s)
-						}
-						return nil
-					},
 					func(s *terraform.State) error {
 						err := CheckExistsPg(serviceDataBase.Name, &serviceDataCreate)
 						if err != nil {
