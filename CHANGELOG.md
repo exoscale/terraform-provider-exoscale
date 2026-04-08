@@ -17,6 +17,7 @@ BREAKING CHANGES:
 FEATURES:
 
 - feat: call crossplane generation after a new release #509
+- dbaas: add missing PostgreSQL configuration options (`recovery_backup_time`, `shared_buffers_percentage`, `synchronous_replication`, `timescaledb`, `variant`, `work_mem`) #499
 
 ## 0.68.0
 

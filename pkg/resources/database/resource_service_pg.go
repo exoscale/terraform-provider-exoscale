@@ -9,9 +9,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -23,14 +28,19 @@ import (
 )
 
 type ResourcePgModel struct {
-	AdminPassword     types.String `tfsdk:"admin_password"`
-	AdminUsername     types.String `tfsdk:"admin_username"`
-	BackupSchedule    types.String `tfsdk:"backup_schedule"`
-	IpFilter          types.Set    `tfsdk:"ip_filter"`
-	Settings          types.String `tfsdk:"pg_settings"`
-	Version           types.String `tfsdk:"version"`
-	PgbouncerSettings types.String `tfsdk:"pgbouncer_settings"`
-	PglookoutSettings types.String `tfsdk:"pglookout_settings"`
+	AdminPassword           types.String `tfsdk:"admin_password"`
+	AdminUsername           types.String `tfsdk:"admin_username"`
+	BackupSchedule          types.String `tfsdk:"backup_schedule"`
+	IpFilter                types.Set    `tfsdk:"ip_filter"`
+	Settings                types.String `tfsdk:"pg_settings"`
+	Version                 types.String `tfsdk:"version"`
+	PgbouncerSettings       types.String `tfsdk:"pgbouncer_settings"`
+	PglookoutSettings       types.String `tfsdk:"pglookout_settings"`
+	SharedBuffersPercentage types.Int64  `tfsdk:"shared_buffers_percentage"`
+	SynchronousReplication  types.String `tfsdk:"synchronous_replication"`
+	TimescaledbSettings     types.String `tfsdk:"timescaledb_settings"`
+	Variant                 types.String `tfsdk:"variant"`
+	WorkMem                 types.Int64  `tfsdk:"work_mem"`
 }
 
 var ResourcePgSchema = schema.SingleNestedAttribute{
@@ -79,6 +89,54 @@ var ResourcePgSchema = schema.SingleNestedAttribute{
 			MarkdownDescription: "pglookout configuration settings in JSON format (`exo dbaas type show pg --settings=pglookout` for reference).",
 			Optional:            true,
 			Computed:            true,
+		},
+		"shared_buffers_percentage": schema.Int64Attribute{
+			MarkdownDescription: "Percentage of total RAM that the database server uses for shared memory buffers. Valid range is 20-60 (float), which corresponds to 20% - 60%. This setting adjusts the shared_buffers configuration value.",
+			Optional:            true,
+			Computed:            true,
+			Validators: []validator.Int64{
+				int64validator.Between(20, 60),
+			},
+			PlanModifiers: []planmodifier.Int64{
+				int64planmodifier.UseStateForUnknown(),
+			},
+		},
+		"synchronous_replication": schema.StringAttribute{
+			MarkdownDescription: "Synchronous replication type. Users can enable synchronous replication with a service restart. Valid values are `quorum` and `off`.",
+			Optional:            true,
+			Computed:            true,
+			Validators: []validator.String{
+				stringvalidator.OneOf("quorum", "off"),
+			},
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.UseStateForUnknown(),
+			},
+		},
+		"timescaledb_settings": schema.StringAttribute{
+			MarkdownDescription: "TimescaleDB extension configuration settings in JSON format (`exo dbaas type show pg --settings=timescaledb` for reference).",
+			Optional:            true,
+			Computed:            true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.UseStateForUnknown(),
+			},
+		},
+		"variant": schema.StringAttribute{
+			MarkdownDescription: "PostgreSQL variant (`timescale` or `aiven`). May only be set at creation time.",
+			Optional:            true,
+			Validators: []validator.String{
+				stringvalidator.OneOf("timescale", "aiven"),
+			},
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.RequiresReplace(),
+			},
+		},
+		"work_mem": schema.Int64Attribute{
+			MarkdownDescription: "Sets the maximum amount of memory to be used by a query operation (such as a sort or hash table) before writing to temporary disk files, in MB. Default is 1MB + 0.075% of total RAM (up to 32MB).",
+			Optional:            true,
+			Computed:            true,
+			PlanModifiers: []planmodifier.Int64{
+				int64planmodifier.UseStateForUnknown(),
+			},
 		},
 	},
 }
@@ -176,6 +234,35 @@ func (r *ServiceResource) createPg(ctx context.Context, data *ServiceResourceMod
 				return
 			}
 			service.PglookoutSettings = &obj
+		}
+
+		if !data.Pg.TimescaledbSettings.IsUnknown() {
+			obj, err := validateSettings(data.Pg.TimescaledbSettings.ValueString(), settingsSchema.JSON200.Settings.Timescaledb)
+			if err != nil {
+				diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
+				return
+			}
+			service.TimescaledbSettings = &obj
+		}
+
+		if !data.Pg.SharedBuffersPercentage.IsNull() && !data.Pg.SharedBuffersPercentage.IsUnknown() {
+			v := data.Pg.SharedBuffersPercentage.ValueInt64()
+			service.SharedBuffersPercentage = &v
+		}
+
+		if !data.Pg.SynchronousReplication.IsNull() && !data.Pg.SynchronousReplication.IsUnknown() {
+			v := oapi.EnumPgSynchronousReplication(data.Pg.SynchronousReplication.ValueString())
+			service.SynchronousReplication = &v
+		}
+
+		if !data.Pg.Variant.IsNull() {
+			v := oapi.EnumPgVariant(data.Pg.Variant.ValueString())
+			service.Variant = &v
+		}
+
+		if !data.Pg.WorkMem.IsNull() && !data.Pg.WorkMem.IsUnknown() {
+			v := data.Pg.WorkMem.ValueInt64()
+			service.WorkMem = &v
 		}
 	}
 
@@ -320,6 +407,39 @@ pooling:
 				return
 			}
 			data.Pg.PglookoutSettings = types.StringValue(string(settings))
+		}
+	}
+
+	if data.Pg.TimescaledbSettings.IsUnknown() {
+		data.Pg.TimescaledbSettings = types.StringNull()
+		if apiService.TimescaledbSettings != nil {
+			settings, err := json.Marshal(*apiService.TimescaledbSettings)
+			if err != nil {
+				diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
+				return
+			}
+			data.Pg.TimescaledbSettings = types.StringValue(string(settings))
+		}
+	}
+
+	if data.Pg.SharedBuffersPercentage.IsUnknown() {
+		data.Pg.SharedBuffersPercentage = types.Int64Null()
+		if apiService.SharedBuffersPercentage != nil {
+			data.Pg.SharedBuffersPercentage = types.Int64Value(*apiService.SharedBuffersPercentage)
+		}
+	}
+
+	if data.Pg.SynchronousReplication.IsUnknown() {
+		data.Pg.SynchronousReplication = types.StringNull()
+		if apiService.SynchronousReplication != nil {
+			data.Pg.SynchronousReplication = types.StringValue(string(*apiService.SynchronousReplication))
+		}
+	}
+
+	if data.Pg.WorkMem.IsUnknown() {
+		data.Pg.WorkMem = types.Int64Null()
+		if apiService.WorkMem != nil {
+			data.Pg.WorkMem = types.Int64Value(*apiService.WorkMem)
 		}
 	}
 }
@@ -487,6 +607,52 @@ func (r *ServiceResource) readPg(ctx context.Context, data *ServiceResourceModel
 		data.Pg.PglookoutSettings = types.StringValue(string(settings))
 	}
 
+	// TimescaleDB settings follow the same partial-management pattern.
+	if data.Pg.TimescaledbSettings.IsUnknown() || apiService.TimescaledbSettings == nil {
+		data.Pg.TimescaledbSettings = types.StringNull()
+		if apiService.TimescaledbSettings != nil {
+			settings, err := json.Marshal(*apiService.TimescaledbSettings)
+			if err != nil {
+				diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
+				return false
+			}
+
+			data.Pg.TimescaledbSettings = types.StringValue(string(settings))
+		}
+	} else if data.Pg.TimescaledbSettings.ValueString() != "" {
+		var userSettings map[string]any
+
+		if err := json.Unmarshal([]byte(data.Pg.TimescaledbSettings.ValueString()), &userSettings); err != nil {
+			diagnostics.AddError("Validation error", fmt.Sprintf("unable to unmarshal JSON: %s", err))
+			return false
+		}
+
+		PartialSettingsPatch(userSettings, *apiService.TimescaledbSettings)
+		settings, err := json.Marshal(userSettings)
+		if err != nil {
+			diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
+			return false
+		}
+		data.Pg.TimescaledbSettings = types.StringValue(string(settings))
+	}
+
+	data.Pg.SharedBuffersPercentage = types.Int64Null()
+	if apiService.SharedBuffersPercentage != nil {
+		data.Pg.SharedBuffersPercentage = types.Int64Value(*apiService.SharedBuffersPercentage)
+	}
+
+	data.Pg.SynchronousReplication = types.StringNull()
+	if apiService.SynchronousReplication != nil {
+		data.Pg.SynchronousReplication = types.StringValue(string(*apiService.SynchronousReplication))
+	}
+
+	data.Pg.WorkMem = types.Int64Null()
+	if apiService.WorkMem != nil {
+		data.Pg.WorkMem = types.Int64Value(*apiService.WorkMem)
+	}
+
+	// Variant is not returned by the API read response, so preserve the plan value.
+
 	return false
 }
 
@@ -607,6 +773,55 @@ func (r *ServiceResource) updatePg(ctx context.Context, stateData *ServiceResour
 			stateData.Pg.PglookoutSettings = planData.Pg.PglookoutSettings
 			updated = true
 		}
+
+		if !planData.Pg.TimescaledbSettings.Equal(stateData.Pg.TimescaledbSettings) {
+			if planData.Pg.TimescaledbSettings.ValueString() != "" {
+				obj, err := validateSettings(planData.Pg.TimescaledbSettings.ValueString(), settingsSchema.JSON200.Settings.Timescaledb)
+				if err != nil {
+					diagnostics.AddError("Validation error", fmt.Sprintf("invalid Timescaledb settings: %s", err))
+					return
+				}
+				service.TimescaledbSettings = &obj
+			}
+			stateData.Pg.TimescaledbSettings = planData.Pg.TimescaledbSettings
+			updated = true
+		}
+
+		if !planData.Pg.SharedBuffersPercentage.IsUnknown() && !planData.Pg.SharedBuffersPercentage.Equal(stateData.Pg.SharedBuffersPercentage) {
+			if !planData.Pg.SharedBuffersPercentage.IsNull() {
+				v := planData.Pg.SharedBuffersPercentage.ValueInt64()
+				service.SharedBuffersPercentage = &v
+			}
+			stateData.Pg.SharedBuffersPercentage = planData.Pg.SharedBuffersPercentage
+			updated = true
+		}
+
+		if !planData.Pg.SynchronousReplication.IsUnknown() && !planData.Pg.SynchronousReplication.Equal(stateData.Pg.SynchronousReplication) {
+			if !planData.Pg.SynchronousReplication.IsNull() {
+				v := oapi.EnumPgSynchronousReplication(planData.Pg.SynchronousReplication.ValueString())
+				service.SynchronousReplication = &v
+			}
+			stateData.Pg.SynchronousReplication = planData.Pg.SynchronousReplication
+			updated = true
+		}
+
+		if !planData.Pg.Variant.IsUnknown() && !planData.Pg.Variant.Equal(stateData.Pg.Variant) {
+			if !planData.Pg.Variant.IsNull() {
+				v := oapi.EnumPgVariant(planData.Pg.Variant.ValueString())
+				service.Variant = &v
+			}
+			stateData.Pg.Variant = planData.Pg.Variant
+			updated = true
+		}
+
+		if !planData.Pg.WorkMem.IsUnknown() && !planData.Pg.WorkMem.Equal(stateData.Pg.WorkMem) {
+			if !planData.Pg.WorkMem.IsNull() {
+				v := planData.Pg.WorkMem.ValueInt64()
+				service.WorkMem = &v
+			}
+			stateData.Pg.WorkMem = planData.Pg.WorkMem
+			updated = true
+		}
 	}
 
 	if !updated {
@@ -636,10 +851,10 @@ func (r *ServiceResource) updatePg(ctx context.Context, stateData *ServiceResour
 		oapi.DbaasServiceName(planData.Id.ValueString()),
 		service,
 	); err != nil {
-		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create database service pg, got error: %s", err))
+		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update database service pg, got error: %s", err))
 		return
 	} else if res.StatusCode() != http.StatusOK {
-		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create database service pg, unexpected status: %s", res.Status()))
+		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update database service pg, unexpected status: %s", res.Status()))
 		return
 	}
 
@@ -725,6 +940,39 @@ func (r *ServiceResource) updatePg(ctx context.Context, stateData *ServiceResour
 				return
 			}
 			stateData.Pg.PglookoutSettings = types.StringValue(string(settings))
+		}
+	}
+
+	if stateData.Pg.TimescaledbSettings.IsUnknown() {
+		stateData.Pg.TimescaledbSettings = types.StringNull()
+		if apiService.TimescaledbSettings != nil {
+			settings, err := json.Marshal(*apiService.TimescaledbSettings)
+			if err != nil {
+				diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
+				return
+			}
+			stateData.Pg.TimescaledbSettings = types.StringValue(string(settings))
+		}
+	}
+
+	if stateData.Pg.SharedBuffersPercentage.IsUnknown() {
+		stateData.Pg.SharedBuffersPercentage = types.Int64Null()
+		if apiService.SharedBuffersPercentage != nil {
+			stateData.Pg.SharedBuffersPercentage = types.Int64Value(*apiService.SharedBuffersPercentage)
+		}
+	}
+
+	if stateData.Pg.SynchronousReplication.IsUnknown() {
+		stateData.Pg.SynchronousReplication = types.StringNull()
+		if apiService.SynchronousReplication != nil {
+			stateData.Pg.SynchronousReplication = types.StringValue(string(*apiService.SynchronousReplication))
+		}
+	}
+
+	if stateData.Pg.WorkMem.IsUnknown() {
+		stateData.Pg.WorkMem = types.Int64Null()
+		if apiService.WorkMem != nil {
+			stateData.Pg.WorkMem = types.Int64Value(*apiService.WorkMem)
 		}
 	}
 }
