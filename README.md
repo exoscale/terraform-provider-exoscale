@@ -84,6 +84,24 @@ website][tf-doc].
 make GO_TEST_EXTRA_ARGS="-v -run ^TestAccResourceCompute$" test-acc
 ```
 
+#### Running acceptance tests under OpenTofu
+
+The provider is compatible with both Terraform and [OpenTofu](https://opentofu.org/).
+To run the acceptance tests against OpenTofu instead of Terraform, point
+`terraform-plugin-testing` at the `tofu` binary and override the default
+provider source host — the test harness defaults to
+`registry.terraform.io/-/exoscale` which OpenTofu rejects with a parse
+error on the legacy `-` namespace:
+
+```sh
+TF_ACC=1 \
+  TF_ACC_TERRAFORM_PATH=$(which tofu) \
+  TF_ACC_PROVIDER_HOST=registry.opentofu.org \
+  go test -v -timeout 50m -tags=testacc \
+    -run '^TestDatabase$/^ResourcePgIntegrations$' \
+    ./pkg/resources/database/...
+```
+
 ### Development Setup
 
 If you would like to use the terraform provider you have built and try

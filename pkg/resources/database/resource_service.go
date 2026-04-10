@@ -402,6 +402,17 @@ func (r *ServiceResource) Create(ctx context.Context, req resource.CreateRequest
 		return
 	}
 
+	// Read the raw configuration so create helpers can distinguish
+	// "operator omitted integrations" (config null, plan unknown →
+	// create standalone service) from "operator set integrations to
+	// an unknown expression" (config non-null, plan unknown → must
+	// reject to avoid silently creating the wrong topology).
+	var configData ServiceResourceModel
+	resp.Diagnostics.Append(req.Config.Get(ctx, &configData)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	// Set timeout
 	t, diags := data.Timeouts.Create(ctx, config.DefaultTimeout)
 	resp.Diagnostics.Append(diags...)
@@ -416,9 +427,9 @@ func (r *ServiceResource) Create(ctx context.Context, req resource.CreateRequest
 
 	switch data.Type.ValueString() {
 	case "pg":
-		r.createPg(ctx, &data, &resp.Diagnostics)
+		r.createPg(ctx, &data, &configData, &resp.Diagnostics)
 	case "mysql":
-		r.createMysql(ctx, &data, &resp.Diagnostics)
+		r.createMysql(ctx, &data, &configData, &resp.Diagnostics)
 	case "valkey":
 		r.createValkey(ctx, &data, &resp.Diagnostics)
 	case "kafka":

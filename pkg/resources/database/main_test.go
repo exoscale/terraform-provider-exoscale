@@ -21,7 +21,12 @@ func TestDatabase(t *testing.T) {
 	t.Parallel()
 
 	t.Run("ResourcePg", testResourcePg)
+	t.Run("ResourcePgIntegrations", testResourcePgIntegrations)
+	t.Run("ResourcePgIntegrationsValidators", testResourcePgIntegrationsValidators)
+	t.Run("ResourcePgIntegrationsUnknownSource", testResourcePgIntegrationsUnknownSource)
+	t.Run("ResourcePgStateUpgrade", testResourcePgStateUpgrade)
 	t.Run("ResourceMysql", testResourceMysql)
+	t.Run("ResourceMysqlIntegrations", testResourceMysqlIntegrations)
 	t.Run("ResourceValkey", testResourceValkey)
 	t.Run("ResourceKafka", testResourceKafka)
 	t.Run("ResourceOpensearch", testResourceOpensearch)

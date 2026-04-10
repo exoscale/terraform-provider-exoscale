@@ -4,6 +4,14 @@ resource "exoscale_dbaas" {{ .ResourceName }} {
   plan = "{{ .Plan }}"
   zone = "{{ .Zone }}"
 
+  {{- if .DependsOn }}
+  depends_on = [
+  {{- range $k, $v := .DependsOn }}
+    {{ $v }},
+  {{- end }}
+  ]
+  {{- end }}
+
   {{- if .MaintenanceDow }}
   maintenance_dow = "{{ .MaintenanceDow }}"
   {{- end }}
@@ -47,6 +55,17 @@ resource "exoscale_dbaas" {{ .ResourceName }} {
 
     {{- if .Version }}
     version = "{{ .Version }}"
+    {{- end }}
+
+    {{- if .Integrations }}
+    integrations = [
+    {{- range $k, $v := .Integrations }}
+      {
+        type           = "{{ $v.Type }}"
+        source_service = {{ $v.SourceService }}
+      },
+    {{- end }}
+    ]
     {{- end }}
   }
 }
