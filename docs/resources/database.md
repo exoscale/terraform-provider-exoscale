@@ -117,9 +117,43 @@ Optional:
 - `admin_password` (String, Sensitive) A custom administrator account password (may only be set at creation time).
 - `admin_username` (String) A custom administrator account username (may only be set at creation time).
 - `backup_schedule` (String) The automated backup schedule (`HH:MM`).
+- `integrations` (Attributes Set) ❗ Service integrations declared when the service is created. Only integrations where **this** resource is the destination are supported: for example, to create a PostgreSQL read replica, declare the `integrations` block on the replica (destination) and set `source_service` to the primary's name. Integrations cannot be updated in place — any change to this set destroys and recreates the service (including all data).
+
+**Declaring the block explicitly is the recommended pattern** when the source service is also managed by Terraform. Use a reference to the source's `.name` attribute:
+
+```hcl
+integrations = [{
+  type           = "read_replica"
+  source_service = exoscale_dbaas.<primary>.name
+}]
+```
+
+`.name` is **required** in the source's configuration, so its value is resolved from configuration at plan time and changes propagate through Terraform's dependency graph. When the primary's name changes (or the primary is replaced for any reason), the replica's `source_service` value changes with it, the `setRequiresReplace` plan modifier fires, and the replica is replaced in the correct order. This is the only pattern that handles refresh, plan, destroy, AND source replacement correctly.
+
+Computed-name workflows (e.g. `name = "${random_id.suffix.hex}-primary"`) are supported: Terraform will normally resolve the primary's name before the replica's create call runs, and the reference is passed through unchanged. In the rare case that the value is still unknown at create time, the provider rejects the create with a clear error naming the `source_service` element, rather than silently submitting an empty value to the API.
+
+**Do not reference `Computed` attributes of the source service — notably `.id`, but also `.created_at`, `.state`, and similar — for `source_service`.** These attributes carry a `UseStateForUnknown` plan modifier that copies the prior state value into the plan during a source replacement. That suppresses the `setRequiresReplace` diff on the replica, leaves the replica attached to the destroyed source, and causes `terraform apply` to fail with `Cannot delete ... while read replica exists`. Always use a reference whose value is determined by configuration, not by post-apply computation — in practice, that means `.name`.
+
+**Omitting the attribute is safe for refresh and plan only.** On an imported or pre-existing replica, leaving `integrations` out of configuration avoids a spurious forced-replace on refresh (the value is read from the API and preserved in state via `UseStateForUnknown`). However, it removes the Terraform dependency edge, so:
+
+- `terraform destroy` may attempt to delete the source before the replica and fail with `Cannot delete ... while read replica exists`. Adding `depends_on = [exoscale_dbaas.<source>]` on the replica restores destroy ordering for **whole-stack destroys only**.
+- Replacing the source (rename, zone change, plan change, etc.) does **not** trigger a corresponding replacement of the replica, because Terraform sees no configuration change on the replica. `depends_on` does not fix this — it only affects ordering, not replacement propagation. There is no provider-level workaround for this case; declaring `integrations` explicitly in configuration with `source_service = exoscale_dbaas.<source>.name` is the only complete fix.
+
+Omitting the attribute is fully safe when the source service is **not** managed by Terraform in the same state (e.g. an external primary created out-of-band), because there is no dependency graph to preserve.
+
+Removing an integration out-of-band (e.g. via the Exoscale dashboard) on a resource that explicitly declares the attribute in configuration still triggers a forced replace on the next plan. (see [below for nested schema](#nestedatt--mysql--integrations))
 - `ip_filter` (Set of String) A list of CIDR blocks to allow incoming connections from.
 - `mysql_settings` (String) MySQL configuration settings in JSON format (`exo dbaas type show mysql --settings=mysql` for reference).
 - `version` (String) MySQL major version (`exo dbaas type show mysql` for reference; may only be set at creation time).
+
+<a id="nestedatt--mysql--integrations"></a>
+### Nested Schema for `mysql.integrations`
+
+Required:
+
+- `source_service` (String) ❗ Name of the source service to integrate with. For a `read_replica` integration, this is the name of the primary service from which data is replicated.
+- `type` (String) ❗ Integration type. Currently only `read_replica` is supported.
+
 
 
 <a id="nestedatt--opensearch"></a>
@@ -177,11 +211,45 @@ Optional:
 - `admin_password` (String, Sensitive) A custom administrator account password (may only be set at creation time).
 - `admin_username` (String) A custom administrator account username (may only be set at creation time).
 - `backup_schedule` (String) The automated backup schedule (`HH:MM`).
+- `integrations` (Attributes Set) ❗ Service integrations declared when the service is created. Only integrations where **this** resource is the destination are supported: for example, to create a PostgreSQL read replica, declare the `integrations` block on the replica (destination) and set `source_service` to the primary's name. Integrations cannot be updated in place — any change to this set destroys and recreates the service (including all data).
+
+**Declaring the block explicitly is the recommended pattern** when the source service is also managed by Terraform. Use a reference to the source's `.name` attribute:
+
+```hcl
+integrations = [{
+  type           = "read_replica"
+  source_service = exoscale_dbaas.<primary>.name
+}]
+```
+
+`.name` is **required** in the source's configuration, so its value is resolved from configuration at plan time and changes propagate through Terraform's dependency graph. When the primary's name changes (or the primary is replaced for any reason), the replica's `source_service` value changes with it, the `setRequiresReplace` plan modifier fires, and the replica is replaced in the correct order. This is the only pattern that handles refresh, plan, destroy, AND source replacement correctly.
+
+Computed-name workflows (e.g. `name = "${random_id.suffix.hex}-primary"`) are supported: Terraform will normally resolve the primary's name before the replica's create call runs, and the reference is passed through unchanged. In the rare case that the value is still unknown at create time, the provider rejects the create with a clear error naming the `source_service` element, rather than silently submitting an empty value to the API.
+
+**Do not reference `Computed` attributes of the source service — notably `.id`, but also `.created_at`, `.state`, and similar — for `source_service`.** These attributes carry a `UseStateForUnknown` plan modifier that copies the prior state value into the plan during a source replacement. That suppresses the `setRequiresReplace` diff on the replica, leaves the replica attached to the destroyed source, and causes `terraform apply` to fail with `Cannot delete ... while read replica exists`. Always use a reference whose value is determined by configuration, not by post-apply computation — in practice, that means `.name`.
+
+**Omitting the attribute is safe for refresh and plan only.** On an imported or pre-existing replica, leaving `integrations` out of configuration avoids a spurious forced-replace on refresh (the value is read from the API and preserved in state via `UseStateForUnknown`). However, it removes the Terraform dependency edge, so:
+
+- `terraform destroy` may attempt to delete the source before the replica and fail with `Cannot delete ... while read replica exists`. Adding `depends_on = [exoscale_dbaas.<source>]` on the replica restores destroy ordering for **whole-stack destroys only**.
+- Replacing the source (rename, zone change, plan change, etc.) does **not** trigger a corresponding replacement of the replica, because Terraform sees no configuration change on the replica. `depends_on` does not fix this — it only affects ordering, not replacement propagation. There is no provider-level workaround for this case; declaring `integrations` explicitly in configuration with `source_service = exoscale_dbaas.<source>.name` is the only complete fix.
+
+Omitting the attribute is fully safe when the source service is **not** managed by Terraform in the same state (e.g. an external primary created out-of-band), because there is no dependency graph to preserve.
+
+Removing an integration out-of-band (e.g. via the Exoscale dashboard) on a resource that explicitly declares the attribute in configuration still triggers a forced replace on the next plan. (see [below for nested schema](#nestedatt--pg--integrations))
 - `ip_filter` (Set of String) A list of CIDR blocks to allow incoming connections from.
 - `pg_settings` (String) PostgreSQL configuration settings in JSON format (`exo dbaas type show pg --settings=pg` for reference).
 - `pgbouncer_settings` (String) PgBouncer configuration settings in JSON format (`exo dbaas type show pg --settings=pgbouncer` for reference).
 - `pglookout_settings` (String) pglookout configuration settings in JSON format (`exo dbaas type show pg --settings=pglookout` for reference).
 - `version` (String) PostgreSQL major version (`exo dbaas type show pg` for reference; may only be set at creation time).
+
+<a id="nestedatt--pg--integrations"></a>
+### Nested Schema for `pg.integrations`
+
+Required:
+
+- `source_service` (String) ❗ Name of the source service to integrate with. For a `read_replica` integration, this is the name of the primary service from which data is replicated.
+- `type` (String) ❗ Integration type. Currently only `read_replica` is supported.
+
 
 
 <a id="nestedblock--timeouts"></a>

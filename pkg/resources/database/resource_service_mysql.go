@@ -16,6 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
+	exoscale "github.com/exoscale/egoscale/v2"
 	apiv2 "github.com/exoscale/egoscale/v2/api"
 	"github.com/exoscale/egoscale/v2/oapi"
 
@@ -29,6 +30,7 @@ type ResourceMysqlModel struct {
 	IpFilter       types.Set    `tfsdk:"ip_filter"`
 	Settings       types.String `tfsdk:"mysql_settings"`
 	Version        types.String `tfsdk:"version"`
+	Integrations   types.Set    `tfsdk:"integrations"`
 }
 
 var ResourceMysqlSchema = schema.SingleNestedAttribute{
@@ -68,11 +70,15 @@ var ResourceMysqlSchema = schema.SingleNestedAttribute{
 			Optional:            true,
 			Computed:            true,
 		},
+		"integrations": ResourceDbaasIntegrationsSchema,
 	},
 }
 
 // createMysql function handles MySQL specific part of database resource creation logic.
-func (r *ServiceResource) createMysql(ctx context.Context, data *ServiceResourceModel, diagnostics *diag.Diagnostics) {
+// configData carries the raw configuration so we can distinguish "operator
+// omitted integrations" (config null) from "operator set integrations to an
+// unknown expression" (config non-null but plan unknown).
+func (r *ServiceResource) createMysql(ctx context.Context, data *ServiceResourceModel, configData *ServiceResourceModel, diagnostics *diag.Diagnostics) {
 	service := oapi.CreateDbaasServiceMysqlJSONRequestBody{
 		Plan:                  data.Plan.ValueString(),
 		TerminationProtection: data.TerminationProtection.ValueBoolPointer(),
@@ -148,6 +154,120 @@ func (r *ServiceResource) createMysql(ctx context.Context, data *ServiceResource
 			}
 			service.MysqlSettings = &obj
 		}
+
+		// P2: See createPg for the full rationale. Likely unreachable
+		// for the current schema shape but guards against future changes.
+		if data.Mysql.Integrations.IsUnknown() && configData.Mysql != nil && !configData.Mysql.Integrations.IsNull() {
+			diagnostics.AddError(
+				"mysql.integrations: entire integrations set is unknown at create time",
+				"The `integrations` attribute was set in configuration but its value "+
+					"is still unknown at apply time. This usually means the entire set is "+
+					"derived from a resource output that Terraform could not resolve before "+
+					"creating this service. Set `integrations` to a list of objects with "+
+					"known `type` and `source_service` values, for example:\n\n"+
+					"  integrations = [{ type = \"read_replica\", source_service = exoscale_dbaas.<primary>.name }]",
+			)
+			return
+		}
+
+		if !data.Mysql.Integrations.IsNull() && !data.Mysql.Integrations.IsUnknown() {
+			var integrationModels []ResourceDbaasIntegrationModel
+			// allowUnhandled=true so unknown per-field values in the
+			// set (e.g. source_service pointing at a computed
+			// attribute of another resource that is unknown at
+			// plan time) do not produce a hard decoding error.
+			// See resource_service_pg.go for the full rationale.
+			if dg := data.Mysql.Integrations.ElementsAs(ctx, &integrationModels, true); dg.HasError() {
+				diagnostics.Append(dg...)
+				return
+			}
+			// Single-pass validation: null/unknown rejection + semantic
+			// re-checks. See createPg for the full rationale.
+			selfName := data.Name.ValueString()
+			for i, integration := range integrationModels {
+				if integration.Type.IsNull() || integration.Type.IsUnknown() {
+					diagnostics.AddError(
+						"mysql.integrations: element type is unknown or null at create time",
+						fmt.Sprintf(
+							"Element %d of the `mysql.integrations` set has no concrete "+
+								"`type` value at the time the service is being created. "+
+								"This usually means `type` depends on a computed value "+
+								"that Terraform could not resolve before the service create "+
+								"call. Set `type` to a literal value (currently only "+
+								"\"read_replica\" is supported).",
+							i,
+						),
+					)
+					return
+				}
+				if integration.SourceService.IsNull() || integration.SourceService.IsUnknown() {
+					diagnostics.AddError(
+						"mysql.integrations: source_service is unknown or null at create time",
+						fmt.Sprintf(
+							"Element %d of the `mysql.integrations` set has no concrete "+
+								"`source_service` value at the time the service is being "+
+								"created. This usually means `source_service` references a "+
+								"value that Terraform could not resolve before the create "+
+								"call — for example, a primary service whose name is itself "+
+								"computed from another resource that has not been applied "+
+								"yet. Ensure `source_service` references a plan-time-known "+
+								"value, typically `exoscale_dbaas.<primary>.name` where the "+
+								"primary's name is a literal or a fully-resolved expression.",
+							i,
+						),
+					)
+					return
+				}
+				typeVal := integration.Type.ValueString()
+				supported := false
+				for _, t := range supportedIntegrationTypes {
+					if typeVal == t {
+						supported = true
+						break
+					}
+				}
+				if !supported {
+					diagnostics.AddError(
+						"mysql.integrations: unsupported integration type",
+						fmt.Sprintf(
+							"Element %d of the `mysql.integrations` set has type %q, "+
+								"which is not a supported integration type. "+
+								"Supported types: %s.",
+							i, typeVal, strings.Join(supportedIntegrationTypes, ", "),
+						),
+					)
+					return
+				}
+				if integration.SourceService.ValueString() == selfName {
+					diagnostics.AddError(
+						"mysql.integrations: self-referencing source_service",
+						fmt.Sprintf(
+							"Element %d of the `mysql.integrations` set has "+
+								"source_service=%q, which is the same service this "+
+								"resource declares. Integrations must be declared on "+
+								"the destination side, with source_service pointing "+
+								"at a different service.",
+							i, selfName,
+						),
+					)
+					return
+				}
+			}
+			if len(integrationModels) > 0 {
+				integrations := make([]struct {
+					DestService   *oapi.DbaasServiceName                               `json:"dest-service,omitempty"`
+					Settings      *map[string]interface{}                              `json:"settings,omitempty"`
+					SourceService *oapi.DbaasServiceName                               `json:"source-service,omitempty"`
+					Type          oapi.CreateDbaasServiceMysqlJSONBodyIntegrationsType `json:"type"`
+				}, len(integrationModels))
+				for i, integration := range integrationModels {
+					source := oapi.DbaasServiceName(integration.SourceService.ValueString())
+					integrations[i].SourceService = &source
+					integrations[i].Type = oapi.CreateDbaasServiceMysqlJSONBodyIntegrationsType(integration.Type.ValueString())
+				}
+				service.Integrations = &integrations
+			}
+		}
 	}
 
 	res, err := r.client.CreateDbaasServiceMysqlWithResponse(
@@ -163,6 +283,36 @@ func (r *ServiceResource) createMysql(ctx context.Context, data *ServiceResource
 		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create database settings schema, unexpected status: %s", res.Status()))
 		return
 	}
+
+	// The service now exists on Exoscale. Any error return after
+	// this point must delete it first — otherwise we orphan a
+	// billable database service that Terraform state never knew
+	// about. See createPg for the full rationale.
+	createSucceeded := false
+	defer func() {
+		if createSucceeded {
+			return
+		}
+		cleanupCtx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+		defer cancel()
+		cleanupCtx = apiv2.WithEndpoint(cleanupCtx, apiv2.NewReqEndpoint(r.env, data.Zone.ValueString()))
+		name := data.Id.ValueString()
+		if delErr := r.client.DeleteDatabaseService(
+			cleanupCtx,
+			data.Zone.ValueString(),
+			&exoscale.DatabaseService{Name: &name},
+		); delErr != nil {
+			tflog.Warn(ctx, fmt.Sprintf(
+				"orphan cleanup failed after createMysql error for service %q: %v",
+				name, delErr,
+			))
+		} else {
+			tflog.Info(ctx, fmt.Sprintf(
+				"orphan cleanup: deleted partially-created mysql service %q",
+				name,
+			))
+		}
+	}()
 
 	tflog.Info(ctx, "DB Service created, waiting for the service to be in 'running' state")
 
@@ -270,6 +420,40 @@ pooling:
 			data.Mysql.Settings = types.StringValue(string(settings))
 		}
 	}
+
+	// Integrations is Optional+Computed: if the operator did not set
+	// the attribute in config, the framework left the plan value
+	// unknown at the Create phase. Populate it from the API response
+	// so the post-create state has a concrete value. Only surface
+	// integrations where the current service is the destination,
+	// matching readMysql's filter.
+	if data.Mysql.Integrations.IsUnknown() {
+		data.Mysql.Integrations = types.SetNull(resourceDbaasIntegrationObjectType)
+		if apiService.Integrations != nil {
+			var models []ResourceDbaasIntegrationModel
+			for _, integration := range *apiService.Integrations {
+				if integration.Dest == nil || *integration.Dest != data.Id.ValueString() {
+					continue
+				}
+				models = append(models, ResourceDbaasIntegrationModel{
+					Type:          types.StringPointerValue(integration.Type),
+					SourceService: types.StringPointerValue(integration.Source),
+				})
+			}
+			if len(models) > 0 {
+				v, dg := types.SetValueFrom(ctx, resourceDbaasIntegrationObjectType, models)
+				if dg.HasError() {
+					diagnostics.Append(dg...)
+					return
+				}
+				data.Mysql.Integrations = v
+			}
+		}
+	}
+
+	// All post-create population succeeded — cancel the deferred
+	// orphan cleanup.
+	createSucceeded = true
 }
 
 // readMysql function handles MySQL specific part of database resource Read logic.
@@ -353,6 +537,31 @@ func (r *ServiceResource) readMysql(ctx context.Context, data *ServiceResourceMo
 		data.Mysql.Settings = types.StringValue(string(settings))
 	}
 
+	// Only surface integrations where the current service is the destination,
+	// so that Terraform state reflects exactly what the resource's config
+	// declares (i.e. integrations the user asked to create for this service).
+	data.Mysql.Integrations = types.SetNull(resourceDbaasIntegrationObjectType)
+	if apiService.Integrations != nil {
+		var integrationModels []ResourceDbaasIntegrationModel
+		for _, integration := range *apiService.Integrations {
+			if integration.Dest == nil || *integration.Dest != data.Id.ValueString() {
+				continue
+			}
+			integrationModels = append(integrationModels, ResourceDbaasIntegrationModel{
+				Type:          types.StringPointerValue(integration.Type),
+				SourceService: types.StringPointerValue(integration.Source),
+			})
+		}
+		if len(integrationModels) > 0 {
+			v, dg := types.SetValueFrom(ctx, resourceDbaasIntegrationObjectType, integrationModels)
+			if dg.HasError() {
+				diagnostics.Append(dg...)
+				return false
+			}
+			data.Mysql.Integrations = v
+		}
+	}
+
 	return false
 }
 
@@ -393,7 +602,7 @@ func (r *ServiceResource) updateMysql(ctx context.Context, stateData *ServiceRes
 			stateData.Mysql = &ResourceMysqlModel{}
 		}
 
-		if !planData.Mysql.BackupSchedule.Equal(stateData.Mysql.BackupSchedule) {
+		if !planData.Mysql.BackupSchedule.IsUnknown() && !planData.Mysql.BackupSchedule.Equal(stateData.Mysql.BackupSchedule) {
 			bh, bm, err := parseBackupSchedule(planData.Mysql.BackupSchedule.ValueString())
 			if err != nil {
 				diagnostics.AddError("Validation error", fmt.Sprintf("Unable to parse backup schedule, got error: %s", err))
@@ -447,6 +656,12 @@ func (r *ServiceResource) updateMysql(ctx context.Context, stateData *ServiceRes
 			stateData.Mysql.Settings = planData.Mysql.Settings
 			updated = true
 		}
+
+		// Defensive no-op: integrations is Optional with a RequiresReplace
+		// plan modifier, so Terraform Core never calls Update when the
+		// set differs from state. Keep stateData in sync with plan here
+		// as a safety net in case that contract is ever weakened.
+		stateData.Mysql.Integrations = planData.Mysql.Integrations
 	}
 
 	if !updated {
@@ -455,8 +670,8 @@ func (r *ServiceResource) updateMysql(ctx context.Context, stateData *ServiceRes
 	}
 
 	// Aiven would overwrite the backup schedule with random value if we don't specify it explicitly every time.
-	if service.BackupSchedule == nil {
-		bh, bm, err := parseBackupSchedule(planData.Mysql.BackupSchedule.ValueString())
+	if service.BackupSchedule == nil && !stateData.Mysql.BackupSchedule.IsUnknown() {
+		bh, bm, err := parseBackupSchedule(stateData.Mysql.BackupSchedule.ValueString())
 		if err != nil {
 			diagnostics.AddError("Validation error", fmt.Sprintf("Unable to parse backup schedule, got error: %s", err))
 			return

@@ -17,6 +17,12 @@ BREAKING CHANGES:
 FEATURES:
 
 - feat: call crossplane generation after a new release #509
+- feat(dbaas): support `integrations` attribute on pg and mysql services to declare read replicas at creation time #511.
+  The attribute is Optional, so existing services are unaffected by the upgrade (they refresh with `integrations = null`).
+  Only integrations where **this** resource is the destination are exposed (e.g. declare the block on the replica, not the primary).
+  Changes to the set force resource replacement — the database service is destroyed and recreated, including all data on it.
+  Removing an integration out-of-band (e.g. via the Exoscale dashboard) will also trigger a forced replace on the next plan.
+  Only `read_replica` integrations are supported inline today; other integration types must still be managed via the standalone API endpoint.
 
 ## 0.68.0
 

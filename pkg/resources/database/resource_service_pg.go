@@ -10,12 +10,16 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
+	exoscale "github.com/exoscale/egoscale/v2"
 	apiv2 "github.com/exoscale/egoscale/v2/api"
 	"github.com/exoscale/egoscale/v2/oapi"
 
@@ -31,7 +35,35 @@ type ResourcePgModel struct {
 	Version           types.String `tfsdk:"version"`
 	PgbouncerSettings types.String `tfsdk:"pgbouncer_settings"`
 	PglookoutSettings types.String `tfsdk:"pglookout_settings"`
+	Integrations      types.Set    `tfsdk:"integrations"`
 }
+
+// ResourceDbaasIntegrationModel describes a DBaaS service integration enabled
+// at creation time (e.g. a `read_replica` integration pointing at a source
+// service).
+type ResourceDbaasIntegrationModel struct {
+	Type          types.String `tfsdk:"type"`
+	SourceService types.String `tfsdk:"source_service"`
+}
+
+// resourceDbaasIntegrationAttrTypes is the attr.Type map for a single
+// element in the `integrations` set.
+var resourceDbaasIntegrationAttrTypes = map[string]attr.Type{
+	"type":           types.StringType,
+	"source_service": types.StringType,
+}
+
+// resourceDbaasIntegrationObjectType is the attr.Type of a single element in
+// the `integrations` set.
+var resourceDbaasIntegrationObjectType = types.ObjectType{AttrTypes: resourceDbaasIntegrationAttrTypes}
+
+// supportedIntegrationTypes lists the integration type values accepted by
+// this provider when declared inline on a pg or mysql service. It is
+// intentionally narrow: the Exoscale DBaaS API supports additional
+// integration types (`logs`, `metrics`, `datasource`) via the standalone
+// integration endpoint, but those do not apply to the create-time
+// destination model exposed here.
+var supportedIntegrationTypes = []string{"read_replica"}
 
 var ResourcePgSchema = schema.SingleNestedAttribute{
 	Optional:            true,
@@ -80,11 +112,94 @@ var ResourcePgSchema = schema.SingleNestedAttribute{
 			Optional:            true,
 			Computed:            true,
 		},
+		"integrations": ResourceDbaasIntegrationsSchema,
+	},
+}
+
+// ResourceDbaasIntegrationsSchema describes the `integrations` nested
+// attribute exposed on database service resources that support it. An
+// integration is configured at service creation time and cannot be updated
+// in place, therefore changing it forces resource replacement. It is
+// modelled as a set so reordering by the API (on Read) doesn't produce
+// spurious plans.
+//
+// The attribute is Optional+Computed with a `UseStateForUnknown` plan
+// modifier so that an operator who omits the attribute from config (most
+// commonly after importing a pre-existing replica service) does not see
+// Terraform propose a destructive replace simply because the API reports
+// an integration that the HCL doesn't mention. The plan value falls back
+// to the state value in that case, producing a no-op plan. The
+// `RequiresReplace` modifier still fires when the operator actively
+// changes a configured integration.
+//
+// NOTE on the limits of omission: when the operator omits the attribute,
+// the provider can only keep refresh and plan stable. It CANNOT preserve
+// Terraform's dependency graph — dependency edges come from configuration
+// references, not from state — so `terraform destroy` and source
+// replacement are NOT fully handled by the provider in that case. The
+// only pattern that handles all lifecycle events correctly is declaring
+// the `integrations` block explicitly in configuration, with a reference
+// to the source's `.name` attribute (which is Required and resolved from
+// configuration at plan time):
+//
+//	source_service = exoscale_dbaas.<primary>.name
+//
+// References to Computed attributes (.id, .created_at, etc.) must NOT
+// be used for source_service. Those attributes carry a
+// UseStateForUnknown plan modifier that preserves the old state value
+// during a source replacement, suppresses the setRequiresReplace diff
+// on the replica, and causes destroy to fail with "Cannot delete ...
+// while read replica exists". The schema description spells this out
+// in detail for operators.
+var ResourceDbaasIntegrationsSchema = schema.SetNestedAttribute{
+	MarkdownDescription: "❗ Service integrations declared when the service is created. Only integrations where **this** resource is the destination are supported: for example, to create a PostgreSQL read replica, declare the `integrations` block on the replica (destination) and set `source_service` to the primary's name. Integrations cannot be updated in place — any change to this set destroys and recreates the service (including all data).\n\n" +
+		"**Declaring the block explicitly is the recommended pattern** when the source service is also managed by Terraform. Use a reference to the source's `.name` attribute:\n\n" +
+		"```hcl\n" +
+		"integrations = [{\n" +
+		"  type           = \"read_replica\"\n" +
+		"  source_service = exoscale_dbaas.<primary>.name\n" +
+		"}]\n" +
+		"```\n\n" +
+		"`.name` is **required** in the source's configuration, so its value is resolved from configuration at plan time and changes propagate through Terraform's dependency graph. When the primary's name changes (or the primary is replaced for any reason), the replica's `source_service` value changes with it, the `setRequiresReplace` plan modifier fires, and the replica is replaced in the correct order. This is the only pattern that handles refresh, plan, destroy, AND source replacement correctly.\n\n" +
+		"Computed-name workflows (e.g. `name = \"${random_id.suffix.hex}-primary\"`) are supported: Terraform will normally resolve the primary's name before the replica's create call runs, and the reference is passed through unchanged. In the rare case that the value is still unknown at create time, the provider rejects the create with a clear error naming the `source_service` element, rather than silently submitting an empty value to the API.\n\n" +
+		"**Do not reference `Computed` attributes of the source service — notably `.id`, but also `.created_at`, `.state`, and similar — for `source_service`.** These attributes carry a `UseStateForUnknown` plan modifier that copies the prior state value into the plan during a source replacement. That suppresses the `setRequiresReplace` diff on the replica, leaves the replica attached to the destroyed source, and causes `terraform apply` to fail with `Cannot delete ... while read replica exists`. Always use a reference whose value is determined by configuration, not by post-apply computation — in practice, that means `.name`.\n\n" +
+		"**Omitting the attribute is safe for refresh and plan only.** On an imported or pre-existing replica, leaving `integrations` out of configuration avoids a spurious forced-replace on refresh (the value is read from the API and preserved in state via `UseStateForUnknown`). However, it removes the Terraform dependency edge, so:\n\n" +
+		"- `terraform destroy` may attempt to delete the source before the replica and fail with `Cannot delete ... while read replica exists`. Adding `depends_on = [exoscale_dbaas.<source>]` on the replica restores destroy ordering for **whole-stack destroys only**.\n" +
+		"- Replacing the source (rename, zone change, plan change, etc.) does **not** trigger a corresponding replacement of the replica, because Terraform sees no configuration change on the replica. `depends_on` does not fix this — it only affects ordering, not replacement propagation. There is no provider-level workaround for this case; declaring `integrations` explicitly in configuration with `source_service = exoscale_dbaas.<source>.name` is the only complete fix.\n\n" +
+		"Omitting the attribute is fully safe when the source service is **not** managed by Terraform in the same state (e.g. an external primary created out-of-band), because there is no dependency graph to preserve.\n\n" +
+		"Removing an integration out-of-band (e.g. via the Exoscale dashboard) on a resource that explicitly declares the attribute in configuration still triggers a forced replace on the next plan.",
+	Optional: true,
+	Computed: true,
+	Validators: []validator.Set{
+		setvalidator.SizeAtLeast(1),
+		integrationsSelfSource(),
+	},
+	PlanModifiers: []planmodifier.Set{
+		setUseStateForUnknown(),
+		setRequiresReplace(),
+	},
+	NestedObject: schema.NestedAttributeObject{
+		Attributes: map[string]schema.Attribute{
+			"type": schema.StringAttribute{
+				MarkdownDescription: "❗ Integration type. Currently only `read_replica` is supported.",
+				Required:            true,
+				Validators: []validator.String{
+					stringvalidator.OneOf(supportedIntegrationTypes...),
+				},
+			},
+			"source_service": schema.StringAttribute{
+				MarkdownDescription: "❗ Name of the source service to integrate with. For a `read_replica` integration, this is the name of the primary service from which data is replicated.",
+				Required:            true,
+			},
+		},
 	},
 }
 
 // createPg function handles PostgreSQL specific part of database resource creation logic.
-func (r *ServiceResource) createPg(ctx context.Context, data *ServiceResourceModel, diagnostics *diag.Diagnostics) {
+// configData carries the raw configuration so we can distinguish "operator
+// omitted integrations" (config null) from "operator set integrations to an
+// unknown expression" (config non-null but plan unknown).
+func (r *ServiceResource) createPg(ctx context.Context, data *ServiceResourceModel, configData *ServiceResourceModel, diagnostics *diag.Diagnostics) {
 	service := oapi.CreateDbaasServicePgJSONRequestBody{
 		Plan:                  data.Plan.ValueString(),
 		TerminationProtection: data.TerminationProtection.ValueBoolPointer(),
@@ -177,6 +292,135 @@ func (r *ServiceResource) createPg(ctx context.Context, data *ServiceResourceMod
 			}
 			service.PglookoutSettings = &obj
 		}
+
+		// P2: If the operator explicitly set integrations in config but
+		// the entire set is still unknown at apply time, reject cleanly.
+		// When the config value is null the operator omitted the
+		// attribute, which is correct for a standalone service.
+		//
+		// Note: this is likely unreachable for the current schema shape
+		// (SetNestedAttribute with Required string children cannot be
+		// assigned from a scalar unknown), but it guards against future
+		// schema changes or unexpected framework behavior.
+		if data.Pg.Integrations.IsUnknown() && configData.Pg != nil && !configData.Pg.Integrations.IsNull() {
+			diagnostics.AddError(
+				"pg.integrations: entire integrations set is unknown at create time",
+				"The `integrations` attribute was set in configuration but its value "+
+					"is still unknown at apply time. This usually means the entire set is "+
+					"derived from a resource output that Terraform could not resolve before "+
+					"creating this service. Set `integrations` to a list of objects with "+
+					"known `type` and `source_service` values, for example:\n\n"+
+					"  integrations = [{ type = \"read_replica\", source_service = exoscale_dbaas.<primary>.name }]",
+			)
+			return
+		}
+
+		if !data.Pg.Integrations.IsNull() && !data.Pg.Integrations.IsUnknown() {
+			var integrationModels []ResourceDbaasIntegrationModel
+			// allowUnhandled=true so unknown per-field values in the
+			// set (e.g. source_service pointing at a computed
+			// attribute of another resource that is unknown at
+			// plan time) do not produce a hard decoding error.
+			// types.String already represents unknown natively so
+			// this is mostly defense-in-depth, but it also
+			// matches the validator's behavior for consistency.
+			if dg := data.Pg.Integrations.ElementsAs(ctx, &integrationModels, true); dg.HasError() {
+				diagnostics.Append(dg...)
+				return
+			}
+			// Validate every element in a single pass:
+			//  1. Reject null/unknown fields — the plan-time validator
+			//     is lenient about unknowns, but by apply time
+			//     ValueString() would return "" for unknowns and we'd
+			//     silently submit source-service="" to the API.
+			//  2. Re-run the semantic checks (type ∈ supported, source
+			//     ≠ self) that plan-time validators skipped for unknown
+			//     nested values.
+			selfName := data.Name.ValueString()
+			for i, integration := range integrationModels {
+				if integration.Type.IsNull() || integration.Type.IsUnknown() {
+					diagnostics.AddError(
+						"pg.integrations: element type is unknown or null at create time",
+						fmt.Sprintf(
+							"Element %d of the `pg.integrations` set has no concrete "+
+								"`type` value at the time the service is being created. "+
+								"This usually means `type` depends on a computed value "+
+								"that Terraform could not resolve before the service create "+
+								"call. Set `type` to a literal value (currently only "+
+								"\"read_replica\" is supported).",
+							i,
+						),
+					)
+					return
+				}
+				if integration.SourceService.IsNull() || integration.SourceService.IsUnknown() {
+					diagnostics.AddError(
+						"pg.integrations: source_service is unknown or null at create time",
+						fmt.Sprintf(
+							"Element %d of the `pg.integrations` set has no concrete "+
+								"`source_service` value at the time the service is being "+
+								"created. This usually means `source_service` references a "+
+								"value that Terraform could not resolve before the create "+
+								"call — for example, a primary service whose name is itself "+
+								"computed from another resource that has not been applied "+
+								"yet. Ensure `source_service` references a plan-time-known "+
+								"value, typically `exoscale_dbaas.<primary>.name` where the "+
+								"primary's name is a literal or a fully-resolved expression.",
+							i,
+						),
+					)
+					return
+				}
+				typeVal := integration.Type.ValueString()
+				supported := false
+				for _, t := range supportedIntegrationTypes {
+					if typeVal == t {
+						supported = true
+						break
+					}
+				}
+				if !supported {
+					diagnostics.AddError(
+						"pg.integrations: unsupported integration type",
+						fmt.Sprintf(
+							"Element %d of the `pg.integrations` set has type %q, "+
+								"which is not a supported integration type. "+
+								"Supported types: %s.",
+							i, typeVal, strings.Join(supportedIntegrationTypes, ", "),
+						),
+					)
+					return
+				}
+				if integration.SourceService.ValueString() == selfName {
+					diagnostics.AddError(
+						"pg.integrations: self-referencing source_service",
+						fmt.Sprintf(
+							"Element %d of the `pg.integrations` set has "+
+								"source_service=%q, which is the same service this "+
+								"resource declares. Integrations must be declared on "+
+								"the destination side, with source_service pointing "+
+								"at a different service.",
+							i, selfName,
+						),
+					)
+					return
+				}
+			}
+			if len(integrationModels) > 0 {
+				integrations := make([]struct {
+					DestService   *oapi.DbaasServiceName                            `json:"dest-service,omitempty"`
+					Settings      *map[string]interface{}                           `json:"settings,omitempty"`
+					SourceService *oapi.DbaasServiceName                            `json:"source-service,omitempty"`
+					Type          oapi.CreateDbaasServicePgJSONBodyIntegrationsType `json:"type"`
+				}, len(integrationModels))
+				for i, integration := range integrationModels {
+					source := oapi.DbaasServiceName(integration.SourceService.ValueString())
+					integrations[i].SourceService = &source
+					integrations[i].Type = oapi.CreateDbaasServicePgJSONBodyIntegrationsType(integration.Type.ValueString())
+				}
+				service.Integrations = &integrations
+			}
+		}
 	}
 
 	resp, err := r.client.CreateDbaasServicePgWithResponse(
@@ -192,6 +436,39 @@ func (r *ServiceResource) createPg(ctx context.Context, data *ServiceResourceMod
 		diagnostics.AddError("Client Error", fmt.Sprintf("Unable create database service pg, unexpected status: %s", resp.Status()))
 		return
 	}
+
+	// The service now exists on Exoscale. Any error return after this
+	// point must delete it first — otherwise we orphan a billable
+	// database service that Terraform state never knew about, which
+	// cannot be cleaned up by CheckDestroy, taint, or any normal
+	// workflow. Cleanup uses a fresh, bounded context detached from
+	// the request ctx (which may already be cancelled if we got here
+	// via ctx.Done()).
+	createSucceeded := false
+	defer func() {
+		if createSucceeded {
+			return
+		}
+		cleanupCtx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+		defer cancel()
+		cleanupCtx = apiv2.WithEndpoint(cleanupCtx, apiv2.NewReqEndpoint(r.env, data.Zone.ValueString()))
+		name := data.Id.ValueString()
+		if delErr := r.client.DeleteDatabaseService(
+			cleanupCtx,
+			data.Zone.ValueString(),
+			&exoscale.DatabaseService{Name: &name},
+		); delErr != nil {
+			tflog.Warn(ctx, fmt.Sprintf(
+				"orphan cleanup failed after createPg error for service %q: %v",
+				name, delErr,
+			))
+		} else {
+			tflog.Info(ctx, fmt.Sprintf(
+				"orphan cleanup: deleted partially-created pg service %q",
+				name,
+			))
+		}
+	}()
 
 	tflog.Info(ctx, "DB Service created, waiting for the service to be in 'running' state")
 	apiService := &oapi.DbaasServicePg{}
@@ -322,6 +599,41 @@ pooling:
 			data.Pg.PglookoutSettings = types.StringValue(string(settings))
 		}
 	}
+
+	// Integrations is Optional+Computed: if the operator did not set
+	// the attribute in config, the framework left the plan value
+	// unknown at the Create phase. Populate it from the API response
+	// so the post-create state has a concrete value. Only surface
+	// integrations where the current service is the destination,
+	// matching readPg's filter.
+	if data.Pg.Integrations.IsUnknown() {
+		data.Pg.Integrations = types.SetNull(resourceDbaasIntegrationObjectType)
+		if apiService.Integrations != nil {
+			var models []ResourceDbaasIntegrationModel
+			for _, integration := range *apiService.Integrations {
+				if integration.Dest == nil || *integration.Dest != data.Id.ValueString() {
+					continue
+				}
+				models = append(models, ResourceDbaasIntegrationModel{
+					Type:          types.StringPointerValue(integration.Type),
+					SourceService: types.StringPointerValue(integration.Source),
+				})
+			}
+			if len(models) > 0 {
+				v, dg := types.SetValueFrom(ctx, resourceDbaasIntegrationObjectType, models)
+				if dg.HasError() {
+					diagnostics.Append(dg...)
+					return
+				}
+				data.Pg.Integrations = v
+			}
+		}
+	}
+
+	// All post-create population succeeded — cancel the deferred
+	// orphan cleanup. Any panic between here and the return still
+	// allows the defer to run.
+	createSucceeded = true
 }
 
 // readPg function handles PostgreSQL specific part of database resource Read logic.
@@ -487,6 +799,31 @@ func (r *ServiceResource) readPg(ctx context.Context, data *ServiceResourceModel
 		data.Pg.PglookoutSettings = types.StringValue(string(settings))
 	}
 
+	// Only surface integrations where the current service is the destination,
+	// so that Terraform state reflects exactly what the resource's config
+	// declares (i.e. integrations the user asked to create for this service).
+	data.Pg.Integrations = types.SetNull(resourceDbaasIntegrationObjectType)
+	if apiService.Integrations != nil {
+		var integrationModels []ResourceDbaasIntegrationModel
+		for _, integration := range *apiService.Integrations {
+			if integration.Dest == nil || *integration.Dest != data.Id.ValueString() {
+				continue
+			}
+			integrationModels = append(integrationModels, ResourceDbaasIntegrationModel{
+				Type:          types.StringPointerValue(integration.Type),
+				SourceService: types.StringPointerValue(integration.Source),
+			})
+		}
+		if len(integrationModels) > 0 {
+			v, dg := types.SetValueFrom(ctx, resourceDbaasIntegrationObjectType, integrationModels)
+			if dg.HasError() {
+				diagnostics.Append(dg...)
+				return false
+			}
+			data.Pg.Integrations = v
+		}
+	}
+
 	return false
 }
 
@@ -607,6 +944,12 @@ func (r *ServiceResource) updatePg(ctx context.Context, stateData *ServiceResour
 			stateData.Pg.PglookoutSettings = planData.Pg.PglookoutSettings
 			updated = true
 		}
+
+		// Defensive no-op: integrations is Optional with a RequiresReplace
+		// plan modifier, so Terraform Core never calls Update when the
+		// set differs from state. Keep stateData in sync with plan here
+		// as a safety net in case that contract is ever weakened.
+		stateData.Pg.Integrations = planData.Pg.Integrations
 	}
 
 	if !updated {
