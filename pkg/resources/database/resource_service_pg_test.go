@@ -312,13 +312,13 @@ func testResourcePg(t *testing.T) {
 					func(s *terraform.State) error {
 						return CheckExistsPgConnectionPool(serviceDataBase.Name, poolDataCreateExpected.Name, &poolDataCreateExpected)
 					},
-						resource.TestCheckResourceAttrSet(defaultPoolFullResourceName, "connection_uri"),
-						resource.TestCheckResourceAttrSet(defaultPoolFullResourceName, "mode"),
-						resource.TestCheckResourceAttrSet(defaultPoolFullResourceName, "size"),
-						resource.TestCheckResourceAttr(defaultPoolFullResourceName, "username", ""),
-						func(s *terraform.State) error {
-							return CheckExistsPgConnectionPoolAny(serviceDataBase.Name, defaultPoolDataCreate.Name)
-						},
+					resource.TestCheckResourceAttrSet(defaultPoolFullResourceName, "connection_uri"),
+					resource.TestCheckResourceAttrSet(defaultPoolFullResourceName, "mode"),
+					resource.TestCheckResourceAttrSet(defaultPoolFullResourceName, "size"),
+					resource.TestCheckResourceAttr(defaultPoolFullResourceName, "username", ""),
+					func(s *terraform.State) error {
+						return CheckExistsPgConnectionPoolAny(serviceDataBase.Name, defaultPoolDataCreate.Name)
+					},
 				),
 			},
 			{
@@ -340,13 +340,13 @@ func testResourcePg(t *testing.T) {
 					func(s *terraform.State) error {
 						return CheckExistsPgConnectionPool(serviceDataBase.Name, poolDataUpdateExpected.Name, &poolDataUpdateExpected)
 					},
-						resource.TestCheckResourceAttrSet(defaultPoolFullResourceName, "connection_uri"),
-						resource.TestCheckResourceAttrSet(defaultPoolFullResourceName, "mode"),
-						resource.TestCheckResourceAttrSet(defaultPoolFullResourceName, "size"),
-						resource.TestCheckResourceAttr(defaultPoolFullResourceName, "username", ""),
-						func(s *terraform.State) error {
-							return CheckExistsPgConnectionPoolAny(serviceDataBase.Name, defaultPoolDataUpdate.Name)
-						},
+					resource.TestCheckResourceAttrSet(defaultPoolFullResourceName, "connection_uri"),
+					resource.TestCheckResourceAttrSet(defaultPoolFullResourceName, "mode"),
+					resource.TestCheckResourceAttrSet(defaultPoolFullResourceName, "size"),
+					resource.TestCheckResourceAttr(defaultPoolFullResourceName, "username", ""),
+					func(s *terraform.State) error {
+						return CheckExistsPgConnectionPoolAny(serviceDataBase.Name, defaultPoolDataUpdate.Name)
+					},
 
 					// User
 					func(s *terraform.State) error {
