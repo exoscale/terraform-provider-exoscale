@@ -131,6 +131,15 @@ func testResourcePg(t *testing.T) {
 		Service:      fmt.Sprintf("%s.name", serviceFullResourceName),
 	}
 
+	defaultPoolFullResourceName := "exoscale_dbaas_pg_connection_pool.default_pool"
+	defaultPoolDataBase := TemplateModelPgConnectionPool{
+		ResourceName: "default_pool",
+		Name:         "foo-default-pool",
+		DatabaseName: fmt.Sprintf("%s.database_name", dbFullResourceName),
+		Zone:         serviceDataBase.Zone,
+		Service:      fmt.Sprintf("%s.name", serviceFullResourceName),
+	}
+
 	serviceDataCreate := serviceDataBase
 	serviceDataCreate.MaintenanceDow = "monday"
 	serviceDataCreate.MaintenanceTime = "01:23:00"
@@ -142,6 +151,7 @@ func testResourcePg(t *testing.T) {
 	userDataCreate := userDataBase
 	dbDataCreate := dbDataBase
 	poolDataCreate := poolDataBase
+	defaultPoolDataCreate := defaultPoolDataBase
 	poolDataCreateExpected := TemplateModelPgConnectionPool{
 		Name:         poolDataBase.Name,
 		DatabaseName: dbDataCreate.DatabaseName,
@@ -167,6 +177,10 @@ func testResourcePg(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	err = poolTpl.Execute(buf, &defaultPoolDataCreate)
+	if err != nil {
+		t.Fatal(err)
+	}
 	configCreate := buf.String()
 
 	serviceDataUpdate := serviceDataBase
@@ -185,6 +199,7 @@ func testResourcePg(t *testing.T) {
 	dbDataUpdate.DatabaseName = "bar_db"
 
 	poolDataUpdate := poolDataBase
+	defaultPoolDataUpdate := defaultPoolDataBase
 	poolDataUpdate.DatabaseName = fmt.Sprintf("%s.database_name", dbFullResourceName)
 	poolDataUpdate.Username = fmt.Sprintf("%s.username", userFullResourceName)
 	poolDataUpdate.Mode = "transaction"
@@ -214,6 +229,10 @@ func testResourcePg(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	err = poolTpl.Execute(buf, &defaultPoolDataUpdate)
+	if err != nil {
+		t.Fatal(err)
+	}
 	configUpdate := buf.String()
 
 	serviceDataScale := serviceDataUpdate
@@ -233,6 +252,10 @@ func testResourcePg(t *testing.T) {
 		t.Fatal(err)
 	}
 	err = poolTpl.Execute(buf, &poolDataUpdate)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = poolTpl.Execute(buf, &defaultPoolDataUpdate)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -289,6 +312,13 @@ func testResourcePg(t *testing.T) {
 					func(s *terraform.State) error {
 						return CheckExistsPgConnectionPool(serviceDataBase.Name, poolDataCreateExpected.Name, &poolDataCreateExpected)
 					},
+						resource.TestCheckResourceAttrSet(defaultPoolFullResourceName, "connection_uri"),
+						resource.TestCheckResourceAttrSet(defaultPoolFullResourceName, "mode"),
+						resource.TestCheckResourceAttrSet(defaultPoolFullResourceName, "size"),
+						resource.TestCheckResourceAttr(defaultPoolFullResourceName, "username", ""),
+						func(s *terraform.State) error {
+							return CheckExistsPgConnectionPoolAny(serviceDataBase.Name, defaultPoolDataCreate.Name)
+						},
 				),
 			},
 			{
@@ -310,6 +340,13 @@ func testResourcePg(t *testing.T) {
 					func(s *terraform.State) error {
 						return CheckExistsPgConnectionPool(serviceDataBase.Name, poolDataUpdateExpected.Name, &poolDataUpdateExpected)
 					},
+						resource.TestCheckResourceAttrSet(defaultPoolFullResourceName, "connection_uri"),
+						resource.TestCheckResourceAttrSet(defaultPoolFullResourceName, "mode"),
+						resource.TestCheckResourceAttrSet(defaultPoolFullResourceName, "size"),
+						resource.TestCheckResourceAttr(defaultPoolFullResourceName, "username", ""),
+						func(s *terraform.State) error {
+							return CheckExistsPgConnectionPoolAny(serviceDataBase.Name, defaultPoolDataUpdate.Name)
+						},
 
 					// User
 					func(s *terraform.State) error {
@@ -387,6 +424,16 @@ func testResourcePg(t *testing.T) {
 				ImportStateIdFunc: func() resource.ImportStateIdFunc {
 					return func(*terraform.State) (string, error) {
 						return fmt.Sprintf("%s/%s@%s", serviceDataBase.Name, dbDataUpdate.DatabaseName, dbDataBase.Zone), nil
+					}
+				}(),
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			{
+				ResourceName: defaultPoolFullResourceName,
+				ImportStateIdFunc: func() resource.ImportStateIdFunc {
+					return func(*terraform.State) (string, error) {
+						return fmt.Sprintf("%s/%s@%s", serviceDataBase.Name, defaultPoolDataUpdate.Name, defaultPoolDataBase.Zone), nil
 					}
 				}(),
 				ImportState:       true,
@@ -669,6 +716,50 @@ func CheckExistsPgConnectionPool(service, poolName string, data *TemplateModelPg
 			if int64(pool.Size) != data.Size {
 				return fmt.Errorf("pool size: expected %d, got %d", data.Size, int64(pool.Size))
 			}
+			if pool.ConnectionURI == "" {
+				return fmt.Errorf("pool connection_uri is empty")
+			}
+
+			return nil
+		}
+
+		time.Sleep(10 * time.Second)
+	}
+
+	return fmt.Errorf("could not find connection pool %s for service %s, found %v", poolName, service, servicePools)
+}
+
+func CheckExistsPgConnectionPoolAny(service, poolName string) error {
+	defaultClientV3, err := testutils.APIClientV3()
+	if err != nil {
+		return err
+	}
+
+	client, err := utils.SwitchClientZone(context.Background(), defaultClientV3, testutils.TestZoneName)
+	if err != nil {
+		return err
+	}
+
+	servicePools := make([]string, 0)
+
+	ch := make(chan any, 1)
+	go func() {
+		time.Sleep(60 * time.Second)
+		ch <- "timeout!"
+	}()
+	for len(ch) == 0 {
+		svc, err := client.GetDBAASServicePG(context.Background(), service)
+		if err != nil {
+			return err
+		}
+
+		servicePools = servicePools[:0]
+		for _, pool := range svc.ConnectionPools {
+			servicePools = append(servicePools, string(pool.Name))
+			if string(pool.Name) != poolName {
+				continue
+			}
+
 			if pool.ConnectionURI == "" {
 				return fmt.Errorf("pool connection_uri is empty")
 			}

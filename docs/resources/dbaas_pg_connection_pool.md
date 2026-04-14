@@ -17,7 +17,7 @@ Manage PostgreSQL PgBouncer connection pools for an Exoscale [Database Services 
 
 ### Required
 
-- `database_name` (String) The PostgreSQL database name targeted by this pool.
+- `database_name` (String) ❗ The PostgreSQL database name targeted by this pool.
 - `name` (String) ❗ The connection pool name.
 - `service` (String) ❗ The name of the PostgreSQL database service.
 - `zone` (String) ❗ The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.
@@ -27,7 +27,7 @@ Manage PostgreSQL PgBouncer connection pools for an Exoscale [Database Services 
 - `mode` (String) The PgBouncer pool mode (`transaction`, `statement`, or `session`).
 - `size` (Number) The connection pool size.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- `username` (String) The PostgreSQL username used by this pool.
+- `username` (String) ❗ The PostgreSQL username used by this pool.
 
 ### Read-Only
 
@@ -45,5 +45,3 @@ Optional:
 - `update` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours).
 
 -> The symbol ❗ in an attribute indicates that modifying it, will force the creation of a new resource.
-
-

@@ -92,6 +92,18 @@ output "pool_name" {
   value = exoscale_dbaas_pg_connection_pool.app.name
 }
 
+output "pool_username" {
+  value = exoscale_dbaas_pg_connection_pool.app.username
+}
+
+output "pool_mode" {
+  value = exoscale_dbaas_pg_connection_pool.app.mode
+}
+
+output "pool_size" {
+  value = exoscale_dbaas_pg_connection_pool.app.size
+}
+
 output "pool_connection_uri" {
   value     = exoscale_dbaas_pg_connection_pool.app.connection_uri
   sensitive = true

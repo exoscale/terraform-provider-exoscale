@@ -10,6 +10,7 @@ import (
 	v3 "github.com/exoscale/egoscale/v3"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -21,8 +22,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
 type PGConnectionPoolResource struct {
@@ -41,6 +44,10 @@ type PGConnectionPoolResourceModel struct {
 	Zone          types.String `tfsdk:"zone"`
 
 	Timeouts timeouts.Value `tfsdk:"timeouts"`
+
+	refreshUsername bool
+	refreshMode     bool
+	refreshSize     bool
 }
 
 var _ resource.Resource = &PGConnectionPoolResource{}
@@ -87,14 +94,14 @@ func (r *PGConnectionPoolResource) Schema(ctx context.Context, req resource.Sche
 				},
 			},
 			"database_name": schema.StringAttribute{
-				MarkdownDescription: "The PostgreSQL database name targeted by this pool.",
+				MarkdownDescription: "❗ The PostgreSQL database name targeted by this pool.",
 				Required:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"username": schema.StringAttribute{
-				MarkdownDescription: "The PostgreSQL username used by this pool.",
+				MarkdownDescription: "❗ The PostgreSQL username used by this pool.",
 				Optional:            true,
 				Computed:            true,
 				PlanModifiers: []planmodifier.String{
@@ -153,12 +160,95 @@ func (r *PGConnectionPoolResource) Read(ctx context.Context, req resource.ReadRe
 
 func (r *PGConnectionPoolResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var data PGConnectionPoolResourceModel
-	CreateResource(ctx, req, resp, &data, r.client)
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	data.configurePostApplyRefresh(ctx, req.Config, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	t, diags := data.GetTimeouts().Create(ctx, config.DefaultTimeout)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	ctx, cancel := context.WithTimeout(ctx, t)
+	defer cancel()
+
+	data.GenerateID()
+
+	client, err := utils.SwitchClientZone(ctx, r.client, v3.ZoneName(data.GetZone().ValueString()))
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"unable to change exoscale client zone",
+			err.Error(),
+		)
+		return
+	}
+
+	data.WaitForService(ctx, client, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	data.CreateResource(ctx, client, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+
+	tflog.Trace(ctx, "resource created", map[string]interface{}{
+		"id": data.GetID(),
+	})
 }
 
 func (r *PGConnectionPoolResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var stateData, planData PGConnectionPoolResourceModel
-	UpdateResource(ctx, req, resp, &stateData, &planData, r.client)
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &planData)...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &stateData)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	planData.configurePostApplyRefresh(ctx, req.Config, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	t, diags := stateData.GetTimeouts().Update(ctx, config.DefaultTimeout)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	ctx, cancel := context.WithTimeout(ctx, t)
+	defer cancel()
+
+	client, err := utils.SwitchClientZone(ctx, r.client, v3.ZoneName(planData.GetZone().ValueString()))
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"unable to change exoscale client zone",
+			err.Error(),
+		)
+		return
+	}
+
+	planData.WaitForService(ctx, client, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	planData.UpdateResource(ctx, client, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, &planData)...)
+
+	tflog.Trace(ctx, "resource updated", map[string]interface{}{
+		"id": planData.GetID(),
+	})
 }
 
 func (r *PGConnectionPoolResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
@@ -206,15 +296,26 @@ func (r *PGConnectionPoolResource) ImportState(ctx context.Context, req resource
 }
 
 func (data *PGConnectionPoolResourceModel) ReadResource(ctx context.Context, client *v3.Client, diagnostics *diag.Diagnostics) (clearState bool) {
+	pool, clearState := data.getConnectionPool(ctx, client, diagnostics)
+	if clearState || pool == nil {
+		return clearState
+	}
+
+	data.applyConnectionPoolState(*pool)
+
+	return false
+}
+
+func (data *PGConnectionPoolResourceModel) getConnectionPool(ctx context.Context, client *v3.Client, diagnostics *diag.Diagnostics) (*v3.DBAASServicePGConnectionPools, bool) {
 	svc, err := waitForDBAASServiceReadyForFn(ctx, client.GetDBAASServicePG, data.Service.ValueString(), func(t *v3.DBAASServicePG) bool {
 		return t.State == v3.EnumServiceStateRunning
 	})
 	if err != nil {
 		if errors.Is(err, v3.ErrNotFound) {
-			return true
+			return nil, true
 		}
 		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read service pg connection pool, got error: %s", err))
-		return false
+		return nil, false
 	}
 
 	for _, pool := range svc.ConnectionPools {
@@ -222,16 +323,68 @@ func (data *PGConnectionPoolResourceModel) ReadResource(ctx context.Context, cli
 			continue
 		}
 
-		data.DatabaseName = basetypes.NewStringValue(string(pool.Database))
-		data.Mode = basetypes.NewStringValue(string(pool.Mode))
-		data.Size = basetypes.NewInt64Value(int64(pool.Size))
-		data.Username = basetypes.NewStringValue(string(pool.Username))
-		data.ConnectionURI = basetypes.NewStringValue(pool.ConnectionURI)
-
-		return false
+		pool := pool
+		return &pool, false
 	}
 
-	return true
+	return nil, true
+}
+
+func (data *PGConnectionPoolResourceModel) applyConnectionPoolState(pool v3.DBAASServicePGConnectionPools) {
+	data.DatabaseName = basetypes.NewStringValue(string(pool.Database))
+	data.Mode = basetypes.NewStringValue(string(pool.Mode))
+	data.Size = basetypes.NewInt64Value(int64(pool.Size))
+	data.Username = basetypes.NewStringValue(string(pool.Username))
+	data.ConnectionURI = basetypes.NewStringValue(pool.ConnectionURI)
+}
+
+func (data *PGConnectionPoolResourceModel) applyPostApplyConnectionPoolState(pool v3.DBAASServicePGConnectionPools) {
+	if data.refreshMode {
+		data.Mode = basetypes.NewStringValue(string(pool.Mode))
+	}
+	if data.refreshSize {
+		data.Size = basetypes.NewInt64Value(int64(pool.Size))
+	}
+	if data.refreshUsername {
+		data.Username = basetypes.NewStringValue(string(pool.Username))
+	}
+	data.ConnectionURI = basetypes.NewStringValue(pool.ConnectionURI)
+}
+
+func (data *PGConnectionPoolResourceModel) configurePostApplyRefresh(ctx context.Context, config tfsdk.Config, diagnostics *diag.Diagnostics) {
+	var usernameConfig types.String
+	var modeConfig types.String
+	var sizeConfig types.Int64
+
+	diagnostics.Append(config.GetAttribute(ctx, path.Root("username"), &usernameConfig)...)
+	diagnostics.Append(config.GetAttribute(ctx, path.Root("mode"), &modeConfig)...)
+	diagnostics.Append(config.GetAttribute(ctx, path.Root("size"), &sizeConfig)...)
+	if diagnostics.HasError() {
+		return
+	}
+
+	data.configurePostApplyRefreshFromConfig(
+		!usernameConfig.IsNull(),
+		!modeConfig.IsNull(),
+		!sizeConfig.IsNull(),
+	)
+}
+
+func (data *PGConnectionPoolResourceModel) configurePostApplyRefreshFromConfig(usernameConfigured, modeConfigured, sizeConfigured bool) {
+	data.refreshUsername = !usernameConfigured && (data.Username.IsNull() || data.Username.IsUnknown())
+	data.refreshMode = !modeConfigured && (data.Mode.IsNull() || data.Mode.IsUnknown())
+	data.refreshSize = !sizeConfigured && (data.Size.IsNull() || data.Size.IsUnknown())
+}
+
+func (data *PGConnectionPoolResourceModel) refreshPostApplyState(ctx context.Context, client *v3.Client, diagnostics *diag.Diagnostics) (clearState bool) {
+	pool, clearState := data.getConnectionPool(ctx, client, diagnostics)
+	if clearState || pool == nil {
+		return clearState
+	}
+
+	data.applyPostApplyConnectionPoolState(*pool)
+
+	return false
 }
 
 func (data *PGConnectionPoolResourceModel) CreateResource(ctx context.Context, client *v3.Client, diagnostics *diag.Diagnostics) {
@@ -269,7 +422,7 @@ func (data *PGConnectionPoolResourceModel) CreateResource(ctx context.Context, c
 		return
 	}
 
-	if data.ReadResource(ctx, client, diagnostics) {
+	if data.refreshPostApplyState(ctx, client, diagnostics) {
 		diagnostics.AddError("Client Error", "Unable to find newly created connection pool for the service")
 	}
 }
@@ -308,7 +461,7 @@ func (data *PGConnectionPoolResourceModel) UpdateResource(ctx context.Context, c
 		return
 	}
 
-	if data.ReadResource(ctx, client, diagnostics) {
+	if data.refreshPostApplyState(ctx, client, diagnostics) {
 		diagnostics.AddError("Client Error", "Unable to find updated connection pool for the service")
 	}
 }
