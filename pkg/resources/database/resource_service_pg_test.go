@@ -119,6 +119,9 @@ func testResourcePg(t *testing.T) {
 		Service:      fmt.Sprintf("%s.name", serviceFullResourceName),
 	}
 
+	// Keep pool sizing conservative: this test replaces one pool while a second
+	// defaulted pool exists, and the hobbyist-2 service plan has a tight
+	// connection budget.
 	poolFullResourceName := "exoscale_dbaas_pg_connection_pool.test_pool"
 	poolDataBase := TemplateModelPgConnectionPool{
 		ResourceName: "test_pool",
@@ -126,7 +129,7 @@ func testResourcePg(t *testing.T) {
 		DatabaseName: fmt.Sprintf("%s.database_name", dbFullResourceName),
 		Username:     fmt.Sprintf("%s.username", userFullResourceName),
 		Mode:         "session",
-		Size:         10,
+		Size:         3,
 		Zone:         serviceDataBase.Zone,
 		Service:      fmt.Sprintf("%s.name", serviceFullResourceName),
 	}
@@ -146,7 +149,7 @@ func testResourcePg(t *testing.T) {
 	serviceDataCreate.BackupSchedule = "01:23"
 	serviceDataCreate.IpFilter = []string{"1.2.3.4/32"}
 	serviceDataCreate.PgSettings = strconv.Quote(`{"timezone":"Europe/Zurich"}`)
-	serviceDataCreate.PgbouncerSettings = strconv.Quote(`{"min_pool_size":10}`)
+	serviceDataCreate.PgbouncerSettings = strconv.Quote(`{"min_pool_size":2}`)
 
 	userDataCreate := userDataBase
 	dbDataCreate := dbDataBase
@@ -189,7 +192,7 @@ func testResourcePg(t *testing.T) {
 	serviceDataUpdate.BackupSchedule = "23:45"
 	serviceDataUpdate.IpFilter = nil
 	serviceDataUpdate.PgSettings = strconv.Quote(`{"max_worker_processes":10,"timezone":"Europe/Zurich"}`)
-	serviceDataUpdate.PgbouncerSettings = strconv.Quote(`{"autodb_pool_size":5,"min_pool_size":10}`)
+	serviceDataUpdate.PgbouncerSettings = strconv.Quote(`{"autodb_pool_size":3,"min_pool_size":2}`)
 	serviceDataUpdate.PglookoutSettings = strconv.Quote(`{"max_failover_replication_time_lag":30}`)
 
 	userDataUpdate := userDataBase
@@ -203,7 +206,7 @@ func testResourcePg(t *testing.T) {
 	poolDataUpdate.DatabaseName = fmt.Sprintf("%s.database_name", dbFullResourceName)
 	poolDataUpdate.Username = fmt.Sprintf("%s.username", userFullResourceName)
 	poolDataUpdate.Mode = "transaction"
-	poolDataUpdate.Size = 20
+	poolDataUpdate.Size = 4
 	poolDataUpdateExpected := TemplateModelPgConnectionPool{
 		Name:         poolDataBase.Name,
 		DatabaseName: dbDataUpdate.DatabaseName,
