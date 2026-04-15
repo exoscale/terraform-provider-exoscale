@@ -45,6 +45,26 @@ resource "exoscale_dbaas" {{ .ResourceName }} {
     pglookout_settings = {{ .PglookoutSettings }}
     {{- end }}
 
+    {{- if .SharedBuffersPercentage }}
+    shared_buffers_percentage = {{ .SharedBuffersPercentage }}
+    {{- end }}
+
+    {{- if .TimescaledbSettings }}
+    timescaledb_settings = {{ .TimescaledbSettings }}
+    {{- end }}
+
+    {{- if .Variant }}
+    variant = "{{ .Variant }}"
+    {{- end }}
+
+    {{- if .RecoveryBackupTime }}
+    recovery_backup_time = "{{ .RecoveryBackupTime }}"
+    {{- end }}
+
+    {{- if .WorkMem }}
+    work_mem = {{ .WorkMem }}
+    {{- end }}
+
     {{- if .Version }}
     version = "{{ .Version }}"
     {{- end }}
