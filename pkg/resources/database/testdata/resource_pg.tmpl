@@ -49,16 +49,16 @@ resource "exoscale_dbaas" {{ .ResourceName }} {
     shared_buffers_percentage = {{ .SharedBuffersPercentage }}
     {{- end }}
 
-    {{- if .SynchronousReplication }}
-    synchronous_replication = "{{ .SynchronousReplication }}"
-    {{- end }}
-
     {{- if .TimescaledbSettings }}
     timescaledb_settings = {{ .TimescaledbSettings }}
     {{- end }}
 
     {{- if .Variant }}
     variant = "{{ .Variant }}"
+    {{- end }}
+
+    {{- if .RecoveryBackupTime }}
+    recovery_backup_time = "{{ .RecoveryBackupTime }}"
     {{- end }}
 
     {{- if .WorkMem }}

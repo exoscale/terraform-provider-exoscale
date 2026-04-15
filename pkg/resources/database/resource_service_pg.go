@@ -37,10 +37,10 @@ type ResourcePgModel struct {
 	PgbouncerSettings       types.String `tfsdk:"pgbouncer_settings"`
 	PglookoutSettings       types.String `tfsdk:"pglookout_settings"`
 	SharedBuffersPercentage types.Int64  `tfsdk:"shared_buffers_percentage"`
-	SynchronousReplication  types.String `tfsdk:"synchronous_replication"`
 	TimescaledbSettings     types.String `tfsdk:"timescaledb_settings"`
 	Variant                 types.String `tfsdk:"variant"`
 	WorkMem                 types.Int64  `tfsdk:"work_mem"`
+	RecoveryBackupTime      types.String `tfsdk:"recovery_backup_time"`
 }
 
 var ResourcePgSchema = schema.SingleNestedAttribute{
@@ -91,7 +91,7 @@ var ResourcePgSchema = schema.SingleNestedAttribute{
 			Computed:            true,
 		},
 		"shared_buffers_percentage": schema.Int64Attribute{
-			MarkdownDescription: "Percentage of total RAM that the database server uses for shared memory buffers. Valid range is 20-60 (float), which corresponds to 20% - 60%. This setting adjusts the shared_buffers configuration value.",
+			MarkdownDescription: "Percentage of total RAM that the database server uses for shared memory buffers. Valid range is 20-60, which corresponds to 20% - 60%. This setting adjusts the shared_buffers configuration value.",
 			Optional:            true,
 			Computed:            true,
 			Validators: []validator.Int64{
@@ -99,17 +99,6 @@ var ResourcePgSchema = schema.SingleNestedAttribute{
 			},
 			PlanModifiers: []planmodifier.Int64{
 				int64planmodifier.UseStateForUnknown(),
-			},
-		},
-		"synchronous_replication": schema.StringAttribute{
-			MarkdownDescription: "Synchronous replication type. Users can enable synchronous replication with a service restart. Valid values are `quorum` and `off`.",
-			Optional:            true,
-			Computed:            true,
-			Validators: []validator.String{
-				stringvalidator.OneOf("quorum", "off"),
-			},
-			PlanModifiers: []planmodifier.String{
-				stringplanmodifier.UseStateForUnknown(),
 			},
 		},
 		"timescaledb_settings": schema.StringAttribute{
@@ -126,6 +115,13 @@ var ResourcePgSchema = schema.SingleNestedAttribute{
 			Validators: []validator.String{
 				stringvalidator.OneOf("timescale", "aiven"),
 			},
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.RequiresReplace(),
+			},
+		},
+		"recovery_backup_time": schema.StringAttribute{
+			MarkdownDescription: "ISO time of a backup to recover from. May only be set at creation time.",
+			Optional:            true,
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.RequiresReplace(),
 			},
@@ -236,7 +232,7 @@ func (r *ServiceResource) createPg(ctx context.Context, data *ServiceResourceMod
 			service.PglookoutSettings = &obj
 		}
 
-		if !data.Pg.TimescaledbSettings.IsUnknown() {
+		if !data.Pg.TimescaledbSettings.IsNull() && !data.Pg.TimescaledbSettings.IsUnknown() {
 			obj, err := validateSettings(data.Pg.TimescaledbSettings.ValueString(), settingsSchema.JSON200.Settings.Timescaledb)
 			if err != nil {
 				diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
@@ -250,14 +246,14 @@ func (r *ServiceResource) createPg(ctx context.Context, data *ServiceResourceMod
 			service.SharedBuffersPercentage = &v
 		}
 
-		if !data.Pg.SynchronousReplication.IsNull() && !data.Pg.SynchronousReplication.IsUnknown() {
-			v := oapi.EnumPgSynchronousReplication(data.Pg.SynchronousReplication.ValueString())
-			service.SynchronousReplication = &v
-		}
-
 		if !data.Pg.Variant.IsNull() {
 			v := oapi.EnumPgVariant(data.Pg.Variant.ValueString())
 			service.Variant = &v
+		}
+
+		if !data.Pg.RecoveryBackupTime.IsNull() {
+			v := data.Pg.RecoveryBackupTime.ValueString()
+			service.RecoveryBackupTime = &v
 		}
 
 		if !data.Pg.WorkMem.IsNull() && !data.Pg.WorkMem.IsUnknown() {
@@ -426,13 +422,6 @@ pooling:
 		data.Pg.SharedBuffersPercentage = types.Int64Null()
 		if apiService.SharedBuffersPercentage != nil {
 			data.Pg.SharedBuffersPercentage = types.Int64Value(*apiService.SharedBuffersPercentage)
-		}
-	}
-
-	if data.Pg.SynchronousReplication.IsUnknown() {
-		data.Pg.SynchronousReplication = types.StringNull()
-		if apiService.SynchronousReplication != nil {
-			data.Pg.SynchronousReplication = types.StringValue(string(*apiService.SynchronousReplication))
 		}
 	}
 
@@ -641,17 +630,13 @@ func (r *ServiceResource) readPg(ctx context.Context, data *ServiceResourceModel
 		data.Pg.SharedBuffersPercentage = types.Int64Value(*apiService.SharedBuffersPercentage)
 	}
 
-	data.Pg.SynchronousReplication = types.StringNull()
-	if apiService.SynchronousReplication != nil {
-		data.Pg.SynchronousReplication = types.StringValue(string(*apiService.SynchronousReplication))
-	}
-
 	data.Pg.WorkMem = types.Int64Null()
 	if apiService.WorkMem != nil {
 		data.Pg.WorkMem = types.Int64Value(*apiService.WorkMem)
 	}
 
 	// Variant is not returned by the API read response, so preserve the plan value.
+	// RecoveryBackupTime is write-only at creation time; not returned by the API.
 
 	return false
 }
@@ -793,15 +778,6 @@ func (r *ServiceResource) updatePg(ctx context.Context, stateData *ServiceResour
 				service.SharedBuffersPercentage = &v
 			}
 			stateData.Pg.SharedBuffersPercentage = planData.Pg.SharedBuffersPercentage
-			updated = true
-		}
-
-		if !planData.Pg.SynchronousReplication.IsUnknown() && !planData.Pg.SynchronousReplication.Equal(stateData.Pg.SynchronousReplication) {
-			if !planData.Pg.SynchronousReplication.IsNull() {
-				v := oapi.EnumPgSynchronousReplication(planData.Pg.SynchronousReplication.ValueString())
-				service.SynchronousReplication = &v
-			}
-			stateData.Pg.SynchronousReplication = planData.Pg.SynchronousReplication
 			updated = true
 		}
 
@@ -959,13 +935,6 @@ func (r *ServiceResource) updatePg(ctx context.Context, stateData *ServiceResour
 		stateData.Pg.SharedBuffersPercentage = types.Int64Null()
 		if apiService.SharedBuffersPercentage != nil {
 			stateData.Pg.SharedBuffersPercentage = types.Int64Value(*apiService.SharedBuffersPercentage)
-		}
-	}
-
-	if stateData.Pg.SynchronousReplication.IsUnknown() {
-		stateData.Pg.SynchronousReplication = types.StringNull()
-		if apiService.SynchronousReplication != nil {
-			stateData.Pg.SynchronousReplication = types.StringValue(string(*apiService.SynchronousReplication))
 		}
 	}
 

@@ -44,10 +44,10 @@ type TemplateModelPg struct {
 	PglookoutSettings       string
 	Version                 string
 	SharedBuffersPercentage int64
-	SynchronousReplication  string
 	TimescaledbSettings     string
 	Variant                 string
 	WorkMem                 int64
+	RecoveryBackupTime      string
 }
 
 type TemplateModelPgUser struct {
@@ -116,10 +116,13 @@ func testResourcePg(t *testing.T) {
 	serviceDataCreate.PgSettings = strconv.Quote(`{"timezone":"Europe/Zurich"}`)
 	serviceDataCreate.PgbouncerSettings = strconv.Quote(`{"min_pool_size":10}`)
 	serviceDataCreate.SharedBuffersPercentage = 25
-	serviceDataCreate.SynchronousReplication = "off"
 	serviceDataCreate.WorkMem = 4
+	serviceDataCreate.Variant = "aiven"
 
-	testSyncReplication := os.Getenv("EXOSCALE_TEST_PG_SYNC_REPLICATION") == "1"
+	testRecoveryBackupTime := os.Getenv("EXOSCALE_TEST_PG_RECOVERY_BACKUP_TIME")
+	if testRecoveryBackupTime != "" {
+		serviceDataCreate.RecoveryBackupTime = testRecoveryBackupTime
+	}
 
 	userDataCreate := userDataBase
 	dbDataCreate := dbDataBase
@@ -149,9 +152,7 @@ func testResourcePg(t *testing.T) {
 	serviceDataUpdate.PglookoutSettings = strconv.Quote(`{"max_failover_replication_time_lag":30}`)
 	serviceDataUpdate.SharedBuffersPercentage = 30
 	serviceDataUpdate.WorkMem = 8
-	if testSyncReplication {
-		serviceDataUpdate.SynchronousReplication = "quorum"
-	}
+	serviceDataUpdate.Variant = "aiven"
 
 	userDataUpdate := userDataBase
 	userDataUpdate.Username = "bar"
@@ -192,6 +193,20 @@ func testResourcePg(t *testing.T) {
 	}
 	configScale := buf.String()
 
+	namedCheck := func(name string, f resource.TestCheckFunc) resource.TestCheckFunc {
+		return func(s *terraform.State) error {
+			ok := t.Run(name, func(t *testing.T) {
+				if err := f(s); err != nil {
+					t.Fatal(err)
+				}
+			})
+			if !ok {
+				return fmt.Errorf("check %q failed", name)
+			}
+			return nil
+		}
+	}
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testutils.AccPreCheck(t) },
 		CheckDestroy:             CheckServiceDestroy("pg", serviceDataBase.Name),
@@ -209,9 +224,15 @@ func testResourcePg(t *testing.T) {
 					resource.TestCheckResourceAttrSet(serviceFullResourceName, "nodes"),
 					resource.TestCheckResourceAttrSet(serviceFullResourceName, "ca_certificate"),
 					resource.TestCheckResourceAttrSet(serviceFullResourceName, "updated_at"),
-					resource.TestCheckResourceAttr(serviceFullResourceName, "pg.shared_buffers_percentage", "25"),
-					resource.TestCheckResourceAttr(serviceFullResourceName, "pg.synchronous_replication", "off"),
-					resource.TestCheckResourceAttr(serviceFullResourceName, "pg.work_mem", "4"),
+					namedCheck("create/shared_buffers_percentage", resource.TestCheckResourceAttr(serviceFullResourceName, "pg.shared_buffers_percentage", "25")),
+					namedCheck("create/work_mem", resource.TestCheckResourceAttr(serviceFullResourceName, "pg.work_mem", "4")),
+					namedCheck("create/variant", resource.TestCheckResourceAttr(serviceFullResourceName, "pg.variant", "aiven")),
+					func(s *terraform.State) error {
+						if testRecoveryBackupTime != "" {
+							return namedCheck("create/recovery_backup_time", resource.TestCheckResourceAttr(serviceFullResourceName, "pg.recovery_backup_time", testRecoveryBackupTime))(s)
+						}
+						return nil
+					},
 					func(s *terraform.State) error {
 						err := CheckExistsPg(serviceDataBase.Name, &serviceDataCreate)
 						if err != nil {
@@ -248,14 +269,9 @@ func testResourcePg(t *testing.T) {
 				Config: configUpdate,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					// Service
-					resource.TestCheckResourceAttr(serviceFullResourceName, "pg.shared_buffers_percentage", "30"),
-					resource.TestCheckResourceAttr(serviceFullResourceName, "pg.work_mem", "8"),
-					func(s *terraform.State) error {
-						if testSyncReplication {
-							return resource.TestCheckResourceAttr(serviceFullResourceName, "pg.synchronous_replication", "quorum")(s)
-						}
-						return nil
-					},
+					namedCheck("update/shared_buffers_percentage", resource.TestCheckResourceAttr(serviceFullResourceName, "pg.shared_buffers_percentage", "30")),
+					namedCheck("update/work_mem", resource.TestCheckResourceAttr(serviceFullResourceName, "pg.work_mem", "8")),
+					namedCheck("update/variant", resource.TestCheckResourceAttr(serviceFullResourceName, "pg.variant", "aiven")),
 					func(s *terraform.State) error {
 						err := CheckExistsPg(serviceDataBase.Name, &serviceDataUpdate)
 						if err != nil {
@@ -405,15 +421,6 @@ func CheckExistsPg(name string, data *TemplateModelPg) error {
 		}
 		if data.SharedBuffersPercentage != *service.SharedBuffersPercentage {
 			return fmt.Errorf("pg.shared_buffers_percentage: expected %d, got %d", data.SharedBuffersPercentage, *service.SharedBuffersPercentage)
-		}
-	}
-
-	if data.SynchronousReplication != "" {
-		if service.SynchronousReplication == nil {
-			return fmt.Errorf("pg.synchronous_replication: expected %q, got nil", data.SynchronousReplication)
-		}
-		if data.SynchronousReplication != string(*service.SynchronousReplication) {
-			return fmt.Errorf("pg.synchronous_replication: expected %q, got %q", data.SynchronousReplication, string(*service.SynchronousReplication))
 		}
 	}
 
