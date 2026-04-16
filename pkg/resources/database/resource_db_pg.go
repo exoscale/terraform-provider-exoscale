@@ -256,6 +256,26 @@ func (data PGDatabaseResourceModel) CreateResource(ctx context.Context, client *
 
 // DeleteResource deletes the resource
 func (data PGDatabaseResourceModel) DeleteResource(ctx context.Context, client *v3.Client, diagnostics *diag.Diagnostics) {
+	blockingPools, err := getPGConnectionPoolsUsingDatabase(ctx, client, data.Service.ValueString(), data.DatabaseName.ValueString())
+	if err != nil {
+		diagnostics.AddError(
+			"Client Error",
+			fmt.Sprintf("unable to check connection pool references for service database %q: %s", data.DatabaseName.ValueString(), err.Error()),
+		)
+		return
+	}
+
+	if len(blockingPools) > 0 {
+		diagnostics.AddError(
+			"Client Error",
+			fmt.Sprintf(
+				"service database %q is referenced by connection pool(s) %s; delete or update the connection pool(s) first",
+				data.DatabaseName.ValueString(),
+				formatPGConnectionPoolReferences(blockingPools),
+			),
+		)
+		return
+	}
 
 	op, err := client.DeleteDBAASPGDatabase(ctx, data.Service.ValueString(), data.DatabaseName.ValueString())
 	if err != nil {

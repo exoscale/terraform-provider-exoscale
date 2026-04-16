@@ -17,7 +17,8 @@ BREAKING CHANGES:
 FEATURES:
 
 - feat: call crossplane generation after a new release #509
-- dbaas: add missing PostgreSQL configuration options (`recovery_backup_time`, `shared_buffers_percentage`, `synchronous_replication`, `timescaledb_settings`, `variant`, `work_mem`) #499
+- feat: added Postgres (pgbouncer) connection pools resource to DBaaS #510
+- dbaas: add missing PostgreSQL configuration options (`recovery_backup_time`, `shared_buffers_percentage`, `timescaledb_settings`, `variant`, `work_mem`) #499
 
 ## 0.68.0
 
