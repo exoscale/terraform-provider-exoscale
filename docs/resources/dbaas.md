@@ -146,7 +146,12 @@ Optional:
 - `pg_settings` (String) PostgreSQL configuration settings in JSON format (`exo dbaas type show pg --settings=pg` for reference).
 - `pgbouncer_settings` (String) PgBouncer configuration settings in JSON format (`exo dbaas type show pg --settings=pgbouncer` for reference).
 - `pglookout_settings` (String) pglookout configuration settings in JSON format (`exo dbaas type show pg --settings=pglookout` for reference).
+- `recovery_backup_time` (String) ISO time of a backup to recover from. May only be set at creation time.
+- `shared_buffers_percentage` (Number) Percentage of total RAM that the database server uses for shared memory buffers. Valid range is 20-60, which corresponds to 20% - 60%. This setting adjusts the shared_buffers configuration value.
+- `timescaledb_settings` (String) TimescaleDB extension configuration settings in JSON format (`exo dbaas type show pg --settings=timescaledb` for reference).
+- `variant` (String) PostgreSQL variant (`timescale` or `aiven`). May only be set at creation time.
 - `version` (String) PostgreSQL major version (`exo dbaas type show pg` for reference; may only be set at creation time).
+- `work_mem` (Number) Sets the maximum amount of memory to be used by a query operation (such as a sort or hash table) before writing to temporary disk files, in MB. Default is 1MB + 0.075% of total RAM (up to 32MB).
 
 
 <a id="nestedblock--timeouts"></a>
