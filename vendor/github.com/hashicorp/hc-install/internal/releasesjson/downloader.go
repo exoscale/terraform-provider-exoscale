@@ -1,4 +1,4 @@
-// Copyright (c) HashiCorp, Inc.
+// Copyright IBM Corp. 2020, 2026
 // SPDX-License-Identifier: MPL-2.0
 
 package releasesjson
@@ -62,7 +62,7 @@ func (d *Downloader) DownloadAndUnpack(ctx context.Context, pv *ProductVersion, 
 		}
 	}
 
-	client := httpclient.NewHTTPClient()
+	client := httpclient.NewHTTPClient(d.Logger)
 
 	archiveURL, err := determineArchiveURL(pb.URL, d.BaseURL)
 	if err != nil {
@@ -100,11 +100,18 @@ func (d *Downloader) DownloadAndUnpack(ctx context.Context, pv *ProductVersion, 
 	if err != nil {
 		return nil, err
 	}
-	defer pkgFile.Close()
-	pkgFilePath, err := filepath.Abs(pkgFile.Name())
+	defer func() {
+		pkgFile.Close()
+		filePath := pkgFile.Name()
+		err = os.Remove(filePath)
+		if err != nil {
+			d.Logger.Printf("failed to delete unpacked archive at %s: %s", filePath, err)
+			return
+		}
+		d.Logger.Printf("deleted unpacked archive at %s", filePath)
+	}()
 
 	up = &UnpackedProduct{}
-	up.PathsToRemove = append(up.PathsToRemove, pkgFilePath)
 
 	d.Logger.Printf("copying %q (%d bytes) to %s", pb.Filename, expectedSize, pkgFile.Name())
 
