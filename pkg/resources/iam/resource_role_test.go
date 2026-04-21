@@ -2,15 +2,65 @@ package iam_test
 
 import (
 	"bytes"
+	"context"
+	"strings"
 	"testing"
 	"text/template"
 
+	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/iam"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/testutils"
 
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
-	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	tfresource "github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
+
+// TestResourceRoleSchema checks schema-level properties of exoscale_iam_role
+// without requiring API credentials (no TF_ACC needed).
+func TestResourceRoleSchema(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	r := iam.NewResourceRole()
+	schemaResp := &resource.SchemaResponse{}
+	r.(resource.ResourceWithImportState).Schema(ctx, resource.SchemaRequest{}, schemaResp)
+
+	attr, ok := schemaResp.Schema.Attributes["editable"]
+	if !ok {
+		t.Fatal("editable attribute not found in schema")
+	}
+
+	boolAttr, ok := attr.(schema.BoolAttribute)
+	if !ok {
+		t.Fatal("editable is not a BoolAttribute")
+	}
+
+	if !boolAttr.IsOptional() {
+		t.Error("editable should be Optional")
+	}
+	if !boolAttr.IsComputed() {
+		t.Error("editable should be Computed")
+	}
+
+	const wantDesc = "Defaults to `true`. This attribute cannot be changed after creation."
+	if !strings.Contains(boolAttr.MarkdownDescription, wantDesc) {
+		t.Errorf("editable description %q does not contain %q", boolAttr.MarkdownDescription, wantDesc)
+	}
+
+	const wantModifier = "Terraform will destroy and recreate the resource"
+	var foundReplace bool
+	for _, m := range boolAttr.PlanModifiers {
+		if strings.Contains(m.Description(ctx), wantModifier) {
+			foundReplace = true
+			break
+		}
+	}
+	if !foundReplace {
+		t.Errorf("editable is missing RequiresReplace plan modifier")
+	}
+}
 
 func testResourceRole(t *testing.T) {
 	t.Parallel()
@@ -90,51 +140,51 @@ func testResourceRole(t *testing.T) {
 	}
 	configUpdatePolicy := buf.String()
 
-	resource.Test(t, resource.TestCase{
+	tfresource.Test(t, tfresource.TestCase{
 		PreCheck:                 func() { testutils.AccPreCheck(t) },
 		ProtoV6ProviderFactories: testutils.TestAccProtoV6ProviderFactories,
-		Steps: []resource.TestStep{
+		Steps: []tfresource.TestStep{
 			// Create
 			{
 				Config: configCreate,
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(fullResourceName, "name", roleName),
-					resource.TestCheckResourceAttr(fullResourceName, "description", "foo bar"),
-					resource.TestCheckResourceAttr(fullResourceName, "editable", "true"),
-					resource.TestCheckResourceAttr(fullResourceName, "labels.foo", "bar"),
-					resource.TestCheckResourceAttr(fullResourceName, "policy.default_service_strategy", "allow"),
-					resource.TestCheckResourceAttr(fullResourceName, "policy.services.%", "1"),
-					resource.TestCheckResourceAttr(fullResourceName, "policy.services.sos.type", "rules"),
-					resource.TestCheckResourceAttr(fullResourceName, "policy.services.sos.rules.#", "1"),
-					resource.TestCheckResourceAttr(fullResourceName, "policy.services.sos.rules.0.action", "allow"),
-					resource.TestCheckResourceAttr(fullResourceName, "policy.services.sos.rules.0.expression", "operation in ['list-sos-buckets-usage', 'list-buckets']"),
+				Check: tfresource.ComposeAggregateTestCheckFunc(
+					tfresource.TestCheckResourceAttr(fullResourceName, "name", roleName),
+					tfresource.TestCheckResourceAttr(fullResourceName, "description", "foo bar"),
+					tfresource.TestCheckResourceAttr(fullResourceName, "editable", "true"),
+					tfresource.TestCheckResourceAttr(fullResourceName, "labels.foo", "bar"),
+					tfresource.TestCheckResourceAttr(fullResourceName, "policy.default_service_strategy", "allow"),
+					tfresource.TestCheckResourceAttr(fullResourceName, "policy.services.%", "1"),
+					tfresource.TestCheckResourceAttr(fullResourceName, "policy.services.sos.type", "rules"),
+					tfresource.TestCheckResourceAttr(fullResourceName, "policy.services.sos.rules.#", "1"),
+					tfresource.TestCheckResourceAttr(fullResourceName, "policy.services.sos.rules.0.action", "allow"),
+					tfresource.TestCheckResourceAttr(fullResourceName, "policy.services.sos.rules.0.expression", "operation in ['list-sos-buckets-usage', 'list-buckets']"),
 				),
 			},
 			// Update
 			{
 				Config: configUpdate,
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(fullResourceName, "permissions.#", "1"),
-					resource.TestCheckResourceAttr(fullResourceName, "permissions.0", "bypass-governance-retention"),
+				Check: tfresource.ComposeAggregateTestCheckFunc(
+					tfresource.TestCheckResourceAttr(fullResourceName, "permissions.#", "1"),
+					tfresource.TestCheckResourceAttr(fullResourceName, "permissions.0", "bypass-governance-retention"),
 				),
 			},
 			// Update policy
 			{
 				Config: configUpdatePolicy,
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(fullResourceName, "policy.default_service_strategy", "deny"),
-					resource.TestCheckResourceAttr(fullResourceName, "policy.services.sos.type", "rules"),
-					resource.TestCheckResourceAttr(fullResourceName, "policy.services.sos.rules.#", "2"),
-					resource.TestCheckResourceAttr(fullResourceName, "policy.services.sos.rules.0.action", "allow"),
-					resource.TestCheckResourceAttr(fullResourceName, "policy.services.sos.rules.0.expression", "operation in ['list-sos-buckets-usage', 'list-buckets']"),
-					resource.TestCheckResourceAttr(fullResourceName, "policy.services.sos.rules.1.action", "deny"),
-					resource.TestCheckResourceAttr(fullResourceName, "policy.services.sos.rules.1.expression", "operation in ['list-objects', 'get-object']"),
+				Check: tfresource.ComposeAggregateTestCheckFunc(
+					tfresource.TestCheckResourceAttr(fullResourceName, "policy.default_service_strategy", "deny"),
+					tfresource.TestCheckResourceAttr(fullResourceName, "policy.services.sos.type", "rules"),
+					tfresource.TestCheckResourceAttr(fullResourceName, "policy.services.sos.rules.#", "2"),
+					tfresource.TestCheckResourceAttr(fullResourceName, "policy.services.sos.rules.0.action", "allow"),
+					tfresource.TestCheckResourceAttr(fullResourceName, "policy.services.sos.rules.0.expression", "operation in ['list-sos-buckets-usage', 'list-buckets']"),
+					tfresource.TestCheckResourceAttr(fullResourceName, "policy.services.sos.rules.1.action", "deny"),
+					tfresource.TestCheckResourceAttr(fullResourceName, "policy.services.sos.rules.1.expression", "operation in ['list-objects', 'get-object']"),
 				),
 			},
 			{
 				// Import
 				ResourceName: fullResourceName,
-				ImportStateIdFunc: func() resource.ImportStateIdFunc {
+				ImportStateIdFunc: func() tfresource.ImportStateIdFunc {
 					return func(s *terraform.State) (string, error) {
 						return s.RootModule().Resources[fullResourceName].Primary.ID, nil
 					}
