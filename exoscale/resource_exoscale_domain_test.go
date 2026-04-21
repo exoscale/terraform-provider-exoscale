@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
+	"golang.org/x/net/idna"
 )
 
 func TestDomainNameToUnicode(t *testing.T) {
@@ -64,10 +65,11 @@ func TestDomainNameDiffSuppress(t *testing.T) {
 var (
 	testAccResourceDomainName = acctest.RandomWithPrefix(testPrefix) + ".net"
 
-	// testAccResourceDomainPunycodeName is the ACE/punycode form of ☃-<random>.net.
-	// The unicode equivalent (☃-<random>.net) is what the API returns, so
-	// using this name exercises the punycode drift fix directly.
-	testAccResourceDomainPunycodeName = "xn--n3h-" + acctest.RandString(8) + ".net"
+	// testAccResourceDomainPunycodeName is a valid punycode domain derived by
+	// converting a unicode name (containing ä) to ACE via idna.ToASCII.
+	// This exercises the drift fix: the API always returns the unicode form,
+	// so a config using punycode would previously cause a perpetual diff.
+	testAccResourceDomainPunycodeName = mustDomainToASCII("test-\u00e4-" + acctest.RandString(8) + ".ch")
 
 	testAccDNSDomainCreate = fmt.Sprintf(`
 resource "exoscale_domain" "exo" {
@@ -77,6 +79,16 @@ resource "exoscale_domain" "exo" {
 		testAccResourceDomainName,
 	)
 )
+
+// mustDomainToASCII converts a unicode domain name to its ACE/punycode form.
+// Panics if conversion fails — only used in test var initialization.
+func mustDomainToASCII(name string) string {
+	ascii, err := idna.ToASCII(name)
+	if err != nil {
+		panic(fmt.Sprintf("idna.ToASCII(%q): %v", name, err))
+	}
+	return ascii
+}
 
 func TestAccResourceDomain(t *testing.T) {
 	t.Parallel()

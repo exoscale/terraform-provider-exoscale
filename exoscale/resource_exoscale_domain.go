@@ -147,8 +147,11 @@ func resourceDomainCreate(ctx context.Context, d *schema.ResourceData, meta inte
 		return diag.FromErr(err)
 	}
 
-	domainName := d.Get("name").(string)
-	o, err := client.CreateDNSDomain(ctx, v3.CreateDNSDomainRequest{UnicodeName: domainName})
+	// Keep the user's input as-is for the create call (the API accepts punycode
+	// in the UnicodeName field). Normalize to unicode only for the post-create
+	// lookup, because the API always returns unicode names in listings.
+	inputName := d.Get("name").(string)
+	o, err := client.CreateDNSDomain(ctx, v3.CreateDNSDomainRequest{UnicodeName: inputName})
 	if err != nil {
 		return diag.Errorf("unable to create domain: %s", err)
 	}
@@ -165,7 +168,7 @@ func resourceDomainCreate(ctx context.Context, d *schema.ResourceData, meta inte
 	if err != nil {
 		return diag.Errorf("unable to retrieve domain after creation: %s", err)
 	}
-	domain, err := domains.FindDNSDomain(domainName)
+	domain, err := domains.FindDNSDomain(domainNameToUnicode(inputName))
 	if err != nil {
 		return diag.Errorf("unable to retrieve domain after creation: %s", err)
 	}
