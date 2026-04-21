@@ -40,7 +40,9 @@ func dataSourceDomainRead(ctx context.Context, d *schema.ResourceData, meta inte
 		return diag.FromErr(err)
 	}
 
-	domainName := d.Get("name").(string)
+	// Normalize to unicode so both punycode and unicode inputs match against
+	// the unicode names returned by the API.
+	domainName := domainNameToUnicode(d.Get("name").(string))
 
 	domains, err := client.ListDNSDomains(ctx)
 	if err != nil {

@@ -12,7 +12,20 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"golang.org/x/net/idna"
 )
+
+// domainNameToUnicode converts an ACE/punycode domain name to its Unicode
+// representation. If the name is already Unicode, or conversion fails, the
+// original value is returned unchanged. This is used to suppress spurious
+// plan diffs when users specify a punycode name but the API returns unicode.
+func domainNameToUnicode(name string) string {
+	unicode, err := idna.ToUnicode(name)
+	if err != nil {
+		return name
+	}
+	return unicode
+}
 
 func resourceDomainIDString(d general.ResourceIDStringer) string {
 	return general.ResourceIDString(d, "exoscale_domain")
@@ -23,9 +36,16 @@ func resourceDomain() *schema.Resource {
 		Description: "Manage Exoscale DNS Domains.",
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true,
+				Type:     schema.TypeString,
+				Required: true,
+				ForceNew: true,
+				// Suppress diffs caused by punycode/unicode inconsistency: the
+				// API always returns the Unicode form of a domain name, so a
+				// config using ACE/punycode (e.g. xn--n3h.example) would
+				// otherwise produce a perpetual diff.
+				DiffSuppressFunc: func(_, oldVal, newVal string, _ *schema.ResourceData) bool {
+					return domainNameToUnicode(oldVal) == domainNameToUnicode(newVal)
+				},
 				Description: "The DNS domain name.",
 			},
 			"token": {
