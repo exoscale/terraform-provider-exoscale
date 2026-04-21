@@ -7,11 +7,59 @@ import (
 	"testing"
 
 	v3 "github.com/exoscale/egoscale/v3"
-
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
+
+func TestDomainNameToUnicode(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		input string
+		want  string
+	}{
+		{"example.com", "example.com"},
+		{"xn--n3h.ws", "☃.ws"},
+		{"xn--domain-with--rcb.ch", "domain-with-ä.ch"},
+		{"already-unicodeä.com", "already-unicodeä.com"},
+		{"", ""},
+	}
+
+	for _, tt := range tests {
+		got := domainNameToUnicode(tt.input)
+		if got != tt.want {
+			t.Errorf("domainNameToUnicode(%q) = %q, want %q", tt.input, got, tt.want)
+		}
+	}
+}
+
+func TestDomainNameDiffSuppress(t *testing.T) {
+	t.Parallel()
+
+	// grab the live func from the schema so we're testing the real wiring
+	suppress := resourceDomain().Schema["name"].DiffSuppressFunc
+
+	tests := []struct {
+		old, new string
+		want     bool
+	}{
+		// same in both forms: should suppress
+		{"xn--n3h.ws", "☃.ws", true},
+		{"☃.ws", "xn--n3h.ws", true},
+		{"example.com", "example.com", true},
+		// different domains: must not suppress
+		{"example.com", "other.com", false},
+		{"xn--n3h.ws", "example.com", false},
+	}
+
+	for _, tt := range tests {
+		got := suppress("name", tt.old, tt.new, nil)
+		if got != tt.want {
+			t.Errorf("DiffSuppressFunc(%q, %q) = %v, want %v", tt.old, tt.new, got, tt.want)
+		}
+	}
+}
 
 var (
 	testAccResourceDomainName = acctest.RandomWithPrefix(testPrefix) + ".net"
