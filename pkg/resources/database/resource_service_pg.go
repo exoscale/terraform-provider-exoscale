@@ -81,6 +81,9 @@ var ResourcePgSchema = schema.SingleNestedAttribute{
 			MarkdownDescription: "PostgreSQL major version (`exo dbaas type show pg` for reference; may only be set at creation time).",
 			Optional:            true,
 			Computed:            true,
+			Validators: []validator.String{
+				validators.IsMajorVersionValidator,
+			},
 		},
 		"pgbouncer_settings": schema.StringAttribute{
 			MarkdownDescription: "PgBouncer configuration settings in JSON format (`exo dbaas type show pg --settings=pgbouncer` for reference).",

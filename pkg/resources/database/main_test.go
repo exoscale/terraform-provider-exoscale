@@ -25,6 +25,7 @@ func TestDatabase(t *testing.T) {
 	t.Run("ResourceValkey", testResourceValkey)
 	t.Run("ResourceKafka", testResourceKafka)
 	t.Run("ResourceOpensearch", testResourceOpensearch)
+	t.Run("ResourceOpensearchVersionValidation", testResourceOpensearchVersionValidation)
 	t.Run("ResourceGrafana", testResourceGrafana)
 	t.Run("DataSourceURI", testDataSourceURI)
 }

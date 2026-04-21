@@ -67,6 +67,9 @@ var ResourceMysqlSchema = schema.SingleNestedAttribute{
 			MarkdownDescription: "MySQL major version (`exo dbaas type show mysql` for reference; may only be set at creation time).",
 			Optional:            true,
 			Computed:            true,
+			Validators: []validator.String{
+				validators.IsMajorVersionValidator,
+			},
 		},
 	},
 }

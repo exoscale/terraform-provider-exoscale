@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"regexp"
 	"strconv"
 	"strings"
 	"testing"
@@ -374,4 +375,40 @@ func CheckExistsOpensearchUser(service, username string, data *TemplateModelOpen
 	}
 
 	return fmt.Errorf("could not find user %s for service %s, found %v", username, service, serviceUsernames)
+}
+
+// testResourceOpensearchVersionValidation verifies that supplying a minor-
+// version string (e.g. "2.0") is rejected at plan time with a clear error
+// rather than causing the cryptic "Provider produced inconsistent result after
+// apply" error that was reported in issue #498.
+func testResourceOpensearchVersionValidation(t *testing.T) {
+	t.Parallel()
+
+	name := acctest.RandomWithPrefix(testutils.Prefix)
+
+	config := fmt.Sprintf(`
+resource "exoscale_dbaas" "version_norm" {
+  name = %q
+  type = "opensearch"
+  plan = "hobbyist-2"
+  zone = %q
+  termination_protection = false
+  opensearch = {
+    version = "2.0"
+  }
+}`, name, testutils.TestZoneName)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testutils.AccPreCheck(t) },
+		ProtoV6ProviderFactories: testutils.TestAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				// "2.0" should be rejected at plan time with a validation error,
+				// not silently applied then marked tainted.
+				Config:      config,
+				ExpectError: regexp.MustCompile(`major version number`),
+				PlanOnly:    true,
+			},
+		},
+	})
 }
