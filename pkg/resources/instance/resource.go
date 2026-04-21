@@ -200,6 +200,7 @@ func Resource() *schema.Resource {
 			Description:      "[cloud-init](https://cloudinit.readthedocs.io/) configuration.",
 			Type:             schema.TypeString,
 			ValidateDiagFunc: utils.ValidateComputeUserData,
+			DiffSuppressFunc: utils.SuppressUserDataDiff,
 			Optional:         true,
 		},
 		AttrZone: {
