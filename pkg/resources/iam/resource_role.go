@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listdefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -84,9 +85,12 @@ func (r *ResourceRole) Schema(ctx context.Context, req resource.SchemaRequest, r
 				Optional:            true,
 			},
 			"editable": schema.BoolAttribute{
-				MarkdownDescription: "Defines if IAM Role Policy is editable or not.",
+				MarkdownDescription: "Defines if IAM Role Policy is editable or not. Defaults to `true`. This attribute cannot be changed after creation.",
 				Optional:            true,
 				Computed:            true,
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.RequiresReplace(),
+				},
 			},
 			"labels": schema.MapAttribute{
 				MarkdownDescription: "IAM Role labels.",
@@ -389,15 +393,6 @@ func (r *ResourceRole) Update(ctx context.Context, req resource.UpdateRequest, r
 	role := exoscale.IAMRole{
 		ID:   planData.ID.ValueStringPointer(),
 		Name: planData.Name.ValueStringPointer(),
-	}
-
-	if !planData.Editable.Equal(stateData.Editable) {
-		if !planData.Editable.IsNull() {
-			role.Editable = planData.Editable.ValueBoolPointer()
-		} else {
-			// For `Optional` and not `Computed` we need to set null to signal `read()` not to write data.
-			stateData.Editable = planData.Editable
-		}
 	}
 
 	if !planData.Description.Equal(stateData.Description) && !planData.Description.IsUnknown() {
