@@ -64,6 +64,11 @@ func TestDomainNameDiffSuppress(t *testing.T) {
 var (
 	testAccResourceDomainName = acctest.RandomWithPrefix(testPrefix) + ".net"
 
+	// testAccResourceDomainPunycodeName is the ACE/punycode form of ☃-<random>.net.
+	// The unicode equivalent (☃-<random>.net) is what the API returns, so
+	// using this name exercises the punycode drift fix directly.
+	testAccResourceDomainPunycodeName = "xn--n3h-" + acctest.RandString(8) + ".net"
+
 	testAccDNSDomainCreate = fmt.Sprintf(`
 resource "exoscale_domain" "exo" {
   name = "%s"
@@ -104,6 +109,53 @@ func TestAccResourceDomain(t *testing.T) {
 						},
 						s[0].Attributes)
 				},
+			},
+		},
+	})
+}
+
+// TestAccResourceDomainIDN verifies that a domain configured with a punycode
+// name does not produce a perpetual diff (the API returns unicode; the provider
+// must treat both forms as equal). It also checks that the data source can be
+// looked up using the original punycode name.
+func TestAccResourceDomainIDN(t *testing.T) {
+	t.Parallel()
+
+	unicodeName := domainNameToUnicode(testAccResourceDomainPunycodeName)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviders,
+		CheckDestroy:      testAccCheckResourceDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				// Create with punycode name; state should store the unicode form
+				// returned by the API, and a subsequent plan must be empty.
+				Config: fmt.Sprintf(`
+resource "exoscale_domain" "idn" {
+  name = "%s"
+}
+data "exoscale_domain" "idn" {
+  name = "%s"
+  depends_on = [exoscale_domain.idn]
+}
+`, testAccResourceDomainPunycodeName, testAccResourceDomainPunycodeName),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckResourceDomainExists("exoscale_domain.idn", &v3.DNSDomain{}),
+					// resource: state name must be the unicode form
+					resource.TestCheckResourceAttr("exoscale_domain.idn", "name", unicodeName),
+					// data source: must resolve via punycode input too
+					resource.TestCheckResourceAttr("data.exoscale_domain.idn", "name", unicodeName),
+				),
+			},
+			{
+				// Re-apply the same punycode config: must produce an empty plan.
+				Config: fmt.Sprintf(`
+resource "exoscale_domain" "idn" {
+  name = "%s"
+}
+`, testAccResourceDomainPunycodeName),
+				PlanOnly: true,
 			},
 		},
 	})
