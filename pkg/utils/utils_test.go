@@ -1,7 +1,7 @@
 package utils
 
 import (
-"testing"
+	"testing"
 )
 
 func TestSuppressUserDataDiff(t *testing.T) {
@@ -32,7 +32,7 @@ func TestSuppressUserDataDiff(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-t.Parallel()
+			t.Parallel()
 			got := SuppressUserDataDiff("", tc.old, tc.new, nil)
 			if got != tc.suppress {
 				t.Errorf("SuppressUserDataDiff(%q, %q) = %v, want %v", tc.old, tc.new, got, tc.suppress)
