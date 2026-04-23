@@ -1,13 +1,13 @@
 package database_test
 
 import (
-"context"
-"strings"
-"testing"
+	"context"
+	"strings"
+	"testing"
 
-"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 
-"github.com/exoscale/terraform-provider-exoscale/pkg/resources/database"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/database"
 )
 
 // TestVersionAttributeSchema checks that the version attribute on each
@@ -29,7 +29,7 @@ func TestVersionAttributeSchema(t *testing.T) {
 
 	for _, svc := range services {
 		t.Run(svc.name, func(t *testing.T) {
-t.Parallel()
+			t.Parallel()
 
 			attr, ok := svc.schema.Attributes["version"]
 			if !ok {

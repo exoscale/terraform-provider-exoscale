@@ -1,14 +1,14 @@
 package validators_test
 
 import (
-"context"
-"testing"
+	"context"
+	"testing"
 
-"github.com/hashicorp/terraform-plugin-framework/path"
-"github.com/hashicorp/terraform-plugin-framework/schema/validator"
-"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 
-exovalidators "github.com/exoscale/terraform-provider-exoscale/pkg/validators"
+	exovalidators "github.com/exoscale/terraform-provider-exoscale/pkg/validators"
 )
 
 func TestIsMajorVersionValidator(t *testing.T) {
@@ -32,7 +32,7 @@ func TestIsMajorVersionValidator(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-t.Parallel()
+			t.Parallel()
 
 			req := validator.StringRequest{
 				Path:        path.Root("version"),
