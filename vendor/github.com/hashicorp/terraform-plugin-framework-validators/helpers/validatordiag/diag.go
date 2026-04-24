@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package validatordiag
 
 import (
@@ -66,6 +69,19 @@ func InvalidAttributeTypeDiagnostic(path path.Path, description string, value st
 func BugInProviderDiagnostic(summary string) diag.Diagnostic {
 	return diag.NewErrorDiagnostic(summary,
 		"This is a bug in the provider, which should be reported in the provider's own issue tracker",
+	)
+}
+
+func InvalidValidatorUsageDiagnostic(path path.Path, validatorName string, description string) diag.Diagnostic {
+	return diag.NewAttributeErrorDiagnostic(
+		path,
+		"Invalid Validator Usage",
+		fmt.Sprintf("When validating the schema, an implementation issue was found. "+
+			"This is always an issue with the provider and should be reported to the provider developers.\n\n"+
+			"An invalid usage of the %q validator was found: %s",
+			validatorName,
+			description,
+		),
 	)
 }
 
