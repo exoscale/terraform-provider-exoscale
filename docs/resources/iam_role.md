@@ -22,7 +22,7 @@ Manage Exoscale [IAM](https://community.exoscale.com/documentation/iam/) Role.
 ### Optional
 
 - `description` (String) A free-form text describing the IAM Role
-- `editable` (Boolean) Defines if IAM Role Policy is editable or not. Defaults to `true`. This attribute cannot be changed after creation.
+- `editable` (Boolean) Defines if IAM Role Policy is editable or not.
 - `labels` (Map of String) IAM Role labels.
 - `permissions` (List of String) IAM Role permissions.
 - `policy` (Attributes) IAM Policy. (see [below for nested schema](#nestedatt--policy))
