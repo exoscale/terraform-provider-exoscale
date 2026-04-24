@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
@@ -32,6 +33,7 @@ resource "exoscale_sks_cluster" "my_sks_cluster" {
   labels = {
     "customer" = "your-telecom"
   }
+  create_default_security_group = true
 }
 
 resource "exoscale_sks_cluster" "my_sks_cluster_2" {
@@ -151,7 +153,8 @@ func TestAccSKSDataSources(t *testing.T) {
 			DataSourceIdentifier: dsId,
 			DataSourceName:       dsName,
 			Attributes: testAttrs{
-				"name": validateString(cluster1Name),
+				"name":                      validateString(cluster1Name),
+				"default_security_group_id": validation.ToDiagFunc(validation.IsUUID),
 			},
 		},
 		{
@@ -164,7 +167,8 @@ func TestAccSKSDataSources(t *testing.T) {
 			DataSourceIdentifier: dsId,
 			DataSourceName:       dsName,
 			Attributes: testAttrs{
-				"name": validateString(cluster1Name),
+				"name":                      validateString(cluster1Name),
+				"default_security_group_id": validation.ToDiagFunc(validation.IsUUID),
 			},
 		},
 	}
@@ -182,8 +186,9 @@ func TestAccSKSDataSources(t *testing.T) {
 			DataSourceIdentifier: dsId,
 			DataSourceName:       dsName,
 			Attributes: testAttrs{
-				"clusters.#":      validateString("1"),
-				"clusters.0.name": validateString(cluster1Name),
+				"clusters.#":                           validateString("1"),
+				"clusters.0.name":                      validateString(cluster1Name),
+				"clusters.0.default_security_group_id": validation.ToDiagFunc(validation.IsUUID),
 			},
 		},
 		{

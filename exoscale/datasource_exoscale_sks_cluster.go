@@ -2,13 +2,14 @@ package exoscale
 
 import (
 	"context"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	v2 "github.com/exoscale/egoscale/v2"
-	exoapi "github.com/exoscale/egoscale/v2/api"
+	v3 "github.com/exoscale/egoscale/v3"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/general"
 )
 
@@ -44,28 +45,37 @@ func dataSourceSKSCluster() *schema.Resource {
 	return ret
 }
 
-func clusterToDataMap(cluster *v2.SKSCluster) general.TerraformObject {
+func clusterToDataMap(cluster *v3.SKSCluster) general.TerraformObject {
 	ret := make(general.TerraformObject)
 
-	general.Assign(ret, resSKSClusterAttrAddons, cluster.AddOns)
-	general.Assign(ret, resSKSClusterAttrAutoUpgrade, cluster.AutoUpgrade)
-	general.Assign(ret, resSKSClusterAttrCNI, cluster.CNI)
-	general.AssignTime(ret, resSKSClusterAttrCreatedAt, cluster.CreatedAt)
-	general.Assign(ret, resSKSClusterAttrDescription, cluster.Description)
-	general.Assign(ret, resSKSClusterAttrEndpoint, cluster.Endpoint)
-	general.Assign(ret, resSKSClusterAttrLabels, cluster.Labels)
-	general.Assign(ret, resSKSClusterAttrName, cluster.Name)
-	general.Assign(ret, dsSKSClusterID, cluster.ID)
+	ret[resSKSClusterAttrAddons] = cluster.Addons
+	ret[resSKSClusterAttrCNI] = string(cluster.Cni)
+	ret[resSKSClusterAttrCreatedAt] = cluster.CreatedAT.Format(time.RFC3339)
+	ret[resSKSClusterAttrDescription] = cluster.Description
+	ret[resSKSClusterAttrEndpoint] = cluster.Endpoint
+	ret[resSKSClusterAttrFeatureGates] = cluster.FeatureGates
+	ret[resSKSClusterAttrLabels] = map[string]string(cluster.Labels)
+	ret[resSKSClusterAttrName] = cluster.Name
+	ret[dsSKSClusterID] = cluster.ID.String()
+	ret[resSKSClusterAttrServiceLevel] = string(cluster.Level)
+	ret[resSKSClusterAttrState] = string(cluster.State)
+	ret[resSKSClusterAttrVersion] = cluster.Version
+
+	if cluster.AutoUpgrade != nil {
+		ret[resSKSClusterAttrAutoUpgrade] = *cluster.AutoUpgrade
+	}
+	if cluster.DefaultSecurityGroupID != nil {
+		ret[resSKSClusterAttrDefaultSecurityGroupID] = cluster.DefaultSecurityGroupID.String()
+	}
+	if cluster.EnableKubeProxy != nil {
+		ret[resSKSClusterAttrEnableKubeProxy] = *cluster.EnableKubeProxy
+	}
 
 	nodepools := make([]string, len(cluster.Nodepools))
-	for i, nodepool := range cluster.Nodepools {
-		nodepools[i] = *nodepool.ID
+	for i, np := range cluster.Nodepools {
+		nodepools[i] = np.ID.String()
 	}
-	general.Assign(ret, resSKSClusterAttrNodepools, &nodepools)
-
-	general.Assign(ret, resSKSClusterAttrServiceLevel, cluster.ServiceLevel)
-	general.Assign(ret, resSKSClusterAttrState, cluster.State)
-	general.Assign(ret, resSKSClusterAttrVersion, cluster.Version)
+	ret[resSKSClusterAttrNodepools] = nodepools
 
 	return ret
 }
@@ -78,30 +88,37 @@ func dataSourceSKSClusterRead(ctx context.Context, d *schema.ResourceData, meta 
 	zone := d.Get(resSKSClusterAttrZone).(string)
 
 	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(getEnvironment(meta), zone))
 	defer cancel()
 
-	client := getClient(meta)
+	client, err := config.GetClientV3WithZone(ctx, meta, zone)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
 	clusterID, searchByClusterID := d.GetOk(dsSKSClusterID)
 	clusterName, searchByClusterName := d.GetOk(resSKSClusterAttrName)
 
-	var cluster *v2.SKSCluster
+	var cluster *v3.SKSCluster
 	switch {
 	case searchByClusterID:
 		clusterIDStr := clusterID.(string)
 
-		var err error
-		if cluster, err = client.GetSKSCluster(ctx, zone, clusterIDStr); err != nil {
+		cluster, err = client.GetSKSCluster(ctx, v3.UUID(clusterIDStr))
+		if err != nil {
 			return diag.Errorf("error getting cluster %q: %s", clusterIDStr, err)
 		}
 	case searchByClusterName:
 		clusterNameStr := clusterName.(string)
 
-		var err error
-		if cluster, err = client.FindSKSCluster(ctx, zone, clusterNameStr); err != nil {
-			return diag.Errorf("error getting cluster %q: %s", clusterNameStr, err)
+		clusters, err := client.ListSKSClusters(ctx)
+		if err != nil {
+			return diag.Errorf("error listing clusters: %s", err)
 		}
+		found, err := clusters.FindSKSCluster(clusterNameStr)
+		if err != nil {
+			return diag.Errorf("error finding cluster %q: %s", clusterNameStr, err)
+		}
+		cluster = &found
 	default:
 		return diag.Errorf(
 			"one of %s or %s must be specified",
@@ -110,10 +127,9 @@ func dataSourceSKSClusterRead(ctx context.Context, d *schema.ResourceData, meta 
 		)
 	}
 
-	d.SetId(*cluster.ID)
+	d.SetId(cluster.ID.String())
 
-	clusterData := clusterToDataMap(cluster)
-	if err := general.Apply(clusterData, d, dataSourceSKSCluster().Schema); err != nil {
+	if err := general.Apply(clusterToDataMap(cluster), d, dataSourceSKSCluster().Schema); err != nil {
 		return diag.FromErr(err)
 	}
 
