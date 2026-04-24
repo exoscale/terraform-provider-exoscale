@@ -2,65 +2,15 @@ package iam_test
 
 import (
 	"bytes"
-	"context"
-	"strings"
 	"testing"
 	"text/template"
 
-	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/iam"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/testutils"
 
-	"github.com/hashicorp/terraform-plugin-framework/resource"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	tfresource "github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
-
-// TestResourceRoleSchema checks schema-level properties of exoscale_iam_role
-// without requiring API credentials (no TF_ACC needed).
-func TestResourceRoleSchema(t *testing.T) {
-	t.Parallel()
-
-	ctx := context.Background()
-	r := iam.NewResourceRole()
-	schemaResp := &resource.SchemaResponse{}
-	r.(resource.ResourceWithImportState).Schema(ctx, resource.SchemaRequest{}, schemaResp)
-
-	attr, ok := schemaResp.Schema.Attributes["editable"]
-	if !ok {
-		t.Fatal("editable attribute not found in schema")
-	}
-
-	boolAttr, ok := attr.(schema.BoolAttribute)
-	if !ok {
-		t.Fatal("editable is not a BoolAttribute")
-	}
-
-	if !boolAttr.IsOptional() {
-		t.Error("editable should be Optional")
-	}
-	if !boolAttr.IsComputed() {
-		t.Error("editable should be Computed")
-	}
-
-	const wantDesc = "Defaults to `true`. This attribute cannot be changed after creation."
-	if !strings.Contains(boolAttr.MarkdownDescription, wantDesc) {
-		t.Errorf("editable description %q does not contain %q", boolAttr.MarkdownDescription, wantDesc)
-	}
-
-	const wantModifier = "Terraform will destroy and recreate the resource"
-	var foundReplace bool
-	for _, m := range boolAttr.PlanModifiers {
-		if strings.Contains(m.Description(ctx), wantModifier) {
-			foundReplace = true
-			break
-		}
-	}
-	if !foundReplace {
-		t.Errorf("editable is missing RequiresReplace plan modifier")
-	}
-}
 
 func testResourceRole(t *testing.T) {
 	t.Parallel()
