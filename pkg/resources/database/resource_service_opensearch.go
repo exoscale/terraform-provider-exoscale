@@ -101,6 +101,9 @@ var ResourceOpensearchSchema = schema.SingleNestedAttribute{
 			MarkdownDescription: "❗ OpenSearch major version (`exo dbaas type show opensearch` for reference)",
 			Optional:            true,
 			Computed:            true,
+			Validators: []validator.String{
+				validators.IsMajorVersionValidator,
+			},
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.RequiresReplaceIfConfigured(),
 			},
