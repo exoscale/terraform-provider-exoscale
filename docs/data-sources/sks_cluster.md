@@ -27,7 +27,9 @@ description: |-
 - `auto_upgrade` (Boolean) Enable automatic upgrading of the control plane version.
 - `cni` (String) The CNI plugin that is to be used. Available options are "calico" or "cilium". Defaults to "calico". Setting empty string will result in a cluster with no CNI.
 - `control_plane_ca` (String, Sensitive) The CA certificate (in PEM format) for TLS communications between control plane components.
+- `create_default_security_group` (Boolean) ❗ Creates an ad-hoc security group based on the choice of the selected CNI (may only be set at creation time).
 - `created_at` (String) The cluster creation date.
+- `default_security_group_id` (String) The ID of the cluster's ad-hoc default security group (when `create_default_security_group` was set at creation time).
 - `description` (String) A free-form text describing the cluster.
 - `enable_karpenter` (Boolean) Indicates whether to deploy Karpenter for cluster autoscaling.
 - `enable_kube_proxy` (Boolean) ❗ Indicates whether to deploy the Kubernetes network proxy. (may only be set at creation time)

@@ -8,6 +8,8 @@ IMPROVEMENTS:
 - Add parallel testing in pkg package #500
 - Allow parallel testing in exoscale package #508
 - Update terraform libraries #517
+- Port SKS data sources to egoscale v3
+- Bump egoscale to v3.1.35
 
 BUG FIXES:
 
@@ -20,6 +22,8 @@ FEATURES:
 - feat: call crossplane generation after a new release #509
 - feat: added Postgres (pgbouncer) connection pools resource to DBaaS #510
 - dbaas: add missing PostgreSQL configuration options (`recovery_backup_time`, `shared_buffers_percentage`, `timescaledb_settings`, `variant`, `work_mem`) #499
+- feat: add `create_default_security_group` SKS cluster option
+- feat: expose `default_security_group_id` on the SKS resource and data sources
 
 ## 0.68.0
 

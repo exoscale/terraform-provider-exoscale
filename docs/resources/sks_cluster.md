@@ -41,6 +41,7 @@ directory for complete configuration examples.
 - `audit` (Block List, Max: 1) Parameters for Kubernetes Audit configuration (may only be enabled at creation time) (see [below for nested schema](#nestedblock--audit))
 - `auto_upgrade` (Boolean) Enable automatic upgrading of the control plane version.
 - `cni` (String) The CNI plugin that is to be used. Available options are "calico" or "cilium". Defaults to "calico". Setting empty string will result in a cluster with no CNI.
+- `create_default_security_group` (Boolean) ❗ Creates an ad-hoc security group based on the choice of the selected CNI (may only be set at creation time).
 - `description` (String) A free-form text describing the cluster.
 - `enable_karpenter` (Boolean) Indicates whether to deploy Karpenter for cluster autoscaling.
 - `enable_kube_proxy` (Boolean) ❗ Indicates whether to deploy the Kubernetes network proxy. (may only be set at creation time)
@@ -59,6 +60,7 @@ directory for complete configuration examples.
 - `aggregation_ca` (String, Sensitive) The CA certificate (in PEM format) for TLS communications between the control plane and the aggregation layer (e.g. `metrics-server`).
 - `control_plane_ca` (String, Sensitive) The CA certificate (in PEM format) for TLS communications between control plane components.
 - `created_at` (String) The cluster creation date.
+- `default_security_group_id` (String) The ID of the cluster's ad-hoc default security group (when `create_default_security_group` was set at creation time).
 - `endpoint` (String) The cluster API endpoint.
 - `id` (String) The SKS cluster ID.
 - `kubelet_ca` (String, Sensitive) The CA certificate (in PEM format) for TLS communications between kubelets and the control plane.

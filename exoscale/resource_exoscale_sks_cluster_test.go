@@ -72,6 +72,7 @@ resource "exoscale_sks_cluster" "test" {
   feature_gates = ["%s"]
 
   enable_kube_proxy = true
+  create_default_security_group = true
 
   oidc {
     client_id  = "%s"
@@ -134,6 +135,7 @@ resource "exoscale_sks_cluster" "test" {
   feature_gates = []
 
   enable_kube_proxy = true
+  create_default_security_group = true
 
   oidc {
     client_id  = "%s"
@@ -426,24 +428,25 @@ func TestAccResourceSKSCluster(t *testing.T) {
 						return nil
 					},
 					checkResourceState(r, checkResourceStateValidateAttributes(testAttrs{
-						resSKSClusterAttrAggregationLayerCA:  validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Aggregation CA must be a PEM certificate")),
-						resSKSClusterAttrAutoUpgrade:         validateString("true"),
-						resSKSClusterAttrCNI:                 validateString(defaultSKSClusterCNI),
-						resSKSClusterAttrControlPlaneCA:      validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Control-plane CA must be a PEM certificate")),
-						resSKSClusterAttrCreatedAt:           validation.ToDiagFunc(validation.NoZeroValues),
-						resSKSClusterAttrDescription:         validateString(testAccResourceSKSClusterDescription),
-						resSKSClusterAttrEndpoint:            validation.ToDiagFunc(isDNSName),
-						resSKSClusterAttrEnableKubeProxy:     validateString("true"),
-						resSKSClusterAttrExoscaleCCM:         validateString("true"),
-						resSKSClusterAttrFeatureGates + ".#": validateString("1"),
-						resSKSClusterAttrKubeletCA:           validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Kubelet CA must be a PEM certificate")),
-						resSKSClusterAttrMetricsServer:       validateString("false"),
-						resSKSClusterAttrExoscaleCSI:         validateString("false"),
-						resSKSClusterAttrLabels + ".test":    validateString(testAccResourceSKSClusterLabelValue),
-						resSKSClusterAttrName:                validateString(testAccResourceSKSClusterName),
-						resSKSClusterAttrServiceLevel:        validateString(defaultSKSClusterServiceLevel),
-						resSKSClusterAttrState:               validation.ToDiagFunc(validation.NoZeroValues),
-						resSKSClusterAttrVersion:             validation.ToDiagFunc(validation.NoZeroValues),
+						resSKSClusterAttrAggregationLayerCA:         validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Aggregation CA must be a PEM certificate")),
+						resSKSClusterAttrAutoUpgrade:                validateString("true"),
+						resSKSClusterAttrCNI:                        validateString(defaultSKSClusterCNI),
+						resSKSClusterAttrControlPlaneCA:             validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Control-plane CA must be a PEM certificate")),
+						resSKSClusterAttrCreatedAt:                  validation.ToDiagFunc(validation.NoZeroValues),
+						resSKSClusterAttrCreateDefaultSecurityGroup: validateString("true"),
+						resSKSClusterAttrDescription:                validateString(testAccResourceSKSClusterDescription),
+						resSKSClusterAttrEndpoint:                   validation.ToDiagFunc(isDNSName),
+						resSKSClusterAttrEnableKubeProxy:            validateString("true"),
+						resSKSClusterAttrExoscaleCCM:                validateString("true"),
+						resSKSClusterAttrFeatureGates + ".#":        validateString("1"),
+						resSKSClusterAttrKubeletCA:                  validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Kubelet CA must be a PEM certificate")),
+						resSKSClusterAttrMetricsServer:              validateString("false"),
+						resSKSClusterAttrExoscaleCSI:                validateString("false"),
+						resSKSClusterAttrLabels + ".test":           validateString(testAccResourceSKSClusterLabelValue),
+						resSKSClusterAttrName:                       validateString(testAccResourceSKSClusterName),
+						resSKSClusterAttrServiceLevel:               validateString(defaultSKSClusterServiceLevel),
+						resSKSClusterAttrState:                      validation.ToDiagFunc(validation.NoZeroValues),
+						resSKSClusterAttrVersion:                    validation.ToDiagFunc(validation.NoZeroValues),
 
 						// OIDC checks
 						resSKSClusterAttrOIDC(resSKSClusterAttrOIDCClientID):       validateString(testAccResourceSKSClusterOIDCClientID),
@@ -507,6 +510,7 @@ func TestAccResourceSKSCluster(t *testing.T) {
 					"oidc.#",
 					"oidc.0.%",
 					"addons",
+					resSKSClusterAttrCreateDefaultSecurityGroup,
 					resSKSClusterAttrEnableKubeProxy,
 					resSKSClusterAttrOIDC(resSKSClusterAttrOIDCClientID),
 					resSKSClusterAttrOIDC(resSKSClusterAttrOIDCGroupsClaim),

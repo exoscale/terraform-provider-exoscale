@@ -462,7 +462,7 @@ func resourceSKSNodepoolRead(ctx context.Context, d *schema.ResourceData, meta i
 		"id": resourceSKSNodepoolIDString(d),
 	})
 
-	return diag.FromErr(resourceSKSNodepoolApply(ctx, client, d, sksNodepool))
+	return diag.FromErr(resourceSKSNodepoolApply(ctx, client, d, sksNodepool, sks.DefaultSecurityGroupID))
 }
 
 func resourceSKSNodepoolUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -694,6 +694,7 @@ func resourceSKSNodepoolApply(
 	client *v3.Client,
 	d *schema.ResourceData,
 	sksNodepool *v3.SKSNodepool,
+	clusterDefaultSGID *v3.UUID,
 ) error {
 	if sksNodepool.AntiAffinityGroups != nil {
 		aags := utils.AntiAffiniGroupsToAntiAffinityGroupIDs(sksNodepool.AntiAffinityGroups)
@@ -790,6 +791,26 @@ func resourceSKSNodepoolApply(
 
 	if sksNodepool.SecurityGroups != nil {
 		sgs := utils.SecurityGroupsToSecurityGroupIDs(sksNodepool.SecurityGroups)
+		// When the parent cluster was created with `create_default_security_group`,
+		// the API auto-attaches that SG to every nodepool. Hide it from state
+		// unless the user's config explicitly lists it; otherwise Terraform would
+		// see perpetual drift against a user config that doesn't mention it.
+		if clusterDefaultSGID != nil {
+			defaultID := clusterDefaultSGID.String()
+			userIncludes := false
+			if current, ok := d.Get(resSKSNodepoolAttrSecurityGroupIDs).(*schema.Set); ok {
+				userIncludes = current.Contains(defaultID)
+			}
+			if !userIncludes {
+				filtered := sgs[:0]
+				for _, id := range sgs {
+					if id != defaultID {
+						filtered = append(filtered, id)
+					}
+				}
+				sgs = filtered
+			}
+		}
 		if err := d.Set(resSKSNodepoolAttrSecurityGroupIDs, sgs); err != nil {
 			return err
 		}
