@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.69.1
 
 BREAKING CHANGES:
 
