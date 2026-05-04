@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+BREAKING CHANGES:
+
+- Drop windows/arm target #524
+
 ## 0.69.0
 
 IMPROVEMENTS:
