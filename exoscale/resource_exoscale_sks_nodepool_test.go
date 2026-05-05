@@ -20,31 +20,34 @@ import (
 )
 
 var (
-	testAccResourceSKSClusterNameNodePoolTest                   = acctest.RandomWithPrefix(testPrefix)
-	testAccResourceSKSNodepoolAntiAffinityGroupName             = acctest.RandomWithPrefix(testPrefix)
-	testAccResourceSKSNodepoolDescription                       = acctest.RandomWithPrefix(testPrefix)
-	testAccResourceSKSNodepoolDescriptionUpdated                = testAccResourceSKSNodepoolDescription + "-updated"
-	testAccResourceSKSNodepoolDiskSize                          = defaultSKSNodepoolDiskSize * 2
-	testAccResourceSKSNodepoolDiskSizeUpdated                   = defaultSKSNodepoolDiskSize*2 + 10
-	testAccResourceSKSNodepoolInstancePrefix                    = "test"
-	testAccResourceSKSNodepoolInstanceType                      = "standard.small"
-	testAccResourceSKSNodepoolInstanceTypeUpdated               = "standard.medium"
-	testAccResourceSKSNodepoolKubeletImageGCMinAge              = "1m"
-	testAccResourceSKSNodepoolKubeletImageGCHighThreshold int64 = 13
-	testAccResourceSKSNodepoolKubeletImageGCLowThreshold  int64 = 12
-	testAccResourceSKSNodepoolLabelValue                        = acctest.RandomWithPrefix(testPrefix)
-	testAccResourceSKSNodepoolLabelValueUpdated                 = testAccResourceSKSNodepoolLabelValue + "-updated"
-	testAccResourceSKSNodepoolName                              = acctest.RandomWithPrefix(testPrefix)
-	testAccResourceSKSNodepoolNameUpdated                       = testAccResourceSKSNodepoolName + "-updated"
-	testAccResourceSKSNodepoolPrivateNetworkName                = acctest.RandomWithPrefix(testPrefix)
-	testAccResourceSKSNodepoolSize                        int64 = 2
-	testAccResourceSKSNodepoolSizeUpdated                 int64 = 1
-	testAccResourceSKSNodepoolIPV6Default                 bool  = false
-	testAccResourceSKSNodepoolIPV6Updated                 bool  = true
-	testAccResourceSKSNodepoolStorageLVM                  bool  = true
-	testAccResourceSKSNodepoolTaintEffect                       = "NoSchedule"
-	testAccResourceSKSNodepoolTaintValue                        = "test"
-	testAccResourceSKSNodepoolTaintValueUpdated                 = "test-updated"
+	testAccResourceSKSClusterNameNodePoolTest                          = acctest.RandomWithPrefix(testPrefix)
+	testAccResourceSKSNodepoolAntiAffinityGroupName                    = acctest.RandomWithPrefix(testPrefix)
+	testAccResourceSKSNodepoolDescription                              = acctest.RandomWithPrefix(testPrefix)
+	testAccResourceSKSNodepoolDescriptionUpdated                       = testAccResourceSKSNodepoolDescription + "-updated"
+	testAccResourceSKSNodepoolDiskSize                                 = defaultSKSNodepoolDiskSize * 2
+	testAccResourceSKSNodepoolDiskSizeUpdated                          = defaultSKSNodepoolDiskSize*2 + 10
+	testAccResourceSKSNodepoolInstancePrefix                           = "test"
+	testAccResourceSKSNodepoolInstanceType                             = "standard.small"
+	testAccResourceSKSNodepoolInstanceTypeUpdated                      = "standard.medium"
+	testAccResourceSKSNodepoolKubeletImageGCMinAge                     = "1m"
+	testAccResourceSKSNodepoolKubeletImageGCHighThreshold        int64 = 13
+	testAccResourceSKSNodepoolKubeletImageGCLowThreshold         int64 = 12
+	testAccResourceSKSNodepoolKubeletImageGCMinAgeUpdated              = "5m"
+	testAccResourceSKSNodepoolKubeletImageGCHighThresholdUpdated int64 = 85
+	testAccResourceSKSNodepoolKubeletImageGCLowThresholdUpdated  int64 = 75
+	testAccResourceSKSNodepoolLabelValue                               = acctest.RandomWithPrefix(testPrefix)
+	testAccResourceSKSNodepoolLabelValueUpdated                        = testAccResourceSKSNodepoolLabelValue + "-updated"
+	testAccResourceSKSNodepoolName                                     = acctest.RandomWithPrefix(testPrefix)
+	testAccResourceSKSNodepoolNameUpdated                              = testAccResourceSKSNodepoolName + "-updated"
+	testAccResourceSKSNodepoolPrivateNetworkName                       = acctest.RandomWithPrefix(testPrefix)
+	testAccResourceSKSNodepoolSize                               int64 = 2
+	testAccResourceSKSNodepoolSizeUpdated                        int64 = 1
+	testAccResourceSKSNodepoolIPV6Default                        bool  = false
+	testAccResourceSKSNodepoolIPV6Updated                        bool  = true
+	testAccResourceSKSNodepoolStorageLVM                         bool  = true
+	testAccResourceSKSNodepoolTaintEffect                              = "NoSchedule"
+	testAccResourceSKSNodepoolTaintValue                               = "test"
+	testAccResourceSKSNodepoolTaintValueUpdated                        = "test-updated"
 
 	testAccResourceSKSNodepoolConfigCreate = fmt.Sprintf(`
 locals {
@@ -177,6 +180,84 @@ resource "exoscale_sks_nodepool" "test" {
 		testAccResourceSKSNodepoolKubeletImageGCMinAge,
 		testAccResourceSKSNodepoolKubeletImageGCHighThreshold,
 		testAccResourceSKSNodepoolKubeletImageGCLowThreshold,
+	)
+
+	testAccResourceSKSNodepoolConfigUpdateKubeletGC = fmt.Sprintf(`
+locals {
+  zone = "%s"
+}
+
+data "exoscale_security_group" "default" {
+  name = "default"
+}
+
+resource "exoscale_anti_affinity_group" "test" {
+  name = "%s"
+}
+
+resource "exoscale_private_network" "test" {
+  zone     = local.zone
+  name     = "%s"
+  start_ip = "10.0.0.20"
+  end_ip   = "10.0.0.253"
+  netmask  = "255.255.255.0"
+}
+
+resource "exoscale_sks_cluster" "test" {
+  zone = local.zone
+  name = "%s"
+
+  timeouts {
+    delete = "10m"
+  }
+}
+
+resource "exoscale_sks_nodepool" "test" {
+  zone = local.zone
+  cluster_id = exoscale_sks_cluster.test.id
+  name = "%s"
+  description = "%s"
+  instance_type = "%s"
+  disk_size = %d
+  size = %d
+  instance_prefix = "%s"
+  anti_affinity_group_ids = [exoscale_anti_affinity_group.test.id]
+  security_group_ids = [data.exoscale_security_group.default.id]
+  private_network_ids = [exoscale_private_network.test.id]
+  labels = { test = "%s" }
+  taints = { test = "%s:%s" }
+  storage_lvm = %t
+  ipv6        = %t
+
+  timeouts {
+    delete = "10m"
+  }
+
+  kubelet_image_gc {
+    min_age = "%s"
+	high_threshold = %d
+	low_threshold = %d
+  }
+}
+	  `,
+		testAccResourceSKSClusterLocalZone,
+		testAccResourceSKSNodepoolAntiAffinityGroupName,
+		testAccResourceSKSNodepoolPrivateNetworkName,
+		testAccResourceSKSClusterNameNodePoolTest,
+		testAccResourceSKSNodepoolNameUpdated,
+		testAccResourceSKSNodepoolDescriptionUpdated,
+		testAccResourceSKSNodepoolInstanceTypeUpdated,
+		testAccResourceSKSNodepoolDiskSizeUpdated,
+		testAccResourceSKSNodepoolSizeUpdated,
+		defaultSKSNodepoolInstancePrefix,
+		testAccResourceSKSNodepoolLabelValueUpdated,
+		testAccResourceSKSNodepoolTaintValueUpdated,
+		testAccResourceSKSNodepoolTaintEffect,
+		testAccResourceSKSNodepoolStorageLVM,
+		testAccResourceSKSNodepoolIPV6Updated,
+		testAccResourceSKSNodepoolKubeletImageGCMinAgeUpdated,
+		testAccResourceSKSNodepoolKubeletImageGCHighThresholdUpdated,
+		testAccResourceSKSNodepoolKubeletImageGCLowThresholdUpdated,
 	)
 )
 
@@ -358,6 +439,28 @@ func TestAccResourceSKSNodepool(t *testing.T) {
 						}(s),
 					)
 				},
+			},
+			{
+				// Update kubelet image GC
+				Config: testAccResourceSKSNodepoolConfigUpdateKubeletGC,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckResourceSKSNodepoolExists(r, &sksNodepool),
+					func(s *terraform.State) error {
+						a := require.New(t)
+						a.Equal(&egoscale.SKSNodepoolKubeletImageGc{
+							MinAge:        &testAccResourceSKSNodepoolKubeletImageGCMinAgeUpdated,
+							HighThreshold: &testAccResourceSKSNodepoolKubeletImageGCHighThresholdUpdated,
+							LowThreshold:  &testAccResourceSKSNodepoolKubeletImageGCLowThresholdUpdated},
+							sksNodepool.KubeletImageGc)
+						return nil
+					},
+					checkResourceState(r, checkResourceStateValidateAttributes(testAttrs{
+						resSKSNodepoolAttrKubeletGC + ".#":                                             validateString("1"),
+						resSKSNodepoolAttrKubeletGC + ".0." + resSKSNodepoolAttrKubeletGCMinAge:        validateString(testAccResourceSKSNodepoolKubeletImageGCMinAgeUpdated),
+						resSKSNodepoolAttrKubeletGC + ".0." + resSKSNodepoolAttrKubeletGCHighThreshold: validateString(fmt.Sprint(testAccResourceSKSNodepoolKubeletImageGCHighThresholdUpdated)),
+						resSKSNodepoolAttrKubeletGC + ".0." + resSKSNodepoolAttrKubeletGCLowThreshold:  validateString(fmt.Sprint(testAccResourceSKSNodepoolKubeletImageGCLowThresholdUpdated)),
+					})),
+				),
 			},
 		},
 	})
