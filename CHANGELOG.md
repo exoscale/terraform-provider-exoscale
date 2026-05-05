@@ -6,6 +6,10 @@ IMPROVEMENTS:
 
 - sks: add Kubelet Image GC update support for nodepools #506
 
+BUG FIXES:
+
+- Fix SG resource schema version #526
+
 ## 0.69.1
 
 BREAKING CHANGES:
