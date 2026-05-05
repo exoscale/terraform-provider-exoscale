@@ -82,6 +82,7 @@ func (r *Resource) Schema(
 	resp.Schema = schema.Schema{
 		Description:         "Manage Security Groups",
 		MarkdownDescription: ResourceDescription,
+		Version:             1, // TODO: Port schema upgrade from SDKv2 (for going from 0.32.0 or older to 0.69.0+).
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description:         "security group ID",
