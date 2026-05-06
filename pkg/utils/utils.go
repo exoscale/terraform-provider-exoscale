@@ -188,6 +188,21 @@ func DecodeUserData(data string) (string, error) {
 	return string(userData), nil
 }
 
+// normalizeUserData decodes and optionally decompresses user data for comparison.
+func normalizeUserData(v string) string {
+	normalized, err := DecodeUserData(v)
+	if err != nil {
+		return v
+	}
+	return normalized
+}
+
+// SuppressUserDataDiff ignores diffs caused by the provider decoding user_data
+// on read when the user originally supplied it pre-encoded (base64 or gzip+base64).
+func SuppressUserDataDiff(_, old, new string, _ *schema.ResourceData) bool {
+	return normalizeUserData(old) == normalizeUserData(new)
+}
+
 // ParseIAMAccessKeyResource parses IAM key format
 func ParseIAMAccessKeyResource(v string) (*exov2.IAMAccessKeyResource, error) {
 	var iamAccessKeyResource exov2.IAMAccessKeyResource
