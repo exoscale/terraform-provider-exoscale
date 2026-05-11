@@ -2,7 +2,6 @@ package database_test
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"testing"
 	"text/template"
@@ -12,7 +11,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/testutils"
-	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
 )
 
 type TemplateModelValkeyUser struct {
@@ -93,31 +91,4 @@ func testResourceValkeyUser(t *testing.T) {
 	})
 }
 
-func CheckValkeyUserExists(serviceName, username string) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		ctx := context.Background()
 
-		defaultClientV3, err := testutils.APIClientV3()
-		if err != nil {
-			return err
-		}
-
-		client, err := utils.SwitchClientZone(ctx, defaultClientV3, testutils.TestZoneName)
-		if err != nil {
-			return err
-		}
-
-		svc, err := client.GetDBAASServiceValkey(ctx, serviceName)
-		if err != nil {
-			return fmt.Errorf("unable to get valkey service %q: %w", serviceName, err)
-		}
-
-		for _, user := range svc.Users {
-			if user.Username == username {
-				return nil
-			}
-		}
-
-		return fmt.Errorf("user %q not found in valkey service %q", username, serviceName)
-	}
-}
