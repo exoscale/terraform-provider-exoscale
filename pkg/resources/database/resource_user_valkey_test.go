@@ -90,5 +90,3 @@ func testResourceValkeyUser(t *testing.T) {
 		},
 	})
 }
-
-
