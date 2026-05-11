@@ -245,6 +245,7 @@ func (p *ExoscaleProvider) Resources(ctx context.Context) []func() resource.Reso
 		database.NewKafkaUserResource,
 		database.NewOpensearchUserResource,
 		database.NewPGUserResource,
+		database.NewValkeyUserResource,
 		database.NewPGDatabaseResource,
 		database.NewPGConnectionPoolResource,
 		database.NewMysqlDatabaseResource,
