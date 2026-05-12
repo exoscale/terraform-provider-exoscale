@@ -10,7 +10,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	exoapi "github.com/exoscale/egoscale/v2/api"
 	v3 "github.com/exoscale/egoscale/v3"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/general"
@@ -437,7 +436,7 @@ func resourceSKSNodepoolRead(ctx context.Context, d *schema.ResourceData, meta i
 
 	sks, err := client.GetSKSCluster(ctx, v3.UUID(d.Get(resSKSNodepoolAttrClusterID).(string)))
 	if err != nil {
-		if errors.Is(err, exoapi.ErrNotFound) {
+		if errors.Is(err, v3.ErrNotFound) {
 			// Parent SKS cluster doesn't exist anymore, so does the SKS Nodepool.
 			d.SetId("")
 			return nil
