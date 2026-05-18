@@ -385,3 +385,12 @@ func DeleteResource[T ResourceModelInterface](ctx context.Context, req resource.
 	})
 
 }
+
+// parseZonedImportID splits a "resourceID@zone" import identifier.
+func parseZonedImportID(id string) (resourceID, zone string, err error) {
+	parts := strings.SplitN(id, "@", 2)
+	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+		return "", "", fmt.Errorf("expected id@zone, got %q", id)
+	}
+	return parts[0], parts[1], nil
+}

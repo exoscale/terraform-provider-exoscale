@@ -28,6 +28,12 @@ func TestDatabase(t *testing.T) {
 	t.Run("ResourceOpensearchVersionValidation", testResourceOpensearchVersionValidation)
 	t.Run("ResourceGrafana", testResourceGrafana)
 	t.Run("DataSourceURI", testDataSourceURI)
+	t.Run("ResourceDBAASExternalEndpointPrometheus", testResourceExternalEndpointPrometheus)
+	t.Run("ResourceDBAASExternalEndpointDatadog", testResourceExternalEndpointDatadog)
+	t.Run("ResourceDBAASExternalEndpointOpensearch", testResourceExternalEndpointOpensearch)
+	t.Run("ResourceDBAASExternalEndpointElasticsearch", testResourceExternalEndpointElasticsearch)
+	t.Run("ResourceDBAASExternalEndpointRsyslog", testResourceExternalEndpointRsyslog)
+	t.Run("ResourceDBAASExternalIntegration", testResourceExternalIntegration)
 }
 
 func CheckServiceDestroy(dbType, name string) resource.TestCheckFunc {

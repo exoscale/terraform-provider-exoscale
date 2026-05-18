@@ -1,0 +1,12 @@
+resource "exoscale_dbaas_external_endpoint_elasticsearch" {{ .ResourceName }} {
+  name           = "{{ .Name }}"
+  zone           = "{{ .Zone }}"
+  url            = "{{ .URL }}"
+  index_prefix   = "{{ .IndexPrefix }}"
+  {{- if .IndexDaysMax }}
+  index_days_max = {{ .IndexDaysMax }}
+  {{- end }}
+  {{- if .Timeout }}
+  timeout        = {{ .Timeout }}
+  {{- end }}
+}
