@@ -2,9 +2,7 @@ package database
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"time"
 
 	v3 "github.com/exoscale/egoscale/v3"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
@@ -386,25 +384,10 @@ func readElasticsearchEndpointIntoModel(ctx context.Context, client *v3.Client, 
 		return false
 	}
 
-	var endpoint *v3.DBAASEndpointElasticsearchOutput
-	for i := range 3 {
-		endpoint, err = client.GetDBAASExternalEndpointElasticsearch(ctx, endpointID)
-		if err == nil {
-			break
-		}
-		if errors.Is(err, v3.ErrNotFound) && i < 2 {
-			select {
-			case <-ctx.Done():
-				diagnostics.AddError("context cancelled", ctx.Err().Error())
-				return false
-			case <-time.After(3 * time.Second):
-			}
-			continue
-		}
-		if errors.Is(err, v3.ErrNotFound) {
-			return false
-		}
-		diagnostics.AddError("read", fmt.Sprintf("error reading elasticsearch external endpoint: %s", err))
+	endpoint, found := pollEndpoint(ctx, func() (*v3.DBAASEndpointElasticsearchOutput, error) {
+		return client.GetDBAASExternalEndpointElasticsearch(ctx, endpointID)
+	}, diagnostics, "error reading elasticsearch external endpoint")
+	if !found {
 		return false
 	}
 

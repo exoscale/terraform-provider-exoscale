@@ -2,9 +2,7 @@ package database
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"time"
 
 	v3 "github.com/exoscale/egoscale/v3"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
@@ -355,25 +353,10 @@ func readDatadogEndpointIntoModel(ctx context.Context, client *v3.Client, data *
 		return false
 	}
 
-	var endpoint *v3.DBAASExternalEndpointDatadogOutput
-	for i := range 3 {
-		endpoint, err = client.GetDBAASExternalEndpointDatadog(ctx, endpointID)
-		if err == nil {
-			break
-		}
-		if errors.Is(err, v3.ErrNotFound) && i < 2 {
-			select {
-			case <-ctx.Done():
-				diagnostics.AddError("context cancelled", ctx.Err().Error())
-				return false
-			case <-time.After(3 * time.Second):
-			}
-			continue
-		}
-		if errors.Is(err, v3.ErrNotFound) {
-			return false
-		}
-		diagnostics.AddError("read", fmt.Sprintf("error reading datadog external endpoint: %s", err))
+	endpoint, found := pollEndpoint(ctx, func() (*v3.DBAASExternalEndpointDatadogOutput, error) {
+		return client.GetDBAASExternalEndpointDatadog(ctx, endpointID)
+	}, diagnostics, "error reading datadog external endpoint")
+	if !found {
 		return false
 	}
 

@@ -2,9 +2,7 @@ package database
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"time"
 
 	v3 "github.com/exoscale/egoscale/v3"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
@@ -442,25 +440,10 @@ func readRsyslogEndpointIntoModel(ctx context.Context, client *v3.Client, data *
 		return false
 	}
 
-	var endpoint *v3.DBAASExternalEndpointRsyslogOutput
-	for i := range 3 {
-		endpoint, err = client.GetDBAASExternalEndpointRsyslog(ctx, endpointID)
-		if err == nil {
-			break
-		}
-		if errors.Is(err, v3.ErrNotFound) && i < 2 {
-			select {
-			case <-ctx.Done():
-				diagnostics.AddError("context cancelled", ctx.Err().Error())
-				return false
-			case <-time.After(3 * time.Second):
-			}
-			continue
-		}
-		if errors.Is(err, v3.ErrNotFound) {
-			return false
-		}
-		diagnostics.AddError("read", fmt.Sprintf("error reading rsyslog external endpoint: %s", err))
+	endpoint, found := pollEndpoint(ctx, func() (*v3.DBAASExternalEndpointRsyslogOutput, error) {
+		return client.GetDBAASExternalEndpointRsyslog(ctx, endpointID)
+	}, diagnostics, "error reading rsyslog external endpoint")
+	if !found {
 		return false
 	}
 

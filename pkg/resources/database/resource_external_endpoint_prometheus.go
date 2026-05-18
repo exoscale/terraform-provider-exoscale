@@ -2,9 +2,7 @@ package database
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"time"
 
 	v3 "github.com/exoscale/egoscale/v3"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
@@ -356,26 +354,10 @@ func readPrometheusEndpointIntoModel(ctx context.Context, client *v3.Client, dat
 		return false
 	}
 
-	var endpoint *v3.DBAASEndpointExternalPrometheusOutput
-	// Poll up to 3 times for the endpoint to appear after creation
-	for i := range 3 {
-		endpoint, err = client.GetDBAASExternalEndpointPrometheus(ctx, endpointID)
-		if err == nil {
-			break
-		}
-		if errors.Is(err, v3.ErrNotFound) && i < 2 {
-			select {
-			case <-ctx.Done():
-				diagnostics.AddError("context cancelled", ctx.Err().Error())
-				return false
-			case <-time.After(3 * time.Second):
-			}
-			continue
-		}
-		if errors.Is(err, v3.ErrNotFound) {
-			return false
-		}
-		diagnostics.AddError("read", fmt.Sprintf("error reading prometheus external endpoint: %s", err))
+	endpoint, found := pollEndpoint(ctx, func() (*v3.DBAASEndpointExternalPrometheusOutput, error) {
+		return client.GetDBAASExternalEndpointPrometheus(ctx, endpointID)
+	}, diagnostics, "error reading prometheus external endpoint")
+	if !found {
 		return false
 	}
 
