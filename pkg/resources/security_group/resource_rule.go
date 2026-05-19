@@ -420,21 +420,29 @@ func (r *ResourceRule) Create(
 		return
 	}
 
-	switch {
-	case !plan.StartPort.IsUnknown() && !plan.EndPort.IsUnknown():
-		ruleReq.StartPort = plan.StartPort.ValueInt64()
-		ruleReq.EndPort = plan.EndPort.ValueInt64()
-	case !plan.ICMPType.IsUnknown() && !plan.ICMPCode.IsUnknown():
-		ruleReq.ICMP = &exoscale.AddRuleToSecurityGroupRequestICMP{
-			Type: plan.ICMPType.ValueInt64Pointer(),
-			Code: plan.ICMPCode.ValueInt64Pointer(),
+	portlessProtocols := map[exoscale.AddRuleToSecurityGroupRequestProtocol]bool{
+		exoscale.AddRuleToSecurityGroupRequestProtocolAh:   true,
+		exoscale.AddRuleToSecurityGroupRequestProtocolEsp:  true,
+		exoscale.AddRuleToSecurityGroupRequestProtocolGre:  true,
+		exoscale.AddRuleToSecurityGroupRequestProtocolIpip: true,
+	}
+	if !portlessProtocols[ruleReq.Protocol] {
+		switch {
+		case !plan.StartPort.IsUnknown() && !plan.EndPort.IsUnknown():
+			ruleReq.StartPort = plan.StartPort.ValueInt64()
+			ruleReq.EndPort = plan.EndPort.ValueInt64()
+		case !plan.ICMPType.IsUnknown() && !plan.ICMPCode.IsUnknown():
+			ruleReq.ICMP = &exoscale.AddRuleToSecurityGroupRequestICMP{
+				Type: plan.ICMPType.ValueInt64Pointer(),
+				Code: plan.ICMPCode.ValueInt64Pointer(),
+			}
+		default:
+			resp.Diagnostics.AddError(
+				"missing required field",
+				"requires start_port/end_port or icmp_type/icmp_code",
+			)
+			return
 		}
-	default: // validation must prevent reaching here
-		resp.Diagnostics.AddError(
-			"missing required field",
-			"requires start_port/end_port or icmp_type/icmp_code",
-		)
-		return
 	}
 
 	op, err := r.client.AddRuleToSecurityGroup(
