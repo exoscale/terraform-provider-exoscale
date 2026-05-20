@@ -507,6 +507,16 @@ func rRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.D
 		return diag.FromErr(err)
 	}
 
+	// An instance deleted out-of-band keeps being returned by the API for a
+	// while in a terminal state before it starts answering 404. In that
+	// window most of its details (instance-type, template, ...) come back
+	// empty, so rApply would panic dereferencing them. Treat it as gone.
+	switch instance.State {
+	case v3.InstanceStateDestroying, v3.InstanceStateExpunging, v3.InstanceStateDestroyed:
+		d.SetId("")
+		return nil
+	}
+
 	tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
 		"id": utils.IDString(d, Name),
 	})

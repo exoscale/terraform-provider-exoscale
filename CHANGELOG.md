@@ -9,6 +9,7 @@ IMPROVEMENTS:
 BUG FIXES:
 
 - Fix SG resource schema version #526
+- instance: don't panic when reading an instance destroyed out-of-band #534
 
 ## 0.69.1
 
