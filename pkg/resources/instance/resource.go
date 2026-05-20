@@ -498,12 +498,12 @@ func rRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.D
 	}
 
 	instance, err := clientV3.GetInstance(ctx, v3.UUID(d.Id()))
+	if errors.Is(err, v3.ErrNotFound) || instance.ID == "" {
+		// Resource doesn't exist anymore, signaling the core to remove it from the state.
+		d.SetId("")
+		return nil
+	}
 	if err != nil {
-		if errors.Is(err, v3.ErrNotFound) {
-			// Resource doesn't exist anymore, signaling the core to remove it from the state.
-			d.SetId("")
-			return nil
-		}
 		return diag.FromErr(err)
 	}
 
