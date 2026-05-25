@@ -2,6 +2,7 @@ package exoscale
 
 import (
 	"context"
+	"errors"
 	"regexp"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -92,10 +93,11 @@ func dataSourceTemplateRead(ctx context.Context, d *schema.ResourceData, meta in
 	var err error
 	if byTemplateID {
 		template, err = client.GetTemplate(ctx, zone, templateID.(string))
-
 	} else {
-
 		template, err = client.GetTemplateByName(ctx, zone, templateName.(string), visibility)
+		if err != nil && errors.Is(err, exoapi.ErrNotFound) && visibility == "public" {
+			template, err = client.GetTemplateByName(ctx, zone, templateName.(string), "private")
+		}
 	}
 
 	if err != nil {

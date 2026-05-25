@@ -9,7 +9,8 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	v2 "github.com/exoscale/egoscale/v2"
+	v3 "github.com/exoscale/egoscale/v3"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/general"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/list"
 )
@@ -27,11 +28,11 @@ func dataSourceSKSNodepoolList() *schema.Resource {
 	return list.FilterableListDataSource(dsSKSNodepoolsListIdentifier, dsSKSNodepoolsListAttributeIdentifier, resSKSNodepoolAttrZone, getNodepoolList, nodepoolToDataMap, generateSKSNodepoolListID, dataSourceSKSNodepoolListGetElementScheme)
 }
 
-func generateSKSNodepoolListID(nodepools []*v2.SKSNodepool) string {
+func generateSKSNodepoolListID(nodepools []*v3.SKSNodepool) string {
 	ids := make([]string, 0, len(nodepools))
 
-	for _, cluster := range nodepools {
-		ids = append(ids, *cluster.ID)
+	for _, np := range nodepools {
+		ids = append(ids, np.ID.String())
 	}
 
 	sort.Strings(ids)
@@ -39,16 +40,28 @@ func generateSKSNodepoolListID(nodepools []*v2.SKSNodepool) string {
 	return fmt.Sprintf("%x", md5.Sum([]byte(strings.Join(ids, ""))))
 }
 
-func getNodepoolList(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*v2.SKSNodepool, error) {
-	clusters, err := getClusterList(ctx, d, meta)
+func getNodepoolList(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*v3.SKSNodepool, error) {
+	zone := d.Get(resSKSClusterAttrZone).(string)
+
+	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
+	defer cancel()
+
+	client, err := config.GetClientV3WithZone(ctx, meta, zone)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error getting client for zone %q: %s", zone, err)
 	}
 
-	var nodepools []*v2.SKSNodepool
+	resp, err := client.ListSKSClusters(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("error getting cluster list from zone %q: %s", zone, err)
+	}
 
-	for _, cluster := range clusters {
-		nodepools = append(nodepools, cluster.Nodepools...)
+	var nodepools []*v3.SKSNodepool
+	for ci := range resp.SKSClusters {
+		cluster := &resp.SKSClusters[ci]
+		for ni := range cluster.Nodepools {
+			nodepools = append(nodepools, &cluster.Nodepools[ni])
+		}
 	}
 
 	return nodepools, nil

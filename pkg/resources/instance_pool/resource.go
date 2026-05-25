@@ -153,9 +153,10 @@ func Resource() *schema.Resource {
 			Required:    true,
 		},
 		AttrUserData: {
-			Description: "[cloud-init](http://cloudinit.readthedocs.io/) configuration to apply to the managed instances.",
-			Type:        schema.TypeString,
-			Optional:    true,
+			Description:      "[cloud-init](http://cloudinit.readthedocs.io/) configuration to apply to the managed instances.",
+			Type:             schema.TypeString,
+			DiffSuppressFunc: utils.SuppressUserDataDiff,
+			Optional:         true,
 		},
 		AttrVirtualMachines: {
 			Description: "The list of managed instances (IDs). Please use the `instances.*.id` attribute instead.",

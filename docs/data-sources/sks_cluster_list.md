@@ -25,7 +25,9 @@ description: |-
 - `auto_upgrade` (Boolean) Match against this bool
 - `cni` (String) Match against this string. If you supply a string that begins and ends with a "/" it will be matched as a regex.
 - `control_plane_ca` (String) Match against this string. If you supply a string that begins and ends with a "/" it will be matched as a regex.
+- `create_default_security_group` (Boolean) Match against this bool
 - `created_at` (String) Match against this string. If you supply a string that begins and ends with a "/" it will be matched as a regex.
+- `default_security_group_id` (String) Match against this string. If you supply a string that begins and ends with a "/" it will be matched as a regex.
 - `description` (String) Match against this string. If you supply a string that begins and ends with a "/" it will be matched as a regex.
 - `enable_karpenter` (Boolean) Match against this bool
 - `enable_kube_proxy` (Boolean) Match against this bool
@@ -56,7 +58,9 @@ Read-Only:
 - `auto_upgrade` (Boolean)
 - `cni` (String)
 - `control_plane_ca` (String)
+- `create_default_security_group` (Boolean)
 - `created_at` (String)
+- `default_security_group_id` (String)
 - `description` (String)
 - `enable_karpenter` (Boolean)
 - `enable_kube_proxy` (Boolean)

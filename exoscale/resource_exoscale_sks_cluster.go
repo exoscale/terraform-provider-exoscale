@@ -26,40 +26,42 @@ const (
 	sksClusterAddonMS          = "metrics-server"
 	sksClusterAddonKarpenter   = "karpenter"
 
-	resSKSClusterAttrAddons             = "addons"
-	resSKSClusterAttrAggregationLayerCA = "aggregation_ca"
-	resSKSClusterAttrAuditBearerToken   = "bearer_token"
-	resSKSClusterAttrAuditEnabled       = "enabled"
-	resSKSClusterAttrAuditEndpoint      = "endpoint"
-	resSKSClusterAttrAuditInitBackoff   = "initial_backoff"
-	resSKSClusterAttrAutoUpgrade        = "auto_upgrade"
-	resSKSClusterAttrCNI                = "cni"
-	resSKSClusterAttrControlPlaneCA     = "control_plane_ca"
-	resSKSClusterAttrCreatedAt          = "created_at"
-	resSKSClusterAttrDescription        = "description"
-	resSKSClusterAttrEnableKubeProxy    = "enable_kube_proxy"
-	resSKSClusterAttrEnableKarpenter    = "enable_karpenter"
-	resSKSClusterAttrEndpoint           = "endpoint"
-	resSKSClusterAttrExoscaleCCM        = "exoscale_ccm"
-	resSKSClusterAttrExoscaleCSI        = "exoscale_csi"
-	resSKSClusterAttrFeatureGates       = "feature_gates"
-	resSKSClusterAttrKubeletCA          = "kubelet_ca"
-	resSKSClusterAttrLabels             = "labels"
-	resSKSClusterAttrMetricsServer      = "metrics_server"
-	resSKSClusterAttrID                 = "id"
-	resSKSClusterAttrName               = "name"
-	resSKSClusterAttrNodepools          = "nodepools"
-	resSKSClusterAttrOIDCClientID       = "client_id"
-	resSKSClusterAttrOIDCGroupsClaim    = "groups_claim"
-	resSKSClusterAttrOIDCGroupsPrefix   = "groups_prefix"
-	resSKSClusterAttrOIDCIssuerURL      = "issuer_url"
-	resSKSClusterAttrOIDCRequiredClaim  = "required_claim"
-	resSKSClusterAttrOIDCUsernameClaim  = "username_claim"
-	resSKSClusterAttrOIDCUsernamePrefix = "username_prefix"
-	resSKSClusterAttrServiceLevel       = "service_level"
-	resSKSClusterAttrState              = "state"
-	resSKSClusterAttrVersion            = "version"
-	resSKSClusterAttrZone               = "zone"
+	resSKSClusterAttrAddons                     = "addons"
+	resSKSClusterAttrAggregationLayerCA         = "aggregation_ca"
+	resSKSClusterAttrAuditBearerToken           = "bearer_token"
+	resSKSClusterAttrAuditEnabled               = "enabled"
+	resSKSClusterAttrAuditEndpoint              = "endpoint"
+	resSKSClusterAttrAuditInitBackoff           = "initial_backoff"
+	resSKSClusterAttrAutoUpgrade                = "auto_upgrade"
+	resSKSClusterAttrCNI                        = "cni"
+	resSKSClusterAttrControlPlaneCA             = "control_plane_ca"
+	resSKSClusterAttrCreatedAt                  = "created_at"
+	resSKSClusterAttrCreateDefaultSecurityGroup = "create_default_security_group"
+	resSKSClusterAttrDefaultSecurityGroupID     = "default_security_group_id"
+	resSKSClusterAttrDescription                = "description"
+	resSKSClusterAttrEnableKubeProxy            = "enable_kube_proxy"
+	resSKSClusterAttrEnableKarpenter            = "enable_karpenter"
+	resSKSClusterAttrEndpoint                   = "endpoint"
+	resSKSClusterAttrExoscaleCCM                = "exoscale_ccm"
+	resSKSClusterAttrExoscaleCSI                = "exoscale_csi"
+	resSKSClusterAttrFeatureGates               = "feature_gates"
+	resSKSClusterAttrKubeletCA                  = "kubelet_ca"
+	resSKSClusterAttrLabels                     = "labels"
+	resSKSClusterAttrMetricsServer              = "metrics_server"
+	resSKSClusterAttrID                         = "id"
+	resSKSClusterAttrName                       = "name"
+	resSKSClusterAttrNodepools                  = "nodepools"
+	resSKSClusterAttrOIDCClientID               = "client_id"
+	resSKSClusterAttrOIDCGroupsClaim            = "groups_claim"
+	resSKSClusterAttrOIDCGroupsPrefix           = "groups_prefix"
+	resSKSClusterAttrOIDCIssuerURL              = "issuer_url"
+	resSKSClusterAttrOIDCRequiredClaim          = "required_claim"
+	resSKSClusterAttrOIDCUsernameClaim          = "username_claim"
+	resSKSClusterAttrOIDCUsernamePrefix         = "username_prefix"
+	resSKSClusterAttrServiceLevel               = "service_level"
+	resSKSClusterAttrState                      = "state"
+	resSKSClusterAttrVersion                    = "version"
+	resSKSClusterAttrZone                       = "zone"
 )
 
 func resourceSKSClusterIDString(d general.ResourceIDStringer) string {
@@ -137,6 +139,17 @@ func resourceSKSCluster() *schema.Resource {
 			Type:        schema.TypeString,
 			Computed:    true,
 			Description: "The cluster creation date.",
+		},
+		resSKSClusterAttrCreateDefaultSecurityGroup: {
+			Type:        schema.TypeBool,
+			Optional:    true,
+			ForceNew:    true,
+			Description: "Creates an ad-hoc security group based on the choice of the selected CNI (may only be set at creation time).",
+		},
+		resSKSClusterAttrDefaultSecurityGroupID: {
+			Type:        schema.TypeString,
+			Computed:    true,
+			Description: "The ID of the cluster's ad-hoc default security group (when `create_default_security_group` was set at creation time).",
 		},
 		resSKSClusterAttrDescription: {
 			Type:        schema.TypeString,
@@ -357,6 +370,11 @@ func resourceSKSClusterCreate(ctx context.Context, d *schema.ResourceData, meta 
 	if !d.GetRawConfig().GetAttr(resSKSClusterAttrEnableKubeProxy).IsNull() {
 		v := d.Get(resSKSClusterAttrEnableKubeProxy).(bool)
 		createReq.EnableKubeProxy = &v
+	}
+
+	if !d.GetRawConfig().GetAttr(resSKSClusterAttrCreateDefaultSecurityGroup).IsNull() {
+		v := d.Get(resSKSClusterAttrCreateDefaultSecurityGroup).(bool)
+		createReq.CreateDefaultSecurityGroup = &v
 	}
 
 	featureGates := make([]string, 0)
@@ -824,6 +842,14 @@ func resourceSKSClusterApply(_ context.Context, d *schema.ResourceData, sksClust
 	}
 
 	if err := d.Set(resSKSClusterAttrCreatedAt, sksCluster.CreatedAT.String()); err != nil {
+		return err
+	}
+
+	defaultSGID := ""
+	if sksCluster.DefaultSecurityGroupID != nil {
+		defaultSGID = sksCluster.DefaultSecurityGroupID.String()
+	}
+	if err := d.Set(resSKSClusterAttrDefaultSecurityGroupID, defaultSGID); err != nil {
 		return err
 	}
 
