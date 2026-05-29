@@ -15,7 +15,7 @@ import (
 	"github.com/exoscale/terraform-provider-exoscale/pkg/provider"
 )
 
-//go:generate terraform fmt -recursive ./examples/
+//go:generate ./scripts/fmt.sh
 
 //go:generate go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs
 

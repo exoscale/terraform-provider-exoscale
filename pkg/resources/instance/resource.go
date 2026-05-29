@@ -177,7 +177,7 @@ func Resource() *schema.Resource {
 			Elem:        &schema.Schema{Type: schema.TypeString},
 		},
 		AttrState: {
-			Description: "The instance state (`running` or `stopped`; default: `running`).",
+			Description: "The instance state (`running` or `stopped`). If omitted, instance will start and reach `running` state.",
 			Type:        schema.TypeString,
 			Optional:    true,
 			Computed:    true,
