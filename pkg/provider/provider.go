@@ -41,7 +41,6 @@ const (
 	EnvironmentAttrName = "environment"
 	SOSEndpointAttrName = "sos_endpoint"
 	TimeoutAttrName     = "timeout"
-	DelayAttrName       = "delay"
 )
 
 var _ provider.Provider = &ExoscaleProvider{}
@@ -53,7 +52,6 @@ type ExoscaleProviderModel struct {
 	Secret      types.String  `tfsdk:"secret"`
 	Environment types.String  `tfsdk:"environment"`
 	Timeout     types.Float64 `tfsdk:"timeout"`
-	Delay       types.Int64   `tfsdk:"delay"`
 	SOSEndpoint types.String  `tfsdk:"sos_endpoint"`
 }
 
@@ -84,10 +82,6 @@ func (p *ExoscaleProvider) Schema(ctx context.Context, req provider.SchemaReques
 				MarkdownDescription: fmt.Sprintf(
 					"Timeout in seconds for waiting on compute resources to become available (by default: %.0f)",
 					config.DefaultTimeout.Seconds()),
-			},
-			DelayAttrName: schema.Int64Attribute{
-				Optional:           true,
-				DeprecationMessage: "Does nothing",
 			},
 		},
 	}

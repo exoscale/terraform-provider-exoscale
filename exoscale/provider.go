@@ -76,11 +76,6 @@ func Provider() *schema.Provider {
 					"Timeout in seconds for waiting on compute resources to become available (by default: %.0f)",
 					config.DefaultTimeout.Seconds()),
 			},
-			"delay": {
-				Type:       schema.TypeInt,
-				Optional:   true,
-				Deprecated: "Does nothing",
-			},
 		},
 
 		DataSourcesMap: map[string]*schema.Resource{
