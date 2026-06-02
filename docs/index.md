@@ -47,7 +47,6 @@ provider "exoscale" {
 
 ### Optional
 
-- `delay` (Number, Deprecated)
 - `environment` (String)
 - `key` (String) Exoscale API key
 - `secret` (String, Sensitive) Exoscale API secret

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+IMPROVEMENTS:
+
+- Removed deprecated and unused `delay` provider attribute
+
 ## 0.69.2
 
 IMPROVEMENTS:
