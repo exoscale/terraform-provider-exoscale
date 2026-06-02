@@ -42,11 +42,19 @@ directory for complete configuration examples.
 - `id` (String) The private network ID to match (conflicts with `name`).
 - `labels` (Map of String) A map of key/value labels.
 - `name` (String) The network name to match (conflicts with `id`).
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
 - `end_ip` (String) The first/last IPv4 addresses used by the DHCP service for dynamic leases.
 - `netmask` (String) The network mask defining the IPv4 network allowed for static leases.
 - `start_ip` (String) The first/last IPv4 addresses used by the DHCP service for dynamic leases.
+
+<a id="nestedblock--timeouts"></a>
+### Nested Schema for `timeouts`
+
+Optional:
+
+- `read` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
 
 
