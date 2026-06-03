@@ -4,7 +4,11 @@
 
 IMPROVEMENTS:
 
-- Removed deprecated and unused `delay` provider attribute
+- Removed deprecated and unused `delay` provider attribute #539
+
+DEPENDENCIES:
+
+- upgraded `golang/x/net` and related dependencies #540
 
 ## 0.69.2
 
