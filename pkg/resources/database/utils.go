@@ -400,12 +400,8 @@ func parseZonedImportID(id string) (resourceID, zone string, err error) {
 // Returns (result, true) on success, (nil, false) if the resource is gone
 // (no diagnostic added), or (nil, false) with a diagnostic on any other error.
 func pollEndpoint[T any](ctx context.Context, fetch func() (*T, error), diagnostics *diag.Diagnostics, errMsg string) (*T, bool) {
-	var (
-		result *T
-		err    error
-	)
 	for i := range 3 {
-		result, err = fetch()
+		result, err := fetch()
 		if err == nil {
 			return result, true
 		}
@@ -424,5 +420,5 @@ func pollEndpoint[T any](ctx context.Context, fetch func() (*T, error), diagnost
 		diagnostics.AddError("read", fmt.Sprintf("%s: %s", errMsg, err))
 		return nil, false
 	}
-	return result, true
+	return nil, false
 }

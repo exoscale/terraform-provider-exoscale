@@ -87,11 +87,17 @@ func (r *ExternalEndpointPrometheusResource) Schema(ctx context.Context, _ resou
 				MarkdownDescription: "Prometheus basic auth username (5-32 characters).",
 				Optional:            true,
 				Computed:            true,
+				Validators: []validator.String{
+					stringvalidator.LengthBetween(5, 32),
+				},
 			},
 			"basic_auth_password": schema.StringAttribute{
 				MarkdownDescription: "Prometheus basic auth password (8-64 characters). Not returned by the API after creation.",
 				Optional:            true,
 				Sensitive:           true,
+				Validators: []validator.String{
+					stringvalidator.LengthBetween(8, 64),
+				},
 			},
 		},
 		Blocks: map[string]schema.Block{
@@ -365,7 +371,7 @@ func readPrometheusEndpointIntoModel(ctx context.Context, client *v3.Client, dat
 	if endpoint.Settings != nil {
 		data.BasicAuthUsername = types.StringValue(endpoint.Settings.BasicAuthUsername)
 	} else {
-		data.BasicAuthUsername = types.StringValue("")
+		data.BasicAuthUsername = types.StringNull()
 	}
 	// BasicAuthPassword is write-only - not returned by API, preserve existing value
 	return true
