@@ -2,26 +2,28 @@ package testutils
 
 import (
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
 
 // DefaultLocalAccount is the substring matched against the account name in
-// ~/.config/exoscale/exoscale.toml when -account is not provided to `go test`.
+// the local exoscale.toml when -account is not provided to `go test`.
 const DefaultLocalAccount = "owner-production"
 
-// LoadLocalCreds reads an Exoscale account block from
-// $HOME/.config/exoscale/exoscale.toml whose name contains `account` and
-// exports its credentials to the test process via t.Setenv. Mirrors the helper
-// in exoscale/cli (PR #837) so the same exoscale.toml file works for both the
-// CLI and the provider's local acceptance runs.
+// LoadLocalCreds reads an Exoscale account block from the local exoscale.toml
+// whose name contains `account` and exports its credentials to the test
+// process via t.Setenv. The config file is resolved in the same order as the
+// CLI: $EXOSCALE_CONFIG if set, otherwise $UserConfigDir/exoscale/exoscale.toml
+// (e.g. ~/.config/exoscale/exoscale.toml on Linux,
+// ~/Library/Application Support/exoscale/exoscale.toml on macOS).
 //
 // Also sets TF_ACC=1 if unset, so `resource.Test()` (which gates on the env
 // var) runs without the caller having to remember to export it. A pre-set
 // TF_ACC is respected.
 //
-// Use only from `_test.go` files gated by `//go:build local_integration` —
-// never link this into CI.
+// Use only from `_test.go` files gated by `//go:build local_integration`.
+// Never link this into CI.
 func LoadLocalCreds(t *testing.T, account string) {
 	t.Helper()
 
@@ -33,7 +35,10 @@ func LoadLocalCreds(t *testing.T, account string) {
 		t.Setenv("TF_ACC", "1")
 	}
 
-	path := os.ExpandEnv("$HOME/.config/exoscale/exoscale.toml")
+	path, err := localConfigPath()
+	if err != nil {
+		t.Fatalf("LoadLocalCreds: %v", err)
+	}
 	toml, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatalf("LoadLocalCreds: read %s: %v", path, err)
@@ -71,4 +76,18 @@ func tomlStringValue(block, key string) string {
 		}
 	}
 	return ""
+}
+
+// localConfigPath returns the path to the local exoscale.toml. $EXOSCALE_CONFIG
+// overrides; otherwise it lives under os.UserConfigDir() so the path matches
+// the CLI's lookup on every platform.
+func localConfigPath() (string, error) {
+	if p := os.Getenv("EXOSCALE_CONFIG"); p != "" {
+		return p, nil
+	}
+	dir, err := os.UserConfigDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(dir, "exoscale", "exoscale.toml"), nil
 }
