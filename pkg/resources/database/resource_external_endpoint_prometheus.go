@@ -316,41 +316,8 @@ func (r *ExternalEndpointPrometheusResource) ImportState(ctx context.Context, re
 		return
 	}
 
-	var data ExternalEndpointPrometheusResourceModel
-	var t timeouts.Value
-	resp.Diagnostics.Append(resp.State.GetAttribute(ctx, path.Root("timeouts"), &t)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	data.Timeouts = t
-	data.ID = types.StringValue(endpointID)
-	data.Zone = types.StringValue(zone)
-
-	timeout, diags := data.Timeouts.Read(ctx, config.DefaultTimeout)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-	ctx, cancel := context.WithTimeout(ctx, timeout)
-	defer cancel()
-
-	client, err := utils.SwitchClientZone(ctx, r.client, v3.ZoneName(data.Zone.ValueString()))
-	if err != nil {
-		resp.Diagnostics.AddError("unable to change exoscale client zone", err.Error())
-		return
-	}
-
-	found := readPrometheusEndpointIntoModel(ctx, client, &data, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-	if !found {
-		resp.Diagnostics.AddError("import", "endpoint not found")
-		return
-	}
-
-	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), endpointID)...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("zone"), zone)...)
 }
 
 func readPrometheusEndpointIntoModel(ctx context.Context, client *v3.Client, data *ExternalEndpointPrometheusResourceModel, diagnostics *diag.Diagnostics) bool {
