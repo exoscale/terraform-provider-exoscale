@@ -238,7 +238,6 @@ func (r *ExternalIntegrationResource) Read(ctx context.Context, req resource.Rea
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-// Update is not needed; all mutable fields use RequiresReplace.
 func (r *ExternalIntegrationResource) Update(_ context.Context, _ resource.UpdateRequest, _ *resource.UpdateResponse) {
 }
 
