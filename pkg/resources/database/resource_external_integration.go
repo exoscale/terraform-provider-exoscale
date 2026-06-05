@@ -296,46 +296,8 @@ func (r *ExternalIntegrationResource) ImportState(ctx context.Context, req resou
 		return
 	}
 
-	var data ExternalIntegrationResourceModel
-	var t timeouts.Value
-	resp.Diagnostics.Append(resp.State.GetAttribute(ctx, path.Root("timeouts"), &t)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	data.Timeouts = t
-	data.ID = types.StringValue(integrationID)
-	data.Zone = types.StringValue(zone)
-
-	timeout, diags := data.Timeouts.Read(ctx, config.DefaultTimeout)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-	ctx, cancel := context.WithTimeout(ctx, timeout)
-	defer cancel()
-
-	client, err := utils.SwitchClientZone(ctx, r.client, v3.ZoneName(data.Zone.ValueString()))
-	if err != nil {
-		resp.Diagnostics.AddError("unable to change exoscale client zone", err.Error())
-		return
-	}
-
-	integrationUUID, err := v3.ParseUUID(data.ID.ValueString())
-	if err != nil {
-		resp.Diagnostics.AddError("parse ID", fmt.Sprintf("error parsing integration ID: %s", err))
-		return
-	}
-
-	integration, err := client.GetDBAASExternalIntegration(ctx, integrationUUID)
-	if err != nil {
-		resp.Diagnostics.AddError("read", fmt.Sprintf("error reading dbaas external integration: %s", err))
-		return
-	}
-
-	readIntegrationIntoModel(integration, &data)
-
-	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), integrationID)...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("zone"), zone)...)
 }
 
 func readIntegrationIntoModel(integration *v3.DBAASExternalIntegration, data *ExternalIntegrationResourceModel) {
