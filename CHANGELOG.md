@@ -5,7 +5,6 @@
 IMPROVEMENTS:
 
 - Removed deprecated and unused `delay` provider attribute #539
-- test: local-creds helper for acceptance runs #545
 
 BUG FIXES:
 
