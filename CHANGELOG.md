@@ -19,7 +19,7 @@ DEPENDENCIES:
 
 FEATURES:
 
-- feat(dbaas): add exoscale_dbaas_valkey_user resource #528
+- `dbaas`: add exoscale_dbaas_valkey_user resource #528
 
 ## 0.69.2
 
