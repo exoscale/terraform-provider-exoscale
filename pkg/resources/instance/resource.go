@@ -656,6 +656,13 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 					bid,
 				)
 				if err != nil {
+					// The volume was likely already deleted as part of its regular
+					// deletion process.
+					if errors.Is(err, v3.ErrNotFound) {
+						tflog.Info(ctx, "volume not found")
+						continue
+					}
+
 					// Ideally we would have a custom error defined in OpenAPI spec & egoscale.
 					// For now we just check the error text.
 					if strings.HasSuffix(err.Error(), "Volume not attached") {
