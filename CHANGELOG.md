@@ -5,14 +5,22 @@
 IMPROVEMENTS:
 
 - Removed deprecated and unused `delay` provider attribute #539
+- test: local-creds helper for acceptance runs #545
 
 BUG FIXES:
 
 - Block storage: handle BS volume deletion in instance update #546
+- fix(compute_instance): suppress user_data diffs for pre-encoded input #518
+- fix(security-group-rule): allow portless protocols (ESP, AH, GRE, IPIP) #531
+- fix(template): fall back to private visibility when name lookup returns not found #532
 
 DEPENDENCIES:
 
 - upgraded `golang/x/net` and related dependencies #540
+
+FEATURES:
+
+- feat(dbaas): add exoscale_dbaas_valkey_user resource #528
 
 ## 0.69.2
 
