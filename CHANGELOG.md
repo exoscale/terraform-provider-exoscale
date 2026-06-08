@@ -8,7 +8,7 @@ IMPROVEMENTS:
 
 BUG FIXES:
 
-- Block storage: handle BS volume deletion in instance update #546
+- `block_storage_volume`: handle BS volume deletion in instance update #546
 - `compute_instance`: suppress user_data diffs for pre-encoded input #518
 - `security_group_rule`: allow portless protocols (ESP, AH, GRE, IPIP) #531
 - `template`: fall back to private visibility when name lookup returns not found #532
