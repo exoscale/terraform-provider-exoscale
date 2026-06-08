@@ -6,6 +6,10 @@ IMPROVEMENTS:
 
 - Removed deprecated and unused `delay` provider attribute #539
 
+BUG FIXES:
+
+- Block storage: handle BS volume deletion in instance update #546
+
 DEPENDENCIES:
 
 - upgraded `golang/x/net` and related dependencies #540

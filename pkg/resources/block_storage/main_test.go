@@ -1,6 +1,8 @@
 package block_storage_test
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -8,7 +10,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
+	egoscale "github.com/exoscale/egoscale/v3"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/testutils"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
 )
 
 func TestBlockStorage(t *testing.T) {
@@ -342,4 +346,99 @@ func TestBlockStorage(t *testing.T) {
 			},
 		},
 	})
+}
+
+func TestBlockStorageDeleteAndDetach(t *testing.T) {
+	t.Parallel()
+
+	volumeResourceName := "exoscale_block_storage_volume.test_volume"
+	volumeDataSourceName := "data." + volumeResourceName
+	var volumeID string
+
+	testdataSpec := testutils.TestdataSpec{
+		ID:   time.Now().UnixNano(),
+		Zone: testutils.TestZoneName,
+	}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testutils.AccPreCheck(t) },
+		ProtoV6ProviderFactories: testutils.TestAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckBlockStorageVolumeDestroy(testdataSpec.Zone, &volumeID),
+		Steps: []resource.TestStep{
+			// 1 Create instance
+			{
+				Config: testutils.ParseTestdataConfig("./testdata/001.instance_create.tf.tmpl", &testdataSpec),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"exoscale_compute_instance.test_instance",
+						"name",
+						fmt.Sprintf("terraform-provider-test-%d", testdataSpec.ID),
+					),
+				),
+			},
+			// 2 Create and attach volume
+			{
+				Config: testutils.ParseTestdataConfig("./testdata/002.volume_create_attach.tf.tmpl", &testdataSpec),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrWith(volumeResourceName, "id", func(v string) error {
+						volumeID = v
+						return nil
+					}),
+					resource.TestCheckResourceAttr(
+						volumeResourceName,
+						"name",
+						fmt.Sprintf("terraform-provider-test-%d", testdataSpec.ID),
+					),
+					resource.TestCheckResourceAttr("exoscale_compute_instance.test_instance", "block_storage_volume_ids.#", "1"),
+					resource.TestCheckResourceAttr(volumeDataSourceName, "instance.%", "1"),
+					resource.TestCheckResourceAttrSet(volumeResourceName, "created_at"),
+					resource.TestCheckResourceAttrSet(volumeResourceName, "blocksize"),
+					resource.TestCheckResourceAttr(volumeDataSourceName, "size", "20"),
+					resource.TestCheckResourceAttr(volumeResourceName, "labels.%", "1"),
+					resource.TestCheckResourceAttr(volumeResourceName, "labels.foo1", "bar1"),
+					resource.TestCheckResourceAttr(volumeDataSourceName, "labels.%", "1"),
+					resource.TestCheckResourceAttr(volumeDataSourceName, "labels.foo1", "bar1"),
+					resource.TestCheckResourceAttrSet(volumeDataSourceName, "created_at"),
+					resource.TestCheckResourceAttrSet(volumeDataSourceName, "blocksize"),
+					resource.TestCheckResourceAttr(volumeDataSourceName, "state", "attached"),
+				),
+			},
+			// 3 Detach and delete volume, crucially, in the same step
+			{
+				Config: testutils.ParseTestdataConfig("./testdata/003.volume_detach_delete.tf.tmpl", &testdataSpec),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("exoscale_compute_instance.test_instance", "block_storage_volume_ids.#", "0"),
+				),
+			},
+		},
+	})
+}
+
+func testAccCheckBlockStorageVolumeDestroy(zone string, volumeID *string) resource.TestCheckFunc {
+	return func(_ *terraform.State) error {
+		if volumeID == nil || *volumeID == "" {
+			return errors.New("volume ID was not captured during the test")
+		}
+
+		defaultClient, err := testutils.APIClientV3()
+		if err != nil {
+			return fmt.Errorf("unable to initialize Exoscale client: %w", err)
+		}
+
+		ctx := context.Background()
+		client, err := utils.SwitchClientZone(ctx, defaultClient, egoscale.ZoneName(zone))
+		if err != nil {
+			return fmt.Errorf("unable to initialize Exoscale client: %w", err)
+		}
+
+		_, err = client.GetBlockStorageVolume(ctx, egoscale.UUID(*volumeID))
+		if err != nil {
+			if errors.Is(err, egoscale.ErrNotFound) {
+				return nil
+			}
+			return err
+		}
+
+		return errors.New("block storage volume still exists")
+	}
 }
