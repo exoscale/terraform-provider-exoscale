@@ -2,6 +2,7 @@ package exoscale
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"regexp"
@@ -192,7 +193,6 @@ func detachMatchingResource(
 	match func(*v3.Instance, v3.UUID) bool,
 	detach func(ctx context.Context, client *v3.Client, id v3.UUID, instance *v3.Instance) (*v3.Operation, error),
 ) diag.Diagnostics {
-
 	listInstancesResponse, err := client.ListInstances(ctx)
 	if err != nil {
 		return diag.FromErr(err)
@@ -201,6 +201,11 @@ func detachMatchingResource(
 	for _, listInst := range listInstancesResponse.Instances {
 		inst, err := client.GetInstance(ctx, listInst.ID)
 		if err != nil {
+			if errors.Is(err, v3.ErrNotFound) {
+				// The instance was removed between the ListInstance and GetInstance
+				// calls, so we can consider any resources to be detached.
+				continue
+			}
 			return diag.FromErr(err)
 		}
 

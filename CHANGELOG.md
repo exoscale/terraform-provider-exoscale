@@ -12,6 +12,7 @@ BUG FIXES:
 - `compute_instance`: suppress user_data diffs for pre-encoded input #518
 - `security_group_rule`: allow portless protocols (ESP, AH, GRE, IPIP) #531
 - `template`: fall back to private visibility when name lookup returns not found #532
+- `elastic_ip`: tolerate missing instance during detach #549
 
 DEPENDENCIES:
 
