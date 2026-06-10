@@ -19,7 +19,6 @@ import (
 )
 
 var (
-	testAccResourceSKSClusterLocalZone              = "ch-gva-2" // TODO: replace with testZoneName when blockstorage becomes available in all zones
 	testAccResourceSKSClusterLabelValue             = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceSKSClusterLabelValueUpdated      = testAccResourceSKSClusterLabelValue + "-updated"
 	testAccResourceSKSClusterName                   = acctest.RandomWithPrefix(testPrefix)
@@ -102,7 +101,7 @@ resource "exoscale_sks_nodepool" "test" {
   }
 }
 `,
-		testAccResourceSKSClusterLocalZone,
+		testZoneName,
 		testAccResourceSKSClusterName,
 		testAccResourceSKSClusterDescription,
 		testAccResourceSKSClusterLabelValue,
@@ -165,7 +164,7 @@ resource "exoscale_sks_nodepool" "test" {
   }
 }
 `,
-		testAccResourceSKSClusterLocalZone,
+		testZoneName,
 		testAccResourceSKSClusterNameUpdated,
 		testAccResourceSKSClusterDescriptionUpdated,
 		testAccResourceSKSClusterLabelValueUpdated,
@@ -222,7 +221,7 @@ resource "exoscale_sks_cluster" "test-with-audit" {
   }
 }
 `,
-		testAccResourceSKSClusterLocalZone,
+		testZoneName,
 		testAccResourceSKSClusterNameWithAudit,
 		testAccResourceSKSClusterDescription,
 		testAccResourceSKSClusterLabelValue,
@@ -256,7 +255,7 @@ resource "exoscale_sks_cluster" "test-with-audit" {
   }
 }
 `,
-		testAccResourceSKSClusterLocalZone,
+		testZoneName,
 		testAccResourceSKSClusterNameWithAudit,
 		testAccResourceSKSClusterDescription,
 		testAccResourceSKSClusterLabelValue,
@@ -289,7 +288,7 @@ resource "exoscale_sks_cluster" "test-with-audit" {
   }
 }
 `,
-		testAccResourceSKSClusterLocalZone,
+		testZoneName,
 		testAccResourceSKSClusterNameWithAudit,
 		testAccResourceSKSClusterDescription,
 		testAccResourceSKSClusterLabelValue,
@@ -320,7 +319,7 @@ resource "exoscale_sks_cluster" "test-with-karpenter" {
   }
 }
 `,
-		testAccResourceSKSClusterLocalZone,
+		testZoneName,
 		testAccResourceSKSClusterNameWithKarpenter,
 		testAccResourceSKSClusterDescription,
 		testAccResourceSKSClusterLabelValue,
@@ -349,7 +348,7 @@ resource "exoscale_sks_cluster" "test-with-karpenter" {
   }
 }
 `,
-		testAccResourceSKSClusterLocalZone,
+		testZoneName,
 		testAccResourceSKSClusterNameWithKarpenter,
 		testAccResourceSKSClusterDescription,
 		testAccResourceSKSClusterLabelValue,
@@ -378,7 +377,7 @@ resource "exoscale_sks_cluster" "test-with-karpenter" {
   }
 }
 `,
-		testAccResourceSKSClusterLocalZone,
+		testZoneName,
 		testAccResourceSKSClusterNameWithKarpenter,
 		testAccResourceSKSClusterDescription,
 		testAccResourceSKSClusterLabelValue,
@@ -501,7 +500,7 @@ func TestAccResourceSKSCluster(t *testing.T) {
 				ResourceName: r,
 				ImportStateIdFunc: func(sksCluster *egoscale.SKSCluster) resource.ImportStateIdFunc {
 					return func(*terraform.State) (string, error) {
-						return fmt.Sprintf("%s@%s", sksCluster.ID, testAccResourceSKSClusterLocalZone), nil
+						return fmt.Sprintf("%s@%s", sksCluster.ID, testZoneName), nil
 					}
 				}(&sksCluster),
 				ImportState:       true,
@@ -555,7 +554,7 @@ func TestAccResourceSKSCluster(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// Create old version cluster
-				Config: fmt.Sprintf(testAccResourceSKSClusterConfig2Format, testAccResourceSKSClusterLocalZone, testAccResourceSKSClusterName, versions[1]),
+				Config: fmt.Sprintf(testAccResourceSKSClusterConfig2Format, testZoneName, testAccResourceSKSClusterName, versions[1]),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckResourceSKSClusterExists(r, &sksCluster),
 					func(s *terraform.State) error {
@@ -575,7 +574,7 @@ func TestAccResourceSKSCluster(t *testing.T) {
 			},
 			{
 				// Upgrade cluster
-				Config: fmt.Sprintf(testAccResourceSKSClusterConfig2Format, testAccResourceSKSClusterLocalZone, testAccResourceSKSClusterName, versions[0]),
+				Config: fmt.Sprintf(testAccResourceSKSClusterConfig2Format, testZoneName, testAccResourceSKSClusterName, versions[0]),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckResourceSKSClusterExists(r, &sksCluster),
 					func(s *terraform.State) error {
@@ -876,7 +875,7 @@ func testGetSKSClusterVersions(t *testing.T) []string {
 	client, err := utils.SwitchClientZone(
 		ctx,
 		defaultClient,
-		egoscale.ZoneName(testAccResourceSKSClusterLocalZone),
+		egoscale.ZoneName(testZoneName),
 	)
 	if err != nil {
 		t.Fatalf("unable to initialize Exoscale client: %s", err)
@@ -913,7 +912,7 @@ func testAccCheckResourceSKSClusterExists(r string, sksCluster *egoscale.SKSClus
 		client, err := utils.SwitchClientZone(
 			ctx,
 			defaultClient,
-			egoscale.ZoneName(testAccResourceSKSClusterLocalZone),
+			egoscale.ZoneName(testZoneName),
 		)
 		if err != nil {
 			return fmt.Errorf("unable to initialize Exoscale client: %s", err)
@@ -939,7 +938,7 @@ func testAccCheckResourceSKSClusterDestroy(sksCluster *egoscale.SKSCluster) reso
 		client, err := utils.SwitchClientZone(
 			ctx,
 			defaultClient,
-			egoscale.ZoneName(testAccResourceSKSClusterLocalZone),
+			egoscale.ZoneName(testZoneName),
 		)
 		if err != nil {
 			return fmt.Errorf("unable to initialize Exoscale client: %s", err)

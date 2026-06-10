@@ -45,7 +45,7 @@ resource "exoscale_sks_kubeconfig" "test_admin" {
 	groups = ["%s"]
 }
 `,
-		testAccResourceSKSClusterLocalZone,
+		testZoneName,
 		testAccResourceSKSClusterNameKubeconfig,
 		testAccResourceSKSKubeconfigAttrTTLSeconds,
 		testAccResourceSKSKubeconfigAttrEarlyRenewalSeconds,
