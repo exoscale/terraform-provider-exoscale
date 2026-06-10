@@ -27,8 +27,8 @@ Corresponding resource: [exoscale_domain](../resources/domain.md).`,
 	}
 }
 
-func dataSourceDomainRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning read", map[string]interface{}{
+func dataSourceDomainRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning read", map[string]any{
 		"id": general.ResourceIDString(d, "exoscale_domain"),
 	})
 
@@ -61,7 +61,7 @@ func dataSourceDomainRead(ctx context.Context, d *schema.ResourceData, meta inte
 		return diag.FromErr(err)
 	}
 
-	tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "read finished successfully", map[string]any{
 		"id": general.ResourceIDString(d, "exoscale_domain"),
 	})
 

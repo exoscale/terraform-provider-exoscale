@@ -78,8 +78,8 @@ Corresponding resource: [exoscale_private_network](../resources/private_network.
 	}
 }
 
-func dataSourcePrivateNetworkRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning read", map[string]interface{}{
+func dataSourcePrivateNetworkRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning read", map[string]any{
 		"id": resourcePrivateNetworkIDString(d),
 	})
 
@@ -148,7 +148,7 @@ func dataSourcePrivateNetworkRead(ctx context.Context, d *schema.ResourceData, m
 		}
 	}
 
-	tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "read finished successfully", map[string]any{
 		"id": resourcePrivateNetworkIDString(d),
 	})
 

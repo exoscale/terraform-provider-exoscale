@@ -963,22 +963,22 @@ func TestAddonsSetToSlice(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		input    []interface{}
+		input    []any
 		expected []string
 	}{
 		{
 			name:     "empty set",
-			input:    []interface{}{},
+			input:    []any{},
 			expected: []string{},
 		},
 		{
 			name:     "single addon",
-			input:    []interface{}{"addon1"},
+			input:    []any{"addon1"},
 			expected: []string{"addon1"},
 		},
 		{
 			name:     "multiple addons",
-			input:    []interface{}{"addon1", "addon2", "addon3"},
+			input:    []any{"addon1", "addon2", "addon3"},
 			expected: []string{"addon1", "addon2", "addon3"},
 		},
 	}
@@ -1011,25 +1011,25 @@ func TestAppendAddonToSet(t *testing.T) {
 
 	tests := []struct {
 		name          string
-		initialAddons []interface{}
+		initialAddons []any
 		addonToAdd    string
 		expected      []string
 	}{
 		{
 			name:          "add to empty set",
-			initialAddons: []interface{}{},
+			initialAddons: []any{},
 			addonToAdd:    "new-addon",
 			expected:      []string{"new-addon"},
 		},
 		{
 			name:          "add to existing set",
-			initialAddons: []interface{}{"addon1", "addon2"},
+			initialAddons: []any{"addon1", "addon2"},
 			addonToAdd:    "addon3",
 			expected:      []string{"addon1", "addon2", "addon3"},
 		},
 		{
 			name:          "add duplicate addon",
-			initialAddons: []interface{}{"addon1", "addon2"},
+			initialAddons: []any{"addon1", "addon2"},
 			addonToAdd:    "addon1",
 			expected:      []string{"addon1", "addon2", "addon1"}, // Note: duplicates allowed in slice
 		},
@@ -1064,7 +1064,7 @@ func TestRemoveAddonFromSet(t *testing.T) {
 
 	tests := []struct {
 		name             string
-		initialAddons    []interface{}
+		initialAddons    []any
 		addonToRemove    string
 		expectedCount    int
 		shouldContain    []string
@@ -1072,7 +1072,7 @@ func TestRemoveAddonFromSet(t *testing.T) {
 	}{
 		{
 			name:             "remove from empty set",
-			initialAddons:    []interface{}{},
+			initialAddons:    []any{},
 			addonToRemove:    "addon1",
 			expectedCount:    0,
 			shouldContain:    []string{},
@@ -1080,7 +1080,7 @@ func TestRemoveAddonFromSet(t *testing.T) {
 		},
 		{
 			name:             "remove existing addon",
-			initialAddons:    []interface{}{"addon1", "addon2", "addon3"},
+			initialAddons:    []any{"addon1", "addon2", "addon3"},
 			addonToRemove:    "addon2",
 			expectedCount:    2,
 			shouldContain:    []string{"addon1", "addon3"},
@@ -1088,7 +1088,7 @@ func TestRemoveAddonFromSet(t *testing.T) {
 		},
 		{
 			name:             "remove non-existent addon",
-			initialAddons:    []interface{}{"addon1", "addon2"},
+			initialAddons:    []any{"addon1", "addon2"},
 			addonToRemove:    "addon3",
 			expectedCount:    2,
 			shouldContain:    []string{"addon1", "addon2"},
@@ -1096,7 +1096,7 @@ func TestRemoveAddonFromSet(t *testing.T) {
 		},
 		{
 			name:             "remove last addon",
-			initialAddons:    []interface{}{"addon1"},
+			initialAddons:    []any{"addon1"},
 			addonToRemove:    "addon1",
 			expectedCount:    0,
 			shouldContain:    []string{},

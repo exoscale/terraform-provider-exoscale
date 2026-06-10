@@ -12,7 +12,7 @@ func Test_validateString(t *testing.T) {
 
 	type args struct {
 		s    string
-		i    interface{}
+		i    any
 		path cty.Path
 	}
 
@@ -63,7 +63,7 @@ func Test_validatePortRange(t *testing.T) {
 	t.Parallel()
 
 	type args struct {
-		i interface{}
+		i any
 		k string
 	}
 
@@ -118,7 +118,7 @@ func Test_validateComputeInstanceType(t *testing.T) {
 	t.Parallel()
 
 	type args struct {
-		i    interface{}
+		i    any
 		path cty.Path
 	}
 

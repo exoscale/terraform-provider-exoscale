@@ -62,8 +62,8 @@ func resourceSSHKey() *schema.Resource {
 	}
 }
 
-func resourceSSHKeyCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning create", map[string]interface{}{
+func resourceSSHKeyCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning create", map[string]any{
 		"id": resourceSSHKeyIDString(d),
 	})
 
@@ -87,15 +87,15 @@ func resourceSSHKeyCreate(ctx context.Context, d *schema.ResourceData, meta inte
 
 	d.SetId(*sshKey.Name)
 
-	tflog.Debug(ctx, "create finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "create finished successfully", map[string]any{
 		"id": resourceSSHKeyIDString(d),
 	})
 
 	return resourceSSHKeyRead(ctx, d, meta)
 }
 
-func resourceSSHKeyRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning read", map[string]interface{}{
+func resourceSSHKeyRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning read", map[string]any{
 		"id": resourceSSHKeyIDString(d),
 	})
 
@@ -117,15 +117,15 @@ func resourceSSHKeyRead(ctx context.Context, d *schema.ResourceData, meta interf
 		return diag.FromErr(err)
 	}
 
-	tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "read finished successfully", map[string]any{
 		"id": resourceSSHKeyIDString(d),
 	})
 
 	return diag.FromErr(resourceSSHKeyApply(ctx, d, sshKey))
 }
 
-func resourceSSHKeyDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning delete", map[string]interface{}{
+func resourceSSHKeyDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning delete", map[string]any{
 		"id": resourceSSHKeyIDString(d),
 	})
 
@@ -141,7 +141,7 @@ func resourceSSHKeyDelete(ctx context.Context, d *schema.ResourceData, meta inte
 		return diag.FromErr(err)
 	}
 
-	tflog.Debug(ctx, "delete finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "delete finished successfully", map[string]any{
 		"id": resourceSSHKeyIDString(d),
 	})
 

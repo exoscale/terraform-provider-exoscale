@@ -144,8 +144,8 @@ Corresponding resource: [exoscale_elastic_ip](../resources/elastic_ip.md).`,
 	}
 }
 
-func dataSourceElasticIPRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning read", map[string]interface{}{
+func dataSourceElasticIPRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning read", map[string]any{
 		"id": resourceElasticIPIDString(d),
 	})
 
@@ -186,7 +186,7 @@ func dataSourceElasticIPRead(ctx context.Context, d *schema.ResourceData, meta i
 				return false
 			}
 
-			for searchKey, searchValue := range elasticIPLabels.(map[string]interface{}) {
+			for searchKey, searchValue := range elasticIPLabels.(map[string]any) {
 				v, ok := (*eip.Labels)[searchKey]
 				if !ok || v != searchValue {
 					return false
@@ -227,7 +227,7 @@ func dataSourceElasticIPRead(ctx context.Context, d *schema.ResourceData, meta i
 	}
 
 	if elasticIP.Healthcheck != nil {
-		elasticIPHealthcheck := map[string]interface{}{
+		elasticIPHealthcheck := map[string]any{
 			dsElasticIPAttrHealthcheckInterval:      elasticIP.Healthcheck.Interval.Seconds(),
 			dsElasticIPAttrHealthcheckMode:          *elasticIP.Healthcheck.Mode,
 			dsElasticIPAttrHealthcheckPort:          int(*elasticIP.Healthcheck.Port),
@@ -239,7 +239,7 @@ func dataSourceElasticIPRead(ctx context.Context, d *schema.ResourceData, meta i
 			dsElasticIPAttrHealthcheckURI:           defaultString(elasticIP.Healthcheck.URI, ""),
 		}
 
-		if err := d.Set("healthcheck", []interface{}{elasticIPHealthcheck}); err != nil {
+		if err := d.Set("healthcheck", []any{elasticIPHealthcheck}); err != nil {
 			return diag.FromErr(err)
 		}
 	}
@@ -262,7 +262,7 @@ func dataSourceElasticIPRead(ctx context.Context, d *schema.ResourceData, meta i
 		return diag.FromErr(err)
 	}
 
-	tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "read finished successfully", map[string]any{
 		"id": resourceElasticIPIDString(d),
 	})
 

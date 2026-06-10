@@ -112,9 +112,9 @@ func resourceDomainV0() *schema.Resource {
 
 func resourceDomainStateUpgradeV0(
 	ctx context.Context,
-	rawState map[string]interface{},
-	meta interface{},
-) (map[string]interface{}, error) {
+	rawState map[string]any,
+	meta any,
+) (map[string]any, error) {
 
 	client := getClient(meta)
 
@@ -134,8 +134,8 @@ func resourceDomainStateUpgradeV0(
 	return nil, fmt.Errorf("domain not found: %q", name)
 }
 
-func resourceDomainCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning create", map[string]interface{}{
+func resourceDomainCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning create", map[string]any{
 		"id": resourceDomainIDString(d),
 	})
 
@@ -175,7 +175,7 @@ func resourceDomainCreate(ctx context.Context, d *schema.ResourceData, meta inte
 
 	d.SetId(domain.ID.String())
 
-	tflog.Debug(ctx, "create finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "create finished successfully", map[string]any{
 		"id": resourceDomainIDString(d),
 	})
 
@@ -187,7 +187,7 @@ func resourceDomainCreate(ctx context.Context, d *schema.ResourceData, meta inte
 	return nil
 }
 
-func resourceDomainExists(d *schema.ResourceData, meta interface{}) (bool, error) {
+func resourceDomainExists(d *schema.ResourceData, meta any) (bool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
 	defer cancel()
 
@@ -207,8 +207,8 @@ func resourceDomainExists(d *schema.ResourceData, meta interface{}) (bool, error
 	return true, nil
 }
 
-func resourceDomainRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning read", map[string]interface{}{
+func resourceDomainRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning read", map[string]any{
 		"id": resourceDomainIDString(d),
 	})
 
@@ -225,7 +225,7 @@ func resourceDomainRead(ctx context.Context, d *schema.ResourceData, meta interf
 		return diag.Errorf("error retrieving domain: %s", err)
 	}
 
-	tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "read finished successfully", map[string]any{
 		"id": resourceDomainIDString(d),
 	})
 
@@ -237,8 +237,8 @@ func resourceDomainRead(ctx context.Context, d *schema.ResourceData, meta interf
 	return nil
 }
 
-func resourceDomainDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning delete", map[string]interface{}{
+func resourceDomainDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning delete", map[string]any{
 		"id": resourceDomainIDString(d),
 	})
 
@@ -264,14 +264,14 @@ func resourceDomainDelete(ctx context.Context, d *schema.ResourceData, meta inte
 		return diag.Errorf("error deleting domain: %s", err)
 	}
 
-	tflog.Debug(ctx, "delete finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "delete finished successfully", map[string]any{
 		"id": resourceDomainIDString(d),
 	})
 
 	return nil
 }
 
-func resourceDomainImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+func resourceDomainImport(ctx context.Context, d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
 	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
 	defer cancel()
 

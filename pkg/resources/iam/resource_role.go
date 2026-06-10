@@ -322,7 +322,7 @@ func (r *ResourceRole) Create(ctx context.Context, req resource.CreateRequest, r
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 
-	tflog.Trace(ctx, "resource created", map[string]interface{}{
+	tflog.Trace(ctx, "resource created", map[string]any{
 		"id": data.ID,
 	})
 }
@@ -360,7 +360,7 @@ func (r *ResourceRole) Read(ctx context.Context, req resource.ReadRequest, resp 
 		resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 	}
 
-	tflog.Trace(ctx, "resource read done", map[string]interface{}{
+	tflog.Trace(ctx, "resource read done", map[string]any{
 		"id": data.ID,
 	})
 }
@@ -517,7 +517,7 @@ func (r *ResourceRole) Update(ctx context.Context, req resource.UpdateRequest, r
 	// Update state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &stateData)...)
 
-	tflog.Trace(ctx, "resource updated", map[string]interface{}{
+	tflog.Trace(ctx, "resource updated", map[string]any{
 		"id": planData.ID,
 	})
 }
@@ -555,7 +555,7 @@ func (r *ResourceRole) Delete(ctx context.Context, req resource.DeleteRequest, r
 		return
 	}
 
-	tflog.Trace(ctx, "resource deleted", map[string]interface{}{
+	tflog.Trace(ctx, "resource deleted", map[string]any{
 		"id": data.ID,
 	})
 }
@@ -579,7 +579,7 @@ func (r *ResourceRole) ImportState(ctx context.Context, req resource.ImportState
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 
-	tflog.Trace(ctx, "resource imported", map[string]interface{}{
+	tflog.Trace(ctx, "resource imported", map[string]any{
 		"id": data.ID,
 	})
 }

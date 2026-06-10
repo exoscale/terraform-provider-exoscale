@@ -40,7 +40,7 @@ func generateSKSClusterListID(clusters []*v3.SKSCluster) string {
 	return fmt.Sprintf("%x", md5.Sum([]byte(strings.Join(ids, ""))))
 }
 
-func getClusterList(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*v3.SKSCluster, error) {
+func getClusterList(ctx context.Context, d *schema.ResourceData, meta any) ([]*v3.SKSCluster, error) {
 	zone := d.Get(resSKSClusterAttrZone).(string)
 
 	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))

@@ -98,8 +98,8 @@ func nodepoolToDataMap(nodepool *v3.SKSNodepool) general.TerraformObject {
 	return ret
 }
 
-func dataSourceSKSNodepoolRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning read", map[string]interface{}{
+func dataSourceSKSNodepoolRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning read", map[string]any{
 		"id": resourceSKSNodepoolIDString(d),
 	})
 

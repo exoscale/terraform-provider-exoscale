@@ -13,7 +13,7 @@ type NetworkInterface struct {
 	MacAddress string  `json:"mac_address"`
 }
 
-func NewNetworkInterface(raw interface{}) (*NetworkInterface, error) {
+func NewNetworkInterface(raw any) (*NetworkInterface, error) {
 	serializedRule, err := json.Marshal(raw)
 	if err != nil {
 		return nil, err
@@ -28,13 +28,13 @@ func NewNetworkInterface(raw interface{}) (*NetworkInterface, error) {
 	return &nif, nil
 }
 
-func (n NetworkInterface) ToInterface() (map[string]interface{}, error) {
+func (n NetworkInterface) ToInterface() (map[string]any, error) {
 	serialized, err := json.Marshal(n)
 	if err != nil {
 		return nil, err
 	}
 
-	var nif map[string]interface{}
+	var nif map[string]any
 	if err := json.Unmarshal(serialized, &nif); err != nil {
 		return nil, err
 	}

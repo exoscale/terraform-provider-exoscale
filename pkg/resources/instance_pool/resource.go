@@ -227,8 +227,8 @@ Corresponding data sources: [exoscale_instance_pool](../data-sources/instance_po
 	}
 }
 
-func rCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics { //nolint:gocyclo
-	tflog.Debug(ctx, "beginning create", map[string]interface{}{
+func rCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics { //nolint:gocyclo
+	tflog.Debug(ctx, "beginning create", map[string]any{
 		"id": utils.IDString(d, Name),
 	})
 
@@ -286,7 +286,7 @@ func rCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 
 	if l, ok := d.GetOk(AttrLabels); ok {
 		labels := make(map[string]string)
-		for k, v := range l.(map[string]interface{}) {
+		for k, v := range l.(map[string]any) {
 			labels[k] = v.(string)
 		}
 		createPoolRequest.Labels = labels
@@ -374,15 +374,15 @@ func rCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 
 	d.SetId(op.Reference.ID.String())
 
-	tflog.Debug(ctx, "create finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "create finished successfully", map[string]any{
 		"id": utils.IDString(d, Name),
 	})
 
 	return rRead(ctx, d, meta)
 }
 
-func rRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning read", map[string]interface{}{
+func rRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning read", map[string]any{
 		"id": utils.IDString(d, Name),
 	})
 
@@ -414,15 +414,15 @@ func rRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.D
 		return diag.FromErr(err)
 	}
 
-	tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "read finished successfully", map[string]any{
 		"id": utils.IDString(d, Name),
 	})
 
 	return rApply(ctx, client, d, pool)
 }
 
-func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning update", map[string]interface{}{
+func rUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning update", map[string]any{
 		"id": utils.IDString(d, Name),
 	})
 
@@ -523,7 +523,7 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 
 	if d.HasChange(AttrLabels) {
 		labels := make(map[string]string)
-		for k, v := range d.Get(AttrLabels).(map[string]interface{}) {
+		for k, v := range d.Get(AttrLabels).(map[string]any) {
 			labels[k] = v.(string)
 		}
 		updateRequest.Labels = labels
@@ -614,15 +614,15 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 		}
 	}
 
-	tflog.Debug(ctx, "update finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "update finished successfully", map[string]any{
 		"id": utils.IDString(d, Name),
 	})
 
 	return rRead(ctx, d, meta)
 }
 
-func rDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning delete", map[string]interface{}{
+func rDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning delete", map[string]any{
 		"id": utils.IDString(d, Name),
 	})
 
@@ -653,7 +653,7 @@ func rDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 		return diag.FromErr(err)
 	}
 
-	tflog.Debug(ctx, "delete finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "delete finished successfully", map[string]any{
 		"id": utils.IDString(d, Name),
 	})
 
@@ -784,7 +784,7 @@ func rApply(ctx context.Context, client *v3.Client, d *schema.ResourceData, pool
 
 	if pool.Instances != nil {
 		instanceIDs := make([]string, len(pool.Instances))
-		instanceDetails := make([]interface{}, len(pool.Instances))
+		instanceDetails := make([]any, len(pool.Instances))
 
 		for k, i := range pool.Instances {
 			instanceIDs[k] = i.ID.String()
@@ -810,8 +810,8 @@ func rApply(ctx context.Context, client *v3.Client, d *schema.ResourceData, pool
 	return nil
 }
 
-func computeInstanceToResource(instance *v3.Instance) interface{} {
-	c := make(map[string]interface{})
+func computeInstanceToResource(instance *v3.Instance) any {
+	c := make(map[string]any)
 	c[AttrInstanceID] = instance.ID
 	c[AttrInstanceIPv6Address] = instance.Ipv6Address
 	c[AttrInstanceName] = instance.Name

@@ -348,7 +348,7 @@ func (r *ServiceResource) updateValkey(ctx context.Context, stateData *ServiceRe
 	}
 
 	if !updated {
-		tflog.Info(ctx, "no updates detected", map[string]interface{}{})
+		tflog.Info(ctx, "no updates detected", map[string]any{})
 		return
 	}
 

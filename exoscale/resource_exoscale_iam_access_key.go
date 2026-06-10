@@ -151,8 +151,8 @@ func resourceIAMAccessKey() *schema.Resource {
 	}
 }
 
-func resourceIAMAccessKeyCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning create", map[string]interface{}{
+func resourceIAMAccessKeyCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning create", map[string]any{
 		"id": resourceIAMAccessKeyIDString(d),
 	})
 
@@ -212,15 +212,15 @@ func resourceIAMAccessKeyCreate(ctx context.Context, d *schema.ResourceData, met
 		return diag.FromErr(err)
 	}
 
-	tflog.Debug(ctx, "create finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "create finished successfully", map[string]any{
 		"id": resourceIAMAccessKeyIDString(d),
 	})
 
 	return resourceIAMAccessKeyRead(ctx, d, meta)
 }
 
-func resourceIAMAccessKeyRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning read", map[string]interface{}{
+func resourceIAMAccessKeyRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning read", map[string]any{
 		"id": resourceIAMAccessKeyIDString(d),
 	})
 
@@ -242,15 +242,15 @@ func resourceIAMAccessKeyRead(ctx context.Context, d *schema.ResourceData, meta 
 		return diag.FromErr(err)
 	}
 
-	tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "read finished successfully", map[string]any{
 		"id": resourceIAMAccessKeyIDString(d),
 	})
 
 	return diag.FromErr(resourceIAMAccessKeyApply(ctx, d, *accessKey, operations))
 }
 
-func resourceIAMAccessKeyDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning delete", map[string]interface{}{
+func resourceIAMAccessKeyDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning delete", map[string]any{
 		"id": resourceIAMAccessKeyIDString(d),
 	})
 
@@ -267,7 +267,7 @@ func resourceIAMAccessKeyDelete(ctx context.Context, d *schema.ResourceData, met
 		return diag.FromErr(err)
 	}
 
-	tflog.Debug(ctx, "delete finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "delete finished successfully", map[string]any{
 		"id": resourceIAMAccessKeyIDString(d),
 	})
 	return nil

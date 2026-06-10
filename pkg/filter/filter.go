@@ -29,10 +29,10 @@ func createMatchStringFunc(expected string) (matchStringFunc, error) {
 	}, nil
 }
 
-type FilterFunc = func(map[string]interface{}) bool
+type FilterFunc = func(map[string]any) bool
 
 func createEqualityFilter[T comparable](argIdentifier string, expected T) (FilterFunc, error) {
-	return func(data map[string]interface{}) bool {
+	return func(data map[string]any) bool {
 		attr, ok := data[argIdentifier]
 		if !ok {
 			return false
@@ -54,7 +54,7 @@ func createEqualityFilter[T comparable](argIdentifier string, expected T) (Filte
 }
 
 func createStringFilterFunc(filterAttribute string, match matchStringFunc) FilterFunc {
-	return func(data map[string]interface{}) bool {
+	return func(data map[string]any) bool {
 		attr, ok := data[filterAttribute]
 		if !ok {
 			return false
@@ -75,9 +75,9 @@ func createStringFilterFunc(filterAttribute string, match matchStringFunc) Filte
 	}
 }
 
-func createMapStrToStrFilterFunc(ctx context.Context, argIdentifier string, filterProp interface{}) (FilterFunc, error) {
+func createMapStrToStrFilterFunc(ctx context.Context, argIdentifier string, filterProp any) (FilterFunc, error) {
 	filters := make(map[string]matchStringFunc)
-	maps := filterProp.(map[string]interface{})
+	maps := filterProp.(map[string]any)
 	for k, v := range maps {
 		filter, err := createMatchStringFunc(v.(string))
 		if err != nil {
@@ -87,7 +87,7 @@ func createMapStrToStrFilterFunc(ctx context.Context, argIdentifier string, filt
 		filters[k] = filter
 	}
 
-	return func(data map[string]interface{}) bool {
+	return func(data map[string]any) bool {
 		mapAttr, ok := data[argIdentifier]
 		if !ok {
 			return false
@@ -180,7 +180,7 @@ func CreateFilters(ctx context.Context, d *schema.ResourceData, s map[string]*sc
 }
 
 // CheckForMatch returns true if all filters match on the given data.
-func CheckForMatch(data map[string]interface{}, filters []FilterFunc) bool {
+func CheckForMatch(data map[string]any, filters []FilterFunc) bool {
 	for _, filter := range filters {
 		if !filter(data) {
 			return false

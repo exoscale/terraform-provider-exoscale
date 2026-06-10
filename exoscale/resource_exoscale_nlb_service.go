@@ -166,7 +166,7 @@ func resourceNLBService() *schema.Resource {
 		DeleteContext: resourceNLBServiceDelete,
 
 		Importer: &schema.ResourceImporter{
-			StateContext: func(ctx context.Context, d *schema.ResourceData, _ interface{}) ([]*schema.ResourceData, error) {
+			StateContext: func(ctx context.Context, d *schema.ResourceData, _ any) ([]*schema.ResourceData, error) {
 				zonedRes, err := zonedStateContextFunc(ctx, d, nil)
 				if err != nil {
 					return nil, err
@@ -196,8 +196,8 @@ func resourceNLBService() *schema.Resource {
 	}
 }
 
-func resourceNLBServiceCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning create", map[string]interface{}{
+func resourceNLBServiceCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning create", map[string]any{
 		"id": resourceNLBServiceIDString(d),
 	})
 
@@ -214,7 +214,7 @@ func resourceNLBServiceCreate(ctx context.Context, d *schema.ResourceData, meta 
 		return diag.FromErr(err)
 	}
 
-	healthcheck := d.Get("healthcheck").(*schema.Set).List()[0].(map[string]interface{})
+	healthcheck := d.Get("healthcheck").(*schema.Set).List()[0].(map[string]any)
 	nlbServiceHealthcheck := new(egoscale.NetworkLoadBalancerServiceHealthcheck)
 
 	nlbServiceHealthcheckInterval := time.Duration(healthcheck[resNLBServiceAttrHealthcheckInterval].(int)) * time.Second
@@ -278,15 +278,15 @@ func resourceNLBServiceCreate(ctx context.Context, d *schema.ResourceData, meta 
 
 	d.SetId(*nlbService.ID)
 
-	tflog.Debug(ctx, "create finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "create finished successfully", map[string]any{
 		"id": resourceNLBServiceIDString(d),
 	})
 
 	return resourceNLBServiceRead(ctx, d, meta)
 }
 
-func resourceNLBServiceRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning read", map[string]interface{}{
+func resourceNLBServiceRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning read", map[string]any{
 		"id": resourceNLBServiceIDString(d),
 	})
 
@@ -321,15 +321,15 @@ func resourceNLBServiceRead(ctx context.Context, d *schema.ResourceData, meta in
 		return nil
 	}
 
-	tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "read finished successfully", map[string]any{
 		"id": resourceNLBServiceIDString(d),
 	})
 
 	return diag.FromErr(resourceNLBServiceApply(ctx, d, nlbService))
 }
 
-func resourceNLBServiceUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning update", map[string]interface{}{
+func resourceNLBServiceUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning update", map[string]any{
 		"id": resourceNLBServiceIDString(d),
 	})
 
@@ -396,7 +396,7 @@ func resourceNLBServiceUpdate(ctx context.Context, d *schema.ResourceData, meta 
 	}
 
 	if d.HasChange("healthcheck") {
-		healthcheck := d.Get("healthcheck").(*schema.Set).List()[0].(map[string]interface{})
+		healthcheck := d.Get("healthcheck").(*schema.Set).List()[0].(map[string]any)
 
 		nlbServiceHealthcheckInterval := time.Duration(healthcheck[resNLBServiceAttrHealthcheckInterval].(int)) * time.Second
 		nlbService.Healthcheck.Interval = &nlbServiceHealthcheckInterval
@@ -448,15 +448,15 @@ func resourceNLBServiceUpdate(ctx context.Context, d *schema.ResourceData, meta 
 		}
 	}
 
-	tflog.Debug(ctx, "update finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "update finished successfully", map[string]any{
 		"id": resourceNLBServiceIDString(d),
 	})
 
 	return resourceNLBServiceRead(ctx, d, meta)
 }
 
-func resourceNLBServiceDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning delete", map[string]interface{}{
+func resourceNLBServiceDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning delete", map[string]any{
 		"id": resourceNLBServiceIDString(d),
 	})
 
@@ -479,7 +479,7 @@ func resourceNLBServiceDelete(ctx context.Context, d *schema.ResourceData, meta 
 		return diag.FromErr(err)
 	}
 
-	tflog.Debug(ctx, "delete finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "delete finished successfully", map[string]any{
 		"id": resourceNLBServiceIDString(d),
 	})
 
@@ -496,8 +496,8 @@ func resourceNLBServiceApply(
 	}
 
 	healthcheck := d.Get(resNLBServiceAttrHealthcheck).(*schema.Set)
-	if err := d.Set(resNLBServiceAttrHealthcheck, schema.NewSet(healthcheck.F, []interface{}{
-		map[string]interface{}{
+	if err := d.Set(resNLBServiceAttrHealthcheck, schema.NewSet(healthcheck.F, []any{
+		map[string]any{
 			resNLBServiceAttrHealthcheckInterval: int(nlbService.Healthcheck.Interval.Seconds()),
 			resNLBServiceAttrHealthcheckMode:     *nlbService.Healthcheck.Mode,
 			resNLBServiceAttrHealthcheckPort:     int(*nlbService.Healthcheck.Port),

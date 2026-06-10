@@ -238,8 +238,8 @@ func Resource() *schema.Resource {
 	}
 }
 
-func rCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics { //nolint:gocyclo
-	tflog.Debug(ctx, "beginning create", map[string]interface{}{
+func rCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics { //nolint:gocyclo
+	tflog.Debug(ctx, "beginning create", map[string]any{
 		"id": utils.IDString(d, Name),
 	})
 
@@ -311,7 +311,7 @@ func rCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 
 	if l, ok := d.GetOk(AttrLabels); ok {
 		labels := make(map[string]string)
-		for k, v := range l.(map[string]interface{}) {
+		for k, v := range l.(map[string]any) {
 			labels[k] = v.(string)
 		}
 		instanceRequest.Labels = labels
@@ -475,15 +475,15 @@ func rCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 		}
 	}
 
-	tflog.Debug(ctx, "create finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "create finished successfully", map[string]any{
 		"id": utils.IDString(d, Name),
 	})
 
 	return rRead(ctx, d, meta)
 }
 
-func rRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning read", map[string]interface{}{
+func rRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning read", map[string]any{
 		"id": utils.IDString(d, Name),
 	})
 
@@ -507,15 +507,15 @@ func rRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.D
 		return diag.FromErr(err)
 	}
 
-	tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "read finished successfully", map[string]any{
 		"id": utils.IDString(d, Name),
 	})
 
 	return rApply(ctx, clientV3, d, instance)
 }
 
-func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics { //nolint:gocyclo
-	tflog.Debug(ctx, "beginning update", map[string]interface{}{
+func rUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics { //nolint:gocyclo
+	tflog.Debug(ctx, "beginning update", map[string]any{
 		"id": utils.IDString(d, Name),
 	})
 
@@ -547,7 +547,7 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 
 	if d.HasChange(AttrLabels) {
 		labels := make(map[string]string)
-		for k, v := range d.Get(AttrLabels).(map[string]interface{}) {
+		for k, v := range d.Get(AttrLabels).(map[string]any) {
 			labels[k] = v.(string)
 		}
 		instanceUpdateRequest.Labels = labels
@@ -713,7 +713,7 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 				)
 				if err != nil {
 					if errors.Is(err, v3.ErrNotFound) {
-						tflog.Debug(ctx, "ElasticIP already detached, ignoring", map[string]interface{}{
+						tflog.Debug(ctx, "ElasticIP already detached, ignoring", map[string]any{
 							"id": id.(string),
 						})
 						continue
@@ -723,7 +723,7 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 
 				if _, err = client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
 					if errors.Is(err, v3.ErrNotFound) {
-						tflog.Debug(ctx, "ElasticIP detach operation already gone, ignoring", map[string]interface{}{
+						tflog.Debug(ctx, "ElasticIP detach operation already gone, ignoring", map[string]any{
 							"id": id.(string),
 						})
 						continue
@@ -753,7 +753,7 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 				)
 				if err != nil {
 					if errors.Is(err, v3.ErrNotFound) {
-						tflog.Debug(ctx, "Private Network already detached, ignoring", map[string]interface{}{
+						tflog.Debug(ctx, "Private Network already detached, ignoring", map[string]any{
 							"id": nif.NetworkID,
 						})
 						continue
@@ -763,7 +763,7 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 
 				if _, err = client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
 					if errors.Is(err, v3.ErrNotFound) {
-						tflog.Debug(ctx, "Private Network detach operation already gone, ignoring", map[string]interface{}{
+						tflog.Debug(ctx, "Private Network detach operation already gone, ignoring", map[string]any{
 							"id": nif.NetworkID,
 						})
 						continue
@@ -828,7 +828,7 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 				)
 				if err != nil {
 					if errors.Is(err, v3.ErrNotFound) {
-						tflog.Debug(ctx, "Security Group already detached, ignoring", map[string]interface{}{
+						tflog.Debug(ctx, "Security Group already detached, ignoring", map[string]any{
 							"id": id.(string),
 						})
 						continue
@@ -838,7 +838,7 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 
 				if _, err = client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
 					if errors.Is(err, v3.ErrNotFound) {
-						tflog.Debug(ctx, "Security Group detach operation already gone, ignoring", map[string]interface{}{
+						tflog.Debug(ctx, "Security Group detach operation already gone, ignoring", map[string]any{
 							"id": id.(string),
 						})
 						continue
@@ -956,15 +956,15 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 		}
 	}
 
-	tflog.Debug(ctx, "update finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "update finished successfully", map[string]any{
 		"id": utils.IDString(d, Name),
 	})
 
 	return rRead(ctx, d, meta)
 }
 
-func rDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning delete", map[string]interface{}{
+func rDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning delete", map[string]any{
 		"id": utils.IDString(d, Name),
 	})
 
@@ -1008,7 +1008,7 @@ func rDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 		return diag.FromErr(err)
 	}
 
-	tflog.Debug(ctx, "delete finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "delete finished successfully", map[string]any{
 		"id": utils.IDString(d, Name),
 	})
 
@@ -1090,7 +1090,7 @@ func rApply( //nolint:gocyclo
 
 	if len(instance.PrivateNetworks) > 0 {
 		privateNetworkIDs := make([]string, len(instance.PrivateNetworks))
-		networkInterfaces := make([]map[string]interface{}, len(instance.PrivateNetworks))
+		networkInterfaces := make([]map[string]any, len(instance.PrivateNetworks))
 
 		for i, privnet := range instance.PrivateNetworks {
 			privateNetwork, err := clientV3.GetPrivateNetwork(ctx, privnet.ID)

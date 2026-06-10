@@ -6,7 +6,7 @@ import (
 )
 
 // Copy copies the value from from into to. The type of "from" must be convertible into the type of "to".
-func Copy(to, from interface{}) error {
+func Copy(to, from any) error {
 	tt := reflect.TypeOf(to)
 	tv := reflect.ValueOf(to)
 

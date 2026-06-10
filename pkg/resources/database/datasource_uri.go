@@ -288,7 +288,7 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 	data.Id = data.Name
 
 	var uri string
-	var params map[string]interface{}
+	var params map[string]any
 	var user string
 
 	switch data.Type.ValueString() {

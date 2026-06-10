@@ -137,7 +137,7 @@ func CreateClient(baseConfig *providerConfig.BaseConfig) (*exov2.Client, error) 
 		}()))
 }
 
-func ProviderConfigure(_ context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
+func ProviderConfigure(_ context.Context, d *schema.ResourceData) (any, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	// we only need to set UserAgent once, so lets do it right away.
@@ -238,7 +238,7 @@ func ProviderConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 		return nil, diag.FromErr(err)
 	}
 
-	return map[string]interface{}{
+	return map[string]any{
 			"config":       baseConfig,
 			"client":       clv2,
 			"clientV3":     clv3,
@@ -253,7 +253,7 @@ func ProviderConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 // to be suffixed with "@ZONE" (e.g. "c01af84d-6ac6-4784-98bb-127c98be8258@ch-gva-2").
 // Upon successful execution, the returned resource state contains the ID of the
 // resource and the "zone" attribute set to the value parsed from the import ID.
-func zonedStateContextFunc(_ context.Context, d *schema.ResourceData, _ interface{}) ([]*schema.ResourceData, error) {
+func zonedStateContextFunc(_ context.Context, d *schema.ResourceData, _ any) ([]*schema.ResourceData, error) {
 	parts := strings.SplitN(d.Id(), "@", 2)
 	if len(parts) != 2 {
 		return nil, fmt.Errorf(`invalid ID %q, expected format "<ID>@<ZONE>"`, d.Id())

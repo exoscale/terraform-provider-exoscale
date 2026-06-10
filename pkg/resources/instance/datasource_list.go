@@ -49,8 +49,8 @@ Corresponding resource: [exoscale_compute_instance](../resources/compute_instanc
 	return ret
 }
 
-func dsListRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning read", map[string]interface{}{
+func dsListRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning read", map[string]any{
 		"id": utils.IDString(d, NameList),
 	})
 
@@ -79,7 +79,7 @@ func dsListRead(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		return diag.FromErr(err)
 	}
 
-	data := make([]interface{}, 0, len(listInstancesResponse.Instances))
+	data := make([]any, 0, len(listInstancesResponse.Instances))
 	ids := make([]string, 0, len(listInstancesResponse.Instances))
 	instanceTypes := map[v3.UUID]string{}
 
@@ -189,7 +189,7 @@ func dsListRead(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 	d.SetId(fmt.Sprintf("%x", md5.Sum([]byte(strings.Join(ids, "")))))
 
-	tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "read finished successfully", map[string]any{
 		"id": utils.IDString(d, NameList),
 	})
 

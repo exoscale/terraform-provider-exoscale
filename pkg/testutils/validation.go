@@ -85,7 +85,7 @@ func CheckResourceStateValidateAttributes(want TestAttrs) TestResourceStateValid
 
 // ValidateString validates that the given field is a string and matches the expected value.
 func ValidateString(str string) schema.SchemaValidateDiagFunc {
-	return validation.ToDiagFunc(func(i interface{}, k string) (s []string, es []error) {
+	return validation.ToDiagFunc(func(i any, k string) (s []string, es []error) {
 		value, ok := i.(string)
 		if !ok {
 			es = append(es, fmt.Errorf("expected type of %s to be string", k))
@@ -102,7 +102,7 @@ func ValidateString(str string) schema.SchemaValidateDiagFunc {
 }
 
 // ValidatePortRange validates that the given field contains a port range.
-func ValidatePortRange(i interface{}, k string) (s []string, es []error) {
+func ValidatePortRange(i any, k string) (s []string, es []error) {
 	value, ok := i.(string)
 	if !ok {
 		es = append(es, fmt.Errorf("expected type of %s to be string", k))
@@ -141,7 +141,7 @@ func ValidatePortRange(i interface{}, k string) (s []string, es []error) {
 }
 
 // ValidateComputeInstanceType validates that the given field contains a valid Exoscale Compute instance type.
-func ValidateComputeInstanceType(v interface{}, _ cty.Path) diag.Diagnostics {
+func ValidateComputeInstanceType(v any, _ cty.Path) diag.Diagnostics {
 	value, ok := v.(string)
 	if !ok {
 		return diag.Errorf("expected field %q type to be string", v)
@@ -155,7 +155,7 @@ func ValidateComputeInstanceType(v interface{}, _ cty.Path) diag.Diagnostics {
 }
 
 // ValidateComputeUserData validates that the given field contains a valid data.
-func ValidateComputeUserData(v interface{}, _ cty.Path) diag.Diagnostics {
+func ValidateComputeUserData(v any, _ cty.Path) diag.Diagnostics {
 	value, ok := v.(string)
 	if !ok {
 		return diag.Errorf("expected field %q type to be string", v)

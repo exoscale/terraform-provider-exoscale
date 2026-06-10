@@ -259,7 +259,7 @@ func testAccCheckResourceDomainRecordStateUpgradeV1(nd, nr string) resource.Test
 
 		upgraded, err := resourceDomainRecordStateUpgradeV0(
 			context.TODO(),
-			map[string]interface{}{
+			map[string]any{
 				"id":          "123456",
 				"domain":      testAccResourceDomainRecordDomainName,
 				"record_type": testAccResourceDomainRecordType,
