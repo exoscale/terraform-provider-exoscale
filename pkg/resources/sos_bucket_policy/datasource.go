@@ -148,7 +148,7 @@ func (d *DataSourceSOSBucketPolicy) Read(ctx context.Context, req datasource.Rea
 	// Save updated state into Terraform state.
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 
-	tflog.Trace(ctx, "datasource read done", map[string]interface{}{
+	tflog.Trace(ctx, "datasource read done", map[string]any{
 		AttrBucket: plan.Bucket,
 	})
 }

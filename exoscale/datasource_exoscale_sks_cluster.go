@@ -80,8 +80,8 @@ func clusterToDataMap(cluster *v3.SKSCluster) general.TerraformObject {
 	return ret
 }
 
-func dataSourceSKSClusterRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning read", map[string]interface{}{
+func dataSourceSKSClusterRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning read", map[string]any{
 		"id": resourceSKSClusterIDString(d),
 	})
 

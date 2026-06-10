@@ -100,8 +100,8 @@ func resourceNLB() *schema.Resource {
 	}
 }
 
-func resourceNLBCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning create", map[string]interface{}{
+func resourceNLBCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning create", map[string]any{
 		"id": resourceNLBIDString(d),
 	})
 
@@ -117,7 +117,7 @@ func resourceNLBCreate(ctx context.Context, d *schema.ResourceData, meta interfa
 
 	if l, ok := d.GetOk(resNLBAttrLabels); ok {
 		labels := make(map[string]string)
-		for k, v := range l.(map[string]interface{}) {
+		for k, v := range l.(map[string]any) {
 			labels[k] = v.(string)
 		}
 		nlb.Labels = &labels
@@ -138,15 +138,15 @@ func resourceNLBCreate(ctx context.Context, d *schema.ResourceData, meta interfa
 
 	d.SetId(*nlb.ID)
 
-	tflog.Debug(ctx, "create finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "create finished successfully", map[string]any{
 		"id": resourceNLBIDString(d),
 	})
 
 	return resourceNLBRead(ctx, d, meta)
 }
 
-func resourceNLBRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning read", map[string]interface{}{
+func resourceNLBRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning read", map[string]any{
 		"id": resourceNLBIDString(d),
 	})
 
@@ -168,15 +168,15 @@ func resourceNLBRead(ctx context.Context, d *schema.ResourceData, meta interface
 		return diag.FromErr(err)
 	}
 
-	tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "read finished successfully", map[string]any{
 		"id": resourceNLBIDString(d),
 	})
 
 	return diag.FromErr(resourceNLBApply(ctx, d, nlb))
 }
 
-func resourceNLBUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning update", map[string]interface{}{
+func resourceNLBUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning update", map[string]any{
 		"id": resourceNLBIDString(d),
 	})
 
@@ -197,7 +197,7 @@ func resourceNLBUpdate(ctx context.Context, d *schema.ResourceData, meta interfa
 
 	if d.HasChange(resNLBAttrLabels) {
 		labels := make(map[string]string)
-		for k, v := range d.Get(resNLBAttrLabels).(map[string]interface{}) {
+		for k, v := range d.Get(resNLBAttrLabels).(map[string]any) {
 			labels[k] = v.(string)
 		}
 		nlb.Labels = &labels
@@ -222,15 +222,15 @@ func resourceNLBUpdate(ctx context.Context, d *schema.ResourceData, meta interfa
 		}
 	}
 
-	tflog.Debug(ctx, "update finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "update finished successfully", map[string]any{
 		"id": resourceNLBIDString(d),
 	})
 
 	return resourceNLBRead(ctx, d, meta)
 }
 
-func resourceNLBDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning delete", map[string]interface{}{
+func resourceNLBDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning delete", map[string]any{
 		"id": resourceNLBIDString(d),
 	})
 
@@ -248,7 +248,7 @@ func resourceNLBDelete(ctx context.Context, d *schema.ResourceData, meta interfa
 		return diag.FromErr(err)
 	}
 
-	tflog.Debug(ctx, "delete finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "delete finished successfully", map[string]any{
 		"id": resourceNLBIDString(d),
 	})
 

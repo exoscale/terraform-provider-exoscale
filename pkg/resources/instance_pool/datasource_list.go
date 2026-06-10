@@ -42,8 +42,8 @@ Corresponding resource: [exoscale_instance_pool](../resources/instance_pool.md).
 	}
 }
 
-func dsListRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning read", map[string]interface{}{
+func dsListRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning read", map[string]any{
 		"id": utils.IDString(d, NameList),
 	})
 
@@ -73,7 +73,7 @@ func dsListRead(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	}
 	pools := poolResponse.InstancePools
 
-	data := make([]interface{}, 0, len(pools))
+	data := make([]any, 0, len(pools))
 	ids := make([]string, 0, len(pools))
 	instanceTypes := map[string]string{}
 
@@ -119,7 +119,7 @@ func dsListRead(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 		}
 
 		if pool.Instances != nil {
-			instancesData := make([]interface{}, len(pool.Instances))
+			instancesData := make([]any, len(pool.Instances))
 			for k, i := range pool.Instances {
 				instance, err := client.GetInstance(ctx, i.ID)
 				if err != nil {
@@ -134,7 +134,7 @@ func dsListRead(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 					publicIp = instance.PublicIP.String()
 				}
 
-				instancesData[k] = map[string]interface{}{
+				instancesData[k] = map[string]any{
 					AttrInstanceID:              i.ID,
 					AttrInstanceIPv6Address:     ipv6,
 					AttrInstanceName:            instance.Name,
@@ -159,7 +159,7 @@ func dsListRead(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 	d.SetId(fmt.Sprintf("%x", md5.Sum([]byte(strings.Join(ids, "")))))
 
-	tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "read finished successfully", map[string]any{
 		"id": utils.IDString(d, NameList),
 	})
 

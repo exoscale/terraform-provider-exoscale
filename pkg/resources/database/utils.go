@@ -27,8 +27,8 @@ const SERVICE_READY_DELAY = time.Second * 10
 
 // validateSettings validates user-provided JSON-formatted
 // Database Service settings against a reference JSON Schema.
-func validateSettings(in string, schema interface{}) (map[string]interface{}, error) {
-	var userSettings map[string]interface{}
+func validateSettings(in string, schema any) (map[string]any, error) {
+	var userSettings map[string]any
 
 	if err := json.Unmarshal([]byte(in), &userSettings); err != nil {
 		return nil, fmt.Errorf("unable to unmarshal JSON: %w", err)
@@ -86,7 +86,7 @@ func parseBackupSchedule(v string) (int64, int64, error) {
 
 // PartialSettingsPatch updates all keys in `data` that exist in `patch`.
 // If key from `data` is not present in `patch` then removes the key from `data`.
-func PartialSettingsPatch(data, patch map[string]interface{}) {
+func PartialSettingsPatch(data, patch map[string]any) {
 	for key := range data {
 		if v, found := patch[key]; found {
 			data[key] = v
@@ -97,7 +97,7 @@ func PartialSettingsPatch(data, patch map[string]interface{}) {
 }
 
 // getSettingFloat64 safely retrieves a float64 value from settings map and converts to int
-func getSettingFloat64(settings map[string]interface{}, key string) int {
+func getSettingFloat64(settings map[string]any, key string) int {
 	if val, ok := settings[key]; ok && val != nil {
 		if fVal, ok := val.(float64); ok {
 			return int(fVal)
@@ -107,7 +107,7 @@ func getSettingFloat64(settings map[string]interface{}, key string) int {
 }
 
 // getSettingString safely retrieves a string value from settings map
-func getSettingString(settings map[string]interface{}, key string) string {
+func getSettingString(settings map[string]any, key string) string {
 	if val, ok := settings[key]; ok && val != nil {
 		if sVal, ok := val.(string); ok {
 			return sVal
@@ -117,7 +117,7 @@ func getSettingString(settings map[string]interface{}, key string) string {
 }
 
 // getSettingBool safely retrieves a bool value from settings map
-func getSettingBool(settings map[string]interface{}, key string) bool {
+func getSettingBool(settings map[string]any, key string) bool {
 	if val, ok := settings[key]; ok && val != nil {
 		if bVal, ok := val.(bool); ok {
 			return bVal
@@ -198,7 +198,7 @@ func ReadResource[T ResourceModelInterface](ctx context.Context, req resource.Re
 		resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 	}
 
-	tflog.Trace(ctx, "resource read done", map[string]interface{}{
+	tflog.Trace(ctx, "resource read done", map[string]any{
 		"id": data.GetID(),
 	})
 
@@ -239,7 +239,7 @@ func ReadResourceForImport[T ResourceModelInterface](ctx context.Context, req re
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 
-	tflog.Trace(ctx, "resource read done", map[string]interface{}{
+	tflog.Trace(ctx, "resource read done", map[string]any{
 		"id": data.GetID(),
 	})
 
@@ -290,7 +290,7 @@ func CreateResource[T ResourceModelInterface](ctx context.Context, req resource.
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 
-	tflog.Trace(ctx, "resource created", map[string]interface{}{
+	tflog.Trace(ctx, "resource created", map[string]any{
 		"id": data.GetID(),
 	})
 
@@ -337,7 +337,7 @@ func UpdateResource[T ResourceModelInterface](ctx context.Context, req resource.
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &planData)...)
 
-	tflog.Trace(ctx, "resource updated", map[string]interface{}{
+	tflog.Trace(ctx, "resource updated", map[string]any{
 		"id": planData.GetID(),
 	})
 }
@@ -380,7 +380,7 @@ func DeleteResource[T ResourceModelInterface](ctx context.Context, req resource.
 		return
 	}
 
-	tflog.Trace(ctx, "resource deleted", map[string]interface{}{
+	tflog.Trace(ctx, "resource deleted", map[string]any{
 		"id": data.GetID(),
 	})
 

@@ -323,8 +323,8 @@ func resourceSKSCluster() *schema.Resource {
 	}
 }
 
-func resourceSKSClusterCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning create", map[string]interface{}{
+func resourceSKSClusterCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning create", map[string]any{
 		"id": resourceSKSClusterIDString(d),
 	})
 
@@ -398,7 +398,7 @@ func resourceSKSClusterCreate(ctx context.Context, d *schema.ResourceData, meta 
 
 	if l, ok := d.GetOk(resSKSClusterAttrLabels); ok {
 		labels := make(map[string]string)
-		for k, v := range l.(map[string]interface{}) {
+		for k, v := range l.(map[string]any) {
 			labels[k] = v.(string)
 		}
 		createReq.Labels = labels
@@ -465,7 +465,7 @@ func resourceSKSClusterCreate(ctx context.Context, d *schema.ResourceData, meta 
 
 		if c, ok := d.GetOk(resSKSClusterAttrOIDC(resSKSClusterAttrOIDCRequiredClaim)); ok {
 			claims := make(map[string]string)
-			for k, v := range c.(map[string]interface{}) {
+			for k, v := range c.(map[string]any) {
 				claims[k] = v.(string)
 			}
 			createReq.Oidc.RequiredClaim = claims
@@ -492,15 +492,15 @@ func resourceSKSClusterCreate(ctx context.Context, d *schema.ResourceData, meta 
 
 	d.SetId(string(op.Reference.ID))
 
-	tflog.Debug(ctx, "create finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "create finished successfully", map[string]any{
 		"id": resourceSKSClusterIDString(d),
 	})
 
 	return resourceSKSClusterRead(ctx, d, meta)
 }
 
-func resourceSKSClusterRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning read", map[string]interface{}{
+func resourceSKSClusterRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning read", map[string]any{
 		"id": resourceSKSClusterIDString(d),
 	})
 
@@ -524,7 +524,7 @@ func resourceSKSClusterRead(ctx context.Context, d *schema.ResourceData, meta in
 		return diag.FromErr(err)
 	}
 
-	tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "read finished successfully", map[string]any{
 		"id": resourceSKSClusterIDString(d),
 	})
 
@@ -580,8 +580,8 @@ func await(ctx context.Context, client *v3.Client) func(op *v3.Operation, err er
 	}
 }
 
-func resourceSKSClusterUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning update", map[string]interface{}{
+func resourceSKSClusterUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning update", map[string]any{
 		"id": resourceSKSClusterIDString(d),
 	})
 
@@ -624,7 +624,7 @@ func resourceSKSClusterUpdate(ctx context.Context, d *schema.ResourceData, meta 
 
 	if d.HasChange(resSKSClusterAttrLabels) {
 		labels := make(map[string]string)
-		for k, v := range d.Get(resSKSClusterAttrLabels).(map[string]interface{}) {
+		for k, v := range d.Get(resSKSClusterAttrLabels).(map[string]any) {
 			labels[k] = v.(string)
 		}
 		updateReq.Labels = labels
@@ -728,7 +728,7 @@ func resourceSKSClusterUpdate(ctx context.Context, d *schema.ResourceData, meta 
 
 		if c, ok := d.GetOk(resSKSClusterAttrOIDC(resSKSClusterAttrOIDCRequiredClaim)); ok {
 			claims := make(map[string]string)
-			for k, v := range c.(map[string]interface{}) {
+			for k, v := range c.(map[string]any) {
 				claims[k] = v.(string)
 			}
 			updateReq.Oidc.RequiredClaim = claims
@@ -772,15 +772,15 @@ func resourceSKSClusterUpdate(ctx context.Context, d *schema.ResourceData, meta 
 		}
 	}
 
-	tflog.Debug(ctx, "update finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "update finished successfully", map[string]any{
 		"id": resourceSKSClusterIDString(d),
 	})
 
 	return resourceSKSClusterRead(ctx, d, meta)
 }
 
-func resourceSKSClusterDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning delete", map[string]interface{}{
+func resourceSKSClusterDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning delete", map[string]any{
 		"id": resourceSKSClusterIDString(d),
 	})
 
@@ -799,7 +799,7 @@ func resourceSKSClusterDelete(ctx context.Context, d *schema.ResourceData, meta 
 		return diag.FromErr(err)
 	}
 
-	tflog.Debug(ctx, "delete finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "delete finished successfully", map[string]any{
 		"id": resourceSKSClusterIDString(d),
 	})
 

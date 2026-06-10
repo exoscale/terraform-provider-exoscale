@@ -178,8 +178,8 @@ func resourceElasticIP() *schema.Resource {
 	}
 }
 
-func resourceElasticIPCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning create", map[string]interface{}{
+func resourceElasticIPCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning create", map[string]any{
 		"id": resourceElasticIPIDString(d),
 	})
 
@@ -207,7 +207,7 @@ func resourceElasticIPCreate(ctx context.Context, d *schema.ResourceData, meta i
 
 	if l, ok := d.GetOk(resElasticIPAttrLabels); ok {
 		labels := make(map[string]string)
-		for k, v := range l.(map[string]interface{}) {
+		for k, v := range l.(map[string]any) {
 			labels[k] = v.(string)
 		}
 		elasticIP.Labels = &labels
@@ -278,15 +278,15 @@ func resourceElasticIPCreate(ctx context.Context, d *schema.ResourceData, meta i
 		}
 	}
 
-	tflog.Debug(ctx, "create finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "create finished successfully", map[string]any{
 		"id": resourceElasticIPIDString(d),
 	})
 
 	return resourceElasticIPRead(ctx, d, meta)
 }
 
-func resourceElasticIPRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning read", map[string]interface{}{
+func resourceElasticIPRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning read", map[string]any{
 		"id": resourceElasticIPIDString(d),
 	})
 
@@ -308,15 +308,15 @@ func resourceElasticIPRead(ctx context.Context, d *schema.ResourceData, meta int
 		return diag.FromErr(err)
 	}
 
-	tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "read finished successfully", map[string]any{
 		"id": resourceElasticIPIDString(d),
 	})
 
 	return resourceElasticIPApply(ctx, client, d, elasticIP)
 }
 
-func resourceElasticIPUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning update", map[string]interface{}{
+func resourceElasticIPUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning update", map[string]any{
 		"id": resourceElasticIPIDString(d),
 	})
 
@@ -337,7 +337,7 @@ func resourceElasticIPUpdate(ctx context.Context, d *schema.ResourceData, meta i
 
 	if d.HasChange(resElasticIPAttrLabels) {
 		labels := make(map[string]string)
-		for k, v := range d.Get(resElasticIPAttrLabels).(map[string]interface{}) {
+		for k, v := range d.Get(resElasticIPAttrLabels).(map[string]any) {
 			labels[k] = v.(string)
 		}
 		elasticIP.Labels = &labels
@@ -431,7 +431,7 @@ func resourceElasticIPUpdate(ctx context.Context, d *schema.ResourceData, meta i
 		}
 	}
 
-	tflog.Debug(ctx, "update finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "update finished successfully", map[string]any{
 		"id": resourceElasticIPIDString(d),
 	})
 
@@ -457,8 +457,8 @@ func detachElasticIP(ctx context.Context, client *v3.Client, id v3.UUID, inst *v
 	)
 }
 
-func resourceElasticIPDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning delete", map[string]interface{}{
+func resourceElasticIPDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning delete", map[string]any{
 		"id": resourceElasticIPIDString(d),
 	})
 
@@ -496,7 +496,7 @@ func resourceElasticIPDelete(ctx context.Context, d *schema.ResourceData, meta i
 		return diag.FromErr(err)
 	}
 
-	tflog.Debug(ctx, "delete finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "delete finished successfully", map[string]any{
 		"id": resourceElasticIPIDString(d),
 	})
 
@@ -520,7 +520,7 @@ func resourceElasticIPApply(
 	}
 
 	if elasticIP.Healthcheck != nil {
-		elasticIPHealthcheck := map[string]interface{}{
+		elasticIPHealthcheck := map[string]any{
 			resElasticIPAttrHealthcheckInterval:      elasticIP.Healthcheck.Interval.Seconds(),
 			resElasticIPAttrHealthcheckMode:          *elasticIP.Healthcheck.Mode,
 			resElasticIPAttrHealthcheckPort:          int(*elasticIP.Healthcheck.Port),
@@ -532,7 +532,7 @@ func resourceElasticIPApply(
 			resElasticIPAttrHealthcheckURI:           defaultString(elasticIP.Healthcheck.URI, ""),
 		}
 
-		if err := d.Set("healthcheck", []interface{}{elasticIPHealthcheck}); err != nil {
+		if err := d.Set("healthcheck", []any{elasticIPHealthcheck}); err != nil {
 			return diag.FromErr(err)
 		}
 	}

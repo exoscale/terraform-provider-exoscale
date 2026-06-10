@@ -173,7 +173,7 @@ func CheckExistsGrafana(name string, data *TemplateModelGrafana) error {
 	}
 
 	if data.GrafanaSettings != "" {
-		obj := map[string]interface{}{}
+		obj := map[string]any{}
 		s, err := strconv.Unquote(data.GrafanaSettings)
 		if err != nil {
 			return err

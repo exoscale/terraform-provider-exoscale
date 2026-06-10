@@ -118,7 +118,7 @@ func parseIAMAccessKeyResource(v string) (*egoscale.IAMAccessKeyResource, error)
 // Based on RFC 1123 and RFC 952 standards
 var validDNSNameRegex = regexp.MustCompile(`^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?)*$`)
 
-func isDNSName(i interface{}, k string) ([]string, []error) {
+func isDNSName(i any, k string) ([]string, []error) {
 	v, ok := i.(string)
 	if !ok {
 		return nil, []error{fmt.Errorf("expected type of %q to be string", k)}
@@ -210,7 +210,7 @@ func detachMatchingResource(
 
 		tflog.Debug(ctx,
 			fmt.Sprintf("Found instance with matching %s, detaching...", resourceType),
-			map[string]interface{}{
+			map[string]any{
 				"instance_id": inst.ID,
 				"resource_id": resourceID,
 			},

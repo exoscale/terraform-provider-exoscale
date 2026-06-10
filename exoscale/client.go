@@ -40,12 +40,12 @@ func getModVersion(module string) string {
 	return "err"
 }
 
-func getConfig(meta interface{}) providerConfig.BaseConfig {
-	t := meta.(map[string]interface{})
+func getConfig(meta any) providerConfig.BaseConfig {
+	t := meta.(map[string]any)
 	return t["config"].(providerConfig.BaseConfig)
 }
 
-func getClient(meta interface{}) *exov2.Client {
+func getClient(meta any) *exov2.Client {
 	config := getConfig(meta)
 
 	httpClient := cleanhttp.DefaultPooledClient()
@@ -82,7 +82,7 @@ func getClient(meta interface{}) *exov2.Client {
 	return clientExoV2
 }
 
-func getEnvironment(meta interface{}) string {
+func getEnvironment(meta any) string {
 	config := getConfig(meta)
 	if config.Environment == "" {
 		return DefaultEnvironment
@@ -111,17 +111,17 @@ type LeveledTFLogger struct {
 	Verbose bool
 }
 
-func (l LeveledTFLogger) Error(msg string, keysAndValues ...interface{}) {
+func (l LeveledTFLogger) Error(msg string, keysAndValues ...any) {
 	log.Println("[ERROR]", msg, keysAndValues)
 }
-func (l LeveledTFLogger) Info(msg string, keysAndValues ...interface{}) {
+func (l LeveledTFLogger) Info(msg string, keysAndValues ...any) {
 	log.Println("[INFO]", msg, keysAndValues)
 }
-func (l LeveledTFLogger) Debug(msg string, keysAndValues ...interface{}) {
+func (l LeveledTFLogger) Debug(msg string, keysAndValues ...any) {
 	if l.Verbose {
 		log.Println("[DEBUG]", msg, keysAndValues)
 	}
 }
-func (l LeveledTFLogger) Warn(msg string, keysAndValues ...interface{}) {
+func (l LeveledTFLogger) Warn(msg string, keysAndValues ...any) {
 	log.Println("[WARN]", msg, keysAndValues)
 }

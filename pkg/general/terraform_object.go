@@ -8,7 +8,7 @@ import (
 
 type SchemaMap map[string]*schema.Schema
 
-type TerraformObject = map[string]interface{}
+type TerraformObject = map[string]any
 
 func AssignTime(data TerraformObject, attributeIdentifier string, value *time.Time) {
 	if value == nil {

@@ -320,7 +320,7 @@ func CheckExistsOpensearch(name string, data *TemplateModelOpensearch) error {
 	}
 
 	if data.OpensearchSettings != "" {
-		obj := map[string]interface{}{}
+		obj := map[string]any{}
 		s, err := strconv.Unquote(data.OpensearchSettings)
 		if err != nil {
 			return err

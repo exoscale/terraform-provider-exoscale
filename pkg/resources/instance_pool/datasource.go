@@ -183,8 +183,8 @@ Corresponding resource: [exoscale_instance_pool](../resources/instance_pool.md).
 	}
 }
 
-func dsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning read", map[string]interface{}{
+func dsRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning read", map[string]any{
 		"id": utils.IDString(d, Name),
 	})
 
@@ -260,7 +260,7 @@ func dsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.
 	)
 
 	if pool.Instances != nil {
-		instancesData := make([]interface{}, len(pool.Instances))
+		instancesData := make([]any, len(pool.Instances))
 		for k, i := range pool.Instances {
 			instance, err := client.GetInstance(ctx, i.ID)
 			if err != nil {
@@ -275,7 +275,7 @@ func dsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.
 				publicIp = instance.PublicIP.String()
 			}
 
-			instancesData[k] = map[string]interface{}{
+			instancesData[k] = map[string]any{
 				AttrInstanceID:              i.ID,
 				AttrInstanceIPv6Address:     ipv6,
 				AttrInstanceName:            instance.Name,
@@ -293,7 +293,7 @@ func dsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.
 		}
 	}
 
-	tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "read finished successfully", map[string]any{
 		"id": utils.IDString(d, Name),
 	})
 
@@ -301,8 +301,8 @@ func dsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.
 }
 
 // dsBuildData builds terraform data object from egoscale API struct.
-func dsBuildData(pool *v3.InstancePool, zone string) (map[string]interface{}, error) {
-	data := map[string]interface{}{}
+func dsBuildData(pool *v3.InstancePool, zone string) (map[string]any, error) {
+	data := map[string]any{}
 
 	if pool.DeployTarget != nil {
 		data[AttrDeployTargetID] = pool.DeployTarget.ID

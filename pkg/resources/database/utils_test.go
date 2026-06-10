@@ -11,60 +11,60 @@ func TestPartialSettingsPatch(t *testing.T) {
 	t.Parallel()
 
 	type testCaseInput struct {
-		data  map[string]interface{}
-		patch map[string]interface{}
+		data  map[string]any
+		patch map[string]any
 	}
 	type testCase struct {
 		input  testCaseInput
-		result map[string]interface{}
+		result map[string]any
 	}
 
 	cases := []testCase{
 		{
 			input: testCaseInput{
-				data: map[string]interface{}{
+				data: map[string]any{
 					"key": "value",
 				},
-				patch: map[string]interface{}{
+				patch: map[string]any{
 					"key": "newvalue",
 				},
 			},
-			result: map[string]interface{}{
+			result: map[string]any{
 				"key": "newvalue",
 			},
 		},
 		{
 			input: testCaseInput{
-				data: map[string]interface{}{
+				data: map[string]any{
 					"key": "value",
 				},
-				patch: map[string]interface{}{
+				patch: map[string]any{
 					"ke2": "newvalu2",
 				},
 			},
-			result: map[string]interface{}{},
+			result: map[string]any{},
 		},
 		{
 			input: testCaseInput{
-				data: map[string]interface{}{},
-				patch: map[string]interface{}{
+				data: map[string]any{},
+				patch: map[string]any{
 					"key": "value",
 				},
 			},
-			result: map[string]interface{}{},
+			result: map[string]any{},
 		},
 		{
 			input: testCaseInput{
-				data: map[string]interface{}{
+				data: map[string]any{
 					"key1": "value",
 					"key2": 1,
 				},
-				patch: map[string]interface{}{
+				patch: map[string]any{
 					"key2": 2,
 					"key3": "newvalue",
 				},
 			},
-			result: map[string]interface{}{
+			result: map[string]any{
 				"key2": 2,
 			},
 		},

@@ -297,7 +297,7 @@ func CheckExistsKafka(name string, data *TemplateModelKafka) error {
 	}
 
 	if data.KafkaSettings != "" {
-		obj := map[string]interface{}{}
+		obj := map[string]any{}
 		s, err := strconv.Unquote(data.KafkaSettings)
 		if err != nil {
 			return err
@@ -315,7 +315,7 @@ func CheckExistsKafka(name string, data *TemplateModelKafka) error {
 	}
 
 	if data.ConnectSettings != "" {
-		obj := map[string]interface{}{}
+		obj := map[string]any{}
 		s, err := strconv.Unquote(data.ConnectSettings)
 		if err != nil {
 			return err
@@ -333,7 +333,7 @@ func CheckExistsKafka(name string, data *TemplateModelKafka) error {
 	}
 
 	if data.RestSettings != "" {
-		obj := map[string]interface{}{}
+		obj := map[string]any{}
 		s, err := strconv.Unquote(data.RestSettings)
 		if err != nil {
 			return err
@@ -351,7 +351,7 @@ func CheckExistsKafka(name string, data *TemplateModelKafka) error {
 	}
 
 	if data.SchemaRegistrySettings != "" {
-		obj := map[string]interface{}{}
+		obj := map[string]any{}
 		s, err := strconv.Unquote(data.SchemaRegistrySettings)
 		if err != nil {
 			return err

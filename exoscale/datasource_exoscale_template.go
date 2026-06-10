@@ -65,8 +65,8 @@ Exoscale instance templates are regularly updated to include the latest updates.
 	}
 }
 
-func dataSourceTemplateRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning read", map[string]interface{}{
+func dataSourceTemplateRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning read", map[string]any{
 		"id": general.ResourceIDString(d, "exoscale_template"),
 	})
 
@@ -113,7 +113,7 @@ func dataSourceTemplateRead(ctx context.Context, d *schema.ResourceData, meta in
 		return diag.FromErr(err)
 	}
 
-	tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "read finished successfully", map[string]any{
 		"id": general.ResourceIDString(d, "exoscale_template"),
 	})
 

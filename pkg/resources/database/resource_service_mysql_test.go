@@ -331,7 +331,7 @@ func CheckExistsMysql(name string, data *TemplateModelMysql) error {
 	}
 
 	if data.MysqlSettings != "" {
-		obj := map[string]interface{}{}
+		obj := map[string]any{}
 		s, err := strconv.Unquote(data.MysqlSettings)
 		if err != nil {
 			return err

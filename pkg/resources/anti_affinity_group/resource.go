@@ -51,8 +51,8 @@ Corresponding data source: [exoscale_anti_affinity_group](../data-sources/anti_a
 	}
 }
 
-func rCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning create", map[string]interface{}{
+func rCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning create", map[string]any{
 		"id": utils.IDString(d, Name),
 	})
 
@@ -77,15 +77,15 @@ func rCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 
 	d.SetId(*res.ID)
 
-	tflog.Debug(ctx, "create finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "create finished successfully", map[string]any{
 		"id": utils.IDString(d, Name),
 	})
 
 	return rRead(ctx, d, meta)
 }
 
-func rRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning read", map[string]interface{}{
+func rRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning read", map[string]any{
 		"id": utils.IDString(d, Name),
 	})
 
@@ -110,15 +110,15 @@ func rRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.D
 		return diag.FromErr(err)
 	}
 
-	tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "read finished successfully", map[string]any{
 		"id": utils.IDString(d, Name),
 	})
 
 	return diag.FromErr(rApply(ctx, d, res))
 }
 
-func rDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning delete", map[string]interface{}{
+func rDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning delete", map[string]any{
 		"id": utils.IDString(d, Name),
 	})
 
@@ -138,7 +138,7 @@ func rDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag
 		return diag.FromErr(err)
 	}
 
-	tflog.Debug(ctx, "delete finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "delete finished successfully", map[string]any{
 		"id": utils.IDString(d, Name),
 	})
 

@@ -13,7 +13,7 @@ import (
 
 // validateString validates that the given field is a string and matches the expected value.
 func validateString(str string) schema.SchemaValidateDiagFunc {
-	return validation.ToDiagFunc(func(i interface{}, k string) (s []string, es []error) {
+	return validation.ToDiagFunc(func(i any, k string) (s []string, es []error) {
 		value, ok := i.(string)
 		if !ok {
 			es = append(es, fmt.Errorf("expected type of %s to be string", k))
@@ -30,7 +30,7 @@ func validateString(str string) schema.SchemaValidateDiagFunc {
 }
 
 // validatePortRange validates that the given field contains a port range.
-func validatePortRange(i interface{}, k string) (s []string, es []error) {
+func validatePortRange(i any, k string) (s []string, es []error) {
 	value, ok := i.(string)
 	if !ok {
 		es = append(es, fmt.Errorf("expected type of %s to be string", k))
@@ -69,7 +69,7 @@ func validatePortRange(i interface{}, k string) (s []string, es []error) {
 }
 
 // validateComputeInstanceType validates that the given field contains a valid Exoscale Compute instance type.
-func validateComputeInstanceType(v interface{}, _ cty.Path) diag.Diagnostics {
+func validateComputeInstanceType(v any, _ cty.Path) diag.Diagnostics {
 	value, ok := v.(string)
 	if !ok {
 		return diag.Errorf("expected field %q type to be string", v)
@@ -84,7 +84,7 @@ func validateComputeInstanceType(v interface{}, _ cty.Path) diag.Diagnostics {
 
 // validateBool validates that the given field is a bool and matches the expected value.
 func validateBool(b bool) schema.SchemaValidateDiagFunc {
-	return validation.ToDiagFunc(func(i interface{}, k string) (s []string, es []error) {
+	return validation.ToDiagFunc(func(i any, k string) (s []string, es []error) {
 		value, err := strconv.ParseBool(i.(string))
 		if err != nil {
 			es = append(es, fmt.Errorf("expected type of %s to be bool: %w", k, err))

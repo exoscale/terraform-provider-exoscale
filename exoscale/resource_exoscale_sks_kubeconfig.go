@@ -109,8 +109,8 @@ func resourceSKSKubeconfig() *schema.Resource {
 	}
 }
 
-func resourceSKSKubeconfigCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning create", map[string]interface{}{
+func resourceSKSKubeconfigCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning create", map[string]any{
 		"id": resourceSKSKubeconfigIDString(d),
 	})
 
@@ -158,23 +158,23 @@ func resourceSKSKubeconfigCreate(ctx context.Context, d *schema.ResourceData, me
 
 	d.SetId(*id)
 
-	tflog.Debug(ctx, "create finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "create finished successfully", map[string]any{
 		"id": resourceSKSKubeconfigIDString(d),
 	})
 
 	return resourceSKSKubeconfigRead(ctx, d, meta)
 }
 
-func resourceSKSKubeconfigRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceSKSKubeconfigRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	return nil
 }
 
-func resourceSKSKubeconfigUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceSKSKubeconfigUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	return resourceSKSKubeconfigRead(ctx, d, meta)
 }
 
-func resourceSKSKubeconfigDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning delete", map[string]interface{}{
+func resourceSKSKubeconfigDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning delete", map[string]any{
 		"id": resourceSKSKubeconfigIDString(d),
 	})
 
@@ -182,13 +182,13 @@ func resourceSKSKubeconfigDelete(ctx context.Context, d *schema.ResourceData, me
 	// So let's just remove the kubeconfig from the state.
 	d.SetId("")
 
-	tflog.Debug(ctx, "delete finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "delete finished successfully", map[string]any{
 		"id": resourceSKSKubeconfigIDString(d),
 	})
 	return nil
 }
 
-func resourceSKSKubeconfigDiff(ctx context.Context, d *schema.ResourceDiff, meta interface{}) error {
+func resourceSKSKubeconfigDiff(ctx context.Context, d *schema.ResourceDiff, meta any) error {
 	kubeconfig := d.Get(resSKSKubeconfigAttrKubeconfig).(string)
 
 	clusterCerts, clientCerts, err := KubeconfigExtractCertificates(kubeconfig)
@@ -283,7 +283,7 @@ func kubeconfigRawPEMDataToCertificate(b64PEMData string) (*x509.Certificate, er
 }
 
 func kubeconfigToID(kubeconfig string) (*string, error) {
-	tflog.Debug(context.Background(), "kubeconfigToID", map[string]interface{}{
+	tflog.Debug(context.Background(), "kubeconfigToID", map[string]any{
 		"kubeconfig": kubeconfig,
 	})
 

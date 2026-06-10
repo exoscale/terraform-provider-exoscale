@@ -176,8 +176,8 @@ Corresponding resource: [exoscale_compute_instance](../resources/compute_instanc
 	}
 }
 
-func dsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning read", map[string]interface{}{
+func dsRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning read", map[string]any{
 		"id": utils.IDString(d, Name),
 	})
 
@@ -278,7 +278,7 @@ func dsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.
 		}
 	}
 
-	tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "read finished successfully", map[string]any{
 		"id": utils.IDString(d, Name),
 	})
 
@@ -286,8 +286,8 @@ func dsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.
 }
 
 // dsBuildData builds terraform data object from egoscale API struct.
-func dsBuildData(instance *v3.Instance, zone string) (map[string]interface{}, error) {
-	data := map[string]interface{}{}
+func dsBuildData(instance *v3.Instance, zone string) (map[string]any, error) {
+	data := map[string]any{}
 
 	data[AttrDiskSize] = instance.DiskSize
 	data[AttrID] = instance.ID

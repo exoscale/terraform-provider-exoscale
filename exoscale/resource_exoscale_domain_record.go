@@ -131,9 +131,9 @@ func resourceDomainRecordV0() *schema.Resource {
 
 func resourceDomainRecordStateUpgradeV0(
 	ctx context.Context,
-	rawState map[string]interface{},
-	meta interface{},
-) (map[string]interface{}, error) {
+	rawState map[string]any,
+	meta any,
+) (map[string]any, error) {
 	client := getClient(meta)
 
 	domainName := rawState["domain"].(string)
@@ -166,8 +166,8 @@ func resourceDomainRecordStateUpgradeV0(
 	return rawState, nil
 }
 
-func resourceDomainRecordCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning create", map[string]interface{}{
+func resourceDomainRecordCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning create", map[string]any{
 		"id": resourceDomainRecordIDString(d),
 	})
 
@@ -204,14 +204,14 @@ func resourceDomainRecordCreate(ctx context.Context, d *schema.ResourceData, met
 
 	d.SetId(op.Reference.ID.String())
 
-	tflog.Debug(ctx, "create finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "create finished successfully", map[string]any{
 		"id": resourceDomainIDString(d),
 	})
 
 	return resourceDomainRecordRead(ctx, d, meta)
 }
 
-func resourceDomainRecordExists(d *schema.ResourceData, meta interface{}) (bool, error) {
+func resourceDomainRecordExists(d *schema.ResourceData, meta any) (bool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), d.Timeout(schema.TimeoutRead))
 	defer cancel()
 
@@ -236,7 +236,7 @@ func resourceDomainRecordExists(d *schema.ResourceData, meta interface{}) (bool,
 
 	// If we reach this stage it means that we're in "import" mode, so we don't have the domain information yet.
 	// We have to scroll each existing domain's records and try to find one matching the resource ID.
-	tflog.Debug(ctx, "import mode detected, trying to locate the record domain", map[string]interface{}{
+	tflog.Debug(ctx, "import mode detected, trying to locate the record domain", map[string]any{
 		"id": resourceDomainIDString(d),
 	})
 
@@ -257,7 +257,7 @@ func resourceDomainRecordExists(d *schema.ResourceData, meta interface{}) (bool,
 			}
 			return false, err
 		}
-		tflog.Debug(ctx, "found record domain", map[string]interface{}{
+		tflog.Debug(ctx, "found record domain", map[string]any{
 			"id":          resourceDomainIDString(d),
 			"domain_name": domain.UnicodeName,
 		})
@@ -267,8 +267,8 @@ func resourceDomainRecordExists(d *schema.ResourceData, meta interface{}) (bool,
 	return false, nil
 }
 
-func resourceDomainRecordRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning read", map[string]interface{}{
+func resourceDomainRecordRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning read", map[string]any{
 		"id": resourceDomainIDString(d),
 	})
 
@@ -293,7 +293,7 @@ func resourceDomainRecordRead(ctx context.Context, d *schema.ResourceData, meta 
 			return diag.Errorf("error retrieving domain record: %s", err)
 		}
 
-		tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
+		tflog.Debug(ctx, "read finished successfully", map[string]any{
 			"id": resourceDomainIDString(d),
 		})
 
@@ -301,7 +301,7 @@ func resourceDomainRecordRead(ctx context.Context, d *schema.ResourceData, meta 
 			contentNormalized != "" && // skip create
 			contentNormalized != record.Content {
 			// If the record content has changed, we need to update the record in the remote
-			tflog.Debug(ctx, "DNSimple Zone Record content changed", map[string]interface{}{
+			tflog.Debug(ctx, "DNSimple Zone Record content changed", map[string]any{
 				"state":  contentNormalized,
 				"remote": record.Content,
 			})
@@ -320,7 +320,7 @@ func resourceDomainRecordRead(ctx context.Context, d *schema.ResourceData, meta 
 
 	// If we reach this stage it means that we're in "import" mode, so we don't have the domain information yet.
 	// We have to scroll each existing domain's records and try to find one matching the resource ID.
-	tflog.Debug(ctx, "import mode detected, trying to locate the record domain", map[string]interface{}{
+	tflog.Debug(ctx, "import mode detected, trying to locate the record domain", map[string]any{
 		"id": resourceDomainIDString(d),
 	})
 
@@ -348,7 +348,7 @@ func resourceDomainRecordRead(ctx context.Context, d *schema.ResourceData, meta 
 			return diag.Errorf("%s", err)
 		}
 
-		tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
+		tflog.Debug(ctx, "read finished successfully", map[string]any{
 			"id": resourceDomainIDString(d),
 		})
 
@@ -368,8 +368,8 @@ func resourceDomainRecordRead(ctx context.Context, d *schema.ResourceData, meta 
 	return diag.Errorf("domain record %s not found", d.Id())
 }
 
-func resourceDomainRecordUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning update", map[string]interface{}{
+func resourceDomainRecordUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning update", map[string]any{
 		"id": resourceDomainIDString(d),
 	})
 
@@ -402,7 +402,7 @@ func resourceDomainRecordUpdate(ctx context.Context, d *schema.ResourceData, met
 		return diag.Errorf("error updating domain record: %s", err)
 	}
 
-	tflog.Debug(ctx, "update finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "update finished successfully", map[string]any{
 		"id": resourceDomainIDString(d),
 	})
 
@@ -424,8 +424,8 @@ func resourceDomainRecordUpdate(ctx context.Context, d *schema.ResourceData, met
 	return nil
 }
 
-func resourceDomainRecordDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning delete", map[string]interface{}{
+func resourceDomainRecordDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning delete", map[string]any{
 		"id": resourceDomainIDString(d),
 	})
 
@@ -453,7 +453,7 @@ func resourceDomainRecordDelete(ctx context.Context, d *schema.ResourceData, met
 		return diag.Errorf("error deleting domain record: %s", err)
 	}
 
-	tflog.Debug(ctx, "delete finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "delete finished successfully", map[string]any{
 		"id": resourceDomainIDString(d),
 	})
 

@@ -114,8 +114,8 @@ Corresponding resource: [exoscale_domain_record](../resources/domain_record.md).
 	}
 }
 
-func dataSourceDomainRecordRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning read", map[string]interface{}{
+func dataSourceDomainRecordRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning read", map[string]any{
 		"id": general.ResourceIDString(d, "exoscale_domain"),
 	})
 
@@ -147,12 +147,12 @@ func dataSourceDomainRecordRead(ctx context.Context, d *schema.ResourceData, met
 		return diag.Errorf("domain %q not found", domainName)
 	}
 
-	flist := d.Get("filter").([]interface{})
+	flist := d.Get("filter").([]any)
 	if len(flist) != 1 || flist[0] == nil {
 		return diag.Errorf("filter not valid")
 	}
 
-	filter := flist[0].(map[string]interface{})
+	filter := flist[0].(map[string]any)
 	id := filter["id"].(string)
 	name := filter["name"].(string)
 	rtype := filter["record_type"].(string)
@@ -211,9 +211,9 @@ func dataSourceDomainRecordRead(ctx context.Context, d *schema.ResourceData, met
 	// derive ID from result
 	d.SetId(fmt.Sprintf("%x", md5.Sum([]byte(strings.Join(ids, "")))))
 
-	recordsDetails := make([]map[string]interface{}, len(records))
+	recordsDetails := make([]map[string]any, len(records))
 	for i, r := range records {
-		recordsDetails[i] = map[string]interface{}{
+		recordsDetails[i] = map[string]any{
 			"id":          r.ID,
 			"domain":      domain.ID,
 			"name":        r.Name,

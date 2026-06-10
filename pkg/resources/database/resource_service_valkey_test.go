@@ -167,7 +167,7 @@ func CheckExistsValkey(name string, data *TemplateModelValkey) error {
 	}
 
 	if data.ValkeySettings != "" {
-		var expectedSettings, actualSettings map[string]interface{}
+		var expectedSettings, actualSettings map[string]any
 
 		// Parse expected settings
 		s, err := strconv.Unquote(data.ValkeySettings)

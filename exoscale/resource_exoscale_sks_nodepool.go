@@ -220,7 +220,7 @@ func resourceSKSNodepool() *schema.Resource {
 		DeleteContext: resourceSKSNodepoolDelete,
 
 		Importer: &schema.ResourceImporter{
-			StateContext: func(ctx context.Context, d *schema.ResourceData, _ interface{}) ([]*schema.ResourceData, error) {
+			StateContext: func(ctx context.Context, d *schema.ResourceData, _ any) ([]*schema.ResourceData, error) {
 				zonedRes, err := zonedStateContextFunc(ctx, d, nil)
 				if err != nil {
 					return nil, err
@@ -250,8 +250,8 @@ func resourceSKSNodepool() *schema.Resource {
 	}
 }
 
-func resourceSKSNodepoolCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning create", map[string]interface{}{
+func resourceSKSNodepoolCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning create", map[string]any{
 		"id": resourceSKSNodepoolIDString(d),
 	})
 
@@ -322,7 +322,7 @@ func resourceSKSNodepoolCreate(ctx context.Context, d *schema.ResourceData, meta
 	}
 
 	if k, ok := d.GetOk(resSKSNodepoolAttrKubeletGC); ok {
-		kubeletGc := k.(*schema.Set).List()[0].(map[string]interface{})
+		kubeletGc := k.(*schema.Set).List()[0].(map[string]any)
 		sksNodepoolKubeletGc := new(v3.KubeletImageGC)
 
 		if val, ok := kubeletGc[resSKSNodepoolAttrKubeletGCMinAge]; ok {
@@ -349,7 +349,7 @@ func resourceSKSNodepoolCreate(ctx context.Context, d *schema.ResourceData, meta
 
 	if l, ok := d.GetOk(resSKSNodepoolAttrLabels); ok {
 		labels := make(map[string]string)
-		for k, v := range l.(map[string]interface{}) {
+		for k, v := range l.(map[string]any) {
 			labels[k] = v.(string)
 		}
 		sksNodepoolCreate.Labels = labels
@@ -383,7 +383,7 @@ func resourceSKSNodepoolCreate(ctx context.Context, d *schema.ResourceData, meta
 
 	if t, ok := d.GetOk(resSKSNodepoolAttrTaints); ok {
 		taints := make(v3.SKSNodepoolTaints)
-		for k, v := range t.(map[string]interface{}) {
+		for k, v := range t.(map[string]any) {
 			taint, err := parseSKSNodepoolTaintV3(v.(string))
 			if err != nil {
 				return diag.Errorf("invalid taint %q: %s", v.(string), err)
@@ -405,15 +405,15 @@ func resourceSKSNodepoolCreate(ctx context.Context, d *schema.ResourceData, meta
 
 	d.SetId(sksNodepoolID.String())
 
-	tflog.Debug(ctx, "create finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "create finished successfully", map[string]any{
 		"id": resourceSKSNodepoolIDString(d),
 	})
 
 	return resourceSKSNodepoolRead(ctx, d, meta)
 }
 
-func resourceSKSNodepoolRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning read", map[string]interface{}{
+func resourceSKSNodepoolRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning read", map[string]any{
 		"id": resourceSKSNodepoolIDString(d),
 	})
 
@@ -458,15 +458,15 @@ func resourceSKSNodepoolRead(ctx context.Context, d *schema.ResourceData, meta i
 		return nil
 	}
 
-	tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "read finished successfully", map[string]any{
 		"id": resourceSKSNodepoolIDString(d),
 	})
 
 	return diag.FromErr(resourceSKSNodepoolApply(ctx, client, d, sksNodepool, sks.DefaultSecurityGroupID))
 }
 
-func resourceSKSNodepoolUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning update", map[string]interface{}{
+func resourceSKSNodepoolUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning update", map[string]any{
 		"id": resourceSKSNodepoolIDString(d),
 	})
 
@@ -565,7 +565,7 @@ func resourceSKSNodepoolUpdate(ctx context.Context, d *schema.ResourceData, meta
 
 	if d.HasChange(resSKSNodepoolAttrLabels) {
 		labels := make(map[string]string)
-		for k, v := range d.Get(resSKSNodepoolAttrLabels).(map[string]interface{}) {
+		for k, v := range d.Get(resSKSNodepoolAttrLabels).(map[string]any) {
 			labels[k] = v.(string)
 		}
 		sksNodepoolUpdate.Labels = labels
@@ -591,7 +591,7 @@ func resourceSKSNodepoolUpdate(ctx context.Context, d *schema.ResourceData, meta
 	}
 
 	if d.HasChange(resSKSNodepoolAttrKubeletGC) {
-		kubeletGc := d.Get(resSKSNodepoolAttrKubeletGC).(*schema.Set).List()[0].(map[string]interface{})
+		kubeletGc := d.Get(resSKSNodepoolAttrKubeletGC).(*schema.Set).List()[0].(map[string]any)
 		sksNodepoolKubeletGc := new(v3.KubeletImageGC)
 		if val, ok := kubeletGc[resSKSNodepoolAttrKubeletGCMinAge]; ok {
 			sksNodepoolKubeletGcMinAge := val.(string)
@@ -613,7 +613,7 @@ func resourceSKSNodepoolUpdate(ctx context.Context, d *schema.ResourceData, meta
 
 	if d.HasChange(resSKSNodepoolAttrTaints) {
 		taints := make(v3.SKSNodepoolTaints)
-		for k, v := range d.Get(resSKSNodepoolAttrTaints).(map[string]interface{}) {
+		for k, v := range d.Get(resSKSNodepoolAttrTaints).(map[string]any) {
 			taint, err := parseSKSNodepoolTaintV3(v.(string))
 			if err != nil {
 				return diag.Errorf("invalid taint %q: %s", v.(string), err)
@@ -660,15 +660,15 @@ func resourceSKSNodepoolUpdate(ctx context.Context, d *schema.ResourceData, meta
 		}
 	}
 
-	tflog.Debug(ctx, "update finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "update finished successfully", map[string]any{
 		"id": resourceSKSNodepoolIDString(d),
 	})
 
 	return resourceSKSNodepoolRead(ctx, d, meta)
 }
 
-func resourceSKSNodepoolDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning delete", map[string]interface{}{
+func resourceSKSNodepoolDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning delete", map[string]any{
 		"id": resourceSKSNodepoolIDString(d),
 	})
 
@@ -703,7 +703,7 @@ func resourceSKSNodepoolDelete(ctx context.Context, d *schema.ResourceData, meta
 		return diag.FromErr(err)
 	}
 
-	tflog.Debug(ctx, "delete finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "delete finished successfully", map[string]any{
 		"id": resourceSKSNodepoolIDString(d),
 	})
 
@@ -775,9 +775,9 @@ func resourceSKSNodepoolApply(
 
 	if sksNodepool.KubeletImageGC != nil {
 		kubeletGc := d.Get(resSKSNodepoolAttrKubeletGC).(*schema.Set)
-		if err := d.Set(resSKSNodepoolAttrKubeletGC, schema.NewSet(kubeletGc.F, []interface{}{
-			func() map[string]interface{} {
-				i := map[string]interface{}{}
+		if err := d.Set(resSKSNodepoolAttrKubeletGC, schema.NewSet(kubeletGc.F, []any{
+			func() map[string]any {
+				i := map[string]any{}
 				if sksNodepool.KubeletImageGC.MinAge != "" {
 					i[resSKSNodepoolAttrKubeletGCMinAge] = sksNodepool.KubeletImageGC.MinAge
 				}
@@ -847,9 +847,9 @@ func resourceSKSNodepoolApply(
 
 	if sksNodepool.KubeletImageGC != nil {
 		kubeletGc := d.Get(resSKSNodepoolAttrKubeletGC).(*schema.Set)
-		if err := d.Set(resSKSNodepoolAttrKubeletGC, schema.NewSet(kubeletGc.F, []interface{}{
-			func() map[string]interface{} {
-				i := map[string]interface{}{}
+		if err := d.Set(resSKSNodepoolAttrKubeletGC, schema.NewSet(kubeletGc.F, []any{
+			func() map[string]any {
+				i := map[string]any{}
 				if sksNodepool.KubeletImageGC.MinAge != "" {
 					i[resSKSNodepoolAttrKubeletGCMinAge] = sksNodepool.KubeletImageGC.MinAge
 				}

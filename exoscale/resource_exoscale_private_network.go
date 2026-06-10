@@ -100,8 +100,8 @@ func resourcePrivateNetwork() *schema.Resource {
 	}
 }
 
-func resourcePrivateNetworkCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning create", map[string]interface{}{
+func resourcePrivateNetworkCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning create", map[string]any{
 		"id": resourcePrivateNetworkIDString(d),
 	})
 
@@ -128,7 +128,7 @@ func resourcePrivateNetworkCreate(ctx context.Context, d *schema.ResourceData, m
 
 	if l, ok := d.GetOk(resPrivateNetworkAttrLabels); ok {
 		labels := make(map[string]string)
-		for k, v := range l.(map[string]interface{}) {
+		for k, v := range l.(map[string]any) {
 			labels[k] = v.(string)
 		}
 		privateNetwork.Labels = &labels
@@ -151,15 +151,15 @@ func resourcePrivateNetworkCreate(ctx context.Context, d *schema.ResourceData, m
 
 	d.SetId(*privateNetwork.ID)
 
-	tflog.Debug(ctx, "create finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "create finished successfully", map[string]any{
 		"id": resourcePrivateNetworkIDString(d),
 	})
 
 	return resourcePrivateNetworkRead(ctx, d, meta)
 }
 
-func resourcePrivateNetworkRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning read", map[string]interface{}{
+func resourcePrivateNetworkRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning read", map[string]any{
 		"id": resourcePrivateNetworkIDString(d),
 	})
 
@@ -181,15 +181,15 @@ func resourcePrivateNetworkRead(ctx context.Context, d *schema.ResourceData, met
 		return diag.FromErr(err)
 	}
 
-	tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "read finished successfully", map[string]any{
 		"id": resourcePrivateNetworkIDString(d),
 	})
 
 	return diag.FromErr(resourcePrivateNetworkApply(ctx, d, privateNetwork))
 }
 
-func resourcePrivateNetworkUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning update", map[string]interface{}{
+func resourcePrivateNetworkUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning update", map[string]any{
 		"id": resourcePrivateNetworkIDString(d),
 	})
 
@@ -222,7 +222,7 @@ func resourcePrivateNetworkUpdate(ctx context.Context, d *schema.ResourceData, m
 
 	if d.HasChange(resPrivateNetworkAttrLabels) {
 		labels := make(map[string]string)
-		for k, v := range d.Get(resPrivateNetworkAttrLabels).(map[string]interface{}) {
+		for k, v := range d.Get(resPrivateNetworkAttrLabels).(map[string]any) {
 			labels[k] = v.(string)
 		}
 		privateNetwork.Labels = &labels
@@ -253,7 +253,7 @@ func resourcePrivateNetworkUpdate(ctx context.Context, d *schema.ResourceData, m
 		}
 	}
 
-	tflog.Debug(ctx, "update finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "update finished successfully", map[string]any{
 		"id": resourcePrivateNetworkIDString(d),
 	})
 
@@ -279,8 +279,8 @@ func detachPrivateNetwork(ctx context.Context, client *v3.Client, id v3.UUID, in
 	)
 }
 
-func resourcePrivateNetworkDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning delete", map[string]interface{}{
+func resourcePrivateNetworkDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	tflog.Debug(ctx, "beginning delete", map[string]any{
 		"id": resourcePrivateNetworkIDString(d),
 	})
 
@@ -313,7 +313,7 @@ func resourcePrivateNetworkDelete(ctx context.Context, d *schema.ResourceData, m
 		}
 	}
 
-	tflog.Debug(ctx, "delete finished successfully", map[string]interface{}{
+	tflog.Debug(ctx, "delete finished successfully", map[string]any{
 		"id": resourcePrivateNetworkIDString(d),
 	})
 

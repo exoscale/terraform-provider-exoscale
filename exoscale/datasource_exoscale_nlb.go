@@ -69,7 +69,7 @@ Corresponding resource: [exoscale_nlb](../resources/nlb.md).`,
 	}
 }
 
-func dataSourceNLBRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceNLBRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	zone := d.Get(dsNLBAttrZone).(string)
 
 	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))

@@ -149,7 +149,7 @@ func (r *ResourceAPIKey) Create(ctx context.Context, req resource.CreateRequest,
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 
-	tflog.Trace(ctx, "resource created", map[string]interface{}{
+	tflog.Trace(ctx, "resource created", map[string]any{
 		"id": data.ID,
 	})
 }
@@ -187,7 +187,7 @@ func (r *ResourceAPIKey) Read(ctx context.Context, req resource.ReadRequest, res
 		resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 	}
 
-	tflog.Trace(ctx, "resource read done", map[string]interface{}{
+	tflog.Trace(ctx, "resource read done", map[string]any{
 		"id": data.ID,
 	})
 }
@@ -229,7 +229,7 @@ func (r *ResourceAPIKey) Delete(ctx context.Context, req resource.DeleteRequest,
 		return
 	}
 
-	tflog.Trace(ctx, "resource deleted", map[string]interface{}{
+	tflog.Trace(ctx, "resource deleted", map[string]any{
 		"id": data.ID,
 	})
 }
@@ -250,7 +250,7 @@ func (r *ResourceAPIKey) ImportState(ctx context.Context, req resource.ImportSta
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 
-	tflog.Trace(ctx, "resource imported", map[string]interface{}{
+	tflog.Trace(ctx, "resource imported", map[string]any{
 		"id": data.ID,
 	})
 }

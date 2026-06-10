@@ -11,7 +11,7 @@ func TestComputeInstanceListFilterString(t *testing.T) {
 	attributeToMatch := "my-test-attr"
 	valueToMatch := "string-to-match"
 
-	dataToFilter := map[string]interface{}{
+	dataToFilter := map[string]any{
 		attributeToMatch: valueToMatch,
 	}
 
@@ -33,7 +33,7 @@ func TestComputeInstanceListFilterRegex(t *testing.T) {
 	attributeToMatch := "my-test-attr"
 	valueToMatch := "string-123-to-match-by-regex"
 
-	dataToFilter := map[string]interface{}{
+	dataToFilter := map[string]any{
 		attributeToMatch: valueToMatch,
 	}
 
@@ -54,13 +54,13 @@ func TestComputeInstanceListFilterLabelsExactly(t *testing.T) {
 
 	labelToMatch := "my-label"
 
-	dataToFilter := map[string]interface{}{
+	dataToFilter := map[string]any{
 		"labels": map[string]string{
 			labelToMatch: "label-string-to-match",
 		},
 	}
 
-	labelsFilterProp := map[string]interface{}{
+	labelsFilterProp := map[string]any{
 		labelToMatch: "label-string-to-match",
 	}
 
@@ -79,13 +79,13 @@ func TestComputeInstanceListFilterLabelsRegex(t *testing.T) {
 
 	labelToMatch := "my-label"
 
-	dataToFilter := map[string]interface{}{
+	dataToFilter := map[string]any{
 		"labels": map[string]string{
 			labelToMatch: "label-string-to-match",
 		},
 	}
 
-	labelsFilterProp := map[string]interface{}{
+	labelsFilterProp := map[string]any{
 		labelToMatch: "/.*-to.*-/",
 	}
 

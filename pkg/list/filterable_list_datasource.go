@@ -51,7 +51,7 @@ func FilterableListDataSource[T any](
 	return ret
 }
 
-type getListFunc[T any] func(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*T, error)
+type getListFunc[T any] func(ctx context.Context, d *schema.ResourceData, meta any) ([]*T, error)
 
 type generateListIDFunc[T any] func([]*T) string
 
@@ -62,9 +62,9 @@ func createDataSourceReadFunc[T any](
 	getList getListFunc[T],
 	toTFObj toTerraformObjectFunc[T],
 	generateListID generateListIDFunc[T],
-	elemScheme general.SchemaMap) func(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	return func(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-		tflog.Debug(ctx, "beginning read", map[string]interface{}{
+	elemScheme general.SchemaMap) func(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	return func(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+		tflog.Debug(ctx, "beginning read", map[string]any{
 			"id": general.ResourceIDString(d, dataSourceIdentifier),
 		})
 
@@ -80,7 +80,7 @@ func createDataSourceReadFunc[T any](
 			return diag.Errorf("failed to create filter: %q", err)
 		}
 
-		data := make([]interface{}, 0, len(clusters))
+		data := make([]any, 0, len(clusters))
 		for _, cluster := range clusters {
 			clusterData := toTFObj(cluster)
 			clusterData[ZoneAttributeIdentifier] = zone
@@ -99,7 +99,7 @@ func createDataSourceReadFunc[T any](
 			return diag.FromErr(err)
 		}
 
-		tflog.Debug(ctx, "read finished successfully", map[string]interface{}{
+		tflog.Debug(ctx, "read finished successfully", map[string]any{
 			"id": general.ResourceIDString(d, dataSourceIdentifier),
 		})
 

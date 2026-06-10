@@ -200,7 +200,7 @@ func (r *PGConnectionPoolResource) Create(ctx context.Context, req resource.Crea
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 
-	tflog.Trace(ctx, "resource created", map[string]interface{}{
+	tflog.Trace(ctx, "resource created", map[string]any{
 		"id": data.GetID(),
 	})
 }
@@ -246,7 +246,7 @@ func (r *PGConnectionPoolResource) Update(ctx context.Context, req resource.Upda
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &planData)...)
 
-	tflog.Trace(ctx, "resource updated", map[string]interface{}{
+	tflog.Trace(ctx, "resource updated", map[string]any{
 		"id": planData.GetID(),
 	})
 }

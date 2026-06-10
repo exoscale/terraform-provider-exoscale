@@ -453,7 +453,7 @@ func (r *ServiceResource) updateMysql(ctx context.Context, stateData *ServiceRes
 	}
 
 	if !updated {
-		tflog.Info(ctx, "no updates detected", map[string]interface{}{})
+		tflog.Info(ctx, "no updates detected", map[string]any{})
 		return
 	}
 
