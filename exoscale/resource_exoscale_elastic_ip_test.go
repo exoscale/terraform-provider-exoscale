@@ -480,7 +480,7 @@ func testAccCheckResourceElasticIPDestroy(elasticIP *egoscale.ElasticIP) resourc
 		}
 		ctx := exoapi.WithEndpoint(
 			context.Background(),
-			exoapi.NewReqEndpoint(testEnvironment, testAccResourceSKSClusterLocalZone),
+			exoapi.NewReqEndpoint(testEnvironment, testZoneName),
 		)
 
 		_, err = client.GetElasticIP(ctx, testZoneName, *elasticIP.ID)

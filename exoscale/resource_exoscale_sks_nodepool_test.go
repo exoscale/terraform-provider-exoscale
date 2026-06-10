@@ -87,7 +87,7 @@ resource "exoscale_sks_nodepool" "test" {
   }
 }
 `,
-		testAccResourceSKSClusterLocalZone,
+		testZoneName,
 		testAccResourceSKSClusterNameNodePoolTest,
 		testAccResourceSKSNodepoolName,
 		testAccResourceSKSNodepoolDescription,
@@ -162,7 +162,7 @@ resource "exoscale_sks_nodepool" "test" {
   }
 }
 	  `,
-		testAccResourceSKSClusterLocalZone,
+		testZoneName,
 		testAccResourceSKSNodepoolAntiAffinityGroupName,
 		testAccResourceSKSNodepoolPrivateNetworkName,
 		testAccResourceSKSClusterNameNodePoolTest,
@@ -240,7 +240,7 @@ resource "exoscale_sks_nodepool" "test" {
   }
 }
 	  `,
-		testAccResourceSKSClusterLocalZone,
+		testZoneName,
 		testAccResourceSKSNodepoolAntiAffinityGroupName,
 		testAccResourceSKSNodepoolPrivateNetworkName,
 		testAccResourceSKSClusterNameNodePoolTest,
@@ -395,7 +395,7 @@ func TestAccResourceSKSNodepool(t *testing.T) {
 					sksNodepool *egoscale.SKSNodepool,
 				) resource.ImportStateIdFunc {
 					return func(*terraform.State) (string, error) {
-						return fmt.Sprintf("%s/%s@%s", sksCluster.ID.String(), *sksNodepool.ID, testAccResourceSKSClusterLocalZone), nil
+						return fmt.Sprintf("%s/%s@%s", sksCluster.ID.String(), *sksNodepool.ID, testZoneName), nil
 					}
 				}(&sksCluster, &sksNodepool),
 				ImportState:       true,
@@ -491,10 +491,10 @@ func testAccCheckResourceSKSNodepoolExists(r string, sksNodepool *egoscale.SKSNo
 		}
 		ctx := exoapi.WithEndpoint(
 			context.Background(),
-			exoapi.NewReqEndpoint(testEnvironment, testAccResourceSKSClusterLocalZone),
+			exoapi.NewReqEndpoint(testEnvironment, testZoneName),
 		)
 
-		cluster, err := client.GetSKSCluster(ctx, testAccResourceSKSClusterLocalZone, clusterID)
+		cluster, err := client.GetSKSCluster(ctx, testZoneName, clusterID)
 		if err != nil {
 			return err
 		}
@@ -553,10 +553,10 @@ func testAccCheckResourceSKSNodepoolDestroy(r string) resource.TestCheckFunc {
 		}
 		ctx := exoapi.WithEndpoint(
 			context.Background(),
-			exoapi.NewReqEndpoint(testEnvironment, testAccResourceSKSClusterLocalZone),
+			exoapi.NewReqEndpoint(testEnvironment, testZoneName),
 		)
 
-		sksCluster, err := client.GetSKSCluster(ctx, testAccResourceSKSClusterLocalZone, clusterID)
+		sksCluster, err := client.GetSKSCluster(ctx, testZoneName, clusterID)
 		if err != nil {
 			if errors.Is(err, exoapi.ErrNotFound) {
 				return nil
