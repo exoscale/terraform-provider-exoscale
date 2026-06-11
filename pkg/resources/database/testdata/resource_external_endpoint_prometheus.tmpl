@@ -1,0 +1,10 @@
+resource "exoscale_dbaas_external_endpoint_prometheus" {{ .ResourceName }} {
+  name = "{{ .Name }}"
+  zone = "{{ .Zone }}"
+  {{- if .BasicAuthUsername }}
+  basic_auth_username = "{{ .BasicAuthUsername }}"
+  {{- end }}
+  {{- if .BasicAuthPassword }}
+  basic_auth_password = "{{ .BasicAuthPassword }}"
+  {{- end }}
+}

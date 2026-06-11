@@ -385,3 +385,40 @@ func DeleteResource[T ResourceModelInterface](ctx context.Context, req resource.
 	})
 
 }
+
+// parseZonedImportID splits a "resourceID@zone" import identifier.
+func parseZonedImportID(id string) (resourceID, zone string, err error) {
+	parts := strings.SplitN(id, "@", 2)
+	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+		return "", "", fmt.Errorf("expected id@zone, got %q", id)
+	}
+	return parts[0], parts[1], nil
+}
+
+// pollEndpoint retries fetch up to 3 times with a 3-second pause on ErrNotFound,
+// to give the API a moment to stabilise after a create/update operation.
+// Returns (result, true) on success, (nil, false) if the resource is gone
+// (no diagnostic added), or (nil, false) with a diagnostic on any other error.
+func pollEndpoint[T any](ctx context.Context, fetch func() (*T, error), diagnostics *diag.Diagnostics, errMsg string) (*T, bool) {
+	for i := range 3 {
+		result, err := fetch()
+		if err == nil {
+			return result, true
+		}
+		if errors.Is(err, exoscale.ErrNotFound) && i < 2 {
+			select {
+			case <-ctx.Done():
+				diagnostics.AddError("context cancelled", ctx.Err().Error())
+				return nil, false
+			case <-time.After(3 * time.Second):
+			}
+			continue
+		}
+		if errors.Is(err, exoscale.ErrNotFound) {
+			return nil, false
+		}
+		diagnostics.AddError("read", fmt.Sprintf("%s: %s", errMsg, err))
+		return nil, false
+	}
+	return nil, false
+}

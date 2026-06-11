@@ -1,0 +1,6 @@
+resource "exoscale_dbaas_external_endpoint_datadog" {{ .ResourceName }} {
+  name            = "{{ .Name }}"
+  zone            = "{{ .Zone }}"
+  datadog_api_key = "{{ .DatadogAPIKey }}"
+  site            = "{{ .Site }}"
+}

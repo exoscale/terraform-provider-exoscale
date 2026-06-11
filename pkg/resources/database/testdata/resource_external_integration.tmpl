@@ -1,0 +1,11 @@
+resource "exoscale_dbaas_external_endpoint_prometheus" {{ .EndpointResourceName }} {
+  name = "{{ .EndpointName }}"
+  zone = "{{ .Zone }}"
+}
+
+resource "exoscale_dbaas_external_integration" {{ .ResourceName }} {
+  source_service_name = "{{ .SourceServiceName }}"
+  dest_endpoint_id    = exoscale_dbaas_external_endpoint_prometheus.{{ .EndpointResourceName }}.id
+  type                = "{{ .Type }}"
+  zone                = "{{ .Zone }}"
+}
