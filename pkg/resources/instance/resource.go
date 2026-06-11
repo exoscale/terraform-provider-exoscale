@@ -860,11 +860,21 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnos
 			return diag.Errorf("unable to scale down the disk size, use size > %v", instance.DiskSize)
 		}
 
-		// Compute instance scaling/disk resizing/TPM enabling API operations requires the instance to be stopped.
-		if d.Get(AttrState) == "stopped" ||
-			d.HasChange(AttrDiskSize) ||
-			d.HasChange(AttrType) ||
-			(d.HasChange(AttrEnableTPM) && d.Get(AttrEnableTPM).(bool)) {
+		// Refresh instance state, since it could have changed since when we
+		// first requested it above.
+		instance, err = client.GetInstance(ctx, v3.UUID(d.Id()))
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		// Compute instance scaling/disk resizing/TPM enabling API operations
+		// requires the instance to be stopped.
+		shouldStop := instance.State == v3.InstanceStateRunning &&
+			(d.Get(AttrState) == string(v3.InstanceStateStopped) ||
+				d.HasChange(AttrDiskSize) ||
+				d.HasChange(AttrType) ||
+				(d.HasChange(AttrEnableTPM) && d.Get(AttrEnableTPM).(bool)))
+		if shouldStop {
 			op, err := client.StopInstance(ctx, instance.ID)
 			if err != nil {
 				return diag.Errorf("unable to stop instance: %s", err)
@@ -872,7 +882,6 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnos
 			if _, err = client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
 				return diag.Errorf("unable to stop instance: %s", err)
 			}
-
 		}
 
 		if d.HasChange(AttrDiskSize) {
@@ -918,7 +927,9 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnos
 			}
 		}
 
-		if d.Get(AttrState) == "running" {
+		shouldStart := d.Get(AttrState) == string(v3.InstanceStateRunning) &&
+			(shouldStop || instance.State != v3.InstanceStateRunning)
+		if shouldStart {
 			op, err := client.StartInstance(ctx, instance.ID, v3.StartInstanceRequest{})
 			if err != nil {
 				return diag.Errorf("unable to start instance: %s", err)
@@ -926,7 +937,6 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnos
 			if _, err = client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
 				return diag.Errorf("unable to start instance: %s", err)
 			}
-
 		}
 	}
 
