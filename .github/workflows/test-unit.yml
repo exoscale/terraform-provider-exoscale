@@ -1,0 +1,25 @@
+name: run-unit-tests
+
+on:
+  push:
+    branches:
+    - '**'
+    paths:
+    - 'go.mod'
+    - 'go.sum'
+    - '**.go'
+    - '.github/workflows/test-unit.yml'
+    tags-ignore:
+    - 'v*' # Don't run on release tags
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: make go.mk
+      - uses: ./go.mk/.github/actions/setup
+      - uses: ./go.mk/.github/actions/pre-check
+      - name: Run unit tests
+        run: |
+          make test-verbose
