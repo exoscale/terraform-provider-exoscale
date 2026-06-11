@@ -1,0 +1,49 @@
+name: run-acceptance-tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_run_pattern:
+        description: 'Extra run arguments to pass to Go tests (e.g. "^Test.*Database.*")'
+        required: false
+        type: string
+        default: ''
+  pull_request:
+    branches:
+      - master
+    paths:
+      - 'go.mod'
+      - 'go.sum'
+      - '**.go'
+      - '.github/workflows/test-acc.yml'
+  push:
+    branches:
+      - master
+    paths:
+      - 'go.mod'
+      - 'go.sum'
+      - '**.go'
+      - '.github/workflows/test-acc.yml'
+
+# Prevent parallel execution of acc tests
+concurrency: acc-tests
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: make go.mk
+      - uses: ./go.mk/.github/actions/setup
+      - uses: ./go.mk/.github/actions/pre-check
+      - name: Run acceptance tests
+        run: |
+          if [ -n "${EXTRA_ARGS}" ]; then
+            make test-acc EXTRA_ARGS="${EXTRA_ARGS}"
+          else
+            make test-acc
+          fi
+        env:
+          EXOSCALE_API_KEY: ${{ secrets.EXOSCALE_API_KEY }}
+          EXOSCALE_API_SECRET: ${{ secrets.EXOSCALE_API_SECRET }}
+          EXTRA_ARGS: ${{ inputs.test_run_pattern != '' && format('-parallel=3 -count=1 -failfast -run={0}', inputs.test_run_pattern) || '' }}
