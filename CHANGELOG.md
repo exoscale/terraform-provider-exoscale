@@ -13,6 +13,7 @@ BUG FIXES:
 - `security_group_rule`: allow portless protocols (ESP, AH, GRE, IPIP) #531
 - `template`: fall back to private visibility when name lookup returns not found #532
 - `elastic_ip`: tolerate missing instance during detach #549
+- `instance`: check instance state before stop/start #551
 
 DEPENDENCIES:
 
