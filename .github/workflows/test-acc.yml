@@ -1,4 +1,4 @@
-name: run-acceptance-tests
+name: Acceptance tests
 
 on:
   workflow_dispatch:
