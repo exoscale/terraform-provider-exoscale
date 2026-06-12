@@ -133,7 +133,7 @@ func Resource() *schema.Resource {
 			Description:  "The number of managed instances.",
 			Type:         schema.TypeInt,
 			Required:     true,
-			ValidateFunc: validation.IntAtLeast(1),
+			ValidateFunc: validation.IntAtLeast(0),
 		},
 		AttrMinAvailable: {
 			Description:  "Minimum number of running Instances.",
