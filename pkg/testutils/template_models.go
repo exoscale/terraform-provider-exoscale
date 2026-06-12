@@ -106,3 +106,13 @@ type ResourceAPIKeyModel struct {
 	Name   string
 	RoleID string
 }
+
+// ResourceKMSKeyModel maps to resource_kms_key.tmpl
+type ResourceKMSKeyModel struct {
+	ResourceName string
+
+	Zone        string
+	Name        string
+	Description string
+	Usage       string
+}
