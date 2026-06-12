@@ -1,0 +1,6 @@
+resource "exoscale_kms_key" "{{ .ResourceName }}" {
+  name        = "{{ .Name }}"
+  zone        = "{{ .Zone }}"
+  description = "{{ .Description }}"
+  usage       = "{{ .Usage }}"
+}

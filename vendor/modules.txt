@@ -271,8 +271,8 @@ github.com/exoscale/egoscale/v2
 github.com/exoscale/egoscale/v2/api
 github.com/exoscale/egoscale/v2/oapi
 github.com/exoscale/egoscale/version
-# github.com/exoscale/egoscale/v3 v3.1.35
-## explicit; go 1.26
+# github.com/exoscale/egoscale/v3 v3.1.38
+## explicit; go 1.25
 github.com/exoscale/egoscale/v3
 github.com/exoscale/egoscale/v3/credentials
 # github.com/fatih/color v1.18.0
