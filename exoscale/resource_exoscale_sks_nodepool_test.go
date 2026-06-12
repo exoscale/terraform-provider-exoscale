@@ -264,6 +264,9 @@ resource "exoscale_sks_nodepool" "test" {
 func TestAccResourceSKSNodepool(t *testing.T) {
 	t.Parallel()
 
+	// TODO: Remove when sks-orch is fixed
+	t.Skipf("Skipped due to sks-orch issue: https://app.shortcut.com/exoscale/story/184320/")
+
 	var (
 		r           = "exoscale_sks_nodepool.test"
 		sksCluster  v3.SKSCluster
