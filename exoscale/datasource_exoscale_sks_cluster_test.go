@@ -132,6 +132,9 @@ resource "exoscale_sks_nodepool" "my_sks_nodepool_2" {
 func TestAccSKSDataSources(t *testing.T) {
 	t.Parallel()
 
+	// TODO: Remove when sks-orch is fixed
+	t.Skipf("Skipped due to sks-orch issue: https://app.shortcut.com/exoscale/story/184320/")
+
 	type testCase struct {
 		Config               string
 		DataSourceIdentifier string
