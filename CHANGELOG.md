@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+IMPROVEMENTS:
+
+- Resource compute_instance: clearify the default state value #538
+
 ## 0.69.3
 
 IMPROVEMENTS:
