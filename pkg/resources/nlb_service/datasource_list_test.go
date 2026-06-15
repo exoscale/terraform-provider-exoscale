@@ -8,7 +8,6 @@ import (
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/testutils"
 
-	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
@@ -43,7 +42,7 @@ func testListDataSource(t *testing.T) {
 	ipoolModel := testutils.ResourceInstancePoolModel{
 		ResourceName: "test",
 		Zone:         testutils.TestZoneName,
-		Name:         acctest.RandomWithPrefix(testutils.Prefix),
+		Name:         testutils.TestResourceName(),
 		Size:         2,
 		TemplateID:   "data.exoscale_template.test.id",
 		Type:         "standard.medium",
@@ -64,7 +63,7 @@ func testListDataSource(t *testing.T) {
 	nlbModel := testutils.ResourceNLBModel{
 		ResourceName: "test",
 		Zone:         testutils.TestZoneName,
-		Name:         acctest.RandomWithPrefix(testutils.Prefix),
+		Name:         testutils.TestResourceName(),
 	}
 	err = tpl.Execute(buf, &nlbModel)
 	if err != nil {
@@ -81,7 +80,7 @@ func testListDataSource(t *testing.T) {
 	nlbServiceModel := testutils.ResourceNLBServiceModel{
 		ResourceName:    "test",
 		Zone:            testutils.TestZoneName,
-		Name:            acctest.RandomWithPrefix(testutils.Prefix),
+		Name:            testutils.TestResourceName(),
 		NLBID:           "exoscale_nlb.test.id",
 		InstancePoolID:  "exoscale_instance_pool.test.id",
 		Port:            8080,

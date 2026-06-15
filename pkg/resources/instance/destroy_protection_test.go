@@ -7,7 +7,6 @@ import (
 	"testing"
 	"text/template"
 
-	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
@@ -96,7 +95,7 @@ func checkResourceDoesNotExist(name string) func(s *terraform.State) error {
 func testExplicitDestroyProtection(t *testing.T) {
 	t.Parallel()
 
-	instanceName := acctest.RandomWithPrefix(testutils.Prefix)
+	instanceName := testutils.TestResourceName()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testutils.AccPreCheck(t) },
@@ -152,7 +151,7 @@ func testExplicitDestroyProtection(t *testing.T) {
 func testDefaultDestroyProtection(t *testing.T) {
 	t.Parallel()
 
-	instanceName := acctest.RandomWithPrefix(testutils.Prefix)
+	instanceName := testutils.TestResourceName()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testutils.AccPreCheck(t) },

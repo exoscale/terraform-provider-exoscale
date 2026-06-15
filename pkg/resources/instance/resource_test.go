@@ -18,18 +18,18 @@ import (
 )
 
 var (
-	rAntiAffinityGroupName       = acctest.RandomWithPrefix(testutils.Prefix)
+	rAntiAffinityGroupName       = testutils.TestResourceName()
 	rDiskSize              int64 = 10
 	rDiskSizeUpdated             = rDiskSize * 2
 	rDiskSizeUpdated2            = rDiskSize * 3
-	rLabelValue                  = acctest.RandomWithPrefix(testutils.Prefix)
+	rLabelValue                  = testutils.TestResourceName()
 	rLabelValueUpdated           = rLabelValue + "-updated"
-	rName                        = acctest.RandomWithPrefix(testutils.Prefix)
+	rName                        = testutils.TestResourceName()
 	rNameUpdated                 = rName + "-updated"
-	rPrivateNetworkName          = acctest.RandomWithPrefix(testutils.Prefix)
-	rSSHKeyName                  = acctest.RandomWithPrefix(testutils.Prefix)
-	rSSHKeyName2                 = acctest.RandomWithPrefix(testutils.Prefix)
-	rSecurityGroupName           = acctest.RandomWithPrefix(testutils.Prefix)
+	rPrivateNetworkName          = testutils.TestResourceName()
+	rSSHKeyName                  = testutils.TestResourceName()
+	rSSHKeyName2                 = testutils.TestResourceName()
+	rSecurityGroupName           = testutils.TestResourceName()
 	rStateStopped                = "stopped"
 	rStateRunning                = "running"
 	rType                        = "standard.tiny"

@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
@@ -17,7 +16,7 @@ import (
 var (
 	dsListDiskSize     = "10"
 	dsListInstanceType = "standard.tiny"
-	dsListName         = acctest.RandomWithPrefix(testutils.Prefix)
+	dsListName         = testutils.TestResourceName()
 	dsListZone         = "at-vie-1"
 )
 

@@ -9,7 +9,6 @@ import (
 	"testing"
 	"text/template"
 
-	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
@@ -48,7 +47,7 @@ func testResourceExternalIntegration(t *testing.T) {
 	fullIntegrationResource := "exoscale_dbaas_external_integration.test"
 	fullEndpointResource := "exoscale_dbaas_external_endpoint_prometheus.test_endpoint"
 
-	rawEndpointName := acctest.RandomWithPrefix(testutils.Prefix)
+	rawEndpointName := testutils.TestResourceName()
 	if len(rawEndpointName) > 40 {
 		rawEndpointName = rawEndpointName[:40]
 	}

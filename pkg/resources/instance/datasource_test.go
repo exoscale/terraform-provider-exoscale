@@ -16,14 +16,14 @@ import (
 )
 
 var (
-	dsAntiAffinityGroupName       = acctest.RandomWithPrefix(testutils.Prefix)
+	dsAntiAffinityGroupName       = testutils.TestResourceName()
 	dsDiskSize              int64 = 10
-	dsLabelValue                  = acctest.RandomWithPrefix(testutils.Prefix)
-	dsName                        = acctest.RandomWithPrefix(testutils.Prefix)
-	dsPrivateNetworkName          = acctest.RandomWithPrefix(testutils.Prefix)
-	dsSSHKeyName                  = acctest.RandomWithPrefix(testutils.Prefix)
+	dsLabelValue                  = testutils.TestResourceName()
+	dsName                        = testutils.TestResourceName()
+	dsPrivateNetworkName          = testutils.TestResourceName()
+	dsSSHKeyName                  = testutils.TestResourceName()
 	dsReverseDNS                  = "tf-provider-rdns-test.exoscale.com"
-	dsSecurityGroupName           = acctest.RandomWithPrefix(testutils.Prefix)
+	dsSecurityGroupName           = testutils.TestResourceName()
 	dsType                        = "standard.tiny"
 	dsUserData                    = acctest.RandString(10)
 

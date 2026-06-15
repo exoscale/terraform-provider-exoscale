@@ -43,7 +43,7 @@ func testDataSourceURI(t *testing.T) {
 	}
 	resourcePg := TemplateModelPg{
 		ResourceName:          "test",
-		Name:                  acctest.RandomWithPrefix(testutils.Prefix),
+		Name:                  testutils.TestResourceName(),
 		Plan:                  "hobbyist-2",
 		Zone:                  testutils.TestZoneName,
 		TerminationProtection: false,
@@ -90,7 +90,7 @@ func testDataSourceURI(t *testing.T) {
 	}
 	resourceMysql := TemplateModelMysql{
 		ResourceName:          "test",
-		Name:                  acctest.RandomWithPrefix(testutils.Prefix),
+		Name:                  testutils.TestResourceName(),
 		Plan:                  "hobbyist-2",
 		Zone:                  testutils.TestZoneName,
 		TerminationProtection: false,
@@ -137,7 +137,7 @@ func testDataSourceURI(t *testing.T) {
 	}
 	resourceKafka := TemplateModelKafka{
 		ResourceName:          "test",
-		Name:                  acctest.RandomWithPrefix(testutils.Prefix),
+		Name:                  testutils.TestResourceName(),
 		Plan:                  "business-4",
 		Zone:                  testutils.TestZoneName,
 		TerminationProtection: false,
@@ -184,7 +184,7 @@ func testDataSourceURI(t *testing.T) {
 	}
 	resourceOpensearch := TemplateModelOpensearch{
 		ResourceName:          "test",
-		Name:                  acctest.RandomWithPrefix(testutils.Prefix),
+		Name:                  testutils.TestResourceName(),
 		Plan:                  "hobbyist-2",
 		Zone:                  testutils.TestZoneName,
 		TerminationProtection: false,
@@ -232,7 +232,7 @@ func testDataSourceURI(t *testing.T) {
 	}
 	resourceGrafana := TemplateModelGrafana{
 		ResourceName:          "test",
-		Name:                  acctest.RandomWithPrefix(testutils.Prefix),
+		Name:                  testutils.TestResourceName(),
 		Plan:                  "hobbyist-2",
 		Zone:                  testutils.TestZoneName,
 		TerminationProtection: false,

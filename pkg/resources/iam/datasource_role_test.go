@@ -7,7 +7,6 @@ import (
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/testutils"
 
-	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
@@ -15,7 +14,7 @@ func testDataSourceRole(t *testing.T) {
 	t.Parallel()
 
 	var (
-		iamRoleName string = acctest.RandomWithPrefix(testutils.Prefix + "-role")
+		iamRoleName string = testutils.TestResourceNameWithSuffix("role")
 	)
 
 	// Role

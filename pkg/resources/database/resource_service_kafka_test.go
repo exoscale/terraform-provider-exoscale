@@ -13,7 +13,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
@@ -77,7 +76,7 @@ func testResourceKafka(t *testing.T) {
 	serviceFullResourceName := "exoscale_dbaas.test"
 	serviceDataBase := TemplateModelKafka{
 		ResourceName:          "test",
-		Name:                  acctest.RandomWithPrefix(testutils.Prefix),
+		Name:                  testutils.TestResourceName(),
 		Plan:                  "business-4",
 		Zone:                  testutils.TestZoneName,
 		TerminationProtection: false,

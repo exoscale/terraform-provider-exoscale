@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
@@ -15,10 +14,10 @@ import (
 )
 
 var (
-	dsListSecurityGroupName       = acctest.RandomWithPrefix(testutils.Prefix)
+	dsListSecurityGroupName       = testutils.TestResourceName()
 	dsListDiskSize          int64 = 10
-	dsListName                    = acctest.RandomWithPrefix(testutils.Prefix)
-	dsListSSHKeyName              = acctest.RandomWithPrefix(testutils.Prefix)
+	dsListName                    = testutils.TestResourceName()
+	dsListSSHKeyName              = testutils.TestResourceName()
 	dsListReverseDNS              = "tf-provider-rdns-list-test.exoscale.com"
 	dsListType                    = "standard.tiny"
 	dsListZone                    = "at-vie-2"

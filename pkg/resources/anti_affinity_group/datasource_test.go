@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
@@ -15,7 +14,7 @@ import (
 	"github.com/exoscale/terraform-provider-exoscale/pkg/testutils"
 )
 
-var dsGroupName = acctest.RandomWithPrefix(testutils.Prefix)
+var dsGroupName = testutils.TestResourceName()
 
 func testDataSource(t *testing.T) {
 	t.Parallel()

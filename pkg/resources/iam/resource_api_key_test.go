@@ -7,7 +7,6 @@ import (
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/testutils"
 
-	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
@@ -16,8 +15,8 @@ func testResourceAPIKey(t *testing.T) {
 	t.Parallel()
 
 	var (
-		roleName         string = acctest.RandomWithPrefix(testutils.Prefix + "-role")
-		apiKeyName       string = acctest.RandomWithPrefix(testutils.Prefix + "-api-key")
+		roleName         string = testutils.TestResourceNameWithSuffix("role")
+		apiKeyName       string = testutils.TestResourceNameWithSuffix("api-key")
 		fullResourceName string = "exoscale_iam_api_key.test"
 	)
 
