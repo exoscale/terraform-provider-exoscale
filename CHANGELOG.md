@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+BUG FIXES:
+
+- `dbaas_pg_database`: wait for newly created database to appear in service list, fixing intermittent "Unable to find newly created database for the service" error on create
+
 IMPROVEMENTS:
 
 - Resource compute_instance: clearify the default state value #538
