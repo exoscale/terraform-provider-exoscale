@@ -3,7 +3,6 @@ package privatenetwork
 import (
 	"context"
 	"fmt"
-	"slices"
 
 	exoscale "github.com/exoscale/egoscale/v3"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
@@ -56,9 +55,10 @@ func (d *DataSource) Schema(ctx context.Context, req datasource.SchemaRequest, r
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Description:         "The private network ID to match (conflicts with `name`).",
+				Description:         "The private network ID to match (conflicts with 'name').",
 				MarkdownDescription: "The private network ID to match (conflicts with `name`).",
 				Optional:            true,
+				Computed:            true,
 				Validators: []validator.String{
 					stringvalidator.ExactlyOneOf(path.Expressions{
 						path.MatchRoot("name"),
@@ -66,9 +66,10 @@ func (d *DataSource) Schema(ctx context.Context, req datasource.SchemaRequest, r
 				},
 			},
 			"name": schema.StringAttribute{
-				Description:         "The network name to match (conflicts with `id`).",
+				Description:         "The network name to match (conflicts with 'id').",
 				MarkdownDescription: "The network name to match (conflicts with `id`).",
 				Optional:            true,
+				Computed:            true,
 				Validators: []validator.String{
 					stringvalidator.ExactlyOneOf(path.Expressions{
 						path.MatchRoot("id"),
@@ -76,7 +77,7 @@ func (d *DataSource) Schema(ctx context.Context, req datasource.SchemaRequest, r
 				},
 			},
 			"zone": schema.StringAttribute{
-				Description:         "The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.",
+				Description:         "The Exoscale zone name.",
 				MarkdownDescription: "The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.",
 				Required:            true,
 				Validators: []validator.String{
@@ -86,13 +87,13 @@ func (d *DataSource) Schema(ctx context.Context, req datasource.SchemaRequest, r
 			"description": schema.StringAttribute{
 				Description:         "The private network description.",
 				MarkdownDescription: "The private network description.",
-				Optional:            true,
+				Computed:            true,
 			},
 			"labels": schema.MapAttribute{
 				Description:         "A map of key/value labels.",
 				MarkdownDescription: "A map of key/value labels.",
 				ElementType:         types.StringType,
-				Optional:            true,
+				Computed:            true,
 			},
 			"start_ip": schema.StringAttribute{
 				Description:         "The first/last IPv4 addresses used by the DHCP service for dynamic leases.",
@@ -134,11 +135,6 @@ func (d *DataSource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 		return
 	}
 
-	zone := state.Zone.ValueString()
-	if !slices.Contains(config.Zones, zone) {
-		resp.Diagnostics.AddError("invalid value", "zone must be a valid exoscale zone")
-	}
-
 	timeout, diags := state.Timeouts.Read(ctx, config.DefaultTimeout)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -150,7 +146,7 @@ func (d *DataSource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 	client, err := utils.SwitchClientZone(
 		ctx,
 		d.client,
-		exoscale.ZoneName(zone),
+		exoscale.ZoneName(state.Zone.ValueString()),
 	)
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -162,7 +158,7 @@ func (d *DataSource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 
 	var privateNetwork exoscale.PrivateNetwork
 	switch {
-	case !(state.Name.IsNull() || state.Name.IsUnknown()): //nolint:staticcheck // in this case De Morgan's law is more complex to read
+	case !state.Name.IsNull(): //nolint:staticcheck // in this case De Morgan's law is more complex to read
 		privateNetworks, err := client.ListPrivateNetworks(ctx)
 		if err != nil {
 			resp.Diagnostics.AddError(
@@ -172,9 +168,6 @@ func (d *DataSource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 			return
 		}
 		privateNetwork, err = privateNetworks.FindPrivateNetwork(state.Name.ValueString())
-		for i := range privateNetworks.PrivateNetworks {
-			fmt.Println("->", privateNetworks.PrivateNetworks[i].Name)
-		}
 		if err != nil {
 			resp.Diagnostics.AddError(
 				fmt.Sprintf("private network with name: %s not found", state.Name.ValueString()),
@@ -183,7 +176,7 @@ func (d *DataSource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 			return
 		}
 
-	case !(state.ID.IsNull() && state.ID.IsUnknown()): //nolint:staticcheck // in this case De Morgan's law is more complex to read
+	case !state.ID.IsNull(): //nolint:staticcheck // in this case De Morgan's law is more complex to read
 		id, err := exoscale.ParseUUID(state.ID.ValueString())
 		if err != nil {
 			resp.Diagnostics.AddError(

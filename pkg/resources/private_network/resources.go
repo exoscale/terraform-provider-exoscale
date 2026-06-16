@@ -50,7 +50,6 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 	resp.Schema = schema.Schema{
 		Description:         "Manage Exoscale Private Networks.",
 		MarkdownDescription: markdownDescriptionResource,
-		Version:             0,
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
@@ -77,7 +76,7 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 				Optional:            true,
 			},
 			"zone": schema.StringAttribute{
-				Description:         "❗ The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.",
+				Description:         "❗ The Exoscale zone name.",
 				MarkdownDescription: "❗ The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.",
 				Required:            true,
 				PlanModifiers: []planmodifier.String{
@@ -243,8 +242,6 @@ func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *res
 		)
 		resp.State.RemoveResource(ctx)
 		return
-	} else if !slices.Contains(config.Zones, zone) {
-		resp.Diagnostics.AddError("invalid value", "zone must be a valid exoscale zone")
 	}
 
 	client, err := utils.SwitchClientZone(
@@ -326,8 +323,6 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 		)
 		resp.State.RemoveResource(ctx)
 		return
-	} else if !slices.Contains(config.Zones, zone) {
-		resp.Diagnostics.AddError("invalid value", "zone must be a valid exoscale zone")
 	}
 
 	id, err := exoscale.ParseUUID(plan.ID.ValueString())
@@ -398,7 +393,7 @@ func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp 
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	timeout, diags := state.Timeouts.Read(ctx, config.DefaultTimeout)
+	timeout, diags := state.Timeouts.Delete(ctx, config.DefaultTimeout)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -434,8 +429,6 @@ func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp 
 		)
 		resp.State.RemoveResource(ctx)
 		return
-	} else if !slices.Contains(config.Zones, zone) {
-		resp.Diagnostics.AddError("invalid value", "zone must be a valid exoscale zone")
 	}
 
 	client, err := utils.SwitchClientZone(
