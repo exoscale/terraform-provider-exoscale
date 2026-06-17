@@ -20,6 +20,7 @@ parameters][tf-doc-provider] or environment variables:
 * `key` / `EXOSCALE_API_KEY`: Exoscale account API key
 * `secret` / `EXOSCALE_API_SECRET`: Exoscale account API secret
 * `timeout`: Global async operations waiting time in seconds (default: `300`)
+* `default_labels`: Labels to apply to all resources that support labels
 
 At least an [Exoscale API key and secret][exo-iam] must be provided in order to
 use the Exoscale Terraform provider.
@@ -47,6 +48,7 @@ provider "exoscale" {
 
 ### Optional
 
+- `default_labels` (Map of String) A map of labels to apply by default to all resources supporting labels.
 - `environment` (String)
 - `key` (String) Exoscale API key
 - `secret` (String, Sensitive) Exoscale API secret

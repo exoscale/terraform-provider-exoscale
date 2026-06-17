@@ -68,6 +68,18 @@ func TestProvider(t *testing.T) {
 	}
 }
 
+func TestProvider_DefaultLabelsSchema(t *testing.T) {
+	t.Parallel()
+
+	s, ok := Provider().Schema["default_labels"]
+	if !ok {
+		t.Fatal("expected default_labels in provider schema")
+	}
+	if s.Type != schema.TypeMap {
+		t.Fatalf("unexpected default_labels type: got %v", s.Type)
+	}
+}
+
 func testAccPreCheck(t *testing.T) {
 	key := os.Getenv("EXOSCALE_API_KEY")
 	secret := os.Getenv("EXOSCALE_API_SECRET")

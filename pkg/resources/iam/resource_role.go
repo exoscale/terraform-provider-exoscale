@@ -39,8 +39,9 @@ func NewResourceRole() resource.Resource {
 
 // ResourceRole defines the IAM Organization Policy resource implementation.
 type ResourceRole struct {
-	client *exoscale.Client
-	env    string
+	client        *exoscale.Client
+	env           string
+	defaultLabels map[string]string
 }
 
 // ResourceRoleModel describes the IAM Organization Policy resource data model.
@@ -179,8 +180,10 @@ func (r *ResourceRole) Configure(ctx context.Context, req resource.ConfigureRequ
 		return
 	}
 
-	r.client = req.ProviderData.(*providerConfig.ExoscaleProviderConfig).ClientV2
-	r.env = req.ProviderData.(*providerConfig.ExoscaleProviderConfig).Environment
+	pcfg := req.ProviderData.(*providerConfig.ExoscaleProviderConfig)
+	r.client = pcfg.ClientV2
+	r.env = pcfg.Environment
+	r.defaultLabels = pcfg.DefaultLabels
 }
 
 func (r *ResourceRole) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -226,7 +229,9 @@ func (r *ResourceRole) Create(ctx context.Context, req resource.CreateRequest, r
 			return
 		}
 
-		role.Labels = labels
+		role.Labels = providerConfig.MergeLabels(r.defaultLabels, labels)
+	} else {
+		role.Labels = providerConfig.MergeLabels(r.defaultLabels, nil)
 	}
 
 	if !data.Permissions.IsUnknown() {
@@ -409,7 +414,7 @@ func (r *ResourceRole) Update(ctx context.Context, req resource.UpdateRequest, r
 			return
 		}
 
-		role.Labels = labels
+		role.Labels = providerConfig.MergeLabels(r.defaultLabels, labels)
 		updated = true
 
 	}
@@ -612,10 +617,11 @@ func (r *ResourceRole) read(
 
 	data.Labels = types.MapNull(types.StringType)
 	if role.Labels != nil {
+		filtered := providerConfig.StripDefaultLabels(role.Labels, r.defaultLabels)
 		t, dg := types.MapValueFrom(
 			ctx,
 			types.StringType,
-			role.Labels,
+			filtered,
 		)
 		if dg.HasError() {
 			d.Append(dg...)

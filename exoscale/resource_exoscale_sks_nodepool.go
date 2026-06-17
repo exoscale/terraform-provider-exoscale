@@ -14,6 +14,7 @@ import (
 	v3 "github.com/exoscale/egoscale/v3"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/general"
+	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
 )
 
@@ -347,11 +348,11 @@ func resourceSKSNodepoolCreate(ctx context.Context, d *schema.ResourceData, meta
 		sksNodepoolCreate.KubeletImageGC = sksNodepoolKubeletGc
 	}
 
+	labels := config.LabelsWithDefaults(meta, nil)
 	if l, ok := d.GetOk(resSKSNodepoolAttrLabels); ok {
-		labels := make(map[string]string)
-		for k, v := range l.(map[string]any) {
-			labels[k] = v.(string)
-		}
+		labels = config.LabelsWithDefaults(meta, providerConfig.StringMapFromAnyMap(l.(map[string]any)))
+	}
+	if labels != nil {
 		sksNodepoolCreate.Labels = labels
 	}
 
@@ -564,10 +565,7 @@ func resourceSKSNodepoolUpdate(ctx context.Context, d *schema.ResourceData, meta
 	}
 
 	if d.HasChange(resSKSNodepoolAttrLabels) {
-		labels := make(map[string]string)
-		for k, v := range d.Get(resSKSNodepoolAttrLabels).(map[string]any) {
-			labels[k] = v.(string)
-		}
+		labels := config.LabelsWithDefaults(meta, providerConfig.StringMapFromAnyMap(d.Get(resSKSNodepoolAttrLabels).(map[string]any)))
 		sksNodepoolUpdate.Labels = labels
 		updated = true
 	}
@@ -795,7 +793,7 @@ func resourceSKSNodepoolApply(
 
 	}
 
-	if err := d.Set(resSKSNodepoolAttrLabels, sksNodepool.Labels); err != nil {
+	if err := d.Set(resSKSNodepoolAttrLabels, config.LabelsWithoutDefaults(meta, sksNodepool.Labels)); err != nil {
 		return err
 	}
 

@@ -36,7 +36,8 @@ var _ resource.ResourceWithImportState = &ResourceSnapshot{}
 
 // ResourceSnapshot defines the resource implementation.
 type ResourceSnapshot struct {
-	client *exoscale.Client
+	client        *exoscale.Client
+	defaultLabels map[string]string
 }
 
 // NewResourceSnapshot creates instance of ResourceSnapshot.
@@ -137,7 +138,9 @@ func (r *ResourceSnapshot) Configure(ctx context.Context, req resource.Configure
 		return
 	}
 
-	r.client = req.ProviderData.(*providerConfig.ExoscaleProviderConfig).ClientV3
+	pcfg := req.ProviderData.(*providerConfig.ExoscaleProviderConfig)
+	r.client = pcfg.ClientV3
+	r.defaultLabels = pcfg.DefaultLabels
 }
 
 // Create resources by receiving Terraform configuration and plan data, performing creation logic, and saving Terraform state data.
@@ -199,15 +202,18 @@ func (r *ResourceSnapshot) Create(ctx context.Context, req resource.CreateReques
 		return
 	}
 
-	if len(plan.Labels.Elements()) > 0 {
-		labels := exoscale.Labels{}
-
-		dg := plan.Labels.ElementsAs(ctx, &labels, false)
+	labels := providerConfig.MergeLabels(r.defaultLabels, nil)
+	if !plan.Labels.IsNull() && !plan.Labels.IsUnknown() {
+		resourceLabels := exoscale.Labels{}
+		dg := plan.Labels.ElementsAs(ctx, &resourceLabels, false)
 		if dg.HasError() {
 			resp.Diagnostics.Append(dg...)
 			return
 		}
 
+		labels = providerConfig.MergeLabels(r.defaultLabels, resourceLabels)
+	}
+	if labels != nil {
 		request.Labels = labels
 	}
 
@@ -351,10 +357,11 @@ func (r *ResourceSnapshot) Read(ctx context.Context, req resource.ReadRequest, r
 		state.Labels = types.MapNull(types.StringType)
 
 		if snapshot.Labels != nil {
+			filtered := providerConfig.StripDefaultLabels(snapshot.Labels, r.defaultLabels)
 			t, dg := types.MapValueFrom(
 				ctx,
 				types.StringType,
-				snapshot.Labels,
+				filtered,
 			)
 			if dg.HasError() {
 				resp.Diagnostics.Append(dg...)
@@ -429,8 +436,11 @@ func (r *ResourceSnapshot) Update(ctx context.Context, req resource.UpdateReques
 	if !plan.Labels.Equal(state.Labels) {
 		update = true
 
+		updateReq.Labels = providerConfig.MergeLabels(r.defaultLabels, nil)
 		if !plan.Labels.IsNull() {
-			resp.Diagnostics.Append(plan.Labels.ElementsAs(ctx, &updateReq.Labels, false)...)
+			resourceLabels := exoscale.Labels{}
+			resp.Diagnostics.Append(plan.Labels.ElementsAs(ctx, &resourceLabels, false)...)
+			updateReq.Labels = providerConfig.MergeLabels(r.defaultLabels, resourceLabels)
 		}
 	}
 

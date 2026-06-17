@@ -17,6 +17,7 @@ import (
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/general"
+	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
 )
 
@@ -126,11 +127,11 @@ func resourcePrivateNetworkCreate(ctx context.Context, d *schema.ResourceData, m
 		privateNetwork.EndIP = &ip
 	}
 
+	labels := config.LabelsWithDefaults(meta, nil)
 	if l, ok := d.GetOk(resPrivateNetworkAttrLabels); ok {
-		labels := make(map[string]string)
-		for k, v := range l.(map[string]any) {
-			labels[k] = v.(string)
-		}
+		labels = config.LabelsWithDefaults(meta, providerConfig.StringMapFromAnyMap(l.(map[string]any)))
+	}
+	if labels != nil {
 		privateNetwork.Labels = &labels
 	}
 
@@ -221,10 +222,7 @@ func resourcePrivateNetworkUpdate(ctx context.Context, d *schema.ResourceData, m
 	}
 
 	if d.HasChange(resPrivateNetworkAttrLabels) {
-		labels := make(map[string]string)
-		for k, v := range d.Get(resPrivateNetworkAttrLabels).(map[string]any) {
-			labels[k] = v.(string)
-		}
+		labels := config.LabelsWithDefaults(meta, providerConfig.StringMapFromAnyMap(d.Get(resPrivateNetworkAttrLabels).(map[string]any)))
 		privateNetwork.Labels = &labels
 		updated = true
 	}
@@ -335,7 +333,11 @@ func resourcePrivateNetworkApply(
 		}
 	}
 
-	if err := d.Set(resPrivateNetworkAttrLabels, privateNetwork.Labels); err != nil {
+	labels := map[string]string(nil)
+	if privateNetwork.Labels != nil {
+		labels = config.LabelsWithoutDefaults(meta, *privateNetwork.Labels)
+	}
+	if err := d.Set(resPrivateNetworkAttrLabels, labels); err != nil {
 		return err
 	}
 
