@@ -5,6 +5,7 @@
 IMPROVEMENTS:
 
 - Resource compute_instance: clearify the default state value #538
+- Change zone for sks acceptance tests
 
 ## 0.69.3
 
