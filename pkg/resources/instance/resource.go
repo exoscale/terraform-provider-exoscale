@@ -15,6 +15,7 @@ import (
 	v3 "github.com/exoscale/egoscale/v3"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
+	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
 )
 
@@ -309,11 +310,11 @@ func rCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnos
 		instanceRequest.SecurebootEnabled = &secureBootEnabledBool
 	}
 
+	labels := config.LabelsWithDefaults(meta, nil)
 	if l, ok := d.GetOk(AttrLabels); ok {
-		labels := make(map[string]string)
-		for k, v := range l.(map[string]any) {
-			labels[k] = v.(string)
-		}
+		labels = config.LabelsWithDefaults(meta, providerConfig.StringMapFromAnyMap(l.(map[string]any)))
+	}
+	if labels != nil {
 		instanceRequest.Labels = labels
 	}
 
@@ -546,10 +547,7 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnos
 	instanceUpdateRequest := v3.UpdateInstanceRequest{}
 
 	if d.HasChange(AttrLabels) {
-		labels := make(map[string]string)
-		for k, v := range d.Get(AttrLabels).(map[string]any) {
-			labels[k] = v.(string)
-		}
+		labels := config.LabelsWithDefaults(meta, providerConfig.StringMapFromAnyMap(d.Get(AttrLabels).(map[string]any)))
 		instanceUpdateRequest.Labels = labels
 		updated = true
 	}
@@ -1090,7 +1088,7 @@ func rApply( //nolint:gocyclo
 		}
 	}
 
-	if err := d.Set(AttrLabels, instance.Labels); err != nil {
+	if err := d.Set(AttrLabels, config.LabelsWithoutDefaults(meta, instance.Labels)); err != nil {
 		return diag.FromErr(err)
 	}
 

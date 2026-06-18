@@ -20,6 +20,7 @@ import (
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/general"
+	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
 )
 
@@ -205,11 +206,11 @@ func resourceElasticIPCreate(ctx context.Context, d *schema.ResourceData, meta a
 		elasticIP.Description = &s
 	}
 
+	labels := config.LabelsWithDefaults(meta, nil)
 	if l, ok := d.GetOk(resElasticIPAttrLabels); ok {
-		labels := make(map[string]string)
-		for k, v := range l.(map[string]any) {
-			labels[k] = v.(string)
-		}
+		labels = config.LabelsWithDefaults(meta, providerConfig.StringMapFromAnyMap(l.(map[string]any)))
+	}
+	if labels != nil {
 		elasticIP.Labels = &labels
 	}
 
@@ -336,10 +337,7 @@ func resourceElasticIPUpdate(ctx context.Context, d *schema.ResourceData, meta a
 	var updated bool
 
 	if d.HasChange(resElasticIPAttrLabels) {
-		labels := make(map[string]string)
-		for k, v := range d.Get(resElasticIPAttrLabels).(map[string]any) {
-			labels[k] = v.(string)
-		}
+		labels := config.LabelsWithDefaults(meta, providerConfig.StringMapFromAnyMap(d.Get(resElasticIPAttrLabels).(map[string]any)))
 		elasticIP.Labels = &labels
 		updated = true
 	}
@@ -555,7 +553,11 @@ func resourceElasticIPApply(
 		return diag.FromErr(err)
 	}
 
-	if err := d.Set(resElasticIPAttrLabels, elasticIP.Labels); err != nil {
+	labels := map[string]string(nil)
+	if elasticIP.Labels != nil {
+		labels = config.LabelsWithoutDefaults(meta, *elasticIP.Labels)
+	}
+	if err := d.Set(resElasticIPAttrLabels, labels); err != nil {
 		return diag.FromErr(err)
 	}
 

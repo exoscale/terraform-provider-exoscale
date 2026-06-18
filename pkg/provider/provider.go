@@ -36,11 +36,12 @@ import (
 const (
 	DefaultEnvironment = "api"
 
-	KeyAttrName         = "key"
-	SecretAttrName      = "secret"
-	EnvironmentAttrName = "environment"
-	SOSEndpointAttrName = "sos_endpoint"
-	TimeoutAttrName     = "timeout"
+	KeyAttrName           = "key"
+	SecretAttrName        = "secret"
+	EnvironmentAttrName   = "environment"
+	SOSEndpointAttrName   = "sos_endpoint"
+	TimeoutAttrName       = "timeout"
+	DefaultLabelsAttrName = "default_labels"
 )
 
 var _ provider.Provider = &ExoscaleProvider{}
@@ -48,11 +49,12 @@ var _ provider.Provider = &ExoscaleProvider{}
 type ExoscaleProvider struct{}
 
 type ExoscaleProviderModel struct {
-	Key         types.String  `tfsdk:"key"`
-	Secret      types.String  `tfsdk:"secret"`
-	Environment types.String  `tfsdk:"environment"`
-	Timeout     types.Float64 `tfsdk:"timeout"`
-	SOSEndpoint types.String  `tfsdk:"sos_endpoint"`
+	Key           types.String  `tfsdk:"key"`
+	Secret        types.String  `tfsdk:"secret"`
+	Environment   types.String  `tfsdk:"environment"`
+	Timeout       types.Float64 `tfsdk:"timeout"`
+	SOSEndpoint   types.String  `tfsdk:"sos_endpoint"`
+	DefaultLabels types.Map     `tfsdk:"default_labels"`
 }
 
 func (p *ExoscaleProvider) Metadata(ctx context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
@@ -82,6 +84,11 @@ func (p *ExoscaleProvider) Schema(ctx context.Context, req provider.SchemaReques
 				MarkdownDescription: fmt.Sprintf(
 					"Timeout in seconds for waiting on compute resources to become available (by default: %.0f)",
 					config.DefaultTimeout.Seconds()),
+			},
+			DefaultLabelsAttrName: schema.MapAttribute{
+				Optional:            true,
+				ElementType:         types.StringType,
+				MarkdownDescription: "A map of labels to apply by default to all resources supporting labels.",
 			},
 		},
 	}
@@ -144,8 +151,24 @@ func (p *ExoscaleProvider) Configure(ctx context.Context, req provider.Configure
 		if err != nil {
 			resp.Diagnostics.AddError(err.Error(), "")
 		}
+
+		defaultLabels := map[string]string{}
+		if !data.DefaultLabels.IsNull() && !data.DefaultLabels.IsUnknown() {
+			resp.Diagnostics.Append(data.DefaultLabels.ElementsAs(ctx, &defaultLabels, false)...)
+			if resp.Diagnostics.HasError() {
+				return
+			}
+		}
 	} else {
 		timeout = data.Timeout.ValueFloat64()
+	}
+
+	defaultLabels := map[string]string{}
+	if !data.DefaultLabels.IsNull() && !data.DefaultLabels.IsUnknown() {
+		resp.Diagnostics.Append(data.DefaultLabels.ElementsAs(ctx, &defaultLabels, false)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
 	}
 
 	exov2.UserAgent = UserAgent
@@ -196,19 +219,21 @@ func (p *ExoscaleProvider) Configure(ctx context.Context, req provider.Configure
 	}
 
 	resp.DataSourceData = &providerConfig.ExoscaleProviderConfig{
-		Config:      baseConfig,
-		ClientV2:    clv2,
-		ClientV3:    clv3,
-		Environment: environment,
-		SOSEndpoint: sosEndpoint,
+		Config:        baseConfig,
+		ClientV2:      clv2,
+		ClientV3:      clv3,
+		Environment:   environment,
+		SOSEndpoint:   sosEndpoint,
+		DefaultLabels: defaultLabels,
 	}
 
 	resp.ResourceData = &providerConfig.ExoscaleProviderConfig{
-		Config:      baseConfig,
-		ClientV2:    clv2,
-		ClientV3:    clv3,
-		Environment: environment,
-		SOSEndpoint: sosEndpoint,
+		Config:        baseConfig,
+		ClientV2:      clv2,
+		ClientV3:      clv3,
+		Environment:   environment,
+		SOSEndpoint:   sosEndpoint,
+		DefaultLabels: defaultLabels,
 	}
 }
 

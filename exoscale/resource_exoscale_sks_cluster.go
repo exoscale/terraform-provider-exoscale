@@ -14,6 +14,7 @@ import (
 	v3 "github.com/exoscale/egoscale/v3"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/general"
+	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
 )
 
 const (
@@ -396,11 +397,11 @@ func resourceSKSClusterCreate(ctx context.Context, d *schema.ResourceData, meta 
 		createReq.Description = &description
 	}
 
+	labels := config.LabelsWithDefaults(meta, nil)
 	if l, ok := d.GetOk(resSKSClusterAttrLabels); ok {
-		labels := make(map[string]string)
-		for k, v := range l.(map[string]any) {
-			labels[k] = v.(string)
-		}
+		labels = config.LabelsWithDefaults(meta, providerConfig.StringMapFromAnyMap(l.(map[string]any)))
+	}
+	if labels != nil {
 		createReq.Labels = labels
 	}
 
@@ -623,10 +624,7 @@ func resourceSKSClusterUpdate(ctx context.Context, d *schema.ResourceData, meta 
 	}
 
 	if d.HasChange(resSKSClusterAttrLabels) {
-		labels := make(map[string]string)
-		for k, v := range d.Get(resSKSClusterAttrLabels).(map[string]any) {
-			labels[k] = v.(string)
-		}
+		labels := config.LabelsWithDefaults(meta, providerConfig.StringMapFromAnyMap(d.Get(resSKSClusterAttrLabels).(map[string]any)))
 		updateReq.Labels = labels
 		updated = true
 	}
@@ -865,7 +863,7 @@ func resourceSKSClusterApply(_ context.Context, d *schema.ResourceData, sksClust
 		return err
 	}
 
-	if err := d.Set(resSKSClusterAttrLabels, sksCluster.Labels); err != nil {
+	if err := d.Set(resSKSClusterAttrLabels, config.LabelsWithoutDefaults(meta, sksCluster.Labels)); err != nil {
 		return err
 	}
 

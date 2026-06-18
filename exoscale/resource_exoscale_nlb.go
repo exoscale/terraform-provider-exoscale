@@ -11,6 +11,7 @@ import (
 	exoapi "github.com/exoscale/egoscale/v2/api"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/general"
+	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -115,11 +116,11 @@ func resourceNLBCreate(ctx context.Context, d *schema.ResourceData, meta any) di
 
 	nlb := new(egoscale.NetworkLoadBalancer)
 
+	labels := config.LabelsWithDefaults(meta, nil)
 	if l, ok := d.GetOk(resNLBAttrLabels); ok {
-		labels := make(map[string]string)
-		for k, v := range l.(map[string]any) {
-			labels[k] = v.(string)
-		}
+		labels = config.LabelsWithDefaults(meta, providerConfig.StringMapFromAnyMap(l.(map[string]any)))
+	}
+	if labels != nil {
 		nlb.Labels = &labels
 	}
 
@@ -172,7 +173,7 @@ func resourceNLBRead(ctx context.Context, d *schema.ResourceData, meta any) diag
 		"id": resourceNLBIDString(d),
 	})
 
-	return diag.FromErr(resourceNLBApply(ctx, d, nlb))
+	return diag.FromErr(resourceNLBApply(ctx, d, nlb, meta))
 }
 
 func resourceNLBUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
@@ -196,10 +197,7 @@ func resourceNLBUpdate(ctx context.Context, d *schema.ResourceData, meta any) di
 	var updated bool
 
 	if d.HasChange(resNLBAttrLabels) {
-		labels := make(map[string]string)
-		for k, v := range d.Get(resNLBAttrLabels).(map[string]any) {
-			labels[k] = v.(string)
-		}
+		labels := config.LabelsWithDefaults(meta, providerConfig.StringMapFromAnyMap(d.Get(resNLBAttrLabels).(map[string]any)))
 		nlb.Labels = &labels
 		updated = true
 	}
@@ -255,7 +253,7 @@ func resourceNLBDelete(ctx context.Context, d *schema.ResourceData, meta any) di
 	return nil
 }
 
-func resourceNLBApply(_ context.Context, d *schema.ResourceData, nlb *egoscale.NetworkLoadBalancer) error {
+func resourceNLBApply(_ context.Context, d *schema.ResourceData, nlb *egoscale.NetworkLoadBalancer, meta any) error {
 	if err := d.Set(resNLBAttrCreatedAt, nlb.CreatedAt.String()); err != nil {
 		return err
 	}
@@ -268,7 +266,11 @@ func resourceNLBApply(_ context.Context, d *schema.ResourceData, nlb *egoscale.N
 		return err
 	}
 
-	if err := d.Set(resNLBAttrLabels, nlb.Labels); err != nil {
+	labels := map[string]string(nil)
+	if nlb.Labels != nil {
+		labels = config.LabelsWithoutDefaults(meta, *nlb.Labels)
+	}
+	if err := d.Set(resNLBAttrLabels, labels); err != nil {
 		return err
 	}
 

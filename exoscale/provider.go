@@ -76,6 +76,12 @@ func Provider() *schema.Provider {
 					"Timeout in seconds for waiting on compute resources to become available (by default: %.0f)",
 					config.DefaultTimeout.Seconds()),
 			},
+			"default_labels": {
+				Type:        schema.TypeMap,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+				Optional:    true,
+				Description: "A map of labels to apply by default to all resources supporting labels.",
+			},
 		},
 
 		DataSourcesMap: map[string]*schema.Resource{
@@ -217,6 +223,11 @@ func ProviderConfigure(_ context.Context, d *schema.ResourceData) (any, diag.Dia
 		SOSEndpoint: sosEndpoint.(string),
 	}
 
+	defaultLabels := map[string]string{}
+	if v, ok := d.GetOk("default_labels"); ok {
+		defaultLabels = providerConfig.StringMapFromAnyMap(v.(map[string]any))
+	}
+
 	clv2, err := CreateClient(&baseConfig)
 	if err != nil {
 		return nil, diag.FromErr(err)
@@ -239,11 +250,12 @@ func ProviderConfigure(_ context.Context, d *schema.ResourceData) (any, diag.Dia
 	}
 
 	return map[string]any{
-			"config":       baseConfig,
-			"client":       clv2,
-			"clientV3":     clv3,
-			"environment":  environment,
-			"sos_endpoint": sosEndpoint,
+			"config":         baseConfig,
+			"client":         clv2,
+			"clientV3":       clv3,
+			"environment":    environment,
+			"sos_endpoint":   sosEndpoint,
+			"default_labels": defaultLabels,
 		},
 		diags
 }

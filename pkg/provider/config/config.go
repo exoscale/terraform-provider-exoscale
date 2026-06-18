@@ -21,11 +21,12 @@ type BaseConfig struct {
 }
 
 type ExoscaleProviderConfig struct {
-	Config      BaseConfig
-	ClientV2    *exov2.Client
-	ClientV3    *exov3.Client
-	Environment string
-	SOSEndpoint string
+	Config        BaseConfig
+	ClientV2      *exov2.Client
+	ClientV3      *exov3.Client
+	Environment   string
+	SOSEndpoint   string
+	DefaultLabels map[string]string
 }
 
 func GetMultiEnvDefault(ks []string, dv string) string {
