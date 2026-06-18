@@ -1,0 +1,21 @@
+resource "exoscale_private_network" "test_pn" {
+  zone        = "{{ .Zone }}"
+  name        = "terraform-provider-test-{{ .ID }}"
+  description = "description-test"
+  start_ip    = "10.0.0.10"
+  end_ip      = "10.0.0.250"
+  netmask     = "255.255.255.0"
+  labels = {
+    A = "B"
+  }
+}
+
+data "exoscale_private_network" "test_pn_name" {
+  zone = "{{ .Zone }}"
+  name = resource.exoscale_private_network.test_pn.name
+}
+
+data "exoscale_private_network" "test_pn_id" {
+  zone = "{{ .Zone }}"
+  id = resource.exoscale_private_network.test_pn.id
+}

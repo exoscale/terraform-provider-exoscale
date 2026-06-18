@@ -6,6 +6,7 @@ IMPROVEMENTS:
 
 - Resource compute_instance: clearify the default state value #538
 - Change zone for sks acceptance tests
+- Migrate Private Network resource/datasource to framework #542
 
 ## 0.69.3
 
