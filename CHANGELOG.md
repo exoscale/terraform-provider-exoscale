@@ -8,6 +8,9 @@ IMPROVEMENTS:
 - Change zone for sks acceptance tests
 - Migrate Private Network resource/datasource to framework #542
 
+BUG FIXES:
+- fix: typo in security group rule import doc #559
+
 ## 0.69.3
 
 IMPROVEMENTS:
