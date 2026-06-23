@@ -1,0 +1,6 @@
+resource "exoscale_kms_key" "test" {
+  name        = "terraform-provider-test-{{ .ID }}"
+  zone        = "{{ .Zone }}"
+  description = "acceptance test key"
+  usage       = "encrypt-decrypt"
+}
