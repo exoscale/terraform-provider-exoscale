@@ -36,14 +36,23 @@ jobs:
       - run: make go.mk
       - uses: ./go.mk/.github/actions/setup
       - uses: ./go.mk/.github/actions/pre-check
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('go.sum') }}-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-go-${{ hashFiles('go.sum') }}-
+            ${{ runner.os }}-go-
       - name: Run acceptance tests
         run: |
           if [ -n "${EXTRA_ARGS}" ]; then
             make test-acc EXTRA_ARGS="${EXTRA_ARGS}"
           else
-            make test-acc
+            make test-acc EXTRA_ARGS="-parallel=3 -failfast"
           fi
         env:
           EXOSCALE_API_KEY: ${{ secrets.EXOSCALE_API_KEY }}
           EXOSCALE_API_SECRET: ${{ secrets.EXOSCALE_API_SECRET }}
-          EXTRA_ARGS: ${{ inputs.test_run_pattern != '' && format('-parallel=3 -count=1 -failfast -run={0}', inputs.test_run_pattern) || '' }}
+          EXTRA_ARGS: ${{ inputs.test_run_pattern != '' && format('-parallel=3 -failfast -run={0}', inputs.test_run_pattern) || '' }}
