@@ -41,7 +41,7 @@ jobs:
           path: |
             ~/.cache/go-build
             ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('go.sum') }}-${{ github.run_id }}
+          key: ${{ runner.os }}-go-${{ hashFiles('go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-${{ hashFiles('go.sum') }}-
             ${{ runner.os }}-go-
@@ -50,7 +50,7 @@ jobs:
           if [ -n "${EXTRA_ARGS}" ]; then
             make test-acc EXTRA_ARGS="${EXTRA_ARGS}"
           else
-            make test-acc EXTRA_ARGS="-parallel=3 -failfast"
+            make test-acc
           fi
         env:
           EXOSCALE_API_KEY: ${{ secrets.EXOSCALE_API_KEY }}
