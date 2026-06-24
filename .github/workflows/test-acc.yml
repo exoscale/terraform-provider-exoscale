@@ -32,19 +32,13 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v7
       - run: make go.mk
       - uses: ./go.mk/.github/actions/setup
-      - uses: ./go.mk/.github/actions/pre-check
-      - uses: actions/cache@v4
         with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-${{ hashFiles('go.sum') }}-
-            ${{ runner.os }}-go-
+          go-version-file: 'go.mod'
+          cache: 'true'
+      - uses: ./go.mk/.github/actions/pre-check
       - name: Run acceptance tests
         run: |
           if [ -n "${EXTRA_ARGS}" ]; then
@@ -55,4 +49,4 @@ jobs:
         env:
           EXOSCALE_API_KEY: ${{ secrets.EXOSCALE_API_KEY }}
           EXOSCALE_API_SECRET: ${{ secrets.EXOSCALE_API_SECRET }}
-          EXTRA_ARGS: ${{ inputs.test_run_pattern != '' && format('-parallel=3 -failfast -run={0}', inputs.test_run_pattern) || '' }}
+          EXTRA_ARGS: ${{ github.event.inputs.test_run_pattern != '' && format('-parallel=3 -failfast -run={0}', github.event.inputs.test_run_pattern) || '' }}
