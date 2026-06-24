@@ -51,4 +51,4 @@ jobs:
         env:
           EXOSCALE_API_KEY: ${{ secrets.EXOSCALE_API_KEY }}
           EXOSCALE_API_SECRET: ${{ secrets.EXOSCALE_API_SECRET }}
-          EXTRA_ARGS: ${{ github.event.inputs.test_run_pattern != '' && format('-parallel=3 -failfast -run={0}', github.event.inputs.test_run_pattern) || '' }}
+          EXTRA_ARGS: ${{ inputs.test_run_pattern != '' && format('-parallel=3 -count=1 -failfast -run={0}', inputs.test_run_pattern) || '' }}

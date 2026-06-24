@@ -20,15 +20,6 @@ jobs:
       - run: make go.mk
       - uses: ./go.mk/.github/actions/setup
       - uses: ./go.mk/.github/actions/pre-check
-      - uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-${{ hashFiles('go.sum') }}-
-            ${{ runner.os }}-go-
       - name: Run unit tests
         run: |
-          make test-verbose EXTRA_ARGS="-parallel=3 -failfast"
+          make test-verbose
