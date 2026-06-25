@@ -29,6 +29,7 @@ BUG FIXES:
 DEPENDENCIES:
 
 - upgraded `golang/x/net` and related dependencies #540
+- upgraded `github.com/aws/aws-sdk-go-v2/service/s3` and related dependencies #541
 
 FEATURES:
 

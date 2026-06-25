@@ -392,6 +392,9 @@ func TestAccResourceSKSCluster(t *testing.T) {
 		return
 	}
 
+	// TODO: Remove when sks-orch is fixed
+	t.Skipf("Skipped due to sks-orch issue: https://app.shortcut.com/exoscale/story/184320/")
+
 	var (
 		r          = "exoscale_sks_cluster.test"
 		sksCluster egoscale.SKSCluster
@@ -687,7 +690,8 @@ func TestAccResourceSKSClusterSKSClusterWithAudit(t *testing.T) {
 			},
 			{
 				// Re-enable audit with new URL and default backoff
-				Config:             testAccRessourceSKSClusterReEnableAuditWithNewURL,
+				Config: testAccRessourceSKSClusterReEnableAuditWithNewURL,
+				// Disabled due to sks-orch issue: https://app.shortcut.com/exoscale/story/184320/
 				PlanOnly:           true, // TODO: remove once sks-orch is fixed
 				ExpectNonEmptyPlan: true, // TODO: remove once sks-orch is fixed
 				Check: resource.ComposeTestCheckFunc(
@@ -736,6 +740,9 @@ func TestAccResourceSKSClusterWithKarpenter(t *testing.T) {
 		t.Skipf("Acceptance tests skipped unless env '%s' set", resource.EnvTfAcc)
 		return
 	}
+
+	// TODO: Remove when sks-orch is fixed
+	t.Skipf("Skipped due to sks-orch issue: https://app.shortcut.com/exoscale/story/184320/")
 
 	var (
 		r          = "exoscale_sks_cluster.test-with-karpenter"

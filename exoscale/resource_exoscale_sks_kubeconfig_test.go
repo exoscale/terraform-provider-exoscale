@@ -57,6 +57,9 @@ resource "exoscale_sks_kubeconfig" "test_admin" {
 func TestAccResourceSKSKubeconfig(t *testing.T) {
 	t.Parallel()
 
+	// TODO: Remove when sks-orch is fixed
+	t.Skipf("Skipped due to sks-orch issue: https://app.shortcut.com/exoscale/story/184320/")
+
 	var (
 		r             = "exoscale_sks_kubeconfig.test_admin"
 		sksCluster    v3.SKSCluster
