@@ -35,7 +35,7 @@ func testResourceValkeyUser(t *testing.T) {
 
 	svcData := TemplateModelValkey{
 		ResourceName:          "test",
-		Name:                  acctest.RandomWithPrefix(testutils.Prefix),
+		Name:                  testutils.TestResourceName(),
 		Plan:                  "hobbyist-2",
 		Zone:                  testutils.TestZoneName,
 		TerminationProtection: false,

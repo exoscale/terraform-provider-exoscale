@@ -12,7 +12,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
@@ -46,7 +45,7 @@ func testResourceValkey(t *testing.T) {
 	fullResourceName := "exoscale_database.test"
 	dataBase := TemplateModelValkey{
 		ResourceName:          "test",
-		Name:                  acctest.RandomWithPrefix(testutils.Prefix),
+		Name:                  testutils.TestResourceName(),
 		Plan:                  "hobbyist-2",
 		Zone:                  testutils.TestZoneName,
 		TerminationProtection: false,

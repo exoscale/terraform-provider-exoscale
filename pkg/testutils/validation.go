@@ -21,11 +21,13 @@ import (
 type TestAttrs map[string]schema.SchemaValidateDiagFunc
 
 func AccPreCheck(t *testing.T) {
+	t.Helper()
 	key := os.Getenv("EXOSCALE_API_KEY")
 	secret := os.Getenv("EXOSCALE_API_SECRET")
 	if key == "" || secret == "" {
 		t.Fatal("EXOSCALE_API_KEY and EXOSCALE_API_SECRET must be set for acceptance tests")
 	}
+	GuardProdRefuse(t)
 }
 
 // testResourceStateValidationFunc represents a resource state validation function.

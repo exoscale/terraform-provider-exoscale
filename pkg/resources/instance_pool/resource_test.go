@@ -18,18 +18,18 @@ import (
 )
 
 var (
-	rAntiAffinityGroupName       = acctest.RandomWithPrefix(testutils.Prefix)
+	rAntiAffinityGroupName       = testutils.TestResourceName()
 	rDescription                 = acctest.RandString(10)
 	rDescriptionUpdated          = rDescription + "-updated"
 	rDiskSize              int64 = 10
 	rDiskSizeUpdated             = rDiskSize * 2
-	rKeyPair                     = acctest.RandomWithPrefix(testutils.Prefix)
-	rLabelValue                  = acctest.RandomWithPrefix(testutils.Prefix)
+	rKeyPair                     = testutils.TestResourceName()
+	rLabelValue                  = testutils.TestResourceName()
 	rLabelValueUpdated           = rLabelValue + "-updated"
-	rName                        = acctest.RandomWithPrefix(testutils.Prefix)
+	rName                        = testutils.TestResourceName()
 	rNameUpdated                 = rName + "-updated"
 	rInstancePrefix              = "test"
-	rNetwork                     = acctest.RandomWithPrefix(testutils.Prefix)
+	rNetwork                     = testutils.TestResourceName()
 	rInstanceType                = "standard.tiny"
 	rInstanceTypeUpdated         = "standard.small"
 	rSize                  int64 = 1

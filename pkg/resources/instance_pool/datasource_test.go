@@ -16,15 +16,15 @@ import (
 )
 
 var (
-	dsAntiAffinityGroupName = acctest.RandomWithPrefix(testutils.Prefix)
+	dsAntiAffinityGroupName = testutils.TestResourceName()
 	dsDescription           = acctest.RandString(10)
 	dsDiskSize              = "10"
 	dsInstancePrefix        = "test"
 	dsInstanceType          = "standard.tiny"
-	dsKeyPair               = acctest.RandomWithPrefix(testutils.Prefix)
-	dsLabelValue            = acctest.RandomWithPrefix(testutils.Prefix)
-	dsNetwork               = acctest.RandomWithPrefix(testutils.Prefix)
-	dsName                  = acctest.RandomWithPrefix(testutils.Prefix)
+	dsKeyPair               = testutils.TestResourceName()
+	dsLabelValue            = testutils.TestResourceName()
+	dsNetwork               = testutils.TestResourceName()
+	dsName                  = testutils.TestResourceName()
 	dsSize                  = "2"
 	dsTemplateName          = testutils.TestInstanceTemplateName
 	dsUserData              = acctest.RandString(10)

@@ -6,7 +6,6 @@ import (
 	"testing"
 	"text/template"
 
-	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
@@ -32,7 +31,7 @@ func testResourceExternalEndpointElasticsearch(t *testing.T) {
 	}
 
 	fullResourceName := "exoscale_dbaas_external_endpoint_elasticsearch.test"
-	rawName := acctest.RandomWithPrefix(testutils.Prefix)
+	rawName := testutils.TestResourceName()
 	if len(rawName) > 40 {
 		rawName = rawName[:40]
 	}
