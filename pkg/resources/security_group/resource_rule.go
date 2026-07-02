@@ -409,7 +409,6 @@ func (r *ResourceRule) Create(
 		}
 		ruleReq.SecurityGroup = &exoscale.SecurityGroupResource{
 			ID:         sg.ID,
-			Name:       sg.Name,
 			Visibility: exoscale.SecurityGroupResourceVisibilityPrivate,
 		}
 	default: // validation must prevent reaching here
@@ -737,8 +736,7 @@ func (r *ResourceRule) FindRemoteRule(
 			((item.SecurityGroup == nil && rule.SecurityGroup == nil) ||
 				(item.SecurityGroup != nil &&
 					rule.SecurityGroup != nil &&
-					item.SecurityGroup.ID == rule.SecurityGroup.ID &&
-					item.SecurityGroup.Name == rule.SecurityGroup.Name)) &&
+					item.SecurityGroup.ID == rule.SecurityGroup.ID)) &&
 			((item.ICMP == nil && rule.ICMP == nil) ||
 				(item.ICMP != nil && rule.ICMP != nil && *item.ICMP == *rule.ICMP)) {
 			return &item, nil
