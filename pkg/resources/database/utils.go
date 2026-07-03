@@ -15,6 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/xeipuuv/gojsonschema"
@@ -60,6 +61,53 @@ func validateSettings(in string, schema any) (map[string]any, error) {
 	}
 
 	return userSettings, nil
+}
+
+// versionUseStateForUnknownIfPrefix keeps the prior state value for a
+// major-version attribute unless the configured version is genuinely
+// different from it. The DBaaS API accepts a version like "8.4" on create,
+// but subsequently reports back a more precise patch version such as
+// "8.4.8". Without this, every plan would show a spurious diff between the
+// configured value and the full version stored in state.
+//
+// It behaves like stringplanmodifier.UseStateForUnknown() when the
+// attribute is not set in config, and additionally keeps the state value
+// when the configured value is a dot-separated prefix of it (e.g. "8.4" is
+// a prefix of "8.4.8").
+type versionUseStateForUnknownIfPrefix struct{}
+
+func (m versionUseStateForUnknownIfPrefix) Description(_ context.Context) string {
+	return "Keeps the version reported by the API unless the configured version is a genuine change, " +
+		"tolerating the API returning a more precise patch version than what was configured."
+}
+
+func (m versionUseStateForUnknownIfPrefix) MarkdownDescription(ctx context.Context) string {
+	return m.Description(ctx)
+}
+
+func (m versionUseStateForUnknownIfPrefix) PlanModifyString(_ context.Context, req planmodifier.StringRequest, resp *planmodifier.StringResponse) {
+	if req.StateValue.IsNull() || req.StateValue.IsUnknown() {
+		return
+	}
+
+	if req.ConfigValue.IsNull() {
+		resp.PlanValue = req.StateValue
+		return
+	}
+
+	if req.ConfigValue.IsUnknown() {
+		return
+	}
+
+	state := req.StateValue.ValueString()
+	config := req.ConfigValue.ValueString()
+	if state == config || strings.HasPrefix(state, config+".") {
+		resp.PlanValue = req.StateValue
+	}
+}
+
+func versionUseStateUnlessChanged() planmodifier.String {
+	return versionUseStateForUnknownIfPrefix{}
 }
 
 // parseBackupSchedule parses a Database Service backup

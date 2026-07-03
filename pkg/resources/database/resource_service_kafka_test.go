@@ -81,7 +81,7 @@ func testResourceKafka(t *testing.T) {
 		Plan:                  "business-4",
 		Zone:                  testutils.TestZoneName,
 		TerminationProtection: false,
-		Version:               "3.8",
+		Version:               "4.2",
 	}
 
 	userFullResourceName := "exoscale_dbaas_kafka_user.test_user"

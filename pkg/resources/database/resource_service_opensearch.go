@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
@@ -89,6 +88,9 @@ var ResourceOpensearchSchema = schema.SingleNestedAttribute{
 			MarkdownDescription: "OpenSearch-specific settings, in json. e.g.`jsonencode({thread_pool_search_size: 64})`. Use `exo x get-dbaas-settings-opensearch` to get a list of available settings.",
 			Optional:            true,
 			Computed:            true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.UseStateForUnknown(),
+			},
 		},
 		"recovery_backup_name": schema.StringAttribute{
 			MarkdownDescription: "❗ Name of a backup to recover from",
@@ -101,10 +103,8 @@ var ResourceOpensearchSchema = schema.SingleNestedAttribute{
 			MarkdownDescription: "❗ OpenSearch major version (`exo dbaas type show opensearch` for reference)",
 			Optional:            true,
 			Computed:            true,
-			Validators: []validator.String{
-				validators.IsMajorVersionValidator,
-			},
 			PlanModifiers: []planmodifier.String{
+				versionUseStateUnlessChanged(),
 				stringplanmodifier.RequiresReplaceIfConfigured(),
 			},
 		},
@@ -383,7 +383,7 @@ pooling:
 	if data.Opensearch.Version.IsUnknown() {
 		data.Opensearch.Version = types.StringNull()
 		if apiService.Version != nil {
-			data.Opensearch.Version = types.StringValue(strings.SplitN(*apiService.Version, ".", 2)[0])
+			data.Opensearch.Version = types.StringValue(*apiService.Version)
 		}
 	}
 
@@ -514,7 +514,7 @@ func (r *ServiceResource) readOpensearch(ctx context.Context, data *ServiceResou
 
 	data.Opensearch.Version = types.StringNull()
 	if apiService.Version != nil {
-		data.Opensearch.Version = types.StringValue(strings.SplitN(*apiService.Version, ".", 2)[0])
+		data.Opensearch.Version = types.StringValue(*apiService.Version)
 	}
 
 	data.Opensearch.Settings = types.StringNull()
@@ -742,7 +742,7 @@ func (r *ServiceResource) updateOpensearch(ctx context.Context, stateData *Servi
 	if stateData.Opensearch.Version.IsUnknown() {
 		stateData.Opensearch.Version = types.StringNull()
 		if apiService.Version != nil {
-			stateData.Opensearch.Version = types.StringValue(strings.SplitN(*apiService.Version, ".", 2)[0])
+			stateData.Opensearch.Version = types.StringValue(*apiService.Version)
 		}
 	}
 

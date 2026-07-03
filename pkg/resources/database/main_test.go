@@ -26,7 +26,6 @@ func TestDatabase(t *testing.T) {
 	t.Run("ResourceValkeyUser", testResourceValkeyUser)
 	t.Run("ResourceKafka", testResourceKafka)
 	t.Run("ResourceOpensearch", testResourceOpensearch)
-	t.Run("ResourceOpensearchVersionValidation", testResourceOpensearchVersionValidation)
 	t.Run("ResourceGrafana", testResourceGrafana)
 	t.Run("DataSourceURI", testDataSourceURI)
 	t.Run("ResourceDBAASExternalEndpointPrometheus", testResourceExternalEndpointPrometheus)

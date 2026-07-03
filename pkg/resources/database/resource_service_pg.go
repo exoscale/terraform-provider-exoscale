@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
@@ -62,6 +61,9 @@ var ResourcePgSchema = schema.SingleNestedAttribute{
 			MarkdownDescription: "The automated backup schedule (`HH:MM`).",
 			Optional:            true,
 			Computed:            true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.UseStateForUnknown(),
+			},
 		},
 		"ip_filter": schema.SetAttribute{
 			ElementType:         types.StringType,
@@ -76,24 +78,34 @@ var ResourcePgSchema = schema.SingleNestedAttribute{
 			MarkdownDescription: "PostgreSQL configuration settings in JSON format (`exo dbaas type show pg --settings=pg` for reference).",
 			Optional:            true,
 			Computed:            true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.UseStateForUnknown(),
+			},
 		},
 		"version": schema.StringAttribute{
 			MarkdownDescription: "PostgreSQL major version (`exo dbaas type show pg` for reference; may only be set at creation time).",
 			Optional:            true,
 			Computed:            true,
-			Validators: []validator.String{
-				validators.IsMajorVersionValidator,
+			PlanModifiers: []planmodifier.String{
+				versionUseStateUnlessChanged(),
+				stringplanmodifier.RequiresReplaceIfConfigured(),
 			},
 		},
 		"pgbouncer_settings": schema.StringAttribute{
 			MarkdownDescription: "PgBouncer configuration settings in JSON format (`exo dbaas type show pg --settings=pgbouncer` for reference).",
 			Optional:            true,
 			Computed:            true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.UseStateForUnknown(),
+			},
 		},
 		"pglookout_settings": schema.StringAttribute{
 			MarkdownDescription: "pglookout configuration settings in JSON format (`exo dbaas type show pg --settings=pglookout` for reference).",
 			Optional:            true,
 			Computed:            true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.UseStateForUnknown(),
+			},
 		},
 		"shared_buffers_percentage": schema.Int64Attribute{
 			MarkdownDescription: "Percentage of total RAM that the database server uses for shared memory buffers. Valid range is 20-60, which corresponds to 20% - 60%. This setting adjusts the shared_buffers configuration value.",
@@ -439,7 +451,7 @@ pooling:
 	if data.Pg.Version.IsUnknown() {
 		data.Pg.Version = types.StringNull()
 		if apiService.Version != nil {
-			data.Pg.Version = types.StringValue(strings.SplitN(*apiService.Version, ".", 2)[0])
+			data.Pg.Version = types.StringValue(*apiService.Version)
 		}
 	}
 
@@ -578,7 +590,7 @@ func (r *ServiceResource) readPg(ctx context.Context, data *ServiceResourceModel
 
 	data.Pg.Version = types.StringNull()
 	if apiService.Version != nil {
-		data.Pg.Version = types.StringValue(strings.SplitN(*apiService.Version, ".", 2)[0])
+		data.Pg.Version = types.StringValue(*apiService.Version)
 	}
 
 	// For database settings, we have a special behaviour:
@@ -952,7 +964,7 @@ func (r *ServiceResource) updatePg(ctx context.Context, stateData *ServiceResour
 	if stateData.Pg.Version.IsUnknown() {
 		stateData.Pg.Version = types.StringNull()
 		if apiService.Version != nil {
-			stateData.Pg.Version = types.StringValue(strings.SplitN(*apiService.Version, ".", 2)[0])
+			stateData.Pg.Version = types.StringValue(*apiService.Version)
 		}
 	}
 

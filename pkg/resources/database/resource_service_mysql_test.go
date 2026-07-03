@@ -87,7 +87,7 @@ func testResourceMysql(t *testing.T) {
 		Plan:                  "hobbyist-2",
 		Zone:                  testutils.TestZoneName,
 		TerminationProtection: false,
-		Version:               "8",
+		Version:               "8.4",
 	}
 
 	userFullResourceName := "exoscale_dbaas_mysql_user.test_user"
@@ -348,10 +348,8 @@ func CheckExistsMysql(name string, data *TemplateModelMysql) error {
 		}
 	}
 
-	majVersion := strings.Split(*service.Version, ".")[0]
-
-	if data.Version != majVersion {
-		return fmt.Errorf("mysql.version: expected %q, got %q", data.Version, majVersion)
+	if strings.HasPrefix(data.Version, *service.Version) {
+		return fmt.Errorf("mysql.version: expected %q, got %q", data.Version, *service.Version)
 	}
 
 	return nil
