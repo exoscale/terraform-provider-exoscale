@@ -492,7 +492,11 @@ func resourceElasticIPDelete(ctx context.Context, d *schema.ResourceData, meta a
 		}
 	}
 
-	if _, err := client.DeleteElasticIP(ctx, elasticIPID); err != nil {
+	op, err = client.DeleteElasticIP(ctx, elasticIPID)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	if _, err := client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
 		return diag.FromErr(err)
 	}
 
