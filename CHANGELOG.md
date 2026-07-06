@@ -10,6 +10,7 @@ IMPROVEMENTS:
 
 BUG FIXES:
 - fix: typo in security group rule import doc #559
+- dbaas: allows services with minor/patch version #563
 
 ## 0.69.3
 
