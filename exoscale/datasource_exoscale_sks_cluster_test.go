@@ -217,7 +217,7 @@ func TestAccSKSDataSources(t *testing.T) {
 		data %q %q {
 		  zone = %q
 		  size = 3
-		  name = "/.*-ds-nodepool-2/"
+		  name = "/.*-ds-nodepool-2-.*/"
 		}
 		`, dsId, dsName, zone),
 			DataSourceIdentifier: dsId,
