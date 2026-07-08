@@ -8,6 +8,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -222,81 +223,102 @@ func (r *ServiceResource) Configure(ctx context.Context, req resource.ConfigureR
 }
 
 // ModifyPlan reconciles attributes that the DBaaS API recomputes rather
-// than the user fully controlling through config: updated_at, node_cpus,
-// node_memory, nodes and state (bumped or transitioned by the API as a
-// side effect of any real update, e.g. a plan/tier resize), and the
-// per-engine ip_filter sets (Optional + Computed, cleared by omitting them
-// from config).
+// than the user fully controlling through config.
 //
-// A Computed attribute that's unconfigured defaults to unknown on every
-// single plan, even when nothing else about the resource is changing -
-// which would make even no-op refreshes report a phantom in-place update.
-// Pinning it unconditionally to the prior state, like
+// ip_filter is handled by resolving it directly from config: the Update
+// logic (see e.g. updateMysql) always sends an empty list when ip_filter is
+// omitted, and sends the configured value otherwise. That's a fully
+// deterministic function of config alone, so instead of guessing from the
+// plan's default unknown value, we compute the same outcome here and set
+// it directly - no comparison against state needed for this one.
+//
+// updated_at, disk_size, node_cpus, node_memory, nodes and state are
+// different: the API bumps or transitions them as a side effect of any
+// real update (e.g. a plan/tier resize), with no config-driven answer to
+// resolve them to. A Computed attribute that's unconfigured defaults to
+// unknown on every single plan, even when nothing else about the resource
+// is changing - which would make even no-op refreshes report a phantom
+// in-place update. Pinning it unconditionally to the prior state, like
 // stringplanmodifier.UseStateForUnknown does for other attributes, avoids
-// that but breaks two things: it causes "provider produced inconsistent
-// result after apply" once a real update legitimately changes one of these
-// (e.g. node_memory/state during a resize), and it defeats the Update
-// logic's use of "unknown" as the signal that ip_filter was omitted from
-// config and should be cleared.
-//
-// This runs after all attribute-level plan modifiers have resolved, so it
-// can reliably tell whether anything else in the resource actually
-// changed: if it hasn't, these attributes are pinned to their previous
-// values; if it has, they're left unknown so the real post-update values
-// are accepted and the Update logic can still detect an omitted ip_filter.
+// that but causes "provider produced inconsistent result after apply" once
+// a real update legitimately changes one of these (e.g. node_memory/state
+// during a resize, or updated_at whenever ip_filter is genuinely cleared).
+// So they're pinned to their previous values only when nothing else in the
+// resource - including the resolved ip_filter above - is genuinely
+// changing; otherwise they're left unknown so the real post-update values
+// are accepted.
 func (r *ServiceResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
 	if req.State.Raw.IsNull() || req.Plan.Raw.IsNull() {
 		// Create or destroy: nothing to reconcile against.
 		return
 	}
 
-	var planData, stateData ServiceResourceModel
+	var planData, stateData, configData ServiceResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &planData)...)
 	resp.Diagnostics.Append(req.State.Get(ctx, &stateData)...)
+	resp.Diagnostics.Append(req.Config.Get(ctx, &configData)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Shallow-copy planData so we can neutralize fields for comparison
-	// without mutating planData itself. The nested engine blocks are
-	// pointers, so each one that's neutralized needs its own shallow copy
-	// too, otherwise normalized.Mysql and planData.Mysql would alias the
-	// same struct and mutating one would silently mutate the other.
+	// A known empty set, not null: the DBaaS API reports a cleared
+	// ip_filter back as a non-nil, empty list, and the Update/Read logic
+	// (e.g. updateMysql/readMysql) stores whatever the API reports, so a
+	// known-empty set is what a real clear actually ends up producing in
+	// state.
+	emptyIPFilter := types.SetValueMust(types.StringType, []attr.Value{})
+
+	// Shallow-copy planData so we can resolve/neutralize fields for
+	// comparison without mutating planData itself. The nested engine
+	// blocks are pointers, so each one that's touched needs its own
+	// shallow copy too, otherwise normalized.Mysql and planData.Mysql
+	// would alias the same struct and mutating one would silently mutate
+	// the other.
 	normalized := planData
+	if normalized.Mysql != nil && configData.Mysql != nil && configData.Mysql.IpFilter.IsNull() {
+		resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("mysql").AtName("ip_filter"), emptyIPFilter)...)
+		mysql := *normalized.Mysql
+		mysql.IpFilter = emptyIPFilter
+		normalized.Mysql = &mysql
+	}
+	if normalized.Pg != nil && configData.Pg != nil && configData.Pg.IpFilter.IsNull() {
+		resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("pg").AtName("ip_filter"), emptyIPFilter)...)
+		pg := *normalized.Pg
+		pg.IpFilter = emptyIPFilter
+		normalized.Pg = &pg
+	}
+	if normalized.Opensearch != nil && configData.Opensearch != nil && configData.Opensearch.IpFilter.IsNull() {
+		resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("opensearch").AtName("ip_filter"), emptyIPFilter)...)
+		opensearch := *normalized.Opensearch
+		opensearch.IpFilter = emptyIPFilter
+		normalized.Opensearch = &opensearch
+	}
+	if normalized.Kafka != nil && configData.Kafka != nil && configData.Kafka.IpFilter.IsNull() {
+		resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("kafka").AtName("ip_filter"), emptyIPFilter)...)
+		kafka := *normalized.Kafka
+		kafka.IpFilter = emptyIPFilter
+		normalized.Kafka = &kafka
+	}
+	if normalized.Grafana != nil && configData.Grafana != nil && configData.Grafana.IpFilter.IsNull() {
+		resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("grafana").AtName("ip_filter"), emptyIPFilter)...)
+		grafana := *normalized.Grafana
+		grafana.IpFilter = emptyIPFilter
+		normalized.Grafana = &grafana
+	}
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	normalized.UpdatedAt = stateData.UpdatedAt
 	normalized.DiskSize = stateData.DiskSize
 	normalized.NodeCPUs = stateData.NodeCPUs
 	normalized.NodeMemory = stateData.NodeMemory
 	normalized.Nodes = stateData.Nodes
 	normalized.State = stateData.State
-	if normalized.Mysql != nil && stateData.Mysql != nil {
-		mysql := *normalized.Mysql
-		mysql.IpFilter = stateData.Mysql.IpFilter
-		normalized.Mysql = &mysql
-	}
-	if normalized.Pg != nil && stateData.Pg != nil {
-		pg := *normalized.Pg
-		pg.IpFilter = stateData.Pg.IpFilter
-		normalized.Pg = &pg
-	}
-	if normalized.Opensearch != nil && stateData.Opensearch != nil {
-		opensearch := *normalized.Opensearch
-		opensearch.IpFilter = stateData.Opensearch.IpFilter
-		normalized.Opensearch = &opensearch
-	}
-	if normalized.Kafka != nil && stateData.Kafka != nil {
-		kafka := *normalized.Kafka
-		kafka.IpFilter = stateData.Kafka.IpFilter
-		normalized.Kafka = &kafka
-	}
-	if normalized.Grafana != nil && stateData.Grafana != nil {
-		grafana := *normalized.Grafana
-		grafana.IpFilter = stateData.Grafana.IpFilter
-		normalized.Grafana = &grafana
-	}
 
 	if !reflect.DeepEqual(normalized, stateData) {
-		// Something else is genuinely changing: leave these unknown so the
+		// Something else is genuinely changing (including a real
+		// ip_filter clear resolved above): leave these unknown so the
 		// real update computes fresh values instead of pinning stale ones.
 		return
 	}
@@ -307,21 +329,6 @@ func (r *ServiceResource) ModifyPlan(ctx context.Context, req resource.ModifyPla
 	resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("node_memory"), stateData.NodeMemory)...)
 	resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("nodes"), stateData.Nodes)...)
 	resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("state"), stateData.State)...)
-	if stateData.Mysql != nil {
-		resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("mysql").AtName("ip_filter"), stateData.Mysql.IpFilter)...)
-	}
-	if stateData.Pg != nil {
-		resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("pg").AtName("ip_filter"), stateData.Pg.IpFilter)...)
-	}
-	if stateData.Opensearch != nil {
-		resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("opensearch").AtName("ip_filter"), stateData.Opensearch.IpFilter)...)
-	}
-	if stateData.Kafka != nil {
-		resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("kafka").AtName("ip_filter"), stateData.Kafka.IpFilter)...)
-	}
-	if stateData.Grafana != nil {
-		resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("grafana").AtName("ip_filter"), stateData.Grafana.IpFilter)...)
-	}
 }
 
 func (r *ServiceResource) UpgradeState(ctx context.Context) map[int64]resource.StateUpgrader {
