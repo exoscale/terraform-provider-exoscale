@@ -126,7 +126,7 @@ resource "exoscale_instance_pool" "test" {
   size = %d
   min_available = %d
   disk_size = %d
-  ipv6 = false
+  ipv6 = true
   key_pair = exoscale_ssh_key.test.name
   anti_affinity_group_ids = [exoscale_anti_affinity_group.test.id]
   network_ids = [exoscale_private_network.test.id]
@@ -242,7 +242,7 @@ func testResource(t *testing.T) {
 						a.Equal(instance_pool.DefaultInstancePrefix, instancePool.InstancePrefix)
 						a.Len(instancePool.Instances, int(rSizeUpdated))
 						a.Equal(testutils.TestInstanceTypeIDSmall, instancePool.InstanceType.ID.String())
-						a.False(*instancePool.Ipv6Enabled)
+						a.True(*instancePool.Ipv6Enabled)
 						a.Equal(rLabelValueUpdated, (instancePool.Labels)["test"])
 						a.Equal(rNameUpdated, instancePool.Name)
 						a.Len(instancePool.PrivateNetworks, 1)
@@ -259,7 +259,7 @@ func testResource(t *testing.T) {
 						instance_pool.AttrDiskSize:                    testutils.ValidateString(fmt.Sprint(rDiskSizeUpdated)),
 						instance_pool.AttrInstancePrefix:              testutils.ValidateString(instance_pool.DefaultInstancePrefix),
 						instance_pool.AttrInstanceType:                testutils.ValidateString(rInstanceTypeUpdated),
-						instance_pool.AttrIPv6:                        testutils.ValidateString("false"),
+						instance_pool.AttrIPv6:                        testutils.ValidateString("true"),
 						instance_pool.AttrKeyPair:                     testutils.ValidateString(rKeyPair),
 						instance_pool.AttrLabels + ".test":            testutils.ValidateString(rLabelValueUpdated),
 						instance_pool.AttrName:                        testutils.ValidateString(rNameUpdated),
@@ -295,7 +295,7 @@ func testResource(t *testing.T) {
 							instance_pool.AttrDiskSize:          testutils.ValidateString(fmt.Sprint(rDiskSizeUpdated)),
 							instance_pool.AttrInstancePrefix:    testutils.ValidateString(instance_pool.DefaultInstancePrefix),
 							instance_pool.AttrInstanceType:      testutils.ValidateString(rInstanceTypeUpdated),
-							instance_pool.AttrIPv6:              testutils.ValidateString("false"),
+							instance_pool.AttrIPv6:              testutils.ValidateString("true"),
 							instance_pool.AttrKeyPair:           testutils.ValidateString(rKeyPair),
 							instance_pool.AttrLabels + ".test":  testutils.ValidateString(rLabelValueUpdated),
 							instance_pool.AttrName:              testutils.ValidateString(rNameUpdated),
