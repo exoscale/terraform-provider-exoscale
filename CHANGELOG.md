@@ -13,6 +13,14 @@ BUG FIXES:
 - dbaas: allows services with minor/patch version #563
 - improve acc test #563
 
+FEATURES:
+
+- `sks_nodepool`: add `nvidia_mig_profile` attribute to enable NVIDIA Multi-Instance GPU (MIG) partitioning on GPU nodepools (resource + data sources) #564
+
+DEPENDENCIES:
+
+- Bump `egoscale/v3` to v3.1.41
+
 ## 0.69.3
 
 IMPROVEMENTS:
