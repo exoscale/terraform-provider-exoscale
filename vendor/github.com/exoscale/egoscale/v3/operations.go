@@ -12,9 +12,9 @@ import (
 	"time"
 )
 
-// FindAIAPIKey attempts to find an AIAPIKey by nameOrID.
-func (l ListAIAPIKeysResponse) FindAIAPIKey(nameOrID string) (AIAPIKey, error) {
-	var result []AIAPIKey
+// FindListAIAPIKeysResponseEntry attempts to find an ListAIAPIKeysResponseEntry by nameOrID.
+func (l ListAIAPIKeysResponse) FindListAIAPIKeysResponseEntry(nameOrID string) (ListAIAPIKeysResponseEntry, error) {
+	var result []ListAIAPIKeysResponseEntry
 	for i, elem := range l.AIAPIKeys {
 		if string(elem.Name) == nameOrID || string(elem.ID) == nameOrID {
 			result = append(result, l.AIAPIKeys[i])
@@ -25,15 +25,15 @@ func (l ListAIAPIKeysResponse) FindAIAPIKey(nameOrID string) (AIAPIKey, error) {
 	}
 
 	if len(result) > 1 {
-		return AIAPIKey{}, fmt.Errorf("%q too many found in ListAIAPIKeysResponse: %w", nameOrID, ErrConflict)
+		return ListAIAPIKeysResponseEntry{}, fmt.Errorf("%q too many found in ListAIAPIKeysResponse: %w", nameOrID, ErrConflict)
 	}
 
-	return AIAPIKey{}, fmt.Errorf("%q not found in ListAIAPIKeysResponse: %w", nameOrID, ErrNotFound)
+	return ListAIAPIKeysResponseEntry{}, fmt.Errorf("%q not found in ListAIAPIKeysResponse: %w", nameOrID, ErrNotFound)
 }
 
 // List AI API keys for an organization
 func (c Client) ListAIAPIKeys(ctx context.Context) (*ListAIAPIKeysResponse, error) {
-	path := "/ai/ai-api-key"
+	path := "/ai/api-key"
 
 	request, err := http.NewRequestWithContext(ctx, "GET", c.serverEndpoint+path, nil)
 	if err != nil {
@@ -76,8 +76,8 @@ func (c Client) ListAIAPIKeys(ctx context.Context) (*ListAIAPIKeysResponse, erro
 }
 
 // Create a new AI API key
-func (c Client) CreateAIAPIKey(ctx context.Context, req CreateAIAPIKeyRequest) (*AIAPIKeyWithValue, error) {
-	path := "/ai/ai-api-key"
+func (c Client) CreateAIAPIKey(ctx context.Context, req CreateAIAPIKeyRequest) (*CreateAIAPIKeyResponse, error) {
+	path := "/ai/api-key"
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
@@ -118,7 +118,7 @@ func (c Client) CreateAIAPIKey(ctx context.Context, req CreateAIAPIKeyRequest) (
 		return nil, fmt.Errorf("CreateAIAPIKey: http response: %w", err)
 	}
 
-	bodyresp := new(AIAPIKeyWithValue)
+	bodyresp := new(CreateAIAPIKeyResponse)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
 		return nil, fmt.Errorf("CreateAIAPIKey: prepare Json response: %w", err)
 	}
@@ -126,13 +126,9 @@ func (c Client) CreateAIAPIKey(ctx context.Context, req CreateAIAPIKeyRequest) (
 	return bodyresp, nil
 }
 
-type DeleteAIAPIKeyResponse struct {
-	Deleted *bool `json:"deleted" validate:"required"`
-}
-
 // Delete AI API key
-func (c Client) DeleteAIAPIKey(ctx context.Context, id UUID) (*DeleteAIAPIKeyResponse, error) {
-	path := fmt.Sprintf("/ai/ai-api-key/%v", id)
+func (c Client) DeleteAIAPIKey(ctx context.Context, id UUID) (*Operation, error) {
+	path := fmt.Sprintf("/ai/api-key/%v", id)
 
 	request, err := http.NewRequestWithContext(ctx, "DELETE", c.serverEndpoint+path, nil)
 	if err != nil {
@@ -166,7 +162,7 @@ func (c Client) DeleteAIAPIKey(ctx context.Context, id UUID) (*DeleteAIAPIKeyRes
 		return nil, fmt.Errorf("DeleteAIAPIKey: http response: %w", err)
 	}
 
-	bodyresp := new(DeleteAIAPIKeyResponse)
+	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
 		return nil, fmt.Errorf("DeleteAIAPIKey: prepare Json response: %w", err)
 	}
@@ -175,8 +171,8 @@ func (c Client) DeleteAIAPIKey(ctx context.Context, id UUID) (*DeleteAIAPIKeyRes
 }
 
 // Get AI API key metadata
-func (c Client) GetAIAPIKey(ctx context.Context, id UUID) (*AIAPIKey, error) {
-	path := fmt.Sprintf("/ai/ai-api-key/%v", id)
+func (c Client) GetAIAPIKey(ctx context.Context, id UUID) (*GetAIAPIKeyResponse, error) {
+	path := fmt.Sprintf("/ai/api-key/%v", id)
 
 	request, err := http.NewRequestWithContext(ctx, "GET", c.serverEndpoint+path, nil)
 	if err != nil {
@@ -210,7 +206,7 @@ func (c Client) GetAIAPIKey(ctx context.Context, id UUID) (*AIAPIKey, error) {
 		return nil, fmt.Errorf("GetAIAPIKey: http response: %w", err)
 	}
 
-	bodyresp := new(AIAPIKey)
+	bodyresp := new(GetAIAPIKeyResponse)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
 		return nil, fmt.Errorf("GetAIAPIKey: prepare Json response: %w", err)
 	}
@@ -219,8 +215,8 @@ func (c Client) GetAIAPIKey(ctx context.Context, id UUID) (*AIAPIKey, error) {
 }
 
 // Update AI API key name and/or scope
-func (c Client) UpdateAIAPIKey(ctx context.Context, id UUID, req UpdateAIAPIKeyRequest) (*AIAPIKey, error) {
-	path := fmt.Sprintf("/ai/ai-api-key/%v", id)
+func (c Client) UpdateAIAPIKey(ctx context.Context, id UUID, req UpdateAIAPIKeyRequest) (*UpdateAIAPIKeyResponse, error) {
+	path := fmt.Sprintf("/ai/api-key/%v", id)
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
@@ -261,7 +257,7 @@ func (c Client) UpdateAIAPIKey(ctx context.Context, id UUID, req UpdateAIAPIKeyR
 		return nil, fmt.Errorf("UpdateAIAPIKey: http response: %w", err)
 	}
 
-	bodyresp := new(AIAPIKey)
+	bodyresp := new(UpdateAIAPIKeyResponse)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
 		return nil, fmt.Errorf("UpdateAIAPIKey: prepare Json response: %w", err)
 	}
@@ -269,9 +265,53 @@ func (c Client) UpdateAIAPIKey(ctx context.Context, id UUID, req UpdateAIAPIKeyR
 	return bodyresp, nil
 }
 
+// Reveal AI API key plaintext value
+func (c Client) RevealAIAPIKey(ctx context.Context, id UUID) (*RevealAIAPIKeyResponse, error) {
+	path := fmt.Sprintf("/ai/api-key/%v/reveal", id)
+
+	request, err := http.NewRequestWithContext(ctx, "GET", c.serverEndpoint+path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("RevealAIAPIKey: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("RevealAIAPIKey: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("RevealAIAPIKey: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "reveal-ai-api-key")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("RevealAIAPIKey: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("RevealAIAPIKey: http response: %w", err)
+	}
+
+	bodyresp := new(RevealAIAPIKeyResponse)
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("RevealAIAPIKey: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
 // Rotate AI API key value
-func (c Client) RotateAIAPIKey(ctx context.Context, id UUID) (*AIAPIKeyWithValue, error) {
-	path := fmt.Sprintf("/ai/ai-api-key/%v/rotate", id)
+func (c Client) RotateAIAPIKey(ctx context.Context, id UUID) (*RotateAIAPIKeyResponse, error) {
+	path := fmt.Sprintf("/ai/api-key/%v/rotate", id)
 
 	request, err := http.NewRequestWithContext(ctx, "POST", c.serverEndpoint+path, nil)
 	if err != nil {
@@ -305,7 +345,7 @@ func (c Client) RotateAIAPIKey(ctx context.Context, id UUID) (*AIAPIKeyWithValue
 		return nil, fmt.Errorf("RotateAIAPIKey: http response: %w", err)
 	}
 
-	bodyresp := new(AIAPIKeyWithValue)
+	bodyresp := new(RotateAIAPIKeyResponse)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
 		return nil, fmt.Errorf("RotateAIAPIKey: prepare Json response: %w", err)
 	}
@@ -1062,6 +1102,50 @@ func (c Client) GetModel(ctx context.Context, id UUID) (*GetModelResponse, error
 	bodyresp := new(GetModelResponse)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
 		return nil, fmt.Errorf("GetModel: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+// Get per-org Unit Of Measurement (UOM) consumption quota (UOM/min). Null means unlimited. UOM represents weighted units across different AI workloads (e.g., tokens for LLMs, minutes for TTS, pages for OCR).
+func (c Client) GetUserOrgConsumptionQuota(ctx context.Context) (*OrgConsumptionQuotaResponse, error) {
+	path := "/ai/quota"
+
+	request, err := http.NewRequestWithContext(ctx, "GET", c.serverEndpoint+path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("GetUserOrgConsumptionQuota: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("GetUserOrgConsumptionQuota: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("GetUserOrgConsumptionQuota: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-user-org-consumption-quota")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("GetUserOrgConsumptionQuota: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("GetUserOrgConsumptionQuota: http response: %w", err)
+	}
+
+	bodyresp := new(OrgConsumptionQuotaResponse)
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("GetUserOrgConsumptionQuota: prepare Json response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -2297,6 +2381,593 @@ func (c Client) GetDBAASCACertificate(ctx context.Context) (*GetDBAASCACertifica
 	bodyresp := new(GetDBAASCACertificateResponse)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
 		return nil, fmt.Errorf("GetDBAASCACertificate: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+func (c Client) DeleteDBAASServiceClickhouse(ctx context.Context, name string) (*Operation, error) {
+	path := fmt.Sprintf("/dbaas-clickhouse/%v", name)
+
+	request, err := http.NewRequestWithContext(ctx, "DELETE", c.serverEndpoint+path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("DeleteDBAASServiceClickhouse: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("DeleteDBAASServiceClickhouse: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("DeleteDBAASServiceClickhouse: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "delete-dbaas-service-clickhouse")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("DeleteDBAASServiceClickhouse: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("DeleteDBAASServiceClickhouse: http response: %w", err)
+	}
+
+	bodyresp := new(Operation)
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("DeleteDBAASServiceClickhouse: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+func (c Client) GetDBAASServiceClickhouse(ctx context.Context, name string) (*DBAASServiceClickhouse, error) {
+	path := fmt.Sprintf("/dbaas-clickhouse/%v", name)
+
+	request, err := http.NewRequestWithContext(ctx, "GET", c.serverEndpoint+path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("GetDBAASServiceClickhouse: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("GetDBAASServiceClickhouse: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("GetDBAASServiceClickhouse: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-dbaas-service-clickhouse")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("GetDBAASServiceClickhouse: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("GetDBAASServiceClickhouse: http response: %w", err)
+	}
+
+	bodyresp := new(DBAASServiceClickhouse)
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("GetDBAASServiceClickhouse: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+type CreateDBAASServiceClickhouseRequestMaintenanceDow string
+
+const (
+	CreateDBAASServiceClickhouseRequestMaintenanceDowSaturday  CreateDBAASServiceClickhouseRequestMaintenanceDow = "saturday"
+	CreateDBAASServiceClickhouseRequestMaintenanceDowTuesday   CreateDBAASServiceClickhouseRequestMaintenanceDow = "tuesday"
+	CreateDBAASServiceClickhouseRequestMaintenanceDowNever     CreateDBAASServiceClickhouseRequestMaintenanceDow = "never"
+	CreateDBAASServiceClickhouseRequestMaintenanceDowWednesday CreateDBAASServiceClickhouseRequestMaintenanceDow = "wednesday"
+	CreateDBAASServiceClickhouseRequestMaintenanceDowSunday    CreateDBAASServiceClickhouseRequestMaintenanceDow = "sunday"
+	CreateDBAASServiceClickhouseRequestMaintenanceDowFriday    CreateDBAASServiceClickhouseRequestMaintenanceDow = "friday"
+	CreateDBAASServiceClickhouseRequestMaintenanceDowMonday    CreateDBAASServiceClickhouseRequestMaintenanceDow = "monday"
+	CreateDBAASServiceClickhouseRequestMaintenanceDowThursday  CreateDBAASServiceClickhouseRequestMaintenanceDow = "thursday"
+)
+
+// Automatic maintenance settings
+type CreateDBAASServiceClickhouseRequestMaintenance struct {
+	// Day of week for installing updates
+	Dow CreateDBAASServiceClickhouseRequestMaintenanceDow `json:"dow" validate:"required"`
+	// Time for installing updates, UTC
+	Time string `json:"time" validate:"required,gte=8,lte=8"`
+}
+
+type CreateDBAASServiceClickhouseRequest struct {
+	// ClickHouse settings
+	ClickhouseSettings *JSONSchemaClickhouse `json:"clickhouse-settings,omitempty"`
+	ForkFromService    DBAASServiceName      `json:"fork-from-service,omitempty" validate:"omitempty,gte=0,lte=63"`
+	// Allow incoming connections from CIDR address block, e.g. '10.20.0.0/16'
+	IPFilter []string `json:"ip-filter,omitempty"`
+	// Automatic maintenance settings
+	Maintenance *CreateDBAASServiceClickhouseRequestMaintenance `json:"maintenance,omitempty"`
+	// Subscription plan
+	Plan string `json:"plan" validate:"required,gte=1,lte=128"`
+	// Name of a backup to recover from for services that support backup names
+	RecoveryBackupName string `json:"recovery-backup-name,omitempty" validate:"omitempty,gte=1"`
+	// Service is protected against termination and powering off
+	TerminationProtection *bool `json:"termination-protection,omitempty"`
+	// ClickHouse major version
+	Version string `json:"version,omitempty" validate:"omitempty,gte=1"`
+}
+
+func (c Client) CreateDBAASServiceClickhouse(ctx context.Context, name string, req CreateDBAASServiceClickhouseRequest) (*Operation, error) {
+	path := fmt.Sprintf("/dbaas-clickhouse/%v", name)
+
+	body, err := prepareJSONBody(req)
+	if err != nil {
+		return nil, fmt.Errorf("CreateDBAASServiceClickhouse: prepare Json body: %w", err)
+	}
+
+	request, err := http.NewRequestWithContext(ctx, "POST", c.serverEndpoint+path, body)
+	if err != nil {
+		return nil, fmt.Errorf("CreateDBAASServiceClickhouse: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	request.Header.Add("Content-Type", "application/json")
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("CreateDBAASServiceClickhouse: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("CreateDBAASServiceClickhouse: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "create-dbaas-service-clickhouse")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("CreateDBAASServiceClickhouse: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("CreateDBAASServiceClickhouse: http response: %w", err)
+	}
+
+	bodyresp := new(Operation)
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("CreateDBAASServiceClickhouse: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+type UpdateDBAASServiceClickhouseRequestMaintenanceDow string
+
+const (
+	UpdateDBAASServiceClickhouseRequestMaintenanceDowSaturday  UpdateDBAASServiceClickhouseRequestMaintenanceDow = "saturday"
+	UpdateDBAASServiceClickhouseRequestMaintenanceDowTuesday   UpdateDBAASServiceClickhouseRequestMaintenanceDow = "tuesday"
+	UpdateDBAASServiceClickhouseRequestMaintenanceDowNever     UpdateDBAASServiceClickhouseRequestMaintenanceDow = "never"
+	UpdateDBAASServiceClickhouseRequestMaintenanceDowWednesday UpdateDBAASServiceClickhouseRequestMaintenanceDow = "wednesday"
+	UpdateDBAASServiceClickhouseRequestMaintenanceDowSunday    UpdateDBAASServiceClickhouseRequestMaintenanceDow = "sunday"
+	UpdateDBAASServiceClickhouseRequestMaintenanceDowFriday    UpdateDBAASServiceClickhouseRequestMaintenanceDow = "friday"
+	UpdateDBAASServiceClickhouseRequestMaintenanceDowMonday    UpdateDBAASServiceClickhouseRequestMaintenanceDow = "monday"
+	UpdateDBAASServiceClickhouseRequestMaintenanceDowThursday  UpdateDBAASServiceClickhouseRequestMaintenanceDow = "thursday"
+)
+
+// Automatic maintenance settings
+type UpdateDBAASServiceClickhouseRequestMaintenance struct {
+	// Day of week for installing updates
+	Dow UpdateDBAASServiceClickhouseRequestMaintenanceDow `json:"dow" validate:"required"`
+	// Time for installing updates, UTC
+	Time string `json:"time" validate:"required,gte=8,lte=8"`
+}
+
+type UpdateDBAASServiceClickhouseRequest struct {
+	// ClickHouse settings
+	ClickhouseSettings *JSONSchemaClickhouse `json:"clickhouse-settings,omitempty"`
+	// Allow incoming connections from CIDR address block, e.g. '10.20.0.0/16'
+	IPFilter []string `json:"ip-filter,omitempty"`
+	// Automatic maintenance settings
+	Maintenance *UpdateDBAASServiceClickhouseRequestMaintenance `json:"maintenance,omitempty"`
+	// Subscription plan
+	Plan string `json:"plan,omitempty" validate:"omitempty,gte=1,lte=128"`
+	// Service is protected against termination and powering off
+	TerminationProtection *bool `json:"termination-protection,omitempty"`
+	// ClickHouse major version
+	Version string `json:"version,omitempty" validate:"omitempty,gte=1"`
+}
+
+func (c Client) UpdateDBAASServiceClickhouse(ctx context.Context, name string, req UpdateDBAASServiceClickhouseRequest) (*Operation, error) {
+	path := fmt.Sprintf("/dbaas-clickhouse/%v", name)
+
+	body, err := prepareJSONBody(req)
+	if err != nil {
+		return nil, fmt.Errorf("UpdateDBAASServiceClickhouse: prepare Json body: %w", err)
+	}
+
+	request, err := http.NewRequestWithContext(ctx, "PUT", c.serverEndpoint+path, body)
+	if err != nil {
+		return nil, fmt.Errorf("UpdateDBAASServiceClickhouse: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	request.Header.Add("Content-Type", "application/json")
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("UpdateDBAASServiceClickhouse: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("UpdateDBAASServiceClickhouse: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "update-dbaas-service-clickhouse")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("UpdateDBAASServiceClickhouse: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("UpdateDBAASServiceClickhouse: http response: %w", err)
+	}
+
+	bodyresp := new(Operation)
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("UpdateDBAASServiceClickhouse: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+func (c Client) StartDBAASClickhouseMaintenance(ctx context.Context, name string) (*Operation, error) {
+	path := fmt.Sprintf("/dbaas-clickhouse/%v/maintenance/start", name)
+
+	request, err := http.NewRequestWithContext(ctx, "PUT", c.serverEndpoint+path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("StartDBAASClickhouseMaintenance: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("StartDBAASClickhouseMaintenance: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("StartDBAASClickhouseMaintenance: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "start-dbaas-clickhouse-maintenance")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("StartDBAASClickhouseMaintenance: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("StartDBAASClickhouseMaintenance: http response: %w", err)
+	}
+
+	bodyresp := new(Operation)
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("StartDBAASClickhouseMaintenance: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+func (c Client) GetDBAASClickhouseAclConfig(ctx context.Context, serviceName string) (*DBAASClickhouseAclConfig, error) {
+	path := fmt.Sprintf("/dbaas-clickhouse/%v/acl-config", serviceName)
+
+	request, err := http.NewRequestWithContext(ctx, "GET", c.serverEndpoint+path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("GetDBAASClickhouseAclConfig: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("GetDBAASClickhouseAclConfig: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("GetDBAASClickhouseAclConfig: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-dbaas-clickhouse-acl-config")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("GetDBAASClickhouseAclConfig: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("GetDBAASClickhouseAclConfig: http response: %w", err)
+	}
+
+	bodyresp := new(DBAASClickhouseAclConfig)
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("GetDBAASClickhouseAclConfig: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+func (c Client) ListDBAASClickhouseUsers(ctx context.Context, serviceName string) (*DBAASClickhouseUsers, error) {
+	path := fmt.Sprintf("/dbaas-clickhouse/%v/user", serviceName)
+
+	request, err := http.NewRequestWithContext(ctx, "GET", c.serverEndpoint+path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("ListDBAASClickhouseUsers: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("ListDBAASClickhouseUsers: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("ListDBAASClickhouseUsers: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "list-dbaas-clickhouse-users")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("ListDBAASClickhouseUsers: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("ListDBAASClickhouseUsers: http response: %w", err)
+	}
+
+	bodyresp := new(DBAASClickhouseUsers)
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("ListDBAASClickhouseUsers: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+type CreateDBAASClickhouseUserRequest struct {
+	Password DBAASUserPassword `json:"password,omitempty" validate:"omitempty,gte=8,lte=256"`
+	// ClickHouse roles to grant to the user
+	Roles    []DBAASClickhouseUserRoleInput `json:"roles,omitempty"`
+	Username DBAASUserUsername              `json:"username" validate:"required,gte=1,lte=64"`
+}
+
+func (c Client) CreateDBAASClickhouseUser(ctx context.Context, serviceName string, req CreateDBAASClickhouseUserRequest) (*Operation, error) {
+	path := fmt.Sprintf("/dbaas-clickhouse/%v/user", serviceName)
+
+	body, err := prepareJSONBody(req)
+	if err != nil {
+		return nil, fmt.Errorf("CreateDBAASClickhouseUser: prepare Json body: %w", err)
+	}
+
+	request, err := http.NewRequestWithContext(ctx, "POST", c.serverEndpoint+path, body)
+	if err != nil {
+		return nil, fmt.Errorf("CreateDBAASClickhouseUser: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	request.Header.Add("Content-Type", "application/json")
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("CreateDBAASClickhouseUser: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("CreateDBAASClickhouseUser: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "create-dbaas-clickhouse-user")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("CreateDBAASClickhouseUser: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("CreateDBAASClickhouseUser: http response: %w", err)
+	}
+
+	bodyresp := new(Operation)
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("CreateDBAASClickhouseUser: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+func (c Client) DeleteDBAASClickhouseUser(ctx context.Context, serviceName string, username string) (*Operation, error) {
+	path := fmt.Sprintf("/dbaas-clickhouse/%v/user/%v", serviceName, username)
+
+	request, err := http.NewRequestWithContext(ctx, "DELETE", c.serverEndpoint+path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("DeleteDBAASClickhouseUser: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("DeleteDBAASClickhouseUser: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("DeleteDBAASClickhouseUser: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "delete-dbaas-clickhouse-user")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("DeleteDBAASClickhouseUser: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("DeleteDBAASClickhouseUser: http response: %w", err)
+	}
+
+	bodyresp := new(Operation)
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("DeleteDBAASClickhouseUser: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+type ResetDBAASClickhouseUserPasswordRequest struct {
+	Password DBAASUserPassword `json:"password,omitempty" validate:"omitempty,gte=8,lte=256"`
+}
+
+func (c Client) ResetDBAASClickhouseUserPassword(ctx context.Context, serviceName string, username string, req ResetDBAASClickhouseUserPasswordRequest) (*Operation, error) {
+	path := fmt.Sprintf("/dbaas-clickhouse/%v/user/%v/password/reset", serviceName, username)
+
+	body, err := prepareJSONBody(req)
+	if err != nil {
+		return nil, fmt.Errorf("ResetDBAASClickhouseUserPassword: prepare Json body: %w", err)
+	}
+
+	request, err := http.NewRequestWithContext(ctx, "PUT", c.serverEndpoint+path, body)
+	if err != nil {
+		return nil, fmt.Errorf("ResetDBAASClickhouseUserPassword: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	request.Header.Add("Content-Type", "application/json")
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("ResetDBAASClickhouseUserPassword: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("ResetDBAASClickhouseUserPassword: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "reset-dbaas-clickhouse-user-password")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("ResetDBAASClickhouseUserPassword: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("ResetDBAASClickhouseUserPassword: http response: %w", err)
+	}
+
+	bodyresp := new(Operation)
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("ResetDBAASClickhouseUserPassword: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+func (c Client) RevealDBAASClickhouseUserPassword(ctx context.Context, serviceName string, username string) (*DBAASUserClickhouseSecrets, error) {
+	path := fmt.Sprintf("/dbaas-clickhouse/%v/user/%v/password/reveal", serviceName, username)
+
+	request, err := http.NewRequestWithContext(ctx, "GET", c.serverEndpoint+path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("RevealDBAASClickhouseUserPassword: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("RevealDBAASClickhouseUserPassword: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("RevealDBAASClickhouseUserPassword: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "reveal-dbaas-clickhouse-user-password")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("RevealDBAASClickhouseUserPassword: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("RevealDBAASClickhouseUserPassword: http response: %w", err)
+	}
+
+	bodyresp := new(DBAASUserClickhouseSecrets)
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("RevealDBAASClickhouseUserPassword: prepare Json response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -5535,6 +6206,8 @@ type UpdateDBAASServiceMysqlRequest struct {
 	Plan string `json:"plan,omitempty" validate:"omitempty,gte=1,lte=128"`
 	// Service is protected against termination and powering off
 	TerminationProtection *bool `json:"termination-protection,omitempty"`
+	// MySQL version
+	Version string `json:"version,omitempty"`
 }
 
 // Update a DBaaS MySQL service
@@ -6864,6 +7537,8 @@ type CreateDBAASServicePGRequest struct {
 	Migration *CreateDBAASServicePGRequestMigration `json:"migration,omitempty"`
 	// postgresql.conf configuration values
 	PGSettings *JSONSchemaPG `json:"pg-settings,omitempty"`
+	// System-wide settings for the pgaudit extension.
+	PgauditSettings *JSONSchemaPgaudit `json:"pgaudit-settings,omitempty"`
 	// System-wide settings for pgbouncer.
 	PgbouncerSettings *JSONSchemaPgbouncer `json:"pgbouncer-settings,omitempty"`
 	// System-wide settings for pglookout.
@@ -6992,6 +7667,8 @@ type UpdateDBAASServicePGRequest struct {
 	Migration *UpdateDBAASServicePGRequestMigration `json:"migration,omitempty"`
 	// postgresql.conf configuration values
 	PGSettings *JSONSchemaPG `json:"pg-settings,omitempty"`
+	// System-wide settings for the pgaudit extension.
+	PgauditSettings *JSONSchemaPgaudit `json:"pgaudit-settings,omitempty"`
 	// System-wide settings for pgbouncer.
 	PgbouncerSettings *JSONSchemaPgbouncer `json:"pgbouncer-settings,omitempty"`
 	// System-wide settings for pglookout.
@@ -8062,6 +8739,66 @@ func (c Client) DeleteDBAASService(ctx context.Context, name string) (*Operation
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASService: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+// ClickHouse configuration values
+type GetDBAASSettingsClickhouseResponseSettingsClickhouse struct {
+	AdditionalProperties *bool          `json:"additionalProperties,omitempty"`
+	Properties           map[string]any `json:"properties,omitempty"`
+	Title                string         `json:"title,omitempty"`
+	Type                 string         `json:"type,omitempty"`
+}
+
+type GetDBAASSettingsClickhouseResponseSettings struct {
+	// ClickHouse configuration values
+	Clickhouse *GetDBAASSettingsClickhouseResponseSettingsClickhouse `json:"clickhouse,omitempty"`
+}
+
+type GetDBAASSettingsClickhouseResponse struct {
+	Settings *GetDBAASSettingsClickhouseResponseSettings `json:"settings,omitempty"`
+}
+
+func (c Client) GetDBAASSettingsClickhouse(ctx context.Context) (*GetDBAASSettingsClickhouseResponse, error) {
+	path := "/dbaas-settings-clickhouse"
+
+	request, err := http.NewRequestWithContext(ctx, "GET", c.serverEndpoint+path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("GetDBAASSettingsClickhouse: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("GetDBAASSettingsClickhouse: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("GetDBAASSettingsClickhouse: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-dbaas-settings-clickhouse")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("GetDBAASSettingsClickhouse: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("GetDBAASSettingsClickhouse: http response: %w", err)
+	}
+
+	bodyresp := new(GetDBAASSettingsClickhouseResponse)
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("GetDBAASSettingsClickhouse: prepare Json response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -9143,6 +9880,8 @@ type CreateDBAASServiceValkeyRequest struct {
 	TerminationProtection *bool `json:"termination-protection,omitempty"`
 	// Valkey settings
 	ValkeySettings *JSONSchemaValkey `json:"valkey-settings,omitempty"`
+	// Valkey major version
+	Version string `json:"version,omitempty" validate:"omitempty,gte=1"`
 }
 
 // Create a DBaaS Valkey service
@@ -9249,6 +9988,8 @@ type UpdateDBAASServiceValkeyRequest struct {
 	TerminationProtection *bool `json:"termination-protection,omitempty"`
 	// Valkey settings
 	ValkeySettings *JSONSchemaValkey `json:"valkey-settings,omitempty"`
+	// Valkey major version
+	Version string `json:"version,omitempty" validate:"omitempty,gte=1"`
 }
 
 // Update a DBaaS Valkey service
@@ -11115,8 +11856,8 @@ func (c Client) ListIAMRoles(ctx context.Context) (*ListIAMRolesResponse, error)
 }
 
 type CreateIAMRoleRequest struct {
-	// Policy
-	AssumeRolePolicy *IAMPolicy `json:"assume-role-policy,omitempty"`
+	// Assume Role Policy
+	AssumeRolePolicy *IAMAssumeRolePolicy `json:"assume-role-policy,omitempty"`
 	// IAM Role description
 	Description string `json:"description,omitempty" validate:"omitempty,gte=1,lte=255"`
 	// Sets if the IAM Role Policy is editable or not (default: true). This setting cannot be changed after creation
@@ -11272,6 +12013,8 @@ func (c Client) GetIAMRole(ctx context.Context, id UUID) (*IAMRole, error) {
 }
 
 type UpdateIAMRoleRequest struct {
+	// Assume Role Policy
+	AssumeRolePolicy *IAMAssumeRolePolicy `json:"assume-role-policy,omitempty"`
 	// IAM Role description
 	Description string `json:"description,omitempty" validate:"omitempty,gte=1,lte=255"`
 	Labels      Labels `json:"labels,omitempty"`
@@ -11332,18 +12075,32 @@ func (c Client) UpdateIAMRole(ctx context.Context, id UUID, req UpdateIAMRoleReq
 	return bodyresp, nil
 }
 
-// Update IAM Assume role Policy
-func (c Client) UpdateIAMRoleAssumePolicy(ctx context.Context, id UUID, req IAMPolicy) (*Operation, error) {
-	path := fmt.Sprintf("/iam-role/%v:assume-role-policy", id)
+type AssumeIAMRoleResponse struct {
+	ExpiresAT string `json:"expires-at,omitempty"`
+	Key       string `json:"key,omitempty"`
+	Name      string `json:"name,omitempty"`
+	OrgID     string `json:"org-id,omitempty"`
+	RoleID    string `json:"role-id,omitempty"`
+	Secret    string `json:"secret,omitempty"`
+}
+
+type AssumeIAMRoleRequest struct {
+	// TTL in seconds for the generated access key (cannot exceed the max TTL defined in the targeted assume role)
+	Ttl int64 `json:"ttl" validate:"required,gt=0"`
+}
+
+// [BETA] Request generation of key/secret that allow caller to assume target role
+func (c Client) AssumeIAMRole(ctx context.Context, id UUID, req AssumeIAMRoleRequest) (*AssumeIAMRoleResponse, error) {
+	path := fmt.Sprintf("/iam-role/%v/assume", id)
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("UpdateIAMRoleAssumePolicy: prepare Json body: %w", err)
+		return nil, fmt.Errorf("AssumeIAMRole: prepare Json body: %w", err)
 	}
 
-	request, err := http.NewRequestWithContext(ctx, "PUT", c.serverEndpoint+path, body)
+	request, err := http.NewRequestWithContext(ctx, "POST", c.serverEndpoint+path, body)
 	if err != nil {
-		return nil, fmt.Errorf("UpdateIAMRoleAssumePolicy: new request: %w", err)
+		return nil, fmt.Errorf("AssumeIAMRole: new request: %w", err)
 	}
 
 	request.Header.Add("User-Agent", c.getUserAgent())
@@ -11351,20 +12108,20 @@ func (c Client) UpdateIAMRoleAssumePolicy(ctx context.Context, id UUID, req IAMP
 	request.Header.Add("Content-Type", "application/json")
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
-		return nil, fmt.Errorf("UpdateIAMRoleAssumePolicy: execute request editors: %w", err)
+		return nil, fmt.Errorf("AssumeIAMRole: execute request editors: %w", err)
 	}
 
 	if err := c.signRequest(request); err != nil {
-		return nil, fmt.Errorf("UpdateIAMRoleAssumePolicy: sign request: %w", err)
+		return nil, fmt.Errorf("AssumeIAMRole: sign request: %w", err)
 	}
 
 	if c.trace {
-		dumpRequest(request, "update-iam-role-assume-policy")
+		dumpRequest(request, "assume-iam-role")
 	}
 
 	response, err := c.httpClient.Do(request)
 	if err != nil {
-		return nil, fmt.Errorf("UpdateIAMRoleAssumePolicy: http client do: %w", err)
+		return nil, fmt.Errorf("AssumeIAMRole: http client do: %w", err)
 	}
 
 	if c.trace {
@@ -11372,12 +12129,12 @@ func (c Client) UpdateIAMRoleAssumePolicy(ctx context.Context, id UUID, req IAMP
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
-		return nil, fmt.Errorf("UpdateIAMRoleAssumePolicy: http response: %w", err)
+		return nil, fmt.Errorf("AssumeIAMRole: http response: %w", err)
 	}
 
-	bodyresp := new(Operation)
+	bodyresp := new(AssumeIAMRoleResponse)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("UpdateIAMRoleAssumePolicy: prepare Json response: %w", err)
+		return nil, fmt.Errorf("AssumeIAMRole: prepare Json response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -11429,70 +12186,6 @@ func (c Client) UpdateIAMRolePolicy(ctx context.Context, id UUID, req IAMPolicy)
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
 		return nil, fmt.Errorf("UpdateIAMRolePolicy: prepare Json response: %w", err)
-	}
-
-	return bodyresp, nil
-}
-
-type AssumeIAMRoleResponse struct {
-	Key    string `json:"key,omitempty"`
-	Name   string `json:"name,omitempty"`
-	OrgID  string `json:"org-id,omitempty"`
-	RoleID string `json:"role-id,omitempty"`
-	Secret string `json:"secret,omitempty"`
-}
-
-type AssumeIAMRoleRequest struct {
-	// TTL in seconds for the generated access key (cannot exceed the max TTL defined in the targeted assume role)
-	Ttl int64 `json:"ttl,omitempty" validate:"omitempty,gt=0"`
-}
-
-// [BETA] Request generation of key/secret that allow caller to assume target role
-func (c Client) AssumeIAMRole(ctx context.Context, targetRoleID UUID, req AssumeIAMRoleRequest) (*AssumeIAMRoleResponse, error) {
-	path := fmt.Sprintf("/iam-role/%v/assume", targetRoleID)
-
-	body, err := prepareJSONBody(req)
-	if err != nil {
-		return nil, fmt.Errorf("AssumeIAMRole: prepare Json body: %w", err)
-	}
-
-	request, err := http.NewRequestWithContext(ctx, "POST", c.serverEndpoint+path, body)
-	if err != nil {
-		return nil, fmt.Errorf("AssumeIAMRole: new request: %w", err)
-	}
-
-	request.Header.Add("User-Agent", c.getUserAgent())
-
-	request.Header.Add("Content-Type", "application/json")
-
-	if err := c.executeRequestInterceptors(ctx, request); err != nil {
-		return nil, fmt.Errorf("AssumeIAMRole: execute request editors: %w", err)
-	}
-
-	if err := c.signRequest(request); err != nil {
-		return nil, fmt.Errorf("AssumeIAMRole: sign request: %w", err)
-	}
-
-	if c.trace {
-		dumpRequest(request, "assume-iam-role")
-	}
-
-	response, err := c.httpClient.Do(request)
-	if err != nil {
-		return nil, fmt.Errorf("AssumeIAMRole: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
-	}
-
-	if err := handleHTTPErrorResp(response); err != nil {
-		return nil, fmt.Errorf("AssumeIAMRole: http response: %w", err)
-	}
-
-	bodyresp := new(AssumeIAMRoleResponse)
-	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("AssumeIAMRole: prepare Json response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -13232,7 +13925,7 @@ func (l ListKmsKeysResponse) FindListKmsKeysResponseEntry(nameOrID string) (List
 	return ListKmsKeysResponseEntry{}, fmt.Errorf("%q not found in ListKmsKeysResponse: %w", nameOrID, ErrNotFound)
 }
 
-// List KMS Keys details for an organization in a given zone.
+// Lists all KMS Keys in your organization in a given zone.
 func (c Client) ListKmsKeys(ctx context.Context) (*ListKmsKeysResponse, error) {
 	path := "/kms-key"
 
@@ -13276,7 +13969,7 @@ func (c Client) ListKmsKeys(ctx context.Context) (*ListKmsKeysResponse, error) {
 	return bodyresp, nil
 }
 
-// Create a KMS Key in a given zone with a given name.
+// Create a customer-managed unique KMS Key in your organization. A KMS Key is a logical represention of a cryptographic key material. It also includes metadata such as a UUID, a name and its state.
 func (c Client) CreateKmsKey(ctx context.Context, req CreateKmsKeyRequest) (*CreateKmsKeyResponse, error) {
 	path := "/kms-key"
 
@@ -13371,7 +14064,7 @@ func (c Client) GetKmsKey(ctx context.Context, id UUID) (*GetKmsKeyResponse, err
 	return bodyresp, nil
 }
 
-// Cancel the scheduled deletion of a KMS Key.
+// Cancels the scheduled deletion of a KMS Key.
 func (c Client) CancelKmsKeyDeletion(ctx context.Context, id UUID) (*SuccessResponse, error) {
 	path := fmt.Sprintf("/kms-key/%v/cancel-deletion", id)
 
@@ -13415,7 +14108,7 @@ func (c Client) CancelKmsKeyDeletion(ctx context.Context, id UUID) (*SuccessResp
 	return bodyresp, nil
 }
 
-// Decrypt a ciphertext.
+// Decrypts a ciphertext.
 func (c Client) Decrypt(ctx context.Context, id UUID, req DecryptRequest) (*DecryptResponse, error) {
 	path := fmt.Sprintf("/kms-key/%v/decrypt", id)
 
@@ -13466,7 +14159,7 @@ func (c Client) Decrypt(ctx context.Context, id UUID, req DecryptRequest) (*Decr
 	return bodyresp, nil
 }
 
-// Disable a KMS Key
+// Disables a KMS Key by setting its state to "disabled". This prevents the use of the KMS key for cryptographic and key lifecycle operations.
 func (c Client) DisableKmsKey(ctx context.Context, id UUID) (*SuccessResponse, error) {
 	path := fmt.Sprintf("/kms-key/%v/disable", id)
 
@@ -13554,7 +14247,7 @@ func (c Client) DisableKmsKeyRotation(ctx context.Context, id UUID) (*DisableKms
 	return bodyresp, nil
 }
 
-// Enable a KMS Key"
+// Enables a KMS Key by setting its stated to "enabled". It restores the ability to fully use the KMS key for cryptographic operations and key lifecycle operations.
 func (c Client) EnableKmsKey(ctx context.Context, id UUID) (*SuccessResponse, error) {
 	path := fmt.Sprintf("/kms-key/%v/enable", id)
 
@@ -13649,7 +14342,7 @@ func (c Client) EnableKmsKeyRotation(ctx context.Context, id UUID, req EnableKms
 	return bodyresp, nil
 }
 
-// Encrypt a plaintext.
+// Encrypts a plaintext.
 func (c Client) Encrypt(ctx context.Context, id UUID, req EncryptRequest) (*EncryptResponse, error) {
 	path := fmt.Sprintf("/kms-key/%v/encrypt", id)
 
@@ -13897,7 +14590,7 @@ func (c Client) ReplicateKmsKey(ctx context.Context, id UUID, req ReplicateKmsKe
 	return bodyresp, nil
 }
 
-// Perform a manual rotation of the key material for a symmetric key.
+// Performs an immediate rotation of the key material for a symmetric key.
 func (c Client) RotateKmsKey(ctx context.Context, id UUID) (*RotateKmsKeyResponse, error) {
 	path := fmt.Sprintf("/kms-key/%v/rotate", id)
 
@@ -13941,8 +14634,8 @@ func (c Client) RotateKmsKey(ctx context.Context, id UUID) (*RotateKmsKeyRespons
 	return bodyresp, nil
 }
 
-// Schedule a KMS key for deletion after a delay.
-func (c Client) ScheduleKmsKeyDeletion(ctx context.Context, id UUID, req ScheduleKmsKeyDeletionRequest) (*SuccessResponse, error) {
+// Schedules a KMS key for deletion after a delay. You can specify a delay of 7-30 days.
+func (c Client) ScheduleKmsKeyDeletion(ctx context.Context, id UUID, req ScheduleKmsKeyDeletionRequest) (*ScheduleKmsKeyDeletionResponse, error) {
 	path := fmt.Sprintf("/kms-key/%v/schedule-deletion", id)
 
 	body, err := prepareJSONBody(req)
@@ -13984,9 +14677,53 @@ func (c Client) ScheduleKmsKeyDeletion(ctx context.Context, id UUID, req Schedul
 		return nil, fmt.Errorf("ScheduleKmsKeyDeletion: http response: %w", err)
 	}
 
-	bodyresp := new(SuccessResponse)
+	bodyresp := new(ScheduleKmsKeyDeletionResponse)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
 		return nil, fmt.Errorf("ScheduleKmsKeyDeletion: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+// [BETA] Returns the live-balance of the current organization.
+func (c Client) GetLiveBalance(ctx context.Context) (*LiveBalance, error) {
+	path := "/live-balance"
+
+	request, err := http.NewRequestWithContext(ctx, "GET", c.serverEndpoint+path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("GetLiveBalance: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("GetLiveBalance: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("GetLiveBalance: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-live-balance")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("GetLiveBalance: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("GetLiveBalance: http response: %w", err)
+	}
+
+	bodyresp := new(LiveBalance)
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("GetLiveBalance: prepare Json response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -16315,7 +17052,7 @@ type CreateSKSClusterRequest struct {
 	Level CreateSKSClusterRequestLevel `json:"level" validate:"required"`
 	// Cluster name
 	Name string `json:"name" validate:"required,gte=1,lte=255"`
-	// Cluster networking configuration.
+	// EXPERIMENTAL: Cluster networking configuration.
 	Networking *Networking `json:"networking,omitempty"`
 	// SKS Cluster OpenID config map
 	Oidc *SKSOidc `json:"oidc,omitempty"`
@@ -16752,6 +17489,102 @@ func (c Client) GetSKSClusterAuthorityCert(ctx context.Context, id UUID, authori
 	return bodyresp, nil
 }
 
+type GenerateSKSKarpenterExoscaleNodeclassResponse struct {
+	ExoscaleNodeclass string `json:"exoscale-nodeclass,omitempty"`
+}
+
+// Generate a Karpenter ExoscaleNodeClass manifest for an SKS cluster, including its default security group and feature flags if present
+func (c Client) GenerateSKSKarpenterExoscaleNodeclass(ctx context.Context, id UUID) (*GenerateSKSKarpenterExoscaleNodeclassResponse, error) {
+	path := fmt.Sprintf("/sks-cluster/%v/generate-karpenter-exoscale-nodeclass", id)
+
+	request, err := http.NewRequestWithContext(ctx, "PUT", c.serverEndpoint+path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("GenerateSKSKarpenterExoscaleNodeclass: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("GenerateSKSKarpenterExoscaleNodeclass: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("GenerateSKSKarpenterExoscaleNodeclass: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "generate-sks-karpenter-exoscale-nodeclass")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("GenerateSKSKarpenterExoscaleNodeclass: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("GenerateSKSKarpenterExoscaleNodeclass: http response: %w", err)
+	}
+
+	bodyresp := new(GenerateSKSKarpenterExoscaleNodeclassResponse)
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("GenerateSKSKarpenterExoscaleNodeclass: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+type GenerateSKSKarpenterNodepoolResponse struct {
+	Nodepool string `json:"nodepool,omitempty"`
+}
+
+// Generate a Karpenter NodePool manifest with minimal configuration for an SKS cluster
+func (c Client) GenerateSKSKarpenterNodepool(ctx context.Context, id UUID) (*GenerateSKSKarpenterNodepoolResponse, error) {
+	path := fmt.Sprintf("/sks-cluster/%v/generate-karpenter-nodepool", id)
+
+	request, err := http.NewRequestWithContext(ctx, "PUT", c.serverEndpoint+path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("GenerateSKSKarpenterNodepool: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("GenerateSKSKarpenterNodepool: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("GenerateSKSKarpenterNodepool: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "generate-sks-karpenter-nodepool")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("GenerateSKSKarpenterNodepool: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("GenerateSKSKarpenterNodepool: http response: %w", err)
+	}
+
+	bodyresp := new(GenerateSKSKarpenterNodepoolResponse)
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("GenerateSKSKarpenterNodepool: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
 type GetSKSClusterInspectionResponse map[string]any
 
 // Helps troubleshoot common problems when deploying a kubernetes cluster. Inspections run every couple of minutes.
@@ -16825,6 +17658,8 @@ type CreateSKSNodepoolRequest struct {
 	Labels         SKSNodepoolLabels `json:"labels,omitempty"`
 	// Nodepool name, lowercase only
 	Name string `json:"name" validate:"required,gte=1,lte=255"`
+	// Nvidia MIG Profiles enabled
+	NvidiaMigProfiles *NvidiaMigProfiles `json:"nvidia-mig-profiles,omitempty"`
 	// Nodepool Private Networks
 	PrivateNetworks []PrivateNetwork `json:"private-networks,omitempty"`
 	// Configures public IP assignment of the Instances with:
@@ -17002,6 +17837,8 @@ type UpdateSKSNodepoolRequest struct {
 	Labels         SKSNodepoolLabels `json:"labels,omitempty"`
 	// Nodepool name, lowercase only
 	Name string `json:"name,omitempty" validate:"omitempty,gte=1,lte=255"`
+	// Nvidia MIG Profiles enabled
+	NvidiaMigProfiles *NvidiaMigProfiles `json:"nvidia-mig-profiles"`
 	// Nodepool Private Networks
 	PrivateNetworks []PrivateNetwork `json:"private-networks,omitempty"`
 	// Configures public IP assignment of the Instances with:
@@ -18801,6 +19638,922 @@ func (c Client) UpdateUserRole(ctx context.Context, id UUID, req UpdateUserRoleR
 	return bodyresp, nil
 }
 
+type ListVpcsResponse struct {
+	Vpcs []ListVpcEntry `json:"vpcs,omitempty"`
+}
+
+// FindListVpcEntry attempts to find an ListVpcEntry by nameOrID.
+func (l ListVpcsResponse) FindListVpcEntry(nameOrID string) (ListVpcEntry, error) {
+	var result []ListVpcEntry
+	for i, elem := range l.Vpcs {
+		if string(elem.Name) == nameOrID || string(elem.ID) == nameOrID {
+			result = append(result, l.Vpcs[i])
+		}
+	}
+	if len(result) == 1 {
+		return result[0], nil
+	}
+
+	if len(result) > 1 {
+		return ListVpcEntry{}, fmt.Errorf("%q too many found in ListVpcsResponse: %w", nameOrID, ErrConflict)
+	}
+
+	return ListVpcEntry{}, fmt.Errorf("%q not found in ListVpcsResponse: %w", nameOrID, ErrNotFound)
+}
+
+// [BETA] List VPCs
+func (c Client) ListVpcs(ctx context.Context) (*ListVpcsResponse, error) {
+	path := "/vpc"
+
+	request, err := http.NewRequestWithContext(ctx, "GET", c.serverEndpoint+path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("ListVpcs: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("ListVpcs: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("ListVpcs: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "list-vpcs")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("ListVpcs: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("ListVpcs: http response: %w", err)
+	}
+
+	bodyresp := new(ListVpcsResponse)
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("ListVpcs: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+type CreateVpcRequest struct {
+	// VPC description
+	Description string `json:"description,omitempty" validate:"omitempty,lte=4096"`
+	Labels      Labels `json:"labels,omitempty"`
+	// VPC name
+	Name string `json:"name" validate:"required,gte=1,lte=255"`
+}
+
+// [BETA] Create a VPC
+func (c Client) CreateVpc(ctx context.Context, req CreateVpcRequest) (*Operation, error) {
+	path := "/vpc"
+
+	body, err := prepareJSONBody(req)
+	if err != nil {
+		return nil, fmt.Errorf("CreateVpc: prepare Json body: %w", err)
+	}
+
+	request, err := http.NewRequestWithContext(ctx, "POST", c.serverEndpoint+path, body)
+	if err != nil {
+		return nil, fmt.Errorf("CreateVpc: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	request.Header.Add("Content-Type", "application/json")
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("CreateVpc: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("CreateVpc: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "create-vpc")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("CreateVpc: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("CreateVpc: http response: %w", err)
+	}
+
+	bodyresp := new(Operation)
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("CreateVpc: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+// [BETA] Delete a VPC
+func (c Client) DeleteVpc(ctx context.Context, id UUID) (*Empty, error) {
+	path := fmt.Sprintf("/vpc/%v", id)
+
+	request, err := http.NewRequestWithContext(ctx, "DELETE", c.serverEndpoint+path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("DeleteVpc: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("DeleteVpc: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("DeleteVpc: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "delete-vpc")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("DeleteVpc: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("DeleteVpc: http response: %w", err)
+	}
+
+	bodyresp := new(Empty)
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("DeleteVpc: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+// [BETA] Retrieve VPC details
+func (c Client) GetVpc(ctx context.Context, id UUID) (*Vpc, error) {
+	path := fmt.Sprintf("/vpc/%v", id)
+
+	request, err := http.NewRequestWithContext(ctx, "GET", c.serverEndpoint+path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("GetVpc: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("GetVpc: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("GetVpc: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-vpc")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("GetVpc: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("GetVpc: http response: %w", err)
+	}
+
+	bodyresp := new(Vpc)
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("GetVpc: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+type UpdateVpcRequest struct {
+	// VPC description
+	Description *string `json:"description,omitempty" validate:"omitempty,lte=4096"`
+	Labels      Labels  `json:"labels"`
+	// VPC name
+	Name *string `json:"name,omitempty" validate:"omitempty,gte=1,lte=255"`
+}
+
+// [BETA] Update a VPC
+func (c Client) UpdateVpc(ctx context.Context, id UUID, req UpdateVpcRequest) (*Vpc, error) {
+	path := fmt.Sprintf("/vpc/%v", id)
+
+	body, err := prepareJSONBody(req)
+	if err != nil {
+		return nil, fmt.Errorf("UpdateVpc: prepare Json body: %w", err)
+	}
+
+	request, err := http.NewRequestWithContext(ctx, "PUT", c.serverEndpoint+path, body)
+	if err != nil {
+		return nil, fmt.Errorf("UpdateVpc: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	request.Header.Add("Content-Type", "application/json")
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("UpdateVpc: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("UpdateVpc: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "update-vpc")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("UpdateVpc: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("UpdateVpc: http response: %w", err)
+	}
+
+	bodyresp := new(Vpc)
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("UpdateVpc: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+type ListVpcRoutesResponse struct {
+	Routes []ListRouteEntry `json:"routes,omitempty"`
+}
+
+// FindListRouteEntry attempts to find an ListRouteEntry by id.
+func (l ListVpcRoutesResponse) FindListRouteEntry(id string) (ListRouteEntry, error) {
+	var result []ListRouteEntry
+	for i, elem := range l.Routes {
+		if string(elem.ID) == id {
+			result = append(result, l.Routes[i])
+		}
+	}
+	if len(result) == 1 {
+		return result[0], nil
+	}
+
+	if len(result) > 1 {
+		return ListRouteEntry{}, fmt.Errorf("%q too many found in ListVpcRoutesResponse: %w", id, ErrConflict)
+	}
+
+	return ListRouteEntry{}, fmt.Errorf("%q not found in ListVpcRoutesResponse: %w", id, ErrNotFound)
+}
+
+// [BETA] List VPC routes
+func (c Client) ListVpcRoutes(ctx context.Context, vpcID UUID) (*ListVpcRoutesResponse, error) {
+	path := fmt.Sprintf("/vpc/%v/route", vpcID)
+
+	request, err := http.NewRequestWithContext(ctx, "GET", c.serverEndpoint+path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("ListVpcRoutes: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("ListVpcRoutes: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("ListVpcRoutes: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "list-vpc-routes")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("ListVpcRoutes: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("ListVpcRoutes: http response: %w", err)
+	}
+
+	bodyresp := new(ListVpcRoutesResponse)
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("ListVpcRoutes: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+type ListSubnetsResponse struct {
+	Subnets []ListSubnetEntry `json:"subnets,omitempty"`
+}
+
+// FindListSubnetEntry attempts to find an ListSubnetEntry by nameOrID.
+func (l ListSubnetsResponse) FindListSubnetEntry(nameOrID string) (ListSubnetEntry, error) {
+	var result []ListSubnetEntry
+	for i, elem := range l.Subnets {
+		if string(elem.Name) == nameOrID || string(elem.ID) == nameOrID {
+			result = append(result, l.Subnets[i])
+		}
+	}
+	if len(result) == 1 {
+		return result[0], nil
+	}
+
+	if len(result) > 1 {
+		return ListSubnetEntry{}, fmt.Errorf("%q too many found in ListSubnetsResponse: %w", nameOrID, ErrConflict)
+	}
+
+	return ListSubnetEntry{}, fmt.Errorf("%q not found in ListSubnetsResponse: %w", nameOrID, ErrNotFound)
+}
+
+// [BETA] List Subnets
+func (c Client) ListSubnets(ctx context.Context, vpcID UUID) (*ListSubnetsResponse, error) {
+	path := fmt.Sprintf("/vpc/%v/subnet", vpcID)
+
+	request, err := http.NewRequestWithContext(ctx, "GET", c.serverEndpoint+path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("ListSubnets: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("ListSubnets: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("ListSubnets: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "list-subnets")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("ListSubnets: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("ListSubnets: http response: %w", err)
+	}
+
+	bodyresp := new(ListSubnetsResponse)
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("ListSubnets: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+type CreateSubnetRequestAddressSpace string
+
+const (
+	CreateSubnetRequestAddressSpacePrivate CreateSubnetRequestAddressSpace = "private"
+)
+
+type CreateSubnetRequestAddressfamily string
+
+const (
+	CreateSubnetRequestAddressfamilyInet4 CreateSubnetRequestAddressfamily = "inet4"
+)
+
+type CreateSubnetRequest struct {
+	// Subnet address space
+	AddressSpace CreateSubnetRequestAddressSpace `json:"address-space" validate:"required"`
+	// Subnet address family
+	Addressfamily CreateSubnetRequestAddressfamily `json:"addressfamily" validate:"required"`
+	// Subnet description
+	Description string `json:"description,omitempty" validate:"omitempty,lte=4096"`
+	// Subnet ipv4 CIDR
+	Ipv4Block string `json:"ipv4-block,omitempty"`
+	Labels    Labels `json:"labels,omitempty"`
+	// Subnet name
+	Name string `json:"name" validate:"required,gte=1,lte=255"`
+}
+
+// [BETA] Create a Subnet
+func (c Client) CreateSubnet(ctx context.Context, vpcID UUID, req CreateSubnetRequest) (*Operation, error) {
+	path := fmt.Sprintf("/vpc/%v/subnet", vpcID)
+
+	body, err := prepareJSONBody(req)
+	if err != nil {
+		return nil, fmt.Errorf("CreateSubnet: prepare Json body: %w", err)
+	}
+
+	request, err := http.NewRequestWithContext(ctx, "POST", c.serverEndpoint+path, body)
+	if err != nil {
+		return nil, fmt.Errorf("CreateSubnet: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	request.Header.Add("Content-Type", "application/json")
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("CreateSubnet: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("CreateSubnet: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "create-subnet")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("CreateSubnet: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("CreateSubnet: http response: %w", err)
+	}
+
+	bodyresp := new(Operation)
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("CreateSubnet: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+// [BETA] Delete a Subnet
+func (c Client) DeleteSubnet(ctx context.Context, vpcID UUID, id UUID) (*Empty, error) {
+	path := fmt.Sprintf("/vpc/%v/subnet/%v", vpcID, id)
+
+	request, err := http.NewRequestWithContext(ctx, "DELETE", c.serverEndpoint+path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("DeleteSubnet: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("DeleteSubnet: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("DeleteSubnet: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "delete-subnet")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("DeleteSubnet: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("DeleteSubnet: http response: %w", err)
+	}
+
+	bodyresp := new(Empty)
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("DeleteSubnet: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+// [BETA] Retrieve Subnet details
+func (c Client) GetSubnet(ctx context.Context, vpcID UUID, id UUID) (*Subnet, error) {
+	path := fmt.Sprintf("/vpc/%v/subnet/%v", vpcID, id)
+
+	request, err := http.NewRequestWithContext(ctx, "GET", c.serverEndpoint+path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("GetSubnet: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("GetSubnet: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("GetSubnet: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "get-subnet")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("GetSubnet: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("GetSubnet: http response: %w", err)
+	}
+
+	bodyresp := new(Subnet)
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("GetSubnet: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+type UpdateSubnetRequest struct {
+	// Subnet description
+	Description *string `json:"description,omitempty" validate:"omitempty,lte=4096"`
+	// Subnet CIDR
+	Ipv4Block *string `json:"ipv4-block,omitempty"`
+	Labels    Labels  `json:"labels"`
+	// Subnet name
+	Name *string `json:"name,omitempty" validate:"omitempty,gte=1,lte=255"`
+}
+
+// [BETA] Update a Subnet
+func (c Client) UpdateSubnet(ctx context.Context, vpcID UUID, id UUID, req UpdateSubnetRequest) (*Subnet, error) {
+	path := fmt.Sprintf("/vpc/%v/subnet/%v", vpcID, id)
+
+	body, err := prepareJSONBody(req)
+	if err != nil {
+		return nil, fmt.Errorf("UpdateSubnet: prepare Json body: %w", err)
+	}
+
+	request, err := http.NewRequestWithContext(ctx, "PUT", c.serverEndpoint+path, body)
+	if err != nil {
+		return nil, fmt.Errorf("UpdateSubnet: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	request.Header.Add("Content-Type", "application/json")
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("UpdateSubnet: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("UpdateSubnet: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "update-subnet")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("UpdateSubnet: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("UpdateSubnet: http response: %w", err)
+	}
+
+	bodyresp := new(Subnet)
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("UpdateSubnet: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+type AttachInstanceToSubnetRequest struct {
+	// Target Instance
+	Instance *InstanceRef `json:"instance" validate:"required"`
+}
+
+// [BETA] Attach a Compute instance to a Subnet
+func (c Client) AttachInstanceToSubnet(ctx context.Context, vpcID UUID, subnetID UUID, req AttachInstanceToSubnetRequest) (*Operation, error) {
+	path := fmt.Sprintf("/vpc/%v/subnet/%v/attach", vpcID, subnetID)
+
+	body, err := prepareJSONBody(req)
+	if err != nil {
+		return nil, fmt.Errorf("AttachInstanceToSubnet: prepare Json body: %w", err)
+	}
+
+	request, err := http.NewRequestWithContext(ctx, "PUT", c.serverEndpoint+path, body)
+	if err != nil {
+		return nil, fmt.Errorf("AttachInstanceToSubnet: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	request.Header.Add("Content-Type", "application/json")
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("AttachInstanceToSubnet: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("AttachInstanceToSubnet: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "attach-instance-to-subnet")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("AttachInstanceToSubnet: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("AttachInstanceToSubnet: http response: %w", err)
+	}
+
+	bodyresp := new(Operation)
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("AttachInstanceToSubnet: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+type DetachInstanceFromSubnetRequest struct {
+	// Target Instance
+	Instance *InstanceRef `json:"instance" validate:"required"`
+}
+
+// [BETA] Detach a Compute instance from a Subnet
+func (c Client) DetachInstanceFromSubnet(ctx context.Context, vpcID UUID, subnetID UUID, req DetachInstanceFromSubnetRequest) (*Operation, error) {
+	path := fmt.Sprintf("/vpc/%v/subnet/%v/detach", vpcID, subnetID)
+
+	body, err := prepareJSONBody(req)
+	if err != nil {
+		return nil, fmt.Errorf("DetachInstanceFromSubnet: prepare Json body: %w", err)
+	}
+
+	request, err := http.NewRequestWithContext(ctx, "PUT", c.serverEndpoint+path, body)
+	if err != nil {
+		return nil, fmt.Errorf("DetachInstanceFromSubnet: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	request.Header.Add("Content-Type", "application/json")
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("DetachInstanceFromSubnet: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("DetachInstanceFromSubnet: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "detach-instance-from-subnet")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("DetachInstanceFromSubnet: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("DetachInstanceFromSubnet: http response: %w", err)
+	}
+
+	bodyresp := new(Operation)
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("DetachInstanceFromSubnet: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+type ListRoutesResponse struct {
+	Routes []ListRouteEntry `json:"routes,omitempty"`
+}
+
+// FindListRouteEntry attempts to find an ListRouteEntry by id.
+func (l ListRoutesResponse) FindListRouteEntry(id string) (ListRouteEntry, error) {
+	var result []ListRouteEntry
+	for i, elem := range l.Routes {
+		if string(elem.ID) == id {
+			result = append(result, l.Routes[i])
+		}
+	}
+	if len(result) == 1 {
+		return result[0], nil
+	}
+
+	if len(result) > 1 {
+		return ListRouteEntry{}, fmt.Errorf("%q too many found in ListRoutesResponse: %w", id, ErrConflict)
+	}
+
+	return ListRouteEntry{}, fmt.Errorf("%q not found in ListRoutesResponse: %w", id, ErrNotFound)
+}
+
+// [BETA] List Subnet routes
+func (c Client) ListRoutes(ctx context.Context, vpcID UUID, subnetID UUID) (*ListRoutesResponse, error) {
+	path := fmt.Sprintf("/vpc/%v/subnet/%v/route", vpcID, subnetID)
+
+	request, err := http.NewRequestWithContext(ctx, "GET", c.serverEndpoint+path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("ListRoutes: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("ListRoutes: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("ListRoutes: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "list-routes")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("ListRoutes: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("ListRoutes: http response: %w", err)
+	}
+
+	bodyresp := new(ListRoutesResponse)
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("ListRoutes: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+type CreateRouteRequest struct {
+	// Route description
+	Description string `json:"description,omitempty" validate:"omitempty,lte=4096"`
+	// Route destination CIDR
+	Destination string `json:"destination" validate:"required"`
+	// Route target
+	Target string `json:"target" validate:"required"`
+}
+
+// [BETA] Create a route
+func (c Client) CreateRoute(ctx context.Context, vpcID UUID, subnetID UUID, req CreateRouteRequest) (*Route, error) {
+	path := fmt.Sprintf("/vpc/%v/subnet/%v/route", vpcID, subnetID)
+
+	body, err := prepareJSONBody(req)
+	if err != nil {
+		return nil, fmt.Errorf("CreateRoute: prepare Json body: %w", err)
+	}
+
+	request, err := http.NewRequestWithContext(ctx, "POST", c.serverEndpoint+path, body)
+	if err != nil {
+		return nil, fmt.Errorf("CreateRoute: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	request.Header.Add("Content-Type", "application/json")
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("CreateRoute: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("CreateRoute: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "create-route")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("CreateRoute: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("CreateRoute: http response: %w", err)
+	}
+
+	bodyresp := new(Route)
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("CreateRoute: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+// [BETA] Delete a route
+func (c Client) DeleteRoute(ctx context.Context, vpcID UUID, subnetID UUID, id UUID) (*Empty, error) {
+	path := fmt.Sprintf("/vpc/%v/subnet/%v/route/%v", vpcID, subnetID, id)
+
+	request, err := http.NewRequestWithContext(ctx, "DELETE", c.serverEndpoint+path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("DeleteRoute: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("DeleteRoute: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("DeleteRoute: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "delete-route")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("DeleteRoute: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("DeleteRoute: http response: %w", err)
+	}
+
+	bodyresp := new(Empty)
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("DeleteRoute: prepare Json response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
 type ListZonesResponse struct {
 	Zones []Zone `json:"zones,omitempty"`
 }
@@ -18837,10 +20590,6 @@ func (c Client) ListZones(ctx context.Context) (*ListZonesResponse, error) {
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
 		return nil, fmt.Errorf("ListZones: execute request editors: %w", err)
-	}
-
-	if err := c.signRequest(request); err != nil {
-		return nil, fmt.Errorf("ListZones: sign request: %w", err)
 	}
 
 	if c.trace {

@@ -39,6 +39,7 @@ const (
 	resSKSNodepoolAttrLabels                 = "labels"
 	resSKSNodepoolAttrID                     = "id"
 	resSKSNodepoolAttrName                   = "name"
+	resSKSNodepoolAttrNvidiaMigProfile       = "nvidia_mig_profile"
 	resSKSNOdepoolAttrIPV6Enabled            = "ipv6"
 	resSKSNodepoolAttrPrivateNetworkIDs      = "private_network_ids"
 	resSKSNodepoolAttrSecurityGroupIDs       = "security_group_ids"
@@ -149,6 +150,13 @@ func resourceSKSNodepool() *schema.Resource {
 			Type:        schema.TypeString,
 			Required:    true,
 			Description: "The SKS node pool name.",
+		},
+		resSKSNodepoolAttrNvidiaMigProfile: {
+			Type:     schema.TypeString,
+			Optional: true,
+			Description: "The NVIDIA [Multi-Instance GPU (MIG)](https://docs.nvidia.com/datacenter/tesla/mig-user-guide/) profile to enable on the managed GPUs. " +
+				"The GPU family is inferred from `instance_type`: `gpua30.*` accepts `2g.12gb`, `1g.6gb+me`, `1g.6gb`, `2g.12gb+me`, `4g.24gb`; " +
+				"`gpurtx6000pro.*` accepts `1g.24gb-me`, `1g.24gb`, `2g.48gb-me`, `2g.48gb`, `4g.96gb+gfx`, `1g.24gb+me`, `2g.48gb+me.all`, `1g.24gb+gfx`, `1g.24gb+me.all`, `4g.96gb`, `2g.48gb+gfx`.",
 		},
 		resSKSNOdepoolAttrIPV6Enabled: {
 			Type:        schema.TypeBool,
@@ -360,6 +368,14 @@ func resourceSKSNodepoolCreate(ctx context.Context, d *schema.ResourceData, meta
 		sksNodepoolCreate.Name = s
 	}
 
+	if v, ok := d.GetOk(resSKSNodepoolAttrNvidiaMigProfile); ok {
+		profiles, err := sksNodepoolMIGProfiles(sksNodepoolInstanceTypeFamily(d), v.(string))
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		sksNodepoolCreate.NvidiaMigProfiles = profiles
+	}
+
 	if set, ok := d.Get(resSKSNodepoolAttrPrivateNetworkIDs).(*schema.Set); ok {
 		sksNodepoolCreate.PrivateNetworks = utils.PrivateNetworkIDsToPrivateNetworks(set.List())
 	}
@@ -514,6 +530,7 @@ func resourceSKSNodepoolUpdate(ctx context.Context, d *schema.ResourceData, meta
 		InstanceType:       sksNp.InstanceType,
 		Labels:             sksNp.Labels,
 		Name:               sksNp.Name,
+		NvidiaMigProfiles:  sksNp.NvidiaMigProfiles,
 		PrivateNetworks:    sksNp.PrivateNetworks,
 		PublicIPAssignment: v3.UpdateSKSNodepoolRequestPublicIPAssignment(sksNp.PublicIPAssignment),
 		SecurityGroups:     sksNp.SecurityGroups,
@@ -575,6 +592,21 @@ func resourceSKSNodepoolUpdate(ctx context.Context, d *schema.ResourceData, meta
 	if d.HasChange(resSKSNodepoolAttrName) {
 		v := d.Get(resSKSNodepoolAttrName).(string)
 		sksNodepoolUpdate.Name = v
+		updated = true
+	}
+
+	// Recompute the MIG profiles when either the profile itself or the instance
+	// type (and thus the inferred GPU family) changes.
+	if d.HasChange(resSKSNodepoolAttrNvidiaMigProfile) || d.HasChange(resSKSNodepoolAttrInstanceType) {
+		if v, ok := d.GetOk(resSKSNodepoolAttrNvidiaMigProfile); ok {
+			profiles, err := sksNodepoolMIGProfiles(sksNodepoolInstanceTypeFamily(d), v.(string))
+			if err != nil {
+				return diag.FromErr(err)
+			}
+			sksNodepoolUpdate.NvidiaMigProfiles = profiles
+		} else {
+			sksNodepoolUpdate.NvidiaMigProfiles = nil
+		}
 		updated = true
 	}
 
@@ -803,6 +835,10 @@ func resourceSKSNodepoolApply(
 		return err
 	}
 
+	if err := d.Set(resSKSNodepoolAttrNvidiaMigProfile, sksNodepoolMIGProfile(sksNodepool.NvidiaMigProfiles)); err != nil {
+		return err
+	}
+
 	if sksNodepool.PrivateNetworks != nil {
 		privnets := utils.PrivateNetworksToPrivateNetworkIDs(sksNodepool.PrivateNetworks)
 		if err := d.Set(resSKSNodepoolAttrPrivateNetworkIDs, privnets); err != nil {
@@ -919,4 +955,75 @@ func parseSKSNodepoolTaintV3(v string) (*v3.SKSNodepoolTaint, error) {
 		Effect: v3.SKSNodepoolTaintEffect(taintEffect),
 		Value:  taintValue,
 	}, nil
+}
+
+// NVIDIA Multi-Instance GPU (MIG) profiles, keyed by the GPU instance type
+// family the profile applies to. A nodepool has a single instance type (hence a
+// single GPU family), so the family is inferred from `instance_type` rather than
+// specified by the user. The accepted values mirror the Exoscale OpenAPI
+// `nvidia-mig-profile-*` enums; update them if the spec gains new ones.
+var sksNodepoolMIGProfileValues = map[v3.InstanceTypeFamily][]string{
+	v3.InstanceTypeFamilyGpua30: {
+		"2g.12gb", "1g.6gb+me", "1g.6gb", "2g.12gb+me", "4g.24gb",
+	},
+	v3.InstanceTypeFamilyGpurtx6000pro: {
+		"1g.24gb-me", "1g.24gb", "2g.48gb-me", "2g.48gb", "4g.96gb+gfx",
+		"1g.24gb+me", "2g.48gb+me.all", "1g.24gb+gfx", "1g.24gb+me.all",
+		"4g.96gb", "2g.48gb+gfx",
+	},
+}
+
+// sksNodepoolInstanceTypeFamily returns the (lowercased) family part of the
+// nodepool's `instance_type` (`<family>.<size>`).
+func sksNodepoolInstanceTypeFamily(d *schema.ResourceData) string {
+	parts := strings.SplitN(d.Get(resSKSNodepoolAttrInstanceType).(string), ".", 2)
+	return strings.ToLower(parts[0])
+}
+
+// sksNodepoolMIGProfiles builds the egoscale NvidiaMigProfiles for the given
+// instance type family and MIG profile, inferring which GPU field to set from
+// the family. It errors if the family is not MIG-capable or the profile is not
+// valid for it.
+func sksNodepoolMIGProfiles(family, profile string) (*v3.NvidiaMigProfiles, error) {
+	values, ok := sksNodepoolMIGProfileValues[v3.InstanceTypeFamily(family)]
+	if !ok {
+		return nil, fmt.Errorf(
+			"%s is only supported on NVIDIA MIG-capable instance types (families %q and %q), not %q",
+			resSKSNodepoolAttrNvidiaMigProfile,
+			v3.InstanceTypeFamilyGpua30, v3.InstanceTypeFamilyGpurtx6000pro, family,
+		)
+	}
+
+	if !in(values, profile) {
+		return nil, fmt.Errorf(
+			"unsupported MIG profile %q for instance type family %q; supported profiles are %s",
+			profile, family, strings.Join(values, ", "),
+		)
+	}
+
+	switch v3.InstanceTypeFamily(family) {
+	case v3.InstanceTypeFamilyGpua30:
+		return &v3.NvidiaMigProfiles{A3024gb: v3.NvidiaMigProfileA3024gb(profile)}, nil
+	case v3.InstanceTypeFamilyGpurtx6000pro:
+		return &v3.NvidiaMigProfiles{Rtxpro600096gb: v3.NvidiaMigProfileRtxpro600096gb(profile)}, nil
+	default:
+		// Unreachable: family presence was validated above.
+		return nil, nil
+	}
+}
+
+// sksNodepoolMIGProfile flattens the egoscale NvidiaMigProfiles into the single
+// MIG profile value (whichever GPU family field is set), or "" when none is set.
+func sksNodepoolMIGProfile(profiles *v3.NvidiaMigProfiles) string {
+	if profiles == nil {
+		return ""
+	}
+	if profiles.A3024gb != "" {
+		return string(profiles.A3024gb)
+	}
+	if profiles.Rtxpro600096gb != "" {
+		return string(profiles.Rtxpro600096gb)
+	}
+
+	return ""
 }
