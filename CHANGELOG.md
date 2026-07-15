@@ -19,7 +19,7 @@ FEATURES:
 
 DEPENDENCIES:
 
-- Bump `egoscale/v3` to v3.1.41
+- Bump `egoscale/v3` to v3.1.42
 
 ## 0.69.3
 
