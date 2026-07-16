@@ -33,6 +33,7 @@ description: |-
 - `ipv6` (Boolean) Match against this bool
 - `labels` (Map of String) Match against key/values. Keys are matched exactly, while values may be matched as a regex if you supply a string that begins and ends with "/"
 - `name` (String) Match against this string. If you supply a string that begins and ends with a "/" it will be matched as a regex.
+- `nvidia_mig_profile` (String) Match against this string. If you supply a string that begins and ends with a "/" it will be matched as a regex.
 - `size` (Number) Match against this int
 - `state` (String) Match against this string. If you supply a string that begins and ends with a "/" it will be matched as a regex.
 - `storage_lvm` (Boolean) Match against this bool
@@ -63,6 +64,7 @@ Read-Only:
 - `kubelet_image_gc` (Set of Object) (see [below for nested schema](#nestedobjatt--nodepools--kubelet_image_gc))
 - `labels` (Map of String)
 - `name` (String)
+- `nvidia_mig_profile` (String)
 - `private_network_ids` (Set of String)
 - `security_group_ids` (Set of String)
 - `size` (Number)

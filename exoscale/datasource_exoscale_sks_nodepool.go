@@ -78,6 +78,9 @@ func nodepoolToDataMap(nodepool *v3.SKSNodepool) general.TerraformObject {
 	if nodepool.InstanceType != nil {
 		ret[resSKSNodepoolAttrInstanceType] = nodepool.InstanceType.ID.String()
 	}
+	if profile := sksNodepoolMIGProfile(nodepool.NvidiaMigProfiles); profile != "" {
+		ret[resSKSNodepoolAttrNvidiaMigProfile] = profile
+	}
 	if len(nodepool.PrivateNetworks) > 0 {
 		ret[resSKSNodepoolAttrPrivateNetworkIDs] = utils.PrivateNetworksToPrivateNetworkIDs(nodepool.PrivateNetworks)
 	}
