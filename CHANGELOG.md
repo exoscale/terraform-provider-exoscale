@@ -16,6 +16,7 @@ BUG FIXES:
 FEATURES:
 
 - `sks_nodepool`: add `nvidia_mig_profile` attribute to enable NVIDIA Multi-Instance GPU (MIG) partitioning on GPU nodepools (resource + data sources) #564
+- dbaas valkey: support active_expire_effort & frequent_snapshots settings #566
 
 DEPENDENCIES:
 
