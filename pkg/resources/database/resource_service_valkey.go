@@ -92,8 +92,11 @@ func (r *ServiceResource) createValkey(ctx context.Context, data *ServiceResourc
 			}
 
 			ssl := getSettingBool(settings, "ssl")
+			fsnap := getSettingBool(settings, "frequent_snapshots")
 			service.ValkeySettings = &v3.JSONSchemaValkey{
+				ActiveExpireEffort:            getSettingFloat64(settings, "active_expire_effort"),
 				AclChannelsDefault:            v3.JSONSchemaValkeyAclChannelsDefault(getSettingString(settings, "acl_channels_default")),
+				FrequentSnapshots:             &fsnap,
 				IoThreads:                     getSettingFloat64(settings, "io_threads"),
 				LfuDecayTime:                  getSettingFloat64(settings, "lfu_decay_time"),
 				LfuLogFactor:                  getSettingFloat64(settings, "lfu_log_factor"),
@@ -328,8 +331,11 @@ func (r *ServiceResource) updateValkey(ctx context.Context, stateData *ServiceRe
 				}
 
 				ssl := getSettingBool(settings, "ssl")
+				fsnap := getSettingBool(settings, "frequent_snapshots")
 				service.ValkeySettings = &v3.JSONSchemaValkey{
+					ActiveExpireEffort:            getSettingFloat64(settings, "active_expire_effort"),
 					AclChannelsDefault:            v3.JSONSchemaValkeyAclChannelsDefault(getSettingString(settings, "acl_channels_default")),
+					FrequentSnapshots:             &fsnap,
 					IoThreads:                     getSettingFloat64(settings, "io_threads"),
 					LfuDecayTime:                  getSettingFloat64(settings, "lfu_decay_time"),
 					LfuLogFactor:                  getSettingFloat64(settings, "lfu_log_factor"),
