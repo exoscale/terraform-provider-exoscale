@@ -46,6 +46,7 @@ Manage Exoscale [Database Services (DBaaS)](https://community.exoscale.com/docum
 - `nodes` (Number) The number of nodes of the database service.
 - `state` (String) The current state of the database service.
 - `updated_at` (String) The date of the latest database service update.
+- `uri` (String) The service uri stripped from credentials
 
 <a id="nestedatt--grafana"></a>
 ### Nested Schema for `grafana`
