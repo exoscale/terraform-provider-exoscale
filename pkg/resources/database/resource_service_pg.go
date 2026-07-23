@@ -409,6 +409,13 @@ pooling:
 	data.State = types.StringPointerValue((*string)(apiService.State))
 	data.UpdatedAt = types.StringValue(apiService.UpdatedAt.String())
 
+	uri, err := uriWitoutCreds(apiService.Uri)
+	if err != nil {
+		diagnostics.AddError(err.Error(), "")
+		return
+	}
+	data.URI = types.StringPointerValue(uri)
+
 	if data.TerminationProtection.IsUnknown() {
 		data.TerminationProtection = types.BoolPointerValue(apiService.TerminationProtection)
 	}
@@ -553,6 +560,13 @@ func (r *ServiceResource) readPg(ctx context.Context, data *ServiceResourceModel
 	data.State = types.StringPointerValue((*string)(apiService.State))
 	data.TerminationProtection = types.BoolPointerValue(apiService.TerminationProtection)
 	data.UpdatedAt = types.StringValue(apiService.UpdatedAt.String())
+
+	uri, err := uriWitoutCreds(apiService.Uri)
+	if err != nil {
+		diagnostics.AddError(err.Error(), "")
+		return
+	}
+	data.URI = types.StringPointerValue(uri)
 
 	data.MaintenanceDOW = types.StringNull()
 	data.MaintenanceTime = types.StringNull()
@@ -944,6 +958,13 @@ func (r *ServiceResource) updatePg(ctx context.Context, stateData *ServiceResour
 	if stateData.TerminationProtection.IsUnknown() {
 		stateData.TerminationProtection = types.BoolPointerValue(apiService.TerminationProtection)
 	}
+
+	uri, err := uriWitoutCreds(apiService.Uri)
+	if err != nil {
+		diagnostics.AddError(err.Error(), "")
+		return
+	}
+	stateData.URI = types.StringPointerValue(uri)
 
 	if stateData.Pg == nil {
 		return

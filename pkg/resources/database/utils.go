@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -469,4 +470,19 @@ func pollEndpoint[T any](ctx context.Context, fetch func() (*T, error), diagnost
 		return nil, false
 	}
 	return nil, false
+}
+
+func uriWitoutCreds(uri *string) (*string, error) {
+	if uri == nil {
+		return nil, nil
+	}
+
+	parsedURI, err := url.Parse(*uri)
+	if err != nil {
+		return nil, fmt.Errorf("unable to parse uri: %q: %w", *uri, err)
+	}
+
+	parsedURI.User = nil
+
+	return new(parsedURI.String()), nil
 }

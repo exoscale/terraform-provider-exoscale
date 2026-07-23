@@ -61,6 +61,7 @@ type ServiceResourceModel struct {
 	Type                  types.String `tfsdk:"type"`
 	UpdatedAt             types.String `tfsdk:"updated_at"`
 	Zone                  types.String `tfsdk:"zone"`
+	URI                   types.String `tfsdk:"uri"`
 
 	Pg         *ResourcePgModel         `tfsdk:"pg"`
 	Mysql      *ResourceMysqlModel      `tfsdk:"mysql"`
@@ -199,6 +200,11 @@ func (r *ServiceResource) Schema(ctx context.Context, req resource.SchemaRequest
 					stringvalidator.OneOf(config.Zones...),
 				},
 			},
+			"uri": schema.StringAttribute{
+				MarkdownDescription: "The service uri stripped from credentials",
+				Computed:            true,
+			},
+
 			"grafana":    ResourceGrafanaSchema,
 			"kafka":      ResourceKafkaSchema,
 			"mysql":      ResourceMysqlSchema,
@@ -315,6 +321,7 @@ func (r *ServiceResource) ModifyPlan(ctx context.Context, req resource.ModifyPla
 	normalized.NodeMemory = stateData.NodeMemory
 	normalized.Nodes = stateData.Nodes
 	normalized.State = stateData.State
+	normalized.URI = stateData.URI
 
 	if !reflect.DeepEqual(normalized, stateData) {
 		// Something else is genuinely changing (including a real
@@ -329,6 +336,7 @@ func (r *ServiceResource) ModifyPlan(ctx context.Context, req resource.ModifyPla
 	resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("node_memory"), stateData.NodeMemory)...)
 	resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("nodes"), stateData.Nodes)...)
 	resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("state"), stateData.State)...)
+	resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("uri"), stateData.URI)...)
 }
 
 func (r *ServiceResource) UpgradeState(ctx context.Context) map[int64]resource.StateUpgrader {
