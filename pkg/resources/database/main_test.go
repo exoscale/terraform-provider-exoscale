@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -95,5 +96,39 @@ func CheckServiceDestroy(dbType, name string) resource.TestCheckFunc {
 		}
 
 		return fmt.Errorf("database service %q not deleted", name)
+	}
+}
+
+func checkURIWellFormed(resourceFullName string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[resourceFullName]
+		if !ok {
+			return fmt.Errorf("resource not found: %s", resourceFullName)
+		}
+
+		uri, ok := rs.Primary.Attributes["uri"]
+		if !ok || uri == "" {
+			return fmt.Errorf("%s: uri attribute is not set", resourceFullName)
+		}
+
+		if !strings.Contains(uri, "://") {
+			// url.Parse without scheme put the host in the URL.Scheme field and not in the URL.Host.
+			uri = "//" + uri
+		}
+
+		parsed, err := url.Parse(uri)
+		if err != nil {
+			return fmt.Errorf("%s: uri %q does not parse as a URL: %w", resourceFullName, uri, err)
+		}
+
+		if parsed.User != nil {
+			return fmt.Errorf("%s: uri %q unexpectedly still contains credentials", resourceFullName, uri)
+		}
+
+		if parsed.Hostname() == "" || parsed.Port() == "" {
+			return fmt.Errorf("%s: uri %q is missing a host or port", resourceFullName, uri)
+		}
+
+		return nil
 	}
 }
