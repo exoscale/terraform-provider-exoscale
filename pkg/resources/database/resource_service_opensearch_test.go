@@ -170,6 +170,8 @@ func testResourceOpensearch(t *testing.T) {
 					resource.TestCheckResourceAttrSet(serviceFullResourceName, "nodes"),
 					resource.TestCheckResourceAttrSet(serviceFullResourceName, "ca_certificate"),
 					resource.TestCheckResourceAttrSet(serviceFullResourceName, "updated_at"),
+					resource.TestCheckResourceAttrSet(serviceFullResourceName, "uri"),
+					checkURIWellFormed(serviceFullResourceName),
 					func(s *terraform.State) error {
 						err := CheckExistsOpensearch(serviceDataBase.Name, &serviceDataCreate)
 						if err != nil {
@@ -196,6 +198,8 @@ func testResourceOpensearch(t *testing.T) {
 				Config: configUpdate,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					// Service
+					resource.TestCheckResourceAttrSet(serviceFullResourceName, "uri"),
+					checkURIWellFormed(serviceFullResourceName),
 					func(s *terraform.State) error {
 						err := CheckExistsOpensearch(serviceDataBase.Name, &serviceDataUpdate)
 						if err != nil {

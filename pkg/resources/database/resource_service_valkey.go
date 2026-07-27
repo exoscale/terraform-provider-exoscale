@@ -148,6 +148,13 @@ func (r *ServiceResource) createValkey(ctx context.Context, data *ServiceResourc
 	data.State = types.StringPointerValue(&serviceState)
 	data.UpdatedAt = types.StringValue(apiService.UpdatedAT.String())
 
+	uri, err := uriWitoutCreds(&apiService.URI)
+	if err != nil {
+		diagnostics.AddError(err.Error(), "")
+		return
+	}
+	data.URI = types.StringPointerValue(uri)
+
 	if data.TerminationProtection.IsUnknown() {
 		data.TerminationProtection = types.BoolPointerValue(apiService.TerminationProtection)
 	}
@@ -224,6 +231,13 @@ func (r *ServiceResource) readValkey(ctx context.Context, data *ServiceResourceM
 	data.State = types.StringPointerValue(&serviceState)
 	data.TerminationProtection = types.BoolPointerValue(apiService.TerminationProtection)
 	data.UpdatedAt = types.StringValue(apiService.UpdatedAT.String())
+
+	uri, err := uriWitoutCreds(&apiService.URI)
+	if err != nil {
+		diagnostics.AddError(err.Error(), "")
+		return
+	}
+	data.URI = types.StringPointerValue(uri)
 
 	data.MaintenanceDOW = types.StringNull()
 	data.MaintenanceTime = types.StringNull()
@@ -381,6 +395,12 @@ func (r *ServiceResource) updateValkey(ctx context.Context, stateData *ServiceRe
 	stateData.NodeMemory = types.Int64PointerValue(&apiService.NodeMemory)
 	stateData.UpdatedAt = types.StringValue(apiService.UpdatedAT.String())
 	stateData.TerminationProtection = types.BoolPointerValue(apiService.TerminationProtection)
+	uri, err := uriWitoutCreds(&apiService.URI)
+	if err != nil {
+		diagnostics.AddError(err.Error(), "")
+		return
+	}
+	stateData.URI = types.StringPointerValue(uri)
 	if apiService.Maintenance != nil {
 		if !stateData.MaintenanceDOW.IsUnknown() {
 			stateData.MaintenanceDOW = types.StringValue(string(apiService.Maintenance.Dow))

@@ -1,10 +1,10 @@
-package database_test
+package database
 
 import (
 	"reflect"
 	"testing"
 
-	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/database"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestPartialSettingsPatch(t *testing.T) {
@@ -71,10 +71,48 @@ func TestPartialSettingsPatch(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		database.PartialSettingsPatch(c.input.data, c.input.patch)
+		PartialSettingsPatch(c.input.data, c.input.patch)
 
 		if !reflect.DeepEqual(c.input.data, c.result) {
 			t.Fatalf("not equal: %v %v", c.input.data, c.result)
 		}
+	}
+}
+
+func Test_uriWitoutCreds(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name   string
+		uri    *string
+		output *string
+		err    string
+	}{
+		{
+			name:   "nominal with creds",
+			uri:    new("postgres://user:password@my-dbaas.k.aivencloud.com:21699/defaultdb?sslmode=require"),
+			output: new("postgres://my-dbaas.k.aivencloud.com:21699/defaultdb?sslmode=require"),
+		},
+		{
+			name:   "nominal without creds",
+			uri:    new("postgres://my-dbaas.k.aivencloud.com:21699/defaultdb?sslmode=require"),
+			output: new("postgres://my-dbaas.k.aivencloud.com:21699/defaultdb?sslmode=require"),
+		},
+		{
+			name: "nominal no value",
+		},
+	}
+
+	for _, ut := range tests {
+		t.Run(ut.name, func(t *testing.T) {
+			output, err := uriWitoutCreds(ut.uri)
+
+			assert.Equal(t, ut.output, output)
+			if ut.err != "" {
+				assert.ErrorContains(t, err, ut.err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
 	}
 }

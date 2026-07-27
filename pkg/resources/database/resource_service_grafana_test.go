@@ -95,6 +95,8 @@ func testResourceGrafana(t *testing.T) {
 					resource.TestCheckResourceAttrSet(fullResourceName, "nodes"),
 					resource.TestCheckResourceAttrSet(fullResourceName, "ca_certificate"),
 					resource.TestCheckResourceAttrSet(fullResourceName, "updated_at"),
+					resource.TestCheckResourceAttrSet(fullResourceName, "uri"),
+					checkURIWellFormed(fullResourceName),
 					func(s *terraform.State) error {
 						err := CheckExistsGrafana(dataBase.Name, &dataCreate)
 						if err != nil {
@@ -109,6 +111,8 @@ func testResourceGrafana(t *testing.T) {
 				// Update
 				Config: configUpdate,
 				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet(fullResourceName, "uri"),
+					checkURIWellFormed(fullResourceName),
 					func(s *terraform.State) error {
 						err := CheckExistsGrafana(dataBase.Name, &dataUpdate)
 						if err != nil {
