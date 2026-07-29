@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -412,19 +413,13 @@ func resourceSKSClusterCreate(ctx context.Context, d *schema.ResourceData, meta 
 		createReq.Level = v3.CreateSKSClusterRequestLevel(v.(string))
 	}
 
-	version := d.Get(resSKSClusterAttrVersion).(string)
-	if version == "" {
-		versions, err := client.ListSKSClusterVersions(ctx)
-		if err != nil {
-			return diag.Errorf("error retrieving SKS versions: %s", err)
-		}
-		if len(versions.SKSClusterVersions) == 0 {
-			return diag.Errorf("ListSKSClusterVersions: API returned empty list")
-		}
+	resolvedVersion, err := resolveSKSClusterVersion(ctx, client, d.Get(resSKSClusterAttrVersion).(string))
 
-		version = versions.SKSClusterVersions[0]
+	if err != nil {
+		return diag.FromErr(err)
 	}
-	createReq.Version = version
+
+	createReq.Version = resolvedVersion
 
 	// Audit
 	if v, ok := d.GetOk(resSKSClusterAttrAudit(resSKSClusterAttrAuditEnabled)); ok && v.(bool) {
@@ -598,10 +593,14 @@ func resourceSKSClusterUpdate(ctx context.Context, d *schema.ResourceData, meta 
 	clusterID := v3.UUID(d.Id())
 
 	// First check if we need to upgrade cluster
-	if d.HasChange(resSKSClusterAttrVersion) {
-		v := d.Get(resSKSClusterAttrVersion).(string)
+	oldVersion, newVersion := d.GetChange(resSKSClusterAttrVersion)
+	resolvedNewVersion, err := resolveSKSClusterVersion(ctx, client, newVersion.(string))
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	if resolvedNewVersion != oldVersion.(string) {
 		if err := await(ctx, client)(client.UpgradeSKSCluster(ctx, clusterID, v3.UpgradeSKSClusterRequest{
-			Version: v,
+			Version: resolvedNewVersion,
 		})); err != nil {
 			return diag.FromErr(err)
 		}
@@ -889,10 +888,15 @@ func resourceSKSClusterApply(_ context.Context, d *schema.ResourceData, sksClust
 		return err
 	}
 
-	if err := d.Set(resSKSClusterAttrVersion, sksCluster.Version); err != nil {
-		return err
+	if len(strings.Split(d.Get(resSKSClusterAttrVersion).(string), ".")) == 2 {
+		if err := d.Set(resSKSClusterAttrVersion, strings.Join(strings.Split(sksCluster.Version, ".")[:2], ".")); err != nil {
+			return err
+		}
+	} else {
+		if err := d.Set(resSKSClusterAttrVersion, sksCluster.Version); err != nil {
+			return err
+		}
 	}
-
 	if err := d.Set(resSKSClusterAttrEnableKubeProxy, defaultBool(sksCluster.EnableKubeProxy, true)); err != nil {
 		return err
 	}
@@ -983,4 +987,42 @@ func readClusterCertificates(ctx context.Context, client *v3.Client, clusterID v
 		ControlPlaneCA: string(controlPlaneCertificate),
 		KubeletCA:      string(kubeletCertificate),
 	}, nil
+}
+
+// Computes the major.minor.patch version of an SKS cluster from an resSKSClusterAttrVersion inputVersion
+// Defaults to latest version
+func resolveSKSClusterVersion(ctx context.Context, client *v3.Client, inputVersion string) (string, error) {
+
+	inputVersionLength := len(strings.Split(inputVersion, "."))
+	isMajorMinor := inputVersionLength == 2
+	isMajorMinorPatch := inputVersionLength == 3
+
+	if isMajorMinorPatch {
+		return inputVersion, nil
+	}
+
+	availableVersions, err := client.ListSKSClusterVersions(ctx)
+	if err != nil {
+		return "", err
+	}
+	if len(availableVersions.SKSClusterVersions) == 0 {
+		return "", fmt.Errorf("ListSKSClusterVersions: API returned empty list")
+	}
+
+	defaultVersion := availableVersions.SKSClusterVersions[0]
+
+	if len(inputVersion) == 0 {
+		return defaultVersion, nil
+	}
+
+	if isMajorMinor {
+		for _, v := range availableVersions.SKSClusterVersions {
+			if inputVersion == strings.Join(strings.Split(v, ".")[:2], ".") {
+				return v, nil
+			}
+		}
+		return "", fmt.Errorf("the SKS cluster version %s is not supported. Available versions: %s", inputVersion, strings.Join(availableVersions.SKSClusterVersions, ", "))
+	}
+
+	return "", fmt.Errorf("error resolving the provided SKS cluster version: %s. Available versions: %s", inputVersion, strings.Join(availableVersions.SKSClusterVersions, ", "))
 }

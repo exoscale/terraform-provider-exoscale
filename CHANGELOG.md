@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+FEATURES:
+
+- `sks_cluster`: allows `major.minor` as input value for `version`, resolves to the latest patch version available on the platform
+
 ## 0.70.0
 
 IMPROVEMENTS:
