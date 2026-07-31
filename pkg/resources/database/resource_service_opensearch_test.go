@@ -90,7 +90,7 @@ func testResourceOpensearch(t *testing.T) {
 		Plan:                  "hobbyist-2",
 		Zone:                  testutils.TestZoneName,
 		TerminationProtection: false,
-		Version:               "2",
+		Version:               "3.6",
 	}
 
 	userFullResourceName := "exoscale_dbaas_opensearch_user.test_user"
