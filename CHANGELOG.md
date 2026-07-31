@@ -8,6 +8,7 @@ IMPROVEMENTS:
 - Change zone for sks acceptance tests
 - Migrate Private Network resource/datasource to framework #542
 - feat: add uri to every dbass service #567
+- only use security group id for private security group rule #562
 
 BUG FIXES:
 - fix: typo in security group rule import doc #559
