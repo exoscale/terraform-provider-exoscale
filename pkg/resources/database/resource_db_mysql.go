@@ -174,17 +174,10 @@ func (p *MysqlDatabaseResource) Update(ctx context.Context, req resource.UpdateR
 
 // ReadResource reads resource from remote and populate the model accordingly
 func (data MysqlDatabaseResourceModel) ReadResource(ctx context.Context, client *v3.Client, diagnostics *diag.Diagnostics) (clearState bool) {
-	if _, err := waitForDBAASServiceReadyForFn(ctx, client.GetDBAASServiceMysql, data.Service.ValueString(), func(t *v3.DBAASServiceMysql) bool {
-		if t.State != v3.EnumServiceStateRunning {
-			return false
-		}
-		for _, db := range t.Databases {
-			if string(db) == data.DatabaseName.ValueString() {
-				return true
-			}
-		}
-		return false
-	}); err != nil {
+	svc, err := waitForDBAASServiceReadyForFn(ctx, client.GetDBAASServiceMysql, data.Service.ValueString(), func(t *v3.DBAASServiceMysql) bool {
+		return t.State == v3.EnumServiceStateRunning
+	})
+	if err != nil {
 		if errors.Is(err, v3.ErrNotFound) {
 			return true
 		}
@@ -192,7 +185,13 @@ func (data MysqlDatabaseResourceModel) ReadResource(ctx context.Context, client 
 		return false
 	}
 
-	return false
+	for _, db := range svc.Databases {
+		if string(db) == data.DatabaseName.ValueString() {
+			return false
+		}
+	}
+
+	return true
 }
 
 // CreateResource creates the resource according to the model, and then
