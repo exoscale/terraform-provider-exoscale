@@ -228,15 +228,7 @@ func (data *MysqlUserResourceModel) DeleteResource(ctx context.Context, client *
 func (data *MysqlUserResourceModel) ReadResource(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics) (clearState bool) {
 
 	svc, err := waitForDBAASServiceReadyForFn(ctx, client.GetDBAASServiceMysql, data.Service.ValueString(), func(t *exoscale.DBAASServiceMysql) bool {
-		if t.State != exoscale.EnumServiceStateRunning {
-			return false
-		}
-		for _, user := range t.Users {
-			if user.Username == data.Username.ValueString() {
-				return true
-			}
-		}
-		return false
+		return t.State == exoscale.EnumServiceStateRunning && len(t.Users) > 0
 	})
 	if err != nil {
 		if errors.Is(err, exoscale.ErrNotFound) {
