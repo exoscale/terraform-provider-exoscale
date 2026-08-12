@@ -82,7 +82,7 @@ resource "exoscale_compute_instance" "test" {
   type                    = "%s"
   disk_size               = %d
   template_id             = data.exoscale_template.ubuntu.id
-  ipv6                    = true
+  ipv6                    = false
   enable_tpm			  = false
   enable_secure_boot	  = true
   anti_affinity_group_ids = [exoscale_anti_affinity_group.test.id]
@@ -470,7 +470,7 @@ resource "exoscale_ssh_key" "test2" {
 	name       = "%s"
 	public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBbM7A2vC0avqeFBvc0QdZMb6YjP4rTD0VLfV0tnbkGD test2"
 }
-  
+
 resource "exoscale_compute_instance" "test" {
   zone                    = local.zone
   name                    = "%s"
@@ -544,7 +544,7 @@ func testResource(t *testing.T) {
 						a.Len(testInstance.ElasticIPS, 1)
 						a.ElementsMatch([]string{testElasticIP.ID.String()}, []string{testInstance.ElasticIPS[0].ID.String()})
 						a.Equal(testutils.TestInstanceTypeIDTiny, testInstance.InstanceType.ID.String())
-						a.Equal(testInstance.PublicIPAssignment, v3.PublicIPAssignmentDual)
+						a.Equal(testInstance.PublicIPAssignment, v3.PublicIPAssignmentInet4)
 						a.Equal(rLabelValue, (testInstance.Labels)["test"])
 						a.Equal(rName, testInstance.Name)
 						a.NotEmpty(testInstance.PrivateNetworks)
@@ -570,18 +570,17 @@ func testResource(t *testing.T) {
 						return nil
 					},
 					testutils.CheckResourceState(r, testutils.CheckResourceStateValidateAttributes(testutils.TestAttrs{
-						instance.AttrAntiAffinityGroupIDs + ".#": testutils.ValidateString("1"),
-						instance.AttrCreatedAt:                   validation.ToDiagFunc(validation.NoZeroValues),
-						instance.AttrDiskSize:                    testutils.ValidateString(fmt.Sprint(rDiskSize)),
-						instance.AttrElasticIPIDs + ".#":         testutils.ValidateString("1"),
-						instance.AttrIPv6:                        testutils.ValidateString("true"),
-						instance.AttrIPv6Address:                 validation.ToDiagFunc(validation.IsIPv6Address),
-						instance.AttrEnableTPM:                   testutils.ValidateString("false"),
-						instance.AttrEnableSecureBoot:            testutils.ValidateString("true"),
-						instance.AttrLabels + ".test":            testutils.ValidateString(rLabelValue),
-						instance.AttrName:                        testutils.ValidateString(rName),
-						instance.AttrMACAddress:                  validation.ToDiagFunc(validation.NoZeroValues),
-						instance.AttrNetworkInterface + ".#":     testutils.ValidateString("1"),
+						instance.AttrAntiAffinityGroupIDs + ".#":                        testutils.ValidateString("1"),
+						instance.AttrCreatedAt:                                          validation.ToDiagFunc(validation.NoZeroValues),
+						instance.AttrDiskSize:                                           testutils.ValidateString(fmt.Sprint(rDiskSize)),
+						instance.AttrElasticIPIDs + ".#":                                testutils.ValidateString("1"),
+						instance.AttrIPv6:                                               testutils.ValidateString("false"),
+						instance.AttrEnableTPM:                                          testutils.ValidateString("false"),
+						instance.AttrEnableSecureBoot:                                   testutils.ValidateString("true"),
+						instance.AttrLabels + ".test":                                   testutils.ValidateString(rLabelValue),
+						instance.AttrName:                                               testutils.ValidateString(rName),
+						instance.AttrMACAddress:                                         validation.ToDiagFunc(validation.NoZeroValues),
+						instance.AttrNetworkInterface + ".#":                            testutils.ValidateString("1"),
 						instance.AttrNetworkInterface + ".0." + instance.AttrMACAddress: validation.ToDiagFunc(validation.NoZeroValues),
 						instance.AttrPublicIPAddress:                                    validation.ToDiagFunc(validation.IsIPv4Address),
 						instance.AttrSSHKey:                                             testutils.ValidateString(rSSHKeyName),
@@ -625,6 +624,7 @@ func testResource(t *testing.T) {
 						a.ElementsMatch([]string{defaultSecurityGroupID}, []string{testInstance.SecurityGroups[0].ID.String()})
 						a.Equal(rStateStopped, string(testInstance.State))
 						a.Equal(expectedUserData, testInstance.UserData)
+						a.Equal(v3.PublicIPAssignmentDual, testInstance.PublicIPAssignment)
 
 						return nil
 					},
@@ -638,6 +638,8 @@ func testResource(t *testing.T) {
 						instance.AttrReverseDNS:              testutils.ValidateString(rReverseDNSUpdated),
 						instance.AttrType:                    testutils.ValidateString(rTypeUpdated),
 						instance.AttrUserData:                testutils.ValidateString(rUserDataUpdated),
+						instance.AttrIPv6:                    testutils.ValidateString("true"),
+						instance.AttrIPv6Address:             validation.ToDiagFunc(validation.IsIPv6Address),
 					})),
 					resource.TestCheckNoResourceAttr(r, instance.AttrElasticIPIDs+".#"),
 					resource.TestCheckNoResourceAttr(r, instance.AttrNetworkInterface+".#"),
