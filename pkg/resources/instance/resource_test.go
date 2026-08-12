@@ -468,9 +468,9 @@ resource "exoscale_ssh_key" "test" {
 
 resource "exoscale_ssh_key" "test2" {
 	name       = "%s"
-	public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIF+eEh1gnYY8pQuhmBS3J/ij7hfMay3rjdy/tSw7xKCO test2"
+	public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBbM7A2vC0avqeFBvc0QdZMb6YjP4rTD0VLfV0tnbkGD test2"
 }
-  
+
 resource "exoscale_compute_instance" "test" {
   zone                    = local.zone
   name                    = "%s"
