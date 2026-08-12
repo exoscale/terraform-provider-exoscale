@@ -70,7 +70,7 @@ func Resource() *schema.Resource {
 			Default:     false,
 		},
 		AttrIPv6: {
-			Description: "Enable IPv6 on the instance (boolean; default: `false`).",
+			Description: "Enable IPv6 on the instance (boolean; default: `false`). Can not be disabled after being enabled.",
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Default:     false,
@@ -566,6 +566,17 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnos
 			return diag.FromErr(err)
 		}
 		instanceUpdateRequest.UserData = v
+		updated = true
+	}
+
+	if d.HasChange(AttrIPv6) {
+		if !d.Get(AttrIPv6).(bool) {
+			return diag.Errorf("ipv6 can't be disabled")
+		}
+		if d.Get(AttrPrivate).(bool) {
+			return diag.Errorf("ipv6 cannot be enabled on a private instance")
+		}
+		instanceUpdateRequest.PublicIPAssignment = v3.PublicIPAssignmentDual
 		updated = true
 	}
 

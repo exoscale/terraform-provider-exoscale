@@ -6,6 +6,10 @@ FEATURES:
 
 - `sks_cluster`: allows `major.minor` as input value for `version`, resolves to the latest patch version available on the platform
 
+BUG FIXES:
+
+- `compute_instance`: `ipv6` attribute is not ignored on instance update
+
 ## 0.70.0
 
 IMPROVEMENTS:
