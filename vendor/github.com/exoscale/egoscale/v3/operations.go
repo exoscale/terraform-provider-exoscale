@@ -2380,7 +2380,7 @@ func (c Client) GetDBAASCACertificate(ctx context.Context) (*GetDBAASCACertifica
 
 	bodyresp := new(GetDBAASCACertificateResponse)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("GetDBAASCACertificate: prepare Json response: %w", err)
+		return nil, fmt.Errorf("GetDBAASCACertificate: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -2423,7 +2423,7 @@ func (c Client) DeleteDBAASServiceClickhouse(ctx context.Context, name string) (
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("DeleteDBAASServiceClickhouse: prepare Json response: %w", err)
+		return nil, fmt.Errorf("DeleteDBAASServiceClickhouse: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -2466,7 +2466,7 @@ func (c Client) GetDBAASServiceClickhouse(ctx context.Context, name string) (*DB
 
 	bodyresp := new(DBAASServiceClickhouse)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("GetDBAASServiceClickhouse: prepare Json response: %w", err)
+		return nil, fmt.Errorf("GetDBAASServiceClickhouse: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -2516,7 +2516,7 @@ func (c Client) CreateDBAASServiceClickhouse(ctx context.Context, name string, r
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("CreateDBAASServiceClickhouse: prepare Json body: %w", err)
+		return nil, fmt.Errorf("CreateDBAASServiceClickhouse: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "POST", c.serverEndpoint+path, body)
@@ -2555,7 +2555,7 @@ func (c Client) CreateDBAASServiceClickhouse(ctx context.Context, name string, r
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("CreateDBAASServiceClickhouse: prepare Json response: %w", err)
+		return nil, fmt.Errorf("CreateDBAASServiceClickhouse: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -2602,7 +2602,7 @@ func (c Client) UpdateDBAASServiceClickhouse(ctx context.Context, name string, r
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("UpdateDBAASServiceClickhouse: prepare Json body: %w", err)
+		return nil, fmt.Errorf("UpdateDBAASServiceClickhouse: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "PUT", c.serverEndpoint+path, body)
@@ -2641,7 +2641,7 @@ func (c Client) UpdateDBAASServiceClickhouse(ctx context.Context, name string, r
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("UpdateDBAASServiceClickhouse: prepare Json response: %w", err)
+		return nil, fmt.Errorf("UpdateDBAASServiceClickhouse: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -2684,7 +2684,7 @@ func (c Client) StartDBAASClickhouseMaintenance(ctx context.Context, name string
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("StartDBAASClickhouseMaintenance: prepare Json response: %w", err)
+		return nil, fmt.Errorf("StartDBAASClickhouseMaintenance: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -2727,7 +2727,93 @@ func (c Client) GetDBAASClickhouseAclConfig(ctx context.Context, serviceName str
 
 	bodyresp := new(DBAASClickhouseAclConfig)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("GetDBAASClickhouseAclConfig: prepare Json response: %w", err)
+		return nil, fmt.Errorf("GetDBAASClickhouseAclConfig: prepare JSON response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+func (c Client) ListDBAASClickhouseRoles(ctx context.Context, serviceName string) (*DBAASClickhouseRoles, error) {
+	path := fmt.Sprintf("/dbaas-clickhouse/%v/role", serviceName)
+
+	request, err := http.NewRequestWithContext(ctx, "GET", c.serverEndpoint+path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("ListDBAASClickhouseRoles: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("ListDBAASClickhouseRoles: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("ListDBAASClickhouseRoles: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "list-dbaas-clickhouse-roles")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("ListDBAASClickhouseRoles: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("ListDBAASClickhouseRoles: http response: %w", err)
+	}
+
+	bodyresp := new(DBAASClickhouseRoles)
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("ListDBAASClickhouseRoles: prepare JSON response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+func (c Client) DeleteDBAASClickhouseRole(ctx context.Context, serviceName string, roleUuid UUID) (*Operation, error) {
+	path := fmt.Sprintf("/dbaas-clickhouse/%v/role/%v", serviceName, roleUuid)
+
+	request, err := http.NewRequestWithContext(ctx, "DELETE", c.serverEndpoint+path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("DeleteDBAASClickhouseRole: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("DeleteDBAASClickhouseRole: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("DeleteDBAASClickhouseRole: sign request: %w", err)
+	}
+
+	if c.trace {
+		dumpRequest(request, "delete-dbaas-clickhouse-role")
+	}
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("DeleteDBAASClickhouseRole: http client do: %w", err)
+	}
+
+	if c.trace {
+		dumpResponse(response)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("DeleteDBAASClickhouseRole: http response: %w", err)
+	}
+
+	bodyresp := new(Operation)
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("DeleteDBAASClickhouseRole: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -2770,7 +2856,7 @@ func (c Client) ListDBAASClickhouseUsers(ctx context.Context, serviceName string
 
 	bodyresp := new(DBAASClickhouseUsers)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("ListDBAASClickhouseUsers: prepare Json response: %w", err)
+		return nil, fmt.Errorf("ListDBAASClickhouseUsers: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -2788,7 +2874,7 @@ func (c Client) CreateDBAASClickhouseUser(ctx context.Context, serviceName strin
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("CreateDBAASClickhouseUser: prepare Json body: %w", err)
+		return nil, fmt.Errorf("CreateDBAASClickhouseUser: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "POST", c.serverEndpoint+path, body)
@@ -2827,14 +2913,14 @@ func (c Client) CreateDBAASClickhouseUser(ctx context.Context, serviceName strin
 
 	bodyresp := new(DBAASUserClickhouseSecrets)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("CreateDBAASClickhouseUser: prepare Json response: %w", err)
+		return nil, fmt.Errorf("CreateDBAASClickhouseUser: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
 }
 
-func (c Client) DeleteDBAASClickhouseUser(ctx context.Context, serviceName string, username string) (*Operation, error) {
-	path := fmt.Sprintf("/dbaas-clickhouse/%v/user/%v", serviceName, username)
+func (c Client) DeleteDBAASClickhouseUser(ctx context.Context, serviceName string, userUuid UUID) (*Operation, error) {
+	path := fmt.Sprintf("/dbaas-clickhouse/%v/user/%v", serviceName, userUuid)
 
 	request, err := http.NewRequestWithContext(ctx, "DELETE", c.serverEndpoint+path, nil)
 	if err != nil {
@@ -2870,7 +2956,7 @@ func (c Client) DeleteDBAASClickhouseUser(ctx context.Context, serviceName strin
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("DeleteDBAASClickhouseUser: prepare Json response: %w", err)
+		return nil, fmt.Errorf("DeleteDBAASClickhouseUser: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -2885,7 +2971,7 @@ func (c Client) ResetDBAASClickhouseUserPassword(ctx context.Context, serviceNam
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("ResetDBAASClickhouseUserPassword: prepare Json body: %w", err)
+		return nil, fmt.Errorf("ResetDBAASClickhouseUserPassword: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "PUT", c.serverEndpoint+path, body)
@@ -2924,7 +3010,7 @@ func (c Client) ResetDBAASClickhouseUserPassword(ctx context.Context, serviceNam
 
 	bodyresp := new(DBAASUserClickhouseSecrets)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("ResetDBAASClickhouseUserPassword: prepare Json response: %w", err)
+		return nil, fmt.Errorf("ResetDBAASClickhouseUserPassword: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -2967,7 +3053,7 @@ func (c Client) RevealDBAASClickhouseUserPassword(ctx context.Context, serviceNa
 
 	bodyresp := new(DBAASUserClickhouseSecrets)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("RevealDBAASClickhouseUserPassword: prepare Json response: %w", err)
+		return nil, fmt.Errorf("RevealDBAASClickhouseUserPassword: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -3011,7 +3097,7 @@ func (c Client) DeleteDBAASExternalEndpointDatadog(ctx context.Context, endpoint
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("DeleteDBAASExternalEndpointDatadog: prepare Json response: %w", err)
+		return nil, fmt.Errorf("DeleteDBAASExternalEndpointDatadog: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -3055,7 +3141,7 @@ func (c Client) GetDBAASExternalEndpointDatadog(ctx context.Context, endpointID 
 
 	bodyresp := new(DBAASExternalEndpointDatadogOutput)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("GetDBAASExternalEndpointDatadog: prepare Json response: %w", err)
+		return nil, fmt.Errorf("GetDBAASExternalEndpointDatadog: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -3067,7 +3153,7 @@ func (c Client) UpdateDBAASExternalEndpointDatadog(ctx context.Context, endpoint
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("UpdateDBAASExternalEndpointDatadog: prepare Json body: %w", err)
+		return nil, fmt.Errorf("UpdateDBAASExternalEndpointDatadog: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "PUT", c.serverEndpoint+path, body)
@@ -3106,7 +3192,7 @@ func (c Client) UpdateDBAASExternalEndpointDatadog(ctx context.Context, endpoint
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("UpdateDBAASExternalEndpointDatadog: prepare Json response: %w", err)
+		return nil, fmt.Errorf("UpdateDBAASExternalEndpointDatadog: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -3118,7 +3204,7 @@ func (c Client) CreateDBAASExternalEndpointDatadog(ctx context.Context, name str
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("CreateDBAASExternalEndpointDatadog: prepare Json body: %w", err)
+		return nil, fmt.Errorf("CreateDBAASExternalEndpointDatadog: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "POST", c.serverEndpoint+path, body)
@@ -3157,7 +3243,7 @@ func (c Client) CreateDBAASExternalEndpointDatadog(ctx context.Context, name str
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("CreateDBAASExternalEndpointDatadog: prepare Json response: %w", err)
+		return nil, fmt.Errorf("CreateDBAASExternalEndpointDatadog: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -3201,7 +3287,7 @@ func (c Client) DeleteDBAASExternalEndpointElasticsearch(ctx context.Context, en
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("DeleteDBAASExternalEndpointElasticsearch: prepare Json response: %w", err)
+		return nil, fmt.Errorf("DeleteDBAASExternalEndpointElasticsearch: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -3245,7 +3331,7 @@ func (c Client) GetDBAASExternalEndpointElasticsearch(ctx context.Context, endpo
 
 	bodyresp := new(DBAASEndpointElasticsearchOutput)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("GetDBAASExternalEndpointElasticsearch: prepare Json response: %w", err)
+		return nil, fmt.Errorf("GetDBAASExternalEndpointElasticsearch: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -3257,7 +3343,7 @@ func (c Client) UpdateDBAASExternalEndpointElasticsearch(ctx context.Context, en
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("UpdateDBAASExternalEndpointElasticsearch: prepare Json body: %w", err)
+		return nil, fmt.Errorf("UpdateDBAASExternalEndpointElasticsearch: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "PUT", c.serverEndpoint+path, body)
@@ -3296,7 +3382,7 @@ func (c Client) UpdateDBAASExternalEndpointElasticsearch(ctx context.Context, en
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("UpdateDBAASExternalEndpointElasticsearch: prepare Json response: %w", err)
+		return nil, fmt.Errorf("UpdateDBAASExternalEndpointElasticsearch: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -3308,7 +3394,7 @@ func (c Client) CreateDBAASExternalEndpointElasticsearch(ctx context.Context, na
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("CreateDBAASExternalEndpointElasticsearch: prepare Json body: %w", err)
+		return nil, fmt.Errorf("CreateDBAASExternalEndpointElasticsearch: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "POST", c.serverEndpoint+path, body)
@@ -3347,7 +3433,7 @@ func (c Client) CreateDBAASExternalEndpointElasticsearch(ctx context.Context, na
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("CreateDBAASExternalEndpointElasticsearch: prepare Json response: %w", err)
+		return nil, fmt.Errorf("CreateDBAASExternalEndpointElasticsearch: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -3391,7 +3477,7 @@ func (c Client) DeleteDBAASExternalEndpointOpensearch(ctx context.Context, endpo
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("DeleteDBAASExternalEndpointOpensearch: prepare Json response: %w", err)
+		return nil, fmt.Errorf("DeleteDBAASExternalEndpointOpensearch: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -3435,7 +3521,7 @@ func (c Client) GetDBAASExternalEndpointOpensearch(ctx context.Context, endpoint
 
 	bodyresp := new(DBAASEndpointOpensearchOutput)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("GetDBAASExternalEndpointOpensearch: prepare Json response: %w", err)
+		return nil, fmt.Errorf("GetDBAASExternalEndpointOpensearch: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -3447,7 +3533,7 @@ func (c Client) UpdateDBAASExternalEndpointOpensearch(ctx context.Context, endpo
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("UpdateDBAASExternalEndpointOpensearch: prepare Json body: %w", err)
+		return nil, fmt.Errorf("UpdateDBAASExternalEndpointOpensearch: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "PUT", c.serverEndpoint+path, body)
@@ -3486,7 +3572,7 @@ func (c Client) UpdateDBAASExternalEndpointOpensearch(ctx context.Context, endpo
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("UpdateDBAASExternalEndpointOpensearch: prepare Json response: %w", err)
+		return nil, fmt.Errorf("UpdateDBAASExternalEndpointOpensearch: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -3498,7 +3584,7 @@ func (c Client) CreateDBAASExternalEndpointOpensearch(ctx context.Context, name 
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("CreateDBAASExternalEndpointOpensearch: prepare Json body: %w", err)
+		return nil, fmt.Errorf("CreateDBAASExternalEndpointOpensearch: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "POST", c.serverEndpoint+path, body)
@@ -3537,7 +3623,7 @@ func (c Client) CreateDBAASExternalEndpointOpensearch(ctx context.Context, name 
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("CreateDBAASExternalEndpointOpensearch: prepare Json response: %w", err)
+		return nil, fmt.Errorf("CreateDBAASExternalEndpointOpensearch: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -3581,7 +3667,7 @@ func (c Client) DeleteDBAASExternalEndpointPrometheus(ctx context.Context, endpo
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("DeleteDBAASExternalEndpointPrometheus: prepare Json response: %w", err)
+		return nil, fmt.Errorf("DeleteDBAASExternalEndpointPrometheus: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -3625,7 +3711,7 @@ func (c Client) GetDBAASExternalEndpointPrometheus(ctx context.Context, endpoint
 
 	bodyresp := new(DBAASEndpointExternalPrometheusOutput)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("GetDBAASExternalEndpointPrometheus: prepare Json response: %w", err)
+		return nil, fmt.Errorf("GetDBAASExternalEndpointPrometheus: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -3637,7 +3723,7 @@ func (c Client) UpdateDBAASExternalEndpointPrometheus(ctx context.Context, endpo
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("UpdateDBAASExternalEndpointPrometheus: prepare Json body: %w", err)
+		return nil, fmt.Errorf("UpdateDBAASExternalEndpointPrometheus: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "PUT", c.serverEndpoint+path, body)
@@ -3676,7 +3762,7 @@ func (c Client) UpdateDBAASExternalEndpointPrometheus(ctx context.Context, endpo
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("UpdateDBAASExternalEndpointPrometheus: prepare Json response: %w", err)
+		return nil, fmt.Errorf("UpdateDBAASExternalEndpointPrometheus: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -3688,7 +3774,7 @@ func (c Client) CreateDBAASExternalEndpointPrometheus(ctx context.Context, name 
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("CreateDBAASExternalEndpointPrometheus: prepare Json body: %w", err)
+		return nil, fmt.Errorf("CreateDBAASExternalEndpointPrometheus: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "POST", c.serverEndpoint+path, body)
@@ -3727,7 +3813,7 @@ func (c Client) CreateDBAASExternalEndpointPrometheus(ctx context.Context, name 
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("CreateDBAASExternalEndpointPrometheus: prepare Json response: %w", err)
+		return nil, fmt.Errorf("CreateDBAASExternalEndpointPrometheus: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -3771,7 +3857,7 @@ func (c Client) DeleteDBAASExternalEndpointRsyslog(ctx context.Context, endpoint
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("DeleteDBAASExternalEndpointRsyslog: prepare Json response: %w", err)
+		return nil, fmt.Errorf("DeleteDBAASExternalEndpointRsyslog: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -3815,7 +3901,7 @@ func (c Client) GetDBAASExternalEndpointRsyslog(ctx context.Context, endpointID 
 
 	bodyresp := new(DBAASExternalEndpointRsyslogOutput)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("GetDBAASExternalEndpointRsyslog: prepare Json response: %w", err)
+		return nil, fmt.Errorf("GetDBAASExternalEndpointRsyslog: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -3827,7 +3913,7 @@ func (c Client) UpdateDBAASExternalEndpointRsyslog(ctx context.Context, endpoint
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("UpdateDBAASExternalEndpointRsyslog: prepare Json body: %w", err)
+		return nil, fmt.Errorf("UpdateDBAASExternalEndpointRsyslog: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "PUT", c.serverEndpoint+path, body)
@@ -3866,7 +3952,7 @@ func (c Client) UpdateDBAASExternalEndpointRsyslog(ctx context.Context, endpoint
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("UpdateDBAASExternalEndpointRsyslog: prepare Json response: %w", err)
+		return nil, fmt.Errorf("UpdateDBAASExternalEndpointRsyslog: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -3878,7 +3964,7 @@ func (c Client) CreateDBAASExternalEndpointRsyslog(ctx context.Context, name str
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("CreateDBAASExternalEndpointRsyslog: prepare Json body: %w", err)
+		return nil, fmt.Errorf("CreateDBAASExternalEndpointRsyslog: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "POST", c.serverEndpoint+path, body)
@@ -3917,7 +4003,7 @@ func (c Client) CreateDBAASExternalEndpointRsyslog(ctx context.Context, name str
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("CreateDBAASExternalEndpointRsyslog: prepare Json response: %w", err)
+		return nil, fmt.Errorf("CreateDBAASExternalEndpointRsyslog: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -3971,7 +4057,7 @@ func (c Client) ListDBAASExternalEndpointTypes(ctx context.Context) (*ListDBAASE
 
 	bodyresp := new(ListDBAASExternalEndpointTypesResponse)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("ListDBAASExternalEndpointTypes: prepare Json response: %w", err)
+		return nil, fmt.Errorf("ListDBAASExternalEndpointTypes: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -3989,7 +4075,7 @@ func (c Client) AttachDBAASServiceToEndpoint(ctx context.Context, sourceServiceN
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("AttachDBAASServiceToEndpoint: prepare Json body: %w", err)
+		return nil, fmt.Errorf("AttachDBAASServiceToEndpoint: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "PUT", c.serverEndpoint+path, body)
@@ -4028,7 +4114,7 @@ func (c Client) AttachDBAASServiceToEndpoint(ctx context.Context, sourceServiceN
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("AttachDBAASServiceToEndpoint: prepare Json response: %w", err)
+		return nil, fmt.Errorf("AttachDBAASServiceToEndpoint: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -4045,7 +4131,7 @@ func (c Client) DetachDBAASServiceFromEndpoint(ctx context.Context, sourceServic
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("DetachDBAASServiceFromEndpoint: prepare Json body: %w", err)
+		return nil, fmt.Errorf("DetachDBAASServiceFromEndpoint: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "PUT", c.serverEndpoint+path, body)
@@ -4084,7 +4170,7 @@ func (c Client) DetachDBAASServiceFromEndpoint(ctx context.Context, sourceServic
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("DetachDBAASServiceFromEndpoint: prepare Json response: %w", err)
+		return nil, fmt.Errorf("DetachDBAASServiceFromEndpoint: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -4151,7 +4237,7 @@ func (c Client) ListDBAASExternalEndpoints(ctx context.Context) (*ListDBAASExter
 
 	bodyresp := new(ListDBAASExternalEndpointsResponse)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("ListDBAASExternalEndpoints: prepare Json response: %w", err)
+		return nil, fmt.Errorf("ListDBAASExternalEndpoints: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -4199,7 +4285,7 @@ func (c Client) GetDBAASExternalIntegrationSettingsDatadog(ctx context.Context, 
 
 	bodyresp := new(GetDBAASExternalIntegrationSettingsDatadogResponse)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("GetDBAASExternalIntegrationSettingsDatadog: prepare Json response: %w", err)
+		return nil, fmt.Errorf("GetDBAASExternalIntegrationSettingsDatadog: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -4215,7 +4301,7 @@ func (c Client) UpdateDBAASExternalIntegrationSettingsDatadog(ctx context.Contex
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("UpdateDBAASExternalIntegrationSettingsDatadog: prepare Json body: %w", err)
+		return nil, fmt.Errorf("UpdateDBAASExternalIntegrationSettingsDatadog: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "POST", c.serverEndpoint+path, body)
@@ -4254,7 +4340,7 @@ func (c Client) UpdateDBAASExternalIntegrationSettingsDatadog(ctx context.Contex
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("UpdateDBAASExternalIntegrationSettingsDatadog: prepare Json response: %w", err)
+		return nil, fmt.Errorf("UpdateDBAASExternalIntegrationSettingsDatadog: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -4298,7 +4384,7 @@ func (c Client) GetDBAASExternalIntegration(ctx context.Context, integrationID U
 
 	bodyresp := new(DBAASExternalIntegration)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("GetDBAASExternalIntegration: prepare Json response: %w", err)
+		return nil, fmt.Errorf("GetDBAASExternalIntegration: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -4346,7 +4432,7 @@ func (c Client) ListDBAASExternalIntegrations(ctx context.Context, serviceName s
 
 	bodyresp := new(ListDBAASExternalIntegrationsResponse)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("ListDBAASExternalIntegrations: prepare Json response: %w", err)
+		return nil, fmt.Errorf("ListDBAASExternalIntegrations: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -4389,7 +4475,7 @@ func (c Client) DeleteDBAASServiceGrafana(ctx context.Context, name string) (*Op
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("DeleteDBAASServiceGrafana: prepare Json response: %w", err)
+		return nil, fmt.Errorf("DeleteDBAASServiceGrafana: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -4432,7 +4518,7 @@ func (c Client) GetDBAASServiceGrafana(ctx context.Context, name string) (*DBAAS
 
 	bodyresp := new(DBAASServiceGrafana)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("GetDBAASServiceGrafana: prepare Json response: %w", err)
+		return nil, fmt.Errorf("GetDBAASServiceGrafana: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -4479,7 +4565,7 @@ func (c Client) CreateDBAASServiceGrafana(ctx context.Context, name string, req 
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("CreateDBAASServiceGrafana: prepare Json body: %w", err)
+		return nil, fmt.Errorf("CreateDBAASServiceGrafana: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "POST", c.serverEndpoint+path, body)
@@ -4518,7 +4604,7 @@ func (c Client) CreateDBAASServiceGrafana(ctx context.Context, name string, req 
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("CreateDBAASServiceGrafana: prepare Json response: %w", err)
+		return nil, fmt.Errorf("CreateDBAASServiceGrafana: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -4563,7 +4649,7 @@ func (c Client) UpdateDBAASServiceGrafana(ctx context.Context, name string, req 
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("UpdateDBAASServiceGrafana: prepare Json body: %w", err)
+		return nil, fmt.Errorf("UpdateDBAASServiceGrafana: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "PUT", c.serverEndpoint+path, body)
@@ -4602,7 +4688,7 @@ func (c Client) UpdateDBAASServiceGrafana(ctx context.Context, name string, req 
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("UpdateDBAASServiceGrafana: prepare Json response: %w", err)
+		return nil, fmt.Errorf("UpdateDBAASServiceGrafana: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -4645,7 +4731,7 @@ func (c Client) StartDBAASGrafanaMaintenance(ctx context.Context, name string) (
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("StartDBAASGrafanaMaintenance: prepare Json response: %w", err)
+		return nil, fmt.Errorf("StartDBAASGrafanaMaintenance: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -4661,7 +4747,7 @@ func (c Client) ResetDBAASGrafanaUserPassword(ctx context.Context, serviceName s
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("ResetDBAASGrafanaUserPassword: prepare Json body: %w", err)
+		return nil, fmt.Errorf("ResetDBAASGrafanaUserPassword: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "PUT", c.serverEndpoint+path, body)
@@ -4700,7 +4786,7 @@ func (c Client) ResetDBAASGrafanaUserPassword(ctx context.Context, serviceName s
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("ResetDBAASGrafanaUserPassword: prepare Json response: %w", err)
+		return nil, fmt.Errorf("ResetDBAASGrafanaUserPassword: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -4743,7 +4829,7 @@ func (c Client) RevealDBAASGrafanaUserPassword(ctx context.Context, serviceName 
 
 	bodyresp := new(DBAASUserGrafanaSecrets)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("RevealDBAASGrafanaUserPassword: prepare Json response: %w", err)
+		return nil, fmt.Errorf("RevealDBAASGrafanaUserPassword: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -4763,7 +4849,7 @@ func (c Client) CreateDBAASIntegration(ctx context.Context, req CreateDBAASInteg
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("CreateDBAASIntegration: prepare Json body: %w", err)
+		return nil, fmt.Errorf("CreateDBAASIntegration: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "POST", c.serverEndpoint+path, body)
@@ -4802,7 +4888,7 @@ func (c Client) CreateDBAASIntegration(ctx context.Context, req CreateDBAASInteg
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("CreateDBAASIntegration: prepare Json response: %w", err)
+		return nil, fmt.Errorf("CreateDBAASIntegration: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -4859,7 +4945,7 @@ func (c Client) ListDBAASIntegrationSettings(ctx context.Context, integrationTyp
 
 	bodyresp := new(ListDBAASIntegrationSettingsResponse)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("ListDBAASIntegrationSettings: prepare Json response: %w", err)
+		return nil, fmt.Errorf("ListDBAASIntegrationSettings: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -4907,7 +4993,7 @@ func (c Client) ListDBAASIntegrationTypes(ctx context.Context) (*ListDBAASIntegr
 
 	bodyresp := new(ListDBAASIntegrationTypesResponse)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("ListDBAASIntegrationTypes: prepare Json response: %w", err)
+		return nil, fmt.Errorf("ListDBAASIntegrationTypes: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -4951,7 +5037,7 @@ func (c Client) DeleteDBAASIntegration(ctx context.Context, id UUID) (*Operation
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("DeleteDBAASIntegration: prepare Json response: %w", err)
+		return nil, fmt.Errorf("DeleteDBAASIntegration: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -4995,7 +5081,7 @@ func (c Client) GetDBAASIntegration(ctx context.Context, id UUID) (*DBAASIntegra
 
 	bodyresp := new(DBAASIntegration)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("GetDBAASIntegration: prepare Json response: %w", err)
+		return nil, fmt.Errorf("GetDBAASIntegration: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -5012,7 +5098,7 @@ func (c Client) UpdateDBAASIntegration(ctx context.Context, id UUID, req UpdateD
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("UpdateDBAASIntegration: prepare Json body: %w", err)
+		return nil, fmt.Errorf("UpdateDBAASIntegration: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "PUT", c.serverEndpoint+path, body)
@@ -5051,7 +5137,7 @@ func (c Client) UpdateDBAASIntegration(ctx context.Context, id UUID, req UpdateD
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("UpdateDBAASIntegration: prepare Json response: %w", err)
+		return nil, fmt.Errorf("UpdateDBAASIntegration: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -5094,7 +5180,7 @@ func (c Client) DeleteDBAASServiceKafka(ctx context.Context, name string) (*Oper
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("DeleteDBAASServiceKafka: prepare Json response: %w", err)
+		return nil, fmt.Errorf("DeleteDBAASServiceKafka: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -5137,7 +5223,7 @@ func (c Client) GetDBAASServiceKafka(ctx context.Context, name string) (*DBAASSe
 
 	bodyresp := new(DBAASServiceKafka)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("GetDBAASServiceKafka: prepare Json response: %w", err)
+		return nil, fmt.Errorf("GetDBAASServiceKafka: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -5207,7 +5293,7 @@ func (c Client) CreateDBAASServiceKafka(ctx context.Context, name string, req Cr
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("CreateDBAASServiceKafka: prepare Json body: %w", err)
+		return nil, fmt.Errorf("CreateDBAASServiceKafka: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "POST", c.serverEndpoint+path, body)
@@ -5246,7 +5332,7 @@ func (c Client) CreateDBAASServiceKafka(ctx context.Context, name string, req Cr
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("CreateDBAASServiceKafka: prepare Json response: %w", err)
+		return nil, fmt.Errorf("CreateDBAASServiceKafka: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -5316,7 +5402,7 @@ func (c Client) UpdateDBAASServiceKafka(ctx context.Context, name string, req Up
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("UpdateDBAASServiceKafka: prepare Json body: %w", err)
+		return nil, fmt.Errorf("UpdateDBAASServiceKafka: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "PUT", c.serverEndpoint+path, body)
@@ -5355,7 +5441,7 @@ func (c Client) UpdateDBAASServiceKafka(ctx context.Context, name string, req Up
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("UpdateDBAASServiceKafka: prepare Json response: %w", err)
+		return nil, fmt.Errorf("UpdateDBAASServiceKafka: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -5398,7 +5484,7 @@ func (c Client) GetDBAASKafkaAclConfig(ctx context.Context, name string) (*DBAAS
 
 	bodyresp := new(DBAASKafkaAcls)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("GetDBAASKafkaAclConfig: prepare Json response: %w", err)
+		return nil, fmt.Errorf("GetDBAASKafkaAclConfig: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -5441,7 +5527,7 @@ func (c Client) StartDBAASKafkaMaintenance(ctx context.Context, name string) (*O
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("StartDBAASKafkaMaintenance: prepare Json response: %w", err)
+		return nil, fmt.Errorf("StartDBAASKafkaMaintenance: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -5452,7 +5538,7 @@ func (c Client) CreateDBAASKafkaSchemaRegistryAclConfig(ctx context.Context, nam
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("CreateDBAASKafkaSchemaRegistryAclConfig: prepare Json body: %w", err)
+		return nil, fmt.Errorf("CreateDBAASKafkaSchemaRegistryAclConfig: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "POST", c.serverEndpoint+path, body)
@@ -5491,7 +5577,7 @@ func (c Client) CreateDBAASKafkaSchemaRegistryAclConfig(ctx context.Context, nam
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("CreateDBAASKafkaSchemaRegistryAclConfig: prepare Json response: %w", err)
+		return nil, fmt.Errorf("CreateDBAASKafkaSchemaRegistryAclConfig: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -5534,7 +5620,7 @@ func (c Client) DeleteDBAASKafkaSchemaRegistryAclConfig(ctx context.Context, nam
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("DeleteDBAASKafkaSchemaRegistryAclConfig: prepare Json response: %w", err)
+		return nil, fmt.Errorf("DeleteDBAASKafkaSchemaRegistryAclConfig: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -5545,7 +5631,7 @@ func (c Client) CreateDBAASKafkaTopicAclConfig(ctx context.Context, name string,
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("CreateDBAASKafkaTopicAclConfig: prepare Json body: %w", err)
+		return nil, fmt.Errorf("CreateDBAASKafkaTopicAclConfig: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "POST", c.serverEndpoint+path, body)
@@ -5584,7 +5670,7 @@ func (c Client) CreateDBAASKafkaTopicAclConfig(ctx context.Context, name string,
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("CreateDBAASKafkaTopicAclConfig: prepare Json response: %w", err)
+		return nil, fmt.Errorf("CreateDBAASKafkaTopicAclConfig: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -5627,7 +5713,7 @@ func (c Client) DeleteDBAASKafkaTopicAclConfig(ctx context.Context, name string,
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("DeleteDBAASKafkaTopicAclConfig: prepare Json response: %w", err)
+		return nil, fmt.Errorf("DeleteDBAASKafkaTopicAclConfig: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -5670,7 +5756,7 @@ func (c Client) RevealDBAASKafkaConnectPassword(ctx context.Context, serviceName
 
 	bodyresp := new(DBAASUserKafkaConnectSecrets)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("RevealDBAASKafkaConnectPassword: prepare Json response: %w", err)
+		return nil, fmt.Errorf("RevealDBAASKafkaConnectPassword: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -5685,7 +5771,7 @@ func (c Client) CreateDBAASKafkaUser(ctx context.Context, serviceName string, re
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("CreateDBAASKafkaUser: prepare Json body: %w", err)
+		return nil, fmt.Errorf("CreateDBAASKafkaUser: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "POST", c.serverEndpoint+path, body)
@@ -5724,7 +5810,7 @@ func (c Client) CreateDBAASKafkaUser(ctx context.Context, serviceName string, re
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("CreateDBAASKafkaUser: prepare Json response: %w", err)
+		return nil, fmt.Errorf("CreateDBAASKafkaUser: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -5767,7 +5853,7 @@ func (c Client) DeleteDBAASKafkaUser(ctx context.Context, serviceName string, us
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("DeleteDBAASKafkaUser: prepare Json response: %w", err)
+		return nil, fmt.Errorf("DeleteDBAASKafkaUser: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -5783,7 +5869,7 @@ func (c Client) ResetDBAASKafkaUserPassword(ctx context.Context, serviceName str
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("ResetDBAASKafkaUserPassword: prepare Json body: %w", err)
+		return nil, fmt.Errorf("ResetDBAASKafkaUserPassword: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "PUT", c.serverEndpoint+path, body)
@@ -5822,7 +5908,7 @@ func (c Client) ResetDBAASKafkaUserPassword(ctx context.Context, serviceName str
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("ResetDBAASKafkaUserPassword: prepare Json response: %w", err)
+		return nil, fmt.Errorf("ResetDBAASKafkaUserPassword: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -5865,7 +5951,7 @@ func (c Client) RevealDBAASKafkaUserPassword(ctx context.Context, serviceName st
 
 	bodyresp := new(DBAASUserKafkaSecrets)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("RevealDBAASKafkaUserPassword: prepare Json response: %w", err)
+		return nil, fmt.Errorf("RevealDBAASKafkaUserPassword: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -5909,7 +5995,7 @@ func (c Client) GetDBAASMigrationStatus(ctx context.Context, name string) (*DBAA
 
 	bodyresp := new(DBAASMigrationStatus)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("GetDBAASMigrationStatus: prepare Json response: %w", err)
+		return nil, fmt.Errorf("GetDBAASMigrationStatus: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -5952,7 +6038,7 @@ func (c Client) DeleteDBAASServiceMysql(ctx context.Context, name string) (*Oper
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("DeleteDBAASServiceMysql: prepare Json response: %w", err)
+		return nil, fmt.Errorf("DeleteDBAASServiceMysql: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -5996,7 +6082,7 @@ func (c Client) GetDBAASServiceMysql(ctx context.Context, name string) (*DBAASSe
 
 	bodyresp := new(DBAASServiceMysql)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("GetDBAASServiceMysql: prepare Json response: %w", err)
+		return nil, fmt.Errorf("GetDBAASServiceMysql: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -6098,7 +6184,7 @@ func (c Client) CreateDBAASServiceMysql(ctx context.Context, name string, req Cr
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("CreateDBAASServiceMysql: prepare Json body: %w", err)
+		return nil, fmt.Errorf("CreateDBAASServiceMysql: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "POST", c.serverEndpoint+path, body)
@@ -6137,7 +6223,7 @@ func (c Client) CreateDBAASServiceMysql(ctx context.Context, name string, req Cr
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("CreateDBAASServiceMysql: prepare Json response: %w", err)
+		return nil, fmt.Errorf("CreateDBAASServiceMysql: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -6216,7 +6302,7 @@ func (c Client) UpdateDBAASServiceMysql(ctx context.Context, name string, req Up
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("UpdateDBAASServiceMysql: prepare Json body: %w", err)
+		return nil, fmt.Errorf("UpdateDBAASServiceMysql: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "PUT", c.serverEndpoint+path, body)
@@ -6255,7 +6341,7 @@ func (c Client) UpdateDBAASServiceMysql(ctx context.Context, name string, req Up
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("UpdateDBAASServiceMysql: prepare Json response: %w", err)
+		return nil, fmt.Errorf("UpdateDBAASServiceMysql: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -6298,7 +6384,7 @@ func (c Client) EnableDBAASMysqlWrites(ctx context.Context, name string) (*Opera
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("EnableDBAASMysqlWrites: prepare Json response: %w", err)
+		return nil, fmt.Errorf("EnableDBAASMysqlWrites: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -6341,7 +6427,7 @@ func (c Client) StartDBAASMysqlMaintenance(ctx context.Context, name string) (*O
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("StartDBAASMysqlMaintenance: prepare Json response: %w", err)
+		return nil, fmt.Errorf("StartDBAASMysqlMaintenance: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -6384,7 +6470,7 @@ func (c Client) StopDBAASMysqlMigration(ctx context.Context, name string) (*Oper
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("StopDBAASMysqlMigration: prepare Json response: %w", err)
+		return nil, fmt.Errorf("StopDBAASMysqlMigration: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -6399,7 +6485,7 @@ func (c Client) CreateDBAASMysqlDatabase(ctx context.Context, serviceName string
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("CreateDBAASMysqlDatabase: prepare Json body: %w", err)
+		return nil, fmt.Errorf("CreateDBAASMysqlDatabase: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "POST", c.serverEndpoint+path, body)
@@ -6438,7 +6524,7 @@ func (c Client) CreateDBAASMysqlDatabase(ctx context.Context, serviceName string
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("CreateDBAASMysqlDatabase: prepare Json response: %w", err)
+		return nil, fmt.Errorf("CreateDBAASMysqlDatabase: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -6481,7 +6567,7 @@ func (c Client) DeleteDBAASMysqlDatabase(ctx context.Context, serviceName string
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("DeleteDBAASMysqlDatabase: prepare Json response: %w", err)
+		return nil, fmt.Errorf("DeleteDBAASMysqlDatabase: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -6497,7 +6583,7 @@ func (c Client) CreateDBAASMysqlUser(ctx context.Context, serviceName string, re
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("CreateDBAASMysqlUser: prepare Json body: %w", err)
+		return nil, fmt.Errorf("CreateDBAASMysqlUser: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "POST", c.serverEndpoint+path, body)
@@ -6536,7 +6622,7 @@ func (c Client) CreateDBAASMysqlUser(ctx context.Context, serviceName string, re
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("CreateDBAASMysqlUser: prepare Json response: %w", err)
+		return nil, fmt.Errorf("CreateDBAASMysqlUser: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -6579,7 +6665,7 @@ func (c Client) DeleteDBAASMysqlUser(ctx context.Context, serviceName string, us
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("DeleteDBAASMysqlUser: prepare Json response: %w", err)
+		return nil, fmt.Errorf("DeleteDBAASMysqlUser: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -6596,7 +6682,7 @@ func (c Client) ResetDBAASMysqlUserPassword(ctx context.Context, serviceName str
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("ResetDBAASMysqlUserPassword: prepare Json body: %w", err)
+		return nil, fmt.Errorf("ResetDBAASMysqlUserPassword: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "PUT", c.serverEndpoint+path, body)
@@ -6635,7 +6721,7 @@ func (c Client) ResetDBAASMysqlUserPassword(ctx context.Context, serviceName str
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("ResetDBAASMysqlUserPassword: prepare Json response: %w", err)
+		return nil, fmt.Errorf("ResetDBAASMysqlUserPassword: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -6678,7 +6764,7 @@ func (c Client) RevealDBAASMysqlUserPassword(ctx context.Context, serviceName st
 
 	bodyresp := new(DBAASUserMysqlSecrets)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("RevealDBAASMysqlUserPassword: prepare Json response: %w", err)
+		return nil, fmt.Errorf("RevealDBAASMysqlUserPassword: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -6721,7 +6807,7 @@ func (c Client) DeleteDBAASServiceOpensearch(ctx context.Context, name string) (
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("DeleteDBAASServiceOpensearch: prepare Json response: %w", err)
+		return nil, fmt.Errorf("DeleteDBAASServiceOpensearch: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -6765,7 +6851,7 @@ func (c Client) GetDBAASServiceOpensearch(ctx context.Context, name string) (*DB
 
 	bodyresp := new(DBAASServiceOpensearch)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("GetDBAASServiceOpensearch: prepare Json response: %w", err)
+		return nil, fmt.Errorf("GetDBAASServiceOpensearch: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -6862,7 +6948,7 @@ func (c Client) CreateDBAASServiceOpensearch(ctx context.Context, name string, r
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("CreateDBAASServiceOpensearch: prepare Json body: %w", err)
+		return nil, fmt.Errorf("CreateDBAASServiceOpensearch: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "POST", c.serverEndpoint+path, body)
@@ -6901,7 +6987,7 @@ func (c Client) CreateDBAASServiceOpensearch(ctx context.Context, name string, r
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("CreateDBAASServiceOpensearch: prepare Json response: %w", err)
+		return nil, fmt.Errorf("CreateDBAASServiceOpensearch: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -6995,7 +7081,7 @@ func (c Client) UpdateDBAASServiceOpensearch(ctx context.Context, name string, r
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("UpdateDBAASServiceOpensearch: prepare Json body: %w", err)
+		return nil, fmt.Errorf("UpdateDBAASServiceOpensearch: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "PUT", c.serverEndpoint+path, body)
@@ -7034,7 +7120,7 @@ func (c Client) UpdateDBAASServiceOpensearch(ctx context.Context, name string, r
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("UpdateDBAASServiceOpensearch: prepare Json response: %w", err)
+		return nil, fmt.Errorf("UpdateDBAASServiceOpensearch: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -7077,7 +7163,7 @@ func (c Client) GetDBAASOpensearchAclConfig(ctx context.Context, name string) (*
 
 	bodyresp := new(DBAASOpensearchAclConfig)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("GetDBAASOpensearchAclConfig: prepare Json response: %w", err)
+		return nil, fmt.Errorf("GetDBAASOpensearchAclConfig: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -7088,7 +7174,7 @@ func (c Client) UpdateDBAASOpensearchAclConfig(ctx context.Context, name string,
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("UpdateDBAASOpensearchAclConfig: prepare Json body: %w", err)
+		return nil, fmt.Errorf("UpdateDBAASOpensearchAclConfig: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "PUT", c.serverEndpoint+path, body)
@@ -7127,7 +7213,7 @@ func (c Client) UpdateDBAASOpensearchAclConfig(ctx context.Context, name string,
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("UpdateDBAASOpensearchAclConfig: prepare Json response: %w", err)
+		return nil, fmt.Errorf("UpdateDBAASOpensearchAclConfig: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -7170,7 +7256,7 @@ func (c Client) StartDBAASOpensearchMaintenance(ctx context.Context, name string
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("StartDBAASOpensearchMaintenance: prepare Json response: %w", err)
+		return nil, fmt.Errorf("StartDBAASOpensearchMaintenance: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -7185,7 +7271,7 @@ func (c Client) CreateDBAASOpensearchUser(ctx context.Context, serviceName strin
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("CreateDBAASOpensearchUser: prepare Json body: %w", err)
+		return nil, fmt.Errorf("CreateDBAASOpensearchUser: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "POST", c.serverEndpoint+path, body)
@@ -7224,7 +7310,7 @@ func (c Client) CreateDBAASOpensearchUser(ctx context.Context, serviceName strin
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("CreateDBAASOpensearchUser: prepare Json response: %w", err)
+		return nil, fmt.Errorf("CreateDBAASOpensearchUser: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -7267,7 +7353,7 @@ func (c Client) DeleteDBAASOpensearchUser(ctx context.Context, serviceName strin
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("DeleteDBAASOpensearchUser: prepare Json response: %w", err)
+		return nil, fmt.Errorf("DeleteDBAASOpensearchUser: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -7283,7 +7369,7 @@ func (c Client) ResetDBAASOpensearchUserPassword(ctx context.Context, serviceNam
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("ResetDBAASOpensearchUserPassword: prepare Json body: %w", err)
+		return nil, fmt.Errorf("ResetDBAASOpensearchUserPassword: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "PUT", c.serverEndpoint+path, body)
@@ -7322,7 +7408,7 @@ func (c Client) ResetDBAASOpensearchUserPassword(ctx context.Context, serviceNam
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("ResetDBAASOpensearchUserPassword: prepare Json response: %w", err)
+		return nil, fmt.Errorf("ResetDBAASOpensearchUserPassword: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -7365,7 +7451,7 @@ func (c Client) RevealDBAASOpensearchUserPassword(ctx context.Context, serviceNa
 
 	bodyresp := new(DBAASUserOpensearchSecrets)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("RevealDBAASOpensearchUserPassword: prepare Json response: %w", err)
+		return nil, fmt.Errorf("RevealDBAASOpensearchUserPassword: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -7408,7 +7494,7 @@ func (c Client) DeleteDBAASServicePG(ctx context.Context, name string) (*Operati
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("DeleteDBAASServicePG: prepare Json response: %w", err)
+		return nil, fmt.Errorf("DeleteDBAASServicePG: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -7452,7 +7538,7 @@ func (c Client) GetDBAASServicePG(ctx context.Context, name string) (*DBAASServi
 
 	bodyresp := new(DBAASServicePG)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("GetDBAASServicePG: prepare Json response: %w", err)
+		return nil, fmt.Errorf("GetDBAASServicePG: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -7565,7 +7651,7 @@ func (c Client) CreateDBAASServicePG(ctx context.Context, name string, req Creat
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("CreateDBAASServicePG: prepare Json body: %w", err)
+		return nil, fmt.Errorf("CreateDBAASServicePG: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "POST", c.serverEndpoint+path, body)
@@ -7604,7 +7690,7 @@ func (c Client) CreateDBAASServicePG(ctx context.Context, name string, req Creat
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("CreateDBAASServicePG: prepare Json response: %w", err)
+		return nil, fmt.Errorf("CreateDBAASServicePG: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -7695,7 +7781,7 @@ func (c Client) UpdateDBAASServicePG(ctx context.Context, name string, req Updat
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("UpdateDBAASServicePG: prepare Json body: %w", err)
+		return nil, fmt.Errorf("UpdateDBAASServicePG: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "PUT", c.serverEndpoint+path, body)
@@ -7734,7 +7820,7 @@ func (c Client) UpdateDBAASServicePG(ctx context.Context, name string, req Updat
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("UpdateDBAASServicePG: prepare Json response: %w", err)
+		return nil, fmt.Errorf("UpdateDBAASServicePG: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -7777,7 +7863,7 @@ func (c Client) StartDBAASPGMaintenance(ctx context.Context, name string) (*Oper
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("StartDBAASPGMaintenance: prepare Json response: %w", err)
+		return nil, fmt.Errorf("StartDBAASPGMaintenance: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -7820,7 +7906,7 @@ func (c Client) StopDBAASPGMigration(ctx context.Context, name string) (*Operati
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("StopDBAASPGMigration: prepare Json response: %w", err)
+		return nil, fmt.Errorf("StopDBAASPGMigration: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -7840,7 +7926,7 @@ func (c Client) CreateDBAASPGConnectionPool(ctx context.Context, serviceName str
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("CreateDBAASPGConnectionPool: prepare Json body: %w", err)
+		return nil, fmt.Errorf("CreateDBAASPGConnectionPool: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "POST", c.serverEndpoint+path, body)
@@ -7879,7 +7965,7 @@ func (c Client) CreateDBAASPGConnectionPool(ctx context.Context, serviceName str
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("CreateDBAASPGConnectionPool: prepare Json response: %w", err)
+		return nil, fmt.Errorf("CreateDBAASPGConnectionPool: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -7923,7 +8009,7 @@ func (c Client) DeleteDBAASPGConnectionPool(ctx context.Context, serviceName str
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("DeleteDBAASPGConnectionPool: prepare Json response: %w", err)
+		return nil, fmt.Errorf("DeleteDBAASPGConnectionPool: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -7942,7 +8028,7 @@ func (c Client) UpdateDBAASPGConnectionPool(ctx context.Context, serviceName str
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("UpdateDBAASPGConnectionPool: prepare Json body: %w", err)
+		return nil, fmt.Errorf("UpdateDBAASPGConnectionPool: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "PUT", c.serverEndpoint+path, body)
@@ -7981,7 +8067,7 @@ func (c Client) UpdateDBAASPGConnectionPool(ctx context.Context, serviceName str
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("UpdateDBAASPGConnectionPool: prepare Json response: %w", err)
+		return nil, fmt.Errorf("UpdateDBAASPGConnectionPool: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -8000,7 +8086,7 @@ func (c Client) CreateDBAASPGDatabase(ctx context.Context, serviceName string, r
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("CreateDBAASPGDatabase: prepare Json body: %w", err)
+		return nil, fmt.Errorf("CreateDBAASPGDatabase: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "POST", c.serverEndpoint+path, body)
@@ -8039,7 +8125,7 @@ func (c Client) CreateDBAASPGDatabase(ctx context.Context, serviceName string, r
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("CreateDBAASPGDatabase: prepare Json response: %w", err)
+		return nil, fmt.Errorf("CreateDBAASPGDatabase: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -8082,7 +8168,7 @@ func (c Client) DeleteDBAASPGDatabase(ctx context.Context, serviceName string, d
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("DeleteDBAASPGDatabase: prepare Json response: %w", err)
+		return nil, fmt.Errorf("DeleteDBAASPGDatabase: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -8098,7 +8184,7 @@ func (c Client) CreateDBAASPostgresUser(ctx context.Context, serviceName string,
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("CreateDBAASPostgresUser: prepare Json body: %w", err)
+		return nil, fmt.Errorf("CreateDBAASPostgresUser: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "POST", c.serverEndpoint+path, body)
@@ -8137,7 +8223,7 @@ func (c Client) CreateDBAASPostgresUser(ctx context.Context, serviceName string,
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("CreateDBAASPostgresUser: prepare Json response: %w", err)
+		return nil, fmt.Errorf("CreateDBAASPostgresUser: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -8180,7 +8266,7 @@ func (c Client) DeleteDBAASPostgresUser(ctx context.Context, serviceName string,
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("DeleteDBAASPostgresUser: prepare Json response: %w", err)
+		return nil, fmt.Errorf("DeleteDBAASPostgresUser: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -8195,7 +8281,7 @@ func (c Client) UpdateDBAASPostgresAllowReplication(ctx context.Context, service
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("UpdateDBAASPostgresAllowReplication: prepare Json body: %w", err)
+		return nil, fmt.Errorf("UpdateDBAASPostgresAllowReplication: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "PUT", c.serverEndpoint+path, body)
@@ -8234,7 +8320,7 @@ func (c Client) UpdateDBAASPostgresAllowReplication(ctx context.Context, service
 
 	bodyresp := new(DBAASPostgresUsers)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("UpdateDBAASPostgresAllowReplication: prepare Json response: %w", err)
+		return nil, fmt.Errorf("UpdateDBAASPostgresAllowReplication: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -8250,7 +8336,7 @@ func (c Client) ResetDBAASPostgresUserPassword(ctx context.Context, serviceName 
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("ResetDBAASPostgresUserPassword: prepare Json body: %w", err)
+		return nil, fmt.Errorf("ResetDBAASPostgresUserPassword: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "PUT", c.serverEndpoint+path, body)
@@ -8289,7 +8375,7 @@ func (c Client) ResetDBAASPostgresUserPassword(ctx context.Context, serviceName 
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("ResetDBAASPostgresUserPassword: prepare Json response: %w", err)
+		return nil, fmt.Errorf("ResetDBAASPostgresUserPassword: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -8332,7 +8418,7 @@ func (c Client) RevealDBAASPostgresUserPassword(ctx context.Context, serviceName
 
 	bodyresp := new(DBAASUserPostgresSecrets)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("RevealDBAASPostgresUserPassword: prepare Json response: %w", err)
+		return nil, fmt.Errorf("RevealDBAASPostgresUserPassword: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -8348,7 +8434,7 @@ func (c Client) CreateDBAASPGUpgradeCheck(ctx context.Context, service string, r
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("CreateDBAASPGUpgradeCheck: prepare Json body: %w", err)
+		return nil, fmt.Errorf("CreateDBAASPGUpgradeCheck: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "POST", c.serverEndpoint+path, body)
@@ -8387,7 +8473,7 @@ func (c Client) CreateDBAASPGUpgradeCheck(ctx context.Context, service string, r
 
 	bodyresp := new(DBAASTask)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("CreateDBAASPGUpgradeCheck: prepare Json response: %w", err)
+		return nil, fmt.Errorf("CreateDBAASPGUpgradeCheck: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -8454,7 +8540,7 @@ func (c Client) ListDBAASServices(ctx context.Context) (*ListDBAASServicesRespon
 
 	bodyresp := new(ListDBAASServicesResponse)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("ListDBAASServices: prepare Json response: %w", err)
+		return nil, fmt.Errorf("ListDBAASServices: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -8474,7 +8560,7 @@ func (c Client) GetDBAASServiceLogs(ctx context.Context, serviceName string, req
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("GetDBAASServiceLogs: prepare Json body: %w", err)
+		return nil, fmt.Errorf("GetDBAASServiceLogs: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "POST", c.serverEndpoint+path, body)
@@ -8513,7 +8599,7 @@ func (c Client) GetDBAASServiceLogs(ctx context.Context, serviceName string, req
 
 	bodyresp := new(DBAASServiceLogs)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("GetDBAASServiceLogs: prepare Json response: %w", err)
+		return nil, fmt.Errorf("GetDBAASServiceLogs: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -8544,7 +8630,7 @@ func (c Client) GetDBAASServiceMetrics(ctx context.Context, serviceName string, 
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("GetDBAASServiceMetrics: prepare Json body: %w", err)
+		return nil, fmt.Errorf("GetDBAASServiceMetrics: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "POST", c.serverEndpoint+path, body)
@@ -8583,7 +8669,7 @@ func (c Client) GetDBAASServiceMetrics(ctx context.Context, serviceName string, 
 
 	bodyresp := new(GetDBAASServiceMetricsResponse)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("GetDBAASServiceMetrics: prepare Json response: %w", err)
+		return nil, fmt.Errorf("GetDBAASServiceMetrics: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -8650,7 +8736,7 @@ func (c Client) ListDBAASServiceTypes(ctx context.Context) (*ListDBAASServiceTyp
 
 	bodyresp := new(ListDBAASServiceTypesResponse)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("ListDBAASServiceTypes: prepare Json response: %w", err)
+		return nil, fmt.Errorf("ListDBAASServiceTypes: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -8694,7 +8780,7 @@ func (c Client) GetDBAASServiceType(ctx context.Context, serviceTypeName string)
 
 	bodyresp := new(DBAASServiceType)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("GetDBAASServiceType: prepare Json response: %w", err)
+		return nil, fmt.Errorf("GetDBAASServiceType: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -8738,7 +8824,7 @@ func (c Client) DeleteDBAASService(ctx context.Context, name string) (*Operation
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("DeleteDBAASService: prepare Json response: %w", err)
+		return nil, fmt.Errorf("DeleteDBAASService: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -8798,7 +8884,7 @@ func (c Client) GetDBAASSettingsClickhouse(ctx context.Context) (*GetDBAASSettin
 
 	bodyresp := new(GetDBAASSettingsClickhouseResponse)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("GetDBAASSettingsClickhouse: prepare Json response: %w", err)
+		return nil, fmt.Errorf("GetDBAASSettingsClickhouse: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -8859,7 +8945,7 @@ func (c Client) GetDBAASSettingsGrafana(ctx context.Context) (*GetDBAASSettingsG
 
 	bodyresp := new(GetDBAASSettingsGrafanaResponse)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("GetDBAASSettingsGrafana: prepare Json response: %w", err)
+		return nil, fmt.Errorf("GetDBAASSettingsGrafana: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -8950,7 +9036,7 @@ func (c Client) GetDBAASSettingsKafka(ctx context.Context) (*GetDBAASSettingsKaf
 
 	bodyresp := new(GetDBAASSettingsKafkaResponse)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("GetDBAASSettingsKafka: prepare Json response: %w", err)
+		return nil, fmt.Errorf("GetDBAASSettingsKafka: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -9011,7 +9097,7 @@ func (c Client) GetDBAASSettingsMysql(ctx context.Context) (*GetDBAASSettingsMys
 
 	bodyresp := new(GetDBAASSettingsMysqlResponse)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("GetDBAASSettingsMysql: prepare Json response: %w", err)
+		return nil, fmt.Errorf("GetDBAASSettingsMysql: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -9072,7 +9158,7 @@ func (c Client) GetDBAASSettingsOpensearch(ctx context.Context) (*GetDBAASSettin
 
 	bodyresp := new(GetDBAASSettingsOpensearchResponse)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("GetDBAASSettingsOpensearch: prepare Json response: %w", err)
+		return nil, fmt.Errorf("GetDBAASSettingsOpensearch: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -9163,7 +9249,7 @@ func (c Client) GetDBAASSettingsPG(ctx context.Context) (*GetDBAASSettingsPGResp
 
 	bodyresp := new(GetDBAASSettingsPGResponse)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("GetDBAASSettingsPG: prepare Json response: %w", err)
+		return nil, fmt.Errorf("GetDBAASSettingsPG: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -9224,7 +9310,7 @@ func (c Client) GetDBAASSettingsThanos(ctx context.Context) (*GetDBAASSettingsTh
 
 	bodyresp := new(GetDBAASSettingsThanosResponse)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("GetDBAASSettingsThanos: prepare Json response: %w", err)
+		return nil, fmt.Errorf("GetDBAASSettingsThanos: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -9285,7 +9371,7 @@ func (c Client) GetDBAASSettingsValkey(ctx context.Context) (*GetDBAASSettingsVa
 
 	bodyresp := new(GetDBAASSettingsValkeyResponse)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("GetDBAASSettingsValkey: prepare Json response: %w", err)
+		return nil, fmt.Errorf("GetDBAASSettingsValkey: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -9305,7 +9391,7 @@ func (c Client) CreateDBAASTaskMigrationCheck(ctx context.Context, service strin
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("CreateDBAASTaskMigrationCheck: prepare Json body: %w", err)
+		return nil, fmt.Errorf("CreateDBAASTaskMigrationCheck: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "POST", c.serverEndpoint+path, body)
@@ -9344,7 +9430,7 @@ func (c Client) CreateDBAASTaskMigrationCheck(ctx context.Context, service strin
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("CreateDBAASTaskMigrationCheck: prepare Json response: %w", err)
+		return nil, fmt.Errorf("CreateDBAASTaskMigrationCheck: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -9388,7 +9474,7 @@ func (c Client) GetDBAASTask(ctx context.Context, service string, id UUID) (*DBA
 
 	bodyresp := new(DBAASTask)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("GetDBAASTask: prepare Json response: %w", err)
+		return nil, fmt.Errorf("GetDBAASTask: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -9431,7 +9517,7 @@ func (c Client) DeleteDBAASServiceThanos(ctx context.Context, name string) (*Ope
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("DeleteDBAASServiceThanos: prepare Json response: %w", err)
+		return nil, fmt.Errorf("DeleteDBAASServiceThanos: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -9475,7 +9561,7 @@ func (c Client) GetDBAASServiceThanos(ctx context.Context, name string) (*DBAASS
 
 	bodyresp := new(DBAASServiceThanos)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("GetDBAASServiceThanos: prepare Json response: %w", err)
+		return nil, fmt.Errorf("GetDBAASServiceThanos: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -9521,7 +9607,7 @@ func (c Client) CreateDBAASServiceThanos(ctx context.Context, name string, req C
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("CreateDBAASServiceThanos: prepare Json body: %w", err)
+		return nil, fmt.Errorf("CreateDBAASServiceThanos: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "POST", c.serverEndpoint+path, body)
@@ -9560,7 +9646,7 @@ func (c Client) CreateDBAASServiceThanos(ctx context.Context, name string, req C
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("CreateDBAASServiceThanos: prepare Json response: %w", err)
+		return nil, fmt.Errorf("CreateDBAASServiceThanos: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -9606,7 +9692,7 @@ func (c Client) UpdateDBAASServiceThanos(ctx context.Context, name string, req U
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("UpdateDBAASServiceThanos: prepare Json body: %w", err)
+		return nil, fmt.Errorf("UpdateDBAASServiceThanos: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "PUT", c.serverEndpoint+path, body)
@@ -9645,7 +9731,7 @@ func (c Client) UpdateDBAASServiceThanos(ctx context.Context, name string, req U
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("UpdateDBAASServiceThanos: prepare Json response: %w", err)
+		return nil, fmt.Errorf("UpdateDBAASServiceThanos: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -9688,7 +9774,7 @@ func (c Client) StartDBAASThanosMaintenance(ctx context.Context, name string) (*
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("StartDBAASThanosMaintenance: prepare Json response: %w", err)
+		return nil, fmt.Errorf("StartDBAASThanosMaintenance: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -9731,7 +9817,7 @@ func (c Client) RevealDBAASThanosUserPassword(ctx context.Context, serviceName s
 
 	bodyresp := new(DBAASUserThanosSecrets)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("RevealDBAASThanosUserPassword: prepare Json response: %w", err)
+		return nil, fmt.Errorf("RevealDBAASThanosUserPassword: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -9774,7 +9860,7 @@ func (c Client) DeleteDBAASServiceValkey(ctx context.Context, name string) (*Ope
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("DeleteDBAASServiceValkey: prepare Json response: %w", err)
+		return nil, fmt.Errorf("DeleteDBAASServiceValkey: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -9818,7 +9904,7 @@ func (c Client) GetDBAASServiceValkey(ctx context.Context, name string) (*DBAASS
 
 	bodyresp := new(DBAASServiceValkey)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("GetDBAASServiceValkey: prepare Json response: %w", err)
+		return nil, fmt.Errorf("GetDBAASServiceValkey: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -9890,7 +9976,7 @@ func (c Client) CreateDBAASServiceValkey(ctx context.Context, name string, req C
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("CreateDBAASServiceValkey: prepare Json body: %w", err)
+		return nil, fmt.Errorf("CreateDBAASServiceValkey: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "POST", c.serverEndpoint+path, body)
@@ -9929,7 +10015,7 @@ func (c Client) CreateDBAASServiceValkey(ctx context.Context, name string, req C
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("CreateDBAASServiceValkey: prepare Json response: %w", err)
+		return nil, fmt.Errorf("CreateDBAASServiceValkey: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -9998,7 +10084,7 @@ func (c Client) UpdateDBAASServiceValkey(ctx context.Context, name string, req U
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("UpdateDBAASServiceValkey: prepare Json body: %w", err)
+		return nil, fmt.Errorf("UpdateDBAASServiceValkey: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "PUT", c.serverEndpoint+path, body)
@@ -10037,7 +10123,7 @@ func (c Client) UpdateDBAASServiceValkey(ctx context.Context, name string, req U
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("UpdateDBAASServiceValkey: prepare Json response: %w", err)
+		return nil, fmt.Errorf("UpdateDBAASServiceValkey: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -10080,7 +10166,7 @@ func (c Client) StartDBAASValkeyMaintenance(ctx context.Context, name string) (*
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("StartDBAASValkeyMaintenance: prepare Json response: %w", err)
+		return nil, fmt.Errorf("StartDBAASValkeyMaintenance: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -10123,7 +10209,7 @@ func (c Client) StopDBAASValkeyMigration(ctx context.Context, name string) (*Ope
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("StopDBAASValkeyMigration: prepare Json response: %w", err)
+		return nil, fmt.Errorf("StopDBAASValkeyMigration: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -10166,7 +10252,7 @@ func (c Client) ListDBAASValkeyUsers(ctx context.Context, serviceName string) (*
 
 	bodyresp := new(DBAASValkeyUsers)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("ListDBAASValkeyUsers: prepare Json response: %w", err)
+		return nil, fmt.Errorf("ListDBAASValkeyUsers: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -10182,7 +10268,7 @@ func (c Client) CreateDBAASValkeyUser(ctx context.Context, serviceName string, r
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("CreateDBAASValkeyUser: prepare Json body: %w", err)
+		return nil, fmt.Errorf("CreateDBAASValkeyUser: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "POST", c.serverEndpoint+path, body)
@@ -10221,7 +10307,7 @@ func (c Client) CreateDBAASValkeyUser(ctx context.Context, serviceName string, r
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("CreateDBAASValkeyUser: prepare Json response: %w", err)
+		return nil, fmt.Errorf("CreateDBAASValkeyUser: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -10264,7 +10350,7 @@ func (c Client) DeleteDBAASValkeyUser(ctx context.Context, serviceName string, u
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("DeleteDBAASValkeyUser: prepare Json response: %w", err)
+		return nil, fmt.Errorf("DeleteDBAASValkeyUser: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -10279,7 +10365,7 @@ func (c Client) UpdateDBAASValkeyUserAccessControl(ctx context.Context, serviceN
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("UpdateDBAASValkeyUserAccessControl: prepare Json body: %w", err)
+		return nil, fmt.Errorf("UpdateDBAASValkeyUserAccessControl: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "PUT", c.serverEndpoint+path, body)
@@ -10318,7 +10404,7 @@ func (c Client) UpdateDBAASValkeyUserAccessControl(ctx context.Context, serviceN
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("UpdateDBAASValkeyUserAccessControl: prepare Json response: %w", err)
+		return nil, fmt.Errorf("UpdateDBAASValkeyUserAccessControl: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -10334,7 +10420,7 @@ func (c Client) ResetDBAASValkeyUserPassword(ctx context.Context, serviceName st
 
 	body, err := prepareJSONBody(req)
 	if err != nil {
-		return nil, fmt.Errorf("ResetDBAASValkeyUserPassword: prepare Json body: %w", err)
+		return nil, fmt.Errorf("ResetDBAASValkeyUserPassword: prepare JSON body: %w", err)
 	}
 
 	request, err := http.NewRequestWithContext(ctx, "PUT", c.serverEndpoint+path, body)
@@ -10373,7 +10459,7 @@ func (c Client) ResetDBAASValkeyUserPassword(ctx context.Context, serviceName st
 
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("ResetDBAASValkeyUserPassword: prepare Json response: %w", err)
+		return nil, fmt.Errorf("ResetDBAASValkeyUserPassword: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -10416,7 +10502,7 @@ func (c Client) RevealDBAASValkeyUserPassword(ctx context.Context, serviceName s
 
 	bodyresp := new(DBAASUserValkeySecrets)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("RevealDBAASValkeyUserPassword: prepare Json response: %w", err)
+		return nil, fmt.Errorf("RevealDBAASValkeyUserPassword: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
