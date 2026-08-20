@@ -16,7 +16,7 @@ BUG FIXES:
 
 BREAKING CHANGES:
 
-- `domain`: remove the unused, already-deprecated `token`, `state`, `auto_renew` and `expires_on` attributes #575
+- `domain`: remove the unused, already-deprecated `token`, `state`, `auto_renew` and `expires_on` attributes, check the [migration guide](docs/guides/migration-of-domain-from-v0_70_x-to-v0_71_x.md) #575
 
 ## 0.70.0
 
