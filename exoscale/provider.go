@@ -82,8 +82,6 @@ func Provider() *schema.Provider {
 			"exoscale_anti_affinity_group":   anti_affinity_group.DataSource(),
 			"exoscale_compute_instance":      instance.DataSource(),
 			"exoscale_compute_instance_list": instance.DataSourceList(),
-			"exoscale_domain":                dataSourceDomain(),
-			"exoscale_domain_record":         dataSourceDomainRecord(),
 			"exoscale_elastic_ip":            dataSourceElasticIP(),
 			"exoscale_instance_pool":         instance_pool.DataSource(),
 			"exoscale_instance_pool_list":    instance_pool.DataSourceList(),
@@ -98,8 +96,6 @@ func Provider() *schema.Provider {
 		ResourcesMap: map[string]*schema.Resource{
 			"exoscale_anti_affinity_group": anti_affinity_group.Resource(),
 			"exoscale_compute_instance":    instance.Resource(),
-			"exoscale_domain":              resourceDomain(),
-			"exoscale_domain_record":       resourceDomainRecord(),
 			"exoscale_elastic_ip":          resourceElasticIP(),
 			"exoscale_iam_access_key":      resourceIAMAccessKey(),
 			"exoscale_instance_pool":       instance_pool.Resource(),

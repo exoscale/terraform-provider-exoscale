@@ -57,12 +57,16 @@ directory for complete configuration examples.
 ### Required
 
 - `domain` (String) The [exoscale_domain](./domain.md) name to match.
-- `filter` (Block List, Min: 1, Max: 1) Filter to apply when looking up domain records. (see [below for nested schema](#nestedblock--filter))
+
+### Optional
+
+- `filter` (Block, Optional) Filter to apply when looking up domain records. (see [below for nested schema](#nestedblock--filter))
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-- `records` (List of Object) The list of matching records. Structure is documented below. (see [below for nested schema](#nestedatt--records))
+- `records` (Attributes List) The list of matching records. Structure is documented below. (see [below for nested schema](#nestedatt--records))
 
 <a id="nestedblock--filter"></a>
 ### Nested Schema for `filter`
@@ -75,17 +79,25 @@ Optional:
 - `record_type` (String) The record type to match.
 
 
+<a id="nestedblock--timeouts"></a>
+### Nested Schema for `timeouts`
+
+Optional:
+
+- `read` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
+
+
 <a id="nestedatt--records"></a>
 ### Nested Schema for `records`
 
 Read-Only:
 
-- `content` (String)
-- `domain` (String)
-- `id` (String)
-- `name` (String)
-- `prio` (Number)
-- `record_type` (String)
-- `ttl` (Number)
+- `content` (String) Content of the Record
+- `domain` (String) Domain of the Record
+- `id` (String) ID of the Record
+- `name` (String) Name of the Record
+- `prio` (Number) Priority of the Record
+- `record_type` (String) Type of the Record
+- `ttl` (Number) TTL of the Record
 
 
