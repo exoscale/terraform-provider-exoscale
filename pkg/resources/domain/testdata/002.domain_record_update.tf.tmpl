@@ -1,0 +1,19 @@
+resource "exoscale_domain" "test_domain" {
+  name = "terraform-provider-test-{{ .ID }}.net"
+}
+
+resource "exoscale_domain_record" "test_mx" {
+  domain      = exoscale_domain.test_domain.id
+  name        = "mail2"
+  record_type = "MX"
+  content     = "mta2.terraform-provider-test-{{ .ID }}.net"
+  prio        = 20
+  ttl         = 20
+}
+
+resource "exoscale_domain_record" "test_txt" {
+  domain      = exoscale_domain.test_domain.id
+  name        = "test"
+  record_type = "TXT"
+  content = "\"test value for TXT record\""
+}

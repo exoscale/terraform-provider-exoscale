@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+IMPROVEMENTS:
+
+- Migrate Domain resource/datasource to framework #575
+
 FEATURES:
 
 - `sks_cluster`: allows `major.minor` as input value for `version`, resolves to the latest patch version available on the platform
@@ -9,6 +13,10 @@ FEATURES:
 BUG FIXES:
 
 - `compute_instance`: `ipv6` attribute is not ignored on instance update
+
+BREAKING CHANGES:
+
+- `domain`: remove the unused, already-deprecated `token`, `state`, `auto_renew` and `expires_on` attributes #575
 
 ## 0.70.0
 
