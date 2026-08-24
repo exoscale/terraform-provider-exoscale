@@ -57,22 +57,34 @@ directory for complete configuration examples.
 ### Required
 
 - `domain` (String) The [exoscale_domain](./domain.md) name to match.
-- `filter` (Block List, Min: 1, Max: 1) Filter to apply when looking up domain records. (see [below for nested schema](#nestedblock--filter))
+
+### Optional
+
+- `filter` (Block, Optional) Filter to apply when looking up domain records. (see [below for nested schema](#nestedblock--filter))
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-- `records` (List of Object) The list of matching records. Structure is documented below. (see [below for nested schema](#nestedatt--records))
+- `records` (Attributes List) The list of matching records. Structure is documented below. (see [below for nested schema](#nestedatt--records))
 
 <a id="nestedblock--filter"></a>
 ### Nested Schema for `filter`
 
 Optional:
 
-- `content_regex` (String) A regular expression to match the record content.
-- `id` (String) The record ID to match.
-- `name` (String) The domain record name to match.
-- `record_type` (String) The record type to match.
+- `content_regex` (String) A regular expression to match the record content (conflicts with `id`, `name` and `record_type`).
+- `id` (String) The record ID to match (conflicts with `name`, `record_type` and `content_regex`).
+- `name` (String) The domain record name to match (conflicts with `id` and `content_regex`; can be combined with `record_type`).
+- `record_type` (String) The record type to match (conflicts with `id` and `content_regex`; can be combined with `name`).
+
+
+<a id="nestedblock--timeouts"></a>
+### Nested Schema for `timeouts`
+
+Optional:
+
+- `read` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
 
 
 <a id="nestedatt--records"></a>
@@ -80,12 +92,12 @@ Optional:
 
 Read-Only:
 
-- `content` (String)
-- `domain` (String)
-- `id` (String)
-- `name` (String)
-- `prio` (Number)
-- `record_type` (String)
-- `ttl` (Number)
+- `content` (String) Content of the Record
+- `domain` (String) Domain of the Record
+- `id` (String) ID of the Record
+- `name` (String) Name of the Record
+- `prio` (Number) Priority of the Record
+- `record_type` (String) Type of the Record
+- `ttl` (Number) TTL of the Record
 
 
