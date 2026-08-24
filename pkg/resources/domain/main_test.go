@@ -1,10 +1,12 @@
 package domain_test
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/testutils"
 )
@@ -84,9 +86,13 @@ func TestDomain(t *testing.T) {
 				ImportStateVerify: true,
 			},
 
-			// Import domain record (only the ID is known; Read() locates the parent domain)
+			// Import domain record (identifier is "<domain_id>@<record_id>")
 			{
-				ResourceName:      mx,
+				ResourceName: mx,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs := s.RootModule().Resources[mx].Primary
+					return fmt.Sprintf("%s@%s", rs.Attributes["domain"], rs.ID), nil
+				},
 				ImportState:       true,
 				ImportStateVerify: true,
 			},

@@ -71,11 +71,6 @@ func (r *Resource) Schema(
 				MarkdownDescription: "❗ The DNS domain name.",
 				Required:            true,
 				PlanModifiers: []planmodifier.String{
-					// Suppress diffs caused by punycode/unicode inconsistency: the
-					// API always returns the Unicode form of a domain name, so a
-					// config using ACE/punycode (e.g. xn--n3h.example) would
-					// otherwise produce a perpetual diff.
-					domainNameUnicodePlanModifier{},
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
@@ -124,9 +119,11 @@ func (r *Resource) Create(
 		return
 	}
 
-	// Keep the user's input as-is for the create call (the API accepts punycode
-	// in the UnicodeName field). Normalize to unicode only for the post-create
-	// lookup, because the API always returns unicode names in listings.
+	// Keep the user's input as-is: the API accepts punycode in the
+	// UnicodeName field, and the resulting state must stay byte-identical to
+	// what was configured (Terraform requires this for a Required
+	// attribute). Normalize to unicode only for the post-create lookup,
+	// because the API always returns unicode names in listings.
 	inputName := plan.Name.ValueString()
 
 	op, err := client.CreateDNSDomain(ctx, exoscale.CreateDNSDomainRequest{UnicodeName: inputName})
@@ -153,7 +150,6 @@ func (r *Resource) Create(
 	}
 
 	plan.ID = types.StringValue(domain.ID.String())
-	plan.Name = types.StringValue(domain.UnicodeName)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
@@ -200,7 +196,14 @@ func (r *Resource) Read(
 		return
 	}
 
-	state.Name = types.StringValue(domain.UnicodeName)
+	// Only overwrite "name" when it's genuinely a different domain (this also
+	// covers import, where there is no prior value at all): the API always
+	// returns the Unicode form, so blindly copying it here would make a
+	// punycode-configured value's state diverge from its config on every
+	// refresh, forcing a perpetual replacement .
+	if domainNameToUnicode(state.Name.ValueString()) != domain.UnicodeName {
+		state.Name = types.StringValue(domain.UnicodeName)
+	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	exoscale "github.com/exoscale/egoscale/v3"
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
@@ -16,7 +17,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
@@ -105,12 +105,12 @@ func (r *ResourceRecord) Schema(
 				},
 			},
 			"name": schema.StringAttribute{
-				Description:         "The record name, Leave blank to create a root record (similar to using `@` in a DNS zone file).",
+				Description:         "The record name, Leave blank to create a root record (similar to using '@' in a DNS zone file).",
 				MarkdownDescription: "The record name, Leave blank (`\"\"`) to create a root record (similar to using `@` in a DNS zone file).",
 				Required:            true,
 			},
 			"content": schema.StringAttribute{
-				Description:         "The record value. Format follows specific record type. For example SRV record format would be `<weight> <port> <target>`",
+				Description:         "The record value. Format follows specific record type. For example SRV record format would be '<weight> <port> <target>'",
 				MarkdownDescription: "The record value. Format follows specific record type. For example SRV record format would be `<weight> <port> <target>`",
 				Required:            true,
 			},
@@ -120,7 +120,7 @@ func (r *ResourceRecord) Schema(
 				Computed:            true,
 			},
 			"ttl": schema.Int64Attribute{
-				Description:         "The record TTL (seconds; minimum `0`; default: `3600`).",
+				Description:         "The record TTL (seconds; minimum '0'; default: '3600').",
 				MarkdownDescription: "The record TTL (seconds; minimum `0`; default: `3600`).",
 				Optional:            true,
 				Computed:            true,
@@ -129,7 +129,7 @@ func (r *ResourceRecord) Schema(
 				},
 			},
 			"prio": schema.Int64Attribute{
-				Description:         "The record priority (for types that support it; minimum `0`).",
+				Description:         "The record priority (for types that support it; minimum '0').",
 				MarkdownDescription: "The record priority (for types that support it; minimum `0`).",
 				Optional:            true,
 				Computed:            true,
@@ -138,7 +138,7 @@ func (r *ResourceRecord) Schema(
 				},
 			},
 			"hostname": schema.StringAttribute{
-				Description:         "The record *Fully Qualified Domain Name* (FQDN). Useful for aliasing `A`/`AAAA` records with `CNAME`.",
+				Description:         "The record *Fully Qualified Domain Name* (FQDN). Useful for aliasing 'A'/'AAAA' records with 'CNAME'.",
 				MarkdownDescription: "The record *Fully Qualified Domain Name* (FQDN). Useful for aliasing `A`/`AAAA` records with `CNAME`.",
 				Computed:            true,
 			},
@@ -198,10 +198,10 @@ func (r *ResourceRecord) Create(
 		Content: plan.Content.ValueString(),
 		Type:    exoscale.CreateDNSDomainRecordRequestType(plan.RecordType.ValueString()),
 	}
-	if !plan.Ttl.IsUnknown() && !plan.Ttl.IsNull() {
+	if !plan.Ttl.IsUnknown() {
 		createReq.Ttl = plan.Ttl.ValueInt64()
 	}
-	if !plan.Prio.IsUnknown() && !plan.Prio.IsNull() {
+	if !plan.Prio.IsUnknown() {
 		createReq.Priority = plan.Prio.ValueInt64()
 	}
 
@@ -232,14 +232,17 @@ func (r *ResourceRecord) Create(
 	state := recordToModel(*record, domain.UnicodeName, plan.Timeouts)
 	// "domain", "name", "record_type" and "content" are Required
 	// (non-Computed) attributes: the applied state must match the planned
-	// value exactly, or Terraform reports "Provider produced inconsistent
-	// result after apply". Keep the values as planned; Read() will self-heal
-	// them from the remote canonical form on the next refresh (e.g. TXT
-	// content gets quoted by the API).
+	// value exactly.
 	state.Domain = plan.Domain
 	state.Name = plan.Name
 	state.RecordType = plan.RecordType
 	state.Content = plan.Content
+	if !plan.Ttl.IsUnknown() {
+		state.Ttl = plan.Ttl
+	}
+	if !plan.Prio.IsUnknown() {
+		state.Prio = plan.Prio
+	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
@@ -276,48 +279,6 @@ func (r *ResourceRecord) Read(
 		return
 	}
 
-	if state.Domain.ValueString() == "" {
-		// Import mode: we don't yet know which domain this record belongs to,
-		// so scan every domain's records to locate a match.
-		tflog.Debug(ctx, "import mode detected, trying to locate the record domain", map[string]any{
-			"id": state.ID.ValueString(),
-		})
-
-		domains, err := client.ListDNSDomains(ctx)
-		if err != nil {
-			resp.Diagnostics.AddError("API returned error when listing domains", err.Error())
-			return
-		}
-
-		for _, d := range domains.DNSDomains {
-			records, err := client.ListDNSDomainRecords(ctx, d.ID)
-			if err != nil {
-				resp.Diagnostics.AddError("API returned error when listing domain records", err.Error())
-				return
-			}
-
-			record, err := records.FindDNSDomainRecord(state.ID.ValueString())
-			if err != nil {
-				if errors.Is(err, exoscale.ErrNotFound) {
-					continue
-				}
-				resp.Diagnostics.AddError("API returned error when locating domain record", err.Error())
-				return
-			}
-
-			newState := recordToModel(record, d.UnicodeName, state.Timeouts)
-			newState.Domain = types.StringValue(d.ID.String())
-			resp.Diagnostics.Append(resp.State.Set(ctx, &newState)...)
-			return
-		}
-
-		resp.Diagnostics.AddError(
-			"domain record not found",
-			fmt.Sprintf("no domain contains a record with ID %q", state.ID.ValueString()),
-		)
-		return
-	}
-
 	domainID, err := exoscale.ParseUUID(state.Domain.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("unable to parse parent domain ID", err.Error())
@@ -343,14 +304,16 @@ func (r *ResourceRecord) Read(
 	newState := recordToModel(*record, domain.UnicodeName, state.Timeouts)
 	newState.Domain = state.Domain
 
-	// If the content we last stored as "normalized" no longer matches the
-	// remote value, the remote content changed out-of-band: pick it up.
-	// Otherwise keep the raw content we already have in state, since the API
-	// may return a normalized form (e.g. quoted TXT) that would otherwise
-	// look like a perpetual diff against the user's config.
-	content := state.Content.ValueString()
-	if v := state.ContentNormalized.ValueString(); v != "" && v != record.Content {
-		content = record.Content
+	// Default to the remote content (this also covers a fresh import, where
+	// state.Content/state.ContentNormalized are still null). If the content
+	// we last stored as "normalized" still matches the remote value, the
+	// remote hasn't changed out-of-band: keep the raw content we already
+	// have in state instead, since the API may return a normalized form
+	// (e.g. quoted TXT) that would otherwise look like a perpetual diff
+	// against the user's config.
+	content := record.Content
+	if !state.ContentNormalized.IsNull() && state.ContentNormalized.ValueString() == record.Content {
+		content = state.Content.ValueString()
 	}
 	newState.Content = types.StringValue(content)
 
@@ -394,10 +357,10 @@ func (r *ResourceRecord) Update(ctx context.Context, req resource.UpdateRequest,
 		Name:    plan.Name.ValueString(),
 		Content: plan.Content.ValueString(),
 	}
-	if !plan.Ttl.IsUnknown() && !plan.Ttl.IsNull() {
+	if !plan.Ttl.IsUnknown() {
 		updateReq.Ttl = plan.Ttl.ValueInt64()
 	}
-	if !plan.Prio.IsUnknown() && !plan.Prio.IsNull() {
+	if !plan.Prio.IsUnknown() {
 		updateReq.Priority = plan.Prio.ValueInt64()
 	}
 
@@ -428,6 +391,12 @@ func (r *ResourceRecord) Update(ctx context.Context, req resource.UpdateRequest,
 	state.Name = plan.Name
 	state.RecordType = plan.RecordType
 	state.Content = plan.Content
+	if !plan.Ttl.IsUnknown() {
+		state.Ttl = plan.Ttl
+	}
+	if !plan.Prio.IsUnknown() {
+		state.Prio = plan.Prio
+	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
@@ -490,7 +459,17 @@ func (r *ResourceRecord) ImportState(
 	req resource.ImportStateRequest,
 	resp *resource.ImportStateResponse,
 ) {
-	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+	idParts := strings.Split(req.ID, "@")
+	if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
+		resp.Diagnostics.AddError(
+			"unexpected import identifier",
+			fmt.Sprintf("Expected import identifier with format: domain_id@record_id. Got: %q", req.ID),
+		)
+		return
+	}
+
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("domain"), idParts[0])...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), idParts[1])...)
 }
 
 // recordToModel converts a DNSDomainRecord (and its parent domain's unicode

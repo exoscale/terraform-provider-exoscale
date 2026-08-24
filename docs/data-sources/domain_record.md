@@ -73,10 +73,10 @@ directory for complete configuration examples.
 
 Optional:
 
-- `content_regex` (String) A regular expression to match the record content.
-- `id` (String) The record ID to match.
-- `name` (String) The domain record name to match.
-- `record_type` (String) The record type to match.
+- `content_regex` (String) A regular expression to match the record content (conflicts with `id`, `name` and `record_type`).
+- `id` (String) The record ID to match (conflicts with `name`, `record_type` and `content_regex`).
+- `name` (String) The domain record name to match (conflicts with `id` and `content_regex`; can be combined with `record_type`).
+- `record_type` (String) The record type to match (conflicts with `id` and `content_regex`; can be combined with `name`).
 
 
 <a id="nestedblock--timeouts"></a>

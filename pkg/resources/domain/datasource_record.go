@@ -9,8 +9,11 @@ import (
 
 	exoscale "github.com/exoscale/egoscale/v3"
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
@@ -68,43 +71,53 @@ func (d *DataSourceRecord) Schema(ctx context.Context, req datasource.SchemaRequ
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				MarkdownDescription: "The ID of this resource.",
+				Description:         "The ID of this resource.",
 				Computed:            true,
 			},
 			"domain": schema.StringAttribute{
 				MarkdownDescription: "The [exoscale_domain](./domain.md) name to match.",
+				Description:         "The exoscale name to match.",
 				Required:            true,
 			},
 			"records": schema.ListNestedAttribute{
 				MarkdownDescription: "The list of matching records. Structure is documented below.",
+				Description:         "The list of matching records. Structure is documented below.",
 				Computed:            true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"id": schema.StringAttribute{
 							MarkdownDescription: "ID of the Record",
+							Description:         "ID of the Record",
 							Computed:            true,
 						},
 						"domain": schema.StringAttribute{
 							MarkdownDescription: "Domain of the Record",
+							Description:         "Domain of the Record",
 							Computed:            true,
 						},
 						"name": schema.StringAttribute{
 							MarkdownDescription: "Name of the Record",
+							Description:         "Name of the Record",
 							Computed:            true,
 						},
 						"content": schema.StringAttribute{
 							MarkdownDescription: "Content of the Record",
+							Description:         "Content of the Record",
 							Computed:            true,
 						},
 						"record_type": schema.StringAttribute{
 							MarkdownDescription: "Type of the Record",
+							Description:         "Type of the Record",
 							Computed:            true,
 						},
 						"ttl": schema.Int64Attribute{
 							MarkdownDescription: "TTL of the Record",
+							Description:         "TTL of the Record",
 							Computed:            true,
 						},
 						"prio": schema.Int64Attribute{
 							MarkdownDescription: "Priority of the Record",
+							Description:         "Priority of the Record",
 							Computed:            true,
 						},
 					},
@@ -114,22 +127,53 @@ func (d *DataSourceRecord) Schema(ctx context.Context, req datasource.SchemaRequ
 		Blocks: map[string]schema.Block{
 			"filter": schema.SingleNestedBlock{
 				MarkdownDescription: "Filter to apply when looking up domain records.",
+				Description:         "Filter to apply when looking up domain records.",
 				Attributes: map[string]schema.Attribute{
 					"id": schema.StringAttribute{
-						MarkdownDescription: "The record ID to match.",
+						MarkdownDescription: "The record ID to match (conflicts with `name`, `record_type` and `content_regex`).",
+						Description:         "The record ID to match (conflicts with 'name', 'record_type' and 'content_regex').",
 						Optional:            true,
+						Validators: []validator.String{
+							stringvalidator.ConflictsWith(path.Expressions{
+								path.MatchRelative().AtParent().AtName("name"),
+								path.MatchRelative().AtParent().AtName("record_type"),
+								path.MatchRelative().AtParent().AtName("content_regex"),
+							}...),
+						},
 					},
 					"name": schema.StringAttribute{
-						MarkdownDescription: "The domain record name to match.",
+						MarkdownDescription: "The domain record name to match (conflicts with `id` and `content_regex`; can be combined with `record_type`).",
+						Description:         "The domain record name to match (conflicts with 'id' and 'content_regex'; can be combined with 'record_type').",
 						Optional:            true,
+						Validators: []validator.String{
+							stringvalidator.ConflictsWith(path.Expressions{
+								path.MatchRelative().AtParent().AtName("id"),
+								path.MatchRelative().AtParent().AtName("content_regex"),
+							}...),
+						},
 					},
 					"record_type": schema.StringAttribute{
-						MarkdownDescription: "The record type to match.",
+						MarkdownDescription: "The record type to match (conflicts with `id` and `content_regex`; can be combined with `name`).",
+						Description:         "The record type to match (conflicts with 'id' and 'content_regex'; can be combined with 'name').",
 						Optional:            true,
+						Validators: []validator.String{
+							stringvalidator.ConflictsWith(path.Expressions{
+								path.MatchRelative().AtParent().AtName("id"),
+								path.MatchRelative().AtParent().AtName("content_regex"),
+							}...),
+						},
 					},
 					"content_regex": schema.StringAttribute{
-						MarkdownDescription: "A regular expression to match the record content.",
+						MarkdownDescription: "A regular expression to match the record content (conflicts with `id`, `name` and `record_type`).",
+						Description:         "A regular expression to match the record content (conflicts with 'id', 'name' and 'record_type').",
 						Optional:            true,
+						Validators: []validator.String{
+							stringvalidator.ConflictsWith(path.Expressions{
+								path.MatchRelative().AtParent().AtName("id"),
+								path.MatchRelative().AtParent().AtName("name"),
+								path.MatchRelative().AtParent().AtName("record_type"),
+							}...),
+						},
 					},
 				},
 			},
@@ -187,25 +231,6 @@ func (d *DataSourceRecord) Read(ctx context.Context, req datasource.ReadRequest,
 	rtype := state.Filter.RecordType.ValueString()
 	cregex := state.Filter.ContentRegex.ValueString()
 
-	set := 0
-	for _, v := range []string{id, name, rtype, cregex} {
-		if v != "" {
-			set++
-		}
-	}
-	if set == 0 {
-		resp.Diagnostics.AddError("filter not valid", "exactly one of id, name, record_type or content_regex must be set")
-		return
-	}
-	if id != "" && set > 1 {
-		resp.Diagnostics.AddError("filter not valid", "id cannot be combined with other filter criteria")
-		return
-	}
-	if cregex != "" && (name != "" || rtype != "") {
-		resp.Diagnostics.AddError("filter not valid", "content_regex cannot be combined with name or record_type")
-		return
-	}
-
 	var records []exoscale.DNSDomainRecord
 
 	switch {
@@ -239,7 +264,7 @@ func (d *DataSourceRecord) Read(ctx context.Context, req datasource.ReadRequest,
 			}
 		}
 
-	default: // name and/or record_type
+	case name != "" || rtype != "":
 		list, err := client.ListDNSDomainRecords(ctx, domain.ID)
 		if err != nil {
 			resp.Diagnostics.AddError("API returned error when listing domain records", err.Error())
@@ -254,6 +279,10 @@ func (d *DataSourceRecord) Read(ctx context.Context, req datasource.ReadRequest,
 			}
 			records = append(records, record)
 		}
+
+	default:
+		resp.Diagnostics.AddError("filter not valid", "at least one of id, name, record_type or content_regex must be set")
+		return
 	}
 
 	if len(records) == 0 {

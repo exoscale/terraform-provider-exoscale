@@ -109,7 +109,6 @@ func (d *DataSource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 	}
 
 	state.ID = types.StringValue(domain.ID.String())
-	state.Name = types.StringValue(domain.UnicodeName)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }

@@ -37,7 +37,8 @@ data "exoscale_domain_record" "by_id" {
 }
 
 data "exoscale_domain_record" "by_regex" {
-  domain = exoscale_domain.test_domain.name
+  domain     = exoscale_domain.test_domain.name
+  depends_on = [exoscale_domain_record.test_mx]
   filter {
     content_regex = "mta.*"
   }
