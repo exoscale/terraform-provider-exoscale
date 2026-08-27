@@ -13,7 +13,7 @@ FEATURES:
 BUG FIXES:
 
 - `compute_instance`: `ipv6` attribute is not ignored on instance update
-- provider: honour `EXOSCALE_API_ENDPOINT` for v2-backed resources and data sources
+- provider: honour `EXOSCALE_API_ENDPOINT` for v2-backed resources and data sources #576
 
 BREAKING CHANGES:
 
