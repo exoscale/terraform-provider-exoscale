@@ -4,7 +4,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.28.1
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.42
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.97.3
-	github.com/exoscale/egoscale v0.102.5-0.20260827090256-d3604f2613d3
+	github.com/exoscale/egoscale v0.102.5
 	github.com/exoscale/egoscale/v3 v3.1.42
 	github.com/google/go-cmp v0.7.0
 	github.com/hashicorp/go-cleanhttp v0.5.2
