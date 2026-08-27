@@ -137,11 +137,6 @@ func CreateClient(baseConfig *providerConfig.BaseConfig) (*exov2.Client, error) 
 // already do for the v3 one: honour EXOSCALE_API_ENDPOINT. Without it a single
 // apply splits across two API hosts, since the v2 client falls back to
 // https://{environment}-{zone}.exoscale.com whatever the endpoint says.
-//
-// Note that egoscale's own per-request interceptor (setEndpointFromContext)
-// still rewrites the host from the zone context unless the configured host is
-// an IP literal, so a hostname endpoint needs the matching egoscale change to
-// be honoured end to end.
 func v2EndpointOpts() []exov2.ClientOpt {
 	ep := os.Getenv("EXOSCALE_API_ENDPOINT")
 	if ep == "" {

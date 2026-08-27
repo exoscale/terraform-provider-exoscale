@@ -265,8 +265,8 @@ github.com/davecgh/go-spew/spew
 ## explicit; go 1.20
 github.com/deepmap/oapi-codegen/pkg/runtime
 github.com/deepmap/oapi-codegen/pkg/types
-# github.com/exoscale/egoscale v0.102.4
-## explicit; go 1.22
+# github.com/exoscale/egoscale v0.102.5-0.20260827090256-d3604f2613d3
+## explicit; go 1.26
 github.com/exoscale/egoscale/v2
 github.com/exoscale/egoscale/v2/api
 github.com/exoscale/egoscale/v2/oapi
