@@ -4,15 +4,18 @@
 
 IMPROVEMENTS:
 
+- feat: add uri to every dbaas service #567
+- only use security group id for private security group rule #562
 - Migrate Domain resource/datasource to framework #575
 
 FEATURES:
 
-- `sks_cluster`: allows `major.minor` as input value for `version`, resolves to the latest patch version available on the platform
+- `sks_cluster`: allows `major.minor` as input value for `version`, resolves to the latest patch version available on the platform #569
 
 BUG FIXES:
 
-- `compute_instance`: `ipv6` attribute is not ignored on instance update
+- dbaas: prevent context deadline during Crossplane observe #571
+- `compute_instance`: `ipv6` attribute is not ignored on instance update #574
 - provider: honour `EXOSCALE_API_ENDPOINT` for v2-backed resources and data sources #576
 
 BREAKING CHANGES:
@@ -26,8 +29,6 @@ IMPROVEMENTS:
 - Resource compute_instance: clearify the default state value #538
 - Change zone for sks acceptance tests
 - Migrate Private Network resource/datasource to framework #542
-- feat: add uri to every dbass service #567
-- only use security group id for private security group rule #562
 
 BUG FIXES:
 - fix: typo in security group rule import doc #559
