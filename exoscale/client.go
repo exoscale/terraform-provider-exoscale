@@ -61,9 +61,7 @@ func getClient(meta any) *exov2.Client {
 	// V2 client independently from the V1 client because of HTTP middleware
 	// (http.Transport) clashes.
 	// This can be removed once the only API used is V2.
-	clientExoV2, err := exov2.NewClient(
-		config.Key,
-		config.Secret,
+	opts := []exov2.ClientOpt{
 		exov2.ClientOptWithTimeout(config.Timeout),
 		exov2.ClientOptWithHTTPClient(func() *http.Client {
 			rc := retryablehttp.NewClient()
@@ -74,7 +72,10 @@ func getClient(meta any) *exov2.Client {
 			}
 			return hc
 		}()),
-	)
+	}
+	opts = append(opts, v2EndpointOpts()...)
+
+	clientExoV2, err := exov2.NewClient(config.Key, config.Secret, opts...)
 	if err != nil {
 		panic(fmt.Sprintf("unable to initialize Exoscale API V2 client: %v", err))
 	}

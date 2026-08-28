@@ -105,8 +105,8 @@ github.com/deepmap/oapi-codegen v1.16.3 h1:GT9G86SbQtT1r8ZB+4Cybi9VGdu1P5ieNvNdE
 github.com/deepmap/oapi-codegen v1.16.3/go.mod h1:JD6ErqeX0nYnhdciLc61Konj3NBASREMlkHOgHn8WAM=
 github.com/emirpasic/gods v1.18.1 h1:FXtiHYKDGKCW2KzwZKx0iC0PQmdlorYgdFG9jPXJ1Bc=
 github.com/emirpasic/gods v1.18.1/go.mod h1:8tpGGwCnJ5H4r6BWwaV6OrWmMoPhUl5jm/FMNAnJvWQ=
-github.com/exoscale/egoscale v0.102.4 h1:GBKsZMIOzwBfSu+4ZmWka3Ejf2JLiaBDHp4CQUgvp2E=
-github.com/exoscale/egoscale v0.102.4/go.mod h1:ROSmPtle0wvf91iLZb09++N/9BH2Jo9XxIpAEumvocA=
+github.com/exoscale/egoscale v0.102.5 h1:YH5xMi9bjETkO0NQ4dwnQmWsWvfIgrPZQ87jraiw3L0=
+github.com/exoscale/egoscale v0.102.5/go.mod h1:dQew6hG9qVTtMm01z0+K1Y7vl9EKQkxOI2B/ps3qVSI=
 github.com/exoscale/egoscale/v3 v3.1.42 h1:KlFDdm2ga1RdCdKuKlzJxLmgJjWVcDbJxF0t6FDswzw=
 github.com/exoscale/egoscale/v3 v3.1.42/go.mod h1:DUTgeubl5msPAo3SKFed04AxNhyTNOrCTJHZDRYLR10=
 github.com/fatih/color v1.7.0/go.mod h1:Zm6kSWBoL9eyXnKyktHP6abPY2pDugNf5KwzbycvMj4=

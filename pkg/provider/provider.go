@@ -160,9 +160,7 @@ func (p *ExoscaleProvider) Configure(ctx context.Context, req provider.Configure
 		SOSEndpoint: sosEndpoint,
 	}
 
-	clv2, err := exov2.NewClient(
-		baseConfig.Key,
-		baseConfig.Secret,
+	v2opts := []exov2.ClientOpt{
 		exov2.ClientOptWithTimeout(baseConfig.Timeout),
 		exov2.ClientOptWithHTTPClient(func() *http.Client {
 			rc := retryablehttp.NewClient()
@@ -172,7 +170,15 @@ func (p *ExoscaleProvider) Configure(ctx context.Context, req provider.Configure
 				hc.Transport = logging.NewSubsystemLoggingHTTPTransport("exoscale", hc.Transport)
 			}
 			return hc
-		}()))
+		}()),
+	}
+	// Honour EXOSCALE_API_ENDPOINT for the v2 client too, as the v3 one below
+	// already does. Without this a single apply splits across two API hosts.
+	if ep := os.Getenv("EXOSCALE_API_ENDPOINT"); ep != "" {
+		v2opts = append(v2opts, exov2.ClientOptWithAPIEndpoint(ep))
+	}
+
+	clv2, err := exov2.NewClient(baseConfig.Key, baseConfig.Secret, v2opts...)
 	if err != nil {
 		resp.Diagnostics.AddError(err.Error(), "")
 

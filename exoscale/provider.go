@@ -120,9 +120,7 @@ func ConvertTimeout(timeout float64) time.Duration {
 }
 
 func CreateClient(baseConfig *providerConfig.BaseConfig) (*exov2.Client, error) {
-	return exov2.NewClient(
-		baseConfig.Key,
-		baseConfig.Secret,
+	opts := []exov2.ClientOpt{
 		exov2.ClientOptWithTimeout(baseConfig.Timeout),
 		exov2.ClientOptWithHTTPClient(func() *http.Client {
 			rc := retryablehttp.NewClient()
@@ -132,7 +130,24 @@ func CreateClient(baseConfig *providerConfig.BaseConfig) (*exov2.Client, error) 
 				hc.Transport = logging.NewSubsystemLoggingHTTPTransport("exoscale", hc.Transport)
 			}
 			return hc
-		}()))
+		}()),
+	}
+	opts = append(opts, v2EndpointOpts()...)
+
+	return exov2.NewClient(baseConfig.Key, baseConfig.Secret, opts...)
+}
+
+// v2EndpointOpts mirrors, for the egoscale v2 client, what both providers
+// already do for the v3 one: honour EXOSCALE_API_ENDPOINT. Without it a single
+// apply splits across two API hosts, since the v2 client falls back to
+// https://{environment}-{zone}.exoscale.com whatever the endpoint says.
+func v2EndpointOpts() []exov2.ClientOpt {
+	ep := os.Getenv("EXOSCALE_API_ENDPOINT")
+	if ep == "" {
+		return nil
+	}
+
+	return []exov2.ClientOpt{exov2.ClientOptWithAPIEndpoint(ep)}
 }
 
 func ProviderConfigure(_ context.Context, d *schema.ResourceData) (any, diag.Diagnostics) {

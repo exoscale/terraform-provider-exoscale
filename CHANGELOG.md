@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+BUG FIXES:
+
+- provider: honour `EXOSCALE_API_ENDPOINT` for v2-backed resources and data sources #576
+
 ## 0.70.0
 
 IMPROVEMENTS:
