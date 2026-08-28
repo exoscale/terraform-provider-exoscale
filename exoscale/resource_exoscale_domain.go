@@ -77,7 +77,8 @@ func resourceDomain() *schema.Resource {
 		CreateContext: resourceDomainCreate,
 		ReadContext:   resourceDomainRead,
 		DeleteContext: resourceDomainDelete,
-		Exists:        resourceDomainExists,
+		//lint:ignore SA1019 Legacy SDKv2 resource, migrated in v0.71.
+		Exists: resourceDomainExists,
 
 		Importer: &schema.ResourceImporter{
 			StateContext: resourceDomainImport,

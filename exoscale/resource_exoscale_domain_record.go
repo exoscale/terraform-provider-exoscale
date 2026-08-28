@@ -83,7 +83,8 @@ Corresponding data source: [exoscale_domain_record](../data-sources/domain_recor
 		ReadContext:   resourceDomainRecordRead,
 		UpdateContext: resourceDomainRecordUpdate,
 		DeleteContext: resourceDomainRecordDelete,
-		Exists:        resourceDomainRecordExists,
+		//lint:ignore SA1019 Legacy SDKv2 resource, migrated in v0.71.
+		Exists: resourceDomainRecordExists,
 
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
