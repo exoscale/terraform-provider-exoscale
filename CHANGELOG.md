@@ -6,6 +6,10 @@ BUG FIXES:
 
 - provider: honour `EXOSCALE_API_ENDPOINT` for v2-backed resources and data sources #576
 
+DEPENDENCIES:
+
+- Update vulnerable `golang.org/x/*` and `google.golang.org/grpc` dependencies
+
 ## 0.70.0
 
 IMPROVEMENTS:
