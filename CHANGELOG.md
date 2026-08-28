@@ -16,11 +16,20 @@ BUG FIXES:
 
 - dbaas: prevent context deadline during Crossplane observe #571
 - `compute_instance`: `ipv6` attribute is not ignored on instance update #574
-- provider: honour `EXOSCALE_API_ENDPOINT` for v2-backed resources and data sources #576
 
 BREAKING CHANGES:
 
 - `domain`: remove the unused, already-deprecated `token`, `state`, `auto_renew` and `expires_on` attributes, check the [migration guide](docs/guides/migration-of-domain-from-v0_70_x-to-v0_71_x.md) #575
+
+## 0.70.1
+
+BUG FIXES:
+
+- provider: honour `EXOSCALE_API_ENDPOINT` for v2-backed resources and data sources #576
+
+DEPENDENCIES:
+
+- Update vulnerable `golang.org/x/*` and `google.golang.org/grpc` dependencies
 
 ## 0.70.0
 
