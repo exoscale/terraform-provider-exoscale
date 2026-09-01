@@ -35,6 +35,7 @@ var (
 	testAccResourceSKSNodepoolKubeletImageGCMinAgeUpdated              = "5m"
 	testAccResourceSKSNodepoolKubeletImageGCHighThresholdUpdated int64 = 85
 	testAccResourceSKSNodepoolKubeletImageGCLowThresholdUpdated  int64 = 75
+	testAccResourceSKSNodepoolKubeletMaxPods                     int64 = 210
 	testAccResourceSKSNodepoolLabelValue                               = acctest.RandomWithPrefix(testPrefix)
 	testAccResourceSKSNodepoolLabelValueUpdated                        = testAccResourceSKSNodepoolLabelValue + "-updated"
 	testAccResourceSKSNodepoolName                                     = acctest.RandomWithPrefix(testPrefix)
@@ -85,6 +86,7 @@ resource "exoscale_sks_nodepool" "test" {
 	high_threshold = %d
 	low_threshold = %d
   }
+  kubelet_max_pods = %d
 }
 `,
 		testZoneName,
@@ -102,6 +104,7 @@ resource "exoscale_sks_nodepool" "test" {
 		testAccResourceSKSNodepoolKubeletImageGCMinAge,
 		testAccResourceSKSNodepoolKubeletImageGCHighThreshold,
 		testAccResourceSKSNodepoolKubeletImageGCLowThreshold,
+		testAccResourceSKSNodepoolKubeletMaxPods,
 	)
 
 	testAccResourceSKSNodepoolConfigUpdate = fmt.Sprintf(`
@@ -314,6 +317,7 @@ func TestAccResourceSKSNodepool(t *testing.T) {
 						resSKSNodepoolAttrKubeletGC + ".0." + resSKSNodepoolAttrKubeletGCMinAge:        validateString(testAccResourceSKSNodepoolKubeletImageGCMinAge),
 						resSKSNodepoolAttrKubeletGC + ".0." + resSKSNodepoolAttrKubeletGCHighThreshold: validateString(fmt.Sprint(testAccResourceSKSNodepoolKubeletImageGCHighThreshold)),
 						resSKSNodepoolAttrKubeletGC + ".0." + resSKSNodepoolAttrKubeletGCLowThreshold:  validateString(fmt.Sprint(testAccResourceSKSNodepoolKubeletImageGCLowThreshold)),
+						resSKSNodepoolAttrKubeletMaxPods:                                               validateString(fmt.Sprint(testAccResourceSKSNodepoolKubeletMaxPods)),
 						resSKSNodepoolAttrLabels + ".test":                                             validateString(testAccResourceSKSNodepoolLabelValue),
 						resSKSNodepoolAttrName:                                                         validateString(testAccResourceSKSNodepoolName),
 						resSKSNodepoolAttrSize:                                                         validateString(fmt.Sprint(testAccResourceSKSNodepoolSize)),
@@ -370,6 +374,7 @@ func TestAccResourceSKSNodepool(t *testing.T) {
 						resSKSNodepoolAttrKubeletGC + ".0." + resSKSNodepoolAttrKubeletGCMinAge:        validateString(testAccResourceSKSNodepoolKubeletImageGCMinAge),
 						resSKSNodepoolAttrKubeletGC + ".0." + resSKSNodepoolAttrKubeletGCHighThreshold: validateString(fmt.Sprint(testAccResourceSKSNodepoolKubeletImageGCHighThreshold)),
 						resSKSNodepoolAttrKubeletGC + ".0." + resSKSNodepoolAttrKubeletGCLowThreshold:  validateString(fmt.Sprint(testAccResourceSKSNodepoolKubeletImageGCLowThreshold)),
+						resSKSNodepoolAttrKubeletMaxPods:                                               validateString(fmt.Sprint(testAccResourceSKSNodepoolKubeletMaxPods)),
 						resSKSNodepoolAttrLabels + ".test":                                             validateString(testAccResourceSKSNodepoolLabelValueUpdated),
 						resSKSNodepoolAttrName:                                                         validateString(testAccResourceSKSNodepoolNameUpdated),
 						resSKSNodepoolAttrPrivateNetworkIDs + ".#":                                     validateString("1"),
@@ -415,6 +420,7 @@ func TestAccResourceSKSNodepool(t *testing.T) {
 							resSKSNodepoolAttrKubeletGC + ".0." + resSKSNodepoolAttrKubeletGCMinAge:        validateString(testAccResourceSKSNodepoolKubeletImageGCMinAge),
 							resSKSNodepoolAttrKubeletGC + ".0." + resSKSNodepoolAttrKubeletGCHighThreshold: validateString(fmt.Sprint(testAccResourceSKSNodepoolKubeletImageGCHighThreshold)),
 							resSKSNodepoolAttrKubeletGC + ".0." + resSKSNodepoolAttrKubeletGCLowThreshold:  validateString(fmt.Sprint(testAccResourceSKSNodepoolKubeletImageGCLowThreshold)),
+							resSKSNodepoolAttrKubeletMaxPods:                                               validateString(fmt.Sprint(testAccResourceSKSNodepoolKubeletMaxPods)),
 							resSKSNodepoolAttrLabels + ".test":                                             validateString(testAccResourceSKSNodepoolLabelValueUpdated),
 							resSKSNodepoolAttrName:                                                         validateString(testAccResourceSKSNodepoolNameUpdated),
 							resSKSNodepoolAttrPrivateNetworkIDs + ".#":                                     validateString("1"),

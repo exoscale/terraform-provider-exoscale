@@ -1,5 +1,11 @@
 # Changelog
 
+## UNRELEASED
+
+FEATURES:
+
+- `sks_nodepool`: add `kubelet_max_pods` attribute to set the maximum number of pods per node on the underlying instance pool (resource + data sources)
+
 ## 0.71.0
 
 IMPROVEMENTS:

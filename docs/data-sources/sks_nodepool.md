@@ -32,6 +32,7 @@ description: |-
 - `instance_type` (String) The managed compute instances type (`<family>.<size>`, e.g. `standard.medium`; use the [Exoscale CLI](https://github.com/exoscale/cli/) - `exo compute instance-type list` - for the list of available types).
 - `ipv6` (Boolean) Enable IPV6 for the nodepool nodes
 - `kubelet_image_gc` (Block Set) Configuration for this nodepool's kubelet image garbage collector (see [below for nested schema](#nestedblock--kubelet_image_gc))
+- `kubelet_max_pods` (Number) The maximum number of pods per node (default is 110).
 - `labels` (Map of String) A map of key/value labels.
 - `name` (String)
 - `nvidia_mig_profile` (String) The NVIDIA [Multi-Instance GPU (MIG)](https://docs.nvidia.com/datacenter/tesla/mig-user-guide/) profile to enable on the managed GPUs. The GPU family is inferred from `instance_type`: `gpua30.*` accepts `2g.12gb`, `1g.6gb+me`, `1g.6gb`, `2g.12gb+me`, `4g.24gb`; `gpurtx6000pro.*` accepts `1g.24gb-me`, `1g.24gb`, `2g.48gb-me`, `2g.48gb`, `4g.96gb+gfx`, `1g.24gb+me`, `2g.48gb+me.all`, `1g.24gb+gfx`, `1g.24gb+me.all`, `4g.96gb`, `2g.48gb+gfx`.
