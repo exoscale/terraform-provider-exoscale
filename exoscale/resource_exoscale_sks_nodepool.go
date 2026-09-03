@@ -36,6 +36,7 @@ const (
 	resSKSNodepoolAttrKubeletGCMinAge        = "min_age"
 	resSKSNodepoolAttrKubeletGCHighThreshold = "high_threshold"
 	resSKSNodepoolAttrKubeletGCLowThreshold  = "low_threshold"
+	resSKSNodepoolAttrKubeletMaxPods         = "kubelet_max_pods"
 	resSKSNodepoolAttrLabels                 = "labels"
 	resSKSNodepoolAttrID                     = "id"
 	resSKSNodepoolAttrName                   = "name"
@@ -134,6 +135,12 @@ func resourceSKSNodepool() *schema.Resource {
 					},
 				},
 			},
+		},
+		resSKSNodepoolAttrKubeletMaxPods: {
+			Type:        schema.TypeInt,
+			Optional:    true,
+			Computed:    true,
+			Description: "The maximum number of pods per node (default is 110).",
 		},
 		resSKSNodepoolAttrLabels: {
 			Type:        schema.TypeMap,
@@ -355,6 +362,11 @@ func resourceSKSNodepoolCreate(ctx context.Context, d *schema.ResourceData, meta
 		sksNodepoolCreate.KubeletImageGC = sksNodepoolKubeletGc
 	}
 
+	if v, ok := d.GetOk(resSKSNodepoolAttrKubeletMaxPods); ok {
+		i := int64(v.(int))
+		sksNodepoolCreate.KubeletMaxPods = &i
+	}
+
 	if l, ok := d.GetOk(resSKSNodepoolAttrLabels); ok {
 		labels := make(map[string]string)
 		for k, v := range l.(map[string]any) {
@@ -528,6 +540,7 @@ func resourceSKSNodepoolUpdate(ctx context.Context, d *schema.ResourceData, meta
 		DiskSize:           sksNp.DiskSize,
 		InstancePrefix:     sksNp.InstancePrefix,
 		InstanceType:       sksNp.InstanceType,
+		KubeletMaxPods:     sksNp.KubeletMaxPods,
 		Labels:             sksNp.Labels,
 		Name:               sksNp.Name,
 		NvidiaMigProfiles:  sksNp.NvidiaMigProfiles,
@@ -640,6 +653,13 @@ func resourceSKSNodepoolUpdate(ctx context.Context, d *schema.ResourceData, meta
 			sksNodepoolKubeletGc.HighThreshold = sksNodepoolKubeletGcHighThresholdInt64
 		}
 		sksNodepoolUpdate.KubeletImageGC = sksNodepoolKubeletGc
+		updated = true
+	}
+
+	if d.HasChange(resSKSNodepoolAttrKubeletMaxPods) {
+		v, _ := d.GetOk(resSKSNodepoolAttrKubeletMaxPods)
+		i := int64(v.(int))
+		sksNodepoolUpdate.KubeletMaxPods = &i
 		updated = true
 	}
 
@@ -825,6 +845,12 @@ func resourceSKSNodepoolApply(
 			return err
 		}
 
+	}
+
+	if sksNodepool.KubeletMaxPods != nil {
+		if err := d.Set(resSKSNodepoolAttrKubeletMaxPods, int(*sksNodepool.KubeletMaxPods)); err != nil {
+			return err
+		}
 	}
 
 	if err := d.Set(resSKSNodepoolAttrLabels, sksNodepool.Labels); err != nil {

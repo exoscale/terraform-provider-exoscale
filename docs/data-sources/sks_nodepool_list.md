@@ -31,6 +31,7 @@ description: |-
 - `instance_prefix` (String) Match against this string. If you supply a string that begins and ends with a "/" it will be matched as a regex.
 - `instance_type` (String) Match against this string. If you supply a string that begins and ends with a "/" it will be matched as a regex.
 - `ipv6` (Boolean) Match against this bool
+- `kubelet_max_pods` (Number) Match against this int
 - `labels` (Map of String) Match against key/values. Keys are matched exactly, while values may be matched as a regex if you supply a string that begins and ends with "/"
 - `name` (String) Match against this string. If you supply a string that begins and ends with a "/" it will be matched as a regex.
 - `nvidia_mig_profile` (String) Match against this string. If you supply a string that begins and ends with a "/" it will be matched as a regex.
@@ -62,6 +63,7 @@ Read-Only:
 - `instance_type` (String)
 - `ipv6` (Boolean)
 - `kubelet_image_gc` (Set of Object) (see [below for nested schema](#nestedobjatt--nodepools--kubelet_image_gc))
+- `kubelet_max_pods` (Number)
 - `labels` (Map of String)
 - `name` (String)
 - `nvidia_mig_profile` (String)

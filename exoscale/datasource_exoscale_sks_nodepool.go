@@ -72,6 +72,9 @@ func nodepoolToDataMap(nodepool *v3.SKSNodepool) general.TerraformObject {
 	if nodepool.DeployTarget != nil {
 		ret[resSKSNodepoolAttrDeployTargetID] = nodepool.DeployTarget.ID.String()
 	}
+	if nodepool.KubeletMaxPods != nil {
+		ret[resSKSNodepoolAttrKubeletMaxPods] = int(*nodepool.KubeletMaxPods)
+	}
 	if nodepool.InstancePool != nil {
 		ret[resSKSNodepoolAttrInstancePoolID] = nodepool.InstancePool.ID.String()
 	}
