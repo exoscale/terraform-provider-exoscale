@@ -41,7 +41,7 @@ func testResourceClickhouse(t *testing.T) {
 	dataBase := TemplateModelClickhouse{
 		ResourceName:          "test",
 		Name:                  acctest.RandomWithPrefix(testutils.Prefix),
-		Plan:                  "standard-1",
+		Plan:                  "startup-8",
 		Zone:                  testutils.TestZoneName,
 		TerminationProtection: false,
 	}
@@ -106,10 +106,10 @@ func testResourceClickhouse(t *testing.T) {
 			{
 				// Import
 				ResourceName:            fullResourceName,
-				ImportState:               true,
-				ImportStateVerify:         true,
-				ImportStateId:             fmt.Sprintf("%s/%s", dataBase.Name, testutils.TestZoneName),
-				ImportStateVerifyIgnore:   []string{"clickhouse.0.fork_from_service", "clickhouse.0.recovery_backup_name"},
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateId:           fmt.Sprintf("%s/%s", dataBase.Name, testutils.TestZoneName),
+				ImportStateVerifyIgnore: []string{"clickhouse.0.fork_from_service", "clickhouse.0.recovery_backup_name"},
 			},
 		},
 	})
@@ -131,9 +131,9 @@ func TestAccClickhouseService_version(t *testing.T) {
 	data := TemplateModelClickhouse{
 		ResourceName:          "test",
 		Name:                  acctest.RandomWithPrefix(testutils.Prefix),
-		Plan:                  "standard-1",
+		Plan:                  "startup-8",
 		Zone:                  testutils.TestZoneName,
-		Version:               "24.3",
+		Version:               "26.3",
 		TerminationProtection: false,
 	}
 
@@ -151,7 +151,7 @@ func TestAccClickhouseService_version(t *testing.T) {
 			{
 				Config: buf.String(),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(fullResourceName, "clickhouse.0.version", "24.3"),
+					resource.TestCheckResourceAttr(fullResourceName, "clickhouse.0.version", "26.3"),
 				),
 			},
 		},
@@ -167,28 +167,49 @@ func TestAccClickhouseService_settings(t *testing.T) {
 	}
 
 	fullResourceName := "exoscale_database.test"
-	data := TemplateModelClickhouse{
+	dataBase := TemplateModelClickhouse{
 		ResourceName:          "test",
 		Name:                  acctest.RandomWithPrefix(testutils.Prefix),
-		Plan:                  "standard-1",
+		Plan:                  "startup-8",
 		Zone:                  testutils.TestZoneName,
 		TerminationProtection: false,
-		ClickhouseSettings:    strconv.Quote(`{"vector_similarity_index_cache_size": 0.1}`),
 	}
 
+	// Cover every ClickHouse setting: the nested server_settings block and the
+	// top-level tiered_storage_move_factor.
+	dataCreate := dataBase
+	dataCreate.ClickhouseSettings = strconv.Quote(`{"server_settings": {"vector_similarity_index_cache_size": 0.1}, "tiered_storage_move_factor": 0.3}`)
 	buf := &bytes.Buffer{}
-	err = tpl.Execute(buf, &data)
+	err = tpl.Execute(buf, &dataCreate)
 	if err != nil {
 		t.Fatal(err)
 	}
+	configCreate := buf.String()
+
+	dataUpdate := dataBase
+	dataUpdate.ClickhouseSettings = strconv.Quote(`{"server_settings": {"vector_similarity_index_cache_size": 0.2}, "tiered_storage_move_factor": 0.5}`)
+	buf = &bytes.Buffer{}
+	err = tpl.Execute(buf, &dataUpdate)
+	if err != nil {
+		t.Fatal(err)
+	}
+	configUpdate := buf.String()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testutils.AccPreCheck(t) },
-		CheckDestroy:             CheckServiceDestroy("clickhouse", data.Name),
+		CheckDestroy:             CheckServiceDestroy("clickhouse", dataBase.Name),
 		ProtoV6ProviderFactories: testutils.TestAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: buf.String(),
+				// Create with all settings
+				Config: configCreate,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet(fullResourceName, "clickhouse.0.clickhouse_settings"),
+				),
+			},
+			{
+				// Update all settings
+				Config: configUpdate,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet(fullResourceName, "clickhouse.0.clickhouse_settings"),
 				),

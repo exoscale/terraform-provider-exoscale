@@ -35,7 +35,7 @@ func TestAccClickhouseUser_basic(t *testing.T) {
 		ServiceName:  svcName,
 		Username:     acctest.RandomWithPrefix(testutils.TestUsername),
 		Zone:         testutils.TestZoneName,
-		Plan:         "standard-1",
+		Plan:         "startup-8",
 	}
 
 	buf := &bytes.Buffer{}
@@ -82,7 +82,7 @@ func TestAccClickhouseUser_withPassword(t *testing.T) {
 		Username:     acctest.RandomWithPrefix(testutils.TestUsername),
 		Zone:         testutils.TestZoneName,
 		Password:     "MyS3cureP@ssw0rd!",
-		Plan:         "standard-1",
+		Plan:         "startup-8",
 	}
 
 	buf := &bytes.Buffer{}
