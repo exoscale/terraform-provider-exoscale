@@ -243,6 +243,7 @@ func (p *ExoscaleProvider) DataSources(ctx context.Context) []func() datasource.
 		domain.NewDataSource,
 		domain.NewDataSourceRecord,
 		vpc.NewDataSource,
+		vpc.NewDataSourceSubnet,
 	}
 }
 
@@ -278,6 +279,7 @@ func (p *ExoscaleProvider) Resources(ctx context.Context) []func() resource.Reso
 		domain.NewResource,
 		domain.NewResourceRecord,
 		vpc.NewResource,
+		vpc.NewResourceSubnet,
 		template.NewResourceTemplate,
 	}
 }
