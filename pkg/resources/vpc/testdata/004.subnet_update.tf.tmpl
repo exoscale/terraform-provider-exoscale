@@ -1,0 +1,15 @@
+resource "exoscale_vpc" "test_vpc" {
+  zone = "{{ .Zone }}"
+  name = "terraform-provider-test-{{ .ID }}"
+}
+
+resource "exoscale_vpc_subnet" "test_subnet" {
+  zone        = "{{ .Zone }}"
+  vpc_id      = resource.exoscale_vpc.test_vpc.id
+  name        = "terraform-provider-test-subnet-{{ .ID }}-updated"
+  description = "description-test-updated"
+  ipv4_block  = "10.20.0.0/23"
+  labels = {
+    A = "C"
+  }
+}
