@@ -2,6 +2,22 @@ locals {
   zone = "ch-gva-2"
 }
 
+data "exoscale_template" "my_template" {
+  zone = local.zone
+  name = "Linux Ubuntu 22.04 LTS 64-bit"
+}
+
+resource "exoscale_compute_instance" "my_instances" {
+  for_each = toset(["my-instance-1", "my-instance-2"])
+
+  zone = local.zone
+  name = each.key
+
+  template_id = data.exoscale_template.my_template.id
+  type        = "standard.medium"
+  disk_size   = 10
+}
+
 resource "exoscale_vpc" "my_vpc" {
   zone        = local.zone
   name        = "my-vpc"
@@ -22,4 +38,14 @@ resource "exoscale_vpc_subnet" "my_vpc_subnet" {
   labels = {
     environment = "production"
   }
+}
+
+# Attach both instances to the same Subnet using `for_each`.
+resource "exoscale_vpc_subnet_attachment" "my_attachments" {
+  for_each = exoscale_compute_instance.my_instances
+
+  zone        = local.zone
+  instance_id = each.value.id
+  vpc_id      = exoscale_vpc.my_vpc.id
+  subnet_id   = exoscale_vpc_subnet.my_vpc_subnet.id
 }
