@@ -4,6 +4,8 @@ resource "exoscale_database" {{ .ResourceName }} {
   plan = "{{ .Plan }}"
   zone = "{{ .Zone }}"
   termination_protection = false
+
+  clickhouse = {}
 }
 
 resource "exoscale_dbaas_clickhouse_user" {{ .ResourceName }} {

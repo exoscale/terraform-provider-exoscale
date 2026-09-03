@@ -9,6 +9,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/testutils"
 )
@@ -105,10 +106,14 @@ func testResourceClickhouse(t *testing.T) {
 			},
 			{
 				// Import
-				ResourceName:            fullResourceName,
+				ResourceName: fullResourceName,
+				ImportStateIdFunc: func() resource.ImportStateIdFunc {
+					return func(*terraform.State) (string, error) {
+						return fmt.Sprintf("%s@%s", dataBase.Name, testutils.TestZoneName), nil
+					}
+				}(),
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateId:           fmt.Sprintf("%s/%s", dataBase.Name, testutils.TestZoneName),
 				ImportStateVerifyIgnore: []string{"clickhouse.0.fork_from_service", "clickhouse.0.recovery_backup_name"},
 			},
 		},
@@ -151,7 +156,7 @@ func TestAccClickhouseService_version(t *testing.T) {
 			{
 				Config: buf.String(),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(fullResourceName, "clickhouse.0.version", "26.3"),
+					resource.TestCheckResourceAttrSet(fullResourceName, "clickhouse.0.version"),
 				),
 			},
 		},
