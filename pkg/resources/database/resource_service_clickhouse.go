@@ -337,8 +337,9 @@ func (r *ServiceResource) updateClickhouse(ctx context.Context, stateData *Servi
 
 	service := v3.UpdateDBAASServiceClickhouseRequest{}
 
-	if !planData.MaintenanceDOW.Equal(stateData.MaintenanceDOW) && !planData.MaintenanceDOW.IsUnknown() ||
-		!planData.MaintenanceTime.Equal(stateData.MaintenanceTime) && !planData.MaintenanceTime.IsUnknown() {
+	maintenanceDowChanged := !planData.MaintenanceDOW.Equal(stateData.MaintenanceDOW) && !planData.MaintenanceDOW.IsUnknown()
+	maintenanceTimeChanged := !planData.MaintenanceTime.Equal(stateData.MaintenanceTime) && !planData.MaintenanceTime.IsUnknown()
+	if maintenanceDowChanged || maintenanceTimeChanged {
 		service.Maintenance = &v3.UpdateDBAASServiceClickhouseRequestMaintenance{
 			Dow:  v3.UpdateDBAASServiceClickhouseRequestMaintenanceDow(planData.MaintenanceDOW.ValueString()),
 			Time: planData.MaintenanceTime.ValueString(),

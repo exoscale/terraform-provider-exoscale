@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"time"
 
 	exoscale "github.com/exoscale/egoscale/v3"
 	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
@@ -209,37 +208,26 @@ func (data *ClickhouseUserResourceModel) CreateResource(ctx context.Context, cli
 
 	secrets, err := client.CreateDBAASClickhouseUser(ctx, data.Service.ValueString(), createRequest)
 	if err != nil {
-		if !errors.Is(err, exoscale.ErrConflict) {
-			diagnostics.AddError(
-				"Client Error",
-				fmt.Sprintf("Unable to create service user, got error %s", err.Error()),
-			)
-			return
-		}
-		// User already exists: idempotent create, adopt it below.
-	} else {
-		data.Password = basetypes.NewStringValue(secrets.Password)
+		diagnostics.AddError(
+			"Client Error",
+			fmt.Sprintf("Unable to create service user, got error %s", err.Error()),
+		)
+		return
 	}
+	data.Password = basetypes.NewStringValue(secrets.Password)
 
-	// Get the user's UUID from the service. Retry a few times to ride out
-	// eventual consistency between the create and the service listing.
-	for i := 0; i < 5; i++ {
-		svc, err := client.GetDBAASServiceClickhouse(ctx, data.Service.ValueString())
-		if err != nil {
-			diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database service clickhouse, got error: %s", err))
-			return
-		}
-		found := false
-		for _, u := range svc.Users {
+	// Poll the service until the new user shows up in its user list, riding
+	// out eventual consistency between the create and the service listing.
+	if _, err := waitForDBAASServiceReadyForFn(ctx, client.GetDBAASServiceClickhouse, data.Service.ValueString(), func(t *exoscale.DBAASServiceClickhouse) bool {
+		for _, u := range t.Users {
 			if string(u.Username) == data.Username.ValueString() {
-				found = true
-				break
+				return true
 			}
 		}
-		if found {
-			break
-		}
-		time.Sleep(2 * time.Second)
+		return false
+	}); err != nil {
+		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database service clickhouse, got error: %s", err))
+		return
 	}
 
 	// The user uuid used for delete is the ACL user uuid; the service's user
@@ -266,22 +254,7 @@ func (data *ClickhouseUserResourceModel) CreateResource(ctx context.Context, cli
 	}
 	data.Type = basetypes.NewStringValue("clickhouse")
 
-	// On the idempotent (already-exists) path with a configured password,
-	// reset the password so state matches config.
-	if err != nil && !data.Password.IsUnknown() && !data.Password.IsNull() {
-		secrets, err := client.ResetDBAASClickhouseUserPassword(ctx, data.Service.ValueString(), data.Username.ValueString(), exoscale.ResetDBAASClickhouseUserPasswordRequest{
-			Password: exoscale.DBAASUserPassword(data.Password.ValueString()),
-		})
-		if err != nil {
-			diagnostics.AddError("Client Error", fmt.Sprintf("Unable to reset clickhouse user password: %s", err))
-			return
-		}
-		data.Password = basetypes.NewStringValue(secrets.Password)
-	}
-
-	if !data.Roles.IsUnknown() && !data.Roles.IsNull() {
-		// configured; keep config value
-	} else {
+	if data.Roles.IsUnknown() || data.Roles.IsNull() {
 		if err := readClickhouseUserRoles(ctx, data, client, diagnostics); err != nil {
 			return
 		}
