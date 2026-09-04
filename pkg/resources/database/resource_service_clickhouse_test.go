@@ -114,7 +114,7 @@ func testResourceClickhouse(t *testing.T) {
 				}(),
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"clickhouse.0.fork_from_service", "clickhouse.0.recovery_backup_name"},
+				ImportStateVerifyIgnore: []string{"clickhouse.fork_from_service", "clickhouse.recovery_backup_name"},
 			},
 		},
 	})
@@ -156,7 +156,7 @@ func TestAccClickhouseService_version(t *testing.T) {
 			{
 				Config: buf.String(),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrSet(fullResourceName, "clickhouse.0.version"),
+					resource.TestCheckResourceAttrSet(fullResourceName, "clickhouse.version"),
 				),
 			},
 		},
@@ -209,14 +209,14 @@ func TestAccClickhouseService_settings(t *testing.T) {
 				// Create with all settings
 				Config: configCreate,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrSet(fullResourceName, "clickhouse.0.clickhouse_settings"),
+					resource.TestCheckResourceAttrSet(fullResourceName, "clickhouse.clickhouse_settings"),
 				),
 			},
 			{
 				// Update all settings
 				Config: configUpdate,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrSet(fullResourceName, "clickhouse.0.clickhouse_settings"),
+					resource.TestCheckResourceAttrSet(fullResourceName, "clickhouse.clickhouse_settings"),
 				),
 			},
 		},
