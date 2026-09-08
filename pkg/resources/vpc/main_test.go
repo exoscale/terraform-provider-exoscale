@@ -67,3 +67,66 @@ func Test_Resource_VPC(t *testing.T) {
 		},
 	})
 }
+
+func Test_Resource_VPC_Subnet(t *testing.T) {
+	t.Parallel()
+
+	vpcResourceName := "exoscale_vpc.test_vpc"
+	resourceName := "exoscale_vpc_subnet.test_subnet"
+	datasourceByID := "data.exoscale_vpc_subnet.test_subnet_by_id"
+	datasourceByName := "data.exoscale_vpc_subnet.test_subnet_by_name"
+
+	testDataSpec := testutils.TestdataSpec{
+		ID:   time.Now().UnixNano(),
+		Zone: testutils.TestZoneName,
+	}
+
+	tftest.Test(t, tftest.TestCase{
+		PreCheck:                 func() { testutils.AccPreCheck(t) },
+		ProtoV6ProviderFactories: testutils.TestAccProtoV6ProviderFactories,
+		Steps: []tftest.TestStep{
+			// Create VPC, Subnet and data sources (match by id and name)
+			{
+				Config: testutils.ParseTestdataConfig("./testdata/003.subnet_create.tf.tmpl", &testDataSpec),
+				Check: tftest.ComposeAggregateTestCheckFunc(
+					tftest.TestCheckResourceAttr(resourceName, "name", fmt.Sprintf("terraform-provider-test-subnet-%d", testDataSpec.ID)),
+					tftest.TestCheckResourceAttr(resourceName, "description", "description-test"),
+					tftest.TestCheckResourceAttr(resourceName, "ipv4_block", "10.20.0.0/24"),
+					tftest.TestCheckResourceAttr(resourceName, "address_family", "inet4"),
+					tftest.TestCheckResourceAttr(resourceName, "address_space", "private"),
+					tftest.TestCheckResourceAttr(resourceName, "labels.%", "1"),
+					tftest.TestCheckResourceAttr(resourceName, "labels.A", "B"),
+
+					tftest.TestCheckResourceAttrPair(resourceName, "name", datasourceByID, "name"),
+					tftest.TestCheckResourceAttrPair(resourceName, "ipv4_block", datasourceByID, "ipv4_block"),
+					tftest.TestCheckResourceAttrPair(resourceName, "name", datasourceByName, "name"),
+					tftest.TestCheckResourceAttrPair(resourceName, "ipv4_block", datasourceByName, "ipv4_block"),
+				),
+			},
+
+			// Update (without data sources)
+			{
+				Config: testutils.ParseTestdataConfig("./testdata/004.subnet_update.tf.tmpl", &testDataSpec),
+				Check: tftest.ComposeAggregateTestCheckFunc(
+					tftest.TestCheckResourceAttr(resourceName, "name", fmt.Sprintf("terraform-provider-test-subnet-%d-updated", testDataSpec.ID)),
+					tftest.TestCheckResourceAttr(resourceName, "description", "description-test-updated"),
+					tftest.TestCheckResourceAttr(resourceName, "ipv4_block", "10.20.0.0/23"),
+					tftest.TestCheckResourceAttr(resourceName, "labels.%", "1"),
+					tftest.TestCheckResourceAttr(resourceName, "labels.A", "C"),
+				),
+			},
+
+			// Import
+			{
+				ResourceName: resourceName,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					vpcID := s.RootModule().Resources[vpcResourceName].Primary.ID
+					subnetID := s.RootModule().Resources[resourceName].Primary.ID
+					return fmt.Sprintf("%s@%s@%s", vpcID, subnetID, testDataSpec.Zone), nil
+				},
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}

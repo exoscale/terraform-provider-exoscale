@@ -1,0 +1,27 @@
+resource "exoscale_vpc" "test_vpc" {
+  zone = "{{ .Zone }}"
+  name = "terraform-provider-test-{{ .ID }}"
+}
+
+resource "exoscale_vpc_subnet" "test_subnet" {
+  zone        = "{{ .Zone }}"
+  vpc_id      = resource.exoscale_vpc.test_vpc.id
+  name        = "terraform-provider-test-subnet-{{ .ID }}"
+  description = "description-test"
+  ipv4_block  = "10.20.0.0/24"
+  labels = {
+    A = "B"
+  }
+}
+
+data "exoscale_vpc_subnet" "test_subnet_by_id" {
+  zone   = "{{ .Zone }}"
+  vpc_id = resource.exoscale_vpc.test_vpc.id
+  id     = resource.exoscale_vpc_subnet.test_subnet.id
+}
+
+data "exoscale_vpc_subnet" "test_subnet_by_name" {
+  zone   = "{{ .Zone }}"
+  vpc_id = resource.exoscale_vpc.test_vpc.id
+  name   = resource.exoscale_vpc_subnet.test_subnet.name
+}
