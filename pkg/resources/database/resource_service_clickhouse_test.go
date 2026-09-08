@@ -183,7 +183,7 @@ func TestAccClickhouseService_settings(t *testing.T) {
 	// Cover every ClickHouse setting: the nested server_settings block and the
 	// top-level tiered_storage_move_factor.
 	dataCreate := dataBase
-	dataCreate.ClickhouseSettings = strconv.Quote(`{"server_settings": {"vector_similarity_index_cache_size": 0.1}, "tiered_storage_move_factor": 0.3}`)
+	dataCreate.ClickhouseSettings = strconv.Quote(`{"server_settings":{"vector_similarity_index_cache_size":0.1},"tiered_storage_move_factor":0.3}`)
 	buf := &bytes.Buffer{}
 	err = tpl.Execute(buf, &dataCreate)
 	if err != nil {
@@ -192,7 +192,7 @@ func TestAccClickhouseService_settings(t *testing.T) {
 	configCreate := buf.String()
 
 	dataUpdate := dataBase
-	dataUpdate.ClickhouseSettings = strconv.Quote(`{"server_settings": {"vector_similarity_index_cache_size": 0.2}, "tiered_storage_move_factor": 0.5}`)
+	dataUpdate.ClickhouseSettings = strconv.Quote(`{"server_settings":{"vector_similarity_index_cache_size":0.2},"tiered_storage_move_factor":0.5}`)
 	buf = &bytes.Buffer{}
 	err = tpl.Execute(buf, &dataUpdate)
 	if err != nil {

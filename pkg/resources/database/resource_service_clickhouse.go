@@ -92,16 +92,21 @@ func (r *ServiceResource) createClickhouse(ctx context.Context, data *ServiceRes
 		return
 	}
 
-	if data.Clickhouse != nil && !data.Clickhouse.Version.IsUnknown() && !data.Clickhouse.Version.IsNull() {
-		service.Version = data.Clickhouse.Version.ValueString()
-	}
+	if data.Clickhouse != nil {
+		versionSet := !data.Clickhouse.Version.IsUnknown() && !data.Clickhouse.Version.IsNull()
+		if versionSet {
+			service.Version = data.Clickhouse.Version.ValueString()
+		}
 
-	if data.Clickhouse != nil && !data.Clickhouse.ForkFromService.IsUnknown() && !data.Clickhouse.ForkFromService.IsNull() {
-		service.ForkFromService = v3.DBAASServiceName(data.Clickhouse.ForkFromService.ValueString())
-	}
+		forkSet := !data.Clickhouse.ForkFromService.IsUnknown() && !data.Clickhouse.ForkFromService.IsNull()
+		if forkSet {
+			service.ForkFromService = v3.DBAASServiceName(data.Clickhouse.ForkFromService.ValueString())
+		}
 
-	if data.Clickhouse != nil && !data.Clickhouse.RecoveryBackupName.IsUnknown() && !data.Clickhouse.RecoveryBackupName.IsNull() {
-		service.RecoveryBackupName = data.Clickhouse.RecoveryBackupName.ValueString()
+		recoverySet := !data.Clickhouse.RecoveryBackupName.IsUnknown() && !data.Clickhouse.RecoveryBackupName.IsNull()
+		if recoverySet {
+			service.RecoveryBackupName = data.Clickhouse.RecoveryBackupName.ValueString()
+		}
 	}
 
 	if !data.MaintenanceDOW.IsUnknown() && !data.MaintenanceTime.IsUnknown() {
@@ -124,7 +129,8 @@ func (r *ServiceResource) createClickhouse(ctx context.Context, data *ServiceRes
 			service.IPFilter = obj
 		}
 
-		if !data.Clickhouse.ClickhouseSettings.IsUnknown() && !data.Clickhouse.ClickhouseSettings.IsNull() {
+		settingsSet := !data.Clickhouse.ClickhouseSettings.IsUnknown() && !data.Clickhouse.ClickhouseSettings.IsNull()
+		if settingsSet {
 			settingsSchema, err := client.GetDBAASSettingsClickhouse(ctx)
 			if err != nil {
 				diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database settings schema, got error: %s", err))
@@ -307,12 +313,48 @@ func (r *ServiceResource) readClickhouse(ctx context.Context, data *ServiceResou
 		data.Clickhouse.IPFilter = v
 	}
 
-	// Preserve a user-configured settings value: the ClickHouse API returns
-	// the full settings object including server-injected defaults (e.g.
-	// tiered_storage_move_factor), which would otherwise drift against a
-	// minimal user config on every plan. Only fill from the API when unset.
-	if data.Clickhouse.ClickhouseSettings.IsNull() && apiService.ClickhouseSettings != nil {
-		settings, err := json.Marshal(apiService.ClickhouseSettings)
+	// Database settings follow the same partial-management pattern as PG:
+	// - If not set in config, handle as a normal computed field;
+	// - If set in config, only manage the key(s) that were set. This
+	//   prevents drift from server-injected defaults (e.g.
+	//   tiered_storage_move_factor) for keys the user did not specify,
+	//   while still reporting drift on user-specified values.
+	// A null or unknown settings value means the user did not set it in
+	// config (including import, where the model is fresh); the API value
+	// is then populated as a normal computed field.
+	settingsValue := data.Clickhouse.ClickhouseSettings
+	settingsUnset := settingsValue.IsUnknown() || settingsValue.IsNull()
+	if settingsUnset || apiService.ClickhouseSettings == nil {
+		data.Clickhouse.ClickhouseSettings = types.StringNull()
+		if apiService.ClickhouseSettings != nil {
+			settings, err := json.Marshal(apiService.ClickhouseSettings)
+			if err != nil {
+				diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
+				return false
+			}
+			data.Clickhouse.ClickhouseSettings = types.StringValue(string(settings))
+		}
+	} else if data.Clickhouse.ClickhouseSettings.ValueString() != "" {
+		var userSettings map[string]any
+
+		if err := json.Unmarshal([]byte(data.Clickhouse.ClickhouseSettings.ValueString()), &userSettings); err != nil {
+			diagnostics.AddError("Validation error", fmt.Sprintf("unable to unmarshal JSON: %s", err))
+			return false
+		}
+
+		apiSettingsJSON, err := json.Marshal(apiService.ClickhouseSettings)
+		if err != nil {
+			diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
+			return false
+		}
+		var apiSettings map[string]any
+		if err := json.Unmarshal(apiSettingsJSON, &apiSettings); err != nil {
+			diagnostics.AddError("Validation error", fmt.Sprintf("unable to unmarshal JSON: %s", err))
+			return false
+		}
+
+		PartialSettingsPatch(userSettings, apiSettings)
+		settings, err := json.Marshal(userSettings)
 		if err != nil {
 			diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
 			return false

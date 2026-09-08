@@ -341,32 +341,32 @@ func (data *ClickhouseUserResourceModel) ReadResource(ctx context.Context, clien
 	}
 
 	for _, user := range svc.Users {
-		if string(user.Username) == data.Username.ValueString() {
-			// The service user list omits the uuid on some environments;
-			// fall back to the stored value / ACL uuid rather than clearing it.
-			if string(user.Uuid) != "" {
-				data.UserUUID = basetypes.NewStringValue(string(user.Uuid))
-			}
-			data.Type = basetypes.NewStringValue("clickhouse")
+		if string(user.Username) != data.Username.ValueString() {
+			continue
+		}
 
-			if data.UserUUID.IsNull() || data.UserUUID.IsUnknown() {
-				aclConfig, err := client.GetDBAASClickhouseAclConfig(ctx, data.Service.ValueString())
-				if err == nil {
-					for _, aclUser := range aclConfig.Users {
-						if string(aclUser.Username) == data.Username.ValueString() {
-							data.UserUUID = basetypes.NewStringValue(string(aclUser.Uuid))
-							break
-						}
+		// The service user list omits the uuid on some environments;
+		// fall back to the stored value / ACL uuid rather than clearing it.
+		if string(user.Uuid) != "" {
+			data.UserUUID = basetypes.NewStringValue(string(user.Uuid))
+		}
+		data.Type = basetypes.NewStringValue("clickhouse")
+
+		if data.UserUUID.IsNull() || data.UserUUID.IsUnknown() {
+			aclConfig, err := client.GetDBAASClickhouseAclConfig(ctx, data.Service.ValueString())
+			if err == nil {
+				for _, aclUser := range aclConfig.Users {
+					if string(aclUser.Username) == data.Username.ValueString() {
+						data.UserUUID = basetypes.NewStringValue(string(aclUser.Uuid))
+						break
 					}
 				}
 			}
-
-			if err := readClickhouseUserRoles(ctx, data, client, diagnostics); err != nil {
-				return false
-			}
-
-			return false
 		}
+
+		readClickhouseUserRoles(ctx, data, client, diagnostics)
+
+		return false
 	}
 
 	return true

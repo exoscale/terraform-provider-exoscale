@@ -68,6 +68,58 @@ func TestPartialSettingsPatch(t *testing.T) {
 				"key2": 2,
 			},
 		},
+		{
+			// Nested settings: only the sub-keys the user set are managed;
+			// server-injected defaults inside the nested object are dropped.
+			input: testCaseInput{
+				data: map[string]any{
+					"server_settings": map[string]any{
+						"vector_similarity_index_cache_size": 0.1,
+					},
+					"tiered_storage_move_factor": 0.3,
+				},
+				patch: map[string]any{
+					"server_settings": map[string]any{
+						"vector_similarity_index_cache_size": 0.1,
+						"max_memory_usage":                   1024,
+					},
+					"tiered_storage_move_factor": 0.3,
+				},
+			},
+			result: map[string]any{
+				"server_settings": map[string]any{
+					"vector_similarity_index_cache_size": 0.1,
+				},
+				"tiered_storage_move_factor": 0.3,
+			},
+		},
+		{
+			// CLI drift: a value the user set is changed out-of-band (CLI /
+			// console). The live (patched) value is picked up into data so
+			// the plan shows the drift, while server-injected defaults are
+			// still not added.
+			input: testCaseInput{
+				data: map[string]any{
+					"server_settings": map[string]any{
+						"vector_similarity_index_cache_size": 0.1,
+					},
+					"tiered_storage_move_factor": 0.3,
+				},
+				patch: map[string]any{
+					"server_settings": map[string]any{
+						"vector_similarity_index_cache_size": 0.5,
+						"max_memory_usage":                   1024,
+					},
+					"tiered_storage_move_factor": 0.2,
+				},
+			},
+			result: map[string]any{
+				"server_settings": map[string]any{
+					"vector_similarity_index_cache_size": 0.5,
+				},
+				"tiered_storage_move_factor": 0.2,
+			},
+		},
 	}
 
 	for _, c := range cases {
