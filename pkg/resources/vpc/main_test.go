@@ -130,3 +130,47 @@ func Test_Resource_VPC_Subnet(t *testing.T) {
 		},
 	})
 }
+
+func Test_Resource_VPC_Subnet_Attachment(t *testing.T) {
+	t.Parallel()
+
+	instanceResourceName := "exoscale_compute_instance.test_instance"
+	vpcResourceName := "exoscale_vpc.test_vpc"
+	subnetResourceName := "exoscale_vpc_subnet.test_subnet"
+	resourceName := "exoscale_vpc_subnet_attachment.test_attachment"
+
+	testDataSpec := testutils.TestdataSpec{
+		ID:   time.Now().UnixNano(),
+		Zone: testutils.TestZoneName,
+	}
+
+	tftest.Test(t, tftest.TestCase{
+		PreCheck:                 func() { testutils.AccPreCheck(t) },
+		ProtoV6ProviderFactories: testutils.TestAccProtoV6ProviderFactories,
+		Steps: []tftest.TestStep{
+			// Create instance, VPC, Subnet and attachment
+			{
+				Config: testutils.ParseTestdataConfig("./testdata/005.instance_attachment_create.tf.tmpl", &testDataSpec),
+				Check: tftest.ComposeAggregateTestCheckFunc(
+					tftest.TestCheckResourceAttr(resourceName, "ipv4_address", "10.22.0.5"),
+					tftest.TestCheckResourceAttrPair(resourceName, "instance_id", instanceResourceName, "id"),
+					tftest.TestCheckResourceAttrPair(resourceName, "vpc_id", vpcResourceName, "id"),
+					tftest.TestCheckResourceAttrPair(resourceName, "subnet_id", subnetResourceName, "id"),
+				),
+			},
+
+			// Import
+			{
+				ResourceName: resourceName,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					instanceID := s.RootModule().Resources[instanceResourceName].Primary.ID
+					vpcID := s.RootModule().Resources[vpcResourceName].Primary.ID
+					subnetID := s.RootModule().Resources[subnetResourceName].Primary.ID
+					return fmt.Sprintf("%s@%s@%s@%s", instanceID, vpcID, subnetID, testDataSpec.Zone), nil
+				},
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}

@@ -1,0 +1,41 @@
+locals {
+  zone = "{{ .Zone }}"
+}
+
+data "exoscale_template" "ubuntu" {
+  zone = local.zone
+  name = "Linux Ubuntu 22.04 LTS 64-bit"
+}
+
+data "exoscale_security_group" "default" {
+  name = "default"
+}
+
+resource "exoscale_compute_instance" "test_instance" {
+  zone               = local.zone
+  name               = "terraform-provider-test-{{ .ID }}"
+  template_id        = data.exoscale_template.ubuntu.id
+  type               = "standard.tiny"
+  disk_size          = 10
+  security_group_ids = [data.exoscale_security_group.default.id]
+}
+
+resource "exoscale_vpc" "test_vpc" {
+  zone = local.zone
+  name = "terraform-provider-test-{{ .ID }}"
+}
+
+resource "exoscale_vpc_subnet" "test_subnet" {
+  zone       = local.zone
+  vpc_id     = resource.exoscale_vpc.test_vpc.id
+  name       = "terraform-provider-test-subnet-{{ .ID }}"
+  ipv4_block = "10.22.0.0/24"
+}
+
+resource "exoscale_vpc_subnet_attachment" "test_attachment" {
+  zone         = local.zone
+  instance_id  = resource.exoscale_compute_instance.test_instance.id
+  vpc_id       = resource.exoscale_vpc.test_vpc.id
+  subnet_id    = resource.exoscale_vpc_subnet.test_subnet.id
+  ipv4_address = "10.22.0.5"
+}
