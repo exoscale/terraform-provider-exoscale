@@ -131,6 +131,48 @@ func Test_Resource_VPC_Subnet(t *testing.T) {
 	})
 }
 
+func Test_Resource_VPC_Route(t *testing.T) {
+	t.Parallel()
+
+	vpcResourceName := "exoscale_vpc.test_vpc"
+	subnetResourceName := "exoscale_vpc_subnet.test_subnet"
+	resourceName := "exoscale_vpc_route.test_route"
+
+	testDataSpec := testutils.TestdataSpec{
+		ID:   time.Now().UnixNano(),
+		Zone: testutils.TestZoneName,
+	}
+
+	tftest.Test(t, tftest.TestCase{
+		PreCheck:                 func() { testutils.AccPreCheck(t) },
+		ProtoV6ProviderFactories: testutils.TestAccProtoV6ProviderFactories,
+		Steps: []tftest.TestStep{
+			// Create VPC, Subnet and route
+			{
+				Config: testutils.ParseTestdataConfig("./testdata/006.route_create.tf.tmpl", &testDataSpec),
+				Check: tftest.ComposeAggregateTestCheckFunc(
+					tftest.TestCheckResourceAttr(resourceName, "destination", "10.99.0.0/24"),
+					tftest.TestCheckResourceAttr(resourceName, "target", "ip=10.21.0.5"),
+					tftest.TestCheckResourceAttr(resourceName, "description", "test route"),
+				),
+			},
+
+			// Import
+			{
+				ResourceName: resourceName,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					vpcID := s.RootModule().Resources[vpcResourceName].Primary.ID
+					subnetID := s.RootModule().Resources[subnetResourceName].Primary.ID
+					routeID := s.RootModule().Resources[resourceName].Primary.ID
+					return fmt.Sprintf("%s@%s@%s@%s", vpcID, subnetID, routeID, testDataSpec.Zone), nil
+				},
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
 func Test_Resource_VPC_Subnet_Attachment(t *testing.T) {
 	t.Parallel()
 

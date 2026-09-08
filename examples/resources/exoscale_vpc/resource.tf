@@ -40,6 +40,15 @@ resource "exoscale_vpc_subnet" "my_vpc_subnet" {
   }
 }
 
+resource "exoscale_vpc_route" "my_vpc_route" {
+  zone        = local.zone
+  vpc_id      = exoscale_vpc.my_vpc.id
+  subnet_id   = exoscale_vpc_subnet.my_vpc_subnet.id
+  destination = "10.0.9.0/24"
+  target      = "ip=10.0.0.5"
+  description = "route to 10.0.9.0/24 via 10.0.0.5"
+}
+
 # Attach both instances to the same Subnet using `for_each`.
 resource "exoscale_vpc_subnet_attachment" "my_attachments" {
   for_each = exoscale_compute_instance.my_instances

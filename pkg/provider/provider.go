@@ -278,6 +278,7 @@ func (p *ExoscaleProvider) Resources(ctx context.Context) []func() resource.Reso
 		domain.NewResourceRecord,
 		vpc.NewResource,
 		vpc.NewResourceSubnet,
+		vpc.NewResourceRoute,
 		vpc.NewResourceSubnetAttachment,
 	}
 }
