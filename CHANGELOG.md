@@ -5,6 +5,7 @@
 FEATURES:
 
 - `sks_nodepool`: add `kubelet_max_pods` attribute to set the maximum number of pods per node on the underlying instance pool (resource + data sources)
+- networking: add `exoscale_vpc` resource, and `exoscale_vpc` data source
 
 ## 0.71.0
 
@@ -37,6 +38,7 @@ IMPROVEMENTS:
 - Migrate Private Network resource/datasource to framework #542
 
 BUG FIXES:
+
 - fix: typo in security group rule import doc #559
 - dbaas: allows services with minor/patch version #563
 - improve acc test #563

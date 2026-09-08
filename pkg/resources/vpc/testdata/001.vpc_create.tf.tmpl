@@ -1,0 +1,18 @@
+resource "exoscale_vpc" "test_vpc" {
+  zone        = "{{ .Zone }}"
+  name        = "terraform-provider-test-{{ .ID }}"
+  description = "description-test"
+  labels = {
+    A = "B"
+  }
+}
+
+data "exoscale_vpc" "test_vpc_by_id" {
+  zone = "{{ .Zone }}"
+  id   = resource.exoscale_vpc.test_vpc.id
+}
+
+data "exoscale_vpc" "test_vpc_by_name" {
+  zone = "{{ .Zone }}"
+  name = resource.exoscale_vpc.test_vpc.name
+}
