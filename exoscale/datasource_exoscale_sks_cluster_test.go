@@ -18,6 +18,7 @@ var (
 	securityGroupName           = acctest.RandomWithPrefix(testPrefix + "-security-group")
 	nodepool1Name               = acctest.RandomWithPrefix(testPrefix + "-ds-nodepool")
 	nodepool2Name               = acctest.RandomWithPrefix(testPrefix + "-ds-nodepool-2")
+	sksTestCustomer             = acctest.RandomWithPrefix("sks-customer") // run-unique customer label: the label-filter list query only matches this run's clusters
 	testAccSKSDataSourcesConfig = fmt.Sprintf(`
 locals {
   my_zone = %q
@@ -31,7 +32,7 @@ resource "exoscale_sks_cluster" "my_sks_cluster" {
   zone = local.my_zone
   name = %q
   labels = {
-    "customer" = "your-telecom"
+    "customer" = %q
   }
   create_default_security_group = true
 }
@@ -40,7 +41,7 @@ resource "exoscale_sks_cluster" "my_sks_cluster_2" {
   zone = local.my_zone
   name = %q
   labels = {
-    "customer" = "your-telecom"
+    "customer" = %q
   }
 }
 
@@ -97,6 +98,9 @@ resource "exoscale_sks_nodepool" "my_sks_nodepool" {
   zone       = local.my_zone
   cluster_id = exoscale_sks_cluster.my_sks_cluster.id
   name       = %q
+  labels = {
+    "customer" = %q
+  }
 
   instance_type = "standard.medium"
   size          = 3
@@ -114,6 +118,9 @@ resource "exoscale_sks_nodepool" "my_sks_nodepool_2" {
   zone       = local.my_zone
   cluster_id = exoscale_sks_cluster.my_sks_cluster_2.id
   name       = %q
+  labels = {
+    "customer" = %q
+  }
 
   instance_type = "standard.medium"
   size          = 3
@@ -126,7 +133,7 @@ resource "exoscale_sks_nodepool" "my_sks_nodepool_2" {
     resource.exoscale_security_group.my_sks_security_group.id,
   ]
 }
-`, testZoneName, cluster1Name, cluster2Name, affinityGroupName, securityGroupName, nodepool1Name, nodepool2Name)
+`, testZoneName, cluster1Name, sksTestCustomer, cluster2Name, sksTestCustomer, affinityGroupName, securityGroupName, nodepool1Name, sksTestCustomer, nodepool2Name, sksTestCustomer)
 )
 
 func TestAccSKSDataSources(t *testing.T) {
@@ -196,10 +203,10 @@ func TestAccSKSDataSources(t *testing.T) {
 		data %q %q {
 		  zone = %q
 		  labels = {
-		    "customer" = "/.*telecom.*/"
+		    "customer" = %q
+		  }
 		}
-		}
-		`, dsId, dsName, zone),
+		`, dsId, dsName, zone, sksTestCustomer),
 			DataSourceIdentifier: dsId,
 			DataSourceName:       dsName,
 			Attributes: testAttrs{
@@ -231,9 +238,11 @@ func TestAccSKSDataSources(t *testing.T) {
 			Config: fmt.Sprintf(`
 		data %q %q {
 		  zone = %q
-		  name = "/.*-ds-nodepool.*/"
+		  labels = {
+		    "customer" = %q
+		  }
 		}
-		`, dsId, dsName, zone),
+		`, dsId, dsName, zone, sksTestCustomer),
 			DataSourceIdentifier: dsId,
 			DataSourceName:       dsName,
 			Attributes: testAttrs{
