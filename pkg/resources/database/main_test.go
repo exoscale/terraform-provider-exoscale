@@ -13,6 +13,7 @@ import (
 
 	"github.com/exoscale/egoscale/v2/api"
 	"github.com/exoscale/egoscale/v2/oapi"
+	v3 "github.com/exoscale/egoscale/v3"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/testutils"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
@@ -77,6 +78,8 @@ func CheckServiceDestroy(dbType, name string) resource.TestCheckFunc {
 			_, serviceErr = client.GetDbaasServicePgWithResponse(ctx, oapi.DbaasServiceName(name))
 		case "valkey":
 			_, serviceErr = clientV3.GetDBAASServiceValkey(ctxV3, name)
+		case "clickhouse":
+			_, serviceErr = clientV3.GetDBAASServiceClickhouse(ctxV3, name)
 		case "opensearch":
 			_, serviceErr = client.GetDbaasServiceOpensearchWithResponse(ctx, oapi.DbaasServiceName(name))
 		default:
@@ -89,7 +92,7 @@ func CheckServiceDestroy(dbType, name string) resource.TestCheckFunc {
 				return nil
 			}
 			// For V3 API
-			if strings.Contains(serviceErr.Error(), "Not Found: Service does not exist") {
+			if errors.Is(serviceErr, v3.ErrNotFound) {
 				return nil
 			}
 			return serviceErr

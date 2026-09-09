@@ -110,7 +110,7 @@ func (d *DataSourceURI) Schema(
 				Required:            true,
 			},
 			"type": schema.StringAttribute{
-				MarkdownDescription: "The type of the database service (`kafka`, `mysql`, `opensearch`, `pg`, `valkey`, `grafana`).",
+				MarkdownDescription: "The type of the database service (`clickhouse`, `kafka`, `mysql`, `opensearch`, `pg`, `valkey`, `grafana`).",
 				Required:            true,
 				Validators: []validator.String{
 					stringvalidator.OneOf(ServicesList...),
@@ -512,6 +512,47 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 		if err != nil {
 			resp.Diagnostics.AddError("Client Error",
 				fmt.Sprintf("Unable to parse Database Service OpenSearch secret: %s", err),
+			)
+			return
+		}
+
+		params["password"] = creds.Password
+	case "clickhouse":
+		res, err := waitForDBAASService(
+			ctx,
+			client.GetDBAASServiceClickhouse,
+			data.Name.ValueString(),
+			func(s *exoscale.DBAASServiceClickhouse) string { return string(s.State) },
+		)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Client Error",
+				fmt.Sprintf("Unable to read Database Service ClickHouse: %s", err),
+			)
+			return
+		}
+
+		uri = res.URI
+		params = res.URIParams
+		if i, ok := params["user"]; ok {
+			if s, ok := i.(string); ok {
+				user = s
+			}
+		}
+		if user == "" {
+			resp.Diagnostics.AddError(
+				"Client Error",
+				"Database Service ClickHouse user is empty",
+			)
+			return
+		}
+		data.Schema = types.StringValue("clickhouse")
+
+		creds, err := client.RevealDBAASClickhouseUserPassword(ctx, data.Name.ValueString(), user)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Client Error",
+				fmt.Sprintf("Unable to reveal Database Service ClickHouse secret: %s", err),
 			)
 			return
 		}

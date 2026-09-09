@@ -25,6 +25,7 @@ import (
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
@@ -69,6 +70,7 @@ type ServiceResourceModel struct {
 	Kafka      *ResourceKafkaModel      `tfsdk:"kafka"`
 	Opensearch *ResourceOpensearchModel `tfsdk:"opensearch"`
 	Grafana    *ResourceGrafanaModel    `tfsdk:"grafana"`
+	Clickhouse *ResourceClickhouseModel `tfsdk:"clickhouse"`
 
 	Timeouts timeouts.Value `tfsdk:"timeouts"`
 }
@@ -177,7 +179,7 @@ func (r *ServiceResource) Schema(ctx context.Context, req resource.SchemaRequest
 				Default:             booldefault.StaticBool(true),
 			},
 			"type": schema.StringAttribute{
-				MarkdownDescription: "❗ The type of the database service (`kafka`, `mysql`, `opensearch`, `pg`, `valkey`, `grafana`).",
+				MarkdownDescription: "The type of the database service (`clickhouse`, `kafka`, `mysql`, `opensearch`, `pg`, `valkey`, `grafana`).",
 				Required:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -211,6 +213,7 @@ func (r *ServiceResource) Schema(ctx context.Context, req resource.SchemaRequest
 			"opensearch": ResourceOpensearchSchema,
 			"pg":         ResourcePgSchema,
 			"valkey":     ResourceValkeySchema,
+			"clickhouse": ResourceClickhouseSchema,
 		},
 		Blocks: map[string]schema.Block{
 			"timeouts": timeouts.BlockAll(ctx),
@@ -311,6 +314,12 @@ func (r *ServiceResource) ModifyPlan(ctx context.Context, req resource.ModifyPla
 		grafana.IpFilter = emptyIPFilter
 		normalized.Grafana = &grafana
 	}
+	if normalized.Clickhouse != nil && configData.Clickhouse != nil && configData.Clickhouse.IPFilter.IsNull() {
+		resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("clickhouse").AtName("ip_filter"), emptyIPFilter)...)
+		clickhouse := *normalized.Clickhouse
+		clickhouse.IPFilter = emptyIPFilter
+		normalized.Clickhouse = &clickhouse
+	}
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -394,6 +403,11 @@ func (r *ServiceResource) UpgradeState(ctx context.Context) map[int64]resource.S
 							Attributes: ResourceValkeySchema.Attributes,
 						},
 					},
+					"clickhouse": schema.ListNestedBlock{
+						NestedObject: schema.NestedBlockObject{
+							Attributes: ResourceClickhouseSchema.Attributes,
+						},
+					},
 					"timeouts": timeouts.BlockAll(ctx),
 				},
 			},
@@ -425,6 +439,7 @@ func (r *ServiceResource) UpgradeState(ctx context.Context) map[int64]resource.S
 					Kafka                 []ResourceKafkaModel      `tfsdk:"kafka"`
 					Opensearch            []ResourceOpensearchModel `tfsdk:"opensearch"`
 					Grafana               []ResourceGrafanaModel    `tfsdk:"grafana"`
+					Clickhouse            []ResourceClickhouseModel `tfsdk:"clickhouse"`
 					Timeouts              timeouts.Value            `tfsdk:"timeouts"`
 				}{}
 
@@ -469,6 +484,9 @@ func (r *ServiceResource) UpgradeState(ctx context.Context) map[int64]resource.S
 				}
 				if len(priorState.Grafana) > 0 {
 					upgradedStateData.Grafana = &priorState.Grafana[0]
+				}
+				if len(priorState.Clickhouse) > 0 {
+					upgradedStateData.Clickhouse = &priorState.Clickhouse[0]
 				}
 
 				resp.Diagnostics.Append(resp.State.Set(ctx, upgradedStateData)...)
@@ -543,6 +561,8 @@ func (r *ServiceResource) Create(ctx context.Context, req resource.CreateRequest
 		r.createOpensearch(ctx, &data, &resp.Diagnostics)
 	case "grafana":
 		r.createGrafana(ctx, &data, &resp.Diagnostics)
+	case "clickhouse":
+		r.createClickhouse(ctx, &data, &resp.Diagnostics)
 	}
 	if resp.Diagnostics.HasError() {
 		return
@@ -592,6 +612,8 @@ func (r *ServiceResource) Read(ctx context.Context, req resource.ReadRequest, re
 		clearState = r.readOpensearch(ctx, &data, &resp.Diagnostics)
 	case "grafana":
 		clearState = r.readGrafana(ctx, &data, &resp.Diagnostics)
+	case "clickhouse":
+		clearState = r.readClickhouse(ctx, &data, &resp.Diagnostics)
 	}
 	if resp.Diagnostics.HasError() {
 		return
@@ -644,6 +666,8 @@ func (r *ServiceResource) Update(ctx context.Context, req resource.UpdateRequest
 		r.updateOpensearch(ctx, &stateData, &planData, &resp.Diagnostics)
 	case "grafana":
 		r.updateGrafana(ctx, &stateData, &planData, &resp.Diagnostics)
+	case "clickhouse":
+		r.updateClickhouse(ctx, &stateData, &planData, &resp.Diagnostics)
 	}
 	if resp.Diagnostics.HasError() {
 		return
@@ -676,10 +700,31 @@ func (r *ServiceResource) Delete(ctx context.Context, req resource.DeleteRequest
 
 	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(r.env, data.Zone.ValueString()))
 
-	err := r.client.DeleteDatabaseService(ctx, data.Zone.ValueString(), &exoscale.DatabaseService{Name: data.Id.ValueStringPointer()})
-	if err != nil {
-		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete database service, got error: %s", err))
-		return
+	switch data.Type.ValueString() {
+	case "clickhouse":
+		client, err := utils.SwitchClientZone(ctx, r.clientV3, v3.ZoneName(data.Zone.ValueString()))
+		if err != nil {
+			resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to init client, got error: %s", err))
+			return
+		}
+
+		op, err := client.DeleteDBAASServiceClickhouse(ctx, data.Id.ValueString())
+		if err != nil {
+			resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete database service clickhouse, got error: %s", err))
+			return
+		}
+
+		if _, err := client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
+			resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to wait for database service clickhouse deletion, got error: %s", err))
+			return
+		}
+
+	default:
+		err := r.client.DeleteDatabaseService(ctx, data.Zone.ValueString(), &exoscale.DatabaseService{Name: data.Id.ValueStringPointer()})
+		if err != nil {
+			resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete database service, got error: %s", err))
+			return
+		}
 	}
 
 	tflog.Trace(ctx, "resource deleted", map[string]any{

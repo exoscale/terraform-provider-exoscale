@@ -134,14 +134,24 @@ func parseBackupSchedule(v string) (int64, int64, error) {
 }
 
 // PartialSettingsPatch updates all keys in `data` that exist in `patch`.
-// If key from `data` is not present in `patch` then removes the key from `data`.
+// If a key from `data` is not present in `patch` then the key is removed
+// from `data`. Nested map values are patched recursively, so only the keys
+// the user actually set are managed and server-injected defaults are not
+// pulled in.
 func PartialSettingsPatch(data, patch map[string]any) {
-	for key := range data {
-		if v, found := patch[key]; found {
-			data[key] = v
-		} else {
+	for key, dVal := range data {
+		pVal, found := patch[key]
+		if !found {
 			delete(data, key)
+			continue
 		}
+		if dMap, ok := dVal.(map[string]any); ok {
+			if pMap, ok := pVal.(map[string]any); ok {
+				PartialSettingsPatch(dMap, pMap)
+				continue
+			}
+		}
+		data[key] = pVal
 	}
 }
 

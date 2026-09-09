@@ -1,0 +1,32 @@
+resource "exoscale_database" {{ .ResourceName }} {
+  name = "{{ .Name }}"
+  type = "clickhouse"
+  plan = "{{ .Plan }}"
+  zone = "{{ .Zone }}"
+
+  {{- if .MaintenanceDow }}
+  maintenance_dow = "{{ .MaintenanceDow }}"
+  {{- end }}
+
+  {{- if .MaintenanceTime }}
+  maintenance_time = "{{ .MaintenanceTime }}"
+  {{- end }}
+  termination_protection = {{- .TerminationProtection }}
+  clickhouse = {
+    {{- if .IpFilter }}
+    ip_filter = [
+    {{- range $k,$v := .IpFilter }}
+       "{{ $v }}",
+    {{- end }}
+    ]
+    {{- end }}
+
+    {{- if .Version }}
+    version = "{{ .Version }}"
+    {{- end }}
+
+    {{- if .ClickhouseSettings }}
+    clickhouse_settings = {{ .ClickhouseSettings }}
+    {{- end }}
+  }
+}
