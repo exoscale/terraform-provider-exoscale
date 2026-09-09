@@ -298,20 +298,21 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 
 	name := plan.Name.ValueString()
 	description := plan.Description.ValueString()
-	request := exoscale.UpdateVpcRequest{
-		Name:        &name,
-		Description: &description,
-	}
+	labels := exoscale.Labels{}
 	if len(plan.Labels.Elements()) > 0 {
-		labels := exoscale.Labels{}
-
 		dg := plan.Labels.ElementsAs(ctx, &labels, false)
 		if dg.HasError() {
 			resp.Diagnostics.Append(dg...)
 			return
 		}
-
-		request.Labels = labels
+	}
+	request := exoscale.UpdateVpcRequest{
+		Name:        &name,
+		Description: &description,
+		// Labels is always sent (as an empty map when the plan has none) so that
+		// removing/emptying the labels block actually clears them on the API side;
+		// omitting the field entirely is interpreted by the API as "leave unchanged".
+		Labels: labels,
 	}
 
 	if _, err := client.UpdateVpc(ctx, id, request); err != nil {
