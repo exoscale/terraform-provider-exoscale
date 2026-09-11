@@ -1,0 +1,35 @@
+locals {
+  zone = "{{ .Zone }}"
+}
+
+resource "exoscale_sks_cluster" "test" {
+  zone           = local.zone
+  name           = "terraform-provider-test-{{ .ID }}"
+  description    = "description-test"
+  exoscale_ccm   = true
+  metrics_server = false
+  auto_upgrade   = true
+  labels = {
+    test = "acctest"
+  }
+  feature_gates = ["GracefulNodeShutdown"]
+
+  create_default_security_group = true
+
+  timeouts {
+    create = "10m"
+  }
+}
+
+resource "exoscale_sks_nodepool" "test" {
+  zone          = local.zone
+  cluster_id    = exoscale_sks_cluster.test.id
+  name          = "test"
+  instance_type = "standard.small"
+  disk_size     = 20
+  size          = 1
+
+  timeouts {
+    delete = "10m"
+  }
+}
