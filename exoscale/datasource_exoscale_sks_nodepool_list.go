@@ -41,7 +41,7 @@ func generateSKSNodepoolListID(nodepools []*v3.SKSNodepool) string {
 }
 
 func getNodepoolList(ctx context.Context, d *schema.ResourceData, meta any) ([]*v3.SKSNodepool, error) {
-	zone := d.Get(resSKSClusterAttrZone).(string)
+	zone := d.Get(resSKSNodepoolAttrZone).(string)
 
 	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
 	defer cancel()

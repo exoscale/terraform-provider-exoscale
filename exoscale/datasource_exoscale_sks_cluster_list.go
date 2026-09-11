@@ -20,8 +20,33 @@ const (
 	dsSKSClustersListClusters   = "clusters"
 )
 
+// dataSourceSKSClusterListGetElementScheme reproduces the schema that the
+// (now framework-based) `exoscale_sks_cluster` data source used to expose, so
+// the `exoscale_sks_cluster_list` data source keeps behaving identically until
+// it is migrated in turn. See exoscale/sks_cluster_sdkv2.go.
 func dataSourceSKSClusterListGetElementScheme() general.SchemaMap {
-	return dataSourceSKSCluster().Schema
+	ret := &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			resSKSClusterAttrZone: {
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			resSKSClusterAttrName: {
+				Type:         schema.TypeString,
+				Optional:     true,
+				ExactlyOneOf: []string{dsSKSClusterID},
+			},
+			dsSKSClusterID: {
+				Type:         schema.TypeString,
+				Optional:     true,
+				ExactlyOneOf: []string{resSKSClusterAttrName},
+			},
+		},
+	}
+
+	general.AddAttributes(ret, sksClusterResourceSchema())
+
+	return ret.Schema
 }
 
 func dataSourceSKSClusterList() *schema.Resource {

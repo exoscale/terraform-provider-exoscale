@@ -109,7 +109,7 @@ func dataSourceSKSNodepoolRead(ctx context.Context, d *schema.ResourceData, meta
 		"id": resourceSKSNodepoolIDString(d),
 	})
 
-	zone := d.Get(resSKSClusterAttrZone).(string)
+	zone := d.Get(resSKSNodepoolAttrZone).(string)
 
 	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
 	defer cancel()
