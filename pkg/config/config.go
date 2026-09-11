@@ -32,6 +32,7 @@ var Zones = []string{
 	"bg-sof-1",
 	"de-muc-1",
 	"hr-zag-1",
+	"es-mad-1",
 }
 
 // GetClient builds egoscale client from configuration parameters in meta field
