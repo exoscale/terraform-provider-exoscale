@@ -119,6 +119,30 @@ func DataSourceSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
+		AttrErrorReason: {
+			Description: "Error reason (if any) explaining why the Instance Pool is in an error state.",
+			Type:        schema.TypeList,
+			Computed:    true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					AttrErrorReasonCause: {
+						Description: "Error cause.",
+						Type:        schema.TypeString,
+						Computed:    true,
+					},
+					AttrErrorReasonType: {
+						Description: "Error type.",
+						Type:        schema.TypeString,
+						Computed:    true,
+					},
+					AttrErrorReasonJobID: {
+						Description: "Job ID at the origin of error.",
+						Type:        schema.TypeString,
+						Computed:    true,
+					},
+				},
+			},
+		},
 		AttrTemplateID: {
 			Description: "The managed instances [exoscale_template](./template.md) ID.",
 			Type:        schema.TypeString,
@@ -319,6 +343,9 @@ func dsBuildData(pool *v3.InstancePool, zone string) (map[string]any, error) {
 	data[AttrSize] = pool.Size
 	data[AttrMinAvailable] = pool.MinAvailable
 	data[AttrState] = pool.State
+	if er := flattenInstancePoolErrorReason(pool.ErrorReason); er != nil {
+		data[AttrErrorReason] = er
+	}
 	data[AttrTemplateID] = pool.Template.ID
 	data[AttrZone] = zone
 
