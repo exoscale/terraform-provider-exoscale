@@ -240,18 +240,19 @@ func (data PGDatabaseResourceModel) CreateResource(ctx context.Context, client *
 		return
 	}
 
-	svc, err := client.GetDBAASServicePG(ctx, data.Service.ValueString())
-	if err != nil {
-		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read database service pg, got error: %s", err))
-		return
-	}
-
-	for _, db := range svc.Databases {
-		if string(db) == data.DatabaseName.ValueString() {
-			return
+	// The service may take a moment to expose the new database in its
+	// Databases list once the create operation has completed. Poll the
+	// service until the new database appears, or the context times out.
+	if _, err := waitForDBAASServiceReadyForFn(ctx, client.GetDBAASServicePG, data.Service.ValueString(), func(t *v3.DBAASServicePG) bool {
+		for _, db := range t.Databases {
+			if string(db) == data.DatabaseName.ValueString() {
+				return true
+			}
 		}
+		return false
+	}); err != nil {
+		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to find newly created database for the service: %s", err))
 	}
-	diagnostics.AddError("Client Error", "Unable to find newly created database for the service")
 }
 
 // DeleteResource deletes the resource
