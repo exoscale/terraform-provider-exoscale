@@ -56,11 +56,12 @@ directory for complete configuration examples.
 - `instance_prefix` (String) The string used to prefix managed instances name (default: `pool`).
 - `instance_type` (String) The managed compute instances type (`<family>.<size>`, e.g. `standard.medium`; use the [Exoscale CLI](https://github.com/exoscale/cli/) - `exo compute instance-type list` - for the list of available types).
 - `instances` (Block Set) The list of managed instances. Structure is documented below. (see [below for nested schema](#nestedblock--instances))
-- `ipv6` (Boolean) Enable IPv6 on managed instances (boolean; default: `false`).
+- `ipv6` (Boolean) Enable IPv6 for instances in the pool (boolean; default: false). Conflicts with `private`.
 - `key_pair` (String) The [exoscale_ssh_key](./ssh_key.md) (name) to authorize in the managed instances.
 - `labels` (Map of String) A map of key/value labels.
 - `min_available` (Number) Minimum number of running Instances.
 - `network_ids` (Set of String) A list of [exoscale_private_network](./private_network.md) (IDs).
+- `private` (Boolean) ❗ Whether the instance pool is private (no public IP addresses; default: false). Cannot be changed after creation. Conflicts with `ipv6`.
 - `security_group_ids` (Set of String) A list of [exoscale_security_group](./security_group.md) (IDs).
 - `service_offering` (String, Deprecated) The managed instances type. Please use the `instance_type` argument instead.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
