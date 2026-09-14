@@ -99,7 +99,6 @@ func Provider() *schema.Provider {
 			"exoscale_instance_pool":       instance_pool.Resource(),
 			"exoscale_nlb":                 resourceNLB(),
 			"exoscale_nlb_service":         resourceNLBService(),
-			"exoscale_sks_kubeconfig":      resourceSKSKubeconfig(),
 			"exoscale_ssh_key":             resourceSSHKey(),
 		},
 

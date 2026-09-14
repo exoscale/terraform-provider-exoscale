@@ -24,6 +24,7 @@ IMPROVEMENTS:
 
 - Migrate SKS Cluster resource/datasource from sdk to framework
 - Migrate SKS Node Pool resource/datasource from sdk to framework
+- Migrate SKS Kubeconfig resource from sdk to framework
 
 FEATURES:
 
