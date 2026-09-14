@@ -279,6 +279,7 @@ func (p *ExoscaleProvider) Resources(ctx context.Context) []func() resource.Reso
 		security_group.NewResourceRule,
 		sks_cluster.NewResourceCluster,
 		sks_cluster.NewResourceNodepool,
+		sks_cluster.NewResourceKubeconfig,
 		privatenetwork.NewResource,
 		kms.NewResourceKMSKey,
 		domain.NewResource,
