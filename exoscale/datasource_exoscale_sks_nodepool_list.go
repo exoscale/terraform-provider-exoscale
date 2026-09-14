@@ -20,8 +20,37 @@ const (
 	dsSKSNodepoolsListAttributeIdentifier = "nodepools"
 )
 
+// dataSourceSKSNodepoolListGetElementScheme reproduces the schema that the
+// (now framework-based) `exoscale_sks_nodepool` data source used to expose, so
+// the `exoscale_sks_nodepool_list` data source keeps behaving identically until
+// it is migrated in turn. See exoscale/sks_nodepool_sdkv2.go.
 func dataSourceSKSNodepoolListGetElementScheme() general.SchemaMap {
-	return dataSourceSKSNodepool().Schema
+	ret := &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			resSKSNodepoolAttrZone: {
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			dsSKSNodepoolID: {
+				Type:         schema.TypeString,
+				Optional:     true,
+				ExactlyOneOf: []string{resSKSNodepoolAttrName},
+			},
+			resSKSNodepoolAttrName: {
+				Type:         schema.TypeString,
+				Optional:     true,
+				ExactlyOneOf: []string{dsSKSNodepoolID},
+			},
+			resSKSNodepoolAttrClusterID: {
+				Type:     schema.TypeString,
+				Required: true,
+			},
+		},
+	}
+
+	general.AddAttributes(ret, sksNodepoolResourceSchema())
+
+	return ret.Schema
 }
 
 func dataSourceSKSNodepoolList() *schema.Resource {

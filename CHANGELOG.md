@@ -19,6 +19,15 @@ DEPENDENCIES:
 
 ## 0.72.0
 
+BREAKING CHANGES:
+
+- `sks_nodepool`: `kubelet_image_gc` now uses attribute assignment syntax (`=`) instead of nested block syntax, check the [migration guide](docs/guides/migration-of-sks-nodepool-from-v0_71_x-to-v0_72_x.md)
+
+IMPROVEMENTS:
+
+- Migrate SKS Cluster resource/datasource from sdk to framework
+- Migrate SKS Node Pool resource/datasource from sdk to framework
+
 FEATURES:
 
 - `sks_nodepool`: add `kubelet_max_pods` attribute to set the maximum number of pods per node on the underlying instance pool (resource + data sources)
