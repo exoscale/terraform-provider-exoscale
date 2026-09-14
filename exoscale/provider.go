@@ -89,7 +89,6 @@ func Provider() *schema.Provider {
 			"exoscale_template":              dataSourceTemplate(),
 			dsSKSClustersListIdentifier:      dataSourceSKSClusterList(),
 			dsSKSNodepoolsListIdentifier:     dataSourceSKSNodepoolList(),
-			dsSKSNodepoolIdentifier:          dataSourceSKSNodepool(),
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
@@ -101,7 +100,6 @@ func Provider() *schema.Provider {
 			"exoscale_nlb":                 resourceNLB(),
 			"exoscale_nlb_service":         resourceNLBService(),
 			"exoscale_sks_kubeconfig":      resourceSKSKubeconfig(),
-			"exoscale_sks_nodepool":        resourceSKSNodepool(),
 			"exoscale_ssh_key":             resourceSSHKey(),
 		},
 
