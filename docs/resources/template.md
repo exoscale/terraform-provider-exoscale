@@ -44,7 +44,7 @@ directory for complete configuration examples.
 - `name` (String) The template name.
 - `password_enabled` (Boolean) ❗ Whether to enable password-based login on Compute instances based on this template.
 - `ssh_key_enabled` (Boolean) ❗ Whether to enable SSH key-based login on Compute instances based on this template.
-- `url` (String) ❗ The URL to download the template image (qcow2/raw disk image) from.
+- `url` (String) ❗ The URL to download the template image (qcow2/raw disk image) from. The API only uses this once, at registration time, and never returns it afterwards, so it cannot be recovered on `terraform import`: the imported resource will show this attribute as unset, and the next plan will propose recreating it unless the URL is still valid and reachable and you re-apply with it set to the original value.
 - `zone` (String) ❗ The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.
 
 ### Optional

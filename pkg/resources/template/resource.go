@@ -108,7 +108,7 @@ func (r *ResourceTemplate) Schema(ctx context.Context, req resource.SchemaReques
 				},
 			},
 			"url": schema.StringAttribute{
-				MarkdownDescription: "❗ The URL to download the template image (qcow2/raw disk image) from.",
+				MarkdownDescription: "❗ The URL to download the template image (qcow2/raw disk image) from. The API only uses this once, at registration time, and never returns it afterwards, so it cannot be recovered on `terraform import`: the imported resource will show this attribute as unset, and the next plan will propose recreating it unless the URL is still valid and reachable and you re-apply with it set to the original value.",
 				Required:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -249,7 +249,6 @@ func apply(model *ResourceTemplateModel, tpl *exoscale.Template) {
 	model.ID = types.StringValue(tpl.ID.String())
 	model.Name = types.StringValue(tpl.Name)
 	model.Description = types.StringValue(tpl.Description)
-	model.URL = types.StringValue(tpl.URL)
 	model.Checksum = types.StringValue(tpl.Checksum)
 	model.DefaultUser = types.StringValue(tpl.DefaultUser)
 	model.BootMode = types.StringValue(string(tpl.BootMode))

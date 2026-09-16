@@ -90,6 +90,10 @@ resource "exoscale_template" "test" {
 				},
 				ImportState:       true,
 				ImportStateVerify: true,
+				// url is write-only on the API: RegisterTemplate uses it once to fetch
+				// the image but GetTemplate/ListTemplates never return it, so it can't
+				// be restored on import.
+				ImportStateVerifyIgnore: []string{"url"},
 			},
 		},
 	})
