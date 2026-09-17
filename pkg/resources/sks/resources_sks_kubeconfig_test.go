@@ -1,4 +1,4 @@
-package sks_cluster_test
+package sks_test
 
 import (
 	"errors"
@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	egoscale "github.com/exoscale/egoscale/v3"
-	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/sks_cluster"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/sks"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/testutils"
 )
 
@@ -54,7 +54,7 @@ func TestAccResourceSKSKubeconfig(t *testing.T) {
 						rs := s.RootModule().Resources[r]
 						kubeconfig := rs.Primary.Attributes["kubeconfig"]
 
-						_, certificates, err := sks_cluster.KubeconfigExtractCertificates(kubeconfig)
+						_, certificates, err := sks.KubeconfigExtractCertificates(kubeconfig)
 						a.NoError(err)
 						a.Len(certificates, 1)
 

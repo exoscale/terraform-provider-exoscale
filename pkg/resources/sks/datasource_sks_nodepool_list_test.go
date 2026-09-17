@@ -1,4 +1,4 @@
-package sks_cluster_test
+package sks_test
 
 import (
 	"fmt"
