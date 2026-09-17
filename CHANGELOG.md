@@ -21,13 +21,15 @@ DEPENDENCIES:
 
 BREAKING CHANGES:
 
-- `sks_nodepool`: `kubelet_image_gc` now uses attribute assignment syntax (`=`) instead of nested block syntax, check the [migration guide](docs/guides/migration-of-sks-nodepool-from-v0_71_x-to-v0_72_x.md)
+- `sks_nodepool`: `kubelet_image_gc` now uses attribute assignment syntax (`=`) instead of nested block syntax, check the [migration guide](docs/guides/migration-of-sks-nodepool-from-v0_72_x-to-v0_73_x.md)
+- `sks_cluster_list` / `sks_nodepool_list`: migrated from sdk to framework, generic per-attribute filtering has been removed and a few attributes changed on the returned list items, check the [migration guide](docs/guides/migration-of-sks-list-datasources-from-v0_72_x-to-v0_73_x.md)
 
 IMPROVEMENTS:
 
 - Migrate SKS Cluster resource/datasource from sdk to framework
 - Migrate SKS Node Pool resource/datasource from sdk to framework
 - Migrate SKS Kubeconfig resource from sdk to framework
+- Migrate SKS Cluster List / Node Pool List data sources from sdk to framework
 
 FEATURES:
 
