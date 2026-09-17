@@ -3,12 +3,15 @@
 page_title: "exoscale_sks_cluster_list Data Source - terraform-provider-exoscale"
 subcategory: ""
 description: |-
-  
+  List Exoscale Scalable Kubernetes Service (SKS) https://community.exoscale.com/product/compute/containers/ Clusters in a zone.
+  Corresponding resource: exoscaleskscluster ../resources/sks_cluster.md.
 ---
 
 # exoscale_sks_cluster_list (Data Source)
 
+List Exoscale [Scalable Kubernetes Service (SKS)](https://community.exoscale.com/product/compute/containers/) Clusters in a zone.
 
+Corresponding resource: [exoscale_sks_cluster](../resources/sks_cluster.md).
 
 
 
@@ -21,87 +24,41 @@ description: |-
 
 ### Optional
 
-- `aggregation_ca` (String) Match against this string. If you supply a string that begins and ends with a "/" it will be matched as a regex.
-- `auto_upgrade` (Boolean) Match against this bool
-- `cni` (String) Match against this string. If you supply a string that begins and ends with a "/" it will be matched as a regex.
-- `control_plane_ca` (String) Match against this string. If you supply a string that begins and ends with a "/" it will be matched as a regex.
-- `create_default_security_group` (Boolean) Match against this bool
-- `created_at` (String) Match against this string. If you supply a string that begins and ends with a "/" it will be matched as a regex.
-- `default_security_group_id` (String) Match against this string. If you supply a string that begins and ends with a "/" it will be matched as a regex.
-- `description` (String) Match against this string. If you supply a string that begins and ends with a "/" it will be matched as a regex.
-- `enable_karpenter` (Boolean) Match against this bool
-- `enable_kube_proxy` (Boolean) Match against this bool
-- `endpoint` (String) Match against this string. If you supply a string that begins and ends with a "/" it will be matched as a regex.
-- `exoscale_ccm` (Boolean) Match against this bool
-- `exoscale_csi` (Boolean) Match against this bool
-- `id` (String) Match against this string. If you supply a string that begins and ends with a "/" it will be matched as a regex.
-- `kubelet_ca` (String) Match against this string. If you supply a string that begins and ends with a "/" it will be matched as a regex.
-- `labels` (Map of String) Match against key/values. Keys are matched exactly, while values may be matched as a regex if you supply a string that begins and ends with "/"
-- `metrics_server` (Boolean) Match against this bool
-- `name` (String) Match against this string. If you supply a string that begins and ends with a "/" it will be matched as a regex.
-- `service_level` (String) Match against this string. If you supply a string that begins and ends with a "/" it will be matched as a regex.
-- `state` (String) Match against this string. If you supply a string that begins and ends with a "/" it will be matched as a regex.
-- `version` (String) Match against this string. If you supply a string that begins and ends with a "/" it will be matched as a regex.
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
-- `clusters` (List of Object) (see [below for nested schema](#nestedatt--clusters))
+- `clusters` (Attributes List) The list of [exoscale_sks_cluster](./sks_cluster.md) in the zone. (see [below for nested schema](#nestedatt--clusters))
+- `id` (String) The ID of this resource.
+
+<a id="nestedblock--timeouts"></a>
+### Nested Schema for `timeouts`
+
+Optional:
+
+- `read` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
+
 
 <a id="nestedatt--clusters"></a>
 ### Nested Schema for `clusters`
 
 Read-Only:
 
-- `addons` (Set of String)
-- `aggregation_ca` (String)
-- `audit` (List of Object) (see [below for nested schema](#nestedobjatt--clusters--audit))
-- `auto_upgrade` (Boolean)
-- `cni` (String)
-- `control_plane_ca` (String)
-- `create_default_security_group` (Boolean)
-- `created_at` (String)
-- `default_security_group_id` (String)
-- `description` (String)
-- `enable_karpenter` (Boolean)
-- `enable_kube_proxy` (Boolean)
-- `endpoint` (String)
-- `exoscale_ccm` (Boolean)
-- `exoscale_csi` (Boolean)
-- `feature_gates` (Set of String)
-- `id` (String)
-- `kubelet_ca` (String)
-- `labels` (Map of String)
-- `metrics_server` (Boolean)
-- `name` (String)
-- `nodepools` (Set of String)
-- `oidc` (List of Object) (see [below for nested schema](#nestedobjatt--clusters--oidc))
-- `service_level` (String)
-- `state` (String)
-- `version` (String)
-- `zone` (String)
-
-<a id="nestedobjatt--clusters--audit"></a>
-### Nested Schema for `clusters.audit`
-
-Read-Only:
-
-- `bearer_token` (String)
-- `enabled` (Boolean)
-- `endpoint` (String)
-- `initial_backoff` (String)
-
-
-<a id="nestedobjatt--clusters--oidc"></a>
-### Nested Schema for `clusters.oidc`
-
-Read-Only:
-
-- `client_id` (String)
-- `groups_claim` (String)
-- `groups_prefix` (String)
-- `issuer_url` (String)
-- `required_claim` (Map of String)
-- `username_claim` (String)
-- `username_prefix` (String)
+- `addons` (Set of String) The list of enabled add-ons.
+- `auto_upgrade` (Boolean) Enable automatic upgrading of the control plane version.
+- `cni` (String) The CNI plugin that is to be used.
+- `created_at` (String) The cluster creation date.
+- `default_security_group_id` (String) The ID of the cluster's ad-hoc default security group.
+- `description` (String) A free-form text describing the cluster.
+- `enable_kube_proxy` (Boolean) Indicates whether the Kubernetes network proxy is deployed.
+- `endpoint` (String) The cluster API endpoint.
+- `feature_gates` (Set of String) Feature gates options for the cluster.
+- `id` (String) The SKS cluster ID.
+- `labels` (Map of String) A map of key/value labels.
+- `name` (String) The SKS cluster name.
+- `nodepools` (Set of String) The list of [exoscale_sks_nodepool](./sks_nodepool.md) (IDs) attached to the cluster.
+- `service_level` (String) The service level of the control plane.
+- `state` (String) The cluster state.
+- `version` (String) The version of the control plane.
 
 
