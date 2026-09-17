@@ -49,7 +49,7 @@ Corresponding resource: [exoscale_sks_nodepool](../resources/sks_nodepool.md).
 - `size` (Number) The number of managed instances.
 - `state` (String) The current pool state.
 - `storage_lvm` (Boolean) Whether nodes were created with non-standard partitioning for persistent storage.
-- `taints` (Map of String) A map of key/value Kubernetes [taints](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/) ("<value>:<effect>").
+- `taints` (Map of String) A map of key/value Kubernetes [taints](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/) ('<value>:<effect>").
 - `template_id` (String) The managed instances template ID.
 - `version` (String) The managed instances version.
 
