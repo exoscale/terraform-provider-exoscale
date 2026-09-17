@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+IMPROVEMENTS:
+
+FEATURES:
+
+BUG FIXES:
+
+BREAKING CHANGES:
+
+DEPENDENCIES:
+
+- Bump `google.golang.org/grpc` to v1.83.2, fixing GO-2026-6443 and GO-2026-6348
+
 ## 0.72.0
 
 FEATURES:
