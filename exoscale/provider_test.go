@@ -128,31 +128,6 @@ func checkResourceState(r string, tests ...testResourceStateValidationFunc) reso
 	}
 }
 
-// resFromState returns the state of the resource r from the current global state s.
-func resFromState(s *terraform.State, r string) (*terraform.InstanceState, error) {
-	res, ok := s.RootModule().Resources[r]
-	if !ok {
-		return nil, fmt.Errorf("no resource %q found in state", r)
-	}
-
-	return res.Primary, nil
-}
-
-// attrFromState returns the value of the attribute a for the resource r from the current global state s.
-func attrFromState(s *terraform.State, r, a string) (string, error) {
-	res, err := resFromState(s, r)
-	if err != nil {
-		return "", err
-	}
-
-	v, ok := res.Attributes[a]
-	if !ok {
-		return "", fmt.Errorf("resource %q has no attribute %q", r, a)
-	}
-
-	return v, nil
-}
-
 func TestCheckResourceAttributes(t *testing.T) {
 	t.Parallel()
 
