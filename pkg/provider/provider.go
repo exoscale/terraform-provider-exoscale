@@ -243,6 +243,7 @@ func (p *ExoscaleProvider) DataSources(ctx context.Context) []func() datasource.
 		sks_cluster.NewDataSource,
 		sks_cluster.NewDataSourceClusterList,
 		sks_cluster.NewDataSourceNodepool,
+		sks_cluster.NewDataSourceNodepoolList,
 		privatenetwork.NewDataSource,
 		domain.NewDataSource,
 		domain.NewDataSourceRecord,
