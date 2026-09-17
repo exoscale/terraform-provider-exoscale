@@ -1,4 +1,4 @@
-package nlb_service_test
+package nlb_test
 
 import (
 	"bytes"

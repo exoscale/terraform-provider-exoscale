@@ -1,0 +1,60 @@
+data "exoscale_template" "test_template" {
+  zone = "{{ .Zone }}"
+  name = "Linux Ubuntu 22.04 LTS 64-bit"
+}
+
+resource "exoscale_instance_pool" "test_pool" {
+  zone          = "{{ .Zone }}"
+  name          = "terraform-provider-test-{{ .ID }}"
+  size          = 1
+  disk_size     = 20
+  template_id   = data.exoscale_template.test_template.id
+  instance_type = "standard.tiny"
+}
+
+resource "exoscale_nlb" "test_nlb" {
+  zone        = "{{ .Zone }}"
+  name        = "terraform-provider-test-{{ .ID }}"
+  description = "description-test"
+
+  labels = {
+    A = "B"
+  }
+}
+
+resource "exoscale_nlb_service" "test_service" {
+  zone             = "{{ .Zone }}"
+  name             = "terraform-provider-test-{{ .ID }}"
+  description      = "service-description-test"
+  nlb_id           = exoscale_nlb.test_nlb.id
+  instance_pool_id = exoscale_instance_pool.test_pool.id
+  port             = 80
+  target_port      = 8080
+
+  healthcheck {
+    mode     = "https"
+    port     = 8080
+    uri      = "/health"
+    tls_sni  = "example.net"
+    interval = 10
+    timeout  = 5
+    retries  = 1
+  }
+}
+
+data "exoscale_nlb" "test_nlb_by_id" {
+  zone = "{{ .Zone }}"
+  id   = exoscale_nlb.test_nlb.id
+}
+
+data "exoscale_nlb" "test_nlb_by_name" {
+  zone = "{{ .Zone }}"
+  name = exoscale_nlb.test_nlb.name
+}
+
+data "exoscale_nlb_service_list" "test_service_list" {
+  zone   = "{{ .Zone }}"
+  nlb_id = exoscale_nlb.test_nlb.id
+
+  depends_on = [exoscale_nlb_service.test_service]
+}

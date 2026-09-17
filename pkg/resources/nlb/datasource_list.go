@@ -1,22 +1,22 @@
-package nlb_service
+package nlb
 
 import (
 	"context"
-	"time"
 
-	exoscale "github.com/exoscale/egoscale/v2"
-	exoapi "github.com/exoscale/egoscale/v2/api"
+	exoscale "github.com/exoscale/egoscale/v3"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
-	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
 )
 
 const (
@@ -47,17 +47,22 @@ const (
 
 // Ensure the implementation satisfies the expected interfaces.
 var (
-	_ datasource.DataSource              = &NLBServiceListDataSource{}
-	_ datasource.DataSourceWithConfigure = &NLBServiceListDataSource{}
+	_ datasource.DataSource              = &DataSourceServiceList{}
+	_ datasource.DataSourceWithConfigure = &DataSourceServiceList{}
 )
 
-// NLBServiceListDataSource is the data source implementation.
-type NLBServiceListDataSource struct {
+// DataSourceServiceList is the exoscale_nlb_service_list data source implementation.
+type DataSourceServiceList struct {
 	client *exoscale.Client
-	env    string
 }
 
-type DataSourceModel struct {
+// NewDataSourceServiceList creates an instance of DataSourceServiceList.
+func NewDataSourceServiceList() datasource.DataSource {
+	return &DataSourceServiceList{}
+}
+
+// DataSourceServiceListModel defines the exoscale_nlb_service_list data model.
+type DataSourceServiceListModel struct {
 	ID             types.String `tfsdk:"id"`
 	NLBID          types.String `tfsdk:"nlb_id"`
 	NLBName        types.String `tfsdk:"nlb_name"`
@@ -67,43 +72,33 @@ type DataSourceModel struct {
 	Timeouts timeouts.Value `tfsdk:"timeouts"`
 }
 
+// Service is a single entry of the `services` list.
 type Service struct {
-	Description    types.String `tfsdk:"description"`
-	Healthcheck    Healthcheck  `tfsdk:"healthcheck"`
-	ID             types.String `tfsdk:"id"`
-	InstancePoolID types.String `tfsdk:"instance_pool_id"`
-	Name           types.String `tfsdk:"name"`
-	Port           types.Int64  `tfsdk:"port"`
-	Protocol       types.String `tfsdk:"protocol"`
-	State          types.String `tfsdk:"state"`
-	Strategy       types.String `tfsdk:"strategy"`
-	TargetPort     types.Int64  `tfsdk:"target_port"`
+	Description    types.String     `tfsdk:"description"`
+	Healthcheck    HealthcheckModel `tfsdk:"healthcheck"`
+	ID             types.String     `tfsdk:"id"`
+	InstancePoolID types.String     `tfsdk:"instance_pool_id"`
+	Name           types.String     `tfsdk:"name"`
+	Port           types.Int64      `tfsdk:"port"`
+	Protocol       types.String     `tfsdk:"protocol"`
+	State          types.String     `tfsdk:"state"`
+	Strategy       types.String     `tfsdk:"strategy"`
+	TargetPort     types.Int64      `tfsdk:"target_port"`
 }
 
-type Healthcheck struct {
-	Interval types.Int64  `tfsdk:"interval"`
-	Mode     types.String `tfsdk:"mode"`
-	Port     types.Int64  `tfsdk:"port"`
-	Retries  types.Int64  `tfsdk:"retries"`
-	TLSSNI   types.String `tfsdk:"tls_sni"`
-	Timeout  types.Int64  `tfsdk:"timeout"`
-	URI      types.String `tfsdk:"uri"`
-}
-
-func (d *NLBServiceListDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (d *DataSourceServiceList) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
 
-	d.client = req.ProviderData.(*providerConfig.ExoscaleProviderConfig).ClientV2
-	d.env = req.ProviderData.(*providerConfig.ExoscaleProviderConfig).Environment
+	d.client = req.ProviderData.(*providerConfig.ExoscaleProviderConfig).ClientV3
 }
 
-func (d *NLBServiceListDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+func (d *DataSourceServiceList) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_nlb_service_list"
 }
 
-func (d *NLBServiceListDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *DataSourceServiceList) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: `Fetch Exoscale [Network Load Balancers (NLB)](https://community.exoscale.com/product/networking/nlb/) Services.
 
@@ -121,12 +116,24 @@ Corresponding resource: [exoscale_nlb](../resources/nlb.md).`,
 				},
 			},
 			NLBServiceListAttrNLBID: schema.StringAttribute{
-				MarkdownDescription: "The NLB ID to match (conflicts with `name`).",
+				MarkdownDescription: "The NLB ID to match (conflicts with `nlb_name`).",
 				Optional:            true,
+				Computed:            true,
+				Validators: []validator.String{
+					stringvalidator.ExactlyOneOf(path.Expressions{
+						path.MatchRoot(NLBServiceListAttrNLBName),
+					}...),
+				},
 			},
 			NLBServiceListAttrNLBName: schema.StringAttribute{
-				MarkdownDescription: "The NLB name to match (conflicts with `id`).",
+				MarkdownDescription: "The NLB name to match (conflicts with `nlb_id`).",
 				Optional:            true,
+				Computed:            true,
+				Validators: []validator.String{
+					stringvalidator.ExactlyOneOf(path.Expressions{
+						path.MatchRoot(NLBServiceListAttrNLBID),
+					}...),
+				},
 			},
 			NLBServiceListAttrNLBServiceList: schema.ListNestedAttribute{
 				MarkdownDescription: "The list of [exoscale_nlb_service](./nlb_service_list.md).",
@@ -142,16 +149,8 @@ Corresponding resource: [exoscale_nlb](../resources/nlb.md).`,
 							Computed:            true,
 						},
 						NLBServiceAttrHealthcheck: schema.ObjectAttribute{
-							Computed: true,
-							AttributeTypes: map[string]attr.Type{
-								NLBServiceHealthcheckAttrInterval: types.Int64Type,
-								NLBServiceHealthcheckAttrMode:     types.StringType,
-								NLBServiceHealthcheckAttrPort:     types.Int64Type,
-								NLBServiceHealthcheckAttrRetries:  types.Int64Type,
-								NLBServiceHealthcheckAttrTimeout:  types.Int64Type,
-								NLBServiceHealthcheckAttrTLSSNI:   types.StringType,
-								NLBServiceHealthcheckAttrURI:      types.StringType,
-							},
+							Computed:       true,
+							AttributeTypes: HealthcheckModel{}.Types(),
 						},
 						NLBServiceAttrInstancePoolID: schema.StringAttribute{
 							MarkdownDescription: "The [exoscale_instance_pool](./instance_pool.md) (ID) to forward traffic to.",
@@ -193,8 +192,8 @@ Corresponding resource: [exoscale_nlb](../resources/nlb.md).`,
 	}
 }
 
-func (d *NLBServiceListDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var data DataSourceModel
+func (d *DataSourceServiceList) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+	var data DataSourceServiceListModel
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
 	if resp.Diagnostics.HasError() {
@@ -209,100 +208,79 @@ func (d *NLBServiceListDataSource) Read(ctx context.Context, req datasource.Read
 	ctx, cancel := context.WithTimeout(ctx, t)
 	defer cancel()
 
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(d.env, data.Zone.ValueString()))
+	client, err := utils.SwitchClientZone(ctx, d.client, exoscale.ZoneName(data.Zone.ValueString()))
+	if err != nil {
+		resp.Diagnostics.AddError("unable to change exoscale client zone", err.Error())
+		return
+	}
 
-	var x string
+	var nlb *exoscale.LoadBalancer
+
 	switch {
 	case !data.NLBID.IsNull():
-		x = data.NLBID.ValueString()
+		id, err := exoscale.ParseUUID(data.NLBID.ValueString())
+		if err != nil {
+			resp.Diagnostics.AddError("unable to parse NLB ID", err.Error())
+			return
+		}
+		nlb, err = client.GetLoadBalancer(ctx, id)
+		if err != nil {
+			resp.Diagnostics.AddError("unable to find Network Load Balancer", err.Error())
+			return
+		}
+
 	case !data.NLBName.IsNull():
-		x = data.NLBName.ValueString()
-	default:
-		resp.Diagnostics.AddError(
-			"Either nlb_name or nlb_id must be specified",
-			"",
-		)
+		nlbs, err := client.ListLoadBalancers(ctx)
+		if err != nil {
+			resp.Diagnostics.AddError("API returned an error while fetching NLBs", err.Error())
+			return
+		}
+		found, err := nlbs.FindLoadBalancer(data.NLBName.ValueString())
+		if err != nil {
+			resp.Diagnostics.AddError("unable to find Network Load Balancer", err.Error())
+			return
+		}
+		// The list endpoint does not return the services, fetch the NLB itself.
+		nlb, err = client.GetLoadBalancer(ctx, found.ID)
+		if err != nil {
+			resp.Diagnostics.AddError("unable to find Network Load Balancer", err.Error())
+			return
+		}
+
+	default: // validation must prevent this, exit as a safe guard
+		resp.Diagnostics.AddError("missing values", "either nlb_name or nlb_id must be specified")
 		return
 	}
 
-	nlb, err := d.client.FindNetworkLoadBalancer(ctx, data.Zone.ValueString(), x)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to find Network Load Balancer",
-			err.Error(),
-		)
-		return
-	}
-
-	if nlb.ID != nil && data.NLBID.IsNull() {
-		data.NLBID = types.StringValue(*nlb.ID)
-	}
-	if nlb.Name != nil && data.NLBName.IsNull() {
-		data.NLBName = types.StringValue(*nlb.Name)
-	}
+	data.NLBID = types.StringValue(nlb.ID.String())
+	data.NLBName = types.StringValue(nlb.Name)
 
 	// Use NLB ID as data source ID since it is unique.
 	data.ID = data.NLBID
 
-	for _, service := range nlb.Services {
-		var serviceState Service
+	for i := range nlb.Services {
+		service := nlb.Services[i]
 
-		if service.Description != nil {
-			serviceState.Description = types.StringValue(*service.Description)
-		}
-		if service.ID != nil {
-			serviceState.ID = types.StringValue(*service.ID)
-		}
-		if service.InstancePoolID != nil {
-			serviceState.InstancePoolID = types.StringValue(*service.InstancePoolID)
-		}
-		if service.Name != nil {
-			serviceState.Name = types.StringValue(*service.Name)
-		}
-		if service.Port != nil {
-			serviceState.Port = types.Int64Value(int64(*service.Port))
-		}
-		if service.Protocol != nil {
-			serviceState.Protocol = types.StringValue(*service.Protocol)
-		}
-		if service.State != nil {
-			serviceState.State = types.StringValue(*service.State)
-		}
-		if service.Strategy != nil {
-			serviceState.Strategy = types.StringValue(*service.Strategy)
-		}
-		if service.TargetPort != nil {
-			serviceState.TargetPort = types.Int64Value(int64(*service.TargetPort))
-		}
+		serviceState := Service{
+			Description: optionalString(service.Description),
+			Healthcheck: healthcheckFromAPI(service.Healthcheck),
+			ID:          types.StringValue(service.ID.String()),
+			Name:        types.StringValue(service.Name),
+			Port:        types.Int64Value(service.Port),
+			Protocol:    types.StringValue(string(service.Protocol)),
+			State:       types.StringValue(string(service.State)),
+			Strategy:    types.StringValue(string(service.Strategy)),
+			TargetPort:  types.Int64Value(service.TargetPort),
 
-		var healtcheckState Healthcheck
-
-		if service.Healthcheck.Interval != nil {
-			healtcheckState.Interval = types.Int64Value(int64(*service.Healthcheck.Interval / time.Second))
+			InstancePoolID: types.StringNull(),
 		}
-		if service.Healthcheck.Mode != nil {
-			healtcheckState.Mode = types.StringValue(*service.Healthcheck.Mode)
+		if service.InstancePool != nil {
+			serviceState.InstancePoolID = types.StringValue(service.InstancePool.ID.String())
 		}
-		if service.Healthcheck.Port != nil {
-			healtcheckState.Port = types.Int64Value(int64(*service.Healthcheck.Port))
-		}
-		if service.Healthcheck.Retries != nil {
-			healtcheckState.Retries = types.Int64Value(int64(*service.Healthcheck.Retries))
-		}
-		if service.Healthcheck.TLSSNI != nil {
-			healtcheckState.TLSSNI = types.StringValue(*service.Healthcheck.TLSSNI)
-		}
-		if service.Healthcheck.Timeout != nil {
-			healtcheckState.Timeout = types.Int64Value(int64(*service.Healthcheck.Timeout / time.Second))
-		}
-		if service.Healthcheck.URI != nil {
-			healtcheckState.URI = types.StringValue(*service.Healthcheck.URI)
-		}
-
-		serviceState.Healthcheck = healtcheckState
 
 		data.NLBServiceList = append(data.NLBServiceList, serviceState)
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	tflog.Trace(ctx, "datasource read done", map[string]any{"id": data.ID})
 }
