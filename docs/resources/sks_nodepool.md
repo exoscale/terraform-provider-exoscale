@@ -55,7 +55,7 @@ directory for complete configuration examples.
 - `labels` (Map of String) A map of key/value labels.
 - `nvidia_mig_profile` (String) The NVIDIA [Multi-Instance GPU (MIG)](https://docs.nvidia.com/datacenter/tesla/mig-user-guide/) profile to enable on the managed GPUs. The GPU family is inferred from `instance_type`: `gpua30.*` accepts `2g.12gb`, `1g.6gb+me`, `1g.6gb`, `2g.12gb+me`, `4g.24gb`; `gpurtx6000pro.*` accepts `1g.24gb-me`, `1g.24gb`, `2g.48gb-me`, `2g.48gb`, `4g.96gb+gfx`, `1g.24gb+me`, `2g.48gb+me.all`, `1g.24gb+gfx`, `1g.24gb+me.all`, `4g.96gb`, `2g.48gb+gfx`.
 - `private_network_ids` (Set of String) A list of [exoscale_private_network](./private_network.md) (IDs) to be attached to the managed instances.
-- `security_group_ids` (Set of String) A list of [exoscale_security_group](./security_group.md) (IDs) to be attached to the managed instances.
+- `security_group_ids` (Set of String) A list of exoscale_security_group (IDs) to be attached to the managed instances.
 - `storage_lvm` (Boolean) Create nodes with non-standard partitioning for persistent storage (requires min 100G of disk space) (may only be set at creation time).
 - `taints` (Map of String) A map of key/value Kubernetes [taints](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/) ('taints = { <key> = "<value>:<effect>" }').
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))

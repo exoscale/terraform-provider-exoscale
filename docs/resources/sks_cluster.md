@@ -78,7 +78,7 @@ Optional:
 - `bearer_token` (String, Sensitive) The optional bearer token to include in the request header
 - `enabled` (Boolean) Whether to run the APIServer with the configured Kubernetes Audit
 - `endpoint` (String) The Endpoint URL for the Webserver responsible of processing Audit events
-- `initial_backoff` (String) The Initial Backoff to wait before sending data to the remote server (default '10s')
+- `initial_backoff` (String) The Initial Backoff to wait before sending data to the remote server (default `10s`)
 
 
 <a id="nestedblock--oidc"></a>
