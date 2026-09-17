@@ -241,6 +241,7 @@ func (p *ExoscaleProvider) DataSources(ctx context.Context) []func() datasource.
 		sos_bucket_policy.NewDataSourceSOSBucketPolicy,
 		security_group.NewDataSource,
 		sks_cluster.NewDataSource,
+		sks_cluster.NewDataSourceClusterList,
 		sks_cluster.NewDataSourceNodepool,
 		privatenetwork.NewDataSource,
 		domain.NewDataSource,

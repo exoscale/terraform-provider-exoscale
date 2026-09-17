@@ -1,0 +1,12 @@
+locals {
+  zone = "{{ .Zone }}"
+}
+
+resource "exoscale_sks_cluster" "test" {
+  zone = local.zone
+  name = "terraform-provider-test-{{ .ID }}"
+
+  timeouts {
+    create = "10m"
+  }
+}

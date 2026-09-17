@@ -5,20 +5,19 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 var (
-	cluster1Name                = acctest.RandomWithPrefix(testPrefix + "-cluster")
-	cluster2Name                = acctest.RandomWithPrefix(testPrefix + "-cluster-2")
-	affinityGroupName           = acctest.RandomWithPrefix(testPrefix + "-affinity-group")
-	securityGroupName           = acctest.RandomWithPrefix(testPrefix + "-security-group")
-	nodepool1Name               = acctest.RandomWithPrefix(testPrefix + "-ds-nodepool")
-	nodepool2Name               = acctest.RandomWithPrefix(testPrefix + "-ds-nodepool-2")
-	testAccSKSDataSourcesConfig = fmt.Sprintf(`
+	cluster1Name                    = acctest.RandomWithPrefix(testPrefix + "-cluster")
+	cluster2Name                    = acctest.RandomWithPrefix(testPrefix + "-cluster-2")
+	affinityGroupName               = acctest.RandomWithPrefix(testPrefix + "-affinity-group")
+	securityGroupName               = acctest.RandomWithPrefix(testPrefix + "-security-group")
+	nodepool1Name                   = acctest.RandomWithPrefix(testPrefix + "-ds-nodepool")
+	nodepool2Name                   = acctest.RandomWithPrefix(testPrefix + "-ds-nodepool-2")
+	testAccSKSListDataSourcesConfig = fmt.Sprintf(`
 locals {
   my_zone = %q
 }
@@ -129,7 +128,13 @@ resource "exoscale_sks_nodepool" "my_sks_nodepool_2" {
 `, testZoneName, cluster1Name, cluster2Name, affinityGroupName, securityGroupName, nodepool1Name, nodepool2Name)
 )
 
-func TestAccSKSDataSources(t *testing.T) {
+// TestAccSKSNodepoolListDataSource exercises the `exoscale_sks_nodepool_list`
+// data source, which is still implemented with the SDKv2 (see
+// exoscale/datasource_exoscale_sks_nodepool_list.go). The `exoscale_sks_cluster_list`
+// data source, along with the single-element `exoscale_sks_cluster`/
+// `exoscale_sks_nodepool` data sources, has been migrated to the
+// terraform-plugin-framework and is covered by pkg/resources/sks_cluster instead.
+func TestAccSKSNodepoolListDataSource(t *testing.T) {
 	t.Parallel()
 
 	type testCase struct {
@@ -140,78 +145,9 @@ func TestAccSKSDataSources(t *testing.T) {
 	}
 
 	zone := testZoneName
-	dsId := dsSKSClusterIdentifier
-	dsName := "my_cluster_ds"
+	dsId := dsSKSNodepoolsListIdentifier
+	dsName := "my_nodepool_list"
 	testCases := []testCase{
-		{
-			Config: fmt.Sprintf(`
-				data %q %q {
-				  zone = %q
-				  name = exoscale_sks_cluster.my_sks_cluster.name
-				}
-				`, dsId, dsName, zone),
-			DataSourceIdentifier: dsId,
-			DataSourceName:       dsName,
-			Attributes: testAttrs{
-				"name":                      validateString(cluster1Name),
-				"default_security_group_id": validation.ToDiagFunc(validation.IsUUID),
-			},
-		},
-		{
-			Config: fmt.Sprintf(`
-		data %q %q {
-		  zone = %q
-		  id = exoscale_sks_cluster.my_sks_cluster.id
-		}
-		`, dsId, dsName, zone),
-			DataSourceIdentifier: dsId,
-			DataSourceName:       dsName,
-			Attributes: testAttrs{
-				"name":                      validateString(cluster1Name),
-				"default_security_group_id": validation.ToDiagFunc(validation.IsUUID),
-			},
-		},
-	}
-
-	dsId = dsSKSClustersListIdentifier
-	dsName = "my_cluster_list"
-	testCases = append(testCases, []testCase{
-		{
-			Config: fmt.Sprintf(`
-		data %q %q {
-		  zone = %q
-		  name = %q
-		}
-		`, dsId, dsName, zone, cluster1Name),
-			DataSourceIdentifier: dsId,
-			DataSourceName:       dsName,
-			Attributes: testAttrs{
-				"clusters.#":                           validateString("1"),
-				"clusters.0.name":                      validateString(cluster1Name),
-				"clusters.0.default_security_group_id": validation.ToDiagFunc(validation.IsUUID),
-			},
-		},
-		{
-			Config: fmt.Sprintf(`
-		data %q %q {
-		  zone = %q
-		  labels = {
-		    "customer" = "/.*telecom.*/"
-		}
-		}
-		`, dsId, dsName, zone),
-			DataSourceIdentifier: dsId,
-			DataSourceName:       dsName,
-			Attributes: testAttrs{
-				"clusters.#": validateString("2"),
-			},
-		},
-	}...,
-	)
-
-	dsId = dsSKSNodepoolsListIdentifier
-	dsName = "my_nodepool_list"
-	testCases = append(testCases, []testCase{
 		{
 			Config: fmt.Sprintf(`
 		data %q %q {
@@ -240,14 +176,14 @@ func TestAccSKSDataSources(t *testing.T) {
 				"nodepools.#": validateString("2"),
 			},
 		},
-	}...)
+	}
 
 	resTC := resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: TestAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccSKSDataSourcesConfig,
+				Config: testAccSKSListDataSourcesConfig,
 			},
 		},
 	}
@@ -257,16 +193,16 @@ func TestAccSKSDataSources(t *testing.T) {
 			Config: fmt.Sprintf(`
 %s
 
-%s`, testAccSKSDataSourcesConfig, c.Config),
+%s`, testAccSKSListDataSourcesConfig, c.Config),
 			Check: resource.ComposeTestCheckFunc(
-				testAccSKSDataSourcesAttributes("data."+c.DataSourceIdentifier+"."+c.DataSourceName, c.Attributes)),
+				testAccSKSListDataSourcesAttributes("data."+c.DataSourceIdentifier+"."+c.DataSourceName, c.Attributes)),
 		})
 	}
 
 	resource.Test(t, resTC)
 }
 
-func testAccSKSDataSourcesAttributes(ds string, expected testAttrs) resource.TestCheckFunc {
+func testAccSKSListDataSourcesAttributes(ds string, expected testAttrs) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		for name, res := range s.RootModule().Resources {
 			if name == ds {
