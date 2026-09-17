@@ -1,4 +1,4 @@
-package sks_cluster
+package sks
 
 import (
 	"context"
