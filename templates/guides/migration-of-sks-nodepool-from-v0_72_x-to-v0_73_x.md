@@ -1,16 +1,16 @@
 ---
 page_title: sks_nodepool migration guide
 description: |-
-    migrating sks_nodepool resources from provider version ~> 0.71.x to ~> 0.72.x
+    migrating sks_nodepool resources from provider version ~> 0.72.x to ~> 0.73.x
 ---
 
-# Migrating SKS Node Pool from v0.71.x to v0.72.x
+# Migrating SKS Node Pool from v0.72.x to v0.73.x
 
-This guide covers the migration of `exoscale_sks_nodepool` (resource and data source) from provider version ~> 0.71.x to ~> 0.72.x.
+This guide covers the migration of `exoscale_sks_nodepool` (resource and data source) from provider version ~> 0.72.x to ~> 0.73.x.
 
 ## Overview
 
-Version 0.72.0 migrates `exoscale_sks_nodepool` (resource and data source) from the legacy SDKv2 implementation to the Terraform plugin framework, continuing the migration started with `exoscale_sks_cluster` in a previous release.
+Version 0.73.0 migrates `exoscale_sks_nodepool` (resource and data source) from the legacy SDKv2 implementation to the Terraform plugin framework, continuing the migration started with `exoscale_sks_cluster` in a previous release.
 
 As part of this migration, the `kubelet_image_gc` argument changes from a repeatable block to an attribute assignment, so that it can properly reflect the cluster's effective kubelet image garbage collection policy (including platform defaults) instead of only echoing back what you explicitly configured.
 
@@ -24,7 +24,7 @@ Your Terraform state is upgraded automatically the next time you run `plan` or `
 
 `kubelet_image_gc` now uses attribute assignment syntax (`=`) with an object, instead of nested block syntax.
 
-**Before (v0.71.x):**
+**Before (v0.72.x):**
 ```hcl
 resource "exoscale_sks_nodepool" "my_sks_nodepool" {
   # ...
@@ -37,7 +37,7 @@ resource "exoscale_sks_nodepool" "my_sks_nodepool" {
 }
 ```
 
-**After (v0.72.x):**
+**After (v0.73.x):**
 ```hcl
 resource "exoscale_sks_nodepool" "my_sks_nodepool" {
   # ...
@@ -61,7 +61,7 @@ terraform {
   required_providers {
     exoscale = {
       source  = "exoscale/exoscale"
-      version = "~> 0.72.0"
+      version = "~> 0.73.0"
     }
   }
 }
