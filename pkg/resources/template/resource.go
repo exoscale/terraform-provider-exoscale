@@ -108,10 +108,12 @@ func (r *ResourceTemplate) Schema(ctx context.Context, req resource.SchemaReques
 				},
 			},
 			"url": schema.StringAttribute{
-				MarkdownDescription: "❗ The URL to download the template image (qcow2/raw disk image) from. The API only uses this once, at registration time, and never returns it afterwards, so it cannot be recovered on `terraform import`: the imported resource will show this attribute as unset, and the next plan will propose recreating it unless the URL is still valid and reachable and you re-apply with it set to the original value.",
-				Required:            true,
+				MarkdownDescription: "❗ The URL to download the template image (qcow2/raw disk image) from. Required when registering a new template. The API only uses this once and never returns it afterwards, so on `terraform import` it is left unset — omit it from your configuration after importing to avoid a one-time forced replacement.",
+				Optional:            true,
+				Computed:            true,
 				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
+					stringplanmodifier.RequiresReplaceIfConfigured(),
+					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"checksum": schema.StringAttribute{
@@ -286,6 +288,14 @@ func (r *ResourceTemplate) Create(ctx context.Context, req resource.CreateReques
 	client, err := utils.SwitchClientZone(ctx, r.client, exoscale.ZoneName(plan.Zone.ValueString()))
 	if err != nil {
 		resp.Diagnostics.AddError("unable to change exoscale client zone", err.Error())
+		return
+	}
+
+	if plan.URL.IsNull() || plan.URL.ValueString() == "" {
+		resp.Diagnostics.AddError(
+			"missing required attribute",
+			"\"url\" is required when registering a new template",
+		)
 		return
 	}
 
