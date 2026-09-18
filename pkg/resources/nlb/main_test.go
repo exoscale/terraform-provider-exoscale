@@ -11,19 +11,16 @@ import (
 	"github.com/exoscale/terraform-provider-exoscale/pkg/testutils"
 )
 
-func TestNlbService(t *testing.T) {
-	t.Run("DataSourceList", testListDataSource)
-}
-
 func TestNLB(t *testing.T) {
 	t.Parallel()
 
 	var (
-		nlbResource     = "exoscale_nlb.test_nlb"
-		serviceResource = "exoscale_nlb_service.test_service"
-		nlbByID         = "data.exoscale_nlb.test_nlb_by_id"
-		nlbByName       = "data.exoscale_nlb.test_nlb_by_name"
-		serviceList     = "data.exoscale_nlb_service_list.test_service_list"
+		nlbResource       = "exoscale_nlb.test_nlb"
+		serviceResource   = "exoscale_nlb_service.test_service"
+		nlbByID           = "data.exoscale_nlb.test_nlb_by_id"
+		nlbByName         = "data.exoscale_nlb.test_nlb_by_name"
+		serviceListByID   = "data.exoscale_nlb_service_list.test_service_list_by_id"
+		serviceListByName = "data.exoscale_nlb_service_list.test_service_list_by_name"
 	)
 
 	testdataSpec := testutils.TestdataSpec{
@@ -75,10 +72,17 @@ func TestNLB(t *testing.T) {
 					resource.TestCheckResourceAttrPair(nlbResource, "name", nlbByName, "name"),
 					resource.TestCheckResourceAttrPair(nlbResource, "id", nlbByName, "id"),
 
-					resource.TestCheckResourceAttr(serviceList, "services.#", "1"),
-					resource.TestCheckResourceAttrPair(serviceResource, "id", serviceList, "services.0.id"),
-					resource.TestCheckResourceAttr(serviceList, "services.0.port", "80"),
-					resource.TestCheckResourceAttr(serviceList, "services.0.healthcheck.port", "8080"),
+					// Service list data source, matched by nlb_id and by nlb_name.
+					resource.TestCheckResourceAttr(serviceListByID, "services.#", "1"),
+					resource.TestCheckResourceAttrPair(serviceResource, "id", serviceListByID, "services.0.id"),
+					resource.TestCheckResourceAttr(serviceListByID, "services.0.port", "80"),
+					resource.TestCheckResourceAttr(serviceListByID, "services.0.target_port", "8080"),
+					resource.TestCheckResourceAttr(serviceListByID, "services.0.healthcheck.port", "8080"),
+					resource.TestCheckResourceAttrPair(serviceResource, "name", serviceListByID, "services.0.name"),
+
+					resource.TestCheckResourceAttr(serviceListByName, "services.#", "1"),
+					resource.TestCheckResourceAttrPair(serviceResource, "id", serviceListByName, "services.0.id"),
+					resource.TestCheckResourceAttrPair(nlbResource, "id", serviceListByName, "nlb_id"),
 				),
 			},
 
@@ -114,8 +118,9 @@ func TestNLB(t *testing.T) {
 
 			// 3 Drop `labels` on the NLB. Every v3 update field is `omitempty`,
 			// so clearing it only works through ResetLoadBalancerField.
-			// `description` is deliberately left in place: egoscale v3 cannot
-			// clear it yet (see the TODO in resource.go).
+			// `description` is deliberately kept: egoscale v3 cannot express an
+			// empty one, so dropping it would leave the API value in place and
+			// surface as drift on the next plan.
 			{
 				Config: testutils.ParseTestdataConfig("./testdata/003.nlb_clear.tf.tmpl", &testdataSpec),
 				Check: resource.ComposeAggregateTestCheckFunc(

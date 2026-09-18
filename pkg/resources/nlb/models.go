@@ -5,6 +5,8 @@ import (
 
 	exoscale "github.com/exoscale/egoscale/v3"
 
+	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
+
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -61,46 +63,28 @@ func healthcheckFromAPI(hc *exoscale.LoadBalancerServiceHealthcheck) Healthcheck
 		Port:     types.Int64Value(hc.Port),
 		Retries:  types.Int64Value(hc.Retries),
 		Timeout:  types.Int64Value(hc.Timeout),
-		TLSSNI:   optionalString(hc.TlsSNI),
-		URI:      optionalString(hc.URI),
+		TLSSNI:   utils.OptionalString(hc.TlsSNI),
+		URI:      utils.OptionalString(hc.URI),
 	}
 }
 
-// optionalString returns a null value for an empty string. The SDKv2 provider
-// persisted unset optional strings as "", while the framework expects null;
-// normalising here keeps pre-migration state from producing a permanent diff.
-func optionalString(s string) types.String {
-	if s == "" {
-		return types.StringNull()
-	}
-
-	return types.StringValue(s)
-}
-
-// applyNLB maps an API Load Balancer onto the resource model. Attributes that
-// the API does not return (zone, timeouts) are left untouched.
-func applyNLB(ctx context.Context, model *ResourceModel, nlb *exoscale.LoadBalancer) diag.Diagnostics {
+// applyNLBComputed fills in the computed attributes of the model from the API.
+//
+// Create and Update use this rather than a full refresh: overwriting the
+// configured attributes there would make the applied state diverge from the
+// plan on any API-side normalisation, which the framework rejects outright
+// ("Provider produced inconsistent result after apply"). Leaving them as
+// planned lets the next Read report the difference as ordinary drift.
+func applyNLBComputed(model *ResourceModel, nlb *exoscale.LoadBalancer) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	model.ID = types.StringValue(nlb.ID.String())
-	model.Name = types.StringValue(nlb.Name)
-	model.Description = optionalString(nlb.Description)
 	model.CreatedAt = types.StringValue(nlb.CreatedAT.String())
 	model.State = types.StringValue(string(nlb.State))
 
 	model.IPAddress = types.StringNull()
 	if len(nlb.IP) > 0 {
 		model.IPAddress = types.StringValue(nlb.IP.String())
-	}
-
-	model.Labels = types.MapNull(types.StringType)
-	if len(nlb.Labels) > 0 {
-		labels, dg := types.MapValueFrom(ctx, types.StringType, nlb.Labels)
-		diags.Append(dg...)
-		if diags.HasError() {
-			return diags
-		}
-		model.Labels = labels
 	}
 
 	// The API returns the full service objects, the schema only tracks their IDs.
@@ -118,18 +102,49 @@ func applyNLB(ctx context.Context, model *ResourceModel, nlb *exoscale.LoadBalan
 	return diags
 }
 
-// applyService maps an API Load Balancer Service onto the resource model.
-// Attributes that the API response does not carry (nlb_id, zone, timeouts) are
-// left untouched.
-func applyService(model *ResourceServiceModel, service *exoscale.LoadBalancerService) {
+// applyNLB refreshes the whole model from the API. Only Read should use this;
+// see applyNLBComputed. Attributes the API does not return (zone, timeouts)
+// are left untouched.
+func applyNLB(ctx context.Context, model *ResourceModel, nlb *exoscale.LoadBalancer) diag.Diagnostics {
+	diags := applyNLBComputed(model, nlb)
+	if diags.HasError() {
+		return diags
+	}
+
+	model.Name = types.StringValue(nlb.Name)
+	model.Description = utils.OptionalString(nlb.Description)
+
+	model.Labels = types.MapNull(types.StringType)
+	if len(nlb.Labels) > 0 {
+		labels, dg := types.MapValueFrom(ctx, types.StringType, nlb.Labels)
+		diags.Append(dg...)
+		if diags.HasError() {
+			return diags
+		}
+		model.Labels = labels
+	}
+
+	return diags
+}
+
+// applyServiceComputed fills in the computed attributes of the service model.
+// See applyNLBComputed for why Create and Update do not refresh everything.
+func applyServiceComputed(model *ResourceServiceModel, service *exoscale.LoadBalancerService) {
 	model.ID = types.StringValue(service.ID.String())
+	model.State = types.StringValue(string(service.State))
+}
+
+// applyService refreshes the whole service model from the API. Only Read
+// should use this; see applyServiceComputed.
+func applyService(model *ResourceServiceModel, service *exoscale.LoadBalancerService) {
+	applyServiceComputed(model, service)
+
 	model.Name = types.StringValue(service.Name)
-	model.Description = optionalString(service.Description)
+	model.Description = utils.OptionalString(service.Description)
 	model.Port = types.Int64Value(service.Port)
 	model.TargetPort = types.Int64Value(service.TargetPort)
 	model.Protocol = types.StringValue(string(service.Protocol))
 	model.Strategy = types.StringValue(string(service.Strategy))
-	model.State = types.StringValue(string(service.State))
 
 	model.InstancePoolID = types.StringNull()
 	if service.InstancePool != nil {

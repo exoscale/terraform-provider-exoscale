@@ -301,7 +301,7 @@ func (r *ResourceService) Create(ctx context.Context, req resource.CreateRequest
 		return
 	}
 
-	applyService(&plan, service)
+	applyServiceComputed(&plan, service)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 	tflog.Trace(ctx, "resource created", map[string]any{"id": plan.ID})
@@ -393,29 +393,58 @@ func (r *ResourceService) Update(ctx context.Context, req resource.UpdateRequest
 		return
 	}
 
-	update := !plan.Name.Equal(state.Name) ||
-		!plan.Description.Equal(state.Description) ||
-		!plan.Port.Equal(state.Port) ||
-		!plan.TargetPort.Equal(state.TargetPort) ||
-		!plan.Protocol.Equal(state.Protocol) ||
-		!plan.Strategy.Equal(state.Strategy) ||
-		len(state.Healthcheck) != 1 ||
-		plan.Healthcheck[0] != state.Healthcheck[0]
+	// Only the attributes that actually changed are sent, with two exceptions.
+	//
+	// `protocol` and `strategy` are always included: although the schema marks
+	// them optional, the service update endpoint rejects a payload that omits
+	// them ("Invalid value `:HTTP/1.1` at 'protocol' ... should be one of
+	// :tcp, :udp" -- the quoted value is the server misreporting an absent
+	// field). Both always have a value here, from the config or the schema
+	// default, so resending them is a no-op.
+	//
+	// The healthcheck is always sent whole, so that dropping `uri`/`tls_sni`
+	// from the configuration clears them instead of leaving the previous
+	// values.
+	//
+	// `update` tracks whether anything besides protocol/strategy changed, so
+	// that an unchanged service does not trigger a pointless API round-trip.
+	var (
+		update  bool
+		request = exoscale.UpdateLoadBalancerServiceRequest{
+			Protocol: exoscale.UpdateLoadBalancerServiceRequestProtocol(plan.Protocol.ValueString()),
+			Strategy: exoscale.UpdateLoadBalancerServiceRequestStrategy(plan.Strategy.ValueString()),
+		}
+	)
 
-	// The full desired state is sent on every update rather than just the
-	// changed fields: the API rejects a partial service update (it answers
-	// "Invalid value at 'protocol'" when the field is absent), and sending the
-	// healthcheck whole is also what clears `uri`/`tls_sni` when they are
-	// dropped from the configuration. This mirrors what the egoscale v2
-	// provider did, which mutated and re-sent the entire service object.
-	request := exoscale.UpdateLoadBalancerServiceRequest{
-		Name:        plan.Name.ValueString(),
-		Description: plan.Description.ValueString(),
-		Port:        plan.Port.ValueInt64(),
-		TargetPort:  plan.TargetPort.ValueInt64(),
-		Protocol:    exoscale.UpdateLoadBalancerServiceRequestProtocol(plan.Protocol.ValueString()),
-		Strategy:    exoscale.UpdateLoadBalancerServiceRequestStrategy(plan.Strategy.ValueString()),
-		Healthcheck: plan.Healthcheck[0].toAPI(),
+	if !plan.Name.Equal(state.Name) {
+		update = true
+		request.Name = plan.Name.ValueString()
+	}
+
+	// TODO(egoscale): an emptied description cannot be expressed here either,
+	// for the same reason as the parent NLB (see the note in resource.go).
+	if !plan.Description.Equal(state.Description) && plan.Description.ValueString() != "" {
+		update = true
+		request.Description = plan.Description.ValueString()
+	}
+
+	if !plan.Port.Equal(state.Port) {
+		update = true
+		request.Port = plan.Port.ValueInt64()
+	}
+
+	if !plan.TargetPort.Equal(state.TargetPort) {
+		update = true
+		request.TargetPort = plan.TargetPort.ValueInt64()
+	}
+
+	if !plan.Protocol.Equal(state.Protocol) || !plan.Strategy.Equal(state.Strategy) {
+		update = true
+	}
+
+	if len(state.Healthcheck) != 1 || plan.Healthcheck[0] != state.Healthcheck[0] {
+		update = true
+		request.Healthcheck = plan.Healthcheck[0].toAPI()
 	}
 
 	if update {
@@ -436,18 +465,7 @@ func (r *ResourceService) Update(ctx context.Context, req resource.UpdateRequest
 		return
 	}
 
-	plannedDescription := plan.Description
-
-	applyService(&plan, service)
-
-	// TODO(egoscale): emptying `description` is not supported yet, exactly as
-	// for the parent NLB (see the matching note in resource.go). Keep the
-	// planned value so the apply does not fail with an inconsistent-result
-	// error; the description stays set on the API side until egoscale makes
-	// UpdateLoadBalancerServiceRequest.Description a *string.
-	if plannedDescription.IsNull() {
-		plan.Description = types.StringNull()
-	}
+	applyServiceComputed(&plan, service)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 	tflog.Trace(ctx, "resource update done", map[string]any{"id": plan.ID})

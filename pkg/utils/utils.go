@@ -16,6 +16,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
+	"github.com/hashicorp/terraform-plugin-framework/types"
+
 	exov2 "github.com/exoscale/egoscale/v2"
 	exov3 "github.com/exoscale/egoscale/v3"
 
@@ -390,4 +392,17 @@ func ElasticIPIDsToElasticIPs(ids []any) (ls []exov3.ElasticIP) {
 		}
 	}
 	return
+}
+
+// OptionalString returns a null value for an empty string.
+//
+// The SDKv2 provider persisted unset optional strings as "", while the
+// framework expects null. Normalising on read keeps state written before a
+// resource was migrated to the framework from producing a permanent diff.
+func OptionalString(s string) types.String {
+	if s == "" {
+		return types.StringNull()
+	}
+
+	return types.StringValue(s)
 }

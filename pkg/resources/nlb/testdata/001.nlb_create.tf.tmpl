@@ -52,9 +52,16 @@ data "exoscale_nlb" "test_nlb_by_name" {
   name = exoscale_nlb.test_nlb.name
 }
 
-data "exoscale_nlb_service_list" "test_service_list" {
+data "exoscale_nlb_service_list" "test_service_list_by_id" {
   zone   = "{{ .Zone }}"
   nlb_id = exoscale_nlb.test_nlb.id
+
+  depends_on = [exoscale_nlb_service.test_service]
+}
+
+data "exoscale_nlb_service_list" "test_service_list_by_name" {
+  zone     = "{{ .Zone }}"
+  nlb_name = exoscale_nlb.test_nlb.name
 
   depends_on = [exoscale_nlb_service.test_service]
 }

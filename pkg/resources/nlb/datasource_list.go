@@ -262,7 +262,7 @@ func (d *DataSourceServiceList) Read(ctx context.Context, req datasource.ReadReq
 		service := nlb.Services[i]
 
 		serviceState := Service{
-			Description: optionalString(service.Description),
+			Description: utils.OptionalString(service.Description),
 			Healthcheck: healthcheckFromAPI(service.Healthcheck),
 			ID:          types.StringValue(service.ID.String()),
 			Name:        types.StringValue(service.Name),

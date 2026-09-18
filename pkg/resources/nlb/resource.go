@@ -198,7 +198,7 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 		return
 	}
 
-	resp.Diagnostics.Append(applyNLB(ctx, &plan, nlb)...)
+	resp.Diagnostics.Append(applyNLBComputed(&plan, nlb)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -290,24 +290,41 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 		return
 	}
 
-	update := !plan.Name.Equal(state.Name) ||
-		!plan.Description.Equal(state.Description) ||
-		!plan.Labels.Equal(state.Labels)
+	// Every attribute of the update payload is optional API-side, so only the
+	// ones that actually changed are sent. `update` tracks whether anything
+	// will actually be serialised: every field is `omitempty`, and the API
+	// rejects a request that ends up with an empty body. Emptying an attribute
+	// is therefore never an update -- it is either a reset call (labels) or
+	// not expressible at all (description, see below).
+	var (
+		update  bool
+		request exoscale.UpdateLoadBalancerRequest
+	)
 
-	// The full desired state is sent rather than just the changed fields, to
-	// match what the egoscale v2 provider did (it mutated and re-sent the whole
-	// object) and to stay consistent with the service update, where a partial
-	// request is rejected by the API.
-	request := exoscale.UpdateLoadBalancerRequest{
-		Name:        plan.Name.ValueString(),
-		Description: plan.Description.ValueString(),
+	if !plan.Name.Equal(state.Name) {
+		update = true
+		request.Name = plan.Name.ValueString()
 	}
-	if len(plan.Labels.Elements()) > 0 {
+
+	// TODO(egoscale): an emptied description cannot be expressed.
+	// UpdateLoadBalancerRequest.Description is a plain `string` with
+	// `omitempty` (UpdateVpcRequest.Description is a *string), so "" is
+	// dropped from the payload and the API keeps the previous value; the
+	// DELETE /load-balancer/{id}/description reset endpoint answers 5xx.
+	// State keeps the planned value, so the next Read reports it as drift.
+	// Remove this note once the field is nullable upstream.
+	if !plan.Description.Equal(state.Description) && plan.Description.ValueString() != "" {
+		update = true
+		request.Description = plan.Description.ValueString()
+	}
+
+	if !plan.Labels.Equal(state.Labels) && len(plan.Labels.Elements()) > 0 {
 		labels := exoscale.Labels{}
 		resp.Diagnostics.Append(plan.Labels.ElementsAs(ctx, &labels, false)...)
 		if resp.Diagnostics.HasError() {
 			return
 		}
+		update = true
 		request.Labels = labels
 	}
 
@@ -338,25 +355,9 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 		return
 	}
 
-	plannedDescription := plan.Description
-
-	resp.Diagnostics.Append(applyNLB(ctx, &plan, nlb)...)
+	resp.Diagnostics.Append(applyNLBComputed(&plan, nlb)...)
 	if resp.Diagnostics.HasError() {
 		return
-	}
-
-	// TODO(egoscale): emptying `description` is not supported yet.
-	//
-	// UpdateLoadBalancerRequest.Description is a plain `string` with
-	// `omitempty` — unlike UpdateVpcRequest.Description, which is a *string —
-	// so an emptied description is never serialised into the request, and the
-	// dedicated DELETE /load-balancer/{id}/description endpoint currently
-	// answers 5xx (DELETE .../labels works, which is why labels are reset
-	// above). Until egoscale makes the field nullable, keep the planned value
-	// so the apply does not fail with an inconsistent-result error; the
-	// description simply stays set on the API side.
-	if plannedDescription.IsNull() {
-		plan.Description = types.StringNull()
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)

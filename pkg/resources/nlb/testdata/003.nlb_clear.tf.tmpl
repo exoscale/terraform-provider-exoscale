@@ -14,8 +14,8 @@ resource "exoscale_instance_pool" "test_pool" {
 
 # `labels` is dropped entirely: the v3 update endpoint ignores empty fields,
 # so this exercises the ResetLoadBalancerField path. `description` is kept on
-# purpose -- clearing it is not supported by egoscale v3 yet, see the TODO in
-# resource.go.
+# purpose -- egoscale v3 cannot express an empty description, so clearing it
+# would leave the API value in place and show up as drift on the next plan.
 resource "exoscale_nlb" "test_nlb" {
   zone        = "{{ .Zone }}"
   name        = "terraform-provider-test-updated-{{ .ID }}"
