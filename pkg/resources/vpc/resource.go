@@ -236,6 +236,7 @@ func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *res
 		return
 	}
 
+	priorLabels := state.Labels
 	state = ResourceModel{
 		ID:          types.StringValue(vpc.ID.String()),
 		Name:        types.StringValue(vpc.Name),
@@ -244,7 +245,7 @@ func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *res
 		Default:     types.BoolValue(vpc.Default != nil && *vpc.Default),
 		Timeouts:    state.Timeouts,
 	}
-	state.Labels = types.MapNull(types.StringType)
+	state.Labels = noLabels(priorLabels)
 	if len(vpc.Labels) > 0 {
 		labels, dg := types.MapValueFrom(ctx, types.StringType, vpc.Labels)
 		if dg.HasError() {
@@ -374,6 +375,17 @@ func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp 
 		resp.Diagnostics.AddError("API returned an error while deleting VPC", err.Error())
 		return
 	}
+}
+
+// noLabels is the state value to use when the API reports no labels. It keeps
+// the prior state's representation so that a config with an explicit
+// `labels = {}` stays an empty map instead of flipping to null on every
+// refresh, which Terraform would report as permanent drift.
+func noLabels(prior types.Map) types.Map {
+	if !prior.IsNull() && !prior.IsUnknown() && len(prior.Elements()) == 0 {
+		return types.MapValueMust(types.StringType, nil)
+	}
+	return types.MapNull(types.StringType)
 }
 
 func optionalStringValue(s string) types.String {
