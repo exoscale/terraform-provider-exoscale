@@ -33,5 +33,6 @@ const (
 	AttrTemplateID            = "template_id"
 	AttrType                  = "type"
 	AttrUserData              = "user_data"
+	AttrVPCInterface          = "vpc_interface"
 	AttrZone                  = "zone"
 )

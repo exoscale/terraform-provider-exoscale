@@ -130,6 +130,32 @@ func Resource() *schema.Resource {
 				},
 			},
 		},
+		AttrVPCInterface: {
+			Description: "VPC Subnet interfaces (may be specified multiple times; unlike `network_interface` the order of the blocks is preserved, and Subnets are attached in that order). Structure is documented below.",
+			Type:        schema.TypeList,
+			Optional:    true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"vpc_id": {
+						Description: "The [exoscale_vpc](./vpc.md) (ID) the Subnet belongs to. All blocks must reference the same VPC, as an instance can only be attached to one.",
+						Type:        schema.TypeString,
+						Required:    true,
+					},
+					"subnet_id": {
+						Description: "The [exoscale_vpc_subnet](./vpc_subnet.md) (ID) to attach to the instance.",
+						Type:        schema.TypeString,
+						Required:    true,
+					},
+					"ipv4_address": {
+						Description:      "The IPv4 address to assign to the instance in the Subnet. Automatically allocated by the platform if not set.",
+						Type:             schema.TypeString,
+						Optional:         true,
+						Computed:         true,
+						ValidateDiagFunc: validation.ToDiagFunc(validation.IsIPv4Address),
+					},
+				},
+			},
+		},
 		AttrBlockStorageVolumeIDs: {
 			Description: "A list of [exoscale_block_storage_volume](./block_storage_volume.md) (ID) to attach to the instance.",
 			Type:        schema.TypeSet,
@@ -413,6 +439,33 @@ func rCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnos
 			}
 			if _, err = clientV3.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
 				return diag.Errorf("unable to attach Private Network %s: %s", nif.NetworkID, err)
+			}
+		}
+	}
+
+	if raw, ok := d.Get(AttrVPCInterface).([]any); ok && len(raw) > 0 {
+		vifs, err := vpcInterfacesFromList(raw)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		// Attached in the order the blocks are declared in, which is also the
+		// order they are stored in state.
+		for _, vif := range vifs {
+			op, err := clientV3.AttachInstanceToSubnet(
+				ctx,
+				v3.UUID(vif.VPCID),
+				v3.UUID(vif.SubnetID),
+				v3.AttachInstanceToSubnetRequest{
+					Instance: &v3.InstanceRef{ID: instanceId},
+					Ipv4:     vif.ipv4(),
+				},
+			)
+			if err != nil {
+				return diag.Errorf("unable to attach VPC Subnet %s: %s", vif.SubnetID, err)
+			}
+			if _, err = clientV3.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
+				return diag.Errorf("unable to attach VPC Subnet %s: %s", vif.SubnetID, err)
 			}
 		}
 	}
@@ -809,6 +862,73 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnos
 		}
 	}
 
+	if d.HasChange(AttrVPCInterface) {
+		// Reconciled against the attachments the instance really has, not against
+		// the ones Terraform recorded: a Subnet attached out of band is then
+		// recognized as attached, and declaring it changes nothing.
+		prior, err := vpcInterfacesFromInstance(instance)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		desired, err := vpcInterfacesFromConfig(d.GetRawConfig())
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		// Matched by Subnet, so an interface that is already attached and
+		// unchanged is left alone: adding a block only attaches that Subnet,
+		// wherever in the list it is written, and reordering the blocks attaches
+		// nothing at all.
+		detach, attach := diffVPCInterfaces(prior, desired)
+
+		for _, vif := range detach {
+			op, err := client.DetachInstanceFromSubnet(
+				ctx,
+				v3.UUID(vif.VPCID),
+				v3.UUID(vif.SubnetID),
+				v3.DetachInstanceFromSubnetRequest{Instance: &v3.InstanceRef{ID: instance.ID}},
+			)
+			if err != nil {
+				if errors.Is(err, v3.ErrNotFound) {
+					tflog.Debug(ctx, "VPC Subnet already detached, ignoring", map[string]any{
+						"id": vif.SubnetID,
+					})
+					continue
+				}
+				return diag.FromErr(err)
+			}
+
+			if _, err = client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
+				if errors.Is(err, v3.ErrNotFound) {
+					tflog.Debug(ctx, "VPC Subnet detach operation already gone, ignoring", map[string]any{
+						"id": vif.SubnetID,
+					})
+					continue
+				}
+				return diag.FromErr(err)
+			}
+		}
+
+		for _, vif := range attach {
+			op, err := client.AttachInstanceToSubnet(
+				ctx,
+				v3.UUID(vif.VPCID),
+				v3.UUID(vif.SubnetID),
+				v3.AttachInstanceToSubnetRequest{
+					Instance: &v3.InstanceRef{ID: instance.ID},
+					Ipv4:     vif.ipv4(),
+				},
+			)
+			if err != nil {
+				return diag.FromErr(err)
+			}
+			if _, err = client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
+				return diag.FromErr(err)
+			}
+		}
+	}
+
 	if d.HasChange(AttrSecurityGroupIDs) {
 		o, n := d.GetChange(AttrSecurityGroupIDs)
 		old := o.(*schema.Set)
@@ -1142,6 +1262,40 @@ func rApply( //nolint:gocyclo
 		if err := d.Set(AttrNetworkInterface, networkInterfaces); err != nil {
 			return diag.FromErr(err)
 		}
+	}
+
+	refreshedVPCInterfaces, err := vpcInterfacesFromInstance(instance)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	// The attachments are stored in the order the blocks are declared in, which
+	// is the order they were attached in: the API returns the Subnets in no
+	// particular order, terraforms state and the order of the declarations in the config have to
+	// agree, otherwise there will be permanent drift. Terraform only sends us the configuration
+	// during an apply; on a plain refresh we fall back to the order the state already holds.
+	declared, err := vpcInterfacesFromConfig(d.GetRawConfig())
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	stored, err := vpcInterfacesFromList(d.Get(AttrVPCInterface).([]any))
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	order := append(subnetIDs(declared), subnetIDs(stored)...)
+
+	// Set unconditionally, so that an out of band detach is reflected in the state.
+	vpcInterfaces := []map[string]any{}
+	for _, vif := range inDeclaredOrder(order, refreshedVPCInterfaces) {
+		serialized, err := vif.ToMap()
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		vpcInterfaces = append(vpcInterfaces, serialized)
+	}
+	if err := d.Set(AttrVPCInterface, vpcInterfaces); err != nil {
+		return diag.FromErr(err)
 	}
 
 	if instance.PublicIP != nil {

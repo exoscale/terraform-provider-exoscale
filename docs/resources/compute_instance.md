@@ -24,6 +24,24 @@ data "exoscale_template" "my_template" {
   name = "Linux Ubuntu 22.04 LTS 64-bit"
 }
 
+# Attaching an instance to VPC Subnets: repeat the `vpc_interface` block per
+# Subnet. All blocks must reference the same VPC, as an instance can only be
+# attached to one. The Subnets are attached in the order the blocks are written
+# in, and they are kept in that order. Reordering them afterwards reattaches
+# nothing: only added, removed and readdressed blocks are acted on.
+
+resource "exoscale_vpc" "my_vpc" {
+  zone = "ch-gva-2"
+  name = "my-vpc"
+}
+
+resource "exoscale_vpc_subnet" "my_vpc_subnet" {
+  zone       = "ch-gva-2"
+  vpc_id     = exoscale_vpc.my_vpc.id
+  name       = "my-vpc-subnet"
+  ipv4_block = "10.0.0.0/24"
+}
+
 resource "exoscale_compute_instance" "my_instance" {
   zone = "ch-gva-2"
   name = "my-instance"
@@ -31,6 +49,14 @@ resource "exoscale_compute_instance" "my_instance" {
   template_id = data.exoscale_template.my_template.id
   type        = "standard.medium"
   disk_size   = 10
+
+  vpc_interface {
+    vpc_id    = exoscale_vpc.my_vpc.id
+    subnet_id = exoscale_vpc_subnet.my_vpc_subnet.id
+
+    # Optional; automatically allocated by the platform if not set.
+    ipv4_address = "10.0.0.11"
+  }
 }
 ```
 
@@ -68,6 +94,7 @@ directory for complete configuration examples.
 - `state` (String) The instance state (`running` or `stopped`). If omitted, instance will start and reach `running` state.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `user_data` (String) [cloud-init](https://cloudinit.readthedocs.io/) configuration.
+- `vpc_interface` (Block List) VPC Subnet interfaces (may be specified multiple times; unlike `network_interface` the order of the blocks is preserved, and Subnets are attached in that order). Structure is documented below. (see [below for nested schema](#nestedblock--vpc_interface))
 
 ### Read-Only
 
@@ -103,6 +130,19 @@ Optional:
 - `delete` (String)
 - `read` (String)
 - `update` (String)
+
+
+<a id="nestedblock--vpc_interface"></a>
+### Nested Schema for `vpc_interface`
+
+Required:
+
+- `subnet_id` (String) The [exoscale_vpc_subnet](./vpc_subnet.md) (ID) to attach to the instance.
+- `vpc_id` (String) The [exoscale_vpc](./vpc.md) (ID) the Subnet belongs to. All blocks must reference the same VPC, as an instance can only be attached to one.
+
+Optional:
+
+- `ipv4_address` (String) The IPv4 address to assign to the instance in the Subnet. Automatically allocated by the platform if not set.
 
 -> The symbol ❗ in an attribute indicates that modifying it, will force the creation of a new resource.
 
