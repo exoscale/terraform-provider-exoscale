@@ -395,24 +395,28 @@ func (r *ResourceService) Update(ctx context.Context, req resource.UpdateRequest
 
 	// Only the attributes that actually changed are sent, with two exceptions.
 	//
-	// `protocol` and `strategy` are always included: although the schema marks
-	// them optional, the service update endpoint rejects a payload that omits
-	// them ("Invalid value `:HTTP/1.1` at 'protocol' ... should be one of
-	// :tcp, :udp" -- the quoted value is the server misreporting an absent
-	// field). Both always have a value here, from the config or the schema
-	// default, so resending them is a no-op.
+	// `protocol` is always included. The OpenAPI spec lists no required field
+	// on this endpoint, but the API rejects any update that omits it,
+	// answering "Invalid value `:HTTP/1.1` at 'protocol' ... should be one of
+	// :tcp, :udp" -- the quoted value being the server misreporting an absent
+	// field rather than anything we send. Verified against the API: a body of
+	// {"description":...}, {"port":...} or {"healthcheck":...} alone is
+	// rejected, and adding {"protocol":...} makes each succeed, so the
+	// requirement is unconditional and not tied to replacing the healthcheck.
+	// `strategy` is *not* required, so it stays conditional. `protocol` always
+	// holds a value here, from the config or the schema default, so resending
+	// it is a no-op. Remove this once the API matches its spec.
 	//
 	// The healthcheck is always sent whole, so that dropping `uri`/`tls_sni`
 	// from the configuration clears them instead of leaving the previous
 	// values.
 	//
-	// `update` tracks whether anything besides protocol/strategy changed, so
-	// that an unchanged service does not trigger a pointless API round-trip.
+	// `update` tracks whether anything besides protocol changed, so that an
+	// unchanged service does not trigger a pointless API round-trip.
 	var (
 		update  bool
 		request = exoscale.UpdateLoadBalancerServiceRequest{
 			Protocol: exoscale.UpdateLoadBalancerServiceRequestProtocol(plan.Protocol.ValueString()),
-			Strategy: exoscale.UpdateLoadBalancerServiceRequestStrategy(plan.Strategy.ValueString()),
 		}
 	)
 
@@ -438,8 +442,13 @@ func (r *ResourceService) Update(ctx context.Context, req resource.UpdateRequest
 		request.TargetPort = plan.TargetPort.ValueInt64()
 	}
 
-	if !plan.Protocol.Equal(state.Protocol) || !plan.Strategy.Equal(state.Strategy) {
+	if !plan.Protocol.Equal(state.Protocol) {
 		update = true
+	}
+
+	if !plan.Strategy.Equal(state.Strategy) {
+		update = true
+		request.Strategy = exoscale.UpdateLoadBalancerServiceRequestStrategy(plan.Strategy.ValueString())
 	}
 
 	if len(state.Healthcheck) != 1 || plan.Healthcheck[0] != state.Healthcheck[0] {
