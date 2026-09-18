@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -32,12 +33,15 @@ func NewDataSource() datasource.DataSource {
 }
 
 type DataSourceModel struct {
-	ID          types.String `tfsdk:"id"`
-	Name        types.String `tfsdk:"name"`
-	Zone        types.String `tfsdk:"zone"`
-	Description types.String `tfsdk:"description"`
-	Labels      types.Map    `tfsdk:"labels"`
-	Default     types.Bool   `tfsdk:"default"`
+	ID           types.String `tfsdk:"id"`
+	Name         types.String `tfsdk:"name"`
+	Zone         types.String `tfsdk:"zone"`
+	Description  types.String `tfsdk:"description"`
+	Labels       types.Map    `tfsdk:"labels"`
+	Default      types.Bool   `tfsdk:"default"`
+	DNSServers   types.List   `tfsdk:"dns_servers"`
+	DomainSearch types.List   `tfsdk:"domain_search"`
+	NTPServers   types.List   `tfsdk:"ntp_servers"`
 
 	Timeouts timeouts.Value `tfsdk:"timeouts"`
 }
@@ -95,6 +99,24 @@ func (d *DataSource) Schema(ctx context.Context, req datasource.SchemaRequest, r
 			"default": schema.BoolAttribute{
 				Description:         "Whether this is the organization's default VPC for the zone.",
 				MarkdownDescription: "Whether this is the organization's default VPC for the zone.",
+				Computed:            true,
+			},
+			"dns_servers": schema.ListAttribute{
+				Description:         "DHCP option 6: a list of DNS server IPv4 addresses.",
+				MarkdownDescription: "DHCP option 6: a list of DNS server IPv4 addresses.",
+				ElementType:         types.StringType,
+				Computed:            true,
+			},
+			"domain_search": schema.ListAttribute{
+				Description:         "DHCP option 119: a list of domain search strings.",
+				MarkdownDescription: "DHCP option 119: a list of domain search strings.",
+				ElementType:         types.StringType,
+				Computed:            true,
+			},
+			"ntp_servers": schema.ListAttribute{
+				Description:         "DHCP option 42: a list of NTP server IPv4 addresses.",
+				MarkdownDescription: "DHCP option 42: a list of NTP server IPv4 addresses.",
+				ElementType:         types.StringType,
 				Computed:            true,
 			},
 		},
@@ -175,13 +197,17 @@ func (d *DataSource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 	}
 
 	state = DataSourceModel{
-		ID:          types.StringValue(vpc.ID.String()),
-		Name:        types.StringValue(vpc.Name),
-		Zone:        state.Zone,
-		Description: types.StringValue(vpc.Description),
-		Default:     types.BoolValue(vpc.Default != nil && *vpc.Default),
-		Timeouts:    state.Timeouts,
+		ID:           types.StringValue(vpc.ID.String()),
+		Name:         types.StringValue(vpc.Name),
+		Zone:         state.Zone,
+		Description:  types.StringValue(vpc.Description),
+		Default:      types.BoolValue(vpc.Default != nil && *vpc.Default),
+		Timeouts:     state.Timeouts,
+		DNSServers:   types.ListNull(types.StringType),
+		DomainSearch: types.ListNull(types.StringType),
+		NTPServers:   types.ListNull(types.StringType),
 	}
+
 	state.Labels = types.MapNull(types.StringType)
 	if vpc.Labels != nil {
 		labels, dg := types.MapValueFrom(ctx, types.StringType, vpc.Labels)
@@ -190,6 +216,20 @@ func (d *DataSource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 			return
 		}
 		state.Labels = labels
+	}
+
+	var dg diag.Diagnostics
+	if len(vpc.DHCPOptions.DNSServers) > 0 {
+		state.DNSServers, dg = ipsToStringList(ctx, vpc.DHCPOptions.DNSServers)
+		resp.Diagnostics.Append(dg...)
+	}
+	if len(vpc.DHCPOptions.DomainSearch) > 0 {
+		state.DomainSearch, dg = types.ListValueFrom(ctx, types.StringType, vpc.DHCPOptions.DomainSearch)
+		resp.Diagnostics.Append(dg...)
+	}
+	if len(vpc.DHCPOptions.NtpServers) > 0 {
+		state.NTPServers, dg = ipsToStringList(ctx, vpc.DHCPOptions.NtpServers)
+		resp.Diagnostics.Append(dg...)
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
