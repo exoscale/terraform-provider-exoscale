@@ -46,7 +46,10 @@ directory for complete configuration examples.
 
 - `default` (Boolean) Whether this is the organization's default VPC for the zone.
 - `description` (String) The VPC description.
+- `dns_servers` (List of String) DHCP option 6: a list of DNS server IPv4 addresses.
+- `domain_search` (List of String) DHCP option 119: a list of domain search strings.
 - `labels` (Map of String) A map of key/value labels.
+- `ntp_servers` (List of String) DHCP option 42: a list of NTP server IPv4 addresses.
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
