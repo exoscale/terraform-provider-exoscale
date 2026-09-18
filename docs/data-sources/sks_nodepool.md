@@ -3,12 +3,15 @@
 page_title: "exoscale_sks_nodepool Data Source - terraform-provider-exoscale"
 subcategory: ""
 description: |-
-  
+  Fetch Exoscale Scalable Kubernetes Service (SKS) https://community.exoscale.com/product/compute/containers/ Node Pool data.
+  Corresponding resource: exoscalesksnodepool ../resources/sks_nodepool.md.
 ---
 
 # exoscale_sks_nodepool (Data Source)
 
+Fetch Exoscale [Scalable Kubernetes Service (SKS)](https://community.exoscale.com/product/compute/containers/) Node Pool data.
 
+Corresponding resource: [exoscale_sks_nodepool](../resources/sks_nodepool.md).
 
 
 
@@ -17,42 +20,51 @@ description: |-
 
 ### Required
 
-- `cluster_id` (String)
-- `zone` (String)
+- `cluster_id` (String) The parent [exoscale_sks_cluster](../resources/sks_cluster.md) ID.
+- `zone` (String) The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.
 
 ### Optional
 
-- `anti_affinity_group_ids` (Set of String) A list of [exoscale_anti_affinity_group](./anti_affinity_group.md) (IDs) to be attached to the managed instances.
-- `created_at` (String) The pool creation date.
-- `deploy_target_id` (String) A deploy target ID.
-- `description` (String) A free-form text describing the pool.
-- `disk_size` (Number) The managed instances disk size (GiB; default: `50`).
-- `instance_pool_id` (String) The underlying [exoscale_instance_pool](./instance_pool.md) ID.
-- `instance_prefix` (String) The string used to prefix the managed instances name (default `pool`).
-- `instance_type` (String) The managed compute instances type (`<family>.<size>`, e.g. `standard.medium`; use the [Exoscale CLI](https://github.com/exoscale/cli/) - `exo compute instance-type list` - for the list of available types).
-- `ipv6` (Boolean) Enable IPV6 for the nodepool nodes
-- `kubelet_image_gc` (Block Set) Configuration for this nodepool's kubelet image garbage collector (see [below for nested schema](#nestedblock--kubelet_image_gc))
-- `kubelet_max_pods` (Number) The maximum number of pods per node (default is 110).
-- `labels` (Map of String) A map of key/value labels.
-- `name` (String)
-- `nvidia_mig_profile` (String) The NVIDIA [Multi-Instance GPU (MIG)](https://docs.nvidia.com/datacenter/tesla/mig-user-guide/) profile to enable on the managed GPUs. The GPU family is inferred from `instance_type`: `gpua30.*` accepts `2g.12gb`, `1g.6gb+me`, `1g.6gb`, `2g.12gb+me`, `4g.24gb`; `gpurtx6000pro.*` accepts `1g.24gb-me`, `1g.24gb`, `2g.48gb-me`, `2g.48gb`, `4g.96gb+gfx`, `1g.24gb+me`, `2g.48gb+me.all`, `1g.24gb+gfx`, `1g.24gb+me.all`, `4g.96gb`, `2g.48gb+gfx`.
-- `private_network_ids` (Set of String) A list of [exoscale_private_network](./private_network.md) (IDs) to be attached to the managed instances.
-- `security_group_ids` (Set of String) A list of [exoscale_security_group](./security_group.md) (IDs) to be attached to the managed instances.
-- `size` (Number)
-- `state` (String) The current pool state.
-- `storage_lvm` (Boolean) Create nodes with non-standard partitioning for persistent storage (requires min 100G of disk space) (may only be set at creation time).
-- `taints` (Map of String) A map of key/value Kubernetes [taints](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/) ('taints = { <key> = "<value>:<effect>" }').
-- `template_id` (String) The managed instances template ID.
-- `version` (String) The managed instances version.
+- `id` (String) The SKS node pool ID to match (conflicts with `name`).
+- `name` (String) The SKS node pool name to match (conflicts with `id`).
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
+- `anti_affinity_group_ids` (Set of String) A list of [exoscale_anti_affinity_group](../resources/anti_affinity_group.md) (IDs) attached to the managed instances.
+- `created_at` (String) The pool creation date.
+- `deploy_target_id` (String) A deploy target ID.
+- `description` (String) A free-form text describing the pool.
+- `disk_size` (Number) The managed instances disk size (GiB).
+- `instance_pool_id` (String) The underlying [exoscale_instance_pool](../resources/instance_pool.md) ID.
+- `instance_prefix` (String) The string used to prefix the managed instances name.
+- `instance_type` (String) The managed compute instances type (`<family>.<size>`, e.g. `standard.medium`).
+- `ipv6` (Boolean) Whether IPv6 is enabled for the nodepool nodes.
+- `kubelet_image_gc` (Attributes) Configuration for this nodepool's kubelet image garbage collector. (see [below for nested schema](#nestedatt--kubelet_image_gc))
+- `kubelet_max_pods` (Number) The maximum number of pods per node.
+- `labels` (Map of String) A map of key/value labels.
+- `nvidia_mig_profile` (String) The NVIDIA [Multi-Instance GPU (MIG)](https://docs.nvidia.com/datacenter/tesla/mig-user-guide/) profile enabled on the managed GPUs.
+- `private_network_ids` (Set of String) A list of [exoscale_private_network](../resources/private_network.md) (IDs) attached to the managed instances.
+- `security_group_ids` (Set of String) A list of [exoscale_security_group](../resources/security_group.md) (IDs) attached to the managed instances.
+- `size` (Number) The number of managed instances.
+- `state` (String) The current pool state.
+- `storage_lvm` (Boolean) Whether nodes were created with non-standard partitioning for persistent storage.
+- `taints` (Map of String) A map of key/value Kubernetes [taints](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/) ('<value>:<effect>").
+- `template_id` (String) The managed instances template ID.
+- `version` (String) The managed instances version.
 
-<a id="nestedblock--kubelet_image_gc"></a>
-### Nested Schema for `kubelet_image_gc`
+<a id="nestedblock--timeouts"></a>
+### Nested Schema for `timeouts`
 
 Optional:
+
+- `read` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
+
+
+<a id="nestedatt--kubelet_image_gc"></a>
+### Nested Schema for `kubelet_image_gc`
+
+Read-Only:
 
 - `high_threshold` (Number) The percent of disk usage after which image garbage collection is always run
 - `low_threshold` (Number) The percent of disk usage before which image garbage collection is never run
