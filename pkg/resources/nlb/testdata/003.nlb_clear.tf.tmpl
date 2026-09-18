@@ -1,0 +1,41 @@
+data "exoscale_template" "test_template" {
+  zone = "{{ .Zone }}"
+  name = "Linux Ubuntu 22.04 LTS 64-bit"
+}
+
+resource "exoscale_instance_pool" "test_pool" {
+  zone          = "{{ .Zone }}"
+  name          = "terraform-provider-test-{{ .ID }}"
+  size          = 1
+  disk_size     = 20
+  template_id   = data.exoscale_template.test_template.id
+  instance_type = "standard.tiny"
+}
+
+# `labels` is dropped entirely: the v3 update endpoint ignores empty fields,
+# so this exercises the ResetLoadBalancerField path. `description` is kept on
+# purpose -- egoscale v3 cannot express an empty description, so clearing it
+# would leave the API value in place and show up as drift on the next plan.
+resource "exoscale_nlb" "test_nlb" {
+  zone        = "{{ .Zone }}"
+  name        = "terraform-provider-test-updated-{{ .ID }}"
+  description = "description-test-updated"
+}
+
+# Every optional healthcheck attribute is omitted: the schema defaults must
+# apply and must not produce a perpetual diff.
+resource "exoscale_nlb_service" "test_service" {
+  zone             = "{{ .Zone }}"
+  name             = "terraform-provider-test-updated-{{ .ID }}"
+  description      = "service-description-test-updated"
+  nlb_id           = exoscale_nlb.test_nlb.id
+  instance_pool_id = exoscale_instance_pool.test_pool.id
+  port             = 443
+  target_port      = 8443
+  protocol         = "udp"
+  strategy         = "source-hash"
+
+  healthcheck {
+    port = 8443
+  }
+}
