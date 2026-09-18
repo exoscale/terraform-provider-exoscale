@@ -85,10 +85,10 @@ func (r *ResourceSubnet) Schema(ctx context.Context, req resource.SchemaRequest,
 			},
 			"ipv4_block": schema.StringAttribute{
 				Required:            true,
-				Description:         "The Subnet IPv4 CIDR (e.g. `10.0.0.0/24`). Cannot be changed after creation.",
-				MarkdownDescription: "The Subnet IPv4 CIDR (e.g. `10.0.0.0/24`). Cannot be changed after creation.",
+				Description:         "❗ The Subnet IPv4 CIDR (e.g. `10.0.0.0/24`).",
+				MarkdownDescription: "❗ The Subnet IPv4 CIDR (e.g. `10.0.0.0/24`).",
 				PlanModifiers: []planmodifier.String{
-					immutableIPv4Block{},
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"address_family": schema.StringAttribute{
@@ -128,42 +128,6 @@ func (r *ResourceSubnet) Schema(ctx context.Context, req resource.SchemaRequest,
 			"timeouts": timeouts.BlockAll(ctx),
 		},
 	}
-}
-
-// immutableIPv4Block rejects any change to a Subnet's CIDR at plan time. The
-// API does not support resizing a Subnet, and replacing the resource is not an
-// option either: that would require detaching every instance attached to it,
-// which means loss of connectivity.
-type immutableIPv4Block struct{}
-
-func (m immutableIPv4Block) Description(ctx context.Context) string {
-	return "Rejects changes to the Subnet CIDR, which cannot be modified after creation."
-}
-
-func (m immutableIPv4Block) MarkdownDescription(ctx context.Context) string {
-	return m.Description(ctx)
-}
-
-func (m immutableIPv4Block) PlanModifyString(ctx context.Context, req planmodifier.StringRequest, resp *planmodifier.StringResponse) {
-	// Nothing to compare on create, and on destroy there is no new value.
-	if req.State.Raw.IsNull() || req.Plan.Raw.IsNull() {
-		return
-	}
-	if req.StateValue.IsNull() || req.PlanValue.IsUnknown() || req.PlanValue.IsNull() {
-		return
-	}
-	if req.StateValue.Equal(req.PlanValue) {
-		return
-	}
-
-	resp.Diagnostics.AddAttributeError(
-		req.Path,
-		"Changing the Subnet CIDR is not supported",
-		"Resizing a Subnet is not supported\n\n"+
-			"Current: "+req.StateValue.ValueString()+"\nPlanned: "+req.PlanValue.ValueString()+
-			"\n\nRestore the ipv4_block value in the configuration, or create a new Subnet "+
-			"with the desired CIDR.",
-	)
 }
 
 type ResourceSubnetModel struct {
