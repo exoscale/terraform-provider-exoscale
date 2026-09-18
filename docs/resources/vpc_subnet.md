@@ -51,7 +51,7 @@ directory for complete configuration examples.
 
 ### Required
 
-- `ipv4_block` (String) The Subnet IPv4 CIDR (e.g. `10.0.0.0/24`). Cannot be changed after creation.
+- `ipv4_block` (String) ❗ The Subnet IPv4 CIDR (e.g. `10.0.0.0/24`).
 - `name` (String) The Subnet name.
 - `vpc_id` (String) ❗ The parent [exoscale_vpc](./vpc.md) ID.
 - `zone` (String) ❗ The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.
