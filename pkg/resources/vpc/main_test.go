@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/instance"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/testutils"
 	tftest "github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
@@ -206,6 +207,146 @@ func Test_Resource_VPC_Route(t *testing.T) {
 				},
 				ImportState:       true,
 				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+// captureAttr stores the value of an attribute, to compare it against in a
+// later step.
+func captureAttr(name, key string, into *string) tftest.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[name]
+		if !ok {
+			return fmt.Errorf("resource %s not found in state", name)
+		}
+
+		*into = rs.Primary.Attributes[key]
+
+		return nil
+	}
+}
+
+// expectCapturedAttr checks an attribute against a value captured in an earlier
+// step.
+func expectCapturedAttr(name, key string, want *string) tftest.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[name]
+		if !ok {
+			return fmt.Errorf("resource %s not found in state", name)
+		}
+
+		if got := rs.Primary.Attributes[key]; got != *want {
+			return fmt.Errorf("expected %s of %s to still be %q, got %q", key, name, *want, got)
+		}
+
+		return nil
+	}
+}
+
+// Test_Resource_VPC_Instance_VPC_Interface exercises the vpc_interface block on
+// exoscale_compute_instance, in particular that the Subnets are attached in the
+// order the blocks are written in, that the list keeps that order, and that an
+// attachment which doesn't change is never recreated.
+func Test_Resource_VPC_Instance_VPC_Interface(t *testing.T) {
+	t.Parallel()
+
+	resourceName := "exoscale_compute_instance.test_instance"
+	subnetResourceName := "exoscale_vpc_subnet.test_subnet"
+	subnet2ResourceName := "exoscale_vpc_subnet.test_subnet_2"
+	subnet3ResourceName := "exoscale_vpc_subnet.test_subnet_3"
+	vpcResourceName := "exoscale_vpc.test_vpc"
+
+	// The address the platform allocated for the second Subnet, which must
+	// survive the blocks being reordered and added to.
+	var subnet2Address string
+
+	testDataSpec := testutils.TestdataSpec{
+		ID:   time.Now().UnixNano(),
+		Zone: testutils.TestZoneName,
+	}
+
+	tftest.Test(t, tftest.TestCase{
+		PreCheck:                 func() { testutils.AccPreCheck(t) },
+		ProtoV6ProviderFactories: testutils.TestAccProtoV6ProviderFactories,
+		Steps: []tftest.TestStep{
+			// Create an instance attached to a single Subnet, with an explicit address.
+			{
+				Config: testutils.ParseTestdataConfig("./testdata/006.instance_vpc_interface.tf.tmpl", &testDataSpec),
+				Check: tftest.ComposeAggregateTestCheckFunc(
+					tftest.TestCheckResourceAttr(resourceName, "vpc_interface.#", "1"),
+					tftest.TestCheckResourceAttr(resourceName, "vpc_interface.0.ipv4_address", "10.22.0.5"),
+					tftest.TestCheckResourceAttrPair(resourceName, "vpc_interface.0.vpc_id", vpcResourceName, "id"),
+					tftest.TestCheckResourceAttrPair(resourceName, "vpc_interface.0.subnet_id", subnetResourceName, "id"),
+				),
+			},
+
+			// Attach a second Subnet: appended to the list, so the first one keeps
+			// its attachment, and the address of the second one is allocated by
+			// the platform.
+			{
+				Config: testutils.ParseTestdataConfig("./testdata/007.instance_vpc_interface_two_subnets.tf.tmpl", &testDataSpec),
+				Check: tftest.ComposeAggregateTestCheckFunc(
+					tftest.TestCheckResourceAttr(resourceName, "vpc_interface.#", "2"),
+					tftest.TestCheckResourceAttr(resourceName, "vpc_interface.0.ipv4_address", "10.22.0.5"),
+					tftest.TestCheckResourceAttrPair(resourceName, "vpc_interface.0.subnet_id", subnetResourceName, "id"),
+					tftest.TestCheckResourceAttrPair(resourceName, "vpc_interface.1.subnet_id", subnet2ResourceName, "id"),
+					tftest.TestCheckResourceAttrSet(resourceName, "vpc_interface.1.ipv4_address"),
+				),
+			},
+
+			// Swapping the two blocks only reorders the state: both Subnets stay
+			// attached, and the plan converges.
+			{
+				Config: testutils.ParseTestdataConfig("./testdata/008.instance_vpc_interface_swapped.tf.tmpl", &testDataSpec),
+				Check: tftest.ComposeAggregateTestCheckFunc(
+					tftest.TestCheckResourceAttr(resourceName, "vpc_interface.#", "2"),
+					tftest.TestCheckResourceAttrPair(resourceName, "vpc_interface.0.subnet_id", subnet2ResourceName, "id"),
+					tftest.TestCheckResourceAttrPair(resourceName, "vpc_interface.1.subnet_id", subnetResourceName, "id"),
+					tftest.TestCheckResourceAttr(resourceName, "vpc_interface.1.ipv4_address", "10.22.0.5"),
+					captureAttr(resourceName, "vpc_interface.0.ipv4_address", &subnet2Address),
+				),
+			},
+
+			// A third Subnet declared before the two that are already attached:
+			// only the new one is attached, so the address the platform allocated
+			// for the second Subnet is left alone.
+			{
+				Config: testutils.ParseTestdataConfig("./testdata/010.instance_vpc_interface_insert_first.tf.tmpl", &testDataSpec),
+				Check: tftest.ComposeAggregateTestCheckFunc(
+					tftest.TestCheckResourceAttr(resourceName, "vpc_interface.#", "3"),
+					tftest.TestCheckResourceAttrPair(resourceName, "vpc_interface.0.subnet_id", subnet3ResourceName, "id"),
+					tftest.TestCheckResourceAttrPair(resourceName, "vpc_interface.1.subnet_id", subnet2ResourceName, "id"),
+					tftest.TestCheckResourceAttrPair(resourceName, "vpc_interface.2.subnet_id", subnetResourceName, "id"),
+					tftest.TestCheckResourceAttrSet(resourceName, "vpc_interface.0.ipv4_address"),
+					tftest.TestCheckResourceAttr(resourceName, "vpc_interface.2.ipv4_address", "10.22.0.5"),
+					expectCapturedAttr(resourceName, "vpc_interface.1.ipv4_address", &subnet2Address),
+				),
+			},
+
+			// Removing every block detaches the instance from the VPC.
+			{
+				Config: testutils.ParseTestdataConfig("./testdata/009.instance_vpc_interface_detach.tf.tmpl", &testDataSpec),
+				Check: tftest.ComposeAggregateTestCheckFunc(
+					tftest.TestCheckResourceAttr(resourceName, "vpc_interface.#", "0"),
+				),
+			},
+
+			// Import
+			{
+				ResourceName: resourceName,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					return fmt.Sprintf("%s@%s", s.RootModule().Resources[resourceName].Primary.ID, testDataSpec.Zone), nil
+				},
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					instance.AttrPrivateNetworkIDs,
+					instance.AttrPrivate,
+					// SSH keys are only used at creation time.
+					instance.AttrSSHKey,
+					instance.AttrSSHKeys,
+				},
 			},
 		},
 	})
