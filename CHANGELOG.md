@@ -4,6 +4,8 @@
 
 IMPROVEMENTS:
 
+- Migrate `nlb`/`nlb_service` resources and data sources to terraform-plugin-framework & egoscale v3. Emptying `description` is not applied yet: `UpdateLoadBalancer(Service)Request.Description` is a non-nullable string in egoscale v3, so an emptied value is never sent and shows up as drift on the next plan. Clearing `labels` on `nlb` works as expected.
+
 FEATURES:
 
 BUG FIXES:
@@ -15,14 +17,6 @@ DEPENDENCIES:
 - Bump `google.golang.org/grpc` to v1.83.2, fixing GO-2026-6443 and GO-2026-6348
 
 ## 0.72.0
-
-IMPROVEMENTS:
-
-- Migrate `nlb`/`nlb_service` resources and data sources to terraform-plugin-framework & egoscale v3
-
-KNOWN ISSUES:
-
-- `nlb`/`nlb_service`: emptying `description` is not applied. `UpdateLoadBalancer(Service)Request.Description` is a non-nullable string in egoscale v3, so an emptied value is never sent, and the dedicated reset endpoint returns a server error. Clearing `labels` on `nlb` works as expected.
 
 FEATURES:
 
