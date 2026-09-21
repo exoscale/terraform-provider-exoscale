@@ -2,9 +2,6 @@ resource "exoscale_vpc" "test_vpc" {
   zone        = "{{ .Zone }}"
   name        = "terraform-provider-test-updated-{{ .ID }}"
   description = "description-test-updated"
-  dns_servers   = ["8.8.8.8"]
-  ntp_servers   = ["42.42.42.42"]
-  domain_search = ["my.domain"]
   labels = {
     A = "C"
   }
