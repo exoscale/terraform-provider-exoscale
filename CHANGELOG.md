@@ -6,6 +6,8 @@ IMPROVEMENTS:
 
 FEATURES:
 
+- networking: add `dns_servers`, `ntp_servers`, and `domain_search` attributes to `exoscale_vpc` resource
+
 BUG FIXES:
 
 BREAKING CHANGES:
