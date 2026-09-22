@@ -22,6 +22,7 @@ FEATURES:
 - dbaas: support for clickhouse
 - `dbaas`: add exoscale_dbaas_clickhouse_user resource
 - networking: add `exoscale_vpc` resource, and `exoscale_vpc` data source
+- `template`: adding the corresponding resource type with a support of CRUD operations.
 
 ## 0.71.0
 
