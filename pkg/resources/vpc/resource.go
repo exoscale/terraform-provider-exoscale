@@ -275,9 +275,9 @@ func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *res
 		Description:  optionalStringValue(vpc.Description),
 		Default:      types.BoolValue(vpc.Default != nil && *vpc.Default),
 		Timeouts:     state.Timeouts,
-		DNSServers:   types.ListNull(types.StringType),
-		DomainSearch: types.ListNull(types.StringType),
-		NTPServers:   types.ListNull(types.StringType),
+		DNSServers:   emptyList(state.DNSServers, ctx),
+		DomainSearch: emptyList(state.DomainSearch, ctx),
+		NTPServers:   emptyList(state.NTPServers, ctx),
 	}
 	state.Labels = types.MapNull(types.StringType)
 	if len(vpc.Labels) > 0 {
@@ -439,6 +439,18 @@ func optionalStringValue(s string) types.String {
 		return types.StringNull()
 	}
 	return types.StringValue(s)
+}
+
+// emptyList is the state value to use when the API reports empty list. It keeps
+// the prior state's representation so that a config with an explicit
+// `list = []` stays an empty list instead of flipping to null on every
+// refresh, which Terraform would report as permanent drift.
+func emptyList(prior types.List, ctx context.Context) types.List {
+	elementType := prior.ElementType(ctx)
+	if !prior.IsNull() && !prior.IsUnknown() && len(prior.Elements()) == 0 {
+		return types.ListValueMust(elementType, nil)
+	}
+	return types.ListNull(elementType)
 }
 
 func (r *Resource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
