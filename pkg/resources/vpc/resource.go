@@ -273,7 +273,7 @@ func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *res
 		Name:         types.StringValue(vpc.Name),
 		Zone:         state.Zone,
 		Description:  optionalStringValue(vpc.Description),
-		Default:      types.BoolValue(vpc.Default != nil && *vpc.Default),
+		Default:      types.BoolValue(*vpc.Default),
 		Timeouts:     state.Timeouts,
 		DNSServers:   emptyList(state.DNSServers, ctx),
 		DomainSearch: emptyList(state.DomainSearch, ctx),

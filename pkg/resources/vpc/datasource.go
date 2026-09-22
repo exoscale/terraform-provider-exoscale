@@ -201,7 +201,7 @@ func (d *DataSource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 		Name:         types.StringValue(vpc.Name),
 		Zone:         state.Zone,
 		Description:  types.StringValue(vpc.Description),
-		Default:      types.BoolValue(vpc.Default != nil && *vpc.Default),
+		Default:      types.BoolValue(*vpc.Default),
 		Timeouts:     state.Timeouts,
 		DNSServers:   types.ListNull(types.StringType),
 		DomainSearch: types.ListNull(types.StringType),
