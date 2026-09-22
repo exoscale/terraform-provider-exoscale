@@ -21,18 +21,8 @@ data "exoscale_vpc" "my_vpc" {
   name = "my-vpc"
 }
 
-data "exoscale_vpc_subnet" "my_vpc_subnet" {
-  zone   = "ch-gva-2"
-  vpc_id = data.exoscale_vpc.my_vpc.id
-  name   = "my-vpc-subnet"
-}
-
 output "my_vpc_id" {
   value = data.exoscale_vpc.my_vpc.id
-}
-
-output "my_vpc_subnet_id" {
-  value = data.exoscale_vpc_subnet.my_vpc_subnet.id
 }
 ```
 
@@ -64,5 +54,3 @@ directory for complete configuration examples.
 Optional:
 
 - `read` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
-
-

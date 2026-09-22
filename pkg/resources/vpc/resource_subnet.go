@@ -24,7 +24,7 @@ import (
 
 const markdownDescriptionSubnetResource = `Manage Exoscale [VPC](https://community.exoscale.ch/product/networking/vpc/) Subnets.
 
-Corresponding data source: [exoscale_vpc_subnet](../data-sources/vpc_subnet.md).
+Corresponding data source: [exoscale\_vpc\_subnet](../data-sources/vpc_subnet.md).
 `
 
 var _ resource.ResourceWithImportState = (*ResourceSubnet)(nil)
@@ -55,7 +55,7 @@ func (r *ResourceSubnet) Schema(ctx context.Context, req resource.SchemaRequest,
 				},
 			},
 			"vpc_id": schema.StringAttribute{
-				Description:         "The parent VPC ID.",
+				Description:         "❗ The parent VPC ID.",
 				MarkdownDescription: "❗ The parent [exoscale_vpc](./vpc.md) ID.",
 				Required:            true,
 				PlanModifiers: []planmodifier.String{

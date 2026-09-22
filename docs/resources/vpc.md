@@ -29,18 +29,6 @@ resource "exoscale_vpc" "my_vpc" {
     environment = "production"
   }
 }
-
-resource "exoscale_vpc_subnet" "my_vpc_subnet" {
-  zone        = local.zone
-  vpc_id      = exoscale_vpc.my_vpc.id
-  name        = "my-vpc-subnet"
-  description = "My VPC Subnet"
-  ipv4_block  = "10.0.0.0/24"
-
-  labels = {
-    environment = "production"
-  }
-}
 ```
 
 Please refer to the [examples](https://github.com/exoscale/terraform-provider-exoscale/tree/master/examples/)
@@ -85,10 +73,4 @@ Optional:
 terraform import \
   exoscale_vpc.my_vpc \
   f81d4fae-7dec-11d0-a765-00a0c91e6bf6@ch-gva-2
-
-# An existing VPC Subnet may be imported by `<vpc-ID>@<subnet-ID>@<zone>`:
-
-terraform import \
-  exoscale_vpc_subnet.my_vpc_subnet \
-  f81d4fae-7dec-11d0-a765-00a0c91e6bf6@9ecc6b8b-73d4-4211-8ced-f7f29bb79524@ch-gva-2
 ```

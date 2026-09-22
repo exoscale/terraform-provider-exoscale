@@ -17,12 +17,10 @@ locals {
   zone = "ch-gva-2"
 }
 
-resource "exoscale_vpc_subnet" "my_vpc_subnet" {
+resource "exoscale_vpc" "my_vpc" {
   zone        = local.zone
-  vpc_id      = "9ecc6b8b-73d4-4211-8ced-f7f29bb79524"
-  name        = "my-vpc-subnet"
-  description = "My VPC Subnet"
-  ipv4_block  = "10.0.0.0/24"
+  name        = "my-vpc"
+  description = "My Virtual Private Cloud"
 
   labels = {
     environment = "production"
@@ -39,4 +37,4 @@ directory for complete configuration examples.
 
 ## Import
 
-{{ codefile "shell" "examples/resources/exoscale_vpc/import_subnet.sh" }}
+{{ codefile "shell" "examples/resources/exoscale_vpc/import.sh" }}

@@ -13,20 +13,13 @@ description: |-
 ## Example Usage
 
 ```terraform
-locals {
+data "exoscale_vpc" "my_vpc" {
   zone = "ch-gva-2"
+  name = "my-vpc"
 }
 
-resource "exoscale_vpc_subnet" "my_vpc_subnet" {
-  zone        = local.zone
-  vpc_id      = "9ecc6b8b-73d4-4211-8ced-f7f29bb79524"
-  name        = "my-vpc-subnet"
-  description = "My VPC Subnet"
-  ipv4_block  = "10.0.0.0/24"
-
-  labels = {
-    environment = "production"
-  }
+output "my_vpc_id" {
+  value = data.exoscale_vpc.my_vpc.id
 }
 ```
 
@@ -34,9 +27,3 @@ Please refer to the [examples](https://github.com/exoscale/terraform-provider-ex
 directory for complete configuration examples.
 
 {{ .SchemaMarkdown | trimspace }}
-
--> The symbol ❗ in an attribute indicates that modifying it, will force the creation of a new resource.
-
-## Import
-
-{{ codefile "shell" "examples/resources/exoscale_vpc/import_subnet.sh" }}
