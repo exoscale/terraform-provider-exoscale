@@ -308,8 +308,8 @@ func (r *ResourceTemplate) Create(ctx context.Context, req resource.CreateReques
 		Build:           plan.Build.ValueString(),
 		Maintainer:      plan.Maintainer.ValueString(),
 		Version:         plan.Version.ValueString(),
-		PasswordEnabled: exoscale.Ptr(plan.PasswordEnabled.ValueBool()),
-		SSHKeyEnabled:   exoscale.Ptr(plan.SSHKeyEnabled.ValueBool()),
+		PasswordEnabled: new(plan.PasswordEnabled.ValueBool()),
+		SSHKeyEnabled:   new(plan.SSHKeyEnabled.ValueBool()),
 	}
 
 	if !plan.BootMode.IsNull() && !plan.BootMode.IsUnknown() {
@@ -321,7 +321,7 @@ func (r *ResourceTemplate) Create(ctx context.Context, req resource.CreateReques
 	}
 
 	if !plan.ApplicationConsistentSnapshotEnabled.IsNull() && !plan.ApplicationConsistentSnapshotEnabled.IsUnknown() {
-		request.ApplicationConsistentSnapshotEnabled = exoscale.Ptr(plan.ApplicationConsistentSnapshotEnabled.ValueBool())
+		request.ApplicationConsistentSnapshotEnabled = new(plan.ApplicationConsistentSnapshotEnabled.ValueBool())
 	}
 
 	op, err := client.RegisterTemplate(ctx, request)
