@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
-func Test_Resource_Private_Network(t *testing.T) {
+func TestPrivateNetwork(t *testing.T) {
 	t.Parallel()
 
 	resource := "exoscale_private_network.test_pn"
