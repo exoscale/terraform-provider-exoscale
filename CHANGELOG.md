@@ -10,6 +10,8 @@ FEATURES:
 
 BUG FIXES:
 
+- Rework attribute value cleanup on private_network resource (#598)
+
 BREAKING CHANGES:
 
 DEPENDENCIES:
