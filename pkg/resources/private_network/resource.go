@@ -3,10 +3,7 @@ package privatenetwork
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net"
-	"slices"
-	"strings"
 
 	exoscale "github.com/exoscale/egoscale/v3"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
@@ -16,7 +13,6 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
-	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -270,43 +266,36 @@ func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *res
 		return
 	}
 
-	state = ResourceModel{
-		ID:          types.StringValue(privateNetwork.ID.String()),
-		Name:        types.StringValue(privateNetwork.Name),
-		Zone:        state.Zone,
-		Description: optionalStringValue(privateNetwork.Description),
-		StartIP:     ipStringValue(privateNetwork.StartIP),
-		EndIP:       ipStringValue(privateNetwork.EndIP),
-		Netmask:     ipStringValue(privateNetwork.Netmask),
-		Timeouts:    state.Timeouts,
-	}
-	state.Labels = types.MapNull(types.StringType)
-	if privateNetwork.Labels != nil {
-		labels, dg := types.MapValueFrom(
-			ctx,
-			types.StringType,
-			privateNetwork.Labels,
-		)
-		if dg.HasError() {
-			resp.Diagnostics.Append(dg...)
-			return
-		}
+	state.Name = types.StringValue(privateNetwork.Name)
 
-		state.Labels = labels
+	utils.RefreshString(&state.Description, privateNetwork.Description)
+	utils.RefreshString(&state.StartIP, privateNetwork.StartIP.String())
+	utils.RefreshString(&state.EndIP, privateNetwork.EndIP.String())
+	utils.RefreshString(&state.Netmask, privateNetwork.Netmask.String())
+	if dg := utils.RefreshLabels(
+		ctx,
+		&state.Labels,
+		privateNetwork.Labels,
+	); dg.HasError() {
+		resp.Diagnostics.Append(dg...)
+		return
+
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
 func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var plan ResourceModel
+	var state, plan ResourceModel
 
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	timeout, diags := plan.Timeouts.Update(ctx, config.DefaultTimeout)
+	state.Timeouts = plan.Timeouts
+	timeout, diags := state.Timeouts.Update(ctx, config.DefaultTimeout)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -348,13 +337,35 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 	}
 
 	request := exoscale.UpdatePrivateNetworkRequest{
-		Description: plan.Description.ValueString(),
-		EndIP:       net.ParseIP(plan.EndIP.ValueString()),
 		Name:        plan.Name.ValueString(),
+		Description: plan.Description.ValueString(),
 		StartIP:     net.ParseIP(plan.StartIP.ValueString()),
+		EndIP:       net.ParseIP(plan.EndIP.ValueString()),
 		Netmask:     net.ParseIP(plan.Netmask.ValueString()),
 	}
-	if len(plan.Labels.Elements()) > 0 {
+
+	if len(plan.Labels.Elements()) == 0 { // reset labels is a separate API call
+		operation, err := client.ResetPrivateNetworkField(
+			ctx,
+			id,
+			exoscale.ResetPrivateNetworkFieldFieldLabels,
+		)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"API returned an error when reseting private network field",
+				err.Error(),
+			)
+			return
+		}
+
+		if _, err := r.client.Wait(ctx, operation); err != nil {
+			resp.Diagnostics.AddError(
+				"reset private netowork field operation failed",
+				err.Error(),
+			)
+			return
+		}
+	} else {
 		labels := exoscale.Labels{}
 
 		dg := plan.Labels.ElementsAs(ctx, &labels, false)
@@ -466,74 +477,10 @@ func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp 
 	}
 }
 
-func optionalStringValue(s string) types.String {
-	if s == "" {
-		return types.StringNull()
-	}
-	return types.StringValue(s)
-}
-
-func ipStringValue(ip net.IP) types.String {
-	if ip == nil {
-		return types.StringNull()
-	}
-	return types.StringValue(ip.String())
-}
-
-func (r *Resource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	idParts := strings.Split(req.ID, "@")
-
-	if len(idParts) != 2 {
-		resp.Diagnostics.AddError(
-			"unexpected import identifier",
-			fmt.Sprintf("Expected import identifier with format: id@zone. Got: %q", req.ID),
-		)
-		return
-	}
-
-	if idParts[0] == "" {
-		tflog.Info(
-			ctx,
-			"private network has no ID, deleting from state to report drift",
-			map[string]any{},
-		)
-		resp.State.RemoveResource(ctx)
-		return
-	}
-
-	id, err := exoscale.ParseUUID(idParts[0])
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"unable to parse ID",
-			err.Error(),
-		)
-		return
-	}
-
-	zone := idParts[1]
-	if zone == "" {
-		tflog.Info(
-			ctx,
-			"private network has no zone, deleting from state to report drift",
-			map[string]any{},
-		)
-		resp.State.RemoveResource(ctx)
-		return
-	} else if !slices.Contains(config.Zones, zone) {
-		resp.Diagnostics.AddError("invalid value", "zone must be a valid exoscale zone")
-	}
-
-	// Set timeouts (quirk https://github.com/hashicorp/terraform-plugin-framework-timeouts/issues/46)
-	var t timeouts.Value
-	resp.Diagnostics.Append(resp.State.GetAttribute(ctx, path.Root("timeouts"), &t)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	resp.Diagnostics.Append(resp.State.Set(ctx, &ResourceModel{
-		ID:       types.StringValue(id.String()),
-		Zone:     types.StringValue(zone),
-		Labels:   types.MapNull(types.StringType),
-		Timeouts: t,
-	})...)
+func (r *Resource) ImportState(
+	ctx context.Context,
+	req resource.ImportStateRequest,
+	resp *resource.ImportStateResponse,
+) {
+	utils.ImportStatePassthroughZonedID(ctx, req, resp)
 }
