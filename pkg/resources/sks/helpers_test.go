@@ -15,49 +15,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestAppendAddon(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		name     string
-		initial  []string
-		addon    string
-		expected []string
-	}{
-		{"add to empty", []string{}, "new-addon", []string{"new-addon"}},
-		{"add to existing", []string{"a", "b"}, "c", []string{"a", "b", "c"}},
-		{"add duplicate (allowed in slice)", []string{"a", "b"}, "a", []string{"a", "b", "a"}},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.expected, appendAddon(tt.initial, tt.addon))
-		})
-	}
-}
-
-func TestRemoveAddon(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		name     string
-		initial  []string
-		addon    string
-		expected []string
-	}{
-		{"remove from empty", []string{}, "a", []string{}},
-		{"remove existing", []string{"a", "b", "c"}, "b", []string{"a", "c"}},
-		{"remove non-existent", []string{"a", "b"}, "c", []string{"a", "b"}},
-		{"remove last", []string{"a"}, "a", []string{}},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.expected, removeAddon(tt.initial, tt.addon))
-		})
-	}
-}
-
 type fakeSKSVersionsTransport struct {
 	versions []string
 }

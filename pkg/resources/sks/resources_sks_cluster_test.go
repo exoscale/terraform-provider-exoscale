@@ -213,7 +213,6 @@ func TestAccResourceSKSCluster(t *testing.T) {
 				ImportStateVerifyIgnore: []string{
 					"oidc.#",
 					"oidc.0.%",
-					"addons",
 					"create_default_security_group",
 					"enable_kube_proxy",
 					"oidc.0.client_id",

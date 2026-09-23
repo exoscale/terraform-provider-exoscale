@@ -100,7 +100,6 @@ type ResourceClusterModel struct {
 	Name                       types.String `tfsdk:"name"`
 	Description                types.String `tfsdk:"description"`
 	Labels                     types.Map    `tfsdk:"labels"`
-	Addons                     types.Set    `tfsdk:"addons"`
 	AggregationLayerCA         types.String `tfsdk:"aggregation_ca"`
 	ControlPlaneCA             types.String `tfsdk:"control_plane_ca"`
 	KubeletCA                  types.String `tfsdk:"kubelet_ca"`
@@ -171,15 +170,6 @@ func (r *ResourceCluster) Schema(ctx context.Context, req resource.SchemaRequest
 				MarkdownDescription: "A map of key/value labels.",
 				ElementType:         types.StringType,
 				Optional:            true,
-			},
-			"addons": schema.SetAttribute{
-				DeprecationMessage: "This attribute has been replaced by `exoscale_ccm`/`metrics_server` " +
-					"attributes, it will be removed in a future release.",
-				Description:         "The list of enabled add-ons.",
-				MarkdownDescription: "The list of enabled add-ons.",
-				ElementType:         types.StringType,
-				Optional:            true,
-				Computed:            true,
 			},
 			"aggregation_ca": schema.StringAttribute{
 				Description:         "The CA certificate (in PEM format) for TLS communications between the control plane and the aggregation layer (e.g. 'metrics-server').",
@@ -432,7 +422,6 @@ func (r *ResourceCluster) ImportState(ctx context.Context, req resource.ImportSt
 		ID:           types.StringValue(idParts[0]),
 		Zone:         types.StringValue(zone),
 		Labels:       types.MapNull(types.StringType),
-		Addons:       types.SetNull(types.StringType),
 		FeatureGates: types.SetNull(types.StringType),
 		Nodepools:    types.SetNull(types.StringType),
 		Oidc:         types.ListNull(types.ObjectType{AttrTypes: oidcAttrTypes()}),
@@ -470,22 +459,16 @@ func (r *ResourceCluster) Create(ctx context.Context, req resource.CreateRequest
 	createReq := exoscale.CreateSKSClusterRequest{}
 
 	addOns := []string{}
-	if !plan.Addons.IsNull() && !plan.Addons.IsUnknown() {
-		resp.Diagnostics.Append(plan.Addons.ElementsAs(ctx, &addOns, false)...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-	}
-	if plan.ExoscaleCCM.ValueBool() && !in(addOns, sksClusterAddonExoscaleCCM) {
+	if plan.ExoscaleCCM.ValueBool() {
 		addOns = append(addOns, sksClusterAddonExoscaleCCM)
 	}
-	if plan.MetricsServer.ValueBool() && !in(addOns, sksClusterAddonMS) {
+	if plan.MetricsServer.ValueBool() {
 		addOns = append(addOns, sksClusterAddonMS)
 	}
-	if plan.ExoscaleCSI.ValueBool() && !in(addOns, sksClusterAddonExoscaleCSI) {
+	if plan.ExoscaleCSI.ValueBool() {
 		addOns = append(addOns, sksClusterAddonExoscaleCSI)
 	}
-	if plan.EnableKarpenter.ValueBool() && !in(addOns, sksClusterAddonKarpenter) {
+	if plan.EnableKarpenter.ValueBool() {
 		addOns = append(addOns, sksClusterAddonKarpenter)
 	}
 	if len(addOns) > 0 {
@@ -755,35 +738,30 @@ func (r *ResourceCluster) Update(ctx context.Context, req resource.UpdateRequest
 		updated = true
 	}
 
-	var stateAddons []string
-	if !state.Addons.IsNull() && !state.Addons.IsUnknown() {
-		resp.Diagnostics.Append(state.Addons.ElementsAs(ctx, &stateAddons, false)...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
+	csiChanged := !plan.ExoscaleCSI.Equal(state.ExoscaleCSI)
+	if csiChanged && !plan.ExoscaleCSI.ValueBool() {
+		resp.Diagnostics.AddError("unable to update SKS cluster", "disabling the CSI addon is not supported")
+		return
 	}
 
-	if !plan.ExoscaleCSI.Equal(state.ExoscaleCSI) {
-		enableCSI := plan.ExoscaleCSI.ValueBool()
-		if !enableCSI {
-			resp.Diagnostics.AddError("unable to update SKS cluster", "disabling the CSI addon is not supported")
-			return
+	if csiChanged || !plan.EnableKarpenter.Equal(state.EnableKarpenter) {
+		// The API expects the full list of addons. CCM and metrics-server can
+		// only be set at creation time, so keep them as they currently are.
+		addOns := []string{}
+		if state.ExoscaleCCM.ValueBool() {
+			addOns = append(addOns, sksClusterAddonExoscaleCCM)
 		}
-		if !in(stateAddons, sksClusterAddonExoscaleCSI) {
-			updateReq.Addons = appendAddon(stateAddons, sksClusterAddonExoscaleCSI)
-			updated = true
+		if state.MetricsServer.ValueBool() {
+			addOns = append(addOns, sksClusterAddonMS)
 		}
-	}
-
-	if !plan.EnableKarpenter.Equal(state.EnableKarpenter) {
-		enableKarpenter := plan.EnableKarpenter.ValueBool()
-		if enableKarpenter && !in(stateAddons, sksClusterAddonKarpenter) {
-			updateReq.Addons = appendAddon(stateAddons, sksClusterAddonKarpenter)
-			updated = true
-		} else if !enableKarpenter && in(stateAddons, sksClusterAddonKarpenter) {
-			updateReq.Addons = removeAddon(stateAddons, sksClusterAddonKarpenter)
-			updated = true
+		if plan.ExoscaleCSI.ValueBool() {
+			addOns = append(addOns, sksClusterAddonExoscaleCSI)
 		}
+		if plan.EnableKarpenter.ValueBool() {
+			addOns = append(addOns, sksClusterAddonKarpenter)
+		}
+		updateReq.Addons = addOns
+		updated = true
 	}
 
 	if !plan.Audit.Equal(state.Audit) {
@@ -971,9 +949,6 @@ func (r *ResourceCluster) applyCluster(ctx context.Context, client *exoscale.Cli
 	model.Name = types.StringValue(sksCluster.Name)
 
 	addons := sksCluster.Addons
-	addonsSet, d := types.SetValueFrom(ctx, types.StringType, sliceOrEmpty(addons))
-	diags.Append(d...)
-	model.Addons = addonsSet
 	model.ExoscaleCCM = types.BoolValue(in(addons, sksClusterAddonExoscaleCCM))
 	model.MetricsServer = types.BoolValue(in(addons, sksClusterAddonMS))
 	model.ExoscaleCSI = types.BoolValue(in(addons, sksClusterAddonExoscaleCSI))

@@ -40,7 +40,6 @@ func TestAccDataSourceSKSCluster(t *testing.T) {
 					// data source by id
 					tftest.TestCheckResourceAttrPair(r, "id", dsByID, "id"),
 					tftest.TestCheckResourceAttrPair(r, "name", dsByID, "name"),
-					tftest.TestCheckResourceAttrPair(r, "addons.#", dsByID, "addons.#"),
 					tftest.TestCheckResourceAttrPair(r, "auto_upgrade", dsByID, "auto_upgrade"),
 					tftest.TestCheckResourceAttrPair(r, "cni", dsByID, "cni"),
 					tftest.TestCheckResourceAttrPair(r, "created_at", dsByID, "created_at"),
@@ -58,7 +57,6 @@ func TestAccDataSourceSKSCluster(t *testing.T) {
 					// data source by name
 					tftest.TestCheckResourceAttrPair(r, "id", dsByName, "id"),
 					tftest.TestCheckResourceAttrPair(r, "name", dsByName, "name"),
-					tftest.TestCheckResourceAttrPair(r, "addons.#", dsByName, "addons.#"),
 					tftest.TestCheckResourceAttrPair(r, "auto_upgrade", dsByName, "auto_upgrade"),
 					tftest.TestCheckResourceAttrPair(r, "cni", dsByName, "cni"),
 					tftest.TestCheckResourceAttrPair(r, "created_at", dsByName, "created_at"),

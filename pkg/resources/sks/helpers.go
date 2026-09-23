@@ -43,27 +43,6 @@ func optionalString(s string) types.String {
 	return types.StringValue(s)
 }
 
-// appendAddon returns a new slice with addon appended.
-func appendAddon(addons []string, addon string) []string {
-	out := make([]string, 0, len(addons)+1)
-	out = append(out, addons...)
-	out = append(out, addon)
-
-	return out
-}
-
-// removeAddon returns a new slice with addon removed.
-func removeAddon(addons []string, addon string) []string {
-	out := make([]string, 0, len(addons))
-	for _, v := range addons {
-		if v != addon {
-			out = append(out, v)
-		}
-	}
-
-	return out
-}
-
 // SKSClusterCertificates holds an SKS Cluster related CA certificates.
 type SKSClusterCertificates struct {
 	AggregationCA  string
