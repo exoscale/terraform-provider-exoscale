@@ -32,12 +32,24 @@ func Test_Resource_VPC(t *testing.T) {
 				Check: tftest.ComposeAggregateTestCheckFunc(
 					tftest.TestCheckResourceAttr(resourceName, "name", testutils.ResourceName(testDataSpec.ID)),
 					tftest.TestCheckResourceAttr(resourceName, "description", "description-test"),
+					tftest.TestCheckResourceAttr(resourceName, "dns_servers.0", "8.8.8.8"),
+					tftest.TestCheckResourceAttr(resourceName, "dns_servers.1", "1.1.1.1"),
+					tftest.TestCheckResourceAttr(resourceName, "ntp_servers.0", "42.42.42.42"),
+					tftest.TestCheckResourceAttr(resourceName, "ntp_servers.1", "43.43.43.43"),
+					tftest.TestCheckResourceAttr(resourceName, "domain_search.0", "my.domain"),
+					tftest.TestCheckResourceAttr(resourceName, "domain_search.1", "their.domain"),
 					tftest.TestCheckResourceAttr(resourceName, "labels.%", "1"),
 					tftest.TestCheckResourceAttr(resourceName, "labels.A", "B"),
 
 					tftest.TestCheckResourceAttrPair(resourceName, "name", datasourceByID, "name"),
 					tftest.TestCheckResourceAttrPair(resourceName, "description", datasourceByID, "description"),
 					tftest.TestCheckResourceAttrPair(resourceName, "labels.A", datasourceByID, "labels.A"),
+					tftest.TestCheckResourceAttrPair(resourceName, "dns_servers.0", datasourceByID, "dns_servers.0"),
+					tftest.TestCheckResourceAttrPair(resourceName, "dns_servers.1", datasourceByID, "dns_servers.1"),
+					tftest.TestCheckResourceAttrPair(resourceName, "ntp_servers.0", datasourceByID, "ntp_servers.0"),
+					tftest.TestCheckResourceAttrPair(resourceName, "ntp_servers.1", datasourceByID, "ntp_servers.1"),
+					tftest.TestCheckResourceAttrPair(resourceName, "domain_search.0", datasourceByID, "domain_search.0"),
+					tftest.TestCheckResourceAttrPair(resourceName, "domain_search.1", datasourceByID, "domain_search.1"),
 
 					tftest.TestCheckResourceAttrPair(resourceName, "name", datasourceByName, "name"),
 					tftest.TestCheckResourceAttrPair(resourceName, "description", datasourceByName, "description"),
@@ -52,6 +64,33 @@ func Test_Resource_VPC(t *testing.T) {
 					tftest.TestCheckResourceAttr(resourceName, "description", "description-test-updated"),
 					tftest.TestCheckResourceAttr(resourceName, "labels.%", "1"),
 					tftest.TestCheckResourceAttr(resourceName, "labels.A", "C"),
+					tftest.TestCheckResourceAttr(resourceName, "dns_servers.#", "1"),
+					tftest.TestCheckResourceAttr(resourceName, "ntp_servers.#", "1"),
+					tftest.TestCheckResourceAttr(resourceName, "domain_search.#", "1"),
+					tftest.TestCheckResourceAttr(resourceName, "dns_servers.0", "8.8.8.8"),
+					tftest.TestCheckResourceAttr(resourceName, "ntp_servers.0", "42.42.42.42"),
+					tftest.TestCheckResourceAttr(resourceName, "domain_search.0", "my.domain"),
+				),
+			},
+
+			// Update resource to delete some dhcp options
+			{
+				Config: testutils.ParseTestdataConfig("./testdata/003.vpc_update_delete_some_dhcp_options.tf.tmpl", &testDataSpec),
+				Check: tftest.ComposeAggregateTestCheckFunc(
+					tftest.TestCheckResourceAttr(resourceName, "dns_servers.#", "1"),
+					tftest.TestCheckResourceAttr(resourceName, "ntp_servers.#", "0"),
+					tftest.TestCheckResourceAttr(resourceName, "domain_search.#", "0"),
+					tftest.TestCheckResourceAttr(resourceName, "dns_servers.0", "8.8.8.8"),
+				),
+			},
+
+			// Update resource to delete all dhcp options
+			{
+				Config: testutils.ParseTestdataConfig("./testdata/004.vpc_update_delete_all_dhcp_options.tf.tmpl", &testDataSpec),
+				Check: tftest.ComposeAggregateTestCheckFunc(
+					tftest.TestCheckResourceAttr(resourceName, "dns_servers.#", "0"),
+					tftest.TestCheckResourceAttr(resourceName, "ntp_servers.#", "0"),
+					tftest.TestCheckResourceAttr(resourceName, "domain_search.#", "0"),
 				),
 			},
 

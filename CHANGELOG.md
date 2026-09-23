@@ -7,6 +7,7 @@ IMPROVEMENTS:
 FEATURES:
 
 - VPC integration: subnets - #585
+- networking: add `dns_servers`, `ntp_servers`, and `domain_search` attributes to `exoscale_vpc` resource - #596
 
 BUG FIXES:
 

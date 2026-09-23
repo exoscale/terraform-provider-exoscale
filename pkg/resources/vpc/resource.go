@@ -3,6 +3,7 @@ package vpc
 import (
 	"context"
 	"errors"
+	"net"
 	"slices"
 	"strings"
 
@@ -13,6 +14,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -90,6 +92,24 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 				Computed:            true,
 				Default:             booldefault.StaticBool(false),
 			},
+			"dns_servers": schema.ListAttribute{
+				Description:         "DHCP option 6: a list of DNS server IPv4 addresses.",
+				MarkdownDescription: "DHCP option 6: a list of DNS server IPv4 addresses.",
+				ElementType:         types.StringType,
+				Optional:            true,
+			},
+			"domain_search": schema.ListAttribute{
+				Description:         "DHCP option 119: a list of domain search strings.",
+				MarkdownDescription: "DHCP option 119: a list of domain search strings.",
+				ElementType:         types.StringType,
+				Optional:            true,
+			},
+			"ntp_servers": schema.ListAttribute{
+				Description:         "DHCP option 42: a list of NTP server IPv4 addresses.",
+				MarkdownDescription: "DHCP option 42: a list of NTP server IPv4 addresses.",
+				ElementType:         types.StringType,
+				Optional:            true,
+			},
 		},
 		Blocks: map[string]schema.Block{
 			"timeouts": timeouts.BlockAll(ctx),
@@ -98,12 +118,15 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 }
 
 type ResourceModel struct {
-	ID          types.String `tfsdk:"id"`
-	Name        types.String `tfsdk:"name"`
-	Zone        types.String `tfsdk:"zone"`
-	Description types.String `tfsdk:"description"`
-	Labels      types.Map    `tfsdk:"labels"`
-	Default     types.Bool   `tfsdk:"default"`
+	ID           types.String `tfsdk:"id"`
+	Name         types.String `tfsdk:"name"`
+	Zone         types.String `tfsdk:"zone"`
+	Description  types.String `tfsdk:"description"`
+	Labels       types.Map    `tfsdk:"labels"`
+	Default      types.Bool   `tfsdk:"default"`
+	DNSServers   types.List   `tfsdk:"dns_servers"`
+	DomainSearch types.List   `tfsdk:"domain_search"`
+	NTPServers   types.List   `tfsdk:"ntp_servers"`
 
 	Timeouts timeouts.Value `tfsdk:"timeouts"`
 }
@@ -158,6 +181,15 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 		}
 
 		request.Labels = labels
+	}
+
+	dhcpOptions, dg := buildDHCPOptionsFromModel(ctx, plan)
+	if dg.HasError() {
+		resp.Diagnostics.Append(dg...)
+		return
+	}
+	if dhcpOptions != nil {
+		request.DHCPOptions = dhcpOptions
 	}
 
 	operation, err := client.CreateVpc(ctx, request)
@@ -238,12 +270,15 @@ func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *res
 
 	priorLabels := state.Labels
 	state = ResourceModel{
-		ID:          types.StringValue(vpc.ID.String()),
-		Name:        types.StringValue(vpc.Name),
-		Zone:        state.Zone,
-		Description: optionalStringValue(vpc.Description),
-		Default:     types.BoolValue(vpc.Default != nil && *vpc.Default),
-		Timeouts:    state.Timeouts,
+		ID:           types.StringValue(vpc.ID.String()),
+		Name:         types.StringValue(vpc.Name),
+		Zone:         state.Zone,
+		Description:  optionalStringValue(vpc.Description),
+		Default:      types.BoolPointerValue(vpc.Default),
+		Timeouts:     state.Timeouts,
+		DNSServers:   emptyList(state.DNSServers, ctx),
+		DomainSearch: emptyList(state.DomainSearch, ctx),
+		NTPServers:   emptyList(state.NTPServers, ctx),
 	}
 	state.Labels = noLabels(priorLabels)
 	if len(vpc.Labels) > 0 {
@@ -253,6 +288,20 @@ func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *res
 			return
 		}
 		state.Labels = labels
+	}
+
+	var dg diag.Diagnostics
+	if len(vpc.DHCPOptions.DNSServers) > 0 {
+		state.DNSServers, dg = ipsToStringList(ctx, vpc.DHCPOptions.DNSServers)
+		resp.Diagnostics.Append(dg...)
+	}
+	if len(vpc.DHCPOptions.DomainSearch) > 0 {
+		state.DomainSearch, dg = types.ListValueFrom(ctx, types.StringType, vpc.DHCPOptions.DomainSearch)
+		resp.Diagnostics.Append(dg...)
+	}
+	if len(vpc.DHCPOptions.NtpServers) > 0 {
+		state.NTPServers, dg = ipsToStringList(ctx, vpc.DHCPOptions.NtpServers)
+		resp.Diagnostics.Append(dg...)
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
@@ -314,6 +363,15 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 		// removing/emptying the labels block actually clears them on the API side;
 		// omitting the field entirely is interpreted by the API as "leave unchanged".
 		Labels: labels,
+	}
+
+	dhcpOptions, dg := buildDHCPOptionsFromModel(ctx, plan)
+	if dg.HasError() {
+		resp.Diagnostics.Append(dg...)
+		return
+	}
+	if dhcpOptions != nil {
+		request.DHCPOptions = dhcpOptions
 	}
 
 	if _, err := client.UpdateVpc(ctx, id, request); err != nil {
@@ -395,6 +453,18 @@ func optionalStringValue(s string) types.String {
 	return types.StringValue(s)
 }
 
+// emptyList is the state value to use when the API reports empty list. It keeps
+// the prior state's representation so that a config with an explicit
+// `list = []` stays an empty list instead of flipping to null on every
+// refresh, which Terraform would report as permanent drift.
+func emptyList(prior types.List, ctx context.Context) types.List {
+	elementType := prior.ElementType(ctx)
+	if !prior.IsNull() && !prior.IsUnknown() && len(prior.Elements()) == 0 {
+		return types.ListValueMust(elementType, nil)
+	}
+	return types.ListNull(elementType)
+}
+
 func (r *Resource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	idParts := strings.Split(req.ID, "@")
 
@@ -436,9 +506,73 @@ func (r *Resource) ImportState(ctx context.Context, req resource.ImportStateRequ
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &ResourceModel{
-		ID:       types.StringValue(id.String()),
-		Zone:     types.StringValue(zone),
-		Labels:   types.MapNull(types.StringType),
-		Timeouts: t,
+		ID:           types.StringValue(id.String()),
+		Zone:         types.StringValue(zone),
+		Labels:       types.MapNull(types.StringType),
+		DNSServers:   types.ListNull(types.StringType),
+		DomainSearch: types.ListNull(types.StringType),
+		NTPServers:   types.ListNull(types.StringType),
+		Timeouts:     t,
 	})...)
+}
+
+// buildDHCPOptionsFromModel builds API DHCP options from the Terraform model. Returns nil on error.
+// Don't return nil if the model has empty dhcp options, as the update API interprets nil as "leave unchanged".
+func buildDHCPOptionsFromModel(ctx context.Context, model ResourceModel) (*exoscale.VpcDHCPOptions, diag.Diagnostics) {
+	var diags diag.Diagnostics
+	opts := &exoscale.VpcDHCPOptions{}
+
+	if !model.DNSServers.IsNull() && !model.DNSServers.IsUnknown() {
+		var ips []string
+		diags.Append(model.DNSServers.ElementsAs(ctx, &ips, false)...)
+		for _, ipStr := range ips {
+			ip := net.ParseIP(ipStr)
+			if ip != nil && ip.To4() != nil {
+				opts.DNSServers = append(opts.DNSServers, ip)
+			} else {
+				diags.AddAttributeError(
+					path.Root("dns_servers"),
+					"Invalid DNS server IP address",
+					"DNS server IP address must be a valid IPv4 address, got: "+ipStr,
+				)
+				return nil, diags
+			}
+		}
+	}
+
+	if !model.DomainSearch.IsNull() && !model.DomainSearch.IsUnknown() {
+		diags.Append(model.DomainSearch.ElementsAs(ctx, &opts.DomainSearch, false)...)
+	}
+
+	if !model.NTPServers.IsNull() && !model.NTPServers.IsUnknown() {
+		var ips []string
+		diags.Append(model.NTPServers.ElementsAs(ctx, &ips, false)...)
+		for _, ipStr := range ips {
+			ip := net.ParseIP(ipStr)
+			if ip != nil && ip.To4() != nil {
+				opts.NtpServers = append(opts.NtpServers, ip)
+			} else {
+				diags.AddAttributeError(
+					path.Root("ntp_servers"),
+					"Invalid NTP server IP address",
+					"NTP server IP address must be a valid IPv4 address, got: "+ipStr,
+				)
+				return nil, diags
+			}
+		}
+	}
+
+	if diags.HasError() {
+		return nil, diags
+	}
+
+	return opts, diags
+}
+
+func ipsToStringList(ctx context.Context, ips []net.IP) (types.List, diag.Diagnostics) {
+	var ipStrs []string
+	for _, ip := range ips {
+		ipStrs = append(ipStrs, ip.String())
+	}
+	return types.ListValueFrom(ctx, types.StringType, ipStrs)
 }

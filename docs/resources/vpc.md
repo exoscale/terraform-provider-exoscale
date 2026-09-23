@@ -45,7 +45,10 @@ directory for complete configuration examples.
 ### Optional
 
 - `description` (String) A text describing the VPC.
+- `dns_servers` (List of String) DHCP option 6: a list of DNS server IPv4 addresses.
+- `domain_search` (List of String) DHCP option 119: a list of domain search strings.
 - `labels` (Map of String) A map of key/value labels.
+- `ntp_servers` (List of String) DHCP option 42: a list of NTP server IPv4 addresses.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
