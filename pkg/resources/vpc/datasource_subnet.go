@@ -162,6 +162,19 @@ func (d *DataSourceSubnet) Read(ctx context.Context, req datasource.ReadRequest,
 
 	var subnet exoscale.Subnet
 	switch {
+	case !state.ID.IsNull(): //nolint:staticcheck // in this case De Morgan's law is more complex to read
+		id, err := exoscale.ParseUUID(state.ID.ValueString())
+		if err != nil {
+			resp.Diagnostics.AddError("unable to parse ID", err.Error())
+			return
+		}
+		got, err := client.GetSubnet(ctx, vpcID, id)
+		if err != nil {
+			resp.Diagnostics.AddError("API returned an error while fetching Subnet", err.Error())
+			return
+		}
+		subnet = *got
+
 	case !state.Name.IsNull(): //nolint:staticcheck // in this case De Morgan's law is more complex to read
 		subnets, err := client.ListSubnets(ctx, vpcID)
 		if err != nil {
@@ -174,19 +187,6 @@ func (d *DataSourceSubnet) Read(ctx context.Context, req datasource.ReadRequest,
 			return
 		}
 		got, err := client.GetSubnet(ctx, vpcID, entry.ID)
-		if err != nil {
-			resp.Diagnostics.AddError("API returned an error while fetching Subnet", err.Error())
-			return
-		}
-		subnet = *got
-
-	case !state.ID.IsNull(): //nolint:staticcheck // in this case De Morgan's law is more complex to read
-		id, err := exoscale.ParseUUID(state.ID.ValueString())
-		if err != nil {
-			resp.Diagnostics.AddError("unable to parse ID", err.Error())
-			return
-		}
-		got, err := client.GetSubnet(ctx, vpcID, id)
 		if err != nil {
 			resp.Diagnostics.AddError("API returned an error while fetching Subnet", err.Error())
 			return
