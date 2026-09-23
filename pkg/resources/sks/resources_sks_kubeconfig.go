@@ -226,44 +226,18 @@ func (r *ResourceKubeconfig) Create(ctx context.Context, req resource.CreateRequ
 // to generate a new one), so the resource state is left untouched between
 // applies. Renewal is instead driven by ModifyPlan/RequiresReplace.
 func (r *ResourceKubeconfig) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state ResourceKubeconfigModel
-
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
 // Update only ever applies to attributes that don't require replacement
 // (currently just early_renewal_seconds): the Kubeconfig itself is never
 // regenerated in place.
 func (r *ResourceKubeconfig) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var plan ResourceKubeconfigModel
-
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	tflog.Debug(ctx, "update finished successfully", map[string]any{"id": plan.ID.ValueString()})
-
-	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 // Delete is a no-op API-wise: there is no revocation support, so we rely on
 // the client certificate's own expiration and simply drop the resource from
 // state.
 func (r *ResourceKubeconfig) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state ResourceKubeconfigModel
-
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	tflog.Debug(ctx, "delete finished successfully", map[string]any{"id": state.ID.ValueString()})
 }
 
 // ModifyPlan replicates the former SDKv2 CustomizeDiff behaviour: it flags
