@@ -32,6 +32,7 @@ import (
 	privatenetwork "github.com/exoscale/terraform-provider-exoscale/pkg/resources/private_network"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/security_group"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/sos_bucket_policy"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/template"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/vpc"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/zones"
 	"github.com/exoscale/terraform-provider-exoscale/version"
@@ -242,6 +243,7 @@ func (p *ExoscaleProvider) DataSources(ctx context.Context) []func() datasource.
 		domain.NewDataSource,
 		domain.NewDataSourceRecord,
 		vpc.NewDataSource,
+		vpc.NewDataSourceSubnet,
 	}
 }
 
@@ -277,6 +279,8 @@ func (p *ExoscaleProvider) Resources(ctx context.Context) []func() resource.Reso
 		domain.NewResource,
 		domain.NewResourceRecord,
 		vpc.NewResource,
+		vpc.NewResourceSubnet,
+		template.NewResourceTemplate,
 	}
 }
 
