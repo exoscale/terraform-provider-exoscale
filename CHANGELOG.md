@@ -6,6 +6,8 @@ IMPROVEMENTS:
 
 FEATURES:
 
+- VPC integration: subnets - #585
+
 BUG FIXES:
 
 BREAKING CHANGES:
