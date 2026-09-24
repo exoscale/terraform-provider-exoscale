@@ -18,6 +18,7 @@ BUG FIXES:
 
 - Rework attribute value cleanup on private_network resource (#598)
 - fix: instance list by labels - #597
+- Rework SG resource and fix the dropped timeout on update (#599)
 
 BREAKING CHANGES:
 

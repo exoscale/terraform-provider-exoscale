@@ -60,6 +60,36 @@ func RefreshIP(state *basetypes.StringValue, remote net.IP) {
 	RefreshString(state, value)
 }
 
+// RefreshInt64 helper to update state value.
+//
+// Zero on remote is equal to zero and nil in state.
+func RefreshInt64(state *basetypes.Int64Value, remote int64) {
+	if state.IsUnknown() {
+		*state = types.Int64Value(remote)
+	}
+
+	if (state.IsNull() || state.ValueInt64() == 0) && remote == 0 {
+		return
+	}
+
+	*state = types.Int64Value(remote)
+}
+
+// RefreshInt64Pointer helper to update state value.
+//
+// Unset and zero on remote is equal to zero and nil in state.
+func RefreshInt64Pointer(state *basetypes.Int64Value, remote *int64) {
+	if state.IsUnknown() {
+		*state = types.Int64PointerValue(remote)
+	}
+
+	if remote == nil {
+		return
+	}
+
+	RefreshInt64(state, *remote)
+}
+
 // RefreshLabels helper to update state value.
 //
 // Unset and empty map on remote is equal to empty map and nil in state.
@@ -88,4 +118,30 @@ func RefreshLabels(
 	*state = t
 
 	return
+}
+
+// RefreshStringSet helper to update state value.
+//
+// Unset and empty slice on remote is equal to empty set and nil in state.
+func RefreshStringSet(
+	ctx context.Context,
+	dg *diag.Diagnostics,
+	state *basetypes.SetValue,
+	set []string,
+) {
+	if len(set) == 0 {
+		if state.IsUnknown() {
+			*state = types.SetNull(types.StringType)
+		}
+		return
+	}
+
+	t, d := types.SetValueFrom(
+		ctx,
+		types.StringType,
+		set,
+	)
+
+	dg.Append(d...)
+	*state = t
 }
