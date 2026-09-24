@@ -105,8 +105,10 @@ func (r *Resource) Schema(
 				Description:         "security group description",
 				MarkdownDescription: "❗ A free-form text describing the the Security Group.",
 				Optional:            true,
+				Computed:            true,
 				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
+					stringplanmodifier.RequiresReplaceIfConfigured(),
+					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"external_sources": schema.SetAttribute{
@@ -180,6 +182,9 @@ func (r *Resource) Create(
 	}
 
 	plan.ID = types.StringValue(op.Reference.ID.String())
+	if plan.Description.IsUnknown() {
+		plan.Description = types.StringNull()
+	}
 
 	var planElems []attr.Value
 	if !plan.ExternalSources.IsNull() {
