@@ -12,12 +12,15 @@ import (
 	"strings"
 
 	"github.com/hashicorp/go-cty/cty"
+	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	exov2 "github.com/exoscale/egoscale/v2"
-	exov3 "github.com/exoscale/egoscale/v3"
+	exoscale "github.com/exoscale/egoscale/v3"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 )
@@ -273,7 +276,7 @@ func ValidateLowercaseString(val any, key string) (warns []string, errs []error)
 }
 
 // SwitchClientZone clones the existing exoscale Client in the new zone.
-func SwitchClientZone(ctx context.Context, client *exov3.Client, zone exov3.ZoneName) (*exov3.Client, error) {
+func SwitchClientZone(ctx context.Context, client *exoscale.Client, zone exoscale.ZoneName) (*exoscale.Client, error) {
 	if zone == "" {
 		return client, nil
 	}
@@ -290,7 +293,7 @@ func SwitchClientZone(ctx context.Context, client *exov3.Client, zone exov3.Zone
 // FindInstanceType attempts to find an Instance type by family+size or ID.
 // To search by family+size, the expected format for v is "[FAMILY.]SIZE" (e.g. "large", "gpu.medium"),
 // with family defaulting to "standard" if not specified.
-func FindInstanceTypeByNameV3(ctx context.Context, client *exov3.Client, id string) (*exov3.InstanceType, error) {
+func FindInstanceTypeByNameV3(ctx context.Context, client *exoscale.Client, id string) (*exoscale.InstanceType, error) {
 
 	var typeFamily, typeSize string
 
@@ -314,13 +317,13 @@ func FindInstanceTypeByNameV3(ctx context.Context, client *exov3.Client, id stri
 		}
 	}
 
-	return nil, exov3.ErrNotFound
+	return nil, exoscale.ErrNotFound
 }
 
 // In the context of converting list of IDs to resources for egoscale V3 update and
 // creation requests, we're using a  lot of inline funcitons, increasing reading complexity
 // when one is called more than once, we should aim to regroup them here.
-func AntiAffiniGroupsToAntiAffinityGroupIDs(aags []exov3.AntiAffinityGroup) (ls []string) {
+func AntiAffiniGroupsToAntiAffinityGroupIDs(aags []exoscale.AntiAffinityGroup) (ls []string) {
 	ls = make([]string, len(aags))
 	for i, aag := range aags {
 		ls[i] = aag.ID.String()
@@ -328,17 +331,17 @@ func AntiAffiniGroupsToAntiAffinityGroupIDs(aags []exov3.AntiAffinityGroup) (ls 
 	return
 }
 
-func AntiAffinityGroupIDsToAntiAffinityGroups(ids []any) (ls []exov3.AntiAffinityGroup) {
-	ls = make([]exov3.AntiAffinityGroup, len(ids))
+func AntiAffinityGroupIDsToAntiAffinityGroups(ids []any) (ls []exoscale.AntiAffinityGroup) {
+	ls = make([]exoscale.AntiAffinityGroup, len(ids))
 	for i, id := range ids {
-		ls[i] = exov3.AntiAffinityGroup{
-			ID: exov3.UUID(id.(string)),
+		ls[i] = exoscale.AntiAffinityGroup{
+			ID: exoscale.UUID(id.(string)),
 		}
 	}
 	return
 }
 
-func PrivateNetworksToPrivateNetworkIDs(privnets []exov3.PrivateNetwork) (ls []string) {
+func PrivateNetworksToPrivateNetworkIDs(privnets []exoscale.PrivateNetwork) (ls []string) {
 	ls = make([]string, len(privnets))
 	for i, aag := range privnets {
 		ls[i] = aag.ID.String()
@@ -346,17 +349,17 @@ func PrivateNetworksToPrivateNetworkIDs(privnets []exov3.PrivateNetwork) (ls []s
 	return
 }
 
-func PrivateNetworkIDsToPrivateNetworks(ids []any) (ls []exov3.PrivateNetwork) {
-	ls = make([]exov3.PrivateNetwork, len(ids))
+func PrivateNetworkIDsToPrivateNetworks(ids []any) (ls []exoscale.PrivateNetwork) {
+	ls = make([]exoscale.PrivateNetwork, len(ids))
 	for i, id := range ids {
-		ls[i] = exov3.PrivateNetwork{
-			ID: exov3.UUID(id.(string)),
+		ls[i] = exoscale.PrivateNetwork{
+			ID: exoscale.UUID(id.(string)),
 		}
 	}
 	return
 }
 
-func SecurityGroupsToSecurityGroupIDs(sgs []exov3.SecurityGroup) (ls []string) {
+func SecurityGroupsToSecurityGroupIDs(sgs []exoscale.SecurityGroup) (ls []string) {
 	ls = make([]string, len(sgs))
 	for i, aag := range sgs {
 		ls[i] = aag.ID.String()
@@ -364,17 +367,17 @@ func SecurityGroupsToSecurityGroupIDs(sgs []exov3.SecurityGroup) (ls []string) {
 	return
 }
 
-func SecurityGroupIDsToSecurityGroups(ids []any) (ls []exov3.SecurityGroup) {
-	ls = make([]exov3.SecurityGroup, len(ids))
+func SecurityGroupIDsToSecurityGroups(ids []any) (ls []exoscale.SecurityGroup) {
+	ls = make([]exoscale.SecurityGroup, len(ids))
 	for i, id := range ids {
-		ls[i] = exov3.SecurityGroup{
-			ID: exov3.UUID(id.(string)),
+		ls[i] = exoscale.SecurityGroup{
+			ID: exoscale.UUID(id.(string)),
 		}
 	}
 	return
 }
 
-func ElasticIPsToElasticIPIDs(eips []exov3.ElasticIP) (ls []string) {
+func ElasticIPsToElasticIPIDs(eips []exoscale.ElasticIP) (ls []string) {
 	ls = make([]string, len(eips))
 	for i, aag := range eips {
 		ls[i] = aag.ID.String()
@@ -382,12 +385,51 @@ func ElasticIPsToElasticIPIDs(eips []exov3.ElasticIP) (ls []string) {
 	return
 }
 
-func ElasticIPIDsToElasticIPs(ids []any) (ls []exov3.ElasticIP) {
-	ls = make([]exov3.ElasticIP, len(ids))
+func ElasticIPIDsToElasticIPs(ids []any) (ls []exoscale.ElasticIP) {
+	ls = make([]exoscale.ElasticIP, len(ids))
 	for i, id := range ids {
-		ls[i] = exov3.ElasticIP{
-			ID: exov3.UUID(id.(string)),
+		ls[i] = exoscale.ElasticIP{
+			ID: exoscale.UUID(id.(string)),
 		}
 	}
 	return
+}
+
+// ImportStatePassthroughZonedID is a helper function for importing zoned resources.
+// Works for all resources that can fully refresh with "id" and "zone" only.
+// Input format is id@zone
+func ImportStatePassthroughZonedID(
+	ctx context.Context,
+	req resource.ImportStateRequest,
+	resp *resource.ImportStateResponse,
+) {
+	idParts := strings.Split(req.ID, "@")
+	if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
+		resp.Diagnostics.AddError(
+			"unexpected import identifier",
+			fmt.Sprintf("Expected import identifier with format: id@zone. Got: %q", req.ID),
+		)
+		return
+	}
+
+	id, err := exoscale.ParseUUID(idParts[0])
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"unable to parse ID",
+			err.Error(),
+		)
+		return
+	}
+	zone := idParts[1]
+
+	resp.Diagnostics.Append(resp.State.SetAttribute(
+		ctx,
+		path.Root("id"),
+		types.StringValue(id.String()),
+	)...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(
+		ctx,
+		path.Root("zone"),
+		types.StringValue(zone),
+	)...)
 }

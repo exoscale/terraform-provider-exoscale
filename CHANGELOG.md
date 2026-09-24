@@ -16,6 +16,8 @@ FEATURES:
 
 BUG FIXES:
 
+- Rework attribute value cleanup on private_network resource (#598)
+
 BREAKING CHANGES:
 
 - `sks_nodepool`: `kubelet_image_gc` now uses attribute assignment syntax (`=`) instead of nested block syntax, check the [migration guide](docs/guides/migration-of-sks-nodepool-from-v0_72_x-to-v0_73_x.md)
