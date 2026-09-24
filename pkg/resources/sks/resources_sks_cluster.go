@@ -595,7 +595,7 @@ func (r *ResourceCluster) Create(ctx context.Context, req resource.CreateRequest
 
 	tflog.Debug(ctx, "create finished successfully", map[string]any{"id": plan.ID.ValueString()})
 
-	if diags := r.applyCluster(ctx, client, exoscale.UUID(plan.ID.ValueString()), &plan); diags.HasError() {
+	if diags := r.setUnknownAttributes(ctx, client, exoscale.UUID(plan.ID.ValueString()), &plan); diags.HasError() {
 		resp.Diagnostics.Append(diags...)
 		return
 	}
@@ -639,9 +639,73 @@ func (r *ResourceCluster) Read(ctx context.Context, req resource.ReadRequest, re
 		return
 	}
 
-	if diags := r.applyCluster(ctx, client, exoscale.UUID(state.ID.ValueString()), &state); diags.HasError() {
-		resp.Diagnostics.Append(diags...)
+	sksCluster, err := client.GetSKSCluster(ctx, exoscale.UUID(state.ID.ValueString()))
+	if err != nil {
+		resp.Diagnostics.AddError("API returned an error while fetching SKS cluster", err.Error())
 		return
+	}
+
+	certificates, err := readClusterCertificates(ctx, client, sksCluster.ID)
+	if err != nil {
+		resp.Diagnostics.AddError("API returned an error while fetching SKS cluster certificates", err.Error())
+		return
+	}
+
+	state.ID = types.StringValue(sksCluster.ID.String())
+	state.Name = types.StringValue(sksCluster.Name)
+
+	addons := sksCluster.Addons
+	state.ExoscaleCCM = types.BoolValue(in(addons, sksClusterAddonExoscaleCCM))
+	state.MetricsServer = types.BoolValue(in(addons, sksClusterAddonMS))
+	state.ExoscaleCSI = types.BoolValue(in(addons, sksClusterAddonExoscaleCSI))
+	state.EnableKarpenter = types.BoolValue(in(addons, sksClusterAddonKarpenter))
+
+	state.AggregationLayerCA = types.StringValue(certificates.AggregationCA)
+	state.ControlPlaneCA = types.StringValue(certificates.ControlPlaneCA)
+	state.KubeletCA = types.StringValue(certificates.KubeletCA)
+
+	state.AutoUpgrade = types.BoolValue(defaultBool(sksCluster.AutoUpgrade, false))
+	state.CNI = types.StringValue(string(sksCluster.Cni))
+	state.CreatedAt = types.StringValue(sksCluster.CreatedAT.String())
+
+	defaultSGID := ""
+	if sksCluster.DefaultSecurityGroupID != nil {
+		defaultSGID = sksCluster.DefaultSecurityGroupID.String()
+		state.CreateDefaultSecurityGroup = types.BoolValue(true)
+	}
+	state.DefaultSecurityGroupID = types.StringValue(defaultSGID)
+
+	state.Description = optionalString(sksCluster.Description)
+	state.Endpoint = types.StringValue(sksCluster.Endpoint)
+	state.ServiceLevel = types.StringValue(string(sksCluster.Level))
+	state.State = types.StringValue(string(sksCluster.State))
+	state.EnableKubeProxy = types.BoolValue(defaultBool(sksCluster.EnableKubeProxy, true))
+
+	labels := types.MapNull(types.StringType)
+	if len(sksCluster.Labels) > 0 {
+		l, d := types.MapValueFrom(ctx, types.StringType, sksCluster.Labels)
+		resp.Diagnostics.Append(d...)
+		labels = l
+	}
+	state.Labels = labels
+
+	nodepools := make([]string, len(sksCluster.Nodepools))
+	for i, np := range sksCluster.Nodepools {
+		nodepools[i] = np.ID.String()
+	}
+	nps, d := types.SetValueFrom(ctx, types.StringType, nodepools)
+	resp.Diagnostics.Append(d...)
+	state.Nodepools = nps
+
+	featureGates, d := types.SetValueFrom(ctx, types.StringType, sliceOrEmpty(sksCluster.FeatureGates))
+	resp.Diagnostics.Append(d...)
+	state.FeatureGates = featureGates
+
+	// Preserve a major.minor input version, otherwise store the resolved one.
+	if len(strings.Split(state.Version.ValueString(), ".")) == 2 {
+		state.Version = types.StringValue(strings.Join(strings.Split(sksCluster.Version, ".")[:2], "."))
+	} else {
+		state.Version = types.StringValue(sksCluster.Version)
 	}
 
 	tflog.Debug(ctx, "read finished successfully", map[string]any{"id": state.ID.ValueString()})
@@ -859,7 +923,7 @@ func (r *ResourceCluster) Update(ctx context.Context, req resource.UpdateRequest
 
 	tflog.Debug(ctx, "update finished successfully", map[string]any{"id": clusterID.String()})
 
-	if diags := r.applyCluster(ctx, client, clusterID, &plan); diags.HasError() {
+	if diags := r.setUnknownAttributes(ctx, client, clusterID, &plan); diags.HasError() {
 		resp.Diagnostics.Append(diags...)
 		return
 	}
@@ -930,7 +994,11 @@ func (r *ResourceCluster) oidcBlock(ctx context.Context, m ResourceClusterModel,
 	return blocks[0], true
 }
 
-func (r *ResourceCluster) applyCluster(ctx context.Context, client *exoscale.Client, id exoscale.UUID, model *ResourceClusterModel) diag.Diagnostics {
+// setUnknownAttributes fills the attributes left unknown by the plan (i.e.
+// Computed ones) with the values returned by the API. Values known in the plan
+// are kept untouched: Terraform requires Create/Update to return them as is,
+// refreshing them is Read's job.
+func (r *ResourceCluster) setUnknownAttributes(ctx context.Context, client *exoscale.Client, id exoscale.UUID, plan *ResourceClusterModel) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	sksCluster, err := client.GetSKSCluster(ctx, id)
@@ -945,61 +1013,71 @@ func (r *ResourceCluster) applyCluster(ctx context.Context, client *exoscale.Cli
 		return diags
 	}
 
-	model.ID = types.StringValue(sksCluster.ID.String())
-	model.Name = types.StringValue(sksCluster.Name)
-
-	addons := sksCluster.Addons
-	model.ExoscaleCCM = types.BoolValue(in(addons, sksClusterAddonExoscaleCCM))
-	model.MetricsServer = types.BoolValue(in(addons, sksClusterAddonMS))
-	model.ExoscaleCSI = types.BoolValue(in(addons, sksClusterAddonExoscaleCSI))
-	model.EnableKarpenter = types.BoolValue(in(addons, sksClusterAddonKarpenter))
-
-	model.AggregationLayerCA = types.StringValue(certificates.AggregationCA)
-	model.ControlPlaneCA = types.StringValue(certificates.ControlPlaneCA)
-	model.KubeletCA = types.StringValue(certificates.KubeletCA)
-
-	model.AutoUpgrade = types.BoolValue(defaultBool(sksCluster.AutoUpgrade, false))
-	model.CNI = types.StringValue(string(sksCluster.Cni))
-	model.CreatedAt = types.StringValue(sksCluster.CreatedAT.String())
-
-	defaultSGID := ""
-	if sksCluster.DefaultSecurityGroupID != nil {
-		defaultSGID = sksCluster.DefaultSecurityGroupID.String()
-		model.CreateDefaultSecurityGroup = types.BoolValue(true)
+	if plan.AggregationLayerCA.IsUnknown() {
+		plan.AggregationLayerCA = types.StringValue(certificates.AggregationCA)
 	}
-	model.DefaultSecurityGroupID = types.StringValue(defaultSGID)
-
-	model.Description = optionalString(sksCluster.Description)
-	model.Endpoint = types.StringValue(sksCluster.Endpoint)
-	model.ServiceLevel = types.StringValue(string(sksCluster.Level))
-	model.State = types.StringValue(string(sksCluster.State))
-	model.EnableKubeProxy = types.BoolValue(defaultBool(sksCluster.EnableKubeProxy, true))
-
-	labels := types.MapNull(types.StringType)
-	if len(sksCluster.Labels) > 0 {
-		l, d := types.MapValueFrom(ctx, types.StringType, sksCluster.Labels)
+	if plan.ControlPlaneCA.IsUnknown() {
+		plan.ControlPlaneCA = types.StringValue(certificates.ControlPlaneCA)
+	}
+	if plan.KubeletCA.IsUnknown() {
+		plan.KubeletCA = types.StringValue(certificates.KubeletCA)
+	}
+	if plan.AutoUpgrade.IsUnknown() {
+		plan.AutoUpgrade = types.BoolValue(defaultBool(sksCluster.AutoUpgrade, false))
+	}
+	if plan.CNI.IsUnknown() {
+		plan.CNI = types.StringValue(string(sksCluster.Cni))
+	}
+	if plan.CreatedAt.IsUnknown() {
+		plan.CreatedAt = types.StringValue(sksCluster.CreatedAT.String())
+	}
+	if plan.DefaultSecurityGroupID.IsUnknown() {
+		defaultSGID := ""
+		if sksCluster.DefaultSecurityGroupID != nil {
+			defaultSGID = sksCluster.DefaultSecurityGroupID.String()
+		}
+		plan.DefaultSecurityGroupID = types.StringValue(defaultSGID)
+	}
+	if plan.EnableKubeProxy.IsUnknown() {
+		plan.EnableKubeProxy = types.BoolValue(defaultBool(sksCluster.EnableKubeProxy, true))
+	}
+	if plan.EnableKarpenter.IsUnknown() {
+		plan.EnableKarpenter = types.BoolValue(in(sksCluster.Addons, sksClusterAddonKarpenter))
+	}
+	if plan.Endpoint.IsUnknown() {
+		plan.Endpoint = types.StringValue(sksCluster.Endpoint)
+	}
+	if plan.ExoscaleCCM.IsUnknown() {
+		plan.ExoscaleCCM = types.BoolValue(in(sksCluster.Addons, sksClusterAddonExoscaleCCM))
+	}
+	if plan.ExoscaleCSI.IsUnknown() {
+		plan.ExoscaleCSI = types.BoolValue(in(sksCluster.Addons, sksClusterAddonExoscaleCSI))
+	}
+	if plan.MetricsServer.IsUnknown() {
+		plan.MetricsServer = types.BoolValue(in(sksCluster.Addons, sksClusterAddonMS))
+	}
+	if plan.FeatureGates.IsUnknown() {
+		featureGates, d := types.SetValueFrom(ctx, types.StringType, sliceOrEmpty(sksCluster.FeatureGates))
 		diags.Append(d...)
-		labels = l
+		plan.FeatureGates = featureGates
 	}
-	model.Labels = labels
-
-	nodepools := make([]string, len(sksCluster.Nodepools))
-	for i, np := range sksCluster.Nodepools {
-		nodepools[i] = np.ID.String()
+	if plan.Nodepools.IsUnknown() {
+		nodepools := make([]string, len(sksCluster.Nodepools))
+		for i, np := range sksCluster.Nodepools {
+			nodepools[i] = np.ID.String()
+		}
+		nps, d := types.SetValueFrom(ctx, types.StringType, nodepools)
+		diags.Append(d...)
+		plan.Nodepools = nps
 	}
-	nps, d := types.SetValueFrom(ctx, types.StringType, nodepools)
-	diags.Append(d...)
-	model.Nodepools = nps
-
-	featureGates, d := types.SetValueFrom(ctx, types.StringType, sliceOrEmpty(sksCluster.FeatureGates))
-	diags.Append(d...)
-	model.FeatureGates = featureGates
-
-	// Preserve a major.minor input version, otherwise store the resolved one.
-	if len(strings.Split(model.Version.ValueString(), ".")) == 2 {
-		model.Version = types.StringValue(strings.Join(strings.Split(sksCluster.Version, ".")[:2], "."))
-	} else {
-		model.Version = types.StringValue(sksCluster.Version)
+	if plan.ServiceLevel.IsUnknown() {
+		plan.ServiceLevel = types.StringValue(string(sksCluster.Level))
+	}
+	if plan.State.IsUnknown() {
+		plan.State = types.StringValue(string(sksCluster.State))
+	}
+	if plan.Version.IsUnknown() {
+		plan.Version = types.StringValue(sksCluster.Version)
 	}
 
 	return diags
