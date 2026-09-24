@@ -333,7 +333,8 @@ func dsBuildData(instance *v3.Instance, zone string) (map[string]any, error) {
 		data[AttrAntiAffinityGroupIDs] = utils.AntiAffiniGroupsToAntiAffinityGroupIDs(instance.AntiAffinityGroups)
 	}
 	if instance.Labels != nil {
-		data[AttrLabels] = instance.Labels
+		// Convert v3.Labels to a plain map so the list data source's labels filter can match it.
+		data[AttrLabels] = map[string]string(instance.Labels)
 	}
 	if instance.PrivateNetworks != nil {
 		data[AttrPrivateNetworkIDs] = func() []string {
