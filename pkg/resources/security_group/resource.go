@@ -21,6 +21,7 @@ import (
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
 )
 
 const ResourceDescription = `Manage [Exoscale Security Groups](https://community.exoscale.com/product/compute/instances/quick-start/#firewall-rules---security-groups).
@@ -104,10 +105,8 @@ func (r *Resource) Schema(
 				Description:         "security group description",
 				MarkdownDescription: "❗ A free-form text describing the the Security Group.",
 				Optional:            true,
-				Computed:            true,
 				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplaceIfConfigured(),
-					stringplanmodifier.UseStateForUnknown(),
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"external_sources": schema.SetAttribute{
@@ -181,9 +180,6 @@ func (r *Resource) Create(
 	}
 
 	plan.ID = types.StringValue(op.Reference.ID.String())
-	if plan.Description.IsUnknown() {
-		plan.Description = types.StringNull()
-	}
 
 	var planElems []attr.Value
 	if !plan.ExternalSources.IsNull() {
@@ -315,23 +311,16 @@ func (r *Resource) Read(
 		return
 	}
 
-	state.Name = types.StringValue(sg.Name)
-	state.Description = types.StringValue(sg.Description)
-
-	if !state.ExternalSources.IsNull() {
-		state.ExternalSources = types.SetNull(types.StringType)
-
-		setElems := []attr.Value{}
-		for _, cidr := range sg.ExternalSources {
-			setElems = append(setElems, types.StringValue((cidr)))
-		}
-
-		var dg diag.Diagnostics
-		state.ExternalSources, dg = types.SetValue(types.StringType, setElems)
-		if dg.HasError() {
-			resp.Diagnostics.Append(dg...)
-			return
-		}
+	utils.RefreshString(&state.Name, sg.Name)
+	utils.RefreshString(&state.Description, sg.Description)
+	utils.RefreshStringSet(
+		ctx,
+		&resp.Diagnostics,
+		&state.ExternalSources,
+		sg.ExternalSources,
+	)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
@@ -360,8 +349,7 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 	// We also exit if unchainded as a safeguard.
 	if plan.ExternalSources.IsNull() ||
 		plan.ExternalSources.Equal(state.ExternalSources) {
-		state.ExternalSources = plan.ExternalSources
-		resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+		resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 		return
 	}
 
@@ -377,8 +365,7 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 	stateElems := state.ExternalSources.Elements()
 	planElems := plan.ExternalSources.Elements()
 	if len(stateElems) == 0 && len(planElems) == 0 { // unset in state, empty in plan
-		state.ExternalSources = plan.ExternalSources
-		resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+		resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 		return
 	}
 
