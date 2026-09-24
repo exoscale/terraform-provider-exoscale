@@ -3,11 +3,14 @@ page_title: "exoscale_sks_cluster Resource - terraform-provider-exoscale"
 subcategory: ""
 description: |-
   Manage Exoscale Scalable Kubernetes Service (SKS) https://community.exoscale.com/product/compute/containers/ Clusters.
+  Corresponding data source: exoscaleskscluster ../data-sources/sks_cluster.md.
 ---
 
 # exoscale_sks_cluster (Resource)
 
 Manage Exoscale [Scalable Kubernetes Service (SKS)](https://community.exoscale.com/product/compute/containers/) Clusters.
+
+Corresponding data source: [exoscale_sks_cluster](../data-sources/sks_cluster.md).
 
 ## Example Usage
 
@@ -37,8 +40,7 @@ directory for complete configuration examples.
 
 ### Optional
 
-- `addons` (Set of String, Deprecated)
-- `audit` (Block List, Max: 1) Parameters for Kubernetes Audit configuration (may only be enabled at creation time) (see [below for nested schema](#nestedblock--audit))
+- `audit` (Block List) Parameters for Kubernetes Audit configuration (may only be enabled at creation time) (see [below for nested schema](#nestedblock--audit))
 - `auto_upgrade` (Boolean) Enable automatic upgrading of the control plane version.
 - `cni` (String) The CNI plugin that is to be used. Available options are "calico" or "cilium". Defaults to "calico". Setting empty string will result in a cluster with no CNI.
 - `create_default_security_group` (Boolean) ❗ Creates an ad-hoc security group based on the choice of the selected CNI (may only be set at creation time).
@@ -50,7 +52,7 @@ directory for complete configuration examples.
 - `feature_gates` (Set of String) Feature gates options for the cluster.
 - `labels` (Map of String) A map of key/value labels.
 - `metrics_server` (Boolean) Deploy the [Kubernetes Metrics Server](https://github.com/kubernetes-sigs/metrics-server/) in the control plane (boolean; default: `true`; may only be set at creation time).
-- `oidc` (Block List, Max: 1) An OpenID Connect configuration to provide to the Kubernetes API server (may only be set at creation time). Structure is documented below. (see [below for nested schema](#nestedblock--oidc))
+- `oidc` (Block List) An OpenID Connect configuration to provide to the Kubernetes API server (may only be set at creation time). Structure is documented below. (see [below for nested schema](#nestedblock--oidc))
 - `service_level` (String) The service level of the control plane (`pro` or `starter`; default: `pro`; may only be set at creation time).
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `version` (String) The version of the control plane (default: latest version available from the API; see `exo compute sks versions` for reference; may only be set at creation time).
@@ -75,7 +77,7 @@ Optional:
 - `bearer_token` (String, Sensitive) The optional bearer token to include in the request header
 - `enabled` (Boolean) Whether to run the APIServer with the configured Kubernetes Audit
 - `endpoint` (String) The Endpoint URL for the Webserver responsible of processing Audit events
-- `initial_backoff` (String) The Initial Backoff to wait before sending data to the remote server (default '10s')
+- `initial_backoff` (String) The Initial Backoff to wait before sending data to the remote server (default `10s`)
 
 
 <a id="nestedblock--oidc"></a>
@@ -100,10 +102,10 @@ Optional:
 
 Optional:
 
-- `create` (String)
-- `delete` (String)
-- `read` (String)
-- `update` (String)
+- `create` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours).
+- `delete` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Setting a timeout for a Delete operation is only applicable if changes are saved into state before the destroy operation occurs.
+- `read` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
+- `update` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours).
 
 -> The symbol ❗ in an attribute indicates that modifying it, will force the creation of a new resource.
 

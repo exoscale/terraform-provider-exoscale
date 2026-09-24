@@ -84,12 +84,6 @@ func unique(s []string) []string {
 	return result
 }
 
-// DiffSuppressFunc https://www.terraform.io/plugin/sdkv2/schemas/schema-behaviors#diffsuppressfunc
-// Do no show case differences between state and resource
-func suppressCaseDiff(k, old, new string, d *schema.ResourceData) bool {
-	return strings.EqualFold(old, new)
-}
-
 func parseIAMAccessKeyResource(v string) (*egoscale.IAMAccessKeyResource, error) {
 	var iamAccessKeyResource egoscale.IAMAccessKeyResource
 

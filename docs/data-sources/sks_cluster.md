@@ -3,12 +3,15 @@
 page_title: "exoscale_sks_cluster Data Source - terraform-provider-exoscale"
 subcategory: ""
 description: |-
-  
+  Fetch Exoscale Scalable Kubernetes Service (SKS) https://community.exoscale.com/product/compute/containers/ Cluster data.
+  Corresponding resource: exoscaleskscluster ../resources/sks_cluster.md.
 ---
 
 # exoscale_sks_cluster (Data Source)
 
+Fetch Exoscale [Scalable Kubernetes Service (SKS)](https://community.exoscale.com/product/compute/containers/) Cluster data.
 
+Corresponding resource: [exoscale_sks_cluster](../resources/sks_cluster.md).
 
 
 
@@ -17,65 +20,36 @@ description: |-
 
 ### Required
 
-- `zone` (String)
+- `zone` (String) The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.
 
 ### Optional
 
-- `addons` (Set of String, Deprecated)
-- `aggregation_ca` (String, Sensitive) The CA certificate (in PEM format) for TLS communications between the control plane and the aggregation layer (e.g. `metrics-server`).
-- `audit` (Block List, Max: 1) Parameters for Kubernetes Audit configuration (may only be enabled at creation time) (see [below for nested schema](#nestedblock--audit))
-- `auto_upgrade` (Boolean) Enable automatic upgrading of the control plane version.
-- `cni` (String) The CNI plugin that is to be used. Available options are "calico" or "cilium". Defaults to "calico". Setting empty string will result in a cluster with no CNI.
-- `control_plane_ca` (String, Sensitive) The CA certificate (in PEM format) for TLS communications between control plane components.
-- `create_default_security_group` (Boolean) ❗ Creates an ad-hoc security group based on the choice of the selected CNI (may only be set at creation time).
-- `created_at` (String) The cluster creation date.
-- `default_security_group_id` (String) The ID of the cluster's ad-hoc default security group (when `create_default_security_group` was set at creation time).
-- `description` (String) A free-form text describing the cluster.
-- `enable_karpenter` (Boolean) Indicates whether to deploy Karpenter for cluster autoscaling.
-- `enable_kube_proxy` (Boolean) ❗ Indicates whether to deploy the Kubernetes network proxy. (may only be set at creation time)
-- `endpoint` (String) The cluster API endpoint.
-- `exoscale_ccm` (Boolean) Deploy the Exoscale [Cloud Controller Manager](https://github.com/exoscale/exoscale-cloud-controller-manager/) in the control plane (boolean; default: `true`; may only be set at creation time).
-- `exoscale_csi` (Boolean) Deploy the Exoscale [Container Storage Interface](https://github.com/exoscale/exoscale-csi-driver/) on worker nodes (boolean; default: `false`; requires the CCM to be enabled).
-- `feature_gates` (Set of String) Feature gates options for the cluster.
-- `kubelet_ca` (String, Sensitive) The CA certificate (in PEM format) for TLS communications between kubelets and the control plane.
-- `labels` (Map of String) A map of key/value labels.
-- `metrics_server` (Boolean) Deploy the [Kubernetes Metrics Server](https://github.com/kubernetes-sigs/metrics-server/) in the control plane (boolean; default: `true`; may only be set at creation time).
-- `name` (String)
-- `nodepools` (Set of String) The list of [exoscale_sks_nodepool](./sks_nodepool.md) (IDs) attached to the cluster.
-- `oidc` (Block List, Max: 1) An OpenID Connect configuration to provide to the Kubernetes API server (may only be set at creation time). Structure is documented below. (see [below for nested schema](#nestedblock--oidc))
-- `service_level` (String) The service level of the control plane (`pro` or `starter`; default: `pro`; may only be set at creation time).
-- `state` (String) The cluster state.
-- `version` (String) The version of the control plane (default: latest version available from the API; see `exo compute sks versions` for reference; may only be set at creation time).
+- `id` (String) The SKS cluster ID to match (conflicts with `name`).
+- `name` (String) The SKS cluster name to match (conflicts with `id`).
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
+- `addons` (Set of String) The list of enabled add-ons.
+- `auto_upgrade` (Boolean) Enable automatic upgrading of the control plane version.
+- `cni` (String) The CNI plugin that is to be used.
+- `created_at` (String) The cluster creation date.
+- `default_security_group_id` (String) The ID of the cluster's ad-hoc default security group.
+- `description` (String) A free-form text describing the cluster.
+- `enable_kube_proxy` (Boolean) Indicates whether the Kubernetes network proxy is deployed.
+- `endpoint` (String) The cluster API endpoint.
+- `feature_gates` (Set of String) Feature gates options for the cluster.
+- `labels` (Map of String) A map of key/value labels.
+- `nodepools` (Set of String) The list of [exoscale_sks_nodepool](./sks_nodepool.md) (IDs) attached to the cluster.
+- `service_level` (String) The service level of the control plane.
+- `state` (String) The cluster state.
+- `version` (String) The version of the control plane.
 
-<a id="nestedblock--audit"></a>
-### Nested Schema for `audit`
-
-Optional:
-
-- `bearer_token` (String, Sensitive) The optional bearer token to include in the request header
-- `enabled` (Boolean) Whether to run the APIServer with the configured Kubernetes Audit
-- `endpoint` (String) The Endpoint URL for the Webserver responsible of processing Audit events
-- `initial_backoff` (String) The Initial Backoff to wait before sending data to the remote server (default '10s')
-
-
-<a id="nestedblock--oidc"></a>
-### Nested Schema for `oidc`
-
-Required:
-
-- `client_id` (String) The OpenID client ID.
-- `issuer_url` (String) The OpenID provider URL.
+<a id="nestedblock--timeouts"></a>
+### Nested Schema for `timeouts`
 
 Optional:
 
-- `groups_claim` (String) An OpenID JWT claim to use as the user's group.
-- `groups_prefix` (String) An OpenID prefix prepended to group claims.
-- `required_claim` (Map of String) A map of key/value pairs that describes a required claim in the OpenID Token.
-- `username_claim` (String) An OpenID JWT claim to use as the user name.
-- `username_prefix` (String) An OpenID prefix prepended to username claims.
+- `read` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
 
 
