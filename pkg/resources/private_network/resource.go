@@ -269,9 +269,9 @@ func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *res
 	state.Name = types.StringValue(privateNetwork.Name)
 
 	utils.RefreshString(&state.Description, privateNetwork.Description)
-	utils.RefreshString(&state.StartIP, privateNetwork.StartIP.String())
-	utils.RefreshString(&state.EndIP, privateNetwork.EndIP.String())
-	utils.RefreshString(&state.Netmask, privateNetwork.Netmask.String())
+	utils.RefreshIP(&state.StartIP, privateNetwork.StartIP)
+	utils.RefreshIP(&state.EndIP, privateNetwork.EndIP)
+	utils.RefreshIP(&state.Netmask, privateNetwork.Netmask)
 	if dg := utils.RefreshLabels(
 		ctx,
 		&state.Labels,

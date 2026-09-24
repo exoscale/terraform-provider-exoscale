@@ -11,6 +11,7 @@ package utils
 
 import (
 	"context"
+	"net"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -45,6 +46,18 @@ func RefreshStringPointer(state *basetypes.StringValue, remote *string) {
 	}
 
 	RefreshString(state, *remote)
+}
+
+// RefreshIP helper to update net.IP state value.
+//
+// Works as RefreshString but further suppress literal '<nil>' output by net library.
+func RefreshIP(state *basetypes.StringValue, remote net.IP) {
+	var value string
+	if len(remote) > 0 {
+		value = remote.String()
+	}
+
+	RefreshString(state, value)
 }
 
 // RefreshLabels helper to update state value.
