@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+FEATURES:
+
+- VPC integration: routes - #588
+
 ## 0.73.1
 
 BUG FIXES:
