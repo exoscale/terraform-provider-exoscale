@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+BUG FIXES:
+
+- Fix security group drift introduced in 0.73.0 (#600)
+
 ## 0.73.0
 
 IMPROVEMENTS:
