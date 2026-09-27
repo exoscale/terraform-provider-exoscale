@@ -1216,16 +1216,9 @@ func (r *ResourceNodepool) applyNodepool(
 	model.Size = types.Int64Value(nodepool.Size)
 	model.State = types.StringValue(string(nodepool.State))
 
-	model.Taints = types.MapNull(types.StringType)
-	if len(nodepool.Taints) > 0 {
-		taints := make(map[string]string, len(nodepool.Taints))
-		for k, v := range nodepool.Taints {
-			taints[k] = fmt.Sprintf("%s:%s", v.Value, v.Effect)
-		}
-		t, d := types.MapValueFrom(ctx, types.StringType, taints)
-		diags.Append(d...)
-		model.Taints = t
-	}
+	taints, d := sksNodepoolTaintsValue(ctx, nodepool.Taints, model.Taints)
+	diags.Append(d...)
+	model.Taints = taints
 
 	model.TemplateID = types.StringNull()
 	if nodepool.Template != nil {

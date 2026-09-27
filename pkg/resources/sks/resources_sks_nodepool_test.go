@@ -204,6 +204,60 @@ func TestAccResourceSKSNodepool(t *testing.T) {
 	})
 }
 
+func TestAccResourceSKSNodepoolEmptyTaints(t *testing.T) {
+	t.Parallel()
+	if os.Getenv(resource.EnvTfAcc) == "" {
+		t.Skipf("Acceptance tests skipped unless env '%s' set", resource.EnvTfAcc)
+		return
+	}
+
+	const r = "exoscale_sks_nodepool.test"
+	id := time.Now().UnixNano()
+	config := func(taints string) string {
+		return fmt.Sprintf(`
+resource "exoscale_sks_cluster" "test" {
+  zone = %[1]q
+  name = "terraform-provider-test-%[2]d"
+  timeouts { delete = "10m" }
+}
+resource "exoscale_sks_nodepool" "test" {
+  zone          = %[1]q
+  cluster_id    = exoscale_sks_cluster.test.id
+  name          = "terraform-provider-test-%[2]d"
+  instance_type = "standard.small"
+  disk_size     = 20
+  size          = 1
+  %[3]s
+  timeouts { delete = "10m" }
+}
+`, testZoneName, id, taints)
+	}
+	empty := config("taints = {}")
+	omitted := config("")
+	null := config("taints = null")
+	nonempty := config(`taints = { dedicated = "system:NoSchedule" }`)
+	checkEmpty := resource.TestCheckResourceAttr(r, "taints.%", "0")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testutils.AccPreCheck(t) },
+		ProtoV6ProviderFactories: testutils.TestAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckResourceSKSNodepoolDestroy(r),
+		Steps: []resource.TestStep{
+			{Config: empty, Check: checkEmpty},
+			{Config: empty, PlanOnly: true},
+			{Config: nonempty, Check: resource.TestCheckResourceAttr(r, "taints.dedicated", "system:NoSchedule")},
+			{Config: empty, Check: checkEmpty},
+			{Config: empty, PlanOnly: true},
+			{Config: omitted, Check: resource.TestCheckNoResourceAttr(r, "taints.%")},
+			{Config: omitted, PlanOnly: true},
+			{Config: null, Check: resource.TestCheckNoResourceAttr(r, "taints.%")},
+			{Config: null, PlanOnly: true},
+			{Config: empty, Check: checkEmpty},
+			{Config: empty, PlanOnly: true},
+		},
+	})
+}
+
 func testAccCheckResourceSKSNodepoolExists(r string, sksNodepool *egoscale.SKSNodepool) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[r]

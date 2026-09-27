@@ -9,8 +9,24 @@ import (
 	"time"
 
 	v3 "github.com/exoscale/egoscale/v3"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
+
+// sksNodepoolTaintsValue preserves the distinction between an omitted taints
+// attribute and an explicitly configured empty map. The API represents both as
+// no taints, but Terraform requires the returned state to match the planned value.
+func sksNodepoolTaintsValue(ctx context.Context, taints v3.SKSNodepoolTaints, current types.Map) (types.Map, diag.Diagnostics) {
+	if len(taints) == 0 && (current.IsNull() || current.IsUnknown()) {
+		return types.MapNull(types.StringType), nil
+	}
+
+	values := make(map[string]string, len(taints))
+	for k, v := range taints {
+		values[k] = fmt.Sprintf("%s:%s", v.Value, v.Effect)
+	}
+	return types.MapValueFrom(ctx, types.StringType, values)
+}
 
 // in returns true if v is found in list.
 func in(list []string, v string) bool {
