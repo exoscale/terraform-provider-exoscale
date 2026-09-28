@@ -45,6 +45,7 @@ type DataSourceClusterModel struct {
 	EnableKubeProxy        types.Bool   `tfsdk:"enable_kube_proxy"`
 	Endpoint               types.String `tfsdk:"endpoint"`
 	FeatureGates           types.Set    `tfsdk:"feature_gates"`
+	KarpenterFeatureGates  types.Set    `tfsdk:"karpenter_feature_gates"`
 	Labels                 types.Map    `tfsdk:"labels"`
 	Nodepools              types.Set    `tfsdk:"nodepools"`
 	ServiceLevel           types.String `tfsdk:"service_level"`
@@ -137,6 +138,12 @@ func (d *DataSourceCluster) Schema(ctx context.Context, req datasource.SchemaReq
 			"feature_gates": schema.SetAttribute{
 				MarkdownDescription: "Feature gates options for the cluster.",
 				Description:         "Feature gates options for the cluster.",
+				ElementType:         types.StringType,
+				Computed:            true,
+			},
+			"karpenter_feature_gates": schema.SetAttribute{
+				MarkdownDescription: "A list of Karpenter controller feature gates to enable for the Karpenter controller binary.",
+				Description:         "A list of Karpenter controller feature gates to enable for the Karpenter controller binary.",
 				ElementType:         types.StringType,
 				Computed:            true,
 			},
@@ -268,6 +275,10 @@ func (d *DataSourceCluster) Read(ctx context.Context, req datasource.ReadRequest
 	featureGates, dg := types.SetValueFrom(ctx, types.StringType, sliceOrEmpty(cluster.FeatureGates))
 	resp.Diagnostics.Append(dg...)
 	state.FeatureGates = featureGates
+
+	karpenterFeatureGates, dg := types.SetValueFrom(ctx, types.StringType, sliceOrEmpty(cluster.KarpenterFeatureGates))
+	resp.Diagnostics.Append(dg...)
+	state.KarpenterFeatureGates = karpenterFeatureGates
 
 	nodepools := make([]string, len(cluster.Nodepools))
 	for i, np := range cluster.Nodepools {

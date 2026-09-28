@@ -9,7 +9,8 @@ resource "exoscale_sks_cluster" "test-with-karpenter" {
     test = "acctest"
   }
 
-  enable_karpenter = true
+  enable_karpenter        = true
+  karpenter_feature_gates = ["NodeRepair"]
 
   timeouts {
     create = "10m"

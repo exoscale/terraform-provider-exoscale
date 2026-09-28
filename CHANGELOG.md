@@ -5,6 +5,7 @@
 FEATURES:
 
 - VPC integration: routes - #588
+- SKS: Karpenter feature-flags - #603
 
 ## 0.73.1
 
