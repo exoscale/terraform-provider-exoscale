@@ -476,17 +476,20 @@ func TestAccResourceSKSClusterWithKarpenter(t *testing.T) {
 						a.Equal(name, sksCluster.Name)
 						a.Equal("description-test", sksCluster.Description)
 						a.True(hasKarpenter(sksCluster.Addons), "Karpenter addon should be present when enabled")
+						a.ElementsMatch([]string{"NodeRepair"}, sksCluster.KarpenterFeatureGates)
 						return nil
 					},
 					testutils.CheckResourceState(r, testutils.CheckResourceStateValidateAttributes(testutils.TestAttrs{
-						"name":             testutils.ValidateString(name),
-						"description":      testutils.ValidateString("description-test"),
-						"auto_upgrade":     testutils.ValidateString("true"),
-						"exoscale_ccm":     testutils.ValidateString("true"),
-						"metrics_server":   testutils.ValidateString("false"),
-						"labels.test":      testutils.ValidateString("acctest"),
-						"enable_karpenter": testutils.ValidateString("true"),
+						"name":                      testutils.ValidateString(name),
+						"description":               testutils.ValidateString("description-test"),
+						"auto_upgrade":              testutils.ValidateString("true"),
+						"exoscale_ccm":              testutils.ValidateString("true"),
+						"metrics_server":            testutils.ValidateString("false"),
+						"labels.test":               testutils.ValidateString("acctest"),
+						"enable_karpenter":          testutils.ValidateString("true"),
+						"karpenter_feature_gates.#": testutils.ValidateString("1"),
 					})),
+					resource.TestCheckTypeSetElemAttr(r, "karpenter_feature_gates.*", "NodeRepair"),
 				),
 			},
 			{
@@ -524,17 +527,20 @@ func TestAccResourceSKSClusterWithKarpenter(t *testing.T) {
 						a.Equal(versions[0], sksCluster.Version)
 						a.Equal(name, sksCluster.Name)
 						a.True(hasKarpenter(sksCluster.Addons), "Karpenter addon should be present when re-enabled")
+						a.ElementsMatch([]string{"NodeRepair"}, sksCluster.KarpenterFeatureGates)
 						return nil
 					},
 					testutils.CheckResourceState(r, testutils.CheckResourceStateValidateAttributes(testutils.TestAttrs{
-						"name":             testutils.ValidateString(name),
-						"description":      testutils.ValidateString("description-test"),
-						"auto_upgrade":     testutils.ValidateString("true"),
-						"exoscale_ccm":     testutils.ValidateString("true"),
-						"metrics_server":   testutils.ValidateString("false"),
-						"labels.test":      testutils.ValidateString("acctest"),
-						"enable_karpenter": testutils.ValidateString("true"),
+						"name":                      testutils.ValidateString(name),
+						"description":               testutils.ValidateString("description-test"),
+						"auto_upgrade":              testutils.ValidateString("true"),
+						"exoscale_ccm":              testutils.ValidateString("true"),
+						"metrics_server":            testutils.ValidateString("false"),
+						"labels.test":               testutils.ValidateString("acctest"),
+						"enable_karpenter":          testutils.ValidateString("true"),
+						"karpenter_feature_gates.#": testutils.ValidateString("1"),
 					})),
+					resource.TestCheckTypeSetElemAttr(r, "karpenter_feature_gates.*", "NodeRepair"),
 				),
 			},
 		},

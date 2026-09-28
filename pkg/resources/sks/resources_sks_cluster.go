@@ -110,6 +110,7 @@ type ResourceClusterModel struct {
 	DefaultSecurityGroupID     types.String `tfsdk:"default_security_group_id"`
 	EnableKubeProxy            types.Bool   `tfsdk:"enable_kube_proxy"`
 	EnableKarpenter            types.Bool   `tfsdk:"enable_karpenter"`
+	KarpenterFeatureGates      types.Set    `tfsdk:"karpenter_feature_gates"`
 	Endpoint                   types.String `tfsdk:"endpoint"`
 	ExoscaleCCM                types.Bool   `tfsdk:"exoscale_ccm"`
 	ExoscaleCSI                types.Bool   `tfsdk:"exoscale_csi"`
@@ -231,6 +232,13 @@ func (r *ResourceCluster) Schema(ctx context.Context, req resource.SchemaRequest
 				Optional:            true,
 				Computed:            true,
 				Default:             booldefault.StaticBool(false),
+			},
+			"karpenter_feature_gates": schema.SetAttribute{
+				Description:         "A list of Karpenter controller feature gates to enable for the Karpenter controller binary.",
+				MarkdownDescription: "A list of Karpenter controller feature gates to enable for the Karpenter controller binary.",
+				ElementType:         types.StringType,
+				Optional:            true,
+				Computed:            true,
 			},
 			"endpoint": schema.StringAttribute{
 				Description:         "The cluster API endpoint.",
@@ -419,14 +427,15 @@ func (r *ResourceCluster) ImportState(ctx context.Context, req resource.ImportSt
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &ResourceClusterModel{
-		ID:           types.StringValue(idParts[0]),
-		Zone:         types.StringValue(zone),
-		Labels:       types.MapNull(types.StringType),
-		FeatureGates: types.SetNull(types.StringType),
-		Nodepools:    types.SetNull(types.StringType),
-		Oidc:         types.ListNull(types.ObjectType{AttrTypes: oidcAttrTypes()}),
-		Audit:        types.ListNull(types.ObjectType{AttrTypes: auditAttrTypes()}),
-		Timeouts:     t,
+		ID:                    types.StringValue(idParts[0]),
+		Zone:                  types.StringValue(zone),
+		Labels:                types.MapNull(types.StringType),
+		FeatureGates:          types.SetNull(types.StringType),
+		KarpenterFeatureGates: types.SetNull(types.StringType),
+		Nodepools:             types.SetNull(types.StringType),
+		Oidc:                  types.ListNull(types.ObjectType{AttrTypes: oidcAttrTypes()}),
+		Audit:                 types.ListNull(types.ObjectType{AttrTypes: auditAttrTypes()}),
+		Timeouts:              t,
 	})...)
 }
 
@@ -498,6 +507,17 @@ func (r *ResourceCluster) Create(ctx context.Context, req resource.CreateRequest
 		}
 	}
 	createReq.FeatureGates = featureGates
+
+	if !plan.KarpenterFeatureGates.IsNull() && !plan.KarpenterFeatureGates.IsUnknown() {
+		karpenterFeatureGates := []string{}
+		resp.Diagnostics.Append(plan.KarpenterFeatureGates.ElementsAs(ctx, &karpenterFeatureGates, false)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+		if len(karpenterFeatureGates) > 0 {
+			createReq.KarpenterFeatureGates = karpenterFeatureGates
+		}
+	}
 
 	if cni := plan.CNI.ValueString(); cni != "" {
 		createReq.Cni = exoscale.CreateSKSClusterRequestCni(cni)
@@ -701,6 +721,10 @@ func (r *ResourceCluster) Read(ctx context.Context, req resource.ReadRequest, re
 	resp.Diagnostics.Append(d...)
 	state.FeatureGates = featureGates
 
+	karpenterFeatureGates, d := types.SetValueFrom(ctx, types.StringType, sliceOrEmpty(sksCluster.KarpenterFeatureGates))
+	resp.Diagnostics.Append(d...)
+	state.KarpenterFeatureGates = karpenterFeatureGates
+
 	// Preserve a major.minor input version, otherwise store the resolved one.
 	if len(strings.Split(state.Version.ValueString(), ".")) == 2 {
 		state.Version = types.StringValue(strings.Join(strings.Split(sksCluster.Version, ".")[:2], "."))
@@ -770,6 +794,18 @@ func (r *ResourceCluster) Update(ctx context.Context, req resource.UpdateRequest
 			}
 		}
 		updateReq.FeatureGates = featureGates
+		updated = true
+	}
+
+	if !plan.KarpenterFeatureGates.Equal(state.KarpenterFeatureGates) {
+		karpenterFeatureGates := []string{}
+		if !plan.KarpenterFeatureGates.IsNull() && !plan.KarpenterFeatureGates.IsUnknown() {
+			resp.Diagnostics.Append(plan.KarpenterFeatureGates.ElementsAs(ctx, &karpenterFeatureGates, false)...)
+			if resp.Diagnostics.HasError() {
+				return
+			}
+		}
+		updateReq.KarpenterFeatureGates = karpenterFeatureGates
 		updated = true
 	}
 
@@ -1060,6 +1096,11 @@ func (r *ResourceCluster) setUnknownAttributes(ctx context.Context, client *exos
 		featureGates, d := types.SetValueFrom(ctx, types.StringType, sliceOrEmpty(sksCluster.FeatureGates))
 		diags.Append(d...)
 		plan.FeatureGates = featureGates
+	}
+	if plan.KarpenterFeatureGates.IsUnknown() {
+		karpenterFeatureGates, d := types.SetValueFrom(ctx, types.StringType, sliceOrEmpty(sksCluster.KarpenterFeatureGates))
+		diags.Append(d...)
+		plan.KarpenterFeatureGates = karpenterFeatureGates
 	}
 	if plan.Nodepools.IsUnknown() {
 		nodepools := make([]string, len(sksCluster.Nodepools))

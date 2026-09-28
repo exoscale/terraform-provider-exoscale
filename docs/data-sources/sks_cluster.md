@@ -39,6 +39,7 @@ Corresponding resource: [exoscale_sks_cluster](../resources/sks_cluster.md).
 - `enable_kube_proxy` (Boolean) Indicates whether the Kubernetes network proxy is deployed.
 - `endpoint` (String) The cluster API endpoint.
 - `feature_gates` (Set of String) Feature gates options for the cluster.
+- `karpenter_feature_gates` (Set of String) A list of Karpenter controller feature gates to enable for the Karpenter controller binary.
 - `labels` (Map of String) A map of key/value labels.
 - `nodepools` (Set of String) The list of [exoscale_sks_nodepool](./sks_nodepool.md) (IDs) attached to the cluster.
 - `service_level` (String) The service level of the control plane.
