@@ -7,6 +7,10 @@ FEATURES:
 - VPC integration: routes - #588
 - SKS: Karpenter feature-flags - #603
 
+BUG FIXES:
+
+- Fix sks nodepool create and update #605
+
 ## 0.73.1
 
 BUG FIXES:

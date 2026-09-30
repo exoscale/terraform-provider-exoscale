@@ -674,7 +674,7 @@ func (r *ResourceNodepool) Create(ctx context.Context, req resource.CreateReques
 		return
 	}
 
-	if diags := r.applyNodepool(ctx, client, cluster, nodepool, &plan); diags.HasError() {
+	if diags := r.applyNodepoolComputed(ctx, nodepool, &plan); diags.HasError() {
 		resp.Diagnostics.Append(diags...)
 		return
 	}
@@ -1004,7 +1004,7 @@ func (r *ResourceNodepool) Update(ctx context.Context, req resource.UpdateReques
 		return
 	}
 
-	if diags := r.applyNodepool(ctx, client, cluster, updatedNodepool, &plan); diags.HasError() {
+	if diags := r.applyNodepoolComputed(ctx, updatedNodepool, &plan); diags.HasError() {
 		resp.Diagnostics.Append(diags...)
 		return
 	}
@@ -1097,9 +1097,84 @@ func setContainsString(ctx context.Context, s types.Set, v string) (bool, diag.D
 	return in(values, v), diags
 }
 
-// applyNodepool fetches the nodepool's instance type (and its CA... none here, just
-// the instance type label) and maps the remote state onto model. It mirrors the
-// former SDKv2 resourceSKSNodepoolApply.
+func (r *ResourceNodepool) applyNodepoolComputed(
+	ctx context.Context,
+	nodepool *exoscale.SKSNodepool,
+	model *ResourceNodepoolModel,
+) diag.Diagnostics {
+	var diags diag.Diagnostics
+
+	model.ID = types.StringValue(nodepool.ID.String())
+	model.CreatedAt = types.StringValue(nodepool.CreatedAT.String())
+
+	model.InstancePoolID = types.StringNull()
+	if nodepool.InstancePool != nil {
+		model.InstancePoolID = types.StringValue(nodepool.InstancePool.ID.String())
+	}
+
+	model.State = types.StringValue(string(nodepool.State))
+
+	model.TemplateID = types.StringNull()
+	if nodepool.Template != nil {
+		model.TemplateID = types.StringValue(nodepool.Template.ID.String())
+	}
+
+	model.Version = types.StringValue(nodepool.Version)
+
+	if model.KubeletMaxPods.IsUnknown() {
+		model.KubeletMaxPods = types.Int64Null()
+		if nodepool.KubeletMaxPods != nil {
+			model.KubeletMaxPods = types.Int64Value(*nodepool.KubeletMaxPods)
+		}
+	}
+
+	if model.KubeletImageGC.IsUnknown() {
+		model.KubeletImageGC = types.ObjectNull(kubeletGCAttrTypes())
+		if nodepool.KubeletImageGC != nil {
+			obj, d := types.ObjectValueFrom(ctx, kubeletGCAttrTypes(), kubeletGCModel{
+				MinAge:        optionalString(nodepool.KubeletImageGC.MinAge),
+				HighThreshold: types.Int64Value(nodepool.KubeletImageGC.HighThreshold),
+				LowThreshold:  types.Int64Value(nodepool.KubeletImageGC.LowThreshold),
+			})
+			diags.Append(d...)
+			model.KubeletImageGC = obj
+		}
+	} else if !model.KubeletImageGC.IsNull() {
+		// The object is configured, but its nested attributes are
+		// Optional+Computed too: fill in those left unknown.
+		var block kubeletGCModel
+		diags.Append(model.KubeletImageGC.As(ctx, &block, basetypes.ObjectAsOptions{})...)
+		if diags.HasError() {
+			return diags
+		}
+
+		if block.MinAge.IsUnknown() {
+			block.MinAge = types.StringNull()
+			if nodepool.KubeletImageGC != nil {
+				block.MinAge = optionalString(nodepool.KubeletImageGC.MinAge)
+			}
+		}
+		if block.HighThreshold.IsUnknown() {
+			block.HighThreshold = types.Int64Null()
+			if nodepool.KubeletImageGC != nil {
+				block.HighThreshold = types.Int64Value(nodepool.KubeletImageGC.HighThreshold)
+			}
+		}
+		if block.LowThreshold.IsUnknown() {
+			block.LowThreshold = types.Int64Null()
+			if nodepool.KubeletImageGC != nil {
+				block.LowThreshold = types.Int64Value(nodepool.KubeletImageGC.LowThreshold)
+			}
+		}
+
+		obj, d := types.ObjectValueFrom(ctx, kubeletGCAttrTypes(), block)
+		diags.Append(d...)
+		model.KubeletImageGC = obj
+	}
+
+	return diags
+}
+
 func (r *ResourceNodepool) applyNodepool(
 	ctx context.Context,
 	client *exoscale.Client,
@@ -1107,9 +1182,10 @@ func (r *ResourceNodepool) applyNodepool(
 	nodepool *exoscale.SKSNodepool,
 	model *ResourceNodepoolModel,
 ) diag.Diagnostics {
-	var diags diag.Diagnostics
-
-	model.ID = types.StringValue(nodepool.ID.String())
+	diags := r.applyNodepoolComputed(ctx, nodepool, model)
+	if diags.HasError() {
+		return diags
+	}
 
 	model.AntiAffinityGroupIDs = types.SetNull(types.StringType)
 	if len(nodepool.AntiAffinityGroups) > 0 {
@@ -1122,20 +1198,12 @@ func (r *ResourceNodepool) applyNodepool(
 		model.StorageLVM = types.BoolValue(in(nodepool.Addons, sksNodepoolAddonStorageLVM))
 	}
 
-	model.CreatedAt = types.StringValue(nodepool.CreatedAT.String())
-
 	if nodepool.DeployTarget != nil {
 		model.DeployTargetID = types.StringValue(nodepool.DeployTarget.ID.String())
 	}
 
 	model.Description = optionalString(nodepool.Description)
 	model.DiskSize = types.Int64Value(nodepool.DiskSize)
-
-	model.InstancePoolID = types.StringNull()
-	if nodepool.InstancePool != nil {
-		model.InstancePoolID = types.StringValue(nodepool.InstancePool.ID.String())
-	}
-
 	model.InstancePrefix = types.StringValue(nodepool.InstancePrefix)
 
 	instanceType, err := client.GetInstanceType(ctx, nodepool.InstanceType.ID)
@@ -1214,7 +1282,6 @@ func (r *ResourceNodepool) applyNodepool(
 	}
 
 	model.Size = types.Int64Value(nodepool.Size)
-	model.State = types.StringValue(string(nodepool.State))
 
 	model.Taints = types.MapNull(types.StringType)
 	if len(nodepool.Taints) > 0 {
@@ -1226,13 +1293,6 @@ func (r *ResourceNodepool) applyNodepool(
 		diags.Append(d...)
 		model.Taints = t
 	}
-
-	model.TemplateID = types.StringNull()
-	if nodepool.Template != nil {
-		model.TemplateID = types.StringValue(nodepool.Template.ID.String())
-	}
-
-	model.Version = types.StringValue(nodepool.Version)
 
 	model.IPv6 = types.BoolValue(nodepool.PublicIPAssignment == exoscale.SKSNodepoolPublicIPAssignmentDual)
 
