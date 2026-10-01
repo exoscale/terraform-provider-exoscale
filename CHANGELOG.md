@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+
+## 0.73.2
 FEATURES:
 
 - VPC integration: routes - #588
