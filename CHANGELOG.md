@@ -15,6 +15,7 @@ BREAKING CHANGES:
 DEPENDENCIES:
 
 - Bump `google.golang.org/grpc` to v1.83.2, fixing GO-2026-6443 and GO-2026-6348
+- Bump `github.com/exoscale/egoscale/v3` to v3.1.54
 
 ## 0.72.0
 
