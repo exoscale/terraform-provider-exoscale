@@ -170,7 +170,8 @@ func Resource() *schema.Resource {
 						// the first interface for example, the block diff would show the
 						// last interface being deleted and the preceding ones being 'moved up'.
 						ConfigMode: schema.SchemaConfigModeAttr,
-						Optional:   true,
+						Required:   true,
+						MinItems:   1,
 						Elem: &schema.Resource{
 							Schema: map[string]*schema.Schema{
 								// These two descriptions reach nobody: tfplugindocs renders the
