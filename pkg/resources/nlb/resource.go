@@ -336,19 +336,26 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 		}
 	}
 
+	// The remote is in sync with the plan: carry the planned values over to
+	// the state. The state struct is what gets saved, never the plan itself.
+	state.Name = plan.Name
+	state.Description = plan.Description
+	state.Labels = plan.Labels
+	state.Timeouts = plan.Timeouts
+
 	nlb, err := client.GetLoadBalancer(ctx, id)
 	if err != nil {
 		resp.Diagnostics.AddError("API returned an error while fetching the updated NLB", err.Error())
 		return
 	}
 
-	resp.Diagnostics.Append(applyNLBComputed(&plan, nlb)...)
+	resp.Diagnostics.Append(applyNLBComputed(&state, nlb)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
-	tflog.Trace(ctx, "resource update done", map[string]any{"id": plan.ID})
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+	tflog.Trace(ctx, "resource update done", map[string]any{"id": state.ID})
 }
 
 func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
