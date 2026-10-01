@@ -290,12 +290,9 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 		return
 	}
 
-	// Every attribute of the update payload is optional API-side, so only the
-	// ones that actually changed are sent. `update` tracks whether anything
-	// will actually be serialised: every field is `omitempty`, and the API
-	// rejects a request that ends up with an empty body. Emptying an attribute
-	// is therefore never an update -- it is either a reset call (labels) or
-	// not expressible at all (description, see below).
+	// Only the attributes that changed are sent: the API leaves an omitted (or
+	// null) attribute untouched. Emptying one is an update like any other, with
+	// "" for the description and an empty map for the labels.
 	var (
 		update  bool
 		request exoscale.UpdateLoadBalancerRequest
@@ -303,26 +300,25 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 
 	if !plan.Name.Equal(state.Name) {
 		update = true
-		request.Name = plan.Name.ValueString()
+		request.Name = plan.Name.ValueStringPointer()
 	}
 
-	// TODO(egoscale): an emptied description cannot be expressed.
-	// UpdateLoadBalancerRequest.Description is a plain `string` with
-	// `omitempty` (UpdateVpcRequest.Description is a *string), so "" is
-	// dropped from the payload and the API keeps the previous value; the
-	// DELETE /load-balancer/{id}/description reset endpoint answers 5xx.
-	// State keeps the planned value, so the next Read reports it as drift.
-	// Remove this note once the field is nullable upstream.
-	if !plan.Description.Equal(state.Description) && plan.Description.ValueString() != "" {
+	if !plan.Description.Equal(state.Description) {
 		update = true
-		request.Description = plan.Description.ValueString()
+		description := plan.Description.ValueString()
+		request.Description = &description
 	}
 
-	if !plan.Labels.Equal(state.Labels) && len(plan.Labels.Elements()) > 0 {
-		labels := exoscale.Labels{}
+	if !plan.Labels.Equal(state.Labels) {
+		var labels exoscale.Labels
 		resp.Diagnostics.Append(plan.Labels.ElementsAs(ctx, &labels, false)...)
 		if resp.Diagnostics.HasError() {
 			return
+		}
+		// Labels removed from the configuration decode to a nil map, which is
+		// serialised as null and left untouched by the API.
+		if labels == nil {
+			labels = exoscale.Labels{}
 		}
 		update = true
 		request.Labels = labels
@@ -340,15 +336,6 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 		}
 	}
 
-	// Every field of UpdateLoadBalancerRequest is `omitempty`, so emptying an
-	// attribute cannot be expressed as an update: it needs a dedicated reset.
-	if len(plan.Labels.Elements()) == 0 && len(state.Labels.Elements()) > 0 {
-		if err := r.resetField(ctx, client, id, exoscale.ResetLoadBalancerFieldFieldLabels); err != nil {
-			resp.Diagnostics.AddError("unable to reset NLB labels", err.Error())
-			return
-		}
-	}
-
 	nlb, err := client.GetLoadBalancer(ctx, id)
 	if err != nil {
 		resp.Diagnostics.AddError("API returned an error while fetching the updated NLB", err.Error())
@@ -362,23 +349,6 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 	tflog.Trace(ctx, "resource update done", map[string]any{"id": plan.ID})
-}
-
-// resetField clears an NLB attribute that cannot be emptied through an update.
-func (r *Resource) resetField(
-	ctx context.Context,
-	client *exoscale.Client,
-	id exoscale.UUID,
-	field exoscale.ResetLoadBalancerFieldField,
-) error {
-	operation, err := client.ResetLoadBalancerField(ctx, id, field)
-	if err != nil {
-		return err
-	}
-
-	_, err = client.Wait(ctx, operation, exoscale.OperationStateSuccess)
-
-	return err
 }
 
 func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {

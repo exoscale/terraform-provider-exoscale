@@ -393,57 +393,41 @@ func (r *ResourceService) Update(ctx context.Context, req resource.UpdateRequest
 		return
 	}
 
-	// Only the attributes that actually changed are sent, with two exceptions.
-	//
-	// `protocol` is always included. The OpenAPI spec lists no required field
-	// on this endpoint, but the API rejects any update that omits it,
-	// answering "Invalid value `:HTTP/1.1` at 'protocol' ... should be one of
-	// :tcp, :udp" -- the quoted value being the server misreporting an absent
-	// field rather than anything we send. Verified against the API: a body of
-	// {"description":...}, {"port":...} or {"healthcheck":...} alone is
-	// rejected, and adding {"protocol":...} makes each succeed, so the
-	// requirement is unconditional and not tied to replacing the healthcheck.
-	// `strategy` is *not* required, so it stays conditional. `protocol` always
-	// holds a value here, from the config or the schema default, so resending
-	// it is a no-op. Remove this once the API matches its spec.
+	// Only the attributes that changed are sent: the API leaves an omitted
+	// attribute untouched, and "" empties the description.
 	//
 	// The healthcheck is always sent whole, so that dropping `uri`/`tls_sni`
 	// from the configuration clears them instead of leaving the previous
 	// values.
-	//
-	// `update` tracks whether anything besides protocol changed, so that an
-	// unchanged service does not trigger a pointless API round-trip.
 	var (
 		update  bool
-		request = exoscale.UpdateLoadBalancerServiceRequest{
-			Protocol: exoscale.UpdateLoadBalancerServiceRequestProtocol(plan.Protocol.ValueString()),
-		}
+		request exoscale.UpdateLoadBalancerServiceRequest
 	)
 
 	if !plan.Name.Equal(state.Name) {
 		update = true
-		request.Name = plan.Name.ValueString()
+		request.Name = plan.Name.ValueStringPointer()
 	}
 
-	// TODO(egoscale): an emptied description cannot be expressed here either,
-	// for the same reason as the parent NLB (see the note in resource.go).
-	if !plan.Description.Equal(state.Description) && plan.Description.ValueString() != "" {
+	if !plan.Description.Equal(state.Description) {
 		update = true
-		request.Description = plan.Description.ValueString()
+		description := plan.Description.ValueString()
+		request.Description = &description
 	}
 
 	if !plan.Port.Equal(state.Port) {
 		update = true
-		request.Port = plan.Port.ValueInt64()
+		request.Port = plan.Port.ValueInt64Pointer()
 	}
 
 	if !plan.TargetPort.Equal(state.TargetPort) {
 		update = true
-		request.TargetPort = plan.TargetPort.ValueInt64()
+		request.TargetPort = plan.TargetPort.ValueInt64Pointer()
 	}
 
 	if !plan.Protocol.Equal(state.Protocol) {
 		update = true
+		request.Protocol = exoscale.UpdateLoadBalancerServiceRequestProtocol(plan.Protocol.ValueString())
 	}
 
 	if !plan.Strategy.Equal(state.Strategy) {

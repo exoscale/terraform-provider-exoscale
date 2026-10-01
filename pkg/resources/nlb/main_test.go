@@ -116,15 +116,15 @@ func TestNLB(t *testing.T) {
 				),
 			},
 
-			// 3 Drop `labels` on the NLB. Every v3 update field is `omitempty`,
-			// so clearing it only works through ResetLoadBalancerField.
-			// `description` is deliberately kept: egoscale v3 cannot express an
-			// empty one, so dropping it would leave the API value in place and
-			// surface as drift on the next plan.
+			// 3 Drop `labels` and `description` on the NLB, and `description` on
+			// the service: emptying an attribute must reach the API, otherwise
+			// the previous value surfaces as drift on the next plan.
 			{
 				Config: testutils.ParseTestdataConfig("./testdata/003.nlb_clear.tf.tmpl", &testdataSpec),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(nlbResource, "labels.%", "0"),
+					resource.TestCheckNoResourceAttr(nlbResource, "description"),
+					resource.TestCheckNoResourceAttr(serviceResource, "description"),
 
 					// Optional healthcheck attributes fall back to their defaults.
 					resource.TestCheckResourceAttr(serviceResource, "healthcheck.0.mode", "tcp"),

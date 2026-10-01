@@ -4,7 +4,7 @@
 
 IMPROVEMENTS:
 
-- Migrate `nlb`/`nlb_service` resources and data sources to terraform-plugin-framework & egoscale v3. Emptying `description` is not applied yet: `UpdateLoadBalancer(Service)Request.Description` is a non-nullable string in egoscale v3, so an emptied value is never sent and shows up as drift on the next plan. Clearing `labels` on `nlb` works as expected.
+- Migrate `nlb`/`nlb_service` resources and data sources to terraform-plugin-framework & egoscale v3.
 
 FEATURES:
 
