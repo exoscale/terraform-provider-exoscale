@@ -1,0 +1,11 @@
+resource "exoscale_sks_cluster" "test" {
+  zone              = "{{ .Zone }}"
+  name              = "terraform-provider-test-{{ .ID }}"
+  auto_upgrade      = false
+  enable_kube_proxy = true
+  version           = "{{ .Version }}"
+
+  timeouts {
+    create = "10m"
+  }
+}

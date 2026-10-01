@@ -31,7 +31,9 @@ import (
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/nlb"
 	privatenetwork "github.com/exoscale/terraform-provider-exoscale/pkg/resources/private_network"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/security_group"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/sks"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/sos_bucket_policy"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/template"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/vpc"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/zones"
 	"github.com/exoscale/terraform-provider-exoscale/version"
@@ -237,10 +239,15 @@ func (p *ExoscaleProvider) DataSources(ctx context.Context) []func() datasource.
 		nlb.NewDataSourceServiceList,
 		sos_bucket_policy.NewDataSourceSOSBucketPolicy,
 		security_group.NewDataSource,
+		sks.NewDataSource,
+		sks.NewDataSourceClusterList,
+		sks.NewDataSourceNodepool,
+		sks.NewDataSourceNodepoolList,
 		privatenetwork.NewDataSource,
 		domain.NewDataSource,
 		domain.NewDataSourceRecord,
 		vpc.NewDataSource,
+		vpc.NewDataSourceSubnet,
 	}
 }
 
@@ -271,11 +278,17 @@ func (p *ExoscaleProvider) Resources(ctx context.Context) []func() resource.Reso
 		sos_bucket_policy.NewResourceSOSBucketPolicy,
 		security_group.NewResource,
 		security_group.NewResourceRule,
+		sks.NewResourceCluster,
+		sks.NewResourceNodepool,
+		sks.NewResourceKubeconfig,
 		privatenetwork.NewResource,
 		kms.NewResourceKMSKey,
 		domain.NewResource,
 		domain.NewResourceRecord,
 		vpc.NewResource,
+		vpc.NewResourceSubnet,
+		vpc.NewResourceRoute,
+		template.NewResourceTemplate,
 		nlb.NewResource,
 		nlb.NewResourceService,
 	}

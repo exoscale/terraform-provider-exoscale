@@ -1,0 +1,20 @@
+resource "exoscale_vpc" "test_vpc" {
+  zone = "{{ .Zone }}"
+  name = "terraform-provider-test-{{ .ID }}"
+}
+
+resource "exoscale_vpc_subnet" "test_subnet" {
+  zone       = "{{ .Zone }}"
+  vpc_id     = resource.exoscale_vpc.test_vpc.id
+  name       = "terraform-provider-test-subnet-{{ .ID }}"
+  ipv4_block = "10.21.0.0/24"
+}
+
+resource "exoscale_vpc_route" "test_route" {
+  zone        = "{{ .Zone }}"
+  vpc_id      = resource.exoscale_vpc.test_vpc.id
+  subnet_id   = resource.exoscale_vpc_subnet.test_subnet.id
+  destination = "10.99.0.0/24"
+  target      = "ip=10.21.0.5"
+  description = "test route"
+}

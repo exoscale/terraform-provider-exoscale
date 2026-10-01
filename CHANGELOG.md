@@ -14,8 +14,52 @@ BREAKING CHANGES:
 
 DEPENDENCIES:
 
-- Bump `google.golang.org/grpc` to v1.83.2, fixing GO-2026-6443 and GO-2026-6348
 - Bump `github.com/exoscale/egoscale/v3` to v3.1.54
+
+## 0.73.2
+FEATURES:
+
+- VPC integration: routes - #588
+- SKS: Karpenter feature-flags - #603
+
+BUG FIXES:
+
+- Fix sks nodepool create and update #605
+
+## 0.73.1
+
+BUG FIXES:
+
+- Fix security group drift introduced in 0.73.0 (#600)
+
+## 0.73.0
+
+IMPROVEMENTS:
+
+- Migrate SKS Cluster resource/datasource from sdk to framework
+- Migrate SKS Node Pool resource/datasource from sdk to framework
+- Migrate SKS Kubeconfig resource from sdk to framework
+- Migrate SKS Cluster List / Node Pool List data sources from sdk to framework
+
+FEATURES:
+
+- VPC integration: subnets - #585
+- networking: add `dns_servers`, `ntp_servers`, and `domain_search` attributes to `exoscale_vpc` resource - #596
+
+BUG FIXES:
+
+- Rework attribute value cleanup on private_network resource (#598)
+- fix: instance list by labels - #597
+- Rework SG resource and fix the dropped timeout on update (#599)
+
+BREAKING CHANGES:
+
+- `sks_nodepool`: `kubelet_image_gc` now uses attribute assignment syntax (`=`) instead of nested block syntax, check the [migration guide](docs/guides/migration-of-sks-nodepool-from-v0_72_x-to-v0_73_x.md)
+- `sks_cluster_list` / `sks_nodepool_list`: migrated from sdk to framework, generic per-attribute filtering has been removed and a few attributes changed on the returned list items, check the [migration guide](docs/guides/migration-of-sks-list-datasources-from-v0_72_x-to-v0_73_x.md)
+
+DEPENDENCIES:
+
+- Bump `google.golang.org/grpc` to v1.83.2, fixing GO-2026-6443 and GO-2026-6348
 
 ## 0.72.0
 
@@ -25,6 +69,7 @@ FEATURES:
 - dbaas: support for clickhouse
 - `dbaas`: add exoscale_dbaas_clickhouse_user resource
 - networking: add `exoscale_vpc` resource, and `exoscale_vpc` data source
+- `template`: adding the corresponding resource type with a support of CRUD operations.
 
 ## 0.71.0
 

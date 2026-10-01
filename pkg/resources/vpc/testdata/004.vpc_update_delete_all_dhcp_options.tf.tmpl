@@ -1,0 +1,8 @@
+resource "exoscale_vpc" "test_vpc" {
+  zone        = "{{ .Zone }}"
+  name        = "terraform-provider-test-updated-{{ .ID }}"
+  description = "description-test-updated"
+  labels = {
+    A = "C"
+  }
+}

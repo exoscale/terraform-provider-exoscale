@@ -1,0 +1,60 @@
+locals {
+  zone = "{{ .Zone }}"
+}
+
+data "exoscale_security_group" "default" {
+  name = "default"
+}
+
+resource "exoscale_anti_affinity_group" "test" {
+  name = "terraform-provider-test-{{ .ID }}"
+}
+
+resource "exoscale_private_network" "test" {
+  zone     = local.zone
+  name     = "terraform-provider-test-{{ .ID }}"
+  start_ip = "10.0.0.20"
+  end_ip   = "10.0.0.253"
+  netmask  = "255.255.255.0"
+}
+
+resource "exoscale_sks_cluster" "test" {
+  zone = local.zone
+  name = "terraform-provider-test-{{ .ID }}"
+
+  timeouts {
+    delete = "10m"
+  }
+}
+
+resource "exoscale_sks_nodepool" "test" {
+  zone                     = local.zone
+  cluster_id               = exoscale_sks_cluster.test.id
+  name                     = "terraform-provider-test-{{ .ID }}-updated"
+  description              = "description-test-updated"
+  instance_type            = "standard.medium"
+  disk_size                = 110
+  size                     = 1
+  instance_prefix          = "pool"
+  anti_affinity_group_ids  = [exoscale_anti_affinity_group.test.id]
+  security_group_ids       = [data.exoscale_security_group.default.id]
+  private_network_ids      = [exoscale_private_network.test.id]
+  storage_lvm              = true
+  ipv6                     = true
+  labels = {
+    test = "acctest-updated"
+  }
+  taints = {
+    test = "test-updated:NoSchedule"
+  }
+
+  kubelet_image_gc = {
+    min_age        = "5m"
+    high_threshold = 85
+    low_threshold  = 75
+  }
+
+  timeouts {
+    delete = "10m"
+  }
+}

@@ -2,7 +2,8 @@
 page_title: "exoscale_sks_nodepool Resource - terraform-provider-exoscale"
 subcategory: ""
 description: |-
-  Manage Exoscale Scalable Kubernetes Service (SKS) Node Pools.
+  Manage Exoscale Scalable Kubernetes Service (SKS) https://community.exoscale.com/product/compute/containers/ Node Pools.
+  Corresponding data source: exoscalesksnodepool ../data-sources/sks_nodepool.md.
 ---
 
 # exoscale_sks_nodepool (Resource)
@@ -49,12 +50,12 @@ directory for complete configuration examples.
 - `disk_size` (Number) The managed instances disk size (GiB; default: `50`).
 - `instance_prefix` (String) The string used to prefix the managed instances name (default `pool`).
 - `ipv6` (Boolean) Enable IPV6 for the nodepool nodes
-- `kubelet_image_gc` (Block Set) Configuration for this nodepool's kubelet image garbage collector (see [below for nested schema](#nestedblock--kubelet_image_gc))
+- `kubelet_image_gc` (Attributes) Configuration for this nodepool's kubelet image garbage collector. (see [below for nested schema](#nestedatt--kubelet_image_gc))
 - `kubelet_max_pods` (Number) The maximum number of pods per node (default is 110).
 - `labels` (Map of String) A map of key/value labels.
 - `nvidia_mig_profile` (String) The NVIDIA [Multi-Instance GPU (MIG)](https://docs.nvidia.com/datacenter/tesla/mig-user-guide/) profile to enable on the managed GPUs. The GPU family is inferred from `instance_type`: `gpua30.*` accepts `2g.12gb`, `1g.6gb+me`, `1g.6gb`, `2g.12gb+me`, `4g.24gb`; `gpurtx6000pro.*` accepts `1g.24gb-me`, `1g.24gb`, `2g.48gb-me`, `2g.48gb`, `4g.96gb+gfx`, `1g.24gb+me`, `2g.48gb+me.all`, `1g.24gb+gfx`, `1g.24gb+me.all`, `4g.96gb`, `2g.48gb+gfx`.
 - `private_network_ids` (Set of String) A list of [exoscale_private_network](./private_network.md) (IDs) to be attached to the managed instances.
-- `security_group_ids` (Set of String) A list of [exoscale_security_group](./security_group.md) (IDs) to be attached to the managed instances.
+- `security_group_ids` (Set of String) A list of exoscale_security_group (IDs) to be attached to the managed instances.
 - `storage_lvm` (Boolean) Create nodes with non-standard partitioning for persistent storage (requires min 100G of disk space) (may only be set at creation time).
 - `taints` (Map of String) A map of key/value Kubernetes [taints](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/) ('taints = { <key> = "<value>:<effect>" }').
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
@@ -68,7 +69,7 @@ directory for complete configuration examples.
 - `template_id` (String) The managed instances template ID.
 - `version` (String) The managed instances version.
 
-<a id="nestedblock--kubelet_image_gc"></a>
+<a id="nestedatt--kubelet_image_gc"></a>
 ### Nested Schema for `kubelet_image_gc`
 
 Optional:
@@ -83,10 +84,10 @@ Optional:
 
 Optional:
 
-- `create` (String)
-- `delete` (String)
-- `read` (String)
-- `update` (String)
+- `create` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours).
+- `delete` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Setting a timeout for a Delete operation is only applicable if changes are saved into state before the destroy operation occurs.
+- `read` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
+- `update` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours).
 
 -> The symbol ❗ in an attribute indicates that modifying it, will force the creation of a new resource.
 

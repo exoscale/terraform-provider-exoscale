@@ -86,10 +86,6 @@ func Provider() *schema.Provider {
 			"exoscale_instance_pool":         instance_pool.DataSource(),
 			"exoscale_instance_pool_list":    instance_pool.DataSourceList(),
 			"exoscale_template":              dataSourceTemplate(),
-			dsSKSClusterIdentifier:           dataSourceSKSCluster(),
-			dsSKSClustersListIdentifier:      dataSourceSKSClusterList(),
-			dsSKSNodepoolsListIdentifier:     dataSourceSKSNodepoolList(),
-			dsSKSNodepoolIdentifier:          dataSourceSKSNodepool(),
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
@@ -98,9 +94,6 @@ func Provider() *schema.Provider {
 			"exoscale_elastic_ip":          resourceElasticIP(),
 			"exoscale_iam_access_key":      resourceIAMAccessKey(),
 			"exoscale_instance_pool":       instance_pool.Resource(),
-			"exoscale_sks_cluster":         resourceSKSCluster(),
-			"exoscale_sks_kubeconfig":      resourceSKSKubeconfig(),
-			"exoscale_sks_nodepool":        resourceSKSNodepool(),
 			"exoscale_ssh_key":             resourceSSHKey(),
 		},
 
