@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+BUG FIXES:
+
+- Fix timeouts block update for security group rule (#607)
+
 ## 0.74.0
 
 IMPROVEMENTS:
