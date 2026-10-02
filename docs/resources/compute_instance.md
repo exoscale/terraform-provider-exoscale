@@ -24,6 +24,25 @@ data "exoscale_template" "my_template" {
   name = "Linux Ubuntu 22.04 LTS 64-bit"
 }
 
+resource "exoscale_vpc" "my_vpc" {
+  zone = "ch-gva-2"
+  name = "my-vpc"
+}
+
+resource "exoscale_vpc_subnet" "my_vpc_subnet" {
+  zone       = "ch-gva-2"
+  vpc_id     = exoscale_vpc.my_vpc.id
+  name       = "my-vpc-subnet"
+  ipv4_block = "10.0.0.0/24"
+}
+
+resource "exoscale_vpc_subnet" "my_vpc_subnet2" {
+  zone       = "ch-gva-2"
+  vpc_id     = exoscale_vpc.my_vpc.id
+  name       = "my-vpc-subnet2"
+  ipv4_block = "10.0.1.0/24"
+}
+
 resource "exoscale_compute_instance" "my_instance" {
   zone = "ch-gva-2"
   name = "my-instance"
@@ -31,6 +50,21 @@ resource "exoscale_compute_instance" "my_instance" {
   template_id = data.exoscale_template.my_template.id
   type        = "standard.medium"
   disk_size   = 10
+
+  vpc {
+    id = exoscale_vpc.my_vpc.id
+
+    interfaces = [
+      {
+        subnet_id    = exoscale_vpc_subnet.my_vpc_subnet.id
+        ipv4_address = "10.0.0.22"
+      },
+      {
+        subnet_id    = exoscale_vpc_subnet.my_vpc_subnet2.id
+        ipv4_address = "auto"
+      },
+    ]
+  }
 }
 ```
 
@@ -68,6 +102,7 @@ directory for complete configuration examples.
 - `state` (String) The instance state (`running` or `stopped`). If omitted, instance will start and reach `running` state.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `user_data` (String) [cloud-init](https://cloudinit.readthedocs.io/) configuration.
+- `vpc` (Block List, Max: 1) Attaches the instance to the Subnets of one [exoscale_vpc](./vpc.md) (may be specified only once, as an instance can only be attached to a single VPC). Structure is documented below. (see [below for nested schema](#nestedblock--vpc))
 
 ### Read-Only
 
@@ -103,6 +138,30 @@ Optional:
 - `delete` (String)
 - `read` (String)
 - `update` (String)
+
+
+<a id="nestedblock--vpc"></a>
+### Nested Schema for `vpc`
+
+Required:
+
+- `id` (String) The [exoscale_vpc](./vpc.md) (ID) the Subnets belong to.
+
+Optional:
+
+- `interfaces` (List of Object) The Subnet interfaces of the instance, attached in the order they are listed in: moving an element reattaches it and every element after it. Every element names both keys: `subnet_id`, the [exoscale_vpc_subnet](./vpc_subnet.md) (ID) to attach, and `ipv4_address`, either the address to assign in that Subnet or `auto` to have the platform allocate one. (see [below for nested schema](#nestedatt--vpc--interfaces))
+
+Read-Only:
+
+- `interface_changes` (List of String) Renders any planned attachments, detachments or reattachments
+
+<a id="nestedatt--vpc--interfaces"></a>
+### Nested Schema for `vpc.interfaces`
+
+Optional:
+
+- `ipv4_address` (String)
+- `subnet_id` (String)
 
 -> The symbol ❗ in an attribute indicates that modifying it, will force the creation of a new resource.
 

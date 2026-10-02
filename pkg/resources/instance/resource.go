@@ -130,6 +130,84 @@ func Resource() *schema.Resource {
 				},
 			},
 		},
+		AttrVPC: {
+			Description: "Attaches the instance to the Subnets of one [exoscale_vpc](./vpc.md) (may be specified only once, as an instance can only be attached to a single VPC). Structure is documented below.",
+			Type:        schema.TypeList,
+			Optional:    true,
+			// Computed, because the block carries interface_changes, which only the
+			// provider can fill. The price is that the SDK no longer diffs the block
+			// away when it is deleted from the configuration, so
+			// customizeDiffVPCInterfaces plans that removal itself and rUpdate
+			// detaches without trusting the diff it is handed.
+			Computed: true,
+			MaxItems: 1,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					vpcIDAttr: {
+						Description: "The [exoscale_vpc](./vpc.md) (ID) the Subnets belong to.",
+						Type:        schema.TypeString,
+						Required:    true,
+					},
+					// With terraform SDK the plan cannot show any warnings or annotations.
+					// Since we guarantee that the order of the `interfaces` list will be
+					// the order of the attachments, we need to reattach all interfaces after
+					// an inserted attachment for example. We inform the user about these
+					// changes through this attribute.
+					// Reset on every read, so it is only ever shown by the plan that describes it.
+					vpcInterfaceChangesAttr: {
+						Description: "Renders any planned attachments, detachments or reattachments",
+						Type:        schema.TypeList,
+						Computed:    true,
+						Elem:        &schema.Schema{Type: schema.TypeString},
+					},
+					vpcInterfacesAttr: {
+						Description: "The Subnet interfaces of the instance, attached in the order they are listed in: moving an element reattaches it and every element after it. Every element names both keys: `subnet_id`, the [exoscale_vpc_subnet](./vpc_subnet.md) (ID) to attach, and `ipv4_address`, either the address to assign in that Subnet or `auto` to have the platform allocate one.",
+						Type:        schema.TypeList,
+						// Unlike `network_interfaces` for privnet which is a block,
+						// we choose VPC interfaces to be a list attribute, as it renders
+						// a much clearer diff to the user when inserting or removing
+						// an interface that isn't at the end of the list. If you delete
+						// the first interface for example, the block diff would show the
+						// last interface being deleted and the preceding ones being 'moved up'.
+						ConfigMode: schema.SchemaConfigModeAttr,
+						Required:   true,
+						MinItems:   1,
+						Elem: &schema.Resource{
+							Schema: map[string]*schema.Schema{
+								// These two descriptions reach nobody: tfplugindocs renders the
+								// keys of an object type without them, because a cty object
+								// carries no documentation - only a block does. What they say
+								// belongs in the description of interfaces above, which is the
+								// text the generator does render.
+								vpcInterfaceSubnetIDAttr: {
+									Description: "The [exoscale_vpc_subnet](./vpc_subnet.md) (ID) to attach to the instance.",
+									Type:        schema.TypeString,
+									Required:    true,
+								},
+								vpcInterfaceIPv4Attr: {
+									Description: "The IPv4 address to assign to the instance in the Subnet, or `auto` to have the platform allocate one.",
+									Type:        schema.TypeString,
+									// vpcInterfaceIPv4Auto asks the platform to allocate an address instead of
+									// pinning one.
+									// Despite being optional, the key itself cannot be left out.
+									// terraform SDK doesn't allow the keys of a list element to be unset.
+									Optional: true,
+									// Computed, so the address the platform allocates is stored
+									// in the state and can be referred to.
+									Computed:         true,
+									ValidateDiagFunc: validateVPCInterfaceIPv4,
+									// No DiffSuppressFunc for the auto keyword: SetNew clears
+									// every vpc key of the diff before writing the block back,
+									// so the suppressed value would come straight back from the
+									// configuration. customizeDiffVPCInterfaces resolves the
+									// keyword to the attached address instead.
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 		AttrBlockStorageVolumeIDs: {
 			Description: "A list of [exoscale_block_storage_volume](./block_storage_volume.md) (ID) to attach to the instance.",
 			Type:        schema.TypeSet,
@@ -220,6 +298,10 @@ func Resource() *schema.Resource {
 			"\n" +
 			"After the creation, you can retrieve the password of an instance with [Exoscale CLI](https://github.com/exoscale/cli): `exo compute instance reveal-password NAME`.",
 
+		CustomizeDiff: func(ctx context.Context, d *schema.ResourceDiff, _ any) error {
+			return customizeDiffVPCInterfaces(ctx, d)
+		},
+
 		CreateContext: rCreate,
 		ReadContext:   rRead,
 		UpdateContext: rUpdate,
@@ -236,6 +318,142 @@ func Resource() *schema.Resource {
 			Delete: schema.DefaultTimeout(config.DefaultTimeout),
 		},
 	}
+}
+
+// customizeDiffVPCInterfaces describes the planned attachment changes in
+// vpc.interface_changes. Because vpc.interface is a list whose order is the
+// order the Subnets are attached in, a reordered block is detached and attached
+// again, which the positional diff of the list itself does not say.
+//
+// The description can only be written as part of the whole vpc block: SetNew
+// takes top level keys only, so vpc.0.interface_changes is not a key it accepts.
+func customizeDiffVPCInterfaces(ctx context.Context, d *schema.ResourceDiff) error {
+	// Without the configuration we cannot tell an empty block from no block at
+	// all, and would describe every attachment as detached. Terraform sends it
+	// while planning; anywhere else we have nothing to say.
+	config := d.GetRawConfig()
+	if config.IsNull() || !config.IsKnown() {
+		return nil
+	}
+
+	vpc := vpcAttr(config)
+
+	// A block that is declared but not known yet says nothing about the
+	// attachments: it is not the block the configuration drops, and must not
+	// reach the removal below, which would detach everything the apply is about
+	// to attach again. The SDK plans an unknown block as unknown on its own -
+	// this only makes sure we never plan it as anything else.
+	if !vpc.IsNull() && !vpc.IsKnown() {
+		return d.SetNewComputed(AttrVPC)
+	}
+
+	// The vpc block is Computed, so the SDK keeps the one in state when the
+	// configuration drops it. Planning the removal is then up to us.
+	if vpc.IsNull() || vpc.LengthInt() == 0 {
+		if len(currentVPCBlock(d)) == 0 {
+			return nil
+		}
+
+		return d.SetNew(AttrVPC, []any{})
+	}
+
+	vpcBlock := currentVPCBlock(d)
+	if len(vpcBlock) == 0 {
+		return nil
+	}
+
+	prior, err := priorVPCInterfaces(d)
+	if err != nil {
+		tflog.Debug(ctx, "unable to read the current vpc attachments", map[string]any{
+			"error": err.Error(),
+		})
+
+		return unknownVPCBlock(d)
+	}
+
+	// The auto keyword is a request, not a value to plan: what the plan shows is
+	// the address the Subnet is attached with.
+	//
+	// (A DiffSuppressFunc would not solve this as it is undone by the SetNew below,
+	// which first clears every vpc key of the diff (resource_diff.go:260-263), leaving
+	// d.Get to read the keyword straight from the configuration. See SetNew in
+	// vendor/github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema/resource_diff.go)
+	resolveVPCInterfaceAutoAddresses(vpcBlock[0], prior)
+
+	changes, err := plannedVPCInterfaceChanges(d)
+	if err != nil {
+		// A Subnet of a resource that doesn't exist yet is unknown during plan,
+		// which is normal: we describe the change we can see, and never fail the
+		// plan over the description of one.
+		tflog.Debug(ctx, "unable to describe the planned vpc changes", map[string]any{
+			"error": err.Error(),
+		})
+
+		return unknownVPCBlock(d)
+	}
+
+	vpcBlock[0][vpcInterfaceChangesAttr] = changes
+
+	return d.SetNew(AttrVPC, []any{vpcBlock[0]})
+}
+
+// unknownVPCBlock plans the whole vpc block as unknown.
+// Needed when an instance with a vpc block is planned for the first time.
+func unknownVPCBlock(d *schema.ResourceDiff) error {
+	return d.SetNewComputed(AttrVPC)
+}
+
+// currentVPCBlock returns the vpc block from the plan.
+func currentVPCBlock(d *schema.ResourceDiff) []map[string]any {
+	raw, ok := d.Get(AttrVPC).([]any)
+	if !ok || len(raw) == 0 {
+		return nil
+	}
+
+	block, ok := raw[0].(map[string]any)
+	if !ok {
+		return nil
+	}
+
+	return []map[string]any{block}
+}
+
+// plannedVPCInterfaceChanges describes what the planned change does to the attachments.
+func plannedVPCInterfaceChanges(d *schema.ResourceDiff) ([]string, error) {
+	if !d.HasChange(AttrVPC) {
+		return []string{}, nil
+	}
+
+	prior, desired, err := plannedVPCInterfaces(d)
+	if err != nil {
+		return nil, err
+	}
+
+	return summarizeVPCInterfaceChanges(prior, desired).Lines(), nil
+}
+
+// priorVPCInterfaces returns the attachments the state holds.
+func priorVPCInterfaces(d *schema.ResourceDiff) ([]VPCInterface, error) {
+	old, _ := d.GetChange(AttrVPC)
+	state, ok := old.([]any)
+	if !ok {
+		return nil, fmt.Errorf("unexpected %s value %T", AttrVPC, old)
+	}
+
+	return vpcInterfacesFromState(state)
+}
+
+// plannedVPCInterfaces returns the attachments the state holds and the ones the
+// configuration asks for. The desired side is read from the raw configuration.
+func plannedVPCInterfaces(d *schema.ResourceDiff) (prior, desired []VPCInterface, err error) {
+	if prior, err = priorVPCInterfaces(d); err != nil {
+		return nil, nil, err
+	}
+	if desired, err = vpcInterfacesFromConfig(d.GetRawConfig()); err != nil {
+		return nil, nil, err
+	}
+
+	return prior, desired, nil
 }
 
 func rCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics { //nolint:gocyclo
@@ -413,6 +631,33 @@ func rCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnos
 			}
 			if _, err = clientV3.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
 				return diag.Errorf("unable to attach Private Network %s: %s", nif.NetworkID, err)
+			}
+		}
+	}
+
+	if state, ok := d.Get(AttrVPC).([]any); ok && len(state) > 0 {
+		vifs, err := vpcInterfacesFromState(state)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		// Attached in the order the blocks are declared in, which is also the
+		// order they are stored in state.
+		for _, vif := range vifs {
+			op, err := clientV3.AttachInstanceToSubnet(
+				ctx,
+				v3.UUID(vif.VPCID),
+				v3.UUID(vif.SubnetID),
+				v3.AttachInstanceToSubnetRequest{
+					Instance: &v3.InstanceRef{ID: instanceId},
+					Ipv4:     vif.ipv4(),
+				},
+			)
+			if err != nil {
+				return diag.Errorf("unable to attach VPC Subnet %s: %s", vif.SubnetID, err)
+			}
+			if _, err = clientV3.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
+				return diag.Errorf("unable to attach VPC Subnet %s: %s", vif.SubnetID, err)
 			}
 		}
 	}
@@ -809,6 +1054,82 @@ func rUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnos
 		}
 	}
 
+	// If the user deletes the vpc block entirely, we need to detach all subnets.
+	// Unfortunately in this case d.HasChange(AttrVPC) would return no diff,
+	// which is why we don't use it here and rely on the raw configuration.
+	if rawConfig := d.GetRawConfig(); !rawConfig.IsNull() && rawConfig.IsKnown() {
+		// Once public interfaces are migrated to VPC, we want to give the
+		// user the ability to as it were "import" these attachments without
+		// reattaching. Unfortunately, if we relied on the terraform state and
+		// configuration, it would detect a migrated public interface as an
+		// interface that must be deleted. Thus we rely on the attachments
+		// returned by the API and filter out ones with a public IP for now.
+		// Later this will also return public interfaces for which an interface
+		// object exists in the interfaces list.
+		prior, err := vpcInterfacesFromInstance(instance)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		// Read from the raw configuration rather than from the diff: ipv4_address
+		// is Optional + Computed, so the value the SDK hands out for an attachment that
+		// sets none is the address that used to sit at the same index, which
+		// belongs to another Subnet as soon as the blocks move.
+		desired, err := vpcInterfacesFromConfig(rawConfig)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		detach, attach := diffVPCInterfaces(prior, desired)
+
+		// All detachments are done first, so that an IP may be reused below for an attachment.
+		for _, vif := range detach {
+			op, err := client.DetachInstanceFromSubnet(
+				ctx,
+				v3.UUID(vif.VPCID),
+				v3.UUID(vif.SubnetID),
+				v3.DetachInstanceFromSubnetRequest{Instance: &v3.InstanceRef{ID: instance.ID}},
+			)
+			if err != nil {
+				if errors.Is(err, v3.ErrNotFound) {
+					tflog.Debug(ctx, "VPC Subnet already detached, ignoring", map[string]any{
+						"id": vif.SubnetID,
+					})
+					continue
+				}
+				return diag.FromErr(err)
+			}
+
+			if _, err = client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
+				if errors.Is(err, v3.ErrNotFound) {
+					tflog.Debug(ctx, "VPC Subnet detach operation already gone, ignoring", map[string]any{
+						"id": vif.SubnetID,
+					})
+					continue
+				}
+				return diag.FromErr(err)
+			}
+		}
+
+		for _, vif := range attach {
+			op, err := client.AttachInstanceToSubnet(
+				ctx,
+				v3.UUID(vif.VPCID),
+				v3.UUID(vif.SubnetID),
+				v3.AttachInstanceToSubnetRequest{
+					Instance: &v3.InstanceRef{ID: instance.ID},
+					Ipv4:     vif.ipv4(),
+				},
+			)
+			if err != nil {
+				return diag.FromErr(err)
+			}
+			if _, err = client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
+				return diag.FromErr(err)
+			}
+		}
+	}
+
 	if d.HasChange(AttrSecurityGroupIDs) {
 		o, n := d.GetChange(AttrSecurityGroupIDs)
 		old := o.(*schema.Set)
@@ -1142,6 +1463,15 @@ func rApply( //nolint:gocyclo
 		if err := d.Set(AttrNetworkInterface, networkInterfaces); err != nil {
 			return diag.FromErr(err)
 		}
+	}
+
+	refreshedVPCInterfaces, err := vpcInterfacesFromInstance(instance)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set(AttrVPC, vpcBlock(refreshedVPCInterfaces)); err != nil {
+		return diag.FromErr(err)
 	}
 
 	if instance.PublicIP != nil {
