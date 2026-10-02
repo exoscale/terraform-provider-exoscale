@@ -19,6 +19,12 @@ resource "exoscale_nlb" "test_nlb" {
   name = "terraform-provider-test-updated-{{ .ID }}"
 }
 
+resource "exoscale_nlb" "test_nlb6" {
+  zone           = "{{ .Zone }}"
+  name           = "terraform-provider-test-6-{{ .ID }}"
+  address_family = "inet6"
+}
+
 # `description` is dropped here too. Every optional healthcheck attribute is
 # omitted: the schema defaults must apply and must not produce a perpetual diff.
 resource "exoscale_nlb_service" "test_service" {

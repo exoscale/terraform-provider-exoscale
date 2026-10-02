@@ -22,6 +22,12 @@ resource "exoscale_nlb" "test_nlb" {
   }
 }
 
+resource "exoscale_nlb" "test_nlb6" {
+  zone           = "{{ .Zone }}"
+  name           = "terraform-provider-test-6-{{ .ID }}"
+  address_family = "inet6"
+}
+
 # protocol, strategy, ports and the healthcheck all change at once; dropping
 # `uri`/`tls_sni` while switching mode away from https must clear them.
 resource "exoscale_nlb_service" "test_service" {

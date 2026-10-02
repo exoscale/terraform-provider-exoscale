@@ -68,6 +68,15 @@ func healthcheckFromAPI(hc *exoscale.LoadBalancerServiceHealthcheck) Healthcheck
 	}
 }
 
+// addressFamily returns the NLB address family, `inet4` when the API omits it.
+func addressFamily(nlb *exoscale.LoadBalancer) types.String {
+	if nlb.Addressfamily == "" {
+		return types.StringValue(string(exoscale.LoadBalancerAddressfamilyInet4))
+	}
+
+	return types.StringValue(string(nlb.Addressfamily))
+}
+
 // applyNLBComputed fills in the computed attributes of the model from the API.
 //
 // Create and Update use this rather than a full refresh: overwriting the
@@ -113,6 +122,7 @@ func applyNLB(ctx context.Context, model *ResourceModel, nlb *exoscale.LoadBalan
 
 	model.Name = types.StringValue(nlb.Name)
 	model.Description = utils.OptionalString(nlb.Description)
+	model.AddressFamily = addressFamily(nlb)
 
 	model.Labels = types.MapNull(types.StringType)
 	if len(nlb.Labels) > 0 {

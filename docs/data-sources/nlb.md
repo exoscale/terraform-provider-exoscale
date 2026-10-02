@@ -44,9 +44,10 @@ directory for complete configuration examples.
 
 ### Read-Only
 
+- `address_family` (String) The NLB address family (`inet4` or `inet6`).
 - `created_at` (String) The NLB creation date.
 - `description` (String) The Network Load Balancers (NLB) description.
-- `ip_address` (String) The NLB public IPv4 address.
+- `ip_address` (String) The NLB public IP address (IPv4 or IPv6, depending on `address_family`).
 - `labels` (Map of String) A map of key/value labels.
 - `state` (String) The current NLB state.
 
