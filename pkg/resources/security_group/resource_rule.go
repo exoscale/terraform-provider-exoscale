@@ -615,7 +615,14 @@ func (r *ResourceRule) Read(
 
 // Update resources in-place by receiving Terraform prior state, configuration, and plan data, performing update logic, and saving updated Terraform state data.
 func (r *ResourceRule) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	// Nothing to do as all SG rule attributes require replace.
+	// All attributes require replace but we still need to update timeouts block.
+	var plan ResourceRuleModel
+
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 // Delete resources by receiving Terraform prior state data and performing deletion logic.
