@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.74.2
+
+DEPENDENCIES:
+
+- Bump `github.com/exoscale/egoscale/v3` to v3.1.56
+
 ## 0.74.1
 
 BUG FIXES:
