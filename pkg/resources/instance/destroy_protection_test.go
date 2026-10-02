@@ -45,8 +45,9 @@ resource "exoscale_compute_instance" "my_instance" {
 `
 
 var (
-	destroyProtectionTmpl  = template.Must(template.New("compute_instance").Parse(computeInstanceResource))
-	destroyProtectionError = regexp.MustCompile(`Forbidden: Operation delete-instance on resource .* is forbidden - reason: manual instance protection`)
+	destroyProtectionTmpl = template.Must(template.New("compute_instance").Parse(computeInstanceResource))
+	// The error detail is wrapped by Terraform: words may be separated by a newline.
+	destroyProtectionError = regexp.MustCompile(`Forbidden: Operation delete-instance on\s+resource .* is forbidden - reason: manual\s+instance protection`)
 )
 
 type destroyProtectionTestData struct {

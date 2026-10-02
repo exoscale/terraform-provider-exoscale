@@ -27,6 +27,7 @@ import (
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/database"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/domain"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/iam"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/instance"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/kms"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/nlb"
 	privatenetwork "github.com/exoscale/terraform-provider-exoscale/pkg/resources/private_network"
@@ -235,6 +236,8 @@ func (p *ExoscaleProvider) DataSources(ctx context.Context) []func() datasource.
 		iam.NewDataSourceAPIKey,
 		block_storage.NewDataSourceVolume,
 		block_storage.NewDataSourceSnapshot,
+		instance.NewDataSource,
+		instance.NewDataSourceList,
 		nlb.NewDataSource,
 		nlb.NewDataSourceServiceList,
 		sos_bucket_policy.NewDataSourceSOSBucketPolicy,
@@ -289,6 +292,7 @@ func (p *ExoscaleProvider) Resources(ctx context.Context) []func() resource.Reso
 		vpc.NewResourceSubnet,
 		vpc.NewResourceRoute,
 		template.NewResourceTemplate,
+		instance.NewResource,
 		nlb.NewResource,
 		nlb.NewResourceService,
 	}
