@@ -6,7 +6,6 @@ import (
 	"regexp"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 type matchStringFunc = func(given string) bool
@@ -31,7 +30,8 @@ func createMatchStringFunc(expected string) (matchStringFunc, error) {
 
 type FilterFunc = func(map[string]any) bool
 
-func createEqualityFilter[T comparable](argIdentifier string, expected T) (FilterFunc, error) {
+// NewEqualityFilter returns a filter matching the attribute argIdentifier against expected.
+func NewEqualityFilter[T comparable](argIdentifier string, expected T) FilterFunc {
 	return func(data map[string]any) bool {
 		attr, ok := data[argIdentifier]
 		if !ok {
@@ -50,7 +50,7 @@ func createEqualityFilter[T comparable](argIdentifier string, expected T) (Filte
 		}
 
 		return false
-	}, nil
+	}
 }
 
 func createStringFilterFunc(filterAttribute string, match matchStringFunc) FilterFunc {
@@ -66,7 +66,7 @@ func createStringFilterFunc(filterAttribute string, match matchStringFunc) Filte
 				return true
 			}
 		case *string:
-			if match(*v) {
+			if v != nil && match(*v) {
 				return true
 			}
 		}
@@ -75,11 +75,12 @@ func createStringFilterFunc(filterAttribute string, match matchStringFunc) Filte
 	}
 }
 
-func createMapStrToStrFilterFunc(ctx context.Context, argIdentifier string, filterProp any) (FilterFunc, error) {
+// NewMapFilter returns a filter matching the map[string]string attribute argIdentifier:
+// keys are matched exactly, while values may be matched as a regex if they begin and end with "/".
+func NewMapFilter(ctx context.Context, argIdentifier string, expected map[string]string) (FilterFunc, error) {
 	filters := make(map[string]matchStringFunc)
-	maps := filterProp.(map[string]any)
-	for k, v := range maps {
-		filter, err := createMatchStringFunc(v.(string))
+	for k, v := range expected {
+		filter, err := createMatchStringFunc(v)
 		if err != nil {
 			return nil, err
 		}
@@ -95,7 +96,7 @@ func createMapStrToStrFilterFunc(ctx context.Context, argIdentifier string, filt
 
 		mapToFilter, isMap := mapAttr.(map[string]string)
 		if !isMap {
-			tflog.Info(ctx, fmt.Sprintf("attribute of compute instance has unexpected type %T for labels", mapAttr))
+			tflog.Info(ctx, fmt.Sprintf("attribute %q has unexpected type %T", argIdentifier, mapAttr))
 
 			return false
 		}
@@ -111,72 +112,15 @@ func createMapStrToStrFilterFunc(ctx context.Context, argIdentifier string, filt
 	}, nil
 }
 
-func createStringFilter(argIdentifier, expected string) (FilterFunc, error) {
+// NewStringFilter returns a filter matching the string attribute argIdentifier against expected.
+// If expected begins and ends with a "/" it is matched as a regex.
+func NewStringFilter(argIdentifier, expected string) (FilterFunc, error) {
 	matchFn, err := createMatchStringFunc(expected)
 	if err != nil {
 		return nil, err
 	}
 
 	return createStringFilterFunc(argIdentifier, matchFn), nil
-}
-
-func GetFilteredFields(ctx context.Context, d *schema.ResourceData, s map[string]*schema.Schema) map[string]struct{} {
-	ret := make(map[string]struct{}, 0)
-
-	for argIdentifier := range s {
-		if _, ok := d.GetOk(argIdentifier); ok {
-			ret[argIdentifier] = struct{}{}
-		}
-	}
-
-	return ret
-}
-
-// CreateFilters accepts a schema for a data source and creates a filter.FilterFunc for each attribute of type bool, int, string or map[string]string. Use these filters to create aggregate data sources like lists.
-func CreateFilters(ctx context.Context, d *schema.ResourceData, s map[string]*schema.Schema) ([]FilterFunc, error) {
-	var filters []FilterFunc
-
-	for argIdentifier, argSpec := range s {
-		argValue, ok := d.GetOk(argIdentifier)
-		if !ok {
-			continue
-		}
-
-		switch argSpec.Type {
-		case schema.TypeBool:
-			newFilterFunc, err := createEqualityFilter(argIdentifier, argValue.(bool))
-			if err != nil {
-				return nil, err
-			}
-
-			filters = append(filters, newFilterFunc)
-		case schema.TypeInt:
-			newFilterFunc, err := createEqualityFilter(argIdentifier, int64(argValue.(int)))
-			if err != nil {
-				return nil, err
-			}
-
-			filters = append(filters, newFilterFunc)
-		case schema.TypeString:
-			newFilterFunc, err := createStringFilter(argIdentifier, argValue.(string))
-			if err != nil {
-				return nil, err
-			}
-
-			filters = append(filters, newFilterFunc)
-		case schema.TypeMap:
-			newFilter, err := createMapStrToStrFilterFunc(ctx, argIdentifier, argValue)
-			if err != nil {
-				return nil, err
-			}
-
-			filters = append(filters, newFilter)
-		default:
-			continue
-		}
-	}
-
-	return filters, nil
 }
 
 // CheckForMatch returns true if all filters match on the given data.
@@ -188,51 +132,4 @@ func CheckForMatch(data map[string]any, filters []FilterFunc) bool {
 	}
 
 	return true
-}
-
-func createFilterAttribute(typ schema.ValueType) *schema.Schema {
-	filterMessage := ""
-	switch typ {
-	case schema.TypeBool:
-		filterMessage = "Match against this bool"
-	case schema.TypeInt:
-		filterMessage = "Match against this int"
-	case schema.TypeString:
-		filterMessage = "Match against this string. If you supply a string that begins and ends with a \"/\" it will be matched as a regex."
-	}
-
-	return &schema.Schema{
-		Description: filterMessage,
-		Type:        typ,
-		Optional:    true,
-	}
-}
-
-func createMapFilterAttribute() *schema.Schema {
-	return &schema.Schema{
-		Description: "Match against key/values. Keys are matched exactly, while values may be matched as a regex if you supply a string that begins and ends with \"/\"",
-		Type:        schema.TypeMap,
-		Elem:        &schema.Schema{Type: schema.TypeString},
-		Optional:    true,
-	}
-}
-
-// AddFilterAttributes adds filter attributes to your resource for all bool, int, string and map[string]string attributes in the supplied schema. In combination with CreateFilters you may use this to create aggregate data sources with filtering functionality.
-func AddFilterAttributes(r *schema.Resource, s map[string]*schema.Schema) {
-	for attrIdentifier, attrSpec := range s {
-		// existing attributes should not be overwritten.
-		if _, alreadySet := r.Schema[attrIdentifier]; alreadySet {
-			continue
-		}
-
-		switch attrSpec.Type {
-		case schema.TypeBool, schema.TypeInt, schema.TypeString:
-			r.Schema[attrIdentifier] = createFilterAttribute(attrSpec.Type)
-		case schema.TypeMap:
-			elem, ok := attrSpec.Elem.(*schema.Schema)
-			if ok && elem.Type == schema.TypeString {
-				r.Schema[attrIdentifier] = createMapFilterAttribute()
-			}
-		}
-	}
 }
