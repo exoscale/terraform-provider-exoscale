@@ -146,6 +146,30 @@ func Resource() *schema.Resource {
 			Type:     schema.TypeString,
 			Computed: true,
 		},
+		AttrErrorReason: {
+			Description: "Error reason (if any) explaining why the Instance Pool is in an error state.",
+			Type:        schema.TypeList,
+			Computed:    true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					AttrErrorReasonCause: {
+						Description: "Error cause.",
+						Type:        schema.TypeString,
+						Computed:    true,
+					},
+					AttrErrorReasonType: {
+						Description: "Error type.",
+						Type:        schema.TypeString,
+						Computed:    true,
+					},
+					AttrErrorReasonJobID: {
+						Description: "Job ID at the origin of error.",
+						Type:        schema.TypeString,
+						Computed:    true,
+					},
+				},
+			},
+		},
 		AttrTemplateID: {
 			Description: "The [exoscale_template](../data-sources/template.md) (ID) to use when creating the managed instances.",
 			Type:        schema.TypeString,
@@ -768,6 +792,10 @@ func rApply(ctx context.Context, client *v3.Client, d *schema.ResourceData, pool
 		return diag.FromErr(err)
 	}
 
+	if err := d.Set(AttrErrorReason, flattenInstancePoolErrorReason(pool.ErrorReason)); err != nil {
+		return diag.FromErr(err)
+	}
+
 	if err := d.Set(AttrTemplateID, pool.Template.ID); err != nil {
 		return diag.FromErr(err)
 	}
@@ -817,4 +845,15 @@ func computeInstanceToResource(instance *v3.Instance) any {
 	c[AttrInstanceName] = instance.Name
 	c[AttrInstancePublicIPAddress] = utils.AddressToStringPtr(&instance.PublicIP)
 	return c
+}
+
+func flattenInstancePoolErrorReason(er *v3.InstancePoolErrorReason) []any {
+	if er == nil {
+		return nil
+	}
+	return []any{map[string]any{
+		AttrErrorReasonCause: er.Cause,
+		AttrErrorReasonType:  er.Type,
+		AttrErrorReasonJobID: er.JobID,
+	}}
 }
