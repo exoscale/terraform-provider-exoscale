@@ -1,6 +1,6 @@
 //go:build local_integration
 
-package nlb_service_test
+package nlb_test
 
 import (
 	"flag"
@@ -11,7 +11,7 @@ import (
 
 var flagAccount = flag.String("account", testutils.DefaultLocalAccount, "account name substring in exoscale.toml")
 
-func TestNlbServiceLocal(t *testing.T) {
+func TestNLBLocal(t *testing.T) {
 	testutils.LoadLocalCreds(t, *flagAccount)
-	TestNlbService(t)
+	TestNLB(t)
 }

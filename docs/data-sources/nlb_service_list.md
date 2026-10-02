@@ -37,8 +37,8 @@ directory for complete configuration examples.
 
 ### Optional
 
-- `nlb_id` (String) The NLB ID to match (conflicts with `name`).
-- `nlb_name` (String) The NLB name to match (conflicts with `id`).
+- `nlb_id` (String) The NLB ID to match (conflicts with `nlb_name`).
+- `nlb_name` (String) The NLB name to match (conflicts with `nlb_id`).
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only

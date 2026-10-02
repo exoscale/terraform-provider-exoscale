@@ -395,6 +395,19 @@ func ElasticIPIDsToElasticIPs(ids []any) (ls []exoscale.ElasticIP) {
 	return
 }
 
+// OptionalString returns a null value for an empty string.
+//
+// The SDKv2 provider persisted unset optional strings as "", while the
+// framework expects null. Normalising on read keeps state written before a
+// resource was migrated to the framework from producing a permanent diff.
+func OptionalString(s string) types.String {
+	if s == "" {
+		return types.StringNull()
+	}
+
+	return types.StringValue(s)
+}
+
 // ImportStatePassthroughZonedID is a helper function for importing zoned resources.
 // Works for all resources that can fully refresh with "id" and "zone" only.
 // Input format is id@zone

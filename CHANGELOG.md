@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+IMPROVEMENTS:
+
+- Migrate `nlb`/`nlb_service` resources and data sources to terraform-plugin-framework & egoscale v3.
+
+FEATURES:
+
+BUG FIXES:
+
+BREAKING CHANGES:
+
+DEPENDENCIES:
+
+- Bump `github.com/exoscale/egoscale/v3` to v3.1.54
 
 ## 0.73.2
 FEATURES:
