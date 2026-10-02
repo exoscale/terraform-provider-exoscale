@@ -1,18 +1,14 @@
 # Changelog
 
-## Unreleased
+## 0.74.0
 
 IMPROVEMENTS:
 
-- Migrate `nlb`/`nlb_service` resources and data sources to terraform-plugin-framework & egoscale v3.
+- Migrate `nlb`/`nlb_service` resources and data sources to terraform-plugin-framework & egoscale v3 (#593)
 
 FEATURES:
 
-- `exoscale_nlb`: add `address_family` (`inet4`|`inet6`) to create IPv6 Network Load Balancers, also exposed by the data source
-
-BUG FIXES:
-
-BREAKING CHANGES:
+- `exoscale_nlb`: add `address_family` (`inet4`|`inet6`) to create IPv6 Network Load Balancers, also exposed by the data source (#606)
 
 DEPENDENCIES:
 
