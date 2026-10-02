@@ -8,6 +8,8 @@ IMPROVEMENTS:
 
 FEATURES:
 
+- `exoscale_nlb`: add `address_family` (`inet4`|`inet6`) to create IPv6 Network Load Balancers, also exposed by the data source
+
 BUG FIXES:
 
 BREAKING CHANGES:

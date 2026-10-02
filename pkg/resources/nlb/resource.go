@@ -18,6 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -43,15 +44,16 @@ func NewResource() resource.Resource {
 
 // ResourceModel defines the exoscale_nlb resource data model.
 type ResourceModel struct {
-	ID          types.String `tfsdk:"id"`
-	Name        types.String `tfsdk:"name"`
-	Description types.String `tfsdk:"description"`
-	Labels      types.Map    `tfsdk:"labels"`
-	Zone        types.String `tfsdk:"zone"`
-	CreatedAt   types.String `tfsdk:"created_at"`
-	IPAddress   types.String `tfsdk:"ip_address"`
-	Services    types.Set    `tfsdk:"services"`
-	State       types.String `tfsdk:"state"`
+	ID            types.String `tfsdk:"id"`
+	Name          types.String `tfsdk:"name"`
+	Description   types.String `tfsdk:"description"`
+	Labels        types.Map    `tfsdk:"labels"`
+	Zone          types.String `tfsdk:"zone"`
+	AddressFamily types.String `tfsdk:"address_family"`
+	CreatedAt     types.String `tfsdk:"created_at"`
+	IPAddress     types.String `tfsdk:"ip_address"`
+	Services      types.Set    `tfsdk:"services"`
+	State         types.String `tfsdk:"state"`
 
 	Timeouts timeouts.Value `tfsdk:"timeouts"`
 }
@@ -103,6 +105,30 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 					stringvalidator.OneOf(config.Zones...),
 				},
 			},
+			"address_family": schema.StringAttribute{
+				Description:         "❗ The NLB address family (inet4|inet6; default: inet4).",
+				MarkdownDescription: "❗ The NLB address family (`inet4`|`inet6`; default: `inet4`).",
+				Optional:            true,
+				Computed:            true,
+				Default:             stringdefault.StaticString(string(exoscale.LoadBalancerAddressfamilyInet4)),
+				PlanModifiers: []planmodifier.String{
+					// State written before this attribute existed holds no
+					// value until the next refresh: that must not replace the NLB.
+					stringplanmodifier.RequiresReplaceIf(
+						func(_ context.Context, req planmodifier.StringRequest, resp *stringplanmodifier.RequiresReplaceIfFuncResponse) {
+							resp.RequiresReplace = !req.StateValue.IsNull()
+						},
+						"Changing the address family replaces the NLB.",
+						"Changing the address family replaces the NLB.",
+					),
+				},
+				Validators: []validator.String{
+					stringvalidator.OneOf(
+						string(exoscale.LoadBalancerAddressfamilyInet4),
+						string(exoscale.LoadBalancerAddressfamilyInet6),
+					),
+				},
+			},
 			"created_at": schema.StringAttribute{
 				Description:         "The NLB creation date.",
 				MarkdownDescription: "The NLB creation date.",
@@ -112,8 +138,8 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 				},
 			},
 			"ip_address": schema.StringAttribute{
-				Description:         "The NLB IPv4 address.",
-				MarkdownDescription: "The NLB IPv4 address.",
+				Description:         "The NLB public IP address (IPv4 or IPv6, depending on address_family).",
+				MarkdownDescription: "The NLB public IP address (IPv4 or IPv6, depending on `address_family`).",
 				Computed:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
@@ -168,8 +194,9 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 	}
 
 	request := exoscale.CreateLoadBalancerRequest{
-		Name:        plan.Name.ValueString(),
-		Description: plan.Description.ValueString(),
+		Name:          plan.Name.ValueString(),
+		Description:   plan.Description.ValueString(),
+		Addressfamily: exoscale.CreateLoadBalancerRequestAddressfamily(plan.AddressFamily.ValueString()),
 	}
 	if len(plan.Labels.Elements()) > 0 {
 		labels := exoscale.Labels{}
@@ -341,6 +368,7 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 	state.Name = plan.Name
 	state.Description = plan.Description
 	state.Labels = plan.Labels
+	state.AddressFamily = plan.AddressFamily
 	state.Timeouts = plan.Timeouts
 
 	nlb, err := client.GetLoadBalancer(ctx, id)

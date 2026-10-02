@@ -2,6 +2,7 @@ package nlb_test
 
 import (
 	"fmt"
+	"regexp"
 	"testing"
 	"time"
 
@@ -16,6 +17,7 @@ func TestNLB(t *testing.T) {
 
 	var (
 		nlbResource       = "exoscale_nlb.test_nlb"
+		nlb6Resource      = "exoscale_nlb.test_nlb6"
 		serviceResource   = "exoscale_nlb_service.test_service"
 		nlbByID           = "data.exoscale_nlb.test_nlb_by_id"
 		nlbByName         = "data.exoscale_nlb.test_nlb_by_name"
@@ -47,6 +49,12 @@ func TestNLB(t *testing.T) {
 					resource.TestCheckResourceAttr(nlbResource, "state", "running"),
 					resource.TestCheckResourceAttrSet(nlbResource, "ip_address"),
 					resource.TestCheckResourceAttrSet(nlbResource, "created_at"),
+					// Defaulted because the configuration omits it.
+					resource.TestCheckResourceAttr(nlbResource, "address_family", "inet4"),
+					resource.TestCheckResourceAttrPair(nlbResource, "address_family", nlbByID, "address_family"),
+
+					resource.TestCheckResourceAttr(nlb6Resource, "address_family", "inet6"),
+					resource.TestMatchResourceAttr(nlb6Resource, "ip_address", regexp.MustCompile(":")),
 					// `services` is intentionally not asserted here: the service
 					// is created after the NLB within the same apply, so the NLB
 					// state still predates it. It is checked in step 2, once a

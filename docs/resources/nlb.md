@@ -36,6 +36,7 @@ directory for complete configuration examples.
 
 ### Optional
 
+- `address_family` (String) ❗ The NLB address family (`inet4`|`inet6`; default: `inet4`).
 - `description` (String) A free-form text describing the NLB.
 - `labels` (Map of String) A map of key/value labels.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
@@ -44,7 +45,7 @@ directory for complete configuration examples.
 
 - `created_at` (String) The NLB creation date.
 - `id` (String) The ID of this resource.
-- `ip_address` (String) The NLB IPv4 address.
+- `ip_address` (String) The NLB public IP address (IPv4 or IPv6, depending on `address_family`).
 - `services` (Set of String) The list of the [exoscale_nlb_service](./nlb_service.md) (IDs).
 - `state` (String) The current NLB state.
 

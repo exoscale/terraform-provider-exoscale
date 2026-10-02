@@ -37,14 +37,15 @@ func NewDataSource() datasource.DataSource {
 
 // DataSourceModel defines the exoscale_nlb data source data model.
 type DataSourceModel struct {
-	ID          types.String `tfsdk:"id"`
-	Name        types.String `tfsdk:"name"`
-	Description types.String `tfsdk:"description"`
-	Labels      types.Map    `tfsdk:"labels"`
-	Zone        types.String `tfsdk:"zone"`
-	CreatedAt   types.String `tfsdk:"created_at"`
-	IPAddress   types.String `tfsdk:"ip_address"`
-	State       types.String `tfsdk:"state"`
+	ID            types.String `tfsdk:"id"`
+	Name          types.String `tfsdk:"name"`
+	Description   types.String `tfsdk:"description"`
+	Labels        types.Map    `tfsdk:"labels"`
+	Zone          types.String `tfsdk:"zone"`
+	AddressFamily types.String `tfsdk:"address_family"`
+	CreatedAt     types.String `tfsdk:"created_at"`
+	IPAddress     types.String `tfsdk:"ip_address"`
+	State         types.String `tfsdk:"state"`
 
 	Timeouts timeouts.Value `tfsdk:"timeouts"`
 }
@@ -105,9 +106,14 @@ func (d *DataSource) Schema(ctx context.Context, req datasource.SchemaRequest, r
 				MarkdownDescription: "The NLB creation date.",
 				Computed:            true,
 			},
+			"address_family": schema.StringAttribute{
+				Description:         "The NLB address family (inet4 or inet6).",
+				MarkdownDescription: "The NLB address family (`inet4` or `inet6`).",
+				Computed:            true,
+			},
 			"ip_address": schema.StringAttribute{
-				Description:         "The NLB public IPv4 address.",
-				MarkdownDescription: "The NLB public IPv4 address.",
+				Description:         "The NLB public IP address (IPv4 or IPv6, depending on address_family).",
+				MarkdownDescription: "The NLB public IP address (IPv4 or IPv6, depending on `address_family`).",
 				Computed:            true,
 			},
 			"state": schema.StringAttribute{
@@ -199,6 +205,7 @@ func (d *DataSource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 	state.Description = types.StringValue(nlb.Description)
 	state.CreatedAt = types.StringValue(nlb.CreatedAT.String())
 	state.State = types.StringValue(string(nlb.State))
+	state.AddressFamily = addressFamily(&nlb)
 
 	state.IPAddress = types.StringNull()
 	if len(nlb.IP) > 0 {
