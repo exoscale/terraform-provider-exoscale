@@ -15,7 +15,6 @@ import (
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/anti_affinity_group"
-	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/instance"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/instance_pool"
 
 	exov2 "github.com/exoscale/egoscale/v2"
@@ -79,18 +78,15 @@ func Provider() *schema.Provider {
 		},
 
 		DataSourcesMap: map[string]*schema.Resource{
-			"exoscale_anti_affinity_group":   anti_affinity_group.DataSource(),
-			"exoscale_compute_instance":      instance.DataSource(),
-			"exoscale_compute_instance_list": instance.DataSourceList(),
-			"exoscale_elastic_ip":            dataSourceElasticIP(),
-			"exoscale_instance_pool":         instance_pool.DataSource(),
-			"exoscale_instance_pool_list":    instance_pool.DataSourceList(),
-			"exoscale_template":              dataSourceTemplate(),
+			"exoscale_anti_affinity_group": anti_affinity_group.DataSource(),
+			"exoscale_elastic_ip":          dataSourceElasticIP(),
+			"exoscale_instance_pool":       instance_pool.DataSource(),
+			"exoscale_instance_pool_list":  instance_pool.DataSourceList(),
+			"exoscale_template":            dataSourceTemplate(),
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
 			"exoscale_anti_affinity_group": anti_affinity_group.Resource(),
-			"exoscale_compute_instance":    instance.Resource(),
 			"exoscale_elastic_ip":          resourceElasticIP(),
 			"exoscale_iam_access_key":      resourceIAMAccessKey(),
 			"exoscale_instance_pool":       instance_pool.Resource(),

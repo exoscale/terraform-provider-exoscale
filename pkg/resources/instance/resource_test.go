@@ -751,7 +751,10 @@ func testResource(t *testing.T) {
 				ImportStateVerify: true,
 				ImportStateVerifyIgnore: []string{instance.AttrPrivateNetworkIDs, instance.AttrPrivate,
 					// SSHKeys are used only at creation so we can ignore those fields at import
-					instance.AttrSSHKey, instance.AttrSSHKeys},
+					instance.AttrSSHKey, instance.AttrSSHKeys,
+					// An instance without reverse DNS is imported with none, while the state
+					// still holds the empty string an earlier step configured.
+					instance.AttrReverseDNS},
 				ImportStateCheck: func(s []*terraform.InstanceState) error {
 					return testutils.CheckResourceAttributes(
 						testutils.TestAttrs{

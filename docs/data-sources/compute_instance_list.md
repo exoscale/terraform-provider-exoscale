@@ -65,42 +65,51 @@ directory for complete configuration examples.
 - `ssh_key` (String) Match against this string. If you supply a string that begins and ends with a "/" it will be matched as a regex.
 - `state` (String) Match against this string. If you supply a string that begins and ends with a "/" it will be matched as a regex.
 - `template_id` (String) Match against this string. If you supply a string that begins and ends with a "/" it will be matched as a regex.
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `type` (String) Match against this string. If you supply a string that begins and ends with a "/" it will be matched as a regex.
 - `user_data` (String) Match against this string. If you supply a string that begins and ends with a "/" it will be matched as a regex.
 
 ### Read-Only
 
-- `instances` (List of Object) The list of [exoscale_compute_instance](./compute_instance.md). (see [below for nested schema](#nestedatt--instances))
+- `instances` (Attributes List) The list of [exoscale_compute_instance](./compute_instance.md). (see [below for nested schema](#nestedatt--instances))
+
+<a id="nestedblock--timeouts"></a>
+### Nested Schema for `timeouts`
+
+Optional:
+
+- `read` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
+
 
 <a id="nestedatt--instances"></a>
 ### Nested Schema for `instances`
 
 Read-Only:
 
-- `anti_affinity_group_ids` (Set of String)
-- `created_at` (String)
-- `deploy_target_id` (String)
-- `disk_size` (Number)
-- `elastic_ip_ids` (Set of String)
-- `enable_secure_boot` (Boolean)
-- `enable_tpm` (Boolean)
-- `id` (String)
-- `ipv6` (Boolean)
-- `ipv6_address` (String)
-- `labels` (Map of String)
-- `manager_id` (String)
-- `manager_type` (String)
-- `name` (String)
-- `private_network_ids` (Set of String)
-- `public_ip_address` (String)
-- `reverse_dns` (String)
-- `security_group_ids` (Set of String)
-- `ssh_key` (String)
-- `ssh_keys` (Set of String)
-- `state` (String)
-- `template_id` (String)
-- `type` (String)
-- `user_data` (String)
-- `zone` (String)
+- `anti_affinity_group_ids` (Set of String) The list of attached [exoscale_anti_affinity_group](../resources/anti_affinity_group.md) (IDs).
+- `created_at` (String) The compute instance creation date.
+- `deploy_target_id` (String) A deploy target ID.
+- `disk_size` (Number) The instance disk size (GiB).
+- `elastic_ip_ids` (Set of String) The list of attached [exoscale_elastic_ip](../resources/elastic_ip.md) (IDs).
+- `enable_secure_boot` (Boolean) Indicates if the instance has secure boot enabled.
+- `enable_tpm` (Boolean) Indicates if the instance has TPM enabled.
+- `id` (String) The compute instance ID.
+- `ipv6` (Boolean) Whether IPv6 is enabled on the instance.
+- `ipv6_address` (String) The instance (main network interface) IPv6 address (if enabled).
+- `labels` (Map of String) A map of key/value labels.
+- `manager_id` (String) The instance manager ID, if any.
+- `manager_type` (String) The instance manager type (instance pool, SKS node pool, etc.), if any.
+- `name` (String) The instance name.
+- `private_network_ids` (Set of String) The list of attached [exoscale_private_network](../resources/private_network.md) (IDs).
+- `public_ip_address` (String) The instance (main network interface) IPv4 address.
+- `reverse_dns` (String) Domain name for reverse DNS record.
+- `security_group_ids` (Set of String) The list of attached [exoscale_security_group](../resources/security_group.md) (IDs).
+- `ssh_key` (String, Deprecated) The [exoscale_ssh_key](../resources/ssh_key.md) (name) authorized on the instance.
+- `ssh_keys` (Set of String) The list of [exoscale_ssh_key](../resources/ssh_key.md) (name) authorized on the instance.
+- `state` (String) The instance state.
+- `template_id` (String) The instance [exoscale_template](./template.md) ID.
+- `type` (String) The instance type.
+- `user_data` (String) The instance [cloud-init](http://cloudinit.readthedocs.io/en/latest/) configuration.
+- `zone` (String) The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.
 
 

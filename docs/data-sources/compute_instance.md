@@ -40,6 +40,7 @@ directory for complete configuration examples.
 
 - `id` (String) The compute instance ID to match (conflicts with `name`).
 - `name` (String) The instance name to match (conflicts with `id`).
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
@@ -65,5 +66,12 @@ directory for complete configuration examples.
 - `template_id` (String) The instance [exoscale_template](./template.md) ID.
 - `type` (String) The instance type.
 - `user_data` (String) The instance [cloud-init](http://cloudinit.readthedocs.io/en/latest/) configuration.
+
+<a id="nestedblock--timeouts"></a>
+### Nested Schema for `timeouts`
+
+Optional:
+
+- `read` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
 
 

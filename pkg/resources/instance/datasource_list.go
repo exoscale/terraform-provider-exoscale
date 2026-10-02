@@ -3,195 +3,392 @@ package instance
 import (
 	"context"
 	"crypto/md5"
-	"errors"
 	"fmt"
 	"sort"
 	"strings"
 
-	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-
-	v3 "github.com/exoscale/egoscale/v3"
+	exoscale "github.com/exoscale/egoscale/v3"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/filter"
+	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
+
+	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
-func DataSourceList() *schema.Resource {
-	ret := &schema.Resource{
-		Description: `List Exoscale [Compute Instances](https://community.exoscale.com/documentation/compute/).
+const (
+	markdownDescriptionDatasourceList = `List Exoscale [Compute Instances](https://community.exoscale.com/documentation/compute/).
 
-Corresponding resource: [exoscale_compute_instance](../resources/compute_instance.md).`,
-		Schema: map[string]*schema.Schema{
-			AttrZone: {
-				Description: "The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
+Corresponding resource: [exoscale_compute_instance](../resources/compute_instance.md).`
 
-			"instances": {
-				Description: "The list of [exoscale_compute_instance](./compute_instance.md).",
-				Type:        schema.TypeList,
-				Computed:    true,
-				Elem: &schema.Resource{
-					Schema: DataSourceSchema(),
-				},
-			},
-		},
+	filterDescriptionBool   = "Match against this bool"
+	filterDescriptionInt    = "Match against this int"
+	filterDescriptionString = `Match against this string. If you supply a string that begins and ends with a "/" it will be matched as a regex.`
+	filterDescriptionMap    = `Match against key/values. Keys are matched exactly, while values may be matched as a regex if you supply a string that begins and ends with "/"`
+)
 
-		ReadContext: dsListRead,
-	}
+var _ datasource.DataSource = (*DataSourceList)(nil)
+var _ datasource.DataSourceWithConfigure = (*DataSourceList)(nil)
 
-	filter.AddFilterAttributes(ret, DataSourceSchema())
-
-	return ret
+// DataSourceList is the exoscale_compute_instance_list data source implementation.
+type DataSourceList struct {
+	client *exoscale.Client
 }
 
-func dsListRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning read", map[string]any{
-		"id": utils.IDString(d, NameList),
-	})
+// NewDataSourceList creates an instance of DataSourceList.
+func NewDataSourceList() datasource.DataSource {
+	return &DataSourceList{}
+}
 
-	zone := d.Get(AttrZone).(string)
+// DataSourceListModel defines the exoscale_compute_instance_list data model.
+// Apart from `zone`, `instances` and `timeouts`, the attributes are filters.
+type DataSourceListModel struct {
+	CreatedAt        types.String `tfsdk:"created_at"`
+	DeployTargetID   types.String `tfsdk:"deploy_target_id"`
+	DiskSize         types.Int64  `tfsdk:"disk_size"`
+	EnableSecureBoot types.Bool   `tfsdk:"enable_secure_boot"`
+	EnableTPM        types.Bool   `tfsdk:"enable_tpm"`
+	ID               types.String `tfsdk:"id"`
+	IPv6             types.Bool   `tfsdk:"ipv6"`
+	IPv6Address      types.String `tfsdk:"ipv6_address"`
+	Labels           types.Map    `tfsdk:"labels"`
+	ManagerID        types.String `tfsdk:"manager_id"`
+	ManagerType      types.String `tfsdk:"manager_type"`
+	Name             types.String `tfsdk:"name"`
+	PublicIPAddress  types.String `tfsdk:"public_ip_address"`
+	ReverseDNS       types.String `tfsdk:"reverse_dns"`
+	SSHKey           types.String `tfsdk:"ssh_key"`
+	State            types.String `tfsdk:"state"`
+	TemplateID       types.String `tfsdk:"template_id"`
+	Type             types.String `tfsdk:"type"`
+	UserData         types.String `tfsdk:"user_data"`
+	Zone             types.String `tfsdk:"zone"`
 
-	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
+	Instances []InstanceModel `tfsdk:"instances"`
+
+	Timeouts timeouts.Value `tfsdk:"timeouts"`
+}
+
+func (d *DataSourceList) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_compute_instance_list"
+}
+
+func (d *DataSourceList) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+	stringFilter := schema.StringAttribute{
+		MarkdownDescription: filterDescriptionString,
+		Optional:            true,
+	}
+	boolFilter := schema.BoolAttribute{
+		MarkdownDescription: filterDescriptionBool,
+		Optional:            true,
+	}
+
+	resp.Schema = schema.Schema{
+		Description:         "List Exoscale Compute Instances.",
+		MarkdownDescription: markdownDescriptionDatasourceList,
+
+		Attributes: map[string]schema.Attribute{
+			AttrZone: schema.StringAttribute{
+				MarkdownDescription: "The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.",
+				Required:            true,
+				Validators: []validator.String{
+					stringvalidator.OneOf(config.Zones...),
+				},
+			},
+			"instances": schema.ListNestedAttribute{
+				MarkdownDescription: "The list of [exoscale_compute_instance](./compute_instance.md).",
+				Computed:            true,
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: instanceAttributes(),
+				},
+			},
+
+			// A filter exists for every bool, int, string and map of strings
+			// attribute of an instance.
+			AttrCreatedAt:      stringFilter,
+			AttrDeployTargetID: stringFilter,
+			AttrDiskSize: schema.Int64Attribute{
+				MarkdownDescription: filterDescriptionInt,
+				Optional:            true,
+			},
+			AttrEnableSecureBoot: boolFilter,
+			AttrEnableTPM:        boolFilter,
+			AttrID: schema.StringAttribute{
+				MarkdownDescription: filterDescriptionString,
+				Optional:            true,
+				Computed:            true,
+			},
+			AttrIPv6:        boolFilter,
+			AttrIPv6Address: stringFilter,
+			AttrLabels: schema.MapAttribute{
+				MarkdownDescription: filterDescriptionMap,
+				ElementType:         types.StringType,
+				Optional:            true,
+			},
+			AttrManagerID:       stringFilter,
+			AttrManagerType:     stringFilter,
+			AttrName:            stringFilter,
+			AttrPublicIPAddress: stringFilter,
+			AttrReverseDNS:      stringFilter,
+			AttrSSHKey:          stringFilter,
+			AttrState:           stringFilter,
+			AttrTemplateID:      stringFilter,
+			AttrType:            stringFilter,
+			AttrUserData:        stringFilter,
+		},
+		Blocks: map[string]schema.Block{
+			"timeouts": timeouts.Block(ctx, timeouts.Opts{
+				Read: true,
+			}),
+		},
+	}
+}
+
+func (d *DataSourceList) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+	if req.ProviderData == nil {
+		return
+	}
+
+	d.client = req.ProviderData.(*providerConfig.ExoscaleProviderConfig).ClientV3
+}
+
+func (d *DataSourceList) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+	var state DataSourceListModel
+
+	resp.Diagnostics.Append(req.Config.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	timeout, diags := state.Timeouts.Read(ctx, config.DefaultTimeout)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	defaultClientV3, err := config.GetClientV3(meta)
+	zone := state.Zone.ValueString()
+
+	client, err := utils.SwitchClientZone(ctx, d.client, exoscale.ZoneName(zone))
 	if err != nil {
-		return diag.FromErr(err)
+		resp.Diagnostics.AddError("unable to change exoscale client zone", err.Error())
+		return
 	}
-	client, err := utils.SwitchClientZone(
-		ctx,
-		defaultClientV3,
-		v3.ZoneName(zone),
+
+	filters, diags := state.filters(ctx)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	instances, err := client.ListInstances(ctx)
+	if err != nil {
+		resp.Diagnostics.AddError("API returned an error while fetching instances", err.Error())
+		return
+	}
+
+	var (
+		ids           = make([]string, 0, len(instances.Instances))
+		instanceTypes = map[exoscale.UUID]string{}
+
+		// To save time the reverse DNS is only fetched before filtering if it
+		// is filtered on, and for the instances passing the filters otherwise.
+		reverseDNSFiltered = state.ReverseDNS.ValueString() != ""
 	)
-	if err != nil {
-		return diag.FromErr(err)
-	}
 
-	listInstancesResponse, err := client.ListInstances(
-		ctx,
-	)
-	if err != nil {
-		return diag.FromErr(err)
-	}
+	state.Instances = make([]InstanceModel, 0, len(instances.Instances))
 
-	data := make([]any, 0, len(listInstancesResponse.Instances))
-	ids := make([]string, 0, len(listInstancesResponse.Instances))
-	instanceTypes := map[v3.UUID]string{}
-
-	filters, err := filter.CreateFilters(ctx, d, DataSourceSchema())
-	if err != nil {
-		return diag.Errorf("failed to create filter: %q", err)
-	}
-
-	filteredFields := filter.GetFilteredFields(ctx, d, DataSourceSchema())
-
-	for _, listInst := range listInstancesResponse.Instances {
+	for _, listed := range instances.Instances {
 		// we use ID to generate a resource ID, we cannot list instances without ID.
-		if listInst.ID == "" {
+		if listed.ID == "" {
 			continue
 		}
 
-		ids = append(ids, listInst.ID.String())
+		ids = append(ids, listed.ID.String())
 
-		inst, err := client.GetInstance(
-			ctx,
-			listInst.ID,
-		)
+		instance, err := client.GetInstance(ctx, listed.ID)
 		if err != nil {
-			return diag.FromErr(err)
+			resp.Diagnostics.AddError("unable to retrieve instance", err.Error())
+			return
 		}
 
-		instanceData, err := dsBuildData(inst, zone)
-		if err != nil {
-			return diag.FromErr(err)
+		model, diags := instanceModel(ctx, instance, zone)
+		resp.Diagnostics.Append(diags...)
+		if resp.Diagnostics.HasError() {
+			return
 		}
 
-		getInstanceReverseDNS := func() (string, diag.Diagnostics) {
-			rdns, err := client.GetReverseDNSInstance(ctx, inst.ID)
-			if err != nil {
-				if !errors.Is(err, v3.ErrNotFound) {
-					return "", diag.Errorf("unable to retrieve instance reverse-dns: %s", err)
-				}
-
-				return "", nil
+		// Unlike exoscale_compute_instance, the entries of the list have
+		// always reported the attributes an instance does not have as empty
+		// strings.
+		for _, v := range []*types.String{
+			&model.IPv6Address,
+			&model.ManagerID,
+			&model.ManagerType,
+			&model.PublicIPAddress,
+			&model.ReverseDNS,
+			&model.SSHKey,
+			&model.TemplateID,
+			&model.Type,
+			&model.UserData,
+		} {
+			if v.IsNull() {
+				*v = types.StringValue("")
 			}
-
-			return string(rdns.DomainName), nil
 		}
 
-		// to save time the reverse DNS is only fetched if it's filtered
-		// if not that it isn't filtered it will be fetched later if the
-		// instance actually passes the filter
-		_, reverseDNSFiltered := filteredFields[AttrReverseDNS]
 		if reverseDNSFiltered {
-			rdns, diagn := getInstanceReverseDNS()
-			if diagn != nil {
-				return diagn
+			rdns, err := reverseDNS(ctx, client, instance.ID)
+			if err != nil {
+				resp.Diagnostics.AddError("unable to retrieve instance reverse-dns", err.Error())
+				return
 			}
-
-			instanceData[AttrReverseDNS] = rdns
+			model.ReverseDNS = types.StringValue(rdns)
 		}
 
 		// The API returns the instance type as a UUID.
 		// We lazily convert it to the <family>.<size> format.
-		instanceType := ""
-		if inst.InstanceType != nil && inst.InstanceType.ID != "" {
-			tid := inst.InstanceType.ID
+		if instance.InstanceType != nil && instance.InstanceType.ID != "" {
+			tid := instance.InstanceType.ID
 			if _, ok := instanceTypes[tid]; !ok {
-				instanceType, err := client.GetInstanceType(
-					ctx,
-					tid,
-				)
+				instanceType, err := client.GetInstanceType(ctx, tid)
 				if err != nil {
-					return diag.Errorf("unable to retrieve instance type: %s", err)
+					resp.Diagnostics.AddError("unable to retrieve instance type", err.Error())
+					return
 				}
-				instanceTypes[tid] = fmt.Sprintf(
-					"%s.%s",
-					strings.ToLower(string(instanceType.Family)),
-					strings.ToLower(string(instanceType.Size)),
-				)
+				instanceTypes[tid] = instanceTypeName(instanceType)
 			}
 
-			instanceType = instanceTypes[tid]
-
-			instanceData[AttrType] = instanceType
+			model.Type = types.StringValue(instanceTypes[tid])
 		}
 
-		if !filter.CheckForMatch(instanceData, filters) {
+		if !filter.CheckForMatch(filterData(model, instance.Labels), filters) {
 			continue
 		}
 
 		if !reverseDNSFiltered {
-			rdns, diagn := getInstanceReverseDNS()
-			if diagn != nil {
-				return diagn
+			rdns, err := reverseDNS(ctx, client, instance.ID)
+			if err != nil {
+				resp.Diagnostics.AddError("unable to retrieve instance reverse-dns", err.Error())
+				return
 			}
-
-			instanceData[AttrReverseDNS] = rdns
+			model.ReverseDNS = types.StringValue(rdns)
 		}
 
-		data = append(data, instanceData)
+		state.Instances = append(state.Instances, model)
 	}
 
-	err = d.Set("instances", data)
-	if err != nil {
-		return diag.FromErr(err)
+	// `id` is also a filter: when set it has to be returned as configured.
+	if state.ID.IsNull() {
+		// by sorting instance IDs we can generate the same resource ID regardless of the order in which
+		// API returns instances in the list.
+		sort.Strings(ids)
+
+		state.ID = types.StringValue(fmt.Sprintf("%x", md5.Sum([]byte(strings.Join(ids, "")))))
 	}
 
-	// by sorting instance IDs we can generate the same resource ID regardless of the order in which
-	// API returns instances in thelist.
-	sort.Strings(ids)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+	tflog.Trace(ctx, "datasource read done", map[string]any{"id": state.ID})
+}
 
-	d.SetId(fmt.Sprintf("%x", md5.Sum([]byte(strings.Join(ids, "")))))
+// filters creates a filter for each filter attribute set in the configuration.
+// As with the SDKv2, a zero value (false, 0, "", {}) is no filter.
+func (m DataSourceListModel) filters(ctx context.Context) ([]filter.FilterFunc, diag.Diagnostics) {
+	var (
+		filters []filter.FilterFunc
+		diags   diag.Diagnostics
+	)
 
-	tflog.Debug(ctx, "read finished successfully", map[string]any{
-		"id": utils.IDString(d, NameList),
-	})
+	for name, value := range map[string]types.String{
+		AttrCreatedAt:       m.CreatedAt,
+		AttrDeployTargetID:  m.DeployTargetID,
+		AttrID:              m.ID,
+		AttrIPv6Address:     m.IPv6Address,
+		AttrManagerID:       m.ManagerID,
+		AttrManagerType:     m.ManagerType,
+		AttrName:            m.Name,
+		AttrPublicIPAddress: m.PublicIPAddress,
+		AttrReverseDNS:      m.ReverseDNS,
+		AttrSSHKey:          m.SSHKey,
+		AttrState:           m.State,
+		AttrTemplateID:      m.TemplateID,
+		AttrType:            m.Type,
+		AttrUserData:        m.UserData,
+	} {
+		if value.ValueString() == "" {
+			continue
+		}
 
-	return nil
+		f, err := filter.NewStringFilter(name, value.ValueString())
+		if err != nil {
+			diags.AddError("failed to create filter", fmt.Sprintf("%s: %s", name, err))
+			return nil, diags
+		}
+		filters = append(filters, f)
+	}
+
+	for name, value := range map[string]types.Bool{
+		AttrEnableSecureBoot: m.EnableSecureBoot,
+		AttrEnableTPM:        m.EnableTPM,
+		AttrIPv6:             m.IPv6,
+	} {
+		if value.ValueBool() {
+			filters = append(filters, filter.NewEqualityFilter(name, true))
+		}
+	}
+
+	if v := m.DiskSize.ValueInt64(); v != 0 {
+		filters = append(filters, filter.NewEqualityFilter(AttrDiskSize, v))
+	}
+
+	if len(m.Labels.Elements()) > 0 {
+		labels := map[string]string{}
+		diags.Append(m.Labels.ElementsAs(ctx, &labels, false)...)
+		if diags.HasError() {
+			return nil, diags
+		}
+
+		f, err := filter.NewMapFilter(ctx, AttrLabels, labels)
+		if err != nil {
+			diags.AddError("failed to create filter", fmt.Sprintf("%s: %s", AttrLabels, err))
+			return nil, diags
+		}
+		filters = append(filters, f)
+	}
+
+	return filters, diags
+}
+
+// filterData returns the attributes of an instance the filters apply to.
+func filterData(model InstanceModel, labels exoscale.Labels) map[string]any {
+	return map[string]any{
+		AttrCreatedAt:        model.CreatedAt.ValueString(),
+		AttrDeployTargetID:   model.DeployTargetID.ValueString(),
+		AttrDiskSize:         model.DiskSize.ValueInt64(),
+		AttrEnableSecureBoot: model.EnableSecureBoot.ValueBool(),
+		AttrEnableTPM:        model.EnableTPM.ValueBool(),
+		AttrID:               model.ID.ValueString(),
+		AttrIPv6:             model.IPv6.ValueBool(),
+		AttrIPv6Address:      model.IPv6Address.ValueString(),
+		AttrLabels:           map[string]string(labels),
+		AttrManagerID:        model.ManagerID.ValueString(),
+		AttrManagerType:      model.ManagerType.ValueString(),
+		AttrName:             model.Name.ValueString(),
+		AttrPublicIPAddress:  model.PublicIPAddress.ValueString(),
+		AttrReverseDNS:       model.ReverseDNS.ValueString(),
+		AttrSSHKey:           model.SSHKey.ValueString(),
+		AttrState:            model.State.ValueString(),
+		AttrTemplateID:       model.TemplateID.ValueString(),
+		AttrType:             model.Type.ValueString(),
+		AttrUserData:         model.UserData.ValueString(),
+	}
 }
