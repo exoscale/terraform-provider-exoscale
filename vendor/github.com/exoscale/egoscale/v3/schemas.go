@@ -6197,6 +6197,7 @@ const (
 	ZoneNameDEFra1 ZoneName = "de-fra-1"
 	ZoneNameBGSof1 ZoneName = "bg-sof-1"
 	ZoneNameATVie2 ZoneName = "at-vie-2"
+	ZoneNameESMad1 ZoneName = "es-mad-1"
 	ZoneNameHrZag1 ZoneName = "hr-zag-1"
 )
 
