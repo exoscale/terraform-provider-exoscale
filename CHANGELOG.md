@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+BUG FIXES:
+
+- Re-enable sks_cluster audit tests (#610)
+
 ## 0.74.2
 
 DEPENDENCIES:
