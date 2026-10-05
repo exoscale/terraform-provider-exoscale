@@ -3,11 +3,14 @@ package exoscale
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"reflect"
 	"strings"
 	"testing"
 
+	exov3 "github.com/exoscale/egoscale/v3"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/provider"
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
@@ -62,6 +65,36 @@ func TestProvider(t *testing.T) {
 
 	if err := Provider().InternalValidate(); err != nil {
 		t.Fatalf("err: %s", err)
+	}
+}
+
+func TestProviderConfigureV3RetryError(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Retry-After", "0")
+		http.Error(w, "unavailable", http.StatusServiceUnavailable)
+	}))
+	defer server.Close()
+
+	t.Setenv("EXOSCALE_API_ENDPOINT", server.URL)
+
+	data := schema.TestResourceDataRaw(t, Provider().Schema, map[string]any{
+		"key":    "key",
+		"secret": "secret",
+	})
+	meta, diags := ProviderConfigure(context.Background(), data)
+	if diags.HasError() {
+		t.Fatalf("configure provider: %v", diags)
+	}
+
+	client := meta.(map[string]any)["clientV3"].(*exov3.Client)
+	_, err := client.CreateInstancePool(context.Background(), exov3.CreateInstancePoolRequest{})
+	if err == nil {
+		t.Fatal("expected request to fail")
+	}
+
+	const want = "giving up after 5 attempt(s): unexpected HTTP status 503 Service Unavailable"
+	if !strings.Contains(err.Error(), want) {
+		t.Fatalf("expected error to contain %q, got %q", want, err)
 	}
 }
 
