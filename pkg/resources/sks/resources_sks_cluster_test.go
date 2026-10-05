@@ -392,9 +392,7 @@ func TestAccResourceSKSClusterWithAudit(t *testing.T) {
 			},
 			{
 				// Re-enable audit with new URL and default backoff
-				Config:             parseSKSConfig(t, "./testdata/006.sks_audit_reenable.tf.tmpl", td),
-				PlanOnly:           true, // TODO: remove once sks-orch is fixed
-				ExpectNonEmptyPlan: true, // TODO: remove once sks-orch is fixed
+				Config: parseSKSConfig(t, "./testdata/006.sks_audit_reenable.tf.tmpl", td),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckResourceSKSClusterExists(r, &sksCluster),
 					func(s *terraform.State) error {
