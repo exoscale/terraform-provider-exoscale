@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+BUG FIXES:
+
+- Preserve the last HTTP status when egoscale v3 retries are exhausted.
+
 ## 0.74.2
 
 DEPENDENCIES:

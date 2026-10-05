@@ -227,7 +227,10 @@ func ProviderConfigure(_ context.Context, d *schema.ResourceData) (any, diag.Dia
 		secret.(string),
 	)
 
-	opts := []exov3.ClientOpt{}
+	rc := retryablehttp.NewClient()
+	rc.Logger = LeveledTFLogger{Verbose: logging.IsDebugOrHigher()}
+	rc.CheckRetry = retryablehttp.ErrorPropagatedRetryPolicy
+	opts := []exov3.ClientOpt{exov3.ClientOptWithHTTPClient(rc.StandardClient())}
 	if ep := os.Getenv("EXOSCALE_API_ENDPOINT"); ep != "" {
 		opts = append(opts, exov3.ClientOptWithEndpoint(exov3.Endpoint(ep)), exov3.ClientOptWithUserAgent(UserAgent))
 	}
