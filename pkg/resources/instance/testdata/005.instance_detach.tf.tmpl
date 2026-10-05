@@ -1,0 +1,38 @@
+data "exoscale_template" "test_template" {
+  zone = "{{ .Zone }}"
+  name = "Linux Ubuntu 22.04 LTS 64-bit"
+}
+
+data "exoscale_security_group" "default" {
+  name = "default"
+}
+
+resource "exoscale_ssh_key" "test_key" {
+  name       = "terraform-provider-test-{{ .ID }}"
+  public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ/FXzAnsaRwP74Mji68Vt6+iz4mmCkC7QpUmPT4zKvf test"
+}
+
+# Dropping the anti-affinity group replaces the instance.
+resource "exoscale_compute_instance" "test_instance" {
+  zone               = "{{ .Zone }}"
+  name               = "terraform-provider-test-{{ .ID }}"
+  type               = "standard.tiny"
+  disk_size          = 10
+  template_id        = data.exoscale_template.test_template.id
+  ipv6               = true
+  enable_tpm         = false
+  enable_secure_boot = true
+  security_group_ids = [data.exoscale_security_group.default.id]
+  user_data          = "user-data-{{ .ID }}"
+  ssh_key            = exoscale_ssh_key.test_key.name
+  state              = "stopped"
+  reverse_dns        = "tf-provider-test.exoscale.com"
+
+  labels = {
+    test = "label-{{ .ID }}"
+  }
+
+  timeouts {
+    delete = "10m"
+  }
+}

@@ -1,176 +1,70 @@
 package instance_test
 
 import (
-	"errors"
-	"fmt"
 	"regexp"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
-	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/testutils"
-)
-
-var (
-	dsListSecurityGroupName       = acctest.RandomWithPrefix(testutils.Prefix)
-	dsListDiskSize          int64 = 10
-	dsListName                    = acctest.RandomWithPrefix(testutils.Prefix)
-	dsListSSHKeyName              = acctest.RandomWithPrefix(testutils.Prefix)
-	dsListReverseDNS              = "tf-provider-rdns-list-test.exoscale.com"
-	dsListType                    = "standard.tiny"
-	dsListZone                    = "at-vie-2"
-
-	dsListConfig = fmt.Sprintf(`
-locals {
-  zone = "%s"
-}
-data "exoscale_template" "ubuntu" {
-  zone = local.zone
-  name = "Linux Ubuntu 22.04 LTS 64-bit"
-}
-resource "exoscale_security_group" "test" {
-  name = "%s"
-}
-resource "exoscale_ssh_key" "test" {
-  name       = "%s"
-  public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGhXL32fOylqUARtE6mPuQPm37B15OlH7GDshQRBPhpx test"
-}
-resource "exoscale_compute_instance" "test" {
-  zone                    = local.zone
-  name                    = "%s"
-  type                    = "%s"
-  disk_size               = %d
-  template_id             = data.exoscale_template.ubuntu.id
-  ipv6                    = true
-  ssh_key                 = exoscale_ssh_key.test.name
-	reverse_dns             = "%s"
-  timeouts {
-    delete = "10m"
-  }
-}
-`,
-		dsListZone,
-		dsListSecurityGroupName,
-		dsListSSHKeyName,
-		dsListName,
-		dsListType,
-		dsListDiskSize,
-		dsListReverseDNS,
-	)
 )
 
 func testListDataSource(t *testing.T) {
 	t.Parallel()
 
+	var (
+		testdataSpec = testutils.TestdataSpec{
+			ID:   time.Now().UnixNano(),
+			Zone: "at-vie-2",
+		}
+		name         = testutils.ResourceName(testdataSpec.ID)
+		reverseDNS   = "tf-provider-rdns-list-test.exoscale.com."
+		byName       = "data.exoscale_compute_instance_list.by_name"
+		byReverseDNS = "data.exoscale_compute_instance_list.by_reverse_dns"
+		byIDAndState = "data.exoscale_compute_instance_list.by_id_and_state"
+		byNameRegex  = "data.exoscale_compute_instance_list.by_name_regex"
+	)
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testutils.AccPreCheck(t) },
 		ProtoV6ProviderFactories: testutils.TestAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
+			// 1 Create the instance. The API attaches the default Security Group
+			// to it, which the configuration does not list.
 			{
-				Config:             dsListConfig,
+				Config:             testutils.ParseTestdataConfig("./testdata/010.datasource_list_create.tf.tmpl", &testdataSpec),
 				ExpectNonEmptyPlan: true,
 			},
-			{
-				Config: fmt.Sprintf(`
-%s
 
-data "exoscale_compute_instance_list" "test" {
-  # we omit the zone to trigger an error as the zone attribute must be mandatory.
-  name = %q
-}
-`,
-					dsListConfig,
-					dsListName,
-				),
+			// 2 The zone is required.
+			{
+				Config:      testutils.ParseTestdataConfig("./testdata/011.datasource_list_missing_zone.tf.tmpl", &testdataSpec),
 				ExpectError: regexp.MustCompile("Missing required argument"),
 			},
-			{
-				Config: fmt.Sprintf(`
-			%s
 
-			data "exoscale_compute_instance_list" "test" {
-			  zone = local.zone
-			  name = %q
-			}
-			`,
-					dsListConfig,
-					dsListName,
-				),
-				Check: resource.ComposeTestCheckFunc(
-					dsCheckListAttrs("data.exoscale_compute_instance_list.test", testutils.TestAttrs{
-						"instances.#":             testutils.ValidateString("1"),
-						"instances.0.id":          validation.ToDiagFunc(validation.NoZeroValues),
-						"instances.0.name":        testutils.ValidateString(dsListName),
-						"instances.0.type":        testutils.ValidateString(dsListType),
-						"instances.0.ssh_key":     testutils.ValidateString(dsListSSHKeyName),
-						"instances.0.disk_size":   testutils.ValidateString(fmt.Sprint(dsDiskSize)),
-						"instances.0.reverse_dns": testutils.ValidateString(dsListReverseDNS + "."),
-					}),
-				),
-			},
+			// 3 Filter by name, reverse DNS + labels, id + state, name regex + disk size.
 			{
-				Config: fmt.Sprintf(`
-			%s
+				Config: testutils.ParseTestdataConfig("./testdata/012.datasource_list.tf.tmpl", &testdataSpec),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(byName, "instances.#", "1"),
+					resource.TestCheckResourceAttrPair(byName, "instances.0.id", instanceResource, "id"),
+					resource.TestCheckResourceAttr(byName, "instances.0.name", name),
+					resource.TestCheckResourceAttr(byName, "instances.0.type", "standard.tiny"),
+					resource.TestCheckResourceAttrPair(byName, "instances.0.ssh_key", "exoscale_ssh_key.test_key", "name"),
+					resource.TestCheckResourceAttr(byName, "instances.0.disk_size", "10"),
+					resource.TestCheckResourceAttr(byName, "instances.0.reverse_dns", reverseDNS),
 
-			data "exoscale_compute_instance_list" "test" {
-			  zone = local.zone
-			  reverse_dns = %q
-			}
-			`,
-					dsListConfig,
-					dsListReverseDNS+".",
-				),
-				Check: resource.ComposeTestCheckFunc(
-					dsCheckListAttrs("data.exoscale_compute_instance_list.test", testutils.TestAttrs{
-						"instances.#":             testutils.ValidateString("1"),
-						"instances.0.id":          validation.ToDiagFunc(validation.NoZeroValues),
-						"instances.0.name":        testutils.ValidateString(dsListName),
-						"instances.0.type":        testutils.ValidateString(dsListType),
-						"instances.0.ssh_key":     testutils.ValidateString(dsListSSHKeyName),
-						"instances.0.disk_size":   testutils.ValidateString(fmt.Sprint(dsDiskSize)),
-						"instances.0.reverse_dns": testutils.ValidateString(dsListReverseDNS + "."),
-					}),
-				),
-			},
-			{
-				Config: fmt.Sprintf(`
-			%s
+					resource.TestCheckResourceAttr(byReverseDNS, "instances.#", "1"),
+					resource.TestCheckResourceAttr(byReverseDNS, "instances.0.name", name),
 
-			data "exoscale_compute_instance_list" "test" {
-			  zone = local.zone
-			  disk_size = %d
-			}
-			`,
-					dsListConfig,
-					dsListDiskSize,
-				),
-				Check: resource.ComposeTestCheckFunc(
-					dsCheckListAttrs("data.exoscale_compute_instance_list.test", testutils.TestAttrs{
-						"instances.#":             testutils.ValidateString("1"),
-						"instances.0.id":          validation.ToDiagFunc(validation.NoZeroValues),
-						"instances.0.name":        testutils.ValidateString(dsListName),
-						"instances.0.type":        testutils.ValidateString(dsListType),
-						"instances.0.ssh_key":     testutils.ValidateString(dsListSSHKeyName),
-						"instances.0.disk_size":   testutils.ValidateString(fmt.Sprint(dsDiskSize)),
-						"instances.0.reverse_dns": testutils.ValidateString(dsListReverseDNS + "."),
-					}),
+					resource.TestCheckResourceAttr(byIDAndState, "instances.#", "1"),
+					resource.TestCheckResourceAttrPair(byIDAndState, "id", instanceResource, "id"),
+
+					resource.TestCheckResourceAttr(byNameRegex, "instances.#", "1"),
+					resource.TestCheckResourceAttr(byNameRegex, "instances.0.name", name),
 				),
 			},
 		},
 	})
-}
-
-func dsCheckListAttrs(ds string, expected testutils.TestAttrs) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		for name, res := range s.RootModule().Resources {
-			if name == ds {
-				return testutils.CheckResourceAttributes(expected, res.Primary.Attributes)
-			}
-		}
-
-		return errors.New("exoscale_compute_instance data source not found in the state")
-	}
 }

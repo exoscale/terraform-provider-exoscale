@@ -135,20 +135,10 @@ func stringSetDiff(old, cur []string) (added, removed []string) {
 	return added, removed
 }
 
-// refreshString updates a state value from the API, null and "" being the
-// same value: whichever the state holds is kept when the API has none.
-func refreshString(state *types.String, remote string) {
-	if remote == "" {
-		if state.IsUnknown() || state.ValueString() != "" {
-			*state = types.StringNull()
-		}
-		return
-	}
-
-	*state = types.StringValue(remote)
-}
-
-// refreshStringSet is refreshString for sets of strings.
+// refreshStringSet updates a state value from the API, null and an empty set
+// being the same value: whichever the state holds is kept when the API has
+// none. Unlike utils.RefreshStringSet, a non-empty state is emptied then, so
+// that a detachment made outside of Terraform shows up as drift.
 func refreshStringSet(ctx context.Context, state *types.Set, remote []string) diag.Diagnostics {
 	if len(remote) == 0 {
 		if state.IsUnknown() || len(state.Elements()) > 0 {
@@ -166,7 +156,7 @@ func refreshStringSet(ctx context.Context, state *types.Set, remote []string) di
 	return diags
 }
 
-// refreshLabels is refreshString for labels.
+// refreshLabels is refreshStringSet for labels, see utils.RefreshLabels.
 func refreshLabels(ctx context.Context, state *types.Map, remote exoscale.Labels) diag.Diagnostics {
 	if len(remote) == 0 {
 		if state.IsUnknown() || len(state.Elements()) > 0 {
@@ -356,7 +346,7 @@ func applyInstance( //nolint:gocyclo
 	if instance.DeployTarget != nil {
 		deployTargetID = instance.DeployTarget.ID.String()
 	}
-	refreshString(&model.DeployTargetID, deployTargetID)
+	utils.RefreshString(&model.DeployTargetID, deployTargetID)
 
 	// The API omits these on instances predating the features.
 	if instance.SecurebootEnabled != nil {
@@ -430,7 +420,7 @@ func applyInstance( //nolint:gocyclo
 		diags.AddError("unable to retrieve instance reverse-dns", err.Error())
 		return diags
 	}
-	refreshString(&model.ReverseDNS, strings.TrimSuffix(rdns, "."))
+	utils.RefreshString(&model.ReverseDNS, strings.TrimSuffix(rdns, "."))
 
 	if instance.InstanceType != nil {
 		instanceTypes, err := client.ListInstanceTypes(ctx)

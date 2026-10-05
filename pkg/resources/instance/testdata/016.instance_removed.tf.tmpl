@@ -1,0 +1,5 @@
+# The instance is removed from the configuration.
+data "exoscale_template" "test_template" {
+  zone = "{{ .Zone }}"
+  name = "Linux Ubuntu 22.04 LTS 64-bit"
+}

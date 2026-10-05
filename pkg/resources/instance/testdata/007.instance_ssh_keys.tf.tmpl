@@ -1,0 +1,32 @@
+data "exoscale_template" "test_template" {
+  zone = "{{ .Zone }}"
+  name = "Linux Ubuntu 22.04 LTS 64-bit"
+}
+
+data "exoscale_security_group" "default" {
+  name = "default"
+}
+
+resource "exoscale_ssh_key" "test_key" {
+  name       = "terraform-provider-test-{{ .ID }}"
+  public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAkAJy7s8lfxEvPP7If9Bjk5yucQxlus1yKjNl0KMJ7j test"
+}
+
+resource "exoscale_ssh_key" "test_key2" {
+  name       = "terraform-provider-test-{{ .ID }}-2"
+  public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICbw8XASr5gWYwEWK45oWKDVLlOFSwodMul+8sf2WFiI test2"
+}
+
+resource "exoscale_compute_instance" "test_instance" {
+  zone               = "{{ .Zone }}"
+  name               = "terraform-provider-test-{{ .ID }}"
+  type               = "standard.tiny"
+  disk_size          = 10
+  template_id        = data.exoscale_template.test_template.id
+  security_group_ids = [data.exoscale_security_group.default.id]
+  ssh_keys           = [exoscale_ssh_key.test_key.name, exoscale_ssh_key.test_key2.name]
+
+  timeouts {
+    delete = "10m"
+  }
+}

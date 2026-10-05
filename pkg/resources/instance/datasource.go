@@ -75,156 +75,160 @@ type DataSourceModel struct {
 	Timeouts timeouts.Value `tfsdk:"timeouts"`
 }
 
-// instanceAttributes returns the computed attributes describing a Compute
-// instance.
-func instanceAttributes() map[string]schema.Attribute {
-	return map[string]schema.Attribute{
-		AttrAntiAffinityGroupIDs: schema.SetAttribute{
-			MarkdownDescription: "The list of attached [exoscale_anti_affinity_group](../resources/anti_affinity_group.md) (IDs).",
-			ElementType:         types.StringType,
-			Computed:            true,
-		},
-		AttrCreatedAt: schema.StringAttribute{
-			MarkdownDescription: "The compute instance creation date.",
-			Computed:            true,
-		},
-		AttrDeployTargetID: schema.StringAttribute{
-			MarkdownDescription: "A deploy target ID.",
-			Computed:            true,
-		},
-		AttrDiskSize: schema.Int64Attribute{
-			MarkdownDescription: "The instance disk size (GiB).",
-			Computed:            true,
-		},
-		AttrElasticIPIDs: schema.SetAttribute{
-			MarkdownDescription: "The list of attached [exoscale_elastic_ip](../resources/elastic_ip.md) (IDs).",
-			ElementType:         types.StringType,
-			Computed:            true,
-		},
-		AttrEnableSecureBoot: schema.BoolAttribute{
-			MarkdownDescription: "Indicates if the instance has secure boot enabled.",
-			Computed:            true,
-		},
-		AttrEnableTPM: schema.BoolAttribute{
-			MarkdownDescription: "Indicates if the instance has TPM enabled.",
-			Computed:            true,
-		},
-		AttrID: schema.StringAttribute{
-			MarkdownDescription: "The compute instance ID.",
-			Computed:            true,
-		},
-		AttrIPv6: schema.BoolAttribute{
-			MarkdownDescription: "Whether IPv6 is enabled on the instance.",
-			Computed:            true,
-		},
-		AttrIPv6Address: schema.StringAttribute{
-			MarkdownDescription: "The instance (main network interface) IPv6 address (if enabled).",
-			Computed:            true,
-		},
-		AttrLabels: schema.MapAttribute{
-			MarkdownDescription: "A map of key/value labels.",
-			ElementType:         types.StringType,
-			Computed:            true,
-		},
-		AttrManagerID: schema.StringAttribute{
-			MarkdownDescription: "The instance manager ID, if any.",
-			Computed:            true,
-		},
-		AttrManagerType: schema.StringAttribute{
-			MarkdownDescription: "The instance manager type (instance pool, SKS node pool, etc.), if any.",
-			Computed:            true,
-		},
-		AttrName: schema.StringAttribute{
-			MarkdownDescription: "The instance name.",
-			Computed:            true,
-		},
-		AttrPrivateNetworkIDs: schema.SetAttribute{
-			MarkdownDescription: "The list of attached [exoscale_private_network](../resources/private_network.md) (IDs).",
-			ElementType:         types.StringType,
-			Computed:            true,
-		},
-		AttrPublicIPAddress: schema.StringAttribute{
-			MarkdownDescription: "The instance (main network interface) IPv4 address.",
-			Computed:            true,
-		},
-		AttrReverseDNS: schema.StringAttribute{
-			MarkdownDescription: "Domain name for reverse DNS record.",
-			Computed:            true,
-		},
-		AttrSSHKey: schema.StringAttribute{
-			MarkdownDescription: "The [exoscale_ssh_key](../resources/ssh_key.md) (name) authorized on the instance.",
-			DeprecationMessage:  "Use ssh_keys instead",
-			Computed:            true,
-		},
-		AttrSSHKeys: schema.SetAttribute{
-			MarkdownDescription: "The list of [exoscale_ssh_key](../resources/ssh_key.md) (name) authorized on the instance.",
-			ElementType:         types.StringType,
-			Computed:            true,
-		},
-		AttrSecurityGroupIDs: schema.SetAttribute{
-			MarkdownDescription: "The list of attached [exoscale_security_group](../resources/security_group.md) (IDs).",
-			ElementType:         types.StringType,
-			Computed:            true,
-		},
-		AttrState: schema.StringAttribute{
-			MarkdownDescription: "The instance state.",
-			Computed:            true,
-		},
-		AttrTemplateID: schema.StringAttribute{
-			MarkdownDescription: "The instance [exoscale_template](./template.md) ID.",
-			Computed:            true,
-		},
-		AttrType: schema.StringAttribute{
-			MarkdownDescription: "The instance type.",
-			Computed:            true,
-		},
-		AttrUserData: schema.StringAttribute{
-			MarkdownDescription: "The instance [cloud-init](http://cloudinit.readthedocs.io/en/latest/) configuration.",
-			Computed:            true,
-		},
-		AttrZone: schema.StringAttribute{
-			MarkdownDescription: "The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.",
-			Computed:            true,
-		},
-	}
-}
-
 func (d *DataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_compute_instance"
 }
 
 func (d *DataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
-	attributes := instanceAttributes()
-
-	attributes[AttrID] = schema.StringAttribute{
-		MarkdownDescription: "The compute instance ID to match (conflicts with `name`).",
-		Optional:            true,
-		Computed:            true,
-		Validators: []validator.String{
-			stringvalidator.ConflictsWith(path.MatchRoot(AttrName)),
-		},
-	}
-	attributes[AttrName] = schema.StringAttribute{
-		MarkdownDescription: "The instance name to match (conflicts with `id`).",
-		Optional:            true,
-		Computed:            true,
-		Validators: []validator.String{
-			stringvalidator.ConflictsWith(path.MatchRoot(AttrID)),
-		},
-	}
-	attributes[AttrZone] = schema.StringAttribute{
-		MarkdownDescription: "The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.",
-		Required:            true,
-		Validators: []validator.String{
-			stringvalidator.OneOf(config.Zones...),
-		},
-	}
-
 	resp.Schema = schema.Schema{
 		Description:         "Fetch Exoscale Compute Instances data.",
 		MarkdownDescription: markdownDescriptionDatasource,
 
-		Attributes: attributes,
+		Attributes: map[string]schema.Attribute{
+			"anti_affinity_group_ids": schema.SetAttribute{
+				Description:         "The list of attached exoscale_anti_affinity_group (IDs).",
+				MarkdownDescription: "The list of attached [exoscale_anti_affinity_group](../resources/anti_affinity_group.md) (IDs).",
+				ElementType:         types.StringType,
+				Computed:            true,
+			},
+			"created_at": schema.StringAttribute{
+				Description:         "The compute instance creation date.",
+				MarkdownDescription: "The compute instance creation date.",
+				Computed:            true,
+			},
+			"deploy_target_id": schema.StringAttribute{
+				Description:         "A deploy target ID.",
+				MarkdownDescription: "A deploy target ID.",
+				Computed:            true,
+			},
+			"disk_size": schema.Int64Attribute{
+				Description:         "The instance disk size (GiB).",
+				MarkdownDescription: "The instance disk size (GiB).",
+				Computed:            true,
+			},
+			"elastic_ip_ids": schema.SetAttribute{
+				Description:         "The list of attached exoscale_elastic_ip (IDs).",
+				MarkdownDescription: "The list of attached [exoscale_elastic_ip](../resources/elastic_ip.md) (IDs).",
+				ElementType:         types.StringType,
+				Computed:            true,
+			},
+			"enable_secure_boot": schema.BoolAttribute{
+				Description:         "Indicates if the instance has secure boot enabled.",
+				MarkdownDescription: "Indicates if the instance has secure boot enabled.",
+				Computed:            true,
+			},
+			"enable_tpm": schema.BoolAttribute{
+				Description:         "Indicates if the instance has TPM enabled.",
+				MarkdownDescription: "Indicates if the instance has TPM enabled.",
+				Computed:            true,
+			},
+			"id": schema.StringAttribute{
+				Description:         "The compute instance ID to match (conflicts with 'name').",
+				MarkdownDescription: "The compute instance ID to match (conflicts with `name`).",
+				Optional:            true,
+				Computed:            true,
+				Validators: []validator.String{
+					stringvalidator.ConflictsWith(path.MatchRoot("name")),
+				},
+			},
+			"ipv6": schema.BoolAttribute{
+				Description:         "Whether IPv6 is enabled on the instance.",
+				MarkdownDescription: "Whether IPv6 is enabled on the instance.",
+				Computed:            true,
+			},
+			"ipv6_address": schema.StringAttribute{
+				Description:         "The instance (main network interface) IPv6 address (if enabled).",
+				MarkdownDescription: "The instance (main network interface) IPv6 address (if enabled).",
+				Computed:            true,
+			},
+			"labels": schema.MapAttribute{
+				Description:         "A map of key/value labels.",
+				MarkdownDescription: "A map of key/value labels.",
+				ElementType:         types.StringType,
+				Computed:            true,
+			},
+			"manager_id": schema.StringAttribute{
+				Description:         "The instance manager ID, if any.",
+				MarkdownDescription: "The instance manager ID, if any.",
+				Computed:            true,
+			},
+			"manager_type": schema.StringAttribute{
+				Description:         "The instance manager type (instance pool, SKS node pool, etc.), if any.",
+				MarkdownDescription: "The instance manager type (instance pool, SKS node pool, etc.), if any.",
+				Computed:            true,
+			},
+			"name": schema.StringAttribute{
+				Description:         "The instance name to match (conflicts with 'id').",
+				MarkdownDescription: "The instance name to match (conflicts with `id`).",
+				Optional:            true,
+				Computed:            true,
+				Validators: []validator.String{
+					stringvalidator.ConflictsWith(path.MatchRoot("id")),
+				},
+			},
+			"private_network_ids": schema.SetAttribute{
+				Description:         "The list of attached exoscale_private_network (IDs).",
+				MarkdownDescription: "The list of attached [exoscale_private_network](../resources/private_network.md) (IDs).",
+				ElementType:         types.StringType,
+				Computed:            true,
+			},
+			"public_ip_address": schema.StringAttribute{
+				Description:         "The instance (main network interface) IPv4 address.",
+				MarkdownDescription: "The instance (main network interface) IPv4 address.",
+				Computed:            true,
+			},
+			"reverse_dns": schema.StringAttribute{
+				Description:         "Domain name for reverse DNS record.",
+				MarkdownDescription: "Domain name for reverse DNS record.",
+				Computed:            true,
+			},
+			"ssh_key": schema.StringAttribute{
+				Description:         "The exoscale_ssh_key (name) authorized on the instance.",
+				MarkdownDescription: "The [exoscale_ssh_key](../resources/ssh_key.md) (name) authorized on the instance.",
+				DeprecationMessage:  "Use ssh_keys instead",
+				Computed:            true,
+			},
+			"ssh_keys": schema.SetAttribute{
+				Description:         "The list of exoscale_ssh_key (name) authorized on the instance.",
+				MarkdownDescription: "The list of [exoscale_ssh_key](../resources/ssh_key.md) (name) authorized on the instance.",
+				ElementType:         types.StringType,
+				Computed:            true,
+			},
+			"security_group_ids": schema.SetAttribute{
+				Description:         "The list of attached exoscale_security_group (IDs).",
+				MarkdownDescription: "The list of attached [exoscale_security_group](../resources/security_group.md) (IDs).",
+				ElementType:         types.StringType,
+				Computed:            true,
+			},
+			"state": schema.StringAttribute{
+				Description:         "The instance state.",
+				MarkdownDescription: "The instance state.",
+				Computed:            true,
+			},
+			"template_id": schema.StringAttribute{
+				Description:         "The instance exoscale_template ID.",
+				MarkdownDescription: "The instance [exoscale_template](./template.md) ID.",
+				Computed:            true,
+			},
+			"type": schema.StringAttribute{
+				Description:         "The instance type.",
+				MarkdownDescription: "The instance type.",
+				Computed:            true,
+			},
+			"user_data": schema.StringAttribute{
+				Description:         "The instance cloud-init configuration.",
+				MarkdownDescription: "The instance [cloud-init](http://cloudinit.readthedocs.io/en/latest/) configuration.",
+				Computed:            true,
+			},
+			"zone": schema.StringAttribute{
+				Description:         "The Exoscale Zone name.",
+				MarkdownDescription: "The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.",
+				Required:            true,
+				Validators: []validator.String{
+					stringvalidator.OneOf(config.Zones...),
+				},
+			},
+		},
 		Blocks: map[string]schema.Block{
 			"timeouts": timeouts.Block(ctx, timeouts.Opts{
 				Read: true,

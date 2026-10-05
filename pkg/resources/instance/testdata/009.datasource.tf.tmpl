@@ -1,0 +1,67 @@
+data "exoscale_template" "test_template" {
+  zone = "{{ .Zone }}"
+  name = "Linux Ubuntu 22.04 LTS 64-bit"
+}
+
+data "exoscale_security_group" "default" {
+  name = "default"
+}
+
+resource "exoscale_security_group" "test_sg" {
+  name = "terraform-provider-test-{{ .ID }}"
+}
+
+resource "exoscale_anti_affinity_group" "test_aag" {
+  name = "terraform-provider-test-{{ .ID }}"
+}
+
+resource "exoscale_private_network" "test_pn" {
+  zone = "{{ .Zone }}"
+  name = "terraform-provider-test-{{ .ID }}"
+}
+
+resource "exoscale_elastic_ip" "test_eip" {
+  zone = "{{ .Zone }}"
+}
+
+resource "exoscale_ssh_key" "test_key" {
+  name       = "terraform-provider-test-{{ .ID }}"
+  public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBbM7A2vC0avqeFBvc0QdZMb6YjP4rTD0VLfV0tnbkGD test"
+}
+
+resource "exoscale_compute_instance" "test_instance" {
+  zone                    = "{{ .Zone }}"
+  name                    = "terraform-provider-test-{{ .ID }}"
+  type                    = "standard.tiny"
+  disk_size               = 10
+  template_id             = data.exoscale_template.test_template.id
+  ipv6                    = true
+  anti_affinity_group_ids = [exoscale_anti_affinity_group.test_aag.id]
+  security_group_ids      = [exoscale_security_group.test_sg.id]
+  elastic_ip_ids          = [exoscale_elastic_ip.test_eip.id]
+  user_data               = "user-data-{{ .ID }}"
+  ssh_key                 = exoscale_ssh_key.test_key.name
+  reverse_dns             = "tf-provider-rdns-test.exoscale.com"
+
+  network_interface {
+    network_id = exoscale_private_network.test_pn.id
+  }
+
+  labels = {
+    test = "label-{{ .ID }}"
+  }
+
+  timeouts {
+    delete = "10m"
+  }
+}
+
+data "exoscale_compute_instance" "by_id" {
+  zone = "{{ .Zone }}"
+  id   = exoscale_compute_instance.test_instance.id
+}
+
+data "exoscale_compute_instance" "by_name" {
+  zone = "{{ .Zone }}"
+  name = exoscale_compute_instance.test_instance.name
+}

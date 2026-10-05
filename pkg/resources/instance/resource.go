@@ -95,14 +95,16 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 		MarkdownDescription: markdownDescriptionResource,
 
 		Attributes: map[string]schema.Attribute{
-			AttrID: schema.StringAttribute{
+			"id": schema.StringAttribute{
+				Description:         "The ID of this resource.",
 				MarkdownDescription: "The ID of this resource.",
 				Computed:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
-			AttrAntiAffinityGroupIDs: schema.SetAttribute{
+			"anti_affinity_group_ids": schema.SetAttribute{
+				Description:         "❗ A list of exoscale_anti_affinity_group (IDs) to attach to the instance (may only be set at creation time).",
 				MarkdownDescription: "❗ A list of [exoscale_anti_affinity_group](./anti_affinity_group.md) (IDs) to attach to the instance (may only be set at creation time).",
 				ElementType:         types.StringType,
 				Optional:            true,
@@ -112,7 +114,8 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 					setRequiresReplace(),
 				},
 			},
-			AttrBlockStorageVolumeIDs: schema.SetAttribute{
+			"block_storage_volume_ids": schema.SetAttribute{
+				Description:         "A list of exoscale_block_storage_volume (ID) to attach to the instance.",
 				MarkdownDescription: "A list of [exoscale_block_storage_volume](./block_storage_volume.md) (ID) to attach to the instance.",
 				ElementType:         types.StringType,
 				Optional:            true,
@@ -121,14 +124,16 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 					emptySetIsNull{},
 				},
 			},
-			AttrCreatedAt: schema.StringAttribute{
+			"created_at": schema.StringAttribute{
+				Description:         "The instance creation date.",
 				MarkdownDescription: "The instance creation date.",
 				Computed:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
-			AttrDeployTargetID: schema.StringAttribute{
+			"deploy_target_id": schema.StringAttribute{
+				Description:         "❗ A deploy target ID.",
 				MarkdownDescription: "❗ A deploy target ID.",
 				Optional:            true,
 				Computed:            true,
@@ -137,18 +142,21 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 					stringRequiresReplace(),
 				},
 			},
-			AttrDestroyProtected: schema.BoolAttribute{
+			"destroy_protected": schema.BoolAttribute{
+				Description:         "Mark the instance as protected, the Exoscale API will refuse to delete the instance until the protection is removed (boolean; default: 'false').",
 				MarkdownDescription: "Mark the instance as protected, the Exoscale API will refuse to delete the instance until the protection is removed (boolean; default: `false`).",
 				Optional:            true,
 			},
-			AttrDiskSize: schema.Int64Attribute{
+			"disk_size": schema.Int64Attribute{
+				Description:         "The instance disk size (GiB; at least '10'). Can not be decreased after creation. WARNING: updating this attribute stops/restarts the instance.",
 				MarkdownDescription: "The instance disk size (GiB; at least `10`). Can not be decreased after creation. **WARNING**: updating this attribute stops/restarts the instance.",
 				Required:            true,
 				Validators: []validator.Int64{
 					int64validator.AtLeast(10),
 				},
 			},
-			AttrElasticIPIDs: schema.SetAttribute{
+			"elastic_ip_ids": schema.SetAttribute{
+				Description:         "A list of exoscale_elastic_ip (IDs) to attach to the instance.",
 				MarkdownDescription: "A list of [exoscale_elastic_ip](./elastic_ip.md) (IDs) to attach to the instance.",
 				ElementType:         types.StringType,
 				Optional:            true,
@@ -157,7 +165,8 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 					emptySetIsNull{},
 				},
 			},
-			AttrEnableSecureBoot: schema.BoolAttribute{
+			"enable_secure_boot": schema.BoolAttribute{
+				Description:         "❗ Enable secure boot on the instance (boolean; default: 'false'). Can not be changed after the creation.",
 				MarkdownDescription: "❗ Enable secure boot on the instance (boolean; default: `false`). Can not be changed after the creation.",
 				Optional:            true,
 				Computed:            true,
@@ -175,23 +184,27 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 					),
 				},
 			},
-			AttrEnableTPM: schema.BoolAttribute{
+			"enable_tpm": schema.BoolAttribute{
+				Description:         "Enable TPM on the instance (boolean; default: 'false'). Can not be disabled after the creation. WARNING: enabling this attribute stops/restarts the instance.",
 				MarkdownDescription: "Enable TPM on the instance (boolean; default: `false`). Can not be disabled after the creation. **WARNING**: enabling this attribute stops/restarts the instance.",
 				Optional:            true,
 				Computed:            true,
 				Default:             booldefault.StaticBool(false),
 			},
-			AttrIPv6: schema.BoolAttribute{
+			"ipv6": schema.BoolAttribute{
+				Description:         "Enable IPv6 on the instance (boolean; default: 'false'). Can not be disabled after being enabled.",
 				MarkdownDescription: "Enable IPv6 on the instance (boolean; default: `false`). Can not be disabled after being enabled.",
 				Optional:            true,
 				Computed:            true,
 				Default:             booldefault.StaticBool(false),
 			},
-			AttrIPv6Address: schema.StringAttribute{
+			"ipv6_address": schema.StringAttribute{
+				Description:         "The instance (main network interface) IPv6 address (if enabled).",
 				MarkdownDescription: "The instance (main network interface) IPv6 address (if enabled).",
 				Computed:            true,
 			},
-			AttrLabels: schema.MapAttribute{
+			"labels": schema.MapAttribute{
+				Description:         "A map of key/value labels.",
 				MarkdownDescription: "A map of key/value labels.",
 				ElementType:         types.StringType,
 				Optional:            true,
@@ -200,37 +213,43 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 					emptyMapIsNull{},
 				},
 			},
-			AttrMACAddress: schema.StringAttribute{
+			"mac_address": schema.StringAttribute{
+				Description:         "MAC address",
 				MarkdownDescription: "MAC address",
 				Computed:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
-			AttrName: schema.StringAttribute{
+			"name": schema.StringAttribute{
+				Description:         "The compute instance name.",
 				MarkdownDescription: "The compute instance name.",
 				Required:            true,
 			},
-			AttrPrivate: schema.BoolAttribute{
+			"private": schema.BoolAttribute{
+				Description:         "Whether the instance is private (no public IP addresses; default: false)",
 				MarkdownDescription: "Whether the instance is private (no public IP addresses; default: false)",
 				Optional:            true,
 				Computed:            true,
 				Default:             booldefault.StaticBool(false),
 			},
-			AttrPrivateNetworkIDs: schema.SetAttribute{
+			"private_network_ids": schema.SetAttribute{
+				Description:         "A list of private networks (IDs) attached to the instance. Please use the 'network_interface..network_id' argument instead.",
 				MarkdownDescription: "A list of private networks (IDs) attached to the instance. Please use the `network_interface.*.network_id` argument instead.",
 				DeprecationMessage:  "Use the network_interface block instead.",
 				ElementType:         types.StringType,
 				Computed:            true,
 			},
-			AttrPublicIPAddress: schema.StringAttribute{
+			"public_ip_address": schema.StringAttribute{
+				Description:         "The instance (main network interface) IPv4 address.",
 				MarkdownDescription: "The instance (main network interface) IPv4 address.",
 				Computed:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
-			AttrReverseDNS: schema.StringAttribute{
+			"reverse_dns": schema.StringAttribute{
+				Description:         "Domain name for reverse DNS record.",
 				MarkdownDescription: "Domain name for reverse DNS record.",
 				Optional:            true,
 				Computed:            true,
@@ -238,7 +257,8 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 					emptyStringIsNull{},
 				},
 			},
-			AttrSSHKey: schema.StringAttribute{
+			"ssh_key": schema.StringAttribute{
+				Description:         "❗ The exoscale_ssh_key (name) to authorize in the instance (may only be set at creation time).",
 				MarkdownDescription: "❗ The [exoscale_ssh_key](./ssh_key.md) (name) to authorize in the instance (may only be set at creation time).",
 				DeprecationMessage:  "Use ssh_keys instead",
 				Optional:            true,
@@ -246,10 +266,11 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 					stringRequiresReplace(),
 				},
 				Validators: []validator.String{
-					stringvalidator.ConflictsWith(path.MatchRoot(AttrSSHKeys)),
+					stringvalidator.ConflictsWith(path.MatchRoot("ssh_keys")),
 				},
 			},
-			AttrSSHKeys: schema.SetAttribute{
+			"ssh_keys": schema.SetAttribute{
+				Description:         "❗ The list of exoscale_ssh_key (name) to authorize in the instance (may only be set at creation time).",
 				MarkdownDescription: "❗ The list of [exoscale_ssh_key](./ssh_key.md) (name) to authorize in the instance (may only be set at creation time).",
 				ElementType:         types.StringType,
 				Optional:            true,
@@ -259,7 +280,8 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 					setRequiresReplace(),
 				},
 			},
-			AttrSecurityGroupIDs: schema.SetAttribute{
+			"security_group_ids": schema.SetAttribute{
+				Description:         "A list of exoscale_security_group (IDs) to attach to the instance.",
 				MarkdownDescription: "A list of [exoscale_security_group](./security_group.md) (IDs) to attach to the instance.",
 				ElementType:         types.StringType,
 				Optional:            true,
@@ -268,7 +290,8 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 					emptySetIsNull{},
 				},
 			},
-			AttrState: schema.StringAttribute{
+			"state": schema.StringAttribute{
+				Description:         "The instance state ('running' or 'stopped'). If omitted, instance will start and reach 'running' state.",
 				MarkdownDescription: "The instance state (`running` or `stopped`). If omitted, instance will start and reach `running` state.",
 				Optional:            true,
 				Computed:            true,
@@ -284,14 +307,16 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 					),
 				},
 			},
-			AttrTemplateID: schema.StringAttribute{
+			"template_id": schema.StringAttribute{
+				Description:         "❗ The exoscale_template (ID) to use when creating the instance.",
 				MarkdownDescription: "❗ The [exoscale_template](../data-sources/template.md) (ID) to use when creating the instance.",
 				Required:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
-			AttrType: schema.StringAttribute{
+			"type": schema.StringAttribute{
+				Description:         "The instance type ('<family>.<size>', e.g. 'standard.medium'; use the Exoscale CLI - 'exo compute instance-type list' - for the list of available types). WARNING: updating this attribute stops/restarts the instance.",
 				MarkdownDescription: "The instance type (`<family>.<size>`, e.g. `standard.medium`; use the [Exoscale CLI](https://github.com/exoscale/cli/) - `exo compute instance-type list` - for the list of available types). **WARNING**: updating this attribute stops/restarts the instance.",
 				Required:            true,
 				PlanModifiers: []planmodifier.String{
@@ -309,7 +334,8 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 					},
 				},
 			},
-			AttrUserData: schema.StringAttribute{
+			"user_data": schema.StringAttribute{
+				Description:         "cloud-init configuration.",
 				MarkdownDescription: "[cloud-init](https://cloudinit.readthedocs.io/) configuration.",
 				Optional:            true,
 				PlanModifiers: []planmodifier.String{
@@ -325,7 +351,8 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 					},
 				},
 			},
-			AttrZone: schema.StringAttribute{
+			"zone": schema.StringAttribute{
+				Description:         "❗ The Exoscale Zone name.",
 				MarkdownDescription: "❗ The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.",
 				Required:            true,
 				PlanModifiers: []planmodifier.String{
@@ -337,11 +364,13 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 			},
 		},
 		Blocks: map[string]schema.Block{
-			AttrNetworkInterface: schema.SetNestedBlock{
+			"network_interface": schema.SetNestedBlock{
+				Description:         "Private network interfaces (may be specified multiple times). Structure is documented below.",
 				MarkdownDescription: "Private network interfaces (may be specified multiple times). Structure is documented below.",
 				NestedObject: schema.NestedBlockObject{
 					Attributes: map[string]schema.Attribute{
 						"ip_address": schema.StringAttribute{
+							Description:         "The IPv4 address to request as static DHCP lease if the network interface is attached to a managed private network.",
 							MarkdownDescription: "The IPv4 address to request as static DHCP lease if the network interface is attached to a *managed* private network.",
 							Optional:            true,
 							Computed:            true,
@@ -358,10 +387,12 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 							},
 						},
 						"mac_address": schema.StringAttribute{
+							Description:         "MAC address",
 							MarkdownDescription: "MAC address",
 							Computed:            true,
 						},
 						"network_id": schema.StringAttribute{
+							Description:         "The exoscale_private_network (ID) to attach to the instance.",
 							MarkdownDescription: "The [exoscale_private_network](./private_network.md) (ID) to attach to the instance.",
 							Required:            true,
 						},
