@@ -611,15 +611,13 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 	id := operation.Reference.ID
 	plan.ID = types.StringValue(id.String())
 
-	// The instance exists from here on: if one of the steps below fails, keep
-	// it in the state (Terraform marks it as tainted) rather than leaving it
-	// behind unmanaged.
-	created := false
-	defer func() {
-		if !created {
-			resp.Diagnostics.Append(resp.State.Set(ctx, nullUnknown(ctx, plan))...)
-		}
-	}()
+	// The instance exists from here on: save it in the state right away, so
+	// that if one of the steps below fails it is kept there (Terraform marks
+	// it as tainted) rather than left behind unmanaged.
+	resp.Diagnostics.Append(resp.State.Set(ctx, nullUnknown(ctx, plan))...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	if plan.DestroyProtected.ValueBool() {
 		if err := wait(ctx, client)(client.AddInstanceProtection(ctx, id)); err != nil {
@@ -679,7 +677,6 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 		return
 	}
 
-	created = true
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 	tflog.Trace(ctx, "resource created", map[string]any{"id": plan.ID})
 }
@@ -1136,53 +1133,7 @@ func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp 
 }
 
 func (r *Resource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	idParts := strings.Split(req.ID, "@")
-
-	if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
-		resp.Diagnostics.AddError(
-			"unexpected import identifier",
-			`Expected import identifier with format: id@zone. Got: "`+req.ID+`"`,
-		)
-		return
-	}
-
-	id, err := exoscale.ParseUUID(idParts[0])
-	if err != nil {
-		resp.Diagnostics.AddError("unable to parse ID", err.Error())
-		return
-	}
-
-	zone := idParts[1]
-	if !slices.Contains(config.Zones, zone) {
-		resp.Diagnostics.AddError("invalid value", "zone must be a valid exoscale zone")
-		return
-	}
-
-	// Set timeouts (quirk https://github.com/hashicorp/terraform-plugin-framework-timeouts/issues/46)
-	var t timeouts.Value
-	resp.Diagnostics.Append(resp.State.GetAttribute(ctx, path.Root("timeouts"), &t)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	nifs, diags := networkInterfaceSet(ctx, nil)
-	resp.Diagnostics.Append(diags...)
-
-	resp.Diagnostics.Append(resp.State.Set(ctx, &ResourceModel{
-		ID:                    types.StringValue(id.String()),
-		Zone:                  types.StringValue(zone),
-		AntiAffinityGroupIDs:  types.SetNull(types.StringType),
-		BlockStorageVolumeIDs: types.SetNull(types.StringType),
-		ElasticIPIDs:          types.SetNull(types.StringType),
-		Labels:                types.MapNull(types.StringType),
-		NetworkInterface:      nifs,
-		PrivateNetworkIDs:     types.SetNull(types.StringType),
-		SSHKeys:               types.SetNull(types.StringType),
-		SecurityGroupIDs:      types.SetNull(types.StringType),
-		Timeouts:              t,
-	})...)
-
-	tflog.Trace(ctx, "resource imported", map[string]any{"id": id.String()})
+	utils.ImportStatePassthroughZonedID(ctx, req, resp)
 }
 
 // wait returns a function waiting for the success of an operation, to be
