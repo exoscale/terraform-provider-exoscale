@@ -38,17 +38,16 @@ func RefreshString(state *basetypes.StringValue, remote string) {
 // RefreshStringPointer helper to update state value.
 //
 // Unset and empty string on remote is equal to empty string and nil in state.
+// A value unset on remote is null in state.
 func RefreshStringPointer(state *basetypes.StringValue, remote *string) {
-	if state.IsUnknown() {
-		*state = types.StringPointerValue(remote)
+	if remote == nil {
+		if state.IsUnknown() || state.ValueString() != "" {
+			*state = types.StringNull()
+		}
+		return
 	}
 
-	var value string
-	if remote != nil {
-		value = *remote
-	}
-
-	RefreshString(state, value)
+	RefreshString(state, *remote)
 }
 
 // RefreshIP helper to update net.IP state value.
@@ -81,17 +80,16 @@ func RefreshInt64(state *basetypes.Int64Value, remote int64) {
 // RefreshInt64Pointer helper to update state value.
 //
 // Unset and zero on remote is equal to zero and nil in state.
+// A value unset on remote is null in state.
 func RefreshInt64Pointer(state *basetypes.Int64Value, remote *int64) {
-	if state.IsUnknown() {
-		*state = types.Int64PointerValue(remote)
+	if remote == nil {
+		if state.IsUnknown() || state.ValueInt64() != 0 {
+			*state = types.Int64Null()
+		}
+		return
 	}
 
-	var value int64
-	if remote != nil {
-		value = *remote
-	}
-
-	RefreshInt64(state, value)
+	RefreshInt64(state, *remote)
 }
 
 // RefreshLabels helper to update state value.

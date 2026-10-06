@@ -54,7 +54,8 @@ func TestRefreshStringPointer(t *testing.T) {
 		{"null kept", types.StringNull(), nil, types.StringNull()},
 		{"null kept on empty", types.StringNull(), &empty, types.StringNull()},
 		{"empty kept", types.StringValue(""), nil, types.StringValue("")},
-		{"removed remotely", types.StringValue("b"), nil, types.StringValue("")},
+		{"removed remotely", types.StringValue("b"), nil, types.StringNull()},
+		{"emptied remotely", types.StringValue("b"), &empty, types.StringValue("")},
 		{"changed", types.StringValue("b"), &a, types.StringValue("a")},
 	}
 
@@ -84,7 +85,7 @@ func TestRefreshInt64Pointer(t *testing.T) {
 		{"unknown, nil remote", types.Int64Unknown(), nil, types.Int64Null()},
 		{"null kept", types.Int64Null(), nil, types.Int64Null()},
 		{"zero kept", types.Int64Value(0), nil, types.Int64Value(0)},
-		{"removed remotely", types.Int64Value(2), nil, types.Int64Value(0)},
+		{"removed remotely", types.Int64Value(2), nil, types.Int64Null()},
 		{"changed", types.Int64Value(2), &one, types.Int64Value(1)},
 	}
 
