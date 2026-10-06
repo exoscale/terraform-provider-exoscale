@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+IMPROVEMENTS:
+
+FEATURES:
+
+BUG FIXES:
+
+- `exoscale_private_network` labels and `exoscale_security_group` external sources removed outside of Terraform now show up as drift
+
+BREAKING CHANGES:
+
+DEPENDENCIES:
+
 ## 0.74.2
 
 DEPENDENCIES:

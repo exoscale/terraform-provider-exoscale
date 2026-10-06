@@ -3,7 +3,9 @@
 // We must preserve the prior state value if the updated value is semantically equal.
 // This prevents Terraform from showing extraneous drift in plans.
 // Globally applied rules are:
-// - unknown value in state must be replaced.
+//   - unknown value in state must be replaced.
+//   - a value the remote no longer has must be removed from the state, so that
+//     the change shows up as drift.
 //
 // NOTE: Refresh helpers provide no protection against a nil pointer state argument.
 // This is unlikelly to happen by accident and panic is considered appropriate.
@@ -41,11 +43,12 @@ func RefreshStringPointer(state *basetypes.StringValue, remote *string) {
 		*state = types.StringPointerValue(remote)
 	}
 
-	if remote == nil {
-		return
+	var value string
+	if remote != nil {
+		value = *remote
 	}
 
-	RefreshString(state, *remote)
+	RefreshString(state, value)
 }
 
 // RefreshIP helper to update net.IP state value.
@@ -83,11 +86,12 @@ func RefreshInt64Pointer(state *basetypes.Int64Value, remote *int64) {
 		*state = types.Int64PointerValue(remote)
 	}
 
-	if remote == nil {
-		return
+	var value int64
+	if remote != nil {
+		value = *remote
 	}
 
-	RefreshInt64(state, *remote)
+	RefreshInt64(state, value)
 }
 
 // RefreshLabels helper to update state value.
@@ -99,7 +103,7 @@ func RefreshLabels(
 	labels map[string]string,
 ) (dg diag.Diagnostics) {
 	if len(labels) == 0 {
-		if state.IsUnknown() {
+		if state.IsUnknown() || len(state.Elements()) > 0 {
 			*state = types.MapNull(types.StringType)
 		}
 		return
@@ -130,7 +134,7 @@ func RefreshStringSet(
 	set []string,
 ) {
 	if len(set) == 0 {
-		if state.IsUnknown() {
+		if state.IsUnknown() || len(state.Elements()) > 0 {
 			*state = types.SetNull(types.StringType)
 		}
 		return
