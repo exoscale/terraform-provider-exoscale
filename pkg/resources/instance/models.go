@@ -135,45 +135,6 @@ func stringSetDiff(old, cur []string) (added, removed []string) {
 	return added, removed
 }
 
-// refreshStringSet updates a state value from the API, null and an empty set
-// being the same value: whichever the state holds is kept when the API has
-// none. Unlike utils.RefreshStringSet, a non-empty state is emptied then, so
-// that a detachment made outside of Terraform shows up as drift.
-func refreshStringSet(ctx context.Context, state *types.Set, remote []string) diag.Diagnostics {
-	if len(remote) == 0 {
-		if state.IsUnknown() || len(state.Elements()) > 0 {
-			*state = types.SetNull(types.StringType)
-		}
-		return nil
-	}
-
-	set, diags := types.SetValueFrom(ctx, types.StringType, remote)
-	if diags.HasError() {
-		return diags
-	}
-	*state = set
-
-	return diags
-}
-
-// refreshLabels is refreshStringSet for labels, see utils.RefreshLabels.
-func refreshLabels(ctx context.Context, state *types.Map, remote exoscale.Labels) diag.Diagnostics {
-	if len(remote) == 0 {
-		if state.IsUnknown() || len(state.Elements()) > 0 {
-			*state = types.MapNull(types.StringType)
-		}
-		return nil
-	}
-
-	labels, diags := types.MapValueFrom(ctx, types.StringType, remote)
-	if diags.HasError() {
-		return diags
-	}
-	*state = labels
-
-	return diags
-}
-
 // instanceTypeName returns the `<family>.<size>` name of an instance type.
 func instanceTypeName(instanceType *exoscale.InstanceType) string {
 	return fmt.Sprintf(
@@ -360,23 +321,26 @@ func applyInstance( //nolint:gocyclo
 		model.EnableTPM = types.BoolValue(false)
 	}
 
-	diags.Append(refreshLabels(ctx, &model.Labels, instance.Labels)...)
-	diags.Append(refreshStringSet(
+	diags.Append(utils.RefreshLabels(ctx, &model.Labels, instance.Labels)...)
+	utils.RefreshStringSet(
 		ctx,
+		&diags,
 		&model.AntiAffinityGroupIDs,
 		utils.AntiAffiniGroupsToAntiAffinityGroupIDs(instance.AntiAffinityGroups),
-	)...)
-	diags.Append(refreshStringSet(
+	)
+	utils.RefreshStringSet(
 		ctx,
+		&diags,
 		&model.ElasticIPIDs,
 		utils.ElasticIPsToElasticIPIDs(instance.ElasticIPS),
-	)...)
-	diags.Append(refreshStringSet(
+	)
+	utils.RefreshStringSet(
 		ctx,
+		&diags,
 		&model.SecurityGroupIDs,
 		utils.SecurityGroupsToSecurityGroupIDs(instance.SecurityGroups),
-	)...)
-	diags.Append(refreshStringSet(ctx, &model.PrivateNetworkIDs, privateNetworkIDs(instance))...)
+	)
+	utils.RefreshStringSet(ctx, &diags, &model.PrivateNetworkIDs, privateNetworkIDs(instance))
 	if diags.HasError() {
 		return diags
 	}
@@ -386,7 +350,7 @@ func applyInstance( //nolint:gocyclo
 	if instance.SSHKey != nil && model.SSHKey.ValueString() != "" {
 		model.SSHKey = types.StringValue(instance.SSHKey.Name)
 	} else if instance.SSHKeys != nil {
-		diags.Append(refreshStringSet(ctx, &model.SSHKeys, sshKeyNames(instance))...)
+		utils.RefreshStringSet(ctx, &diags, &model.SSHKeys, sshKeyNames(instance))
 		if diags.HasError() {
 			return diags
 		}
