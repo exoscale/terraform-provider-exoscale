@@ -251,6 +251,7 @@ func (p *ExoscaleProvider) DataSources(ctx context.Context) []func() datasource.
 		domain.NewDataSourceRecord,
 		vpc.NewDataSource,
 		vpc.NewDataSourceSubnet,
+		template.NewDataSourceTemplate,
 	}
 }
 

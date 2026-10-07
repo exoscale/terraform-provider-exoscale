@@ -82,7 +82,6 @@ func Provider() *schema.Provider {
 			"exoscale_elastic_ip":          dataSourceElasticIP(),
 			"exoscale_instance_pool":       instance_pool.DataSource(),
 			"exoscale_instance_pool_list":  instance_pool.DataSourceList(),
-			"exoscale_template":            dataSourceTemplate(),
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
