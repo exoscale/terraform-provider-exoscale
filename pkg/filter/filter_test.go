@@ -60,11 +60,11 @@ func TestComputeInstanceListFilterLabelsExactly(t *testing.T) {
 		},
 	}
 
-	labelsFilterProp := map[string]any{
+	labelsFilterProp := map[string]string{
 		labelToMatch: "label-string-to-match",
 	}
 
-	filter, err := createMapStrToStrFilterFunc(context.Background(), "labels", labelsFilterProp)
+	filter, err := NewMapFilter(context.Background(), "labels", labelsFilterProp)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -85,11 +85,11 @@ func TestComputeInstanceListFilterLabelsRegex(t *testing.T) {
 		},
 	}
 
-	labelsFilterProp := map[string]any{
+	labelsFilterProp := map[string]string{
 		labelToMatch: "/.*-to.*-/",
 	}
 
-	filter, err := createMapStrToStrFilterFunc(context.Background(), "labels", labelsFilterProp)
+	filter, err := NewMapFilter(context.Background(), "labels", labelsFilterProp)
 	if err != nil {
 		t.Fatal(err)
 	}

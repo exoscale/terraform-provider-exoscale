@@ -4,13 +4,19 @@
 
 IMPROVEMENTS:
 
+- Migrate the `exoscale_compute_instance` resource and the `exoscale_compute_instance`/`exoscale_compute_instance_list` data sources to terraform-plugin-framework. Existing state loads unchanged; a configuration setting an optional list to an explicit `[]` (e.g. `elastic_ip_ids = []`) shows a one-time in-place update with no effect on the instance. (#608)
+
 FEATURES:
 
 BUG FIXES:
 
 - `exoscale_private_network` labels and `exoscale_security_group` external sources removed outside of Terraform now show up as drift
+- `exoscale_compute_instance_list`: the `id`, `state`, `manager_id` and `manager_type` filters never matched any instance.
+- `exoscale_compute_instance`: deleting an instance honours the `delete` timeout instead of the `update` one.
 
 BREAKING CHANGES:
+
+- `exoscale_compute_instance` data source: an instance that does not exist is now an error, it used to return an empty result.
 
 DEPENDENCIES:
 
