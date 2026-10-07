@@ -89,7 +89,6 @@ func Provider() *schema.Provider {
 			"exoscale_elastic_ip":          resourceElasticIP(),
 			"exoscale_iam_access_key":      resourceIAMAccessKey(),
 			"exoscale_instance_pool":       instance_pool.Resource(),
-			"exoscale_ssh_key":             resourceSSHKey(),
 		},
 
 		ConfigureContextFunc: ProviderConfigure,
