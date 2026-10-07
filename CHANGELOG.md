@@ -10,6 +10,7 @@ FEATURES:
 
 BUG FIXES:
 
+- Fix timeout update for domain resource (#613)
 - `exoscale_private_network` labels and `exoscale_security_group` external sources removed outside of Terraform now show up as drift
 - `exoscale_compute_instance_list`: the `id`, `state`, `manager_id` and `manager_type` filters never matched any instance.
 - `exoscale_compute_instance`: deleting an instance honours the `delete` timeout instead of the `update` one.
