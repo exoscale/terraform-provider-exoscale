@@ -23,6 +23,7 @@ import (
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/anti_affinity_group"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/block_storage"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/database"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/domain"
@@ -231,6 +232,7 @@ func (p *ExoscaleProvider) DataSources(ctx context.Context) []func() datasource.
 		func() datasource.DataSource {
 			return &zones.ZonesDataSource{}
 		},
+		anti_affinity_group.NewDataSource,
 		database.NewDataSourceURI,
 		iam.NewDataSourceOrgPolicy,
 		iam.NewDataSourceRole,
@@ -258,6 +260,7 @@ func (p *ExoscaleProvider) DataSources(ctx context.Context) []func() datasource.
 
 func (p *ExoscaleProvider) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
+		anti_affinity_group.NewResource,
 		database.DeprecatedNewResource,
 		database.NewServiceResource,
 		database.NewMysqlUserResource,
