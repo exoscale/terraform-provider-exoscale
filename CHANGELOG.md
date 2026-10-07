@@ -7,7 +7,7 @@ IMPROVEMENTS:
 - Migrate the `exoscale_compute_instance` resource and the `exoscale_compute_instance`/`exoscale_compute_instance_list` data sources to terraform-plugin-framework. Existing state loads unchanged; a configuration setting an optional list to an explicit `[]` (e.g. `elastic_ip_ids = []`) shows a one-time in-place update with no effect on the instance. (#608)
 - Migrate the `exoscale_template` data source to terraform-plugin-framework. (#616)
 - Migrate the `exoscale_ssh_key` resource to terraform-plugin-framework. Existing state loads unchanged. (#615)
-- Migrate the `exoscale_anti_affinity_group` resource and data source to terraform-plugin-framework. Existing state loads unchanged; removing `description` from the configuration no longer replaces the group.
+- Migrate the `exoscale_anti_affinity_group` resource and data source to terraform-plugin-framework. Existing state loads unchanged; removing `description` from the configuration no longer replaces the group. (#614)
 
 FEATURES:
 
