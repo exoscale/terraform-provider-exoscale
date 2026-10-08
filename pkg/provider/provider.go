@@ -278,6 +278,7 @@ func (p *ExoscaleProvider) Resources(ctx context.Context) []func() resource.Reso
 		iam.NewResourceOrgPolicy,
 		iam.NewResourceRole,
 		iam.NewResourceAPIKey,
+		iam.NewResourceAccessKey,
 		block_storage.NewResourceVolume,
 		block_storage.NewResourceSnapshot,
 		sos_bucket_policy.NewResourceSOSBucketPolicy,

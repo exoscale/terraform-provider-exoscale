@@ -23,15 +23,6 @@ import (
 	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
 )
 
-const (
-	// FIXME: defaultZone is used for global resources management, as at the
-	//  time of this implementation the Exoscale public API V2 doesn't
-	//  expose a global endpoint – only zone-local endpoints.
-	//  This should be removed once the Exoscale public API V2 exposes a
-	//  global endpoint.
-	defaultZone = "ch-gva-2"
-)
-
 func init() {
 	schema.DescriptionKind = schema.StringMarkdown
 
@@ -87,7 +78,6 @@ func Provider() *schema.Provider {
 		ResourcesMap: map[string]*schema.Resource{
 			"exoscale_anti_affinity_group": anti_affinity_group.Resource(),
 			"exoscale_elastic_ip":          resourceElasticIP(),
-			"exoscale_iam_access_key":      resourceIAMAccessKey(),
 			"exoscale_instance_pool":       instance_pool.Resource(),
 		},
 

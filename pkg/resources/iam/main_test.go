@@ -11,4 +11,5 @@ func TestIAM(t *testing.T) {
 	t.Run("DataSourceRole", testDataSourceRole)
 	t.Run("DataSourceAPIKey", testDataSourceAPIKey)
 	t.Run("ResourceAPIKey", testResourceAPIKey)
+	t.Run("ResourceAccessKey", testResourceAccessKey)
 }

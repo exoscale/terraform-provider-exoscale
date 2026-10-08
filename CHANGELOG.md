@@ -7,6 +7,7 @@ IMPROVEMENTS:
 - Migrate the `exoscale_compute_instance` resource and the `exoscale_compute_instance`/`exoscale_compute_instance_list` data sources to terraform-plugin-framework. Existing state loads unchanged; a configuration setting an optional list to an explicit `[]` (e.g. `elastic_ip_ids = []`) shows a one-time in-place update with no effect on the instance. (#608)
 - Migrate the `exoscale_template` data source to terraform-plugin-framework. (#616)
 - Migrate the `exoscale_ssh_key` resource to terraform-plugin-framework. Existing state loads unchanged. (#615)
+- Migrate the `exoscale_iam_access_key` resource to terraform-plugin-framework (it keeps the egoscale v2 client: legacy access keys are not part of the v3 API).
 
 FEATURES:
 
@@ -16,6 +17,7 @@ BUG FIXES:
 - `exoscale_private_network` labels and `exoscale_security_group` external sources removed outside of Terraform now show up as drift
 - `exoscale_compute_instance_list`: the `id`, `state`, `manager_id` and `manager_type` filters never matched any instance.
 - `exoscale_compute_instance`: deleting an instance honours the `delete` timeout instead of the `update` one.
+- `exoscale_iam_access_key`: import by key (`terraform import exoscale_iam_access_key.x <key>`) works; it always failed before. A key revoked outside of Terraform is now removed from the state instead of failing the refresh.
 
 BREAKING CHANGES:
 
