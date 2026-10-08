@@ -1,0 +1,46 @@
+resource "exoscale_elastic_ip" "test4" {
+  zone        = "{{ .Zone }}"
+  description = "terraform-provider-test-{{ .ID }}"
+
+  healthcheck = {
+    mode         = "http"
+    port         = 80
+    uri          = "/health"
+    interval     = 5
+    timeout      = 3
+    strikes_ok   = 2
+    strikes_fail = 1
+  }
+
+  labels = {
+    test = "terraform-provider-test-{{ .ID }}"
+  }
+}
+
+resource "exoscale_elastic_ip" "test6" {
+  zone           = "{{ .Zone }}"
+  description    = "terraform-provider-test-{{ .ID }}"
+  address_family = "inet6"
+  reverse_dns    = "tf-provider-test.exoscale.com"
+
+  labels = {
+    test = "terraform-provider-test-{{ .ID }}-6"
+  }
+}
+
+data "exoscale_elastic_ip" "by_id" {
+  zone = "{{ .Zone }}"
+  id   = exoscale_elastic_ip.test4.id
+}
+
+data "exoscale_elastic_ip" "by_ip_address" {
+  zone       = "{{ .Zone }}"
+  ip_address = exoscale_elastic_ip.test6.ip_address
+}
+
+data "exoscale_elastic_ip" "by_labels" {
+  zone = "{{ .Zone }}"
+  labels = {
+    test = exoscale_elastic_ip.test4.labels.test
+  }
+}

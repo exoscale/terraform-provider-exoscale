@@ -29,7 +29,7 @@ resource "exoscale_elastic_ip" "my_managed_elastic_ip" {
   address_family = "inet6"
   reverse_dns = "example.net"
 
-  healthcheck {
+  healthcheck = {
     mode         = "https"
     port         = 443
     uri          = "/health"
@@ -56,7 +56,7 @@ directory for complete configuration examples.
 
 - `address_family` (String) ❗ The Elastic IP (EIP) address family (`inet4` or `inet6`; default: `inet4`).
 - `description` (String) A free-form text describing the Elastic IP (EIP).
-- `healthcheck` (Block List, Max: 1) Healthcheck configuration for *managed* EIPs. It can not be added to an existing *Unmanaged* EIP. (see [below for nested schema](#nestedblock--healthcheck))
+- `healthcheck` (Attributes) Healthcheck configuration for *managed* EIPs. ❗ Adding it to or removing it from an existing EIP forces the creation of a new resource (an *unmanaged* EIP can not become *managed* and vice versa). (see [below for nested schema](#nestedatt--healthcheck))
 - `labels` (Map of String) A map of key/value labels.
 - `reverse_dns` (String) Domain name for reverse DNS record.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
@@ -67,7 +67,7 @@ directory for complete configuration examples.
 - `id` (String) The ID of this resource.
 - `ip_address` (String) The Elastic IP (EIP) IPv4 or IPv6 address.
 
-<a id="nestedblock--healthcheck"></a>
+<a id="nestedatt--healthcheck"></a>
 ### Nested Schema for `healthcheck`
 
 Required:
@@ -91,10 +91,10 @@ Optional:
 
 Optional:
 
-- `create` (String)
-- `delete` (String)
-- `read` (String)
-- `update` (String)
+- `create` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours).
+- `delete` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Setting a timeout for a Delete operation is only applicable if changes are saved into state before the destroy operation occurs.
+- `read` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
+- `update` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours).
 
 -> The symbol ❗ in an attribute indicates that modifying it, will force the creation of a new resource.
 

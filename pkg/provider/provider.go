@@ -27,6 +27,7 @@ import (
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/block_storage"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/database"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/domain"
+	elasticip "github.com/exoscale/terraform-provider-exoscale/pkg/resources/elastic_ip"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/iam"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/instance"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/kms"
@@ -239,6 +240,7 @@ func (p *ExoscaleProvider) DataSources(ctx context.Context) []func() datasource.
 		iam.NewDataSourceAPIKey,
 		block_storage.NewDataSourceVolume,
 		block_storage.NewDataSourceSnapshot,
+		elasticip.NewDataSource,
 		instance.NewDataSource,
 		instance.NewDataSourceList,
 		nlb.NewDataSource,
@@ -297,6 +299,7 @@ func (p *ExoscaleProvider) Resources(ctx context.Context) []func() resource.Reso
 		vpc.NewResourceSubnet,
 		vpc.NewResourceRoute,
 		template.NewResourceTemplate,
+		elasticip.NewResource,
 		instance.NewResource,
 		nlb.NewResource,
 		nlb.NewResourceService,

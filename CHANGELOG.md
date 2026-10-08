@@ -8,6 +8,7 @@ IMPROVEMENTS:
 - Migrate the `exoscale_template` data source to terraform-plugin-framework. (#616)
 - Migrate the `exoscale_ssh_key` resource to terraform-plugin-framework. Existing state loads unchanged. (#615)
 - Migrate the `exoscale_anti_affinity_group` resource and data source to terraform-plugin-framework. Existing state loads unchanged; removing `description` from the configuration no longer replaces the group. (#614)
+- Migrate the `exoscale_elastic_ip` resource and data source to terraform-plugin-framework & egoscale v3.
 
 FEATURES:
 
@@ -22,6 +23,9 @@ BREAKING CHANGES:
 
 - `exoscale_compute_instance` data source: an instance that does not exist is now an error, it used to return an empty result.
 - `exoscale_anti_affinity_group` data source: a `name` matching several groups is now an error, it used to return the first one.
+- `exoscale_elastic_ip`: `healthcheck` now uses attribute assignment syntax (`=`) instead of nested block syntax, in the resource and the data source (`healthcheck.port` instead of `healthcheck[0].port`), check the [migration guide](docs/guides/migration-of-elastic-ip-from-v0_74_x-to-v0_75_x.md)
+- `exoscale_elastic_ip`: adding a `healthcheck` to an existing Elastic IP or removing it now plans its replacement (an unmanaged Elastic IP can not become managed and vice versa). A managed Elastic IP whose configuration has no `healthcheck` is replaced, check the [migration guide](docs/guides/migration-of-elastic-ip-from-v0_74_x-to-v0_75_x.md).
+- `exoscale_elastic_ip`: removing `description` from the configuration now clears it on the Elastic IP, it used to be kept.
 
 DEPENDENCIES:
 
