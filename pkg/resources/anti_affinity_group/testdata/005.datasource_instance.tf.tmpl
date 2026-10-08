@@ -1,0 +1,32 @@
+data "exoscale_template" "test_template" {
+  zone = "{{ .Zone }}"
+  name = "Linux Ubuntu 22.04 LTS 64-bit"
+}
+
+data "exoscale_security_group" "default" {
+  name = "default"
+}
+
+resource "exoscale_anti_affinity_group" "test" {
+  name = "terraform-provider-test-{{ .ID }}"
+}
+
+resource "exoscale_compute_instance" "test" {
+  zone                    = "{{ .Zone }}"
+  name                    = "terraform-provider-test-{{ .ID }}"
+  type                    = "standard.micro"
+  disk_size               = 10
+  template_id             = data.exoscale_template.test_template.id
+  security_group_ids      = [data.exoscale_security_group.default.id]
+  anti_affinity_group_ids = [exoscale_anti_affinity_group.test.id]
+}
+
+data "exoscale_anti_affinity_group" "by_id" {
+  id         = exoscale_anti_affinity_group.test.id
+  depends_on = [exoscale_compute_instance.test]
+}
+
+data "exoscale_anti_affinity_group" "by_name" {
+  name       = exoscale_anti_affinity_group.test.name
+  depends_on = [exoscale_compute_instance.test]
+}
