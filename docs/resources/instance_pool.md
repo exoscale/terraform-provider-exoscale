@@ -40,6 +40,7 @@ directory for complete configuration examples.
 
 ### Required
 
+- `instance_type` (String) The managed compute instances type (`<family>.<size>`, e.g. `standard.medium`; use the [Exoscale CLI](https://github.com/exoscale/cli/) - `exo compute instance-type list` - for the list of available types).
 - `name` (String) The instance pool name.
 - `size` (Number) The number of managed instances.
 - `template_id` (String) The [exoscale_template](../data-sources/template.md) (ID) to use when creating the managed instances.
@@ -54,47 +55,42 @@ directory for complete configuration examples.
 - `disk_size` (Number) The managed instances disk size (GiB).
 - `elastic_ip_ids` (Set of String) A list of [exoscale_elastic_ip](./elastic_ip.md) (IDs).
 - `instance_prefix` (String) The string used to prefix managed instances name (default: `pool`).
-- `instance_type` (String) The managed compute instances type (`<family>.<size>`, e.g. `standard.medium`; use the [Exoscale CLI](https://github.com/exoscale/cli/) - `exo compute instance-type list` - for the list of available types).
-- `instances` (Block Set) The list of managed instances. Structure is documented below. (see [below for nested schema](#nestedblock--instances))
 - `ipv6` (Boolean) Enable IPv6 on managed instances (boolean; default: `false`).
 - `key_pair` (String) The [exoscale_ssh_key](./ssh_key.md) (name) to authorize in the managed instances.
 - `labels` (Map of String) A map of key/value labels.
 - `min_available` (Number) Minimum number of running Instances.
 - `network_ids` (Set of String) A list of [exoscale_private_network](./private_network.md) (IDs).
 - `security_group_ids` (Set of String) A list of [exoscale_security_group](./security_group.md) (IDs).
-- `service_offering` (String, Deprecated) The managed instances type. Please use the `instance_type` argument instead.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `user_data` (String) [cloud-init](http://cloudinit.readthedocs.io/) configuration to apply to the managed instances.
-- `virtual_machines` (Set of String, Deprecated) The list of managed instances (IDs). Please use the `instances.*.id` attribute instead.
 
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-- `state` (String)
-
-<a id="nestedblock--instances"></a>
-### Nested Schema for `instances`
-
-Optional:
-
-- `name` (String) The instance name.
-
-Read-Only:
-
-- `id` (String) The ID of this resource.
-- `ipv6_address` (String) The instance (main network interface) IPv6 address.
-- `public_ip_address` (String) The instance (main network interface) IPv4 address.
-
+- `instances` (Attributes Set) The list of managed instances. Structure is documented below. (see [below for nested schema](#nestedatt--instances))
+- `state` (String) The instance pool state.
+- `virtual_machines` (Set of String, Deprecated) The list of managed instances (IDs). Please use the `instances.*.id` attribute instead.
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
 
 Optional:
 
-- `create` (String)
-- `delete` (String)
-- `read` (String)
-- `update` (String)
+- `create` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours).
+- `delete` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Setting a timeout for a Delete operation is only applicable if changes are saved into state before the destroy operation occurs.
+- `read` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
+- `update` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours).
+
+
+<a id="nestedatt--instances"></a>
+### Nested Schema for `instances`
+
+Read-Only:
+
+- `id` (String) The instance ID.
+- `ipv6_address` (String) The instance (main network interface) IPv6 address.
+- `name` (String) The instance name.
+- `public_ip_address` (String) The instance (main network interface) IPv4 address.
 
 -> The symbol ❗ in an attribute indicates that modifying it, will force the creation of a new resource.
 
