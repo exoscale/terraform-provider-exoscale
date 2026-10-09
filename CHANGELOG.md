@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+BUG FIXES:
+
+- `dbaas_pg_database`: wait for newly created database to appear in service list, fixing intermittent "Unable to find newly created database for the service" error on create
+
 IMPROVEMENTS:
 
 - Migrate the `exoscale_compute_instance` resource and the `exoscale_compute_instance`/`exoscale_compute_instance_list` data sources to terraform-plugin-framework. Existing state loads unchanged; a configuration setting an optional list to an explicit `[]` (e.g. `elastic_ip_ids = []`) shows a one-time in-place update with no effect on the instance. (#608)
