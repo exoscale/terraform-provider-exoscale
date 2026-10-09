@@ -83,7 +83,6 @@ func Provider() *schema.Provider {
 
 		ResourcesMap: map[string]*schema.Resource{
 			"exoscale_iam_access_key": resourceIAMAccessKey(),
-			"exoscale_instance_pool":  instance_pool.Resource(),
 		},
 
 		ConfigureContextFunc: ProviderConfigure,

@@ -8,7 +8,11 @@ IMPROVEMENTS:
 - Migrate the `exoscale_template` data source to terraform-plugin-framework. (#616)
 - Migrate the `exoscale_ssh_key` resource to terraform-plugin-framework. Existing state loads unchanged. (#615)
 - Migrate the `exoscale_anti_affinity_group` resource and data source to terraform-plugin-framework. Existing state loads unchanged; removing `description` from the configuration no longer replaces the group. (#614)
+<<<<<<< HEAD
 - Migrate the `exoscale_elastic_ip` resource and data source to terraform-plugin-framework & egoscale v3.
+=======
+- Migrate the `exoscale_instance_pool` resource to terraform-plugin-framework.
+>>>>>>> 90c5baaa (refacto: migrate exoscale_instance_pool resource to terraform-plugin-framework)
 
 FEATURES:
 
@@ -18,14 +22,21 @@ BUG FIXES:
 - `exoscale_private_network` labels and `exoscale_security_group` external sources removed outside of Terraform now show up as drift
 - `exoscale_compute_instance_list`: the `id`, `state`, `manager_id` and `manager_type` filters never matched any instance.
 - `exoscale_compute_instance`: deleting an instance honours the `delete` timeout instead of the `update` one.
+- `exoscale_instance_pool`: removing `description`, `labels` or `user_data` from the configuration now clears them on the pool, they used to be left as they were.
+- `exoscale_instance_pool`: updating a pool configured with the deprecated `affinity_group_ids` no longer sends an empty anti-affinity group list.
 
 BREAKING CHANGES:
 
 - `exoscale_compute_instance` data source: an instance that does not exist is now an error, it used to return an empty result.
 - `exoscale_anti_affinity_group` data source: a `name` matching several groups is now an error, it used to return the first one.
+<<<<<<< HEAD
 - `exoscale_elastic_ip`: `healthcheck` now uses attribute assignment syntax (`=`) instead of nested block syntax, in the resource and the data source (`healthcheck.port` instead of `healthcheck[0].port`), check the [migration guide](docs/guides/migration-of-elastic-ip-from-v0_74_x-to-v0_75_x.md)
 - `exoscale_elastic_ip`: adding a `healthcheck` to an existing Elastic IP or removing it now plans its replacement (an unmanaged Elastic IP can not become managed and vice versa). A managed Elastic IP whose configuration has no `healthcheck` is replaced, check the [migration guide](docs/guides/migration-of-elastic-ip-from-v0_74_x-to-v0_75_x.md).
 - `exoscale_elastic_ip`: removing `description` from the configuration now clears it on the Elastic IP, it used to be kept.
+=======
+- `exoscale_instance_pool`: `instances` and `virtual_machines` are read-only and can no longer be set in the configuration (the values set were ignored).
+- `exoscale_instance_pool`: the `service_offering` attribute, deprecated since 0.27.0, is removed and `instance_type` is now required: replace `service_offering = "<size>"` with `instance_type = "standard.<size>"`.
+>>>>>>> 90c5baaa (refacto: migrate exoscale_instance_pool resource to terraform-plugin-framework)
 
 DEPENDENCIES:
 
