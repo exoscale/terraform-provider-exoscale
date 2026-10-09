@@ -174,4 +174,4 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 )
 
-go 1.26.0
+go 1.26.9
