@@ -18,7 +18,6 @@ const (
 	AttrID                      = "id"
 	AttrName                    = "name"
 	AttrNetworkIDs              = "network_ids"
-	AttrServiceOffering         = "service_offering"
 	AttrSecurityGroupIDs        = "security_group_ids"
 	AttrSize                    = "size"
 	AttrMinAvailable            = "min_available"

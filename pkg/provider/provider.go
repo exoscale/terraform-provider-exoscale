@@ -30,6 +30,7 @@ import (
 	elasticip "github.com/exoscale/terraform-provider-exoscale/pkg/resources/elastic_ip"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/iam"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/instance"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/instance_pool"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/kms"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/nlb"
 	privatenetwork "github.com/exoscale/terraform-provider-exoscale/pkg/resources/private_network"
@@ -301,6 +302,7 @@ func (p *ExoscaleProvider) Resources(ctx context.Context) []func() resource.Reso
 		template.NewResourceTemplate,
 		elasticip.NewResource,
 		instance.NewResource,
+		instance_pool.NewResource,
 		nlb.NewResource,
 		nlb.NewResourceService,
 		ssh_key.NewResource,
