@@ -41,6 +41,7 @@ directory for complete configuration examples.
 - `id` (String) The instance pool ID to match (conflicts with `name`).
 - `labels` (Map of String) A map of key/value labels.
 - `name` (String) The pool name to match (conflicts with `id`).
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
@@ -52,7 +53,7 @@ directory for complete configuration examples.
 - `elastic_ip_ids` (Set of String) The list of attached [exoscale_elastic_ip](../resources/elastic_ip.md) (IDs).
 - `instance_prefix` (String) The string used to prefix the managed instances name.
 - `instance_type` (String) The managed instances type.
-- `instances` (Set of Object) The list of managed instances. Structure is documented below. (see [below for nested schema](#nestedatt--instances))
+- `instances` (Attributes Set) The list of managed instances. Structure is documented below. (see [below for nested schema](#nestedatt--instances))
 - `ipv6` (Boolean) Whether IPv6 is enabled on managed instances.
 - `key_pair` (String) The [exoscale_ssh_key](../resources/ssh_key.md) (name) authorized on the managed instances.
 - `min_available` (Number) Minimum number of running Instances.
@@ -63,14 +64,22 @@ directory for complete configuration examples.
 - `template_id` (String) The managed instances [exoscale_template](./template.md) ID.
 - `user_data` (String) [cloud-init](http://cloudinit.readthedocs.io/en/latest/) configuration.
 
+<a id="nestedblock--timeouts"></a>
+### Nested Schema for `timeouts`
+
+Optional:
+
+- `read` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
+
+
 <a id="nestedatt--instances"></a>
 ### Nested Schema for `instances`
 
 Read-Only:
 
-- `id` (String)
-- `ipv6_address` (String)
-- `name` (String)
-- `public_ip_address` (String)
+- `id` (String) The compute instance ID.
+- `ipv6_address` (String) The instance (main network interface) IPv6 address.
+- `name` (String) The instance name.
+- `public_ip_address` (String) The instance (main network interface) IPv4 address.
 
 

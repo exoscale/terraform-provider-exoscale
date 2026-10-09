@@ -77,7 +77,6 @@ func Provider() *schema.Provider {
 		},
 
 		DataSourcesMap: map[string]*schema.Resource{
-			"exoscale_instance_pool":      instance_pool.DataSource(),
 			"exoscale_instance_pool_list": instance_pool.DataSourceList(),
 		},
 
