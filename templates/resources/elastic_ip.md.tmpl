@@ -29,7 +29,7 @@ resource "exoscale_elastic_ip" "my_managed_elastic_ip" {
   address_family = "inet6"
   reverse_dns = "example.net"
 
-  healthcheck {
+  healthcheck = {
     mode         = "https"
     port         = 443
     uri          = "/health"

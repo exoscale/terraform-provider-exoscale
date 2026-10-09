@@ -1,19 +1,14 @@
 package exoscale
 
 import (
-	"context"
-	"errors"
 	"fmt"
 	"net"
 	"regexp"
 	"strings"
 
-	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	egoscale "github.com/exoscale/egoscale/v2"
-	v3 "github.com/exoscale/egoscale/v3"
 )
 
 // in returns true if v is found in list.
@@ -52,15 +47,6 @@ func defaultBool(v *bool, def bool) bool {
 	}
 
 	return def
-}
-
-// nonEmptyStringPtr returns a non-nil pointer to s if the string is not empty, otherwise nil.
-func nonEmptyStringPtr(s string) *string {
-	if s != "" {
-		return &s
-	}
-
-	return nil
 }
 
 func schemaSetToStringArray(set *schema.Set) []string {
@@ -174,56 +160,5 @@ func validateDNSLabel(label string) error {
 	if strings.HasPrefix(label, "-") || strings.HasSuffix(label, "-") {
 		return fmt.Errorf("DNS label cannot start or end with hyphen")
 	}
-	return nil
-}
-
-// This is an auxiliary function, aimed to extract a similar logic of detaching an instance
-// before dropping a resource
-func detachMatchingResource(
-	ctx context.Context,
-	client *v3.Client,
-	resourceType string,
-	resourceID v3.UUID,
-	match func(*v3.Instance, v3.UUID) bool,
-	detach func(ctx context.Context, client *v3.Client, id v3.UUID, instance *v3.Instance) (*v3.Operation, error),
-) diag.Diagnostics {
-	listInstancesResponse, err := client.ListInstances(ctx)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	for _, listInst := range listInstancesResponse.Instances {
-		inst, err := client.GetInstance(ctx, listInst.ID)
-		if err != nil {
-			if errors.Is(err, v3.ErrNotFound) {
-				// The instance was removed between the ListInstance and GetInstance
-				// calls, so we can consider any resources to be detached.
-				continue
-			}
-			return diag.FromErr(err)
-		}
-
-		if !match(inst, resourceID) {
-			continue
-		}
-
-		tflog.Debug(ctx,
-			fmt.Sprintf("Found instance with matching %s, detaching...", resourceType),
-			map[string]any{
-				"instance_id": inst.ID,
-				"resource_id": resourceID,
-			},
-		)
-
-		op, err := detach(ctx, client, resourceID, inst)
-		if err != nil {
-			return diag.FromErr(err)
-		}
-
-		if _, err = client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
-			return diag.FromErr(err)
-		}
-	}
-
 	return nil
 }
