@@ -2,82 +2,299 @@ package instance_pool
 
 import (
 	"context"
-	"crypto/md5"
+	"crypto/md5" //nolint:gosec // used only to derive a stable synthetic data source ID, not for security purposes
 	"fmt"
+	"maps"
 	"sort"
 	"strings"
 
+	exoscale "github.com/exoscale/egoscale/v3"
+	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-
-	v3 "github.com/exoscale/egoscale/v3"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
+	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
 )
 
-func DataSourceList() *schema.Resource {
-	return &schema.Resource{
-		Description: `List Exoscale [Instance Pools](https://community.exoscale.com/product/compute/instances/how-to/instance-pools/).
+const markdownDescriptionDataSourceList = `List Exoscale [Instance Pools](https://community.exoscale.com/product/compute/instances/how-to/instance-pools/).
 
-Corresponding resource: [exoscale_instance_pool](../resources/instance_pool.md).`,
-		Schema: map[string]*schema.Schema{
-			AttrZone: {
-				Description: "The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.",
-				Type:        schema.TypeString,
-				Required:    true,
+Corresponding resource: [exoscale_instance_pool](../resources/instance_pool.md).`
+
+var _ datasource.DataSourceWithConfigure = (*DataSourceList)(nil)
+
+type DataSourceList struct {
+	client *exoscale.Client
+}
+
+func NewDataSourceList() datasource.DataSource {
+	return &DataSourceList{}
+}
+
+// DataSourceListModel defines the exoscale_instance_pool_list data source data model.
+type DataSourceListModel struct {
+	ID    types.String              `tfsdk:"id"`
+	Zone  types.String              `tfsdk:"zone"`
+	Pools []DataSourceListPoolModel `tfsdk:"pools"`
+
+	Timeouts timeouts.Value `tfsdk:"timeouts"`
+}
+
+// DataSourceListPoolModel maps the elements of the `pools` attribute.
+type DataSourceListPoolModel struct {
+	ID                   types.String `tfsdk:"id"`
+	AffinityGroupIDs     types.Set    `tfsdk:"affinity_group_ids"`
+	AntiAffinityGroupIDs types.Set    `tfsdk:"anti_affinity_group_ids"`
+	DeployTargetID       types.String `tfsdk:"deploy_target_id"`
+	Description          types.String `tfsdk:"description"`
+	DiskSize             types.Int64  `tfsdk:"disk_size"`
+	ElasticIPIDs         types.Set    `tfsdk:"elastic_ip_ids"`
+	InstancePrefix       types.String `tfsdk:"instance_prefix"`
+	InstanceType         types.String `tfsdk:"instance_type"`
+	Instances            types.Set    `tfsdk:"instances"`
+	IPv6                 types.Bool   `tfsdk:"ipv6"`
+	KeyPair              types.String `tfsdk:"key_pair"`
+	Labels               types.Map    `tfsdk:"labels"`
+	MinAvailable         types.Int64  `tfsdk:"min_available"`
+	Name                 types.String `tfsdk:"name"`
+	NetworkIDs           types.Set    `tfsdk:"network_ids"`
+	SecurityGroupIDs     types.Set    `tfsdk:"security_group_ids"`
+	Size                 types.Int64  `tfsdk:"size"`
+	State                types.String `tfsdk:"state"`
+	TemplateID           types.String `tfsdk:"template_id"`
+	UserData             types.String `tfsdk:"user_data"`
+	Zone                 types.String `tfsdk:"zone"`
+}
+
+func (d *DataSourceList) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_instance_pool_list"
+}
+
+func (d *DataSourceList) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		Description:         "List Exoscale Instance Pools.",
+		MarkdownDescription: markdownDescriptionDataSourceList,
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
+				Description:         "The ID of this resource.",
+				MarkdownDescription: "The ID of this resource.",
+				Computed:            true,
 			},
-			"pools": {
-				Description: "The list of [exoscale_instance_pool](./instance_pool.md).",
-				Type:        schema.TypeList,
-				Computed:    true,
-				Elem: &schema.Resource{
-					Schema: DataSourceSchema(),
+			"zone": schema.StringAttribute{
+				Description:         "The Exoscale Zone name.",
+				MarkdownDescription: "The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.",
+				Required:            true,
+				Validators: []validator.String{
+					stringvalidator.OneOf(config.Zones...),
+				},
+			},
+			"pools": schema.ListNestedAttribute{
+				Description:         "The list of exoscale_instance_pool.",
+				MarkdownDescription: "The list of [exoscale_instance_pool](./instance_pool.md).",
+				Computed:            true,
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"id": schema.StringAttribute{
+							Description:         "The instance pool ID.",
+							MarkdownDescription: "The instance pool ID.",
+							Computed:            true,
+						},
+						"affinity_group_ids": schema.SetAttribute{
+							Description:         "The list of attached exoscale_anti_affinity_group (IDs). Use anti_affinity_group_ids instead.",
+							MarkdownDescription: "The list of attached [exoscale_anti_affinity_group](../resources/anti_affinity_group.md) (IDs). Use `anti_affinity_group_ids` instead.",
+							ElementType:         types.StringType,
+							Computed:            true,
+						},
+						"anti_affinity_group_ids": schema.SetAttribute{
+							Description:         "The list of attached exoscale_anti_affinity_group (IDs).",
+							MarkdownDescription: "The list of attached [exoscale_anti_affinity_group](../resources/anti_affinity_group.md) (IDs).",
+							ElementType:         types.StringType,
+							Computed:            true,
+						},
+						"deploy_target_id": schema.StringAttribute{
+							Description:         "The deploy target ID.",
+							MarkdownDescription: "The deploy target ID.",
+							Computed:            true,
+						},
+						"description": schema.StringAttribute{
+							Description:         "The instance pool description.",
+							MarkdownDescription: "The instance pool description.",
+							Computed:            true,
+						},
+						"disk_size": schema.Int64Attribute{
+							Description:         "The managed instances disk size.",
+							MarkdownDescription: "The managed instances disk size.",
+							Computed:            true,
+						},
+						"elastic_ip_ids": schema.SetAttribute{
+							Description:         "The list of attached exoscale_elastic_ip (IDs).",
+							MarkdownDescription: "The list of attached [exoscale_elastic_ip](../resources/elastic_ip.md) (IDs).",
+							ElementType:         types.StringType,
+							Computed:            true,
+						},
+						"instance_prefix": schema.StringAttribute{
+							Description:         "The string used to prefix the managed instances name.",
+							MarkdownDescription: "The string used to prefix the managed instances name.",
+							Computed:            true,
+						},
+						"instance_type": schema.StringAttribute{
+							Description:         "The managed instances type.",
+							MarkdownDescription: "The managed instances type.",
+							Computed:            true,
+						},
+						"instances": schema.SetNestedAttribute{
+							Description:         "The list of managed instances.",
+							MarkdownDescription: "The list of managed instances.",
+							Computed:            true,
+							NestedObject: schema.NestedAttributeObject{
+								Attributes: map[string]schema.Attribute{
+									"id": schema.StringAttribute{
+										Description:         "The compute instance ID.",
+										MarkdownDescription: "The compute instance ID.",
+										Computed:            true,
+									},
+									"ipv6_address": schema.StringAttribute{
+										Description:         "The instance (main network interface) IPv6 address.",
+										MarkdownDescription: "The instance (main network interface) IPv6 address.",
+										Computed:            true,
+									},
+									"name": schema.StringAttribute{
+										Description:         "The instance name.",
+										MarkdownDescription: "The instance name.",
+										Computed:            true,
+									},
+									"public_ip_address": schema.StringAttribute{
+										Description:         "The instance (main network interface) IPv4 address.",
+										MarkdownDescription: "The instance (main network interface) IPv4 address.",
+										Computed:            true,
+									},
+								},
+							},
+						},
+						"ipv6": schema.BoolAttribute{
+							Description:         "Whether IPv6 is enabled on managed instances.",
+							MarkdownDescription: "Whether IPv6 is enabled on managed instances.",
+							Computed:            true,
+						},
+						"key_pair": schema.StringAttribute{
+							Description:         "The exoscale_ssh_key (name) authorized on the managed instances.",
+							MarkdownDescription: "The [exoscale_ssh_key](../resources/ssh_key.md) (name) authorized on the managed instances.",
+							Computed:            true,
+						},
+						"labels": schema.MapAttribute{
+							Description:         "A map of key/value labels.",
+							MarkdownDescription: "A map of key/value labels.",
+							ElementType:         types.StringType,
+							Computed:            true,
+						},
+						"min_available": schema.Int64Attribute{
+							Description:         "Minimum number of running Instances.",
+							MarkdownDescription: "Minimum number of running Instances.",
+							Computed:            true,
+						},
+						"name": schema.StringAttribute{
+							Description:         "The instance pool name.",
+							MarkdownDescription: "The instance pool name.",
+							Computed:            true,
+						},
+						"network_ids": schema.SetAttribute{
+							Description:         "The list of attached exoscale_private_network (IDs).",
+							MarkdownDescription: "The list of attached [exoscale_private_network](../resources/private_network.md) (IDs).",
+							ElementType:         types.StringType,
+							Computed:            true,
+						},
+						"security_group_ids": schema.SetAttribute{
+							Description:         "The list of attached exoscale_security_group (IDs).",
+							MarkdownDescription: "The list of attached [exoscale_security_group](../resources/security_group.md) (IDs).",
+							ElementType:         types.StringType,
+							Computed:            true,
+						},
+						"size": schema.Int64Attribute{
+							Description:         "The number managed instances.",
+							MarkdownDescription: "The number managed instances.",
+							Computed:            true,
+						},
+						"state": schema.StringAttribute{
+							Description:         "The pool state.",
+							MarkdownDescription: "The pool state.",
+							Computed:            true,
+						},
+						"template_id": schema.StringAttribute{
+							Description:         "The managed instances exoscale_template ID.",
+							MarkdownDescription: "The managed instances [exoscale_template](./template.md) ID.",
+							Computed:            true,
+						},
+						"user_data": schema.StringAttribute{
+							Description:         "cloud-init configuration.",
+							MarkdownDescription: "[cloud-init](http://cloudinit.readthedocs.io/en/latest/) configuration.",
+							Computed:            true,
+						},
+						"zone": schema.StringAttribute{
+							Description:         "The Exoscale Zone name.",
+							MarkdownDescription: "The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.",
+							Computed:            true,
+						},
+					},
 				},
 			},
 		},
-
-		ReadContext: dsListRead,
+		Blocks: map[string]schema.Block{
+			"timeouts": timeouts.Block(ctx, timeouts.Opts{
+				Read: true,
+			}),
+		},
 	}
 }
 
-func dsListRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning read", map[string]any{
-		"id": utils.IDString(d, NameList),
-	})
+func (d *DataSourceList) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+	if req.ProviderData == nil {
+		return
+	}
 
-	zone := d.Get(AttrZone).(string)
+	d.client = req.ProviderData.(*providerConfig.ExoscaleProviderConfig).ClientV3
+}
 
-	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
+func (d *DataSourceList) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+	var data DataSourceListModel
+
+	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	timeout, diags := data.Timeouts.Read(ctx, config.DefaultTimeout)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	defaultClientV3, err := config.GetClientV3(meta)
+	zone := data.Zone.ValueString()
+
+	client, err := utils.SwitchClientZone(ctx, d.client, exoscale.ZoneName(zone))
 	if err != nil {
-		return diag.FromErr(err)
-	}
-	client, err := utils.SwitchClientZone(
-		ctx,
-		defaultClientV3,
-		v3.ZoneName(zone),
-	)
-	if err != nil {
-		return diag.FromErr(err)
+		resp.Diagnostics.AddError("unable to change exoscale client zone", err.Error())
+		return
 	}
 
-	poolResponse, err := client.ListInstancePools(
-		ctx,
-	)
+	list, err := client.ListInstancePools(ctx)
 	if err != nil {
-		return diag.FromErr(err)
+		resp.Diagnostics.AddError("unable to list instance pools", err.Error())
+		return
 	}
-	pools := poolResponse.InstancePools
 
-	data := make([]any, 0, len(pools))
-	ids := make([]string, 0, len(pools))
-	instanceTypes := map[string]string{}
+	ids := make([]string, 0, len(list.InstancePools))
+	instanceTypes := map[exoscale.UUID]string{}
+	data.Pools = make([]DataSourceListPoolModel, 0, len(list.InstancePools))
 
-	for _, item := range pools {
+	for _, item := range list.InstancePools {
 		// we use ID to generate a resource ID, we cannot list instance pools without ID.
 		if item.ID == "" {
 			continue
@@ -85,296 +302,126 @@ func dsListRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diag
 
 		ids = append(ids, item.ID.String())
 
-		pool, err := client.GetInstancePool(
-			ctx,
-			item.ID,
-		)
+		pool, err := client.GetInstancePool(ctx, item.ID)
 		if err != nil {
-			return diag.FromErr(err)
+			resp.Diagnostics.AddError("unable to get instance pool", err.Error())
+			return
 		}
 
-		poolData, err := dsBuildData(pool, zone)
-		if err != nil {
-			return diag.FromErr(err)
-		}
-
+		// Many pools tend to share the same instance type.
+		instanceType := ""
 		if pool.InstanceType != nil {
-			tid := pool.InstanceType.ID.String()
-			if _, ok := instanceTypes[tid]; !ok {
-				instanceType, err := client.GetInstanceType(
-					ctx,
-					v3.UUID(tid),
-				)
+			if _, ok := instanceTypes[pool.InstanceType.ID]; !ok {
+				name, err := poolInstanceType(ctx, client, pool)
 				if err != nil {
-					return diag.Errorf("unable to retrieve instance type: %s", err)
+					resp.Diagnostics.AddError("unable to retrieve instance type", err.Error())
+					return
 				}
-				instanceTypes[tid] = fmt.Sprintf(
-					"%s.%s",
-					strings.ToLower(string(instanceType.Family)),
-					strings.ToLower(string(instanceType.Size)),
-				)
+				instanceTypes[pool.InstanceType.ID] = name
 			}
-
-			poolData[AttrInstanceType] = instanceTypes[tid]
+			instanceType = instanceTypes[pool.InstanceType.ID]
 		}
 
-		if pool.Instances != nil {
-			instancesData := make([]any, len(pool.Instances))
-			for k, i := range pool.Instances {
-				instance, err := client.GetInstance(ctx, i.ID)
-				if err != nil {
-					return diag.FromErr(err)
-				}
-
-				var ipv6, publicIp string
-				if instance.Ipv6Address != "" {
-					ipv6 = instance.Ipv6Address
-				}
-				if instance.PublicIP.String() != "" {
-					publicIp = instance.PublicIP.String()
-				}
-
-				instancesData[k] = map[string]any{
-					AttrInstanceID:              i.ID,
-					AttrInstanceIPv6Address:     ipv6,
-					AttrInstanceName:            instance.Name,
-					AttrInstancePublicIPAddress: publicIp,
-				}
-			}
-
-			poolData[AttrInstances] = instancesData
+		model, diags := dataSourceListPool(ctx, client, pool, zone, instanceType)
+		resp.Diagnostics.Append(diags...)
+		if resp.Diagnostics.HasError() {
+			return
 		}
 
-		data = append(data, poolData)
+		data.Pools = append(data.Pools, model)
 	}
 
-	err = d.Set("pools", &data)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	// by sorting instance IDs we can generate the same resource ID regardless of the order in which
-	// API returns instances in thelist.
+	// by sorting instance pool IDs we can generate the same resource ID regardless of the order in which
+	// API returns instance pools in the list.
 	sort.Strings(ids)
 
-	d.SetId(fmt.Sprintf("%x", md5.Sum([]byte(strings.Join(ids, "")))))
+	data.ID = types.StringValue(fmt.Sprintf("%x", md5.Sum([]byte(strings.Join(ids, ""))))) //nolint:gosec
 
-	tflog.Debug(ctx, "read finished successfully", map[string]any{
-		"id": utils.IDString(d, NameList),
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+
+	tflog.Trace(ctx, "data source read", map[string]any{
+		"id": data.ID.ValueString(),
 	})
-
-	return nil
 }
 
-// DataSourceSchema returns the schema of the elements of exoscale_instance_pool_list.
-func DataSourceSchema() map[string]*schema.Schema {
-	return map[string]*schema.Schema{
-		AttrAntiAffinityGroupIDs: {
-			Description: "The list of attached [exoscale_anti_affinity_group](../resources/anti_affinity_group.md) (IDs).",
-			Type:        schema.TypeSet,
-			Computed:    true,
-			Set:         schema.HashString,
-			Elem:        &schema.Schema{Type: schema.TypeString},
-		},
-		AttrAffinityGroupIDs: {
-			Description: "The list of attached [exoscale_anti_affinity_group](../resources/anti_affinity_group.md) (IDs). Use anti_affinity_group_ids instead.",
-			Type:        schema.TypeSet,
-			Computed:    true,
-			Set:         schema.HashString,
-			Elem:        &schema.Schema{Type: schema.TypeString},
-			Deprecated:  "Use anti_affinity_group_ids instead.",
-		},
-		AttrDeployTargetID: {
-			Description: "The deploy target ID.",
-			Type:        schema.TypeString,
-			Computed:    true,
-		},
-		AttrDescription: {
-			Description: "The instance pool description.",
-			Type:        schema.TypeString,
-			Computed:    true,
-		},
-		AttrDiskSize: {
-			Description: "The managed instances disk size.",
-			Type:        schema.TypeInt,
-			Computed:    true,
-		},
-		AttrElasticIPIDs: {
-			Description: "The list of attached [exoscale_elastic_ip](../resources/elastic_ip.md) (IDs).",
-			Type:        schema.TypeSet,
-			Computed:    true,
-			Set:         schema.HashString,
-			Elem:        &schema.Schema{Type: schema.TypeString},
-		},
-		AttrInstancePrefix: {
-			Description: "The string used to prefix the managed instances name.",
-			Type:        schema.TypeString,
-			Computed:    true,
-		},
-		AttrInstanceType: {
-			Description: "The managed instances type.",
-			Type:        schema.TypeString,
-			Computed:    true,
-		},
-		AttrIPv6: {
-			Description: "Whether IPv6 is enabled on managed instances.",
-			Type:        schema.TypeBool,
-			Computed:    true,
-		},
-		AttrKeyPair: {
-			Description: "The [exoscale_ssh_key](../resources/ssh_key.md) (name) authorized on the managed instances.",
-			Type:        schema.TypeString,
-			Computed:    true,
-		},
-		AttrLabels: {
-			Description: "A map of key/value labels.",
-			Type:        schema.TypeMap,
-			Elem:        &schema.Schema{Type: schema.TypeString},
-			Optional:    true,
-		},
-		AttrName: {
-			Description: "The pool name to match (conflicts with `id`).",
-			Type:        schema.TypeString,
-			Optional:    true,
-		},
-		AttrID: {
-			Description: "The instance pool ID to match (conflicts with `name`).",
-			Type:        schema.TypeString,
-			Optional:    true,
-		},
-		AttrNetworkIDs: {
-			Description: "The list of attached [exoscale_private_network](../resources/private_network.md) (IDs).",
-			Type:        schema.TypeSet,
-			Computed:    true,
-			Set:         schema.HashString,
-			Elem:        &schema.Schema{Type: schema.TypeString},
-		},
-		AttrSecurityGroupIDs: {
-			Description: "The list of attached [exoscale_security_group](../resources/security_group.md) (IDs).",
-			Type:        schema.TypeSet,
-			Computed:    true,
-			Set:         schema.HashString,
-			Elem:        &schema.Schema{Type: schema.TypeString},
-		},
-		AttrSize: {
-			Description: "The number managed instances.",
-			Type:        schema.TypeInt,
-			Computed:    true,
-		},
-		AttrMinAvailable: {
-			Description: "Minimum number of running Instances.",
-			Type:        schema.TypeInt,
-			Computed:    true,
-		},
-		AttrState: {
-			Description: "The pool state.",
-			Type:        schema.TypeString,
-			Computed:    true,
-		},
-		AttrTemplateID: {
-			Description: "The managed instances [exoscale_template](./template.md) ID.",
-			Type:        schema.TypeString,
-			Computed:    true,
-		},
-		AttrUserData: {
-			Description: "[cloud-init](http://cloudinit.readthedocs.io/en/latest/) configuration.",
-			Type:        schema.TypeString,
-			Computed:    true,
-		},
-		AttrInstances: {
-			Description: "The list of managed instances. Structure is documented below.",
-			Type:        schema.TypeSet,
-			Computed:    true,
-			Elem: &schema.Resource{
-				Schema: map[string]*schema.Schema{
-					AttrInstanceID: {
-						Description: "The compute instance ID.",
-						Type:        schema.TypeString,
-						Optional:    true,
-					},
-					AttrInstanceIPv6Address: {
-						Description: "The instance (main network interface) IPv6 address.",
-						Type:        schema.TypeString,
-						Computed:    true,
-					},
-					AttrInstanceName: {
-						Description: "The instance name.",
-						Type:        schema.TypeString,
-						Optional:    true,
-					},
-					AttrInstancePublicIPAddress: {
-						Description: "The instance (main network interface) IPv4 address.",
-						Type:        schema.TypeString,
-						Computed:    true,
-					},
-				},
-			},
-		},
-		AttrZone: {
-			Description: "The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.",
-			Type:        schema.TypeString,
-			Required:    true,
-		},
+// dataSourceListPool builds an element of `pools` from the API. Unlike
+// exoscale_instance_pool, the elements of the list have always reported the
+// values a pool does not have as empty strings, sets and maps rather than null.
+func dataSourceListPool(
+	ctx context.Context,
+	client *exoscale.Client,
+	pool *exoscale.InstancePool,
+	zone string,
+	instanceType string,
+) (DataSourceListPoolModel, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	model := DataSourceListPoolModel{
+		ID:             types.StringValue(pool.ID.String()),
+		Name:           types.StringValue(pool.Name),
+		Description:    types.StringValue(pool.Description),
+		DiskSize:       types.Int64Value(pool.DiskSize),
+		InstancePrefix: types.StringValue(pool.InstancePrefix),
+		InstanceType:   types.StringValue(instanceType),
+		IPv6:           types.BoolValue(utils.DefaultBool(pool.Ipv6Enabled, false)),
+		MinAvailable:   types.Int64Value(pool.MinAvailable),
+		Size:           types.Int64Value(pool.Size),
+		State:          types.StringValue(string(pool.State)),
+		Zone:           types.StringValue(zone),
 	}
-}
 
-// dsBuildData builds terraform data object from egoscale API struct.
-func dsBuildData(pool *v3.InstancePool, zone string) (map[string]any, error) {
-	data := map[string]any{}
-
+	model.DeployTargetID = types.StringValue("")
 	if pool.DeployTarget != nil {
-		data[AttrDeployTargetID] = pool.DeployTarget.ID
+		model.DeployTargetID = types.StringValue(pool.DeployTarget.ID.String())
 	}
-	data[AttrDescription] = utils.DefaultString(&pool.Description, "")
-	data[AttrDiskSize] = pool.DiskSize
-	data[AttrID] = pool.ID
-	data[AttrInstancePrefix] = utils.DefaultString(&pool.InstancePrefix, "")
-	data[AttrIPv6] = utils.DefaultBool(pool.Ipv6Enabled, false)
+
+	model.KeyPair = types.StringValue("")
 	if pool.SSHKey != nil {
-		data[AttrKeyPair] = pool.SSHKey.Name
-	}
-	data[AttrName] = pool.Name
-	data[AttrSize] = pool.Size
-	data[AttrMinAvailable] = pool.MinAvailable
-	data[AttrState] = pool.State
-	data[AttrTemplateID] = pool.Template.ID
-	data[AttrZone] = zone
-
-	if pool.AntiAffinityGroups != nil {
-
-		antiAffinityGroupIds := make([]string, len(pool.AntiAffinityGroups))
-
-		for i, g := range pool.AntiAffinityGroups {
-			antiAffinityGroupIds[i] = g.ID.String()
-		}
-
-		data[AttrAntiAffinityGroupIDs] = antiAffinityGroupIds
-		data[AttrAffinityGroupIDs] = antiAffinityGroupIds // deprecated
+		model.KeyPair = types.StringValue(pool.SSHKey.Name)
 	}
 
-	if pool.Labels != nil {
-		data[AttrLabels] = pool.Labels
+	model.TemplateID = types.StringValue("")
+	if pool.Template != nil {
+		model.TemplateID = types.StringValue(pool.Template.ID.String())
 	}
 
-	if pool.ElasticIPS != nil {
-		data[AttrElasticIPIDs] = utils.ElasticIPsToElasticIPIDs(pool.ElasticIPS)
+	labels := map[string]string{}
+	maps.Copy(labels, pool.Labels)
+
+	var dg diag.Diagnostics
+	model.Labels, dg = types.MapValueFrom(ctx, types.StringType, labels)
+	diags.Append(dg...)
+
+	model.AntiAffinityGroupIDs, dg = types.SetValueFrom(ctx, types.StringType, utils.AntiAffiniGroupsToAntiAffinityGroupIDs(pool.AntiAffinityGroups))
+	diags.Append(dg...)
+	model.AffinityGroupIDs = model.AntiAffinityGroupIDs
+
+	model.ElasticIPIDs, dg = types.SetValueFrom(ctx, types.StringType, utils.ElasticIPsToElasticIPIDs(pool.ElasticIPS))
+	diags.Append(dg...)
+
+	model.NetworkIDs, dg = types.SetValueFrom(ctx, types.StringType, utils.PrivateNetworksToPrivateNetworkIDs(pool.PrivateNetworks))
+	diags.Append(dg...)
+
+	model.SecurityGroupIDs, dg = types.SetValueFrom(ctx, types.StringType, utils.SecurityGroupsToSecurityGroupIDs(pool.SecurityGroups))
+	diags.Append(dg...)
+
+	if diags.HasError() {
+		return model, diags
 	}
 
-	if pool.PrivateNetworks != nil {
-		data[AttrNetworkIDs] = utils.PrivateNetworksToPrivateNetworkIDs(pool.PrivateNetworks)
-	}
-
-	if pool.SecurityGroups != nil {
-		data[AttrSecurityGroupIDs] = utils.SecurityGroupsToSecurityGroupIDs(pool.SecurityGroups)
-	}
-
+	model.UserData = types.StringValue("")
 	if pool.UserData != "" {
 		userData, err := utils.DecodeUserData(pool.UserData)
 		if err != nil {
-			return nil, fmt.Errorf("error decoding user data: %w", err)
+			diags.AddError("unable to decode user data", err.Error())
+			return model, diags
 		}
-		data[AttrUserData] = userData
+		model.UserData = types.StringValue(userData)
 	}
 
-	return data, nil
+	instances, _, dg := poolInstances(ctx, client, pool)
+	diags.Append(dg...)
+	model.Instances = instances
+
+	return model, diags
 }

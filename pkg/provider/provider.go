@@ -245,6 +245,7 @@ func (p *ExoscaleProvider) DataSources(ctx context.Context) []func() datasource.
 		instance.NewDataSource,
 		instance.NewDataSourceList,
 		instance_pool.NewDataSource,
+		instance_pool.NewDataSourceList,
 		nlb.NewDataSource,
 		nlb.NewDataSourceServiceList,
 		sos_bucket_policy.NewDataSourceSOSBucketPolicy,
