@@ -10,7 +10,7 @@ IMPROVEMENTS:
 - Migrate the `exoscale_anti_affinity_group` resource and data source to terraform-plugin-framework. Existing state loads unchanged; removing `description` from the configuration no longer replaces the group. (#614)
 - Migrate the `exoscale_elastic_ip` resource and data source to terraform-plugin-framework & egoscale v3.
 - Migrate the `exoscale_instance_pool` resource to terraform-plugin-framework.
-- Migrate the `exoscale_instance_pool` data source to terraform-plugin-framework.
+- Migrate the `exoscale_instance_pool` and `exoscale_instance_pool_list` data sources to terraform-plugin-framework.
 
 FEATURES:
 
@@ -22,7 +22,7 @@ BUG FIXES:
 - `exoscale_compute_instance`: deleting an instance honours the `delete` timeout instead of the `update` one.
 - `exoscale_instance_pool`: removing `description`, `labels` or `user_data` from the configuration now clears them on the pool, they used to be left as they were.
 - `exoscale_instance_pool`: updating a pool configured with the deprecated `affinity_group_ids` no longer sends an empty anti-affinity group list.
-- `exoscale_instance_pool` data source: `instances.*.public_ip_address` is `""` for an instance without public IP, it used to be `"<nil>"`.
+- `exoscale_instance_pool` and `exoscale_instance_pool_list` data sources: `instances.*.public_ip_address` is `""` for an instance without public IP, it used to be `"<nil>"`.
 
 BREAKING CHANGES:
 

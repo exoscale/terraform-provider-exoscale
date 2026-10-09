@@ -1,97 +1,78 @@
 package instance_pool_test
 
 import (
-	"errors"
 	"fmt"
 	"regexp"
+	"strconv"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/testutils"
 )
 
-var (
-	dsListDiskSize     = "10"
-	dsListInstanceType = "standard.tiny"
-	dsListName         = acctest.RandomWithPrefix(testutils.Prefix)
-	dsListZone         = "at-vie-1"
-)
-
-var dsListConfig = fmt.Sprintf(`
-locals {
-  zone = "%s"
-	instance_type = "%s"
-	disk_size = "%s"
-}
-data "exoscale_template" "ubuntu" {
-  zone = local.zone
-  name = "Linux Ubuntu 22.04 LTS 64-bit"
-}
-resource "exoscale_instance_pool" "test1" {
-  zone = local.zone
-  name = "%s"
-  template_id = data.exoscale_template.ubuntu.id
-  instance_type = local.instance_type
-  size = 1
-  disk_size = local.disk_size
-}
-resource "exoscale_instance_pool" "test2" {
-  zone = local.zone
-  name = "%s"
-  template_id = data.exoscale_template.ubuntu.id
-  instance_type = local.instance_type
-  size = 1
-  disk_size = local.disk_size
-  labels = { test="test"}
-}`,
-	dsListZone,
-	dsListInstanceType,
-	dsListDiskSize,
-	dsListName+"_1",
-	dsListName+"_2",
-)
-
 func testListDataSource(t *testing.T) {
 	t.Parallel()
+
+	var (
+		testdataSpec = testutils.TestdataSpec{
+			ID:   time.Now().UnixNano(),
+			Zone: testutils.TestZoneName,
+		}
+		name = testutils.ResourceName(testdataSpec.ID)
+		ds   = "data.exoscale_instance_pool_list.test"
+	)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testutils.AccPreCheck(t) },
 		ProtoV6ProviderFactories: testutils.TestAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
+			// 1 Create the pools.
 			{
-				Config: dsListConfig,
+				Config: testutils.ParseTestdataConfig("./testdata/006.datasource_list_create.tf.tmpl", &testdataSpec),
 			},
+
+			// 2 The zone is required.
 			{
-				Config: fmt.Sprintf(`
-%s
-data "exoscale_instance_pool_list" "test" {
-  # we omit the zone to trigger an error as the zone attribute must be mandatory.
-}
-`,
-					dsListConfig,
-				),
+				Config:      testutils.ParseTestdataConfig("./testdata/007.datasource_list_missing_zone.tf.tmpl", &testdataSpec),
 				ExpectError: regexp.MustCompile("Missing required argument"),
 			},
+
+			// 3 List the pools. The values a pool does not have are empty
+			// rather than null, as with the SDKv2.
 			{
-				Config: fmt.Sprintf(`
-			%s
-			data "exoscale_instance_pool_list" "test" {
-			  zone = local.zone
-			}
-			`,
-					dsListConfig,
-				),
-				Check: resource.ComposeTestCheckFunc(
-					dsCheckListAttrs("data.exoscale_instance_pool_list.test", testutils.TestAttrs{
-						"pools.#":             testutils.ValidateString("2"),
-						"pools.0.id":          validation.ToDiagFunc(validation.NoZeroValues),
-						"pools.0.instances.#": testutils.ValidateString("1"),
-						"pools.1.id":          validation.ToDiagFunc(validation.NoZeroValues),
-						"pools.1.instances.#": testutils.ValidateString("1"),
+				Config: testutils.ParseTestdataConfig("./testdata/008.datasource_list.tf.tmpl", &testdataSpec),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet(ds, "id"),
+					checkListedPool(ds, "exoscale_instance_pool.minimal", map[string]string{
+						"name":                      name + "-minimal",
+						"zone":                      testdataSpec.Zone,
+						"description":               "",
+						"deploy_target_id":          "",
+						"disk_size":                 "10",
+						"instance_prefix":           "pool",
+						"instance_type":             "standard.tiny",
+						"ipv6":                      "false",
+						"key_pair":                  "",
+						"size":                      "1",
+						"user_data":                 "",
+						"labels.%":                  "0",
+						"affinity_group_ids.#":      "0",
+						"anti_affinity_group_ids.#": "0",
+						"elastic_ip_ids.#":          "0",
+						"network_ids.#":             "0",
+						"security_group_ids.#":      "1",
+						"instances.#":               "1",
+					}),
+					checkListedPool(ds, "exoscale_instance_pool.labeled", map[string]string{
+						"name":        name + "-labeled",
+						"description": fmt.Sprintf("description-%d", testdataSpec.ID),
+						"user_data":   fmt.Sprintf("user-data-%d", testdataSpec.ID),
+						"labels.%":    "1",
+						"labels.test": fmt.Sprintf("label-%d", testdataSpec.ID),
+						"instances.#": "1",
 					}),
 				),
 			},
@@ -99,14 +80,45 @@ data "exoscale_instance_pool_list" "test" {
 	})
 }
 
-func dsCheckListAttrs(ds string, expected testutils.TestAttrs) resource.TestCheckFunc {
+// checkListedPool checks the attributes of the element of `pools` matching the
+// given resource. The zone holds the pools of other tests too.
+func checkListedPool(ds, res string, expected map[string]string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		for name, res := range s.RootModule().Resources {
-			if name == ds {
-				return testutils.CheckResourceAttributes(expected, res.Primary.Attributes)
-			}
+		id, err := testutils.AttrFromState(s, res, "id")
+		if err != nil {
+			return err
 		}
 
-		return errors.New("exoscale_instance_pool_list data source not found in the state")
+		list, ok := s.RootModule().Resources[ds]
+		if !ok {
+			return fmt.Errorf("%s not found in the state", ds)
+		}
+		attrs := list.Primary.Attributes
+
+		count, err := strconv.Atoi(attrs["pools.#"])
+		if err != nil {
+			return fmt.Errorf("unable to read the number of pools: %w", err)
+		}
+
+		for i := range count {
+			prefix := fmt.Sprintf("pools.%d.", i)
+			if attrs[prefix+"id"] != id {
+				continue
+			}
+
+			for k, want := range expected {
+				got, ok := attrs[prefix+k]
+				if !ok {
+					return fmt.Errorf("%s: %s%s is not set, expected %q", ds, prefix, k, want)
+				}
+				if got != want {
+					return fmt.Errorf("%s: %s%s is %q, expected %q", ds, prefix, k, got, want)
+				}
+			}
+
+			return nil
+		}
+
+		return fmt.Errorf("%s: instance pool %s not found", ds, id)
 	}
 }
