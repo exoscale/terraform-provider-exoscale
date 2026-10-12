@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"html/template"
 	"os"
+	"text/template"
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
@@ -44,20 +44,31 @@ type TestdataSpec struct {
 	Zone string
 }
 
+func (s *TestdataSpec) testdataSpec() *TestdataSpec {
+	return s
+}
+
+// TestdataSpecEmbedder is implemented by *TestdataSpec and by pointers to
+// structs embedding a TestdataSpec, which add their own fields to the
+// testdata templates.
+type TestdataSpecEmbedder interface {
+	testdataSpec() *TestdataSpec
+}
+
 func ResourceName(id int64) string {
 	return fmt.Sprintf("terraform-provider-test-%d", id)
 }
 
 // ParseTestdataConfig loads configuration template and replaces Zone and test ID placeholders.
 // To reduce some error handling boilerplate funcion panics on failure to parse the template.
-func ParseTestdataConfig(path string, spec *TestdataSpec) string {
+func ParseTestdataConfig(path string, spec TestdataSpecEmbedder) string {
 	tpl, err := template.ParseFiles(path)
 	if err != nil {
 		panic(err)
 	}
 
 	buf := &bytes.Buffer{}
-	err = tpl.Execute(buf, &spec)
+	err = tpl.Execute(buf, spec)
 	if err != nil {
 		panic(err)
 	}
