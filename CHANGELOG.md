@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+BUG FIXES:
+
+- `exoscale_block_storage_volume`: deleting a volume that is already gone (API returned 404) no longer fails.
+
 ## 0.75.0
 
 IMPROVEMENTS:
