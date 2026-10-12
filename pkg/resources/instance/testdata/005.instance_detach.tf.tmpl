@@ -9,7 +9,7 @@ data "exoscale_security_group" "default" {
 
 resource "exoscale_ssh_key" "test_key" {
   name       = "terraform-provider-test-{{ .ID }}"
-  public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ/FXzAnsaRwP74Mji68Vt6+iz4mmCkC7QpUmPT4zKvf test"
+  public_key = "{{ .SSHPublicKey }}"
 }
 
 # Dropping the anti-affinity group replaces the instance.

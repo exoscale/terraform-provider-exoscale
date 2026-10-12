@@ -15,9 +15,12 @@ func testDataSource(t *testing.T) {
 	t.Parallel()
 
 	var (
-		testdataSpec = testutils.TestdataSpec{
-			ID:   time.Now().UnixNano(),
-			Zone: testutils.TestZoneName,
+		testdataSpec = sshTestdataSpec{
+			TestdataSpec: testutils.TestdataSpec{
+				ID:   time.Now().UnixNano(),
+				Zone: testutils.TestZoneName,
+			},
+			SSHPublicKey: newSSHPublicKey(),
 		}
 		byID   = "data.exoscale_compute_instance.by_id"
 		byName = "data.exoscale_compute_instance.by_name"

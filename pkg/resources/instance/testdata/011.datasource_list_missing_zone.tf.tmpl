@@ -5,7 +5,7 @@ data "exoscale_template" "test_template" {
 
 resource "exoscale_ssh_key" "test_key" {
   name       = "terraform-provider-test-{{ .ID }}"
-  public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGhXL32fOylqUARtE6mPuQPm37B15OlH7GDshQRBPhpx test"
+  public_key = "{{ .SSHPublicKey }}"
 }
 
 resource "exoscale_compute_instance" "test_instance" {
