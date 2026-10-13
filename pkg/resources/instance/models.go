@@ -263,6 +263,11 @@ func applyInstanceComputed(
 
 	model.NetworkInterface, dg = networkInterfaceSet(ctx, planned)
 	diags.Append(dg...)
+	if diags.HasError() {
+		return diags
+	}
+
+	diags.Append(applyVPCComputed(ctx, model, instance)...)
 
 	return diags
 }
@@ -378,6 +383,11 @@ func applyInstance( //nolint:gocyclo
 		return diags
 	}
 	model.NetworkInterface = nifSet
+
+	diags.Append(refreshVPC(ctx, model, instance)...)
+	if diags.HasError() {
+		return diags
+	}
 
 	rdns, err := reverseDNS(ctx, client, instance.ID)
 	if err != nil {

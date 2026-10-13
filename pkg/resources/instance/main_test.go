@@ -19,6 +19,7 @@ func TestInstance(t *testing.T) {
 	t.Run("Resource", testResource)
 	t.Run("Resource/ManagedNetworkInterface", testResourceManagedNetworkInterface)
 	t.Run("Resource/SSHKeys", testResourceSSHKeys)
+	t.Run("Resource/VPC", testResourceVPC)
 	t.Run("DestroyProtection/ExplicitValue", testExplicitDestroyProtection)
 	t.Run("DestroyProtection/DefaultValue", testDefaultDestroyProtection)
 }

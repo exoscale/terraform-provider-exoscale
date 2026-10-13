@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+FEATURES:
+
+- `exoscale_compute_instance`: new `vpc` block to attach the instance to VPC subnets, in strict interface order.
+
 BUG FIXES:
 
 - `exoscale_block_storage_volume`: deleting a volume that is already gone (API returned 404) no longer fails.
