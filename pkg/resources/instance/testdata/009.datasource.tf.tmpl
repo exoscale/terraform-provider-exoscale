@@ -26,7 +26,7 @@ resource "exoscale_elastic_ip" "test_eip" {
 
 resource "exoscale_ssh_key" "test_key" {
   name       = "terraform-provider-test-{{ .ID }}"
-  public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBbM7A2vC0avqeFBvc0QdZMb6YjP4rTD0VLfV0tnbkGD test"
+  public_key = "{{ .SSHPublicKey }}"
 }
 
 resource "exoscale_compute_instance" "test_instance" {

@@ -9,12 +9,12 @@ data "exoscale_security_group" "default" {
 
 resource "exoscale_ssh_key" "test_key" {
   name       = "terraform-provider-test-{{ .ID }}"
-  public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAkAJy7s8lfxEvPP7If9Bjk5yucQxlus1yKjNl0KMJ7j test"
+  public_key = "{{ .SSHPublicKey }}"
 }
 
 resource "exoscale_ssh_key" "test_key2" {
   name       = "terraform-provider-test-{{ .ID }}-2"
-  public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICbw8XASr5gWYwEWK45oWKDVLlOFSwodMul+8sf2WFiI test2"
+  public_key = "{{ .SSHPublicKey2 }}"
 }
 
 resource "exoscale_compute_instance" "test_instance" {

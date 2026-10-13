@@ -23,9 +23,12 @@ func testResource(t *testing.T) {
 	var (
 		testInstance v3.Instance
 
-		testdataSpec = testutils.TestdataSpec{
-			ID:   time.Now().UnixNano(),
-			Zone: testutils.TestZoneName,
+		testdataSpec = sshTestdataSpec{
+			TestdataSpec: testutils.TestdataSpec{
+				ID:   time.Now().UnixNano(),
+				Zone: testutils.TestZoneName,
+			},
+			SSHPublicKey: newSSHPublicKey(),
 		}
 		name        = testutils.ResourceName(testdataSpec.ID)
 		label       = fmt.Sprintf("label-%d", testdataSpec.ID)
@@ -253,9 +256,13 @@ func testResourceSSHKeys(t *testing.T) {
 	var (
 		testInstance v3.Instance
 
-		testdataSpec = testutils.TestdataSpec{
-			ID:   time.Now().UnixNano(),
-			Zone: testutils.TestZoneName,
+		testdataSpec = sshTestdataSpec{
+			TestdataSpec: testutils.TestdataSpec{
+				ID:   time.Now().UnixNano(),
+				Zone: testutils.TestZoneName,
+			},
+			SSHPublicKey:  newSSHPublicKey(),
+			SSHPublicKey2: newSSHPublicKey(),
 		}
 		name = testutils.ResourceName(testdataSpec.ID)
 	)

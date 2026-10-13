@@ -14,9 +14,12 @@ func testListDataSource(t *testing.T) {
 	t.Parallel()
 
 	var (
-		testdataSpec = testutils.TestdataSpec{
-			ID:   time.Now().UnixNano(),
-			Zone: "at-vie-2",
+		testdataSpec = sshTestdataSpec{
+			TestdataSpec: testutils.TestdataSpec{
+				ID:   time.Now().UnixNano(),
+				Zone: "at-vie-2",
+			},
+			SSHPublicKey: newSSHPublicKey(),
 		}
 		name         = testutils.ResourceName(testdataSpec.ID)
 		reverseDNS   = "tf-provider-rdns-list-test.exoscale.com."
