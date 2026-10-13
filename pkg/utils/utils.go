@@ -19,7 +19,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
-	exov2 "github.com/exoscale/egoscale/v2"
 	exoscale "github.com/exoscale/egoscale/v3"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
@@ -204,32 +203,6 @@ func normalizeUserData(v string) string {
 // on read when the user originally supplied it pre-encoded (base64 or gzip+base64).
 func SuppressUserDataDiff(_, old, new string, _ *schema.ResourceData) bool {
 	return normalizeUserData(old) == normalizeUserData(new)
-}
-
-// ParseIAMAccessKeyResource parses IAM key format
-func ParseIAMAccessKeyResource(v string) (*exov2.IAMAccessKeyResource, error) {
-	var iamAccessKeyResource exov2.IAMAccessKeyResource
-
-	parts := strings.SplitN(v, ":", 2)
-	if len(parts) != 2 {
-		return nil, fmt.Errorf("invalid format")
-	}
-	iamAccessKeyResource.ResourceName = parts[1]
-
-	parts = strings.SplitN(parts[0], "/", 2)
-	if len(parts) != 2 {
-		return nil, fmt.Errorf("invalid format")
-	}
-	iamAccessKeyResource.Domain = parts[0]
-	iamAccessKeyResource.ResourceType = parts[1]
-
-	if iamAccessKeyResource.Domain == "" ||
-		iamAccessKeyResource.ResourceType == "" ||
-		iamAccessKeyResource.ResourceName == "" {
-		return nil, fmt.Errorf("invalid format")
-	}
-
-	return &iamAccessKeyResource, nil
 }
 
 // ValidateZone validates zone string.

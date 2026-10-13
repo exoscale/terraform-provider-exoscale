@@ -18,6 +18,7 @@ BREAKING CHANGES:
 
 - `exoscale_instance_pool`: the `service_offering` attribute, deprecated since 0.27.0, is removed and `instance_type` is now required: replace `service_offering = "<size>"` with `instance_type = "standard.<size>"`, check the [migration guide](docs/guides/migration-of-instance-pool-from-v0_75_x-to-v0_76_x.md).
 - `exoscale_instance_pool`: `instances` and `virtual_machines` are read-only and can no longer be set in the configuration (the values set were ignored), check the [migration guide](docs/guides/migration-of-instance-pool-from-v0_75_x-to-v0_76_x.md).
+- Remove the `exoscale_iam_access_key` resource, use `exoscale_iam_api_key` with `exoscale_iam_role` instead. Remove access keys from your state before upgrading, see the [migration guide](https://registry.terraform.io/providers/exoscale/exoscale/latest/docs/guides/migration-of-iam-access-key-from-v0_75_x-to-v0_76_x).
 
 ## 0.75.0
 

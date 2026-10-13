@@ -77,9 +77,7 @@ func Provider() *schema.Provider {
 
 		DataSourcesMap: map[string]*schema.Resource{},
 
-		ResourcesMap: map[string]*schema.Resource{
-			"exoscale_iam_access_key": resourceIAMAccessKey(),
-		},
+		ResourcesMap: map[string]*schema.Resource{},
 
 		ConfigureContextFunc: ProviderConfigure,
 	}
