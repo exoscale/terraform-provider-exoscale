@@ -5,8 +5,6 @@ import (
 	"net"
 	"regexp"
 	"strings"
-
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 // in returns true if v is found in list.
@@ -45,27 +43,6 @@ func defaultBool(v *bool, def bool) bool {
 	}
 
 	return def
-}
-
-func schemaSetToStringArray(set *schema.Set) []string {
-	array := make([]string, set.Len())
-	for i, group := range set.List() {
-		array[i] = group.(string)
-	}
-
-	return array
-}
-
-func unique(s []string) []string {
-	inResult := map[string]struct{}{}
-	var result []string
-	for _, str := range s {
-		if _, ok := inResult[str]; !ok {
-			inResult[str] = struct{}{}
-			result = append(result, str)
-		}
-	}
-	return result
 }
 
 // validDNSNameRegex represents a valid DNS name pattern
