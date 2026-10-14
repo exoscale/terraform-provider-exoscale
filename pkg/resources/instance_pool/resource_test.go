@@ -3,9 +3,8 @@ package instance_pool_test
 import (
 	"fmt"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/stretchr/testify/require"
@@ -17,150 +16,23 @@ import (
 	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
 )
 
-var (
-	rAntiAffinityGroupName       = acctest.RandomWithPrefix(testutils.Prefix)
-	rDescription                 = acctest.RandString(10)
-	rDescriptionUpdated          = rDescription + "-updated"
-	rDiskSize              int64 = 10
-	rDiskSizeUpdated             = rDiskSize * 2
-	rKeyPair                     = acctest.RandomWithPrefix(testutils.Prefix)
-	rLabelValue                  = acctest.RandomWithPrefix(testutils.Prefix)
-	rLabelValueUpdated           = rLabelValue + "-updated"
-	rName                        = acctest.RandomWithPrefix(testutils.Prefix)
-	rNameUpdated                 = rName + "-updated"
-	rInstancePrefix              = "test"
-	rNetwork                     = acctest.RandomWithPrefix(testutils.Prefix)
-	rInstanceType                = "standard.tiny"
-	rInstanceTypeUpdated         = "standard.small"
-	rSize                  int64 = 1
-	rMinAvailable          int64 = 0
-	rSizeUpdated                 = rSize * 2
-	rMinAvailableUpdated         = rMinAvailable + 1
-	rUserData                    = acctest.RandString(10)
-	rUserDataUpdated             = rUserData + "-updated"
-
-	rConfigCreate = fmt.Sprintf(`
-locals {
-  zone = "%s"
-}
-
-data "exoscale_template" "ubuntu" {
-  zone = local.zone
-  name = "Linux Ubuntu 22.04 LTS 64-bit"
-}
-
-data "exoscale_security_group" "default" {
-  name = "default"
-}
-
-resource "exoscale_anti_affinity_group" "test" {
-  name = "%s"
-}
-
-resource "exoscale_instance_pool" "test" {
-  zone = local.zone
-  name = "%s"
-  description = "%s"
-  template_id = data.exoscale_template.ubuntu.id
-  instance_type = "%s"
-  size = %d
-  min_available = %d
-  disk_size = %d
-  ipv6 = true
-  anti_affinity_group_ids = [exoscale_anti_affinity_group.test.id]
-  security_group_ids = [data.exoscale_security_group.default.id]
-  instance_prefix = "%s"
-  user_data = "%s"
-  labels = {
-    test = "%s"
-  }
-
-  timeouts {
-    delete = "10m"
-  }
-}
-`,
-		testutils.TestZoneName,
-		rAntiAffinityGroupName,
-		rName,
-		rDescription,
-		rInstanceType,
-		rSize,
-		rMinAvailable,
-		rDiskSize,
-		rInstancePrefix,
-		rUserData,
-		rLabelValue,
-	)
-
-	rConfigUpdate = fmt.Sprintf(`
-locals {
-  zone = "%s"
-}
-
-data "exoscale_template" "debian" {
-  zone = local.zone
-  name = "Linux Debian 12 (Bookworm) 64-bit"
-}
-
-resource "exoscale_private_network" "test" {
-  zone = local.zone
-  name = "%s"
-}
-
-resource "exoscale_ssh_key" "test" {
-  name = "%s"
-  public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB8bfA67mQWv4eGND/XVtPx1JW6RAqafub1lV1EcpB+b test"
-}
-
-resource "exoscale_anti_affinity_group" "test" {
-  name = "%s"
-}
-
-resource "exoscale_instance_pool" "test" {
-  zone = local.zone
-  name = "%s"
-  description = "%s"
-  template_id = data.exoscale_template.debian.id
-  instance_type = "%s"
-  size = %d
-  min_available = %d
-  disk_size = %d
-  ipv6 = true
-  key_pair = exoscale_ssh_key.test.name
-  anti_affinity_group_ids = [exoscale_anti_affinity_group.test.id]
-  network_ids = [exoscale_private_network.test.id]
-  user_data = "%s"
-  labels = {
-    test = "%s"
-  }
-
-  timeouts {
-    delete = "10m"
-  }
-}
-`,
-		testutils.TestZoneName,
-		rNetwork,
-		rKeyPair,
-		rAntiAffinityGroupName,
-		rNameUpdated,
-		rDescriptionUpdated,
-		rInstanceTypeUpdated,
-		rSizeUpdated,
-		rMinAvailableUpdated,
-		rDiskSizeUpdated,
-		rUserDataUpdated,
-		rLabelValueUpdated,
-	)
-)
+const poolResource = "exoscale_instance_pool.test"
 
 func testResource(t *testing.T) {
 	t.Parallel()
 
 	var (
-		r            = "exoscale_instance_pool.test"
 		instancePool v3.InstancePool
+
+		testdataSpec = testutils.TestdataSpec{
+			ID:   time.Now().UnixNano(),
+			Zone: testutils.TestZoneName,
+		}
+		name        = testutils.ResourceName(testdataSpec.ID)
+		description = fmt.Sprintf("description-%d", testdataSpec.ID)
+		label       = fmt.Sprintf("label-%d", testdataSpec.ID)
+		userData    = fmt.Sprintf("user-data-%d", testdataSpec.ID)
+		aagResource = "exoscale_anti_affinity_group.test"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -168,152 +40,158 @@ func testResource(t *testing.T) {
 		ProtoV6ProviderFactories: testutils.TestAccProtoV6ProviderFactories,
 		CheckDestroy:             testutils.CheckInstancePoolDestroy(&instancePool),
 		Steps: []resource.TestStep{
+			// 1 Create
 			{
-				// Create
-				Config: rConfigCreate,
-				Check: resource.ComposeTestCheckFunc(
-					testutils.CheckInstancePoolExists(r, &instancePool),
+				Config: testutils.ParseTestdataConfig("./testdata/001.resource_create.tf.tmpl", &testdataSpec),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					testutils.CheckInstancePoolExists(poolResource, &instancePool),
 					func(s *terraform.State) error {
 						a := require.New(t)
 
 						templateID, err := testutils.AttrFromState(s, "data.exoscale_template.ubuntu", "id")
 						a.NoError(err, "unable to retrieve template ID from state")
 
-						expectedUserData, _, err := utils.EncodeUserData(rUserData)
-						if err != nil {
-							return err
-						}
+						expectedUserData, _, err := utils.EncodeUserData(userData)
+						a.NoError(err)
 
 						a.Len(instancePool.AntiAffinityGroups, 1)
-						a.Equal(rDescription, instancePool.Description)
-						a.Equal(rDiskSize, instancePool.DiskSize)
-						a.Equal(rInstancePrefix, instancePool.InstancePrefix)
-						a.Len(instancePool.Instances, int(rSize))
+						a.Equal(description, instancePool.Description)
+						a.Equal(int64(10), instancePool.DiskSize)
+						a.Equal("test", instancePool.InstancePrefix)
+						a.Len(instancePool.Instances, 1)
 						a.Equal(testutils.TestInstanceTypeIDTiny, instancePool.InstanceType.ID.String())
 						a.True(*instancePool.Ipv6Enabled)
-						a.Equal(rLabelValue, (instancePool.Labels)["test"])
-						a.Equal(rName, instancePool.Name)
-						a.Equal(rSize, instancePool.Size)
+						a.Equal(label, instancePool.Labels["test"])
+						a.Equal(name, instancePool.Name)
+						a.Len(instancePool.SecurityGroups, 1)
+						a.Equal(int64(1), instancePool.Size)
 						a.Equal(templateID, instancePool.Template.ID.String())
 						a.Equal(expectedUserData, instancePool.UserData)
 
 						return nil
 					},
-					testutils.CheckResourceState(r, testutils.CheckResourceStateValidateAttributes(testutils.TestAttrs{
-						instance_pool.AttrAntiAffinityGroupIDs + ".#": testutils.ValidateString("1"),
-						instance_pool.AttrDescription:                 testutils.ValidateString(rDescription),
-						instance_pool.AttrDiskSize:                    testutils.ValidateString(fmt.Sprint(rDiskSize)),
-						instance_pool.AttrIPv6:                        testutils.ValidateString("true"),
-						instance_pool.AttrInstancePrefix:              testutils.ValidateString(rInstancePrefix),
-						instance_pool.AttrInstanceType:                testutils.ValidateString(rInstanceType),
-						instance_pool.AttrLabels + ".test":            testutils.ValidateString(rLabelValue),
-						instance_pool.AttrName:                        testutils.ValidateString(rName),
-						instance_pool.AttrSecurityGroupIDs + ".#":     testutils.ValidateString("1"),
-						instance_pool.AttrSize:                        testutils.ValidateString(fmt.Sprint(rSize)),
-						instance_pool.AttrMinAvailable:                testutils.ValidateString(fmt.Sprint(rMinAvailable)),
-						instance_pool.AttrState:                       validation.ToDiagFunc(validation.NoZeroValues),
-						instance_pool.AttrTemplateID:                  validation.ToDiagFunc(validation.IsUUID),
-						instance_pool.AttrUserData:                    testutils.ValidateString(rUserData),
-						instance_pool.AttrVirtualMachines + ".#":      testutils.ValidateString(fmt.Sprint(rSize)),
-						instance_pool.AttrInstances + ".#":            testutils.ValidateString(fmt.Sprint(rSize)),
-						instance_pool.AttrZone:                        testutils.ValidateString(testutils.TestZoneName),
-					})),
+					resource.TestCheckResourceAttr(poolResource, "anti_affinity_group_ids.#", "1"),
+					resource.TestCheckTypeSetElemAttrPair(poolResource, "anti_affinity_group_ids.*", aagResource, "id"),
+					resource.TestCheckResourceAttr(poolResource, "description", description),
+					resource.TestCheckResourceAttr(poolResource, "disk_size", "10"),
+					resource.TestCheckResourceAttr(poolResource, "ipv6", "true"),
+					resource.TestCheckResourceAttr(poolResource, "instance_prefix", "test"),
+					resource.TestCheckResourceAttr(poolResource, "instance_type", "standard.tiny"),
+					resource.TestCheckResourceAttr(poolResource, "labels.%", "1"),
+					resource.TestCheckResourceAttr(poolResource, "labels.test", label),
+					resource.TestCheckResourceAttr(poolResource, "name", name),
+					resource.TestCheckResourceAttr(poolResource, "security_group_ids.#", "1"),
+					resource.TestCheckResourceAttrPair(poolResource, "security_group_ids.0", "data.exoscale_security_group.default", "id"),
+					resource.TestCheckResourceAttr(poolResource, "size", "1"),
+					resource.TestCheckResourceAttr(poolResource, "min_available", "0"),
+					resource.TestCheckResourceAttrSet(poolResource, "state"),
+					resource.TestCheckResourceAttrPair(poolResource, "template_id", "data.exoscale_template.ubuntu", "id"),
+					resource.TestCheckResourceAttr(poolResource, "user_data", userData),
+					resource.TestCheckResourceAttr(poolResource, "virtual_machines.#", "1"),
+					resource.TestCheckResourceAttr(poolResource, "instances.#", "1"),
+					resource.TestCheckResourceAttrSet(poolResource, "instances.0.id"),
+					resource.TestCheckResourceAttrSet(poolResource, "instances.0.name"),
+					resource.TestCheckResourceAttr(poolResource, "zone", testdataSpec.Zone),
 				),
 			},
+
+			// 2 Update
 			{
-				// Update
-				Config: rConfigUpdate,
-				Check: resource.ComposeTestCheckFunc(
-					testutils.CheckInstancePoolExists(r, &instancePool),
+				Config: testutils.ParseTestdataConfig("./testdata/002.resource_update.tf.tmpl", &testdataSpec),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					testutils.CheckInstancePoolExists(poolResource, &instancePool),
 					func(s *terraform.State) error {
 						a := require.New(t)
 
 						templateID, err := testutils.AttrFromState(s, "data.exoscale_template.debian", "id")
 						a.NoError(err, "unable to retrieve template ID from state")
 
-						expectedUserData, _, err := utils.EncodeUserData(rUserDataUpdated)
-						if err != nil {
-							return err
-						}
+						expectedUserData, _, err := utils.EncodeUserData(userData + "-updated")
+						a.NoError(err)
 
 						a.Len(instancePool.AntiAffinityGroups, 1)
-						a.Equal(rDescriptionUpdated, instancePool.Description)
-						a.Equal(rDiskSizeUpdated, instancePool.DiskSize)
+						a.Equal(description+"-updated", instancePool.Description)
+						a.Equal(int64(20), instancePool.DiskSize)
 						a.Equal(instance_pool.DefaultInstancePrefix, instancePool.InstancePrefix)
-						a.Len(instancePool.Instances, int(rSizeUpdated))
+						a.Len(instancePool.Instances, 2)
 						a.Equal(testutils.TestInstanceTypeIDSmall, instancePool.InstanceType.ID.String())
 						a.True(*instancePool.Ipv6Enabled)
-						a.Equal(rLabelValueUpdated, (instancePool.Labels)["test"])
-						a.Equal(rNameUpdated, instancePool.Name)
+						a.Equal(label+"-updated", instancePool.Labels["test"])
+						a.Equal(name+"-updated", instancePool.Name)
 						a.Len(instancePool.PrivateNetworks, 1)
-						a.Equal(rSizeUpdated, instancePool.Size)
-						a.Equal(rKeyPair, instancePool.SSHKey.Name)
+						a.Empty(instancePool.SecurityGroups)
+						a.Equal(int64(2), instancePool.Size)
+						a.Equal(int64(1), instancePool.MinAvailable)
+						a.Equal(name, instancePool.SSHKey.Name)
 						a.Equal(templateID, instancePool.Template.ID.String())
 						a.Equal(expectedUserData, instancePool.UserData)
 
 						return nil
 					},
-					testutils.CheckResourceState(r, testutils.CheckResourceStateValidateAttributes(testutils.TestAttrs{
-						instance_pool.AttrAntiAffinityGroupIDs + ".#": testutils.ValidateString("1"),
-						instance_pool.AttrDescription:                 testutils.ValidateString(rDescriptionUpdated),
-						instance_pool.AttrDiskSize:                    testutils.ValidateString(fmt.Sprint(rDiskSizeUpdated)),
-						instance_pool.AttrInstancePrefix:              testutils.ValidateString(instance_pool.DefaultInstancePrefix),
-						instance_pool.AttrInstanceType:                testutils.ValidateString(rInstanceTypeUpdated),
-						instance_pool.AttrIPv6:                        testutils.ValidateString("true"),
-						instance_pool.AttrKeyPair:                     testutils.ValidateString(rKeyPair),
-						instance_pool.AttrLabels + ".test":            testutils.ValidateString(rLabelValueUpdated),
-						instance_pool.AttrName:                        testutils.ValidateString(rNameUpdated),
-						instance_pool.AttrNetworkIDs + ".#":           testutils.ValidateString("1"),
-						instance_pool.AttrSize:                        testutils.ValidateString(fmt.Sprint(rSizeUpdated)),
-						instance_pool.AttrMinAvailable:                testutils.ValidateString(fmt.Sprint(rMinAvailableUpdated)),
-						instance_pool.AttrState:                       validation.ToDiagFunc(validation.NoZeroValues),
-						instance_pool.AttrUserData:                    testutils.ValidateString(rUserDataUpdated),
-					})),
-					resource.TestCheckNoResourceAttr(r, instance_pool.AttrSecurityGroupIDs+".#"),
+					resource.TestCheckResourceAttr(poolResource, "anti_affinity_group_ids.#", "1"),
+					resource.TestCheckResourceAttr(poolResource, "description", description+"-updated"),
+					resource.TestCheckResourceAttr(poolResource, "disk_size", "20"),
+					resource.TestCheckResourceAttr(poolResource, "instance_prefix", instance_pool.DefaultInstancePrefix),
+					resource.TestCheckResourceAttr(poolResource, "instance_type", "standard.small"),
+					resource.TestCheckResourceAttr(poolResource, "ipv6", "true"),
+					resource.TestCheckResourceAttrPair(poolResource, "key_pair", "exoscale_ssh_key.test", "name"),
+					resource.TestCheckResourceAttr(poolResource, "labels.test", label+"-updated"),
+					resource.TestCheckResourceAttr(poolResource, "name", name+"-updated"),
+					resource.TestCheckResourceAttr(poolResource, "network_ids.#", "1"),
+					resource.TestCheckResourceAttrPair(poolResource, "network_ids.0", "exoscale_private_network.test", "id"),
+					resource.TestCheckNoResourceAttr(poolResource, "security_group_ids.#"),
+					resource.TestCheckResourceAttr(poolResource, "size", "2"),
+					resource.TestCheckResourceAttr(poolResource, "min_available", "1"),
+					resource.TestCheckResourceAttrPair(poolResource, "template_id", "data.exoscale_template.debian", "id"),
+					resource.TestCheckResourceAttr(poolResource, "user_data", userData+"-updated"),
+					resource.TestCheckResourceAttr(poolResource, "virtual_machines.#", "2"),
+					resource.TestCheckResourceAttr(poolResource, "instances.#", "2"),
 				),
 			},
+
+			// 3 Clear the optional attributes.
 			{
-				// Import
-				ResourceName: r,
-				ImportStateIdFunc: func(instancePool *v3.InstancePool) resource.ImportStateIdFunc {
-					return func(*terraform.State) (string, error) {
-						return fmt.Sprintf("%s@%s", instancePool.ID.String(), testutils.TestZoneName), nil
-					}
-				}(&instancePool),
-				ImportState: true,
-				// We will not verify state as we are unable to set AAG while both AffinityGroup & AntiAffinityGroup exist.
-				// Once AffinityGroup is completely removed we can reenable this check.
-				// ImportStateVerify: true,
-				ImportStateCheck: func(s []*terraform.InstanceState) error {
-					return testutils.CheckResourceAttributes(
-						testutils.TestAttrs{
-							// AAG is unset because SDK provides no way to determine if AffinityGroup or AntiAffinityGroup
-							// are set in config during import.
-							// Once AffinityGroup is completely removed we can reenable this check.
-							// instance_pool.AttrAntiAffinityGroupIDs + ".#": testutils.ValidateString("1"),
-							instance_pool.AttrDescription:       testutils.ValidateString(rDescriptionUpdated),
-							instance_pool.AttrDiskSize:          testutils.ValidateString(fmt.Sprint(rDiskSizeUpdated)),
-							instance_pool.AttrInstancePrefix:    testutils.ValidateString(instance_pool.DefaultInstancePrefix),
-							instance_pool.AttrInstanceType:      testutils.ValidateString(rInstanceTypeUpdated),
-							instance_pool.AttrIPv6:              testutils.ValidateString("true"),
-							instance_pool.AttrKeyPair:           testutils.ValidateString(rKeyPair),
-							instance_pool.AttrLabels + ".test":  testutils.ValidateString(rLabelValueUpdated),
-							instance_pool.AttrName:              testutils.ValidateString(rNameUpdated),
-							instance_pool.AttrNetworkIDs + ".#": testutils.ValidateString("1"),
-							instance_pool.AttrSize:              testutils.ValidateString(fmt.Sprint(rSizeUpdated)),
-							instance_pool.AttrMinAvailable:      testutils.ValidateString(fmt.Sprint(rMinAvailableUpdated)),
-							instance_pool.AttrState:             validation.ToDiagFunc(validation.NoZeroValues),
-							instance_pool.AttrUserData:          testutils.ValidateString(rUserDataUpdated),
-						},
-						func(s []*terraform.InstanceState) map[string]string {
-							for _, state := range s {
-								if state.ID == instancePool.ID.String() {
-									return state.Attributes
-								}
-							}
-							return nil
-						}(s),
-					)
+				Config: testutils.ParseTestdataConfig("./testdata/003.resource_clear.tf.tmpl", &testdataSpec),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					testutils.CheckInstancePoolExists(poolResource, &instancePool),
+					func(s *terraform.State) error {
+						a := require.New(t)
+
+						a.Empty(instancePool.Description)
+						a.Empty(instancePool.Labels)
+						a.Empty(instancePool.UserData)
+						a.Empty(instancePool.PrivateNetworks)
+						a.Len(instancePool.AntiAffinityGroups, 1)
+						a.Equal(int64(2), instancePool.Size)
+
+						return nil
+					},
+					resource.TestCheckNoResourceAttr(poolResource, "description"),
+					resource.TestCheckNoResourceAttr(poolResource, "labels.%"),
+					resource.TestCheckNoResourceAttr(poolResource, "user_data"),
+					resource.TestCheckNoResourceAttr(poolResource, "key_pair"),
+					resource.TestCheckNoResourceAttr(poolResource, "network_ids.#"),
+					resource.TestCheckResourceAttr(poolResource, "anti_affinity_group_ids.#", "1"),
+					resource.TestCheckResourceAttr(poolResource, "instances.#", "2"),
+				),
+			},
+
+			// 4 Import: <ID>@<ZONE>.
+			{
+				ResourceName: poolResource,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					return fmt.Sprintf(
+						"%s@%s",
+						s.RootModule().Resources[poolResource].Primary.ID,
+						testdataSpec.Zone,
+					), nil
+				},
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					// The pool may still be scaling when the test imports it.
+					"state",
+					"timeouts",
 				},
 			},
 		},

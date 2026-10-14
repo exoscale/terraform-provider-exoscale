@@ -5,6 +5,19 @@
 BUG FIXES:
 
 - `exoscale_block_storage_volume`: deleting a volume that is already gone (API returned 404) no longer fails.
+- `exoscale_instance_pool`: removing `description`, `labels` or `user_data` from the configuration now clears them on the pool, they used to be left as they were.
+- `exoscale_instance_pool`: updating a pool configured with the deprecated `affinity_group_ids` no longer sends an empty anti-affinity group list.
+- `exoscale_instance_pool` and `exoscale_instance_pool_list` data sources: `instances.*.public_ip_address` is `""` for an instance without public IP, it used to be `"<nil>"`.
+
+IMPROVEMENTS:
+
+- Migrate the `exoscale_instance_pool` resource to terraform-plugin-framework.
+- Migrate the `exoscale_instance_pool` and `exoscale_instance_pool_list` data sources to terraform-plugin-framework.
+
+BREAKING CHANGES:
+
+- `exoscale_instance_pool`: the `service_offering` attribute, deprecated since 0.27.0, is removed and `instance_type` is now required: replace `service_offering = "<size>"` with `instance_type = "standard.<size>"`, check the [migration guide](docs/guides/migration-of-instance-pool-from-v0_75_x-to-v0_76_x.md).
+- `exoscale_instance_pool`: `instances` and `virtual_machines` are read-only and can no longer be set in the configuration (the values set were ignored), check the [migration guide](docs/guides/migration-of-instance-pool-from-v0_75_x-to-v0_76_x.md).
 
 ## 0.75.0
 
