@@ -11,7 +11,20 @@ jobs:
     env:
       GH_TOKEN: ${{ secrets.EXOSCALE_BUILD_GH_TOKEN }}
     steps:
-      - run: gh workflow run gen-terraform.yaml -R exoscale/community-ng -f version=${{ github.ref_name }}
+      # Only the highest release regenerates the community docs, so that a
+      # patch release of an older version (e.g. v0.74.3 after v0.75.0) does
+      # not replace the docs of the newer one.
+      - shell: bash
+        run: |
+          latest=$(git ls-remote --tags --refs "https://github.com/${GITHUB_REPOSITORY}.git" 'v*' \
+            | sed 's#.*refs/tags/##' \
+            | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' \
+            | sort -V | tail -n 1)
+          if [ "${GITHUB_REF_NAME}" != "${latest}" ]; then
+            echo "::notice::${GITHUB_REF_NAME} is not the latest release (${latest}), not regenerating the community docs"
+            exit 0
+          fi
+          gh workflow run gen-terraform.yaml -R exoscale/community-ng -f version="${GITHUB_REF_NAME}"
   goreleaser:
     runs-on: ubuntu-latest
 
