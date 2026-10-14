@@ -1,16 +1,16 @@
 ---
 page_title: instance_pool migration guide
 description: |-
-    migrating instance_pool resources from provider version ~> 0.74.x to ~> 0.75.x
+    migrating instance_pool resources from provider version ~> 0.75.x to ~> 0.76.x
 ---
 
-# Migrating Instance Pool from v0.74.x to v0.75.x
+# Migrating Instance Pool from v0.75.x to v0.76.x
 
-This guide covers the migration of the `exoscale_instance_pool` resource from provider version ~> 0.74.x to ~> 0.75.x.
+This guide covers the migration of the `exoscale_instance_pool` resource from provider version ~> 0.75.x to ~> 0.76.x.
 
 ## Overview
 
-Version 0.75.0 migrates the `exoscale_instance_pool` resource from the legacy SDKv2 implementation to the Terraform plugin framework.
+Version 0.76.0 migrates the `exoscale_instance_pool` resource from the legacy SDKv2 implementation to the Terraform plugin framework.
 
 As part of this migration, the `service_offering` argument, deprecated since v0.27.0, is removed: `instance_type` is now required. The `instances` and `virtual_machines` attributes become read-only.
 
@@ -30,7 +30,7 @@ The `exoscale_instance_pool` and `exoscale_instance_pool_list` data sources are 
 exo compute instance-type list
 ```
 
-**Before (v0.74.x):**
+**Before (v0.75.x):**
 ```hcl
 resource "exoscale_instance_pool" "my_instance_pool" {
   # ...
@@ -39,7 +39,7 @@ resource "exoscale_instance_pool" "my_instance_pool" {
 }
 ```
 
-**After (v0.75.x):**
+**After (v0.76.x):**
 ```hcl
 resource "exoscale_instance_pool" "my_instance_pool" {
   # ...
@@ -54,7 +54,7 @@ If you are not sure of the current type of a pool, `terraform state show` prints
 
 `instances` and `virtual_machines` are computed by the provider: the values set in the configuration were ignored. They can no longer be set, remove any `instances { ... }` block or `virtual_machines` argument from your configuration.
 
-**Before (v0.74.x):**
+**Before (v0.75.x):**
 ```hcl
 resource "exoscale_instance_pool" "my_instance_pool" {
   # ...
@@ -65,7 +65,7 @@ resource "exoscale_instance_pool" "my_instance_pool" {
 }
 ```
 
-**After (v0.75.x):**
+**After (v0.76.x):**
 ```hcl
 resource "exoscale_instance_pool" "my_instance_pool" {
   # ...
@@ -87,7 +87,7 @@ terraform {
   required_providers {
     exoscale = {
       source  = "exoscale/exoscale"
-      version = "~> 0.75.0"
+      version = "~> 0.76.0"
     }
   }
 }
