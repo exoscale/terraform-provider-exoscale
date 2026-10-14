@@ -13,8 +13,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
-
-	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
 )
 
 // testAttrs represents a map of expected resource attributes during acceptance tests.
@@ -138,33 +136,4 @@ func ValidatePortRange(i any, k string) (s []string, es []error) {
 	}
 
 	return
-}
-
-// ValidateComputeInstanceType validates that the given field contains a valid Exoscale Compute instance type.
-func ValidateComputeInstanceType(v any, _ cty.Path) diag.Diagnostics {
-	value, ok := v.(string)
-	if !ok {
-		return diag.Errorf("expected field %q type to be string", v)
-	}
-
-	if !strings.Contains(value, ".") {
-		return diag.Errorf(`invalid value %q, expected format "FAMILY.SIZE"`, value)
-	}
-
-	return nil
-}
-
-// ValidateComputeUserData validates that the given field contains a valid data.
-func ValidateComputeUserData(v any, _ cty.Path) diag.Diagnostics {
-	value, ok := v.(string)
-	if !ok {
-		return diag.Errorf("expected field %q type to be string", v)
-	}
-
-	_, _, err := utils.EncodeUserData(value)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	return nil
 }
