@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"testing"
 	"text/template"
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
@@ -96,6 +97,14 @@ func APIClientV3() (*v3.Client, error) {
 	}
 
 	return client, nil
+}
+
+func AccPreCheck(t *testing.T) {
+	key := os.Getenv("EXOSCALE_API_KEY")
+	secret := os.Getenv("EXOSCALE_API_SECRET")
+	if key == "" || secret == "" {
+		t.Fatal("EXOSCALE_API_KEY and EXOSCALE_API_SECRET must be set for acceptance tests")
+	}
 }
 
 func TestEnvironment() string {
