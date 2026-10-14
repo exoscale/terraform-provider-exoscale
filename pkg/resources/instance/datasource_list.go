@@ -25,7 +25,7 @@ import (
 )
 
 const (
-	markdownDescriptionDatasourceList = `List Exoscale [Compute Instances](https://community.exoscale.com/documentation/compute/).
+	markdownDescriptionDatasourceList = `List Exoscale [Compute Instances](https://community.exoscale.com/product/compute/instances/).
 
 Corresponding resource: [exoscale_compute_instance](../resources/compute_instance.md).`
 

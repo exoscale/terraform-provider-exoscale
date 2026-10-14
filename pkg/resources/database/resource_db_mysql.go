@@ -123,7 +123,7 @@ func (p *MysqlDatabaseResource) Read(ctx context.Context, req resource.ReadReque
 func (p *MysqlDatabaseResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 
-		MarkdownDescription: "❗ Manage service database for a PostgreSQL Exoscale [Database Services (DBaaS)](https://community.exoscale.com/documentation/dbaas/).",
+		MarkdownDescription: "❗ Manage service database for a PostgreSQL Exoscale [Database Services (DBaaS)](https://community.exoscale.com/product/dbaas/).",
 		Attributes: map[string]schema.Attribute{
 			// Computed attributes
 			"id": schema.StringAttribute{

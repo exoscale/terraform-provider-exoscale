@@ -7,7 +7,7 @@ description: |-
 
 # exoscale_iam_api_key (Resource)
 
-Manage Exoscale [IAM](https://community.exoscale.com/documentation/iam/) API Keys.
+Manage Exoscale [IAM](https://community.exoscale.com/product/security/iam/) API Keys.
 
 !> **WARNING:** This resource stores sensitive information in your Terraform state. Please be sure to correctly understand implications and how to mitigate potential risks before using it.
 

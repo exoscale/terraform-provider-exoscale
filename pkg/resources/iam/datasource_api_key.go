@@ -15,7 +15,7 @@ import (
 	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
 )
 
-const DataSourceAPIKeyDescription = `Fetch Exoscale [IAM](https://community.exoscale.com/documentation/iam/) API Key.
+const DataSourceAPIKeyDescription = `Fetch Exoscale [IAM](https://community.exoscale.com/product/security/iam/) API Key.
 
 Corresponding resource: [exoscale_iam_role](../resources/iam_api_key.md).`
 

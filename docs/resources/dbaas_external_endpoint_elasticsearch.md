@@ -3,12 +3,12 @@
 page_title: "exoscale_dbaas_external_endpoint_elasticsearch Resource - terraform-provider-exoscale"
 subcategory: ""
 description: |-
-  Manage Exoscale DBaaS External Endpoint https://community.exoscale.com/documentation/dbaas/ for Elasticsearch logs integration.
+  Manage Exoscale DBaaS External Endpoint https://community.exoscale.com/product/dbaas/ for Elasticsearch logs integration.
 ---
 
 # exoscale_dbaas_external_endpoint_elasticsearch (Resource)
 
-Manage Exoscale DBaaS [External Endpoint](https://community.exoscale.com/documentation/dbaas/) for Elasticsearch logs integration.
+Manage Exoscale DBaaS [External Endpoint](https://community.exoscale.com/product/dbaas/) for Elasticsearch logs integration.
 
 
 

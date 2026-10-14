@@ -3,13 +3,13 @@
 page_title: "exoscale_compute_instance Data Source - terraform-provider-exoscale"
 subcategory: ""
 description: |-
-  Fetch Exoscale Compute Instances https://community.exoscale.com/documentation/compute/ data.
+  Fetch Exoscale Compute Instances https://community.exoscale.com/product/compute/instances/ data.
   Corresponding resource: exoscalecomputeinstance ../resources/compute_instance.md.
 ---
 
 # exoscale_compute_instance (Data Source)
 
-Fetch Exoscale [Compute Instances](https://community.exoscale.com/documentation/compute/) data.
+Fetch Exoscale [Compute Instances](https://community.exoscale.com/product/compute/instances/) data.
 
 Corresponding resource: [exoscale_compute_instance](../resources/compute_instance.md).
 

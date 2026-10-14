@@ -3,12 +3,12 @@
 page_title: "exoscale_dbaas_external_endpoint_datadog Resource - terraform-provider-exoscale"
 subcategory: ""
 description: |-
-  Manage Exoscale DBaaS External Endpoint https://community.exoscale.com/documentation/dbaas/ for Datadog integration.
+  Manage Exoscale DBaaS External Endpoint https://community.exoscale.com/product/dbaas/ for Datadog integration.
 ---
 
 # exoscale_dbaas_external_endpoint_datadog (Resource)
 
-Manage Exoscale DBaaS [External Endpoint](https://community.exoscale.com/documentation/dbaas/) for Datadog integration.
+Manage Exoscale DBaaS [External Endpoint](https://community.exoscale.com/product/dbaas/) for Datadog integration.
 
 
 

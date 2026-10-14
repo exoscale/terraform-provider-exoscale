@@ -13,6 +13,7 @@ IMPROVEMENTS:
 
 - Migrate the `exoscale_instance_pool` resource to terraform-plugin-framework.
 - Migrate the `exoscale_instance_pool` and `exoscale_instance_pool_list` data sources to terraform-plugin-framework.
+- Documentation: links to the Exoscale documentation now point to the current pages on community.exoscale.com instead of legacy `/documentation/` URLs that only work through redirects.
 
 BREAKING CHANGES:
 

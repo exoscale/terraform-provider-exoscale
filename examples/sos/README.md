@@ -1,7 +1,7 @@
 # Simple Object Storage (SOS)
 
 This example demonstrates how to manage
-[Simple Object Storage (SOS)](https://community.exoscale.com/documentation/storage/)
+[Simple Object Storage (SOS)](https://community.exoscale.com/product/storage/object-storage/)
 buckets and objects, using the stock
 [S3/AWS](https://registry.terraform.io/providers/hashicorp/aws/) provider.
 

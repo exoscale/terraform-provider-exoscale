@@ -3,12 +3,12 @@
 page_title: "exoscale_dbaas_external_integration Resource - terraform-provider-exoscale"
 subcategory: ""
 description: |-
-  Manage Exoscale DBaaS External Integrations https://community.exoscale.com/documentation/dbaas/ — attach a DBaaS service to an external endpoint for log/metrics forwarding.
+  Manage Exoscale DBaaS External Integrations https://community.exoscale.com/product/dbaas/ — attach a DBaaS service to an external endpoint for log/metrics forwarding.
 ---
 
 # exoscale_dbaas_external_integration (Resource)
 
-Manage Exoscale DBaaS [External Integrations](https://community.exoscale.com/documentation/dbaas/) — attach a DBaaS service to an external endpoint for log/metrics forwarding.
+Manage Exoscale DBaaS [External Integrations](https://community.exoscale.com/product/dbaas/) — attach a DBaaS service to an external endpoint for log/metrics forwarding.
 
 
 

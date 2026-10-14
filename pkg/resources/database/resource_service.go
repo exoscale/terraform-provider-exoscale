@@ -81,7 +81,7 @@ func (r *ServiceResource) Metadata(ctx context.Context, req resource.MetadataReq
 
 func (r *ServiceResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Manage Exoscale [Database Services (DBaaS)](https://community.exoscale.com/documentation/dbaas/).",
+		MarkdownDescription: "Manage Exoscale [Database Services (DBaaS)](https://community.exoscale.com/product/dbaas/).",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				MarkdownDescription: "The ID of this resource.",

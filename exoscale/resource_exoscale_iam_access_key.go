@@ -107,7 +107,7 @@ func resourceIAMAccessKey() *schema.Resource {
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
-				Description: "A list of API [resources](https://community.exoscale.com/documentation/iam/quick-start/#restricting-api-access-keys-to-resources) to restrict the key to (`<domain>/<type>:<name>`).",
+				Description: "A list of API [resources](https://community.exoscale.com/product/security/iam/how-to/key-mgmt/#restricted-access-keys) to restrict the key to (`<domain>/<type>:<name>`).",
 			},
 			resIAMAccessKeyAttrSecret: {
 				Type:        schema.TypeString,

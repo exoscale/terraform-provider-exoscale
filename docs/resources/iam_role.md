@@ -3,12 +3,12 @@
 page_title: "exoscale_iam_role Resource - terraform-provider-exoscale"
 subcategory: ""
 description: |-
-  Manage Exoscale IAM https://community.exoscale.com/documentation/iam/ Role.
+  Manage Exoscale IAM https://community.exoscale.com/product/security/iam/ Role.
 ---
 
 # exoscale_iam_role (Resource)
 
-Manage Exoscale [IAM](https://community.exoscale.com/documentation/iam/) Role.
+Manage Exoscale [IAM](https://community.exoscale.com/product/security/iam/) Role.
 
 
 

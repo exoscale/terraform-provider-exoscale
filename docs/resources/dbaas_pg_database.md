@@ -3,12 +3,12 @@
 page_title: "exoscale_dbaas_pg_database Resource - terraform-provider-exoscale"
 subcategory: ""
 description: |-
-  ❗ Manage service database for a PostgreSQL Exoscale Database Services (DBaaS) https://community.exoscale.com/documentation/dbaas/.
+  ❗ Manage service database for a PostgreSQL Exoscale Database Services (DBaaS) https://community.exoscale.com/product/dbaas/.
 ---
 
 # exoscale_dbaas_pg_database (Resource)
 
-❗ Manage service database for a PostgreSQL Exoscale [Database Services (DBaaS)](https://community.exoscale.com/documentation/dbaas/).
+❗ Manage service database for a PostgreSQL Exoscale [Database Services (DBaaS)](https://community.exoscale.com/product/dbaas/).
 
 
 

@@ -2,7 +2,7 @@
 
 ## [Database](./database)
 
-This example demonstrates how to setup [DBaaS service](https://community.exoscale.com/documentation/dbaas/)
+This example demonstrates how to setup [DBaaS service](https://community.exoscale.com/product/dbaas/)
 (Grafana in example) using `exoscale_database` resource.
 
 ## [Domain Name Service (DNS)](./dns)
@@ -65,7 +65,7 @@ using the `exoscale_sks` and `exoscale_sks_nodepool` resource.
 ## [Simple Object Storage (SOS)](./sos)
 
 This example demonstrates how to manage
-[Simple Object Storage (SOS)](https://community.exoscale.com/documentation/storage/)
+[Simple Object Storage (SOS)](https://community.exoscale.com/product/storage/object-storage/)
 buckets and objects, using the stock
 [S3/AWS](https://registry.terraform.io/providers/hashicorp/aws/) provider.
 
@@ -78,25 +78,25 @@ to access your computes instances, using the `exoscale_ssh_key` resource.
 ## [IAM API Key SOS](./iam-bucket-access)
 
 This example demonstrates how to create
-[IAM API Key](https://community.exoscale.com/product/iam/operation/roles-policies/)
+[IAM API Key](https://community.exoscale.com/product/security/iam/how-to/key-mgmt/)
 that has restricted access to an SOS bucket.
 
 ## [IAM API Key Compute](./iam-priv-instance)
 
 This example demonstrates how to create
-[IAM API Key](https://community.exoscale.com/product/iam/operation/roles-policies/)
+[IAM API Key](https://community.exoscale.com/product/security/iam/how-to/key-mgmt/)
 that only allows private instances to be deployed.
 
 ## [IAM API Key DBaaS](./iam-dbaas-instance)
 
 This example demonstrates how to create
-[IAM API Key](https://community.exoscale.com/product/iam/operation/roles-policies/)
+[IAM API Key](https://community.exoscale.com/product/security/iam/how-to/key-mgmt/)
 that only allows access to the specific instance of DBaaS service.
 
 ## [SOS as Terraform Backend](./sos-backend)
 
 This example demonstrates how to configure Terraform to use a
-[Simple Object Storage (SOS)](https://community.exoscale.com/documentation/storage/) bucket
+[Simple Object Storage (SOS)](https://community.exoscale.com/product/storage/object-storage/) bucket
 as [Terraform S3 backend](https://www.terraform.io/docs/backends/types/s3.html)
 to persist its state (`terraform.tfstate` object).
 

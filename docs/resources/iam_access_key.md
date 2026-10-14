@@ -7,7 +7,7 @@ description: |-
 
 # exoscale_iam_access_key (Resource)
 
-Manage Exoscale [IAM Access Keys](https://community.exoscale.com/documentation/iam/)
+Manage Exoscale [IAM Access Keys](https://community.exoscale.com/product/security/iam/)
 
 !> **WARNING:** This resource stores sensitive information in your Terraform state. Please be sure to correctly understand implications and how to mitigate potential risks before using it.
 
@@ -41,7 +41,7 @@ directory for complete configuration examples.
 ### Optional
 
 - `operations` (Set of String) ❗ A list of API operations to restrict the key to.
-- `resources` (Set of String) ❗ A list of API [resources](https://community.exoscale.com/documentation/iam/quick-start/#restricting-api-access-keys-to-resources) to restrict the key to (`<domain>/<type>:<name>`).
+- `resources` (Set of String) ❗ A list of API [resources](https://community.exoscale.com/product/security/iam/how-to/key-mgmt/#restricted-access-keys) to restrict the key to (`<domain>/<type>:<name>`).
 - `tags` (Set of String) ❗ A list of tags to restrict the key to.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 

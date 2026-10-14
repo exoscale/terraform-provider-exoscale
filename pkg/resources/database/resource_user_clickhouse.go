@@ -76,7 +76,7 @@ func rolesToSet(ctx context.Context, roles []exoscale.DBAASClickhouseUserRole) (
 
 func (r *ClickhouseUserResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Manage service users for a ClickHouse Exoscale [Database Services (DBaaS)](https://community.exoscale.com/documentation/dbaas/).",
+		MarkdownDescription: "Manage service users for a ClickHouse Exoscale [Database Services (DBaaS)](https://community.exoscale.com/product/dbaas/).",
 		Attributes: buildUserAttributes(map[string]schema.Attribute{
 			"password": schema.StringAttribute{
 				MarkdownDescription: "The password of the ClickHouse user. If not set, the API will generate one. Cannot be retrieved after creation (use the generated value or reset via update).",

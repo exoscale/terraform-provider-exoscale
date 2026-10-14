@@ -17,7 +17,7 @@ import (
 	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
 )
 
-const DataSourceOrgPolicyDescription = `Fetch Exoscale [IAM](https://community.exoscale.com/documentation/iam/) Organization Policy.
+const DataSourceOrgPolicyDescription = `Fetch Exoscale [IAM](https://community.exoscale.com/product/security/iam/) Organization Policy.
 
 Corresponding resource: [exoscale_iam_org_policy](../resources/iam_org_policy.md).`
 

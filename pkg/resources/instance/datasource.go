@@ -21,7 +21,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
-const markdownDescriptionDatasource = `Fetch Exoscale [Compute Instances](https://community.exoscale.com/documentation/compute/) data.
+const markdownDescriptionDatasource = `Fetch Exoscale [Compute Instances](https://community.exoscale.com/product/compute/instances/) data.
 
 Corresponding resource: [exoscale_compute_instance](../resources/compute_instance.md).`
 

@@ -178,9 +178,9 @@ directory of the source code.
 S3-compatible, [Terraform AWS provider][tf-provider-aws] can be used instead to
 [manage your SOS resources][exo-sos-terraform].
 
-[exo-iam]: https://community.exoscale.com/documentation/iam/quick-start/
+[exo-iam]: https://community.exoscale.com/product/security/iam/quick-start/
 [tf-doc-provider]: https://www.terraform.io/docs/configuration/providers.html
 [tf-exo-gh-examples]: https://github.com/exoscale/terraform-provider-exoscale/tree/master/examples
 [tf-provider-aws]: https://registry.terraform.io/providers/hashicorp/aws/latest/docs
-[exo-sos]: https://community.exoscale.com/documentation/storage
-[exo-sos-terraform]: https://community.exoscale.com/product/storage/
+[exo-sos]: https://community.exoscale.com/product/storage/object-storage/
+[exo-sos-terraform]: https://community.exoscale.com/product/storage/object-storage/how-to/terraform/
