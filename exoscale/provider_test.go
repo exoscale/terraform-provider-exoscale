@@ -16,8 +16,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-mux/tf6muxserver"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
-	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 // Common test environment information
@@ -33,9 +31,6 @@ const (
 
 // testAttrs represents a map of expected resource attributes during acceptance tests.
 type testAttrs map[string]schema.SchemaValidateDiagFunc
-
-// testResourceStateValidationFunc represents a resource state validation function.
-type testResourceStateValidationFunc func(state *terraform.InstanceState) error
 
 var (
 	testAccProviders map[string]func() (*schema.Provider, error)
@@ -65,14 +60,6 @@ func TestProvider(t *testing.T) {
 	}
 }
 
-func testAccPreCheck(t *testing.T) {
-	key := os.Getenv("EXOSCALE_API_KEY")
-	secret := os.Getenv("EXOSCALE_API_SECRET")
-	if key == "" || secret == "" {
-		t.Fatal("EXOSCALE_API_KEY and EXOSCALE_API_SECRET must be set for acceptance tests")
-	}
-}
-
 // checkResourceAttributes compares a map of resource attributes against a map
 // of expected resource attributes and performs validation on the values.
 func checkResourceAttributes(want testAttrs, got map[string]string) error {
@@ -94,35 +81,6 @@ func checkResourceAttributes(want testAttrs, got map[string]string) error {
 	}
 
 	return nil
-}
-
-// checkResourceStateValidateAttributes compares a map of resource attributes against
-// a map of expected resource attributes and performs validation on the values.
-func checkResourceStateValidateAttributes(want testAttrs) testResourceStateValidationFunc {
-	return func(s *terraform.InstanceState) error {
-		return checkResourceAttributes(want, s.Attributes)
-	}
-}
-
-// checkResourceState executes the specified testResourceStateValidationFunc
-// functions against the state of the resource matching the specified
-// identifier r (e.g. "exoscale_compute.test"), and returns an error if any
-// test function returns an error.
-func checkResourceState(r string, tests ...testResourceStateValidationFunc) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		res, ok := s.RootModule().Resources[r]
-		if !ok {
-			return fmt.Errorf("resource %q not found in the state", r)
-		}
-
-		for _, t := range tests {
-			if err := t(res.Primary); err != nil {
-				return err
-			}
-		}
-
-		return nil
-	}
 }
 
 func TestCheckResourceAttributes(t *testing.T) {
