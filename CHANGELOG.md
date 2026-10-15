@@ -13,6 +13,7 @@ IMPROVEMENTS:
 
 - Migrate the `exoscale_instance_pool` resource to terraform-plugin-framework.
 - Migrate the `exoscale_instance_pool` and `exoscale_instance_pool_list` data sources to terraform-plugin-framework.
+- The provider is now served by terraform-plugin-framework alone: the terraform-plugin-sdk provider server and the mux combining both are removed, as every resource and data source has been migrated. The User-Agent no longer reports a `Terraform-SDK/` version.
 - Documentation: links to the Exoscale documentation now point to the current pages on community.exoscale.com instead of legacy `/documentation/` URLs that only work through redirects.
 
 BREAKING CHANGES:
@@ -20,6 +21,10 @@ BREAKING CHANGES:
 - `exoscale_instance_pool`: the `service_offering` attribute, deprecated since 0.27.0, is removed and `instance_type` is now required: replace `service_offering = "<size>"` with `instance_type = "standard.<size>"`, check the [migration guide](docs/guides/migration-of-instance-pool-from-v0_75_x-to-v0_76_x.md).
 - `exoscale_instance_pool`: `instances` and `virtual_machines` are read-only and can no longer be set in the configuration (the values set were ignored), check the [migration guide](docs/guides/migration-of-instance-pool-from-v0_75_x-to-v0_76_x.md).
 - Remove the `exoscale_iam_access_key` resource, use `exoscale_iam_api_key` with `exoscale_iam_role` instead. Remove access keys from your state before upgrading, see the [migration guide](https://registry.terraform.io/providers/exoscale/exoscale/latest/docs/guides/migration-of-iam-access-key-from-v0_75_x-to-v0_76_x).
+
+DEPENDENCIES:
+
+- Remove `github.com/hashicorp/terraform-plugin-mux`
 
 ## 0.75.0
 

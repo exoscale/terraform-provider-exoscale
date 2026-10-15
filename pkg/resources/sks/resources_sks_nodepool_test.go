@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/stretchr/testify/assert"
@@ -72,27 +71,25 @@ func TestAccResourceSKSNodepool(t *testing.T) {
 						}
 						return nil
 					},
-					testutils.CheckResourceState(r, testutils.CheckResourceStateValidateAttributes(testutils.TestAttrs{
-						"created_at":                      validation.ToDiagFunc(validation.NoZeroValues),
-						"description":                     testutils.ValidateString("description-test"),
-						"disk_size":                       testutils.ValidateString("100"),
-						"instance_pool_id":                validation.ToDiagFunc(validation.IsUUID),
-						"instance_prefix":                 testutils.ValidateString("test"),
-						"instance_type":                   testutils.ValidateString("standard.small"),
-						"ipv6":                            testutils.ValidateString("false"),
-						"kubelet_image_gc.min_age":        testutils.ValidateString("1m"),
-						"kubelet_image_gc.high_threshold": testutils.ValidateString("13"),
-						"kubelet_image_gc.low_threshold":  testutils.ValidateString("12"),
-						"kubelet_max_pods":                testutils.ValidateString("210"),
-						"labels.test":                     testutils.ValidateString("acctest"),
-						"name":                            testutils.ValidateString(name),
-						"size":                            testutils.ValidateString("2"),
-						"state":                           validation.ToDiagFunc(validation.NoZeroValues),
-						"storage_lvm":                     testutils.ValidateString("true"),
-						"taints.test":                     testutils.ValidateString("test:NoSchedule"),
-						"template_id":                     validation.ToDiagFunc(validation.IsUUID),
-						"version":                         validation.ToDiagFunc(validation.NoZeroValues),
-					})),
+					resource.TestCheckResourceAttrSet(r, "created_at"),
+					resource.TestCheckResourceAttr(r, "description", "description-test"),
+					resource.TestCheckResourceAttr(r, "disk_size", "100"),
+					resource.TestMatchResourceAttr(r, "instance_pool_id", testUUIDRegex),
+					resource.TestCheckResourceAttr(r, "instance_prefix", "test"),
+					resource.TestCheckResourceAttr(r, "instance_type", "standard.small"),
+					resource.TestCheckResourceAttr(r, "ipv6", "false"),
+					resource.TestCheckResourceAttr(r, "kubelet_image_gc.min_age", "1m"),
+					resource.TestCheckResourceAttr(r, "kubelet_image_gc.high_threshold", "13"),
+					resource.TestCheckResourceAttr(r, "kubelet_image_gc.low_threshold", "12"),
+					resource.TestCheckResourceAttr(r, "kubelet_max_pods", "210"),
+					resource.TestCheckResourceAttr(r, "labels.test", "acctest"),
+					resource.TestCheckResourceAttr(r, "name", name),
+					resource.TestCheckResourceAttr(r, "size", "2"),
+					resource.TestCheckResourceAttrSet(r, "state"),
+					resource.TestCheckResourceAttr(r, "storage_lvm", "true"),
+					resource.TestCheckResourceAttr(r, "taints.test", "test:NoSchedule"),
+					resource.TestMatchResourceAttr(r, "template_id", testUUIDRegex),
+					resource.TestCheckResourceAttrSet(r, "version"),
 				),
 			},
 			{
@@ -116,25 +113,24 @@ func TestAccResourceSKSNodepool(t *testing.T) {
 						a.Equal(egoscale.SKSNodepoolPublicIPAssignmentDual, sksNodepool.PublicIPAssignment)
 						return nil
 					},
-					testutils.CheckResourceState(r, testutils.CheckResourceStateValidateAttributes(testutils.TestAttrs{
-						"anti_affinity_group_ids.#": testutils.ValidateString("1"),
-						"created_at":                validation.ToDiagFunc(validation.NoZeroValues),
-						"description":               testutils.ValidateString("description-test-updated"),
-						"disk_size":                 testutils.ValidateString("110"),
-						"instance_pool_id":          validation.ToDiagFunc(validation.IsUUID),
-						"instance_prefix":           testutils.ValidateString("pool"),
-						"instance_type":             testutils.ValidateString("standard.medium"),
-						"ipv6":                      testutils.ValidateString("true"),
-						"labels.test":               testutils.ValidateString("acctest-updated"),
-						"name":                      testutils.ValidateString(name + "-updated"),
-						"private_network_ids.#":     testutils.ValidateString("1"),
-						"security_group_ids.#":      testutils.ValidateString("1"),
-						"size":                      testutils.ValidateString("1"),
-						"state":                     validation.ToDiagFunc(validation.NoZeroValues),
-						"taints.test":               testutils.ValidateString("test-updated:NoSchedule"),
-						"template_id":               validation.ToDiagFunc(validation.IsUUID),
-						"version":                   validation.ToDiagFunc(validation.NoZeroValues),
-					})),
+					resource.TestCheckResourceAttr(r, "anti_affinity_group_ids.#", "1"),
+					resource.TestMatchResourceAttr(r, "cluster_id", testUUIDRegex),
+					resource.TestCheckResourceAttrSet(r, "created_at"),
+					resource.TestCheckResourceAttr(r, "description", "description-test-updated"),
+					resource.TestCheckResourceAttr(r, "disk_size", "110"),
+					resource.TestMatchResourceAttr(r, "instance_pool_id", testUUIDRegex),
+					resource.TestCheckResourceAttr(r, "instance_prefix", "pool"),
+					resource.TestCheckResourceAttr(r, "instance_type", "standard.medium"),
+					resource.TestCheckResourceAttr(r, "ipv6", "true"),
+					resource.TestCheckResourceAttr(r, "labels.test", "acctest-updated"),
+					resource.TestCheckResourceAttr(r, "name", name+"-updated"),
+					resource.TestCheckResourceAttr(r, "private_network_ids.#", "1"),
+					resource.TestCheckResourceAttr(r, "security_group_ids.#", "1"),
+					resource.TestCheckResourceAttr(r, "size", "1"),
+					resource.TestCheckResourceAttrSet(r, "state"),
+					resource.TestCheckResourceAttr(r, "taints.test", "test-updated:NoSchedule"),
+					resource.TestMatchResourceAttr(r, "template_id", testUUIDRegex),
+					resource.TestCheckResourceAttrSet(r, "version"),
 				),
 			},
 			{
@@ -147,36 +143,6 @@ func TestAccResourceSKSNodepool(t *testing.T) {
 				}(&sksCluster, &sksNodepool),
 				ImportState:       true,
 				ImportStateVerify: true,
-				ImportStateCheck: func(s []*terraform.InstanceState) error {
-					return testutils.CheckResourceAttributes(
-						testutils.TestAttrs{
-							"anti_affinity_group_ids.#": testutils.ValidateString("1"),
-							"cluster_id":                validation.ToDiagFunc(validation.IsUUID),
-							"created_at":                validation.ToDiagFunc(validation.NoZeroValues),
-							"description":               testutils.ValidateString("description-test-updated"),
-							"disk_size":                 testutils.ValidateString("110"),
-							"instance_pool_id":          validation.ToDiagFunc(validation.IsUUID),
-							"instance_prefix":           testutils.ValidateString("pool"),
-							"instance_type":             testutils.ValidateString("standard.medium"),
-							"name":                      testutils.ValidateString(name + "-updated"),
-							"private_network_ids.#":     testutils.ValidateString("1"),
-							"security_group_ids.#":      testutils.ValidateString("1"),
-							"size":                      testutils.ValidateString("1"),
-							"state":                     validation.ToDiagFunc(validation.NoZeroValues),
-							"taints.test":               testutils.ValidateString("test-updated:NoSchedule"),
-							"template_id":               validation.ToDiagFunc(validation.IsUUID),
-							"version":                   validation.ToDiagFunc(validation.NoZeroValues),
-						},
-						func(s []*terraform.InstanceState) map[string]string {
-							for _, state := range s {
-								if state.ID == sksNodepool.ID.String() {
-									return state.Attributes
-								}
-							}
-							return nil
-						}(s),
-					)
-				},
 			},
 			{
 				// Update kubelet image GC
@@ -193,11 +159,9 @@ func TestAccResourceSKSNodepool(t *testing.T) {
 						}
 						return nil
 					},
-					testutils.CheckResourceState(r, testutils.CheckResourceStateValidateAttributes(testutils.TestAttrs{
-						"kubelet_image_gc.min_age":        testutils.ValidateString("5m"),
-						"kubelet_image_gc.high_threshold": testutils.ValidateString("85"),
-						"kubelet_image_gc.low_threshold":  testutils.ValidateString("75"),
-					})),
+					resource.TestCheckResourceAttr(r, "kubelet_image_gc.min_age", "5m"),
+					resource.TestCheckResourceAttr(r, "kubelet_image_gc.high_threshold", "85"),
+					resource.TestCheckResourceAttr(r, "kubelet_image_gc.low_threshold", "75"),
 				),
 			},
 		},

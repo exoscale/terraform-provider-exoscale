@@ -2,23 +2,19 @@ package testutils
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"os"
+	"testing"
 	"text/template"
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
-	"github.com/hashicorp/terraform-plugin-mux/tf5to6server"
-	"github.com/hashicorp/terraform-plugin-mux/tf6muxserver"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	egoscale "github.com/exoscale/egoscale/v2"
 	v3 "github.com/exoscale/egoscale/v3"
 	"github.com/exoscale/egoscale/v3/credentials"
 
-	"github.com/exoscale/terraform-provider-exoscale/exoscale"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/provider"
 )
@@ -76,16 +72,6 @@ func ParseTestdataConfig(path string, spec TestdataSpecEmbedder) string {
 	return buf.String()
 }
 
-// Providers returns all providers used during acceptance testing.
-func Providers() map[string]func() (*schema.Provider, error) {
-	testAccProvider := exoscale.Provider()
-	return map[string]func() (*schema.Provider, error){
-		"exoscale": func() (*schema.Provider, error) {
-			return testAccProvider, nil
-		},
-	}
-}
-
 func APIClient() (*egoscale.Client, error) {
 	client, err := egoscale.NewClient(
 		os.Getenv("EXOSCALE_API_KEY"),
@@ -111,6 +97,14 @@ func APIClientV3() (*v3.Client, error) {
 	}
 
 	return client, nil
+}
+
+func AccPreCheck(t *testing.T) {
+	key := os.Getenv("EXOSCALE_API_KEY")
+	secret := os.Getenv("EXOSCALE_API_SECRET")
+	if key == "" || secret == "" {
+		t.Fatal("EXOSCALE_API_KEY and EXOSCALE_API_SECRET must be set for acceptance tests")
+	}
 }
 
 func TestEnvironment() string {
@@ -152,25 +146,5 @@ func resFromState(s *terraform.State, r string) (*terraform.InstanceState, error
 // CLI command executed to create a provider server to which the CLI can
 // reattach.
 var TestAccProtoV6ProviderFactories = map[string]func() (tfprotov6.ProviderServer, error){
-	"exoscale": func() (tfprotov6.ProviderServer, error) {
-		ctx := context.Background()
-		upgradedProvider, err := tf5to6server.UpgradeServer(
-			ctx,
-			exoscale.Provider().GRPCProvider,
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		newProvider := providerserver.NewProtocol6(&provider.ExoscaleProvider{})
-
-		providers := []func() tfprotov6.ProviderServer{
-			func() tfprotov6.ProviderServer {
-				return upgradedProvider
-			},
-			newProvider,
-		}
-
-		return tf6muxserver.NewMuxServer(ctx, providers...)
-	},
+	"exoscale": providerserver.NewProtocol6WithError(&provider.ExoscaleProvider{}),
 }
