@@ -5,10 +5,6 @@ import (
 	"net"
 	"regexp"
 	"strings"
-
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-
-	egoscale "github.com/exoscale/egoscale/v2"
 )
 
 // in returns true if v is found in list.
@@ -47,52 +43,6 @@ func defaultBool(v *bool, def bool) bool {
 	}
 
 	return def
-}
-
-func schemaSetToStringArray(set *schema.Set) []string {
-	array := make([]string, set.Len())
-	for i, group := range set.List() {
-		array[i] = group.(string)
-	}
-
-	return array
-}
-
-func unique(s []string) []string {
-	inResult := map[string]struct{}{}
-	var result []string
-	for _, str := range s {
-		if _, ok := inResult[str]; !ok {
-			inResult[str] = struct{}{}
-			result = append(result, str)
-		}
-	}
-	return result
-}
-
-func parseIAMAccessKeyResource(v string) (*egoscale.IAMAccessKeyResource, error) {
-	var iamAccessKeyResource egoscale.IAMAccessKeyResource
-
-	parts := strings.SplitN(v, ":", 2)
-	if len(parts) != 2 {
-		return nil, fmt.Errorf("invalid format")
-	}
-	iamAccessKeyResource.ResourceName = parts[1]
-
-	parts = strings.SplitN(parts[0], "/", 2)
-	if len(parts) != 2 {
-		return nil, fmt.Errorf("invalid format")
-	}
-	iamAccessKeyResource.Domain = parts[0]
-	iamAccessKeyResource.ResourceType = parts[1]
-
-	if iamAccessKeyResource.Domain == "" ||
-		iamAccessKeyResource.ResourceType == "" ||
-		iamAccessKeyResource.ResourceName == "" {
-		return nil, fmt.Errorf("invalid format")
-	}
-
-	return &iamAccessKeyResource, nil
 }
 
 // validDNSNameRegex represents a valid DNS name pattern

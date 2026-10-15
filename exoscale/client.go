@@ -83,14 +83,6 @@ func getClient(meta any) *exov2.Client {
 	return clientExoV2
 }
 
-func getEnvironment(meta any) string {
-	config := getConfig(meta)
-	if config.Environment == "" {
-		return DefaultEnvironment
-	}
-	return config.Environment
-}
-
 type defaultTransport struct {
 	next http.RoundTripper
 }
