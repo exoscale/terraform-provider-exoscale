@@ -11,7 +11,6 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/stretchr/testify/assert"
@@ -45,16 +44,15 @@ var testPemCertificateFormatRegex = regexp.MustCompile(`^-----BEGIN CERTIFICATE-
 // validDNSNameRegex represents a valid DNS name pattern (RFC 1123/952).
 var validDNSNameRegex = regexp.MustCompile(`^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?)*$`)
 
-func isDNSName(i any, k string) ([]string, []error) {
-	v, ok := i.(string)
-	if !ok {
-		return nil, []error{fmt.Errorf("expected type of %q to be string", k)}
-	}
+// testUUIDRegex validates a UUID.
+var testUUIDRegex = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
+
+func isDNSName(v string) error {
 	if v == "" || len(v) > 253 || !validDNSNameRegex.MatchString(v) {
-		return nil, []error{fmt.Errorf("expected %q to be a valid DNS name, got %q", k, v)}
+		return fmt.Errorf("expected a valid DNS name, got %q", v)
 	}
 
-	return nil, nil
+	return nil
 }
 
 func defaultBool(v *bool, def bool) bool {
@@ -131,35 +129,33 @@ func TestAccResourceSKSCluster(t *testing.T) {
 						a.Equal(testAccSKSClusterFeatureGate, sksCluster.FeatureGates[0])
 						return nil
 					},
-					testutils.CheckResourceState(r, testutils.CheckResourceStateValidateAttributes(testutils.TestAttrs{
-						"aggregation_ca":                validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Aggregation CA must be a PEM certificate")),
-						"auto_upgrade":                  testutils.ValidateString("true"),
-						"cni":                           testutils.ValidateString(defaultSKSClusterCNI),
-						"control_plane_ca":              validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Control-plane CA must be a PEM certificate")),
-						"created_at":                    validation.ToDiagFunc(validation.NoZeroValues),
-						"create_default_security_group": testutils.ValidateString("true"),
-						"description":                   testutils.ValidateString("description-test"),
-						"endpoint":                      validation.ToDiagFunc(isDNSName),
-						"enable_kube_proxy":             testutils.ValidateString("true"),
-						"exoscale_ccm":                  testutils.ValidateString("true"),
-						"feature_gates.#":               testutils.ValidateString("1"),
-						"kubelet_ca":                    validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Kubelet CA must be a PEM certificate")),
-						"metrics_server":                testutils.ValidateString("false"),
-						"exoscale_csi":                  testutils.ValidateString("false"),
-						"labels.test":                   testutils.ValidateString("acctest"),
-						"name":                          testutils.ValidateString(name),
-						"service_level":                 testutils.ValidateString(defaultSKSClusterServiceLevel),
-						"state":                         validation.ToDiagFunc(validation.NoZeroValues),
-						"version":                       validation.ToDiagFunc(validation.NoZeroValues),
+					resource.TestMatchResourceAttr(r, "aggregation_ca", testPemCertificateFormatRegex),
+					resource.TestCheckResourceAttr(r, "auto_upgrade", "true"),
+					resource.TestCheckResourceAttr(r, "cni", defaultSKSClusterCNI),
+					resource.TestMatchResourceAttr(r, "control_plane_ca", testPemCertificateFormatRegex),
+					resource.TestCheckResourceAttrSet(r, "created_at"),
+					resource.TestCheckResourceAttr(r, "create_default_security_group", "true"),
+					resource.TestCheckResourceAttr(r, "description", "description-test"),
+					resource.TestCheckResourceAttrWith(r, "endpoint", isDNSName),
+					resource.TestCheckResourceAttr(r, "enable_kube_proxy", "true"),
+					resource.TestCheckResourceAttr(r, "exoscale_ccm", "true"),
+					resource.TestCheckResourceAttr(r, "feature_gates.#", "1"),
+					resource.TestMatchResourceAttr(r, "kubelet_ca", testPemCertificateFormatRegex),
+					resource.TestCheckResourceAttr(r, "metrics_server", "false"),
+					resource.TestCheckResourceAttr(r, "exoscale_csi", "false"),
+					resource.TestCheckResourceAttr(r, "labels.test", "acctest"),
+					resource.TestCheckResourceAttr(r, "name", name),
+					resource.TestCheckResourceAttr(r, "service_level", defaultSKSClusterServiceLevel),
+					resource.TestCheckResourceAttrSet(r, "state"),
+					resource.TestCheckResourceAttrSet(r, "version"),
 
-						// OIDC checks
-						"oidc.0.client_id":       testutils.ValidateString("test-client"),
-						"oidc.0.groups_claim":    testutils.ValidateString("test-groups-claim"),
-						"oidc.0.groups_prefix":   testutils.ValidateString("test-groups-prefix"),
-						"oidc.0.issuer_url":      testutils.ValidateString("https://id.example.net"),
-						"oidc.0.username_claim":  testutils.ValidateString("test-username-claim"),
-						"oidc.0.username_prefix": testutils.ValidateString("test-username-prefix"),
-					})),
+					// OIDC checks
+					resource.TestCheckResourceAttr(r, "oidc.0.client_id", "test-client"),
+					resource.TestCheckResourceAttr(r, "oidc.0.groups_claim", "test-groups-claim"),
+					resource.TestCheckResourceAttr(r, "oidc.0.groups_prefix", "test-groups-prefix"),
+					resource.TestCheckResourceAttr(r, "oidc.0.issuer_url", "https://id.example.net"),
+					resource.TestCheckResourceAttr(r, "oidc.0.username_claim", "test-username-claim"),
+					resource.TestCheckResourceAttr(r, "oidc.0.username_prefix", "test-username-prefix"),
 				),
 			},
 			{
@@ -173,31 +169,30 @@ func TestAccResourceSKSCluster(t *testing.T) {
 						a.Len(sksCluster.FeatureGates, 0)
 						return nil
 					},
-					testutils.CheckResourceState(r, testutils.CheckResourceStateValidateAttributes(testutils.TestAttrs{
-						"aggregation_ca":   validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Aggregation CA must be a PEM certificate")),
-						"auto_upgrade":     testutils.ValidateString("true"),
-						"cni":              testutils.ValidateString(defaultSKSClusterCNI),
-						"control_plane_ca": validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Control-plane CA must be a PEM certificate")),
-						"created_at":       validation.ToDiagFunc(validation.NoZeroValues),
-						"description":      testutils.ValidateString("description-test-updated"),
-						"endpoint":         validation.ToDiagFunc(isDNSName),
-						"exoscale_ccm":     testutils.ValidateString("true"),
-						"feature_gates.#":  testutils.ValidateString("0"),
-						"kubelet_ca":       validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Kubelet CA must be a PEM certificate")),
-						"metrics_server":   testutils.ValidateString("false"),
-						"exoscale_csi":     testutils.ValidateString("true"),
-						"labels.test":      testutils.ValidateString("acctest-updated"),
-						"name":             testutils.ValidateString(name + "-updated"),
-						"service_level":    testutils.ValidateString(defaultSKSClusterServiceLevel),
-						"state":            validation.ToDiagFunc(validation.NoZeroValues),
+					resource.TestMatchResourceAttr(r, "aggregation_ca", testPemCertificateFormatRegex),
+					resource.TestCheckResourceAttr(r, "auto_upgrade", "true"),
+					resource.TestCheckResourceAttr(r, "cni", defaultSKSClusterCNI),
+					resource.TestMatchResourceAttr(r, "control_plane_ca", testPemCertificateFormatRegex),
+					resource.TestCheckResourceAttrSet(r, "created_at"),
+					resource.TestCheckResourceAttr(r, "description", "description-test-updated"),
+					resource.TestCheckResourceAttrWith(r, "endpoint", isDNSName),
+					resource.TestCheckResourceAttr(r, "exoscale_ccm", "true"),
+					resource.TestCheckResourceAttr(r, "feature_gates.#", "0"),
+					resource.TestMatchResourceAttr(r, "kubelet_ca", testPemCertificateFormatRegex),
+					resource.TestCheckResourceAttr(r, "metrics_server", "false"),
+					resource.TestCheckResourceAttr(r, "exoscale_csi", "true"),
+					resource.TestCheckResourceAttr(r, "labels.test", "acctest-updated"),
+					resource.TestCheckResourceAttr(r, "name", name+"-updated"),
+					resource.TestCheckResourceAttr(r, "service_level", defaultSKSClusterServiceLevel),
+					resource.TestCheckResourceAttrSet(r, "state"),
+					resource.TestCheckResourceAttrSet(r, "version"),
 
-						"oidc.0.client_id":       testutils.ValidateString("test-client-updated"),
-						"oidc.0.groups_claim":    testutils.ValidateString("test-groups-claim-updated"),
-						"oidc.0.groups_prefix":   testutils.ValidateString("test-groups-prefix-updated"),
-						"oidc.0.issuer_url":      testutils.ValidateString("https://id-updated.example.net"),
-						"oidc.0.username_claim":  testutils.ValidateString("test-username-claim-updated"),
-						"oidc.0.username_prefix": testutils.ValidateString("test-username-prefix-updated"),
-					})),
+					resource.TestCheckResourceAttr(r, "oidc.0.client_id", "test-client-updated"),
+					resource.TestCheckResourceAttr(r, "oidc.0.groups_claim", "test-groups-claim-updated"),
+					resource.TestCheckResourceAttr(r, "oidc.0.groups_prefix", "test-groups-prefix-updated"),
+					resource.TestCheckResourceAttr(r, "oidc.0.issuer_url", "https://id-updated.example.net"),
+					resource.TestCheckResourceAttr(r, "oidc.0.username_claim", "test-username-claim-updated"),
+					resource.TestCheckResourceAttr(r, "oidc.0.username_prefix", "test-username-prefix-updated"),
 				),
 			},
 			{
@@ -223,28 +218,6 @@ func TestAccResourceSKSCluster(t *testing.T) {
 					"oidc.0.username_claim",
 					"oidc.0.username_prefix",
 				},
-				ImportStateCheck: func(s []*terraform.InstanceState) error {
-					return testutils.CheckResourceAttributes(
-						testutils.TestAttrs{
-							"aggregation_ca":   validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Aggregation CA must be a PEM certificate")),
-							"auto_upgrade":     testutils.ValidateString("true"),
-							"cni":              testutils.ValidateString(defaultSKSClusterCNI),
-							"control_plane_ca": validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Control-plane CA must be a PEM certificate")),
-							"created_at":       validation.ToDiagFunc(validation.NoZeroValues),
-							"description":      testutils.ValidateString("description-test-updated"),
-							"endpoint":         validation.ToDiagFunc(isDNSName),
-							"exoscale_ccm":     testutils.ValidateString("true"),
-							"kubelet_ca":       validation.ToDiagFunc(validation.StringMatch(testPemCertificateFormatRegex, "Kubelet CA must be a PEM certificate")),
-							"metrics_server":   testutils.ValidateString("false"),
-							"exoscale_csi":     testutils.ValidateString("true"),
-							"labels.test":      testutils.ValidateString("acctest-updated"),
-							"name":             testutils.ValidateString(name + "-updated"),
-							"service_level":    testutils.ValidateString(defaultSKSClusterServiceLevel),
-							"state":            validation.ToDiagFunc(validation.NoZeroValues),
-							"version":          validation.ToDiagFunc(validation.NoZeroValues),
-						},
-						s[0].Attributes)
-				},
 			},
 		},
 	})
@@ -268,12 +241,10 @@ func TestAccResourceSKSCluster(t *testing.T) {
 						a.Equal(versions[1], sksCluster.Version)
 						return nil
 					},
-					testutils.CheckResourceState(r, testutils.CheckResourceStateValidateAttributes(testutils.TestAttrs{
-						"auto_upgrade": testutils.ValidateString("false"),
-						"name":         testutils.ValidateString(name),
-						"state":        validation.ToDiagFunc(validation.NoZeroValues),
-						"version":      testutils.ValidateString(versions[1]),
-					})),
+					resource.TestCheckResourceAttr(r, "auto_upgrade", "false"),
+					resource.TestCheckResourceAttr(r, "name", name),
+					resource.TestCheckResourceAttrSet(r, "state"),
+					resource.TestCheckResourceAttr(r, "version", versions[1]),
 				),
 			},
 			{
@@ -288,12 +259,10 @@ func TestAccResourceSKSCluster(t *testing.T) {
 						a.Equal(versions[0], sksCluster.Version)
 						return nil
 					},
-					testutils.CheckResourceState(r, testutils.CheckResourceStateValidateAttributes(testutils.TestAttrs{
-						"auto_upgrade": testutils.ValidateString("false"),
-						"name":         testutils.ValidateString(name),
-						"state":        validation.ToDiagFunc(validation.NoZeroValues),
-						"version":      testutils.ValidateString(versions[0]),
-					})),
+					resource.TestCheckResourceAttr(r, "auto_upgrade", "false"),
+					resource.TestCheckResourceAttr(r, "name", name),
+					resource.TestCheckResourceAttrSet(r, "state"),
+					resource.TestCheckResourceAttr(r, "version", versions[0]),
 				),
 			},
 		},
@@ -348,18 +317,16 @@ func TestAccResourceSKSClusterWithAudit(t *testing.T) {
 
 						return nil
 					},
-					testutils.CheckResourceState(r, testutils.CheckResourceStateValidateAttributes(testutils.TestAttrs{
-						"name":                    testutils.ValidateString(name),
-						"description":             testutils.ValidateString("description-test"),
-						"auto_upgrade":            testutils.ValidateString("true"),
-						"exoscale_ccm":            testutils.ValidateString("true"),
-						"metrics_server":          testutils.ValidateString("false"),
-						"labels.test":             testutils.ValidateString("acctest"),
-						"audit.0.enabled":         testutils.ValidateString("true"),
-						"audit.0.endpoint":        testutils.ValidateString(testAccSKSClusterAuditRemoteURL),
-						"audit.0.initial_backoff": testutils.ValidateString(testAccSKSClusterAuditInitBackoff),
-						"audit.0.bearer_token":    testutils.ValidateString(testAccSKSClusterAuditBearerToken),
-					})),
+					resource.TestCheckResourceAttr(r, "name", name),
+					resource.TestCheckResourceAttr(r, "description", "description-test"),
+					resource.TestCheckResourceAttr(r, "auto_upgrade", "true"),
+					resource.TestCheckResourceAttr(r, "exoscale_ccm", "true"),
+					resource.TestCheckResourceAttr(r, "metrics_server", "false"),
+					resource.TestCheckResourceAttr(r, "labels.test", "acctest"),
+					resource.TestCheckResourceAttr(r, "audit.0.enabled", "true"),
+					resource.TestCheckResourceAttr(r, "audit.0.endpoint", testAccSKSClusterAuditRemoteURL),
+					resource.TestCheckResourceAttr(r, "audit.0.initial_backoff", testAccSKSClusterAuditInitBackoff),
+					resource.TestCheckResourceAttr(r, "audit.0.bearer_token", testAccSKSClusterAuditBearerToken),
 				),
 			},
 			{
@@ -379,15 +346,13 @@ func TestAccResourceSKSClusterWithAudit(t *testing.T) {
 
 						return nil
 					},
-					testutils.CheckResourceState(r, testutils.CheckResourceStateValidateAttributes(testutils.TestAttrs{
-						"name":            testutils.ValidateString(name),
-						"description":     testutils.ValidateString("description-test"),
-						"auto_upgrade":    testutils.ValidateString("true"),
-						"exoscale_ccm":    testutils.ValidateString("true"),
-						"metrics_server":  testutils.ValidateString("false"),
-						"labels.test":     testutils.ValidateString("acctest"),
-						"audit.0.enabled": testutils.ValidateString("false"),
-					})),
+					resource.TestCheckResourceAttr(r, "name", name),
+					resource.TestCheckResourceAttr(r, "description", "description-test"),
+					resource.TestCheckResourceAttr(r, "auto_upgrade", "true"),
+					resource.TestCheckResourceAttr(r, "exoscale_ccm", "true"),
+					resource.TestCheckResourceAttr(r, "metrics_server", "false"),
+					resource.TestCheckResourceAttr(r, "labels.test", "acctest"),
+					resource.TestCheckResourceAttr(r, "audit.0.enabled", "false"),
 				),
 			},
 			{
@@ -414,18 +379,16 @@ func TestAccResourceSKSClusterWithAudit(t *testing.T) {
 
 						return nil
 					},
-					testutils.CheckResourceState(r, testutils.CheckResourceStateValidateAttributes(testutils.TestAttrs{
-						"name":                    testutils.ValidateString(name),
-						"description":             testutils.ValidateString("description-test"),
-						"auto_upgrade":            testutils.ValidateString("true"),
-						"exoscale_ccm":            testutils.ValidateString("true"),
-						"metrics_server":          testutils.ValidateString("false"),
-						"labels.test":             testutils.ValidateString("acctest"),
-						"audit.0.enabled":         testutils.ValidateString("true"),
-						"audit.0.endpoint":        testutils.ValidateString(testAccSKSClusterAuditRemoteURLUpd),
-						"audit.0.initial_backoff": testutils.ValidateString(defaultSKSClusterAuditInitBackoff),
-						"audit.0.bearer_token":    testutils.ValidateString(testAccSKSClusterAuditBearerTokUpd),
-					})),
+					resource.TestCheckResourceAttr(r, "name", name),
+					resource.TestCheckResourceAttr(r, "description", "description-test"),
+					resource.TestCheckResourceAttr(r, "auto_upgrade", "true"),
+					resource.TestCheckResourceAttr(r, "exoscale_ccm", "true"),
+					resource.TestCheckResourceAttr(r, "metrics_server", "false"),
+					resource.TestCheckResourceAttr(r, "labels.test", "acctest"),
+					resource.TestCheckResourceAttr(r, "audit.0.enabled", "true"),
+					resource.TestCheckResourceAttr(r, "audit.0.endpoint", testAccSKSClusterAuditRemoteURLUpd),
+					resource.TestCheckResourceAttr(r, "audit.0.initial_backoff", defaultSKSClusterAuditInitBackoff),
+					resource.TestCheckResourceAttr(r, "audit.0.bearer_token", testAccSKSClusterAuditBearerTokUpd),
 				),
 			},
 		},
@@ -479,16 +442,14 @@ func TestAccResourceSKSClusterWithKarpenter(t *testing.T) {
 						a.ElementsMatch([]string{"NodeRepair"}, sksCluster.KarpenterFeatureGates)
 						return nil
 					},
-					testutils.CheckResourceState(r, testutils.CheckResourceStateValidateAttributes(testutils.TestAttrs{
-						"name":                      testutils.ValidateString(name),
-						"description":               testutils.ValidateString("description-test"),
-						"auto_upgrade":              testutils.ValidateString("true"),
-						"exoscale_ccm":              testutils.ValidateString("true"),
-						"metrics_server":            testutils.ValidateString("false"),
-						"labels.test":               testutils.ValidateString("acctest"),
-						"enable_karpenter":          testutils.ValidateString("true"),
-						"karpenter_feature_gates.#": testutils.ValidateString("1"),
-					})),
+					resource.TestCheckResourceAttr(r, "name", name),
+					resource.TestCheckResourceAttr(r, "description", "description-test"),
+					resource.TestCheckResourceAttr(r, "auto_upgrade", "true"),
+					resource.TestCheckResourceAttr(r, "exoscale_ccm", "true"),
+					resource.TestCheckResourceAttr(r, "metrics_server", "false"),
+					resource.TestCheckResourceAttr(r, "labels.test", "acctest"),
+					resource.TestCheckResourceAttr(r, "enable_karpenter", "true"),
+					resource.TestCheckResourceAttr(r, "karpenter_feature_gates.#", "1"),
 					resource.TestCheckTypeSetElemAttr(r, "karpenter_feature_gates.*", "NodeRepair"),
 				),
 			},
@@ -505,15 +466,13 @@ func TestAccResourceSKSClusterWithKarpenter(t *testing.T) {
 						a.False(hasKarpenter(sksCluster.Addons), "Karpenter addon should not be present when disabled")
 						return nil
 					},
-					testutils.CheckResourceState(r, testutils.CheckResourceStateValidateAttributes(testutils.TestAttrs{
-						"name":             testutils.ValidateString(name),
-						"description":      testutils.ValidateString("description-test"),
-						"auto_upgrade":     testutils.ValidateString("true"),
-						"exoscale_ccm":     testutils.ValidateString("true"),
-						"metrics_server":   testutils.ValidateString("false"),
-						"labels.test":      testutils.ValidateString("acctest"),
-						"enable_karpenter": testutils.ValidateString("false"),
-					})),
+					resource.TestCheckResourceAttr(r, "name", name),
+					resource.TestCheckResourceAttr(r, "description", "description-test"),
+					resource.TestCheckResourceAttr(r, "auto_upgrade", "true"),
+					resource.TestCheckResourceAttr(r, "exoscale_ccm", "true"),
+					resource.TestCheckResourceAttr(r, "metrics_server", "false"),
+					resource.TestCheckResourceAttr(r, "labels.test", "acctest"),
+					resource.TestCheckResourceAttr(r, "enable_karpenter", "false"),
 				),
 			},
 			{
@@ -530,16 +489,14 @@ func TestAccResourceSKSClusterWithKarpenter(t *testing.T) {
 						a.ElementsMatch([]string{"NodeRepair"}, sksCluster.KarpenterFeatureGates)
 						return nil
 					},
-					testutils.CheckResourceState(r, testutils.CheckResourceStateValidateAttributes(testutils.TestAttrs{
-						"name":                      testutils.ValidateString(name),
-						"description":               testutils.ValidateString("description-test"),
-						"auto_upgrade":              testutils.ValidateString("true"),
-						"exoscale_ccm":              testutils.ValidateString("true"),
-						"metrics_server":            testutils.ValidateString("false"),
-						"labels.test":               testutils.ValidateString("acctest"),
-						"enable_karpenter":          testutils.ValidateString("true"),
-						"karpenter_feature_gates.#": testutils.ValidateString("1"),
-					})),
+					resource.TestCheckResourceAttr(r, "name", name),
+					resource.TestCheckResourceAttr(r, "description", "description-test"),
+					resource.TestCheckResourceAttr(r, "auto_upgrade", "true"),
+					resource.TestCheckResourceAttr(r, "exoscale_ccm", "true"),
+					resource.TestCheckResourceAttr(r, "metrics_server", "false"),
+					resource.TestCheckResourceAttr(r, "labels.test", "acctest"),
+					resource.TestCheckResourceAttr(r, "enable_karpenter", "true"),
+					resource.TestCheckResourceAttr(r, "karpenter_feature_gates.#", "1"),
 					resource.TestCheckTypeSetElemAttr(r, "karpenter_feature_gates.*", "NodeRepair"),
 				),
 			},

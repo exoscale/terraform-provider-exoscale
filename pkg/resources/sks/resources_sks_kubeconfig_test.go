@@ -67,14 +67,12 @@ func TestAccResourceSKSKubeconfig(t *testing.T) {
 
 						return nil
 					},
-					testutils.CheckResourceState(r, testutils.CheckResourceStateValidateAttributes(testutils.TestAttrs{
-						"groups.#":              testutils.ValidateString("1"),
-						"groups.0":              testutils.ValidateString(testAccResourceSKSKubeconfigAttrGroup),
-						"ttl_seconds":           testutils.ValidateString(strconv.FormatInt(testAccResourceSKSKubeconfigAttrTTLSeconds, 10)),
-						"user":                  testutils.ValidateString(testAccResourceSKSKubeconfigAttrUser),
-						"early_renewal_seconds": testutils.ValidateString(strconv.FormatInt(testAccResourceSKSKubeconfigAttrEarlyRenewalSeconds, 10)),
-						"ready_for_renewal":     testutils.ValidateString("false"),
-					})),
+					resource.TestCheckResourceAttr(r, "groups.#", "1"),
+					resource.TestCheckResourceAttr(r, "groups.0", testAccResourceSKSKubeconfigAttrGroup),
+					resource.TestCheckResourceAttr(r, "ttl_seconds", strconv.FormatInt(testAccResourceSKSKubeconfigAttrTTLSeconds, 10)),
+					resource.TestCheckResourceAttr(r, "user", testAccResourceSKSKubeconfigAttrUser),
+					resource.TestCheckResourceAttr(r, "early_renewal_seconds", strconv.FormatInt(testAccResourceSKSKubeconfigAttrEarlyRenewalSeconds, 10)),
+					resource.TestCheckResourceAttr(r, "ready_for_renewal", "false"),
 				),
 			},
 		},

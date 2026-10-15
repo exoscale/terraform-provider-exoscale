@@ -317,12 +317,12 @@ func New() func() provider.Provider {
 	}
 }
 
-var UserAgent = fmt.Sprintf("Exoscale-Terraform-Provider/%s (%s) Terraform-SDK/%s Terraform-framework/%s %s",
+var UserAgent = fmt.Sprintf("Exoscale-Terraform-Provider/%s (%s) Terraform-framework/%s %s",
 	version.Version,
 	version.Commit,
-	getModVersion("github.com/hashicorp/terraform-plugin-sdk/v2"),
 	getModVersion("github.com/hashicorp/terraform-plugin-framework"),
-	exov2.UserAgent)
+	exov2.UserAgent,
+)
 
 func getModVersion(module string) string {
 	// Read Build info
