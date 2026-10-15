@@ -3,13 +3,13 @@
 page_title: "exoscale_iam_role Data Source - terraform-provider-exoscale"
 subcategory: ""
 description: |-
-  Fetch Exoscale IAM https://community.exoscale.com/documentation/iam/ Role.
+  Fetch Exoscale IAM https://community.exoscale.com/product/security/iam/ Role.
   Corresponding resource: exoscaleiamrole ../resources/iam_role.md.
 ---
 
 # exoscale_iam_role (Data Source)
 
-Fetch Exoscale [IAM](https://community.exoscale.com/documentation/iam/) Role.
+Fetch Exoscale [IAM](https://community.exoscale.com/product/security/iam/) Role.
 
 Corresponding resource: [exoscale_iam_role](../resources/iam_role.md).
 

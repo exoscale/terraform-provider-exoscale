@@ -1,7 +1,7 @@
 # SOS as Terraform Backend
 
 This example demonstrates how to configure Terraform to use a
-[Simple Object Storage (SOS)](https://community.exoscale.com/documentation/storage/) bucket
+[Simple Object Storage (SOS)](https://community.exoscale.com/product/storage/object-storage/) bucket
 as [Terraform S3 backend](https://www.terraform.io/docs/backends/types/s3.html)
 to persist its state (`terraform.tfstate` object).
 

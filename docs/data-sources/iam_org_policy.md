@@ -3,13 +3,13 @@
 page_title: "exoscale_iam_org_policy Data Source - terraform-provider-exoscale"
 subcategory: ""
 description: |-
-  Fetch Exoscale IAM https://community.exoscale.com/documentation/iam/ Organization Policy.
+  Fetch Exoscale IAM https://community.exoscale.com/product/security/iam/ Organization Policy.
   Corresponding resource: exoscaleiamorg_policy ../resources/iam_org_policy.md.
 ---
 
 # exoscale_iam_org_policy (Data Source)
 
-Fetch Exoscale [IAM](https://community.exoscale.com/documentation/iam/) Organization Policy.
+Fetch Exoscale [IAM](https://community.exoscale.com/product/security/iam/) Organization Policy.
 
 Corresponding resource: [exoscale_iam_org_policy](../resources/iam_org_policy.md).
 

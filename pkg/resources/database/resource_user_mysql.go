@@ -52,7 +52,7 @@ func (r *MysqlUserResource) Metadata(ctx context.Context, req resource.MetadataR
 func (r *MysqlUserResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		// This description is used by the documentation generator and the language server.
-		MarkdownDescription: "Manage service users for MySQL Exoscale [Database Services (DBaaS)](https://community.exoscale.com/documentation/dbaas/).",
+		MarkdownDescription: "Manage service users for MySQL Exoscale [Database Services (DBaaS)](https://community.exoscale.com/product/dbaas/).",
 		Attributes: buildUserAttributes(map[string]schema.Attribute{
 			"authentication": schema.StringAttribute{
 				MarkdownDescription: "❗ Authentication details. The possible values are `null`, `caching_sha2_password` and `mysql_native_password`.",

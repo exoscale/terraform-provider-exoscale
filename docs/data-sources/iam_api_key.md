@@ -3,13 +3,13 @@
 page_title: "exoscale_iam_api_key Data Source - terraform-provider-exoscale"
 subcategory: ""
 description: |-
-  Fetch Exoscale IAM https://community.exoscale.com/documentation/iam/ API Key.
+  Fetch Exoscale IAM https://community.exoscale.com/product/security/iam/ API Key.
   Corresponding resource: exoscaleiamrole ../resources/iam_api_key.md.
 ---
 
 # exoscale_iam_api_key (Data Source)
 
-Fetch Exoscale [IAM](https://community.exoscale.com/documentation/iam/) API Key.
+Fetch Exoscale [IAM](https://community.exoscale.com/product/security/iam/) API Key.
 
 Corresponding resource: [exoscale_iam_role](../resources/iam_api_key.md).
 

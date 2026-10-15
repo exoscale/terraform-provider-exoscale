@@ -3,12 +3,12 @@
 page_title: "exoscale_dbaas_external_endpoint_prometheus Resource - terraform-provider-exoscale"
 subcategory: ""
 description: |-
-  Manage Exoscale DBaaS External Endpoint https://community.exoscale.com/documentation/dbaas/ for Prometheus metrics integration.
+  Manage Exoscale DBaaS External Endpoint https://community.exoscale.com/product/dbaas/ for Prometheus metrics integration.
 ---
 
 # exoscale_dbaas_external_endpoint_prometheus (Resource)
 
-Manage Exoscale DBaaS [External Endpoint](https://community.exoscale.com/documentation/dbaas/) for Prometheus metrics integration.
+Manage Exoscale DBaaS [External Endpoint](https://community.exoscale.com/product/dbaas/) for Prometheus metrics integration.
 
 
 

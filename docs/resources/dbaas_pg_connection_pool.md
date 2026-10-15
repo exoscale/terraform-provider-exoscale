@@ -3,12 +3,12 @@
 page_title: "exoscale_dbaas_pg_connection_pool Resource - terraform-provider-exoscale"
 subcategory: ""
 description: |-
-  Manage PostgreSQL PgBouncer connection pools for an Exoscale Database Services (DBaaS) https://community.exoscale.com/documentation/dbaas/.
+  Manage PostgreSQL PgBouncer connection pools for an Exoscale Database Services (DBaaS) https://community.exoscale.com/product/dbaas/.
 ---
 
 # exoscale_dbaas_pg_connection_pool (Resource)
 
-Manage PostgreSQL PgBouncer connection pools for an Exoscale [Database Services (DBaaS)](https://community.exoscale.com/documentation/dbaas/).
+Manage PostgreSQL PgBouncer connection pools for an Exoscale [Database Services (DBaaS)](https://community.exoscale.com/product/dbaas/).
 
 
 

@@ -26,7 +26,7 @@ import (
 	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
 )
 
-const ResourceRoleDescription = `Manage Exoscale [IAM](https://community.exoscale.com/documentation/iam/) Role.
+const ResourceRoleDescription = `Manage Exoscale [IAM](https://community.exoscale.com/product/security/iam/) Role.
 `
 
 // Ensure provider defined types fully satisfy framework interfaces.

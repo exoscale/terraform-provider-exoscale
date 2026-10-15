@@ -21,7 +21,7 @@ import (
 	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
 )
 
-const ResourceAPIKeyDescription = `Manage Exoscale [IAM](https://community.exoscale.com/documentation/iam/) API Key.
+const ResourceAPIKeyDescription = `Manage Exoscale [IAM](https://community.exoscale.com/product/security/iam/) API Key.
 `
 
 // Ensure provider defined types fully satisfy framework interfaces.

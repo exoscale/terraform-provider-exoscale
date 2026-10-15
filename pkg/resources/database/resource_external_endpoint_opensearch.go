@@ -58,7 +58,7 @@ func (r *ExternalEndpointOpensearchResource) Metadata(_ context.Context, req res
 
 func (r *ExternalEndpointOpensearchResource) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Manage Exoscale DBaaS [External Endpoint](https://community.exoscale.com/documentation/dbaas/) for OpenSearch logs integration.",
+		MarkdownDescription: "Manage Exoscale DBaaS [External Endpoint](https://community.exoscale.com/product/dbaas/) for OpenSearch logs integration.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				MarkdownDescription: "The ID of this resource.",

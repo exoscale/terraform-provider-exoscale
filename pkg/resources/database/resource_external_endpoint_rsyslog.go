@@ -63,7 +63,7 @@ func (r *ExternalEndpointRsyslogResource) Metadata(_ context.Context, req resour
 
 func (r *ExternalEndpointRsyslogResource) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Manage Exoscale DBaaS [External Endpoint](https://community.exoscale.com/documentation/dbaas/) for Rsyslog logs integration.",
+		MarkdownDescription: "Manage Exoscale DBaaS [External Endpoint](https://community.exoscale.com/product/dbaas/) for Rsyslog logs integration.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				MarkdownDescription: "The ID of this resource.",

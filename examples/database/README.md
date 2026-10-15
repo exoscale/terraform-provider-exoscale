@@ -1,6 +1,6 @@
 # Database
 
-This example demonstrates how to setup and run Grafana [DBaaS service](https://community.exoscale.com/documentation/dbaas/)
+This example demonstrates how to setup and run Grafana [DBaaS service](https://community.exoscale.com/product/dbaas/)
 using `exoscale_database` resource, as well as read connection URL using `exoscale_database_uri` datasource.
 
 Please refer to the [main.tf](./main.tf) Terraform configuration file.

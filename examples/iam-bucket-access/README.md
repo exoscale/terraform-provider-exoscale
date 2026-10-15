@@ -1,7 +1,7 @@
 # IAM API Key SOS
 
 This example demonstrates how to provision
-[IAM](https://community.exoscale.com/product/iam/)
+[IAM](https://community.exoscale.com/product/security/iam/)
 Roles and API Keys using `exoscale_iam_role` and `exoscale_iam_api_key` resources.
 product
 In our configuration we will define 2 Roles:

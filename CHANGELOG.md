@@ -14,6 +14,7 @@ IMPROVEMENTS:
 - Migrate the `exoscale_instance_pool` resource to terraform-plugin-framework.
 - Migrate the `exoscale_instance_pool` and `exoscale_instance_pool_list` data sources to terraform-plugin-framework.
 - The provider is now served by terraform-plugin-framework alone: the terraform-plugin-sdk provider server and the mux combining both are removed, as every resource and data source has been migrated. The User-Agent no longer reports a `Terraform-SDK/` version.
+- Documentation: links to the Exoscale documentation now point to the current pages on community.exoscale.com instead of legacy `/documentation/` URLs that only work through redirects.
 
 BREAKING CHANGES:
 
