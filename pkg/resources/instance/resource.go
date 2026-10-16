@@ -435,6 +435,20 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 										Optional:            true,
 										Computed:            true,
 										Default:             stringdefault.StaticString(vpcIPv4Auto),
+										Validators: []validator.String{
+											stringFuncValidator{
+												description: "The value must be 'auto' or an IPv4 address.",
+												validate: func(v string) error {
+													if v == vpcIPv4Auto {
+														return nil
+													}
+													if ip := net.ParseIP(v); ip == nil || ip.To4() == nil {
+														return fmt.Errorf("expected %q or a valid IPv4 address, got %q", vpcIPv4Auto, v)
+													}
+													return nil
+												},
+											},
+										},
 									},
 									"ipv4_address_allocated": schema.StringAttribute{
 										Description:         "The IPv4 address allocated to the instance in the subnet.",
