@@ -35,3 +35,43 @@ resource "exoscale_vpc_route" "my_vpc_route" {
   target      = "ip=10.0.0.5"
   description = "route to 10.0.9.0/24 via 10.0.0.5"
 }
+
+resource "exoscale_vpc_subnet" "my_other_vpc_subnet" {
+  zone       = local.zone
+  vpc_id     = exoscale_vpc.my_vpc.id
+  name       = "my-other-vpc-subnet"
+  ipv4_block = "10.0.1.0/24"
+}
+
+data "exoscale_template" "my_template" {
+  zone = local.zone
+  name = "Linux Ubuntu 22.04 LTS 64-bit"
+}
+
+# Instance attached to the VPC subnets. Interfaces are strictly ordered:
+# reordering, inserting or removing one reattaches every
+# interface from that position on. Removing the vpc block detaches them all.
+resource "exoscale_compute_instance" "my_instance" {
+  zone = local.zone
+  name = "my-instance"
+
+  template_id = data.exoscale_template.my_template.id
+  type        = "standard.medium"
+  disk_size   = 10
+
+  vpc {
+    id = exoscale_vpc.my_vpc.id
+
+    interfaces = [
+      {
+        subnet_id    = exoscale_vpc_subnet.my_vpc_subnet.id
+        ipv4_address = "10.0.0.22"
+      },
+      {
+        # ipv4_address defaults to "auto": the platform picks the address,
+        # read it from ipv4_address_allocated.
+        subnet_id = exoscale_vpc_subnet.my_other_vpc_subnet.id
+      },
+    ]
+  }
+}
