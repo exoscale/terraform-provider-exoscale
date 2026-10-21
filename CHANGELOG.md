@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+BUG FIXES:
+
+- `exoscale_security_group`: state written by 0.69.0 and 0.69.1 no longer fails to load with "Unable to Upgrade Resource State".
+
 IMPROVEMENTS:
 
 - `exoscale_sks_nodepool` resource and data sources: `vpc.subnet_ids` is now a list instead of a set, so the subnet order is preserved. Expressions that need a set (e.g. `for_each`) must wrap it in `toset()`.
