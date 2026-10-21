@@ -1,0 +1,22 @@
+resource "exoscale_sks_cluster" "test-with-audit" {
+  zone           = "{{ .Zone }}"
+  name           = "terraform-provider-test-{{ .ID }}"
+  description    = "description-test"
+  exoscale_ccm   = true
+  metrics_server = false
+  auto_upgrade   = true
+  labels = {
+    test = "acctest"
+  }
+
+  audit {
+    enabled         = true
+    endpoint        = "https://audit.example.exoscale.net"
+    initial_backoff = "30s"
+    bearer_token    = "supersecretbearertoken"
+  }
+
+  timeouts {
+    create = "10m"
+  }
+}

@@ -15,36 +15,6 @@ import (
 	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
 )
 
-func CheckAntiAffinityGroupExists(r string, res *egoscale.AntiAffinityGroup) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		rs, ok := s.RootModule().Resources[r]
-		if !ok {
-			return errors.New("resource not found in the state")
-		}
-
-		if rs.Primary.ID == "" {
-			return errors.New("resource ID not set")
-		}
-
-		client, err := APIClient()
-		if err != nil {
-			return err
-		}
-
-		ctx := exoapi.WithEndpoint(
-			context.Background(),
-			exoapi.NewReqEndpoint(TestEnvironment(), TestZoneName),
-		)
-		data, err := client.GetAntiAffinityGroup(ctx, TestZoneName, rs.Primary.ID)
-		if err != nil {
-			return err
-		}
-
-		*res = *data
-		return nil
-	}
-}
-
 func CheckAntiAffinityGroupExistsV3(r string, res *v3.AntiAffinityGroup) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[r]
@@ -81,25 +51,20 @@ func CheckAntiAffinityGroupExistsV3(r string, res *v3.AntiAffinityGroup) resourc
 	}
 }
 
-func CheckAntiAffinityGroupDestroy(res *egoscale.AntiAffinityGroup) resource.TestCheckFunc {
+func CheckAntiAffinityGroupDestroy(res *v3.AntiAffinityGroup) resource.TestCheckFunc {
 	return func(_ *terraform.State) error {
-		if res == nil {
+		if res == nil || res.ID == "" {
 			return nil
 		}
 
-		client, err := APIClient()
+		client, err := APIClientV3()
 		if err != nil {
 			return err
 		}
 
-		ctx := exoapi.WithEndpoint(
-			context.Background(),
-			exoapi.NewReqEndpoint(TestEnvironment(), TestZoneName),
-		)
-
-		_, err = client.GetAntiAffinityGroup(ctx, TestZoneName, *res.ID)
+		_, err = client.GetAntiAffinityGroup(context.Background(), res.ID)
 		if err != nil {
-			if errors.Is(err, exoapi.ErrNotFound) {
+			if errors.Is(err, v3.ErrNotFound) {
 				return nil
 			}
 

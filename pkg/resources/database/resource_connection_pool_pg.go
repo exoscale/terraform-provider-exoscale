@@ -70,7 +70,7 @@ func (r *PGConnectionPoolResource) Metadata(ctx context.Context, req resource.Me
 
 func (r *PGConnectionPoolResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Manage PostgreSQL PgBouncer connection pools for an Exoscale [Database Services (DBaaS)](https://community.exoscale.com/documentation/dbaas/).",
+		MarkdownDescription: "Manage PostgreSQL PgBouncer connection pools for an Exoscale [Database Services (DBaaS)](https://community.exoscale.com/product/dbaas/).",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				MarkdownDescription: "The ID of this resource, computed as `service/name`.",
@@ -200,7 +200,7 @@ func (r *PGConnectionPoolResource) Create(ctx context.Context, req resource.Crea
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 
-	tflog.Trace(ctx, "resource created", map[string]interface{}{
+	tflog.Trace(ctx, "resource created", map[string]any{
 		"id": data.GetID(),
 	})
 }
@@ -246,7 +246,7 @@ func (r *PGConnectionPoolResource) Update(ctx context.Context, req resource.Upda
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &planData)...)
 
-	tflog.Trace(ctx, "resource updated", map[string]interface{}{
+	tflog.Trace(ctx, "resource updated", map[string]any{
 		"id": planData.GetID(),
 	})
 }

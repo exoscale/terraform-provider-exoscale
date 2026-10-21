@@ -1,0 +1,9 @@
+resource "exoscale_instance_pool" "test" {
+  zone          = "{{ .Zone }}"
+  name          = "terraform-provider-test-{{ .ID }}"
+  template_id   = "00000000-0000-0000-0000-000000000000"
+  instance_type = "standard.tiny"
+  size          = 1
+  private       = true
+  ipv6          = true
+}

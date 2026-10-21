@@ -6,12 +6,13 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -48,6 +49,9 @@ var ResourceMysqlSchema = schema.SingleNestedAttribute{
 			MarkdownDescription: "The automated backup schedule (`HH:MM`).",
 			Optional:            true,
 			Computed:            true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.UseStateForUnknown(),
+			},
 		},
 		"ip_filter": schema.SetAttribute{
 			ElementType:         types.StringType,
@@ -62,13 +66,17 @@ var ResourceMysqlSchema = schema.SingleNestedAttribute{
 			MarkdownDescription: "MySQL configuration settings in JSON format (`exo dbaas type show mysql --settings=mysql` for reference).",
 			Optional:            true,
 			Computed:            true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.UseStateForUnknown(),
+			},
 		},
 		"version": schema.StringAttribute{
 			MarkdownDescription: "MySQL major version (`exo dbaas type show mysql` for reference; may only be set at creation time).",
 			Optional:            true,
 			Computed:            true,
-			Validators: []validator.String{
-				validators.IsMajorVersionValidator,
+			PlanModifiers: []planmodifier.String{
+				versionUseStateUnlessChanged(),
+				stringplanmodifier.RequiresReplaceIfConfigured(),
 			},
 		},
 	},
@@ -216,6 +224,13 @@ pooling:
 	data.State = types.StringPointerValue((*string)(apiService.State))
 	data.UpdatedAt = types.StringValue(apiService.UpdatedAt.String())
 
+	uri, err := uriWitoutCreds(apiService.Uri)
+	if err != nil {
+		diagnostics.AddError(err.Error(), "")
+		return
+	}
+	data.URI = types.StringPointerValue(uri)
+
 	if data.TerminationProtection.IsUnknown() {
 		data.TerminationProtection = types.BoolPointerValue(apiService.TerminationProtection)
 	}
@@ -258,7 +273,7 @@ pooling:
 	if data.Mysql.Version.IsUnknown() {
 		data.Mysql.Version = types.StringNull()
 		if apiService.Version != nil {
-			data.Mysql.Version = types.StringValue(strings.SplitN(*apiService.Version, ".", 2)[0])
+			data.Mysql.Version = types.StringValue(*apiService.Version)
 		}
 	}
 
@@ -308,6 +323,13 @@ func (r *ServiceResource) readMysql(ctx context.Context, data *ServiceResourceMo
 	data.TerminationProtection = types.BoolPointerValue(apiService.TerminationProtection)
 	data.UpdatedAt = types.StringValue(apiService.UpdatedAt.String())
 
+	uri, err := uriWitoutCreds(apiService.Uri)
+	if err != nil {
+		diagnostics.AddError(err.Error(), "")
+		return
+	}
+	data.URI = types.StringPointerValue(uri)
+
 	data.MaintenanceDOW = types.StringNull()
 	data.MaintenanceTime = types.StringNull()
 	if apiService.Maintenance != nil {
@@ -343,7 +365,7 @@ func (r *ServiceResource) readMysql(ctx context.Context, data *ServiceResourceMo
 
 	data.Mysql.Version = types.StringNull()
 	if apiService.Version != nil {
-		data.Mysql.Version = types.StringValue(strings.SplitN(*apiService.Version, ".", 2)[0])
+		data.Mysql.Version = types.StringValue(*apiService.Version)
 	}
 
 	data.Mysql.Settings = types.StringNull()
@@ -453,7 +475,7 @@ func (r *ServiceResource) updateMysql(ctx context.Context, stateData *ServiceRes
 	}
 
 	if !updated {
-		tflog.Info(ctx, "no updates detected", map[string]interface{}{})
+		tflog.Info(ctx, "no updates detected", map[string]any{})
 		return
 	}
 
@@ -507,6 +529,12 @@ func (r *ServiceResource) updateMysql(ctx context.Context, stateData *ServiceRes
 	stateData.NodeMemory = types.Int64PointerValue(apiService.NodeMemory)
 	stateData.Nodes = types.Int64PointerValue(apiService.NodeCount)
 	stateData.State = types.StringPointerValue((*string)(apiService.State))
+	uri, err := uriWitoutCreds(apiService.Uri)
+	if err != nil {
+		diagnostics.AddError(err.Error(), "")
+		return
+	}
+	stateData.URI = types.StringPointerValue(uri)
 	if apiService.UpdatedAt != nil {
 		stateData.UpdatedAt = types.StringValue(apiService.UpdatedAt.String())
 	}
@@ -532,7 +560,7 @@ func (r *ServiceResource) updateMysql(ctx context.Context, stateData *ServiceRes
 	if stateData.Mysql.Version.IsUnknown() {
 		stateData.Mysql.Version = types.StringNull()
 		if apiService.Version != nil {
-			stateData.Mysql.Version = types.StringValue(strings.SplitN(*apiService.Version, ".", 2)[0])
+			stateData.Mysql.Version = types.StringValue(*apiService.Version)
 		}
 	}
 

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -15,6 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/xeipuuv/gojsonschema"
@@ -27,8 +29,8 @@ const SERVICE_READY_DELAY = time.Second * 10
 
 // validateSettings validates user-provided JSON-formatted
 // Database Service settings against a reference JSON Schema.
-func validateSettings(in string, schema interface{}) (map[string]interface{}, error) {
-	var userSettings map[string]interface{}
+func validateSettings(in string, schema any) (map[string]any, error) {
+	var userSettings map[string]any
 
 	if err := json.Unmarshal([]byte(in), &userSettings); err != nil {
 		return nil, fmt.Errorf("unable to unmarshal JSON: %w", err)
@@ -62,6 +64,53 @@ func validateSettings(in string, schema interface{}) (map[string]interface{}, er
 	return userSettings, nil
 }
 
+// versionUseStateForUnknownIfPrefix keeps the prior state value for a
+// major-version attribute unless the configured version is genuinely
+// different from it. The DBaaS API accepts a version like "8.4" on create,
+// but subsequently reports back a more precise patch version such as
+// "8.4.8". Without this, every plan would show a spurious diff between the
+// configured value and the full version stored in state.
+//
+// It behaves like stringplanmodifier.UseStateForUnknown() when the
+// attribute is not set in config, and additionally keeps the state value
+// when the configured value is a dot-separated prefix of it (e.g. "8.4" is
+// a prefix of "8.4.8").
+type versionUseStateForUnknownIfPrefix struct{}
+
+func (m versionUseStateForUnknownIfPrefix) Description(_ context.Context) string {
+	return "Keeps the version reported by the API unless the configured version is a genuine change, " +
+		"tolerating the API returning a more precise patch version than what was configured."
+}
+
+func (m versionUseStateForUnknownIfPrefix) MarkdownDescription(ctx context.Context) string {
+	return m.Description(ctx)
+}
+
+func (m versionUseStateForUnknownIfPrefix) PlanModifyString(_ context.Context, req planmodifier.StringRequest, resp *planmodifier.StringResponse) {
+	if req.StateValue.IsNull() || req.StateValue.IsUnknown() {
+		return
+	}
+
+	if req.ConfigValue.IsNull() {
+		resp.PlanValue = req.StateValue
+		return
+	}
+
+	if req.ConfigValue.IsUnknown() {
+		return
+	}
+
+	state := req.StateValue.ValueString()
+	config := req.ConfigValue.ValueString()
+	if state == config || strings.HasPrefix(state, config+".") {
+		resp.PlanValue = req.StateValue
+	}
+}
+
+func versionUseStateUnlessChanged() planmodifier.String {
+	return versionUseStateForUnknownIfPrefix{}
+}
+
 // parseBackupSchedule parses a Database Service backup
 // schedule value expressed in HH:MM format and returns the discrete values
 // for hour and minute, or an error if the parsing failed.
@@ -85,19 +134,29 @@ func parseBackupSchedule(v string) (int64, int64, error) {
 }
 
 // PartialSettingsPatch updates all keys in `data` that exist in `patch`.
-// If key from `data` is not present in `patch` then removes the key from `data`.
-func PartialSettingsPatch(data, patch map[string]interface{}) {
-	for key := range data {
-		if v, found := patch[key]; found {
-			data[key] = v
-		} else {
+// If a key from `data` is not present in `patch` then the key is removed
+// from `data`. Nested map values are patched recursively, so only the keys
+// the user actually set are managed and server-injected defaults are not
+// pulled in.
+func PartialSettingsPatch(data, patch map[string]any) {
+	for key, dVal := range data {
+		pVal, found := patch[key]
+		if !found {
 			delete(data, key)
+			continue
 		}
+		if dMap, ok := dVal.(map[string]any); ok {
+			if pMap, ok := pVal.(map[string]any); ok {
+				PartialSettingsPatch(dMap, pMap)
+				continue
+			}
+		}
+		data[key] = pVal
 	}
 }
 
 // getSettingFloat64 safely retrieves a float64 value from settings map and converts to int
-func getSettingFloat64(settings map[string]interface{}, key string) int {
+func getSettingFloat64(settings map[string]any, key string) int {
 	if val, ok := settings[key]; ok && val != nil {
 		if fVal, ok := val.(float64); ok {
 			return int(fVal)
@@ -107,7 +166,7 @@ func getSettingFloat64(settings map[string]interface{}, key string) int {
 }
 
 // getSettingString safely retrieves a string value from settings map
-func getSettingString(settings map[string]interface{}, key string) string {
+func getSettingString(settings map[string]any, key string) string {
 	if val, ok := settings[key]; ok && val != nil {
 		if sVal, ok := val.(string); ok {
 			return sVal
@@ -117,7 +176,7 @@ func getSettingString(settings map[string]interface{}, key string) string {
 }
 
 // getSettingBool safely retrieves a bool value from settings map
-func getSettingBool(settings map[string]interface{}, key string) bool {
+func getSettingBool(settings map[string]any, key string) bool {
 	if val, ok := settings[key]; ok && val != nil {
 		if bVal, ok := val.(bool); ok {
 			return bVal
@@ -198,7 +257,7 @@ func ReadResource[T ResourceModelInterface](ctx context.Context, req resource.Re
 		resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 	}
 
-	tflog.Trace(ctx, "resource read done", map[string]interface{}{
+	tflog.Trace(ctx, "resource read done", map[string]any{
 		"id": data.GetID(),
 	})
 
@@ -239,7 +298,7 @@ func ReadResourceForImport[T ResourceModelInterface](ctx context.Context, req re
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 
-	tflog.Trace(ctx, "resource read done", map[string]interface{}{
+	tflog.Trace(ctx, "resource read done", map[string]any{
 		"id": data.GetID(),
 	})
 
@@ -290,7 +349,7 @@ func CreateResource[T ResourceModelInterface](ctx context.Context, req resource.
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 
-	tflog.Trace(ctx, "resource created", map[string]interface{}{
+	tflog.Trace(ctx, "resource created", map[string]any{
 		"id": data.GetID(),
 	})
 
@@ -337,7 +396,7 @@ func UpdateResource[T ResourceModelInterface](ctx context.Context, req resource.
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &planData)...)
 
-	tflog.Trace(ctx, "resource updated", map[string]interface{}{
+	tflog.Trace(ctx, "resource updated", map[string]any{
 		"id": planData.GetID(),
 	})
 }
@@ -380,8 +439,60 @@ func DeleteResource[T ResourceModelInterface](ctx context.Context, req resource.
 		return
 	}
 
-	tflog.Trace(ctx, "resource deleted", map[string]interface{}{
+	tflog.Trace(ctx, "resource deleted", map[string]any{
 		"id": data.GetID(),
 	})
 
+}
+
+// parseZonedImportID splits a "resourceID@zone" import identifier.
+func parseZonedImportID(id string) (resourceID, zone string, err error) {
+	parts := strings.SplitN(id, "@", 2)
+	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+		return "", "", fmt.Errorf("expected id@zone, got %q", id)
+	}
+	return parts[0], parts[1], nil
+}
+
+// pollEndpoint retries fetch up to 3 times with a 3-second pause on ErrNotFound,
+// to give the API a moment to stabilise after a create/update operation.
+// Returns (result, true) on success, (nil, false) if the resource is gone
+// (no diagnostic added), or (nil, false) with a diagnostic on any other error.
+func pollEndpoint[T any](ctx context.Context, fetch func() (*T, error), diagnostics *diag.Diagnostics, errMsg string) (*T, bool) {
+	for i := range 3 {
+		result, err := fetch()
+		if err == nil {
+			return result, true
+		}
+		if errors.Is(err, exoscale.ErrNotFound) && i < 2 {
+			select {
+			case <-ctx.Done():
+				diagnostics.AddError("context cancelled", ctx.Err().Error())
+				return nil, false
+			case <-time.After(3 * time.Second):
+			}
+			continue
+		}
+		if errors.Is(err, exoscale.ErrNotFound) {
+			return nil, false
+		}
+		diagnostics.AddError("read", fmt.Sprintf("%s: %s", errMsg, err))
+		return nil, false
+	}
+	return nil, false
+}
+
+func uriWitoutCreds(uri *string) (*string, error) {
+	if uri == nil {
+		return nil, nil
+	}
+
+	parsedURI, err := url.Parse(*uri)
+	if err != nil {
+		return nil, fmt.Errorf("unable to parse uri: %q: %w", *uri, err)
+	}
+
+	parsedURI.User = nil
+
+	return new(parsedURI.String()), nil
 }

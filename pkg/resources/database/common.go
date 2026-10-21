@@ -1,12 +1,11 @@
 package database
 
-var (
-	ServicesList = []string{
-		"kafka",
-		"mysql",
-		"pg",
-		"valkey",
-		"opensearch",
-		"grafana",
-	}
-)
+var ServicesList = []string{
+	"clickhouse",
+	"kafka",
+	"mysql",
+	"pg",
+	"valkey",
+	"opensearch",
+	"grafana",
+}

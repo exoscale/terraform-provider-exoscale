@@ -74,25 +74,16 @@ type AccessKeyResource struct {
 	ResourceType AccessKeyResourceResourceType `json:"resource-type,omitempty"`
 }
 
-// AI API key metadata (without value)
-type AIAPIKey struct {
-	// Creation timestamp
-	CreatedAT time.Time `json:"created-at,omitempty"`
-	// AI API key ID
-	ID UUID `json:"id,omitempty"`
-	// Human-readable name for the AI API key
-	Name string `json:"name,omitempty"`
-	// Organization UUID that owns this key
-	OrgUuid UUID `json:"org-uuid,omitempty"`
-	// Key scope: 'public' for all deployments, or a specific deployment UUID
-	Scope string `json:"scope,omitempty"`
-	// Last update timestamp
-	UpdatedAT time.Time `json:"updated-at,omitempty"`
+type AIAPIKeyDeploymentRef struct {
+	// Deployment ID
+	ID UUID `json:"id" validate:"required"`
 }
 
-// AI API key with plaintext value
-type AIAPIKeyWithValue struct {
-}
+// Allowlist of deployments. An empty array denies access to all deployments. Grant access to all deployments with all-deployments instead.
+type AIAPIKeyDeployments []AIAPIKeyDeploymentRef
+
+// Allowlist of public model names. An empty array denies access to all public models. Grant access to all public models with all-models instead.
+type AIAPIKeyModels []string
 
 // Anti-affinity Group
 type AntiAffinityGroup struct {
@@ -110,6 +101,14 @@ type AntiAffinityGroup struct {
 type AntiAffinityGroupRef struct {
 	// Anti-affinity group ID
 	ID UUID `json:"id,omitempty"`
+}
+
+// Usage breakdown for one API key, grouped by product-name
+type APIKeyUsageEntry struct {
+	// Organization that owns this API key
+	OrganizationID UUID `json:"organization-id" validate:"required"`
+	// Map of product-name to accumulated counters. Keys are product names.
+	ProductNames map[string]ModelUsageCounters `json:"product-names" validate:"required"`
 }
 
 type BlockStorageSnapshotState string
@@ -172,6 +171,8 @@ type BlockStorageVolume struct {
 	Blocksize int64 `json:"blocksize,omitempty" validate:"omitempty,gte=0"`
 	// Volume creation date
 	CreatedAT time.Time `json:"created-at,omitempty"`
+	// Indicates if the block-storage volume is encrypted
+	Encrypted *bool `json:"encrypted,omitempty"`
 	// Volume ID
 	ID UUID `json:"id,omitempty"`
 	// Target Instance
@@ -191,15 +192,62 @@ type BlockStorageVolumeRef struct {
 	ID UUID `json:"id,omitempty"`
 }
 
-// Request to create a new AI API key
-type CreateAIAPIKeyRequest struct {
-	// Human-readable name for the AI API key
-	Name string `json:"name" validate:"required"`
-	// Key scope: 'public' for all deployments, or a specific deployment UUID
-	Scope string `json:"scope" validate:"required"`
+type CPUManagerConfigCPUManagerPolicy string
+
+const (
+	CPUManagerConfigCPUManagerPolicyStatic CPUManagerConfigCPUManagerPolicy = "static"
+	CPUManagerConfigCPUManagerPolicyNone   CPUManagerConfigCPUManagerPolicy = "none"
+)
+
+// CPU manager config
+type CPUManagerConfig struct {
+	// CPU management policy used by the kubelet. The "static" policy grants exclusive CPUs to Guaranteed pods requesting integer CPU limits. When set to "static", a CPU reservation must be provided via kube-reserved or system-reserved
+	CPUManagerPolicy CPUManagerConfigCPUManagerPolicy `json:"cpu-manager-policy,omitempty"`
+	// CPU manager policy options used by the kubelet. They refine the behavior of the "static" cpu-manager-policy and are only valid when the policy is "static"
+	CPUManagerPolicyOptions []string `json:"cpu-manager-policy-options,omitempty"`
+	// CPU manager reconcile period used by the kubelet, as a duration string (for example "10s").
+	CPUManagerReconcilePeriod string `json:"cpu-manager-reconcile-period,omitempty"`
+	// Resources reserved for kube or system components.
+	KubeReserved *ReservedResources `json:"kube-reserved,omitempty"`
+	// Resources reserved for kube or system components.
+	SystemReserved *ReservedResources `json:"system-reserved,omitempty"`
 }
 
-// Deployment an AI model onto a set of GPUs
+// Request to create a new AI API key.
+type CreateAIAPIKeyRequest struct {
+	// Grant access to all deployments of the organization. Takes precedence over the deployments array, which is ignored when set.
+	AllDeployments *bool `json:"all-deployments,omitempty"`
+	// Grant access to all public models. Takes precedence over the models array, which is ignored when set.
+	AllModels *bool `json:"all-models,omitempty"`
+	// Allowlist of deployments. An empty array denies access to all deployments. Grant access to all deployments with all-deployments instead.
+	Deployments *AIAPIKeyDeployments `json:"deployments,omitempty"`
+	// Allowlist of public model names. An empty array denies access to all public models. Grant access to all public models with all-models instead.
+	Models *AIAPIKeyModels `json:"models,omitempty"`
+	// Human-readable name for the AI API key
+	Name string `json:"name" validate:"required,gte=1,lte=50"`
+}
+
+// Create AI API key response
+type CreateAIAPIKeyResponse struct {
+	// True when the key has access to all deployments of the organization.
+	AllDeployments *bool `json:"all-deployments" validate:"required"`
+	// True when the key has access to all public models.
+	AllModels *bool     `json:"all-models" validate:"required"`
+	CreatedAT time.Time `json:"created-at" validate:"required"`
+	// Allowlist of deployments. An empty array denies access to all deployments. Grant access to all deployments with all-deployments instead.
+	Deployments *AIAPIKeyDeployments `json:"deployments" validate:"required"`
+	ID          UUID                 `json:"id" validate:"required"`
+	// Allowlist of public model names. An empty array denies access to all public models. Grant access to all public models with all-models instead.
+	Models *AIAPIKeyModels `json:"models" validate:"required"`
+	Name   string          `json:"name" validate:"required"`
+	// Last update timestamp
+	RevokedAT *time.Time `json:"revoked-at,omitempty"`
+	UpdatedAT time.Time  `json:"updated-at" validate:"required"`
+	// Plaintext AI API key value
+	Value string `json:"value" validate:"required"`
+}
+
+// Deploy an AI model onto a set of GPUs
 type CreateDeploymentRequest struct {
 	// Number of GPUs (1-8)
 	GpuCount int64 `json:"gpu-count" validate:"required,gte=1"`
@@ -209,11 +257,30 @@ type CreateDeploymentRequest struct {
 	InferenceEngineParameters []string `json:"inference-engine-parameters,omitempty"`
 	// Inference engine version
 	InferenceEngineVersion InferenceEngineVersion `json:"inference-engine-version,omitempty"`
-	Model                  *ModelRef              `json:"model" validate:"required"`
+	// Model reference. Provide either id or name.
+	Model *ModelRef `json:"model" validate:"required"`
 	// Deployment name
 	Name string `json:"name" validate:"required,gte=1"`
+	// Billing identifier for this deployment. Used by the Router for usage counters and Kafka events.
+	ProductName string `json:"product-name,omitempty" validate:"omitempty,gte=1"`
 	// Number of replicas (>=1)
 	Replicas int64 `json:"replicas" validate:"required,gte=1"`
+}
+
+type CreateKeyStoreRequestType string
+
+const (
+	CreateKeyStoreRequestTypeExternalKeyStore CreateKeyStoreRequestType = "external-key-store"
+)
+
+type CreateKeyStoreRequest struct {
+	// An optional detailed description providing additional context about the key store's intended use case.
+	Description string `json:"description,omitempty" validate:"omitempty,lte=1024"`
+	// A human-readable display name uniquely identifying the key store within the organization.
+	Name  string         `json:"name" validate:"required,gte=1,lte=256"`
+	Proxy *KeyStoreProxy `json:"proxy" validate:"required"`
+	// The key store type. Only external key stores are supported for this API version.
+	Type CreateKeyStoreRequestType `json:"type,omitempty"`
 }
 
 type CreateKmsKeyRequestUsage string
@@ -223,10 +290,13 @@ const (
 )
 
 type CreateKmsKeyRequest struct {
-	Description string                   `json:"description" validate:"required"`
-	MultiZone   *bool                    `json:"multi-zone" validate:"required"`
-	Name        string                   `json:"name" validate:"required"`
-	Usage       CreateKmsKeyRequestUsage `json:"usage" validate:"required"`
+	// An optional detailed description providing additional context about the key's intended use case.
+	Description string `json:"description,omitempty"`
+	// True if this is a multi-zone key.
+	MultiZone *bool `json:"multi-zone,omitempty"`
+	// A human-readable display name uniquely identifying the KMS key within the tenant space.
+	Name  string                   `json:"name" validate:"required"`
+	Usage CreateKmsKeyRequestUsage `json:"usage,omitempty"`
 }
 
 type CreateKmsKeyResponseSource string
@@ -244,16 +314,25 @@ const (
 )
 
 type CreateKmsKeyResponse struct {
-	CreatedAT   time.Time                  `json:"created-at" validate:"required"`
-	Description string                     `json:"description" validate:"required"`
-	ID          UUID                       `json:"id" validate:"required"`
-	MultiZone   *bool                      `json:"multi-zone" validate:"required"`
-	Name        string                     `json:"name" validate:"required"`
-	OriginZone  string                     `json:"origin-zone" validate:"required"`
-	Revision    *RevisionStamp             `json:"revision" validate:"required"`
-	Source      CreateKmsKeyResponseSource `json:"source" validate:"required"`
-	Status      CreateKmsKeyResponseStatus `json:"status" validate:"required"`
-	Usage       string                     `json:"usage" validate:"required"`
+	// The UTC timestamp showing when the KMS key was originally provisioned.
+	CreatedAT time.Time `json:"created-at" validate:"required"`
+	// An optional detailed description providing additional context about the key's intended use case.
+	Description string `json:"description,omitempty"`
+	// The globally unique identifier (UUID) assigned to the newly created KMS key.
+	ID UUID `json:"id" validate:"required"`
+	// True if this is a multi-zone key.
+	MultiZone *bool `json:"multi-zone" validate:"required"`
+	// The display name assigned to the KMS key.
+	Name string `json:"name" validate:"required"`
+	// The creation zone of the KMS key.
+	OriginZone string                     `json:"origin-zone" validate:"required"`
+	Revision   *RevisionStamp             `json:"revision" validate:"required"`
+	Source     CreateKmsKeyResponseSource `json:"source" validate:"required"`
+	Status     CreateKmsKeyResponseStatus `json:"status" validate:"required"`
+	// The timestamp indicating exactly when the current key status was last transitioned.
+	StatusSince time.Time `json:"status-since" validate:"required"`
+	// The cryptographic operation constraints allowed on this key.
+	Usage string `json:"usage" validate:"required"`
 }
 
 // AI model
@@ -286,6 +365,79 @@ type DBAASBackupConfig struct {
 	// is restored to the state it was when the backup was generated.
 	// 'pitr' means point-in-time-recovery, which allows restoring the system to any state since the first available full snapshot.
 	RecoveryMode string `json:"recovery-mode,omitempty"`
+}
+
+type DBAASClickhouseAclConfig struct {
+	Users []DBAASClickhouseUserAclConfig `json:"users,omitempty"`
+}
+
+type DBAASClickhouseGrantedRole struct {
+	ISDefault *bool `json:"is-default,omitempty"`
+	// Granted role name
+	Name            string `json:"name" validate:"required"`
+	Uuid            string `json:"uuid,omitempty"`
+	WithAdminOption *bool  `json:"with-admin-option,omitempty"`
+}
+
+type DBAASClickhouseRole struct {
+	GrantedRoles []DBAASClickhouseGrantedRole   `json:"granted-roles,omitempty"`
+	Name         DBAASUserUsername              `json:"name" validate:"required,gte=1,lte=64"`
+	Privileges   []DBAASClickhouseRolePrivilege `json:"privileges,omitempty"`
+	Uuid         string                         `json:"uuid,omitempty"`
+}
+
+type DBAASClickhouseRolePrivilege struct {
+	// Column
+	Column string `json:"column,omitempty"`
+	// Database
+	Database        string            `json:"database,omitempty"`
+	GrantOption     *bool             `json:"grant-option,omitempty"`
+	ISPartialRevoke *bool             `json:"is-partial-revoke,omitempty"`
+	Name            DBAASUserUsername `json:"name" validate:"required,gte=1,lte=64"`
+	// Table
+	Table string `json:"table,omitempty"`
+}
+
+type DBAASClickhouseRoles struct {
+	Roles []DBAASClickhouseRole `json:"roles,omitempty"`
+}
+
+type DBAASClickhouseUser struct {
+	Required *bool             `json:"required,omitempty"`
+	Username DBAASUserUsername `json:"username" validate:"required,gte=1,lte=64"`
+	Uuid     UUID              `json:"uuid,omitempty"`
+}
+
+type DBAASClickhouseUserAclConfig struct {
+	Privileges []DBAASClickhouseUserPrivilege `json:"privileges,omitempty"`
+	Roles      []DBAASClickhouseUserRole      `json:"roles,omitempty"`
+	Username   DBAASUserUsername              `json:"username" validate:"required,gte=1,lte=64"`
+	Uuid       UUID                           `json:"uuid,omitempty"`
+}
+
+type DBAASClickhouseUserPrivilege struct {
+	AccessType    string `json:"access-type,omitempty"`
+	Column        string `json:"column,omitempty"`
+	Database      string `json:"database,omitempty"`
+	GrantOption   *bool  `json:"grant-option,omitempty"`
+	PartialRevoke *bool  `json:"partial-revoke,omitempty"`
+	Table         string `json:"table,omitempty"`
+}
+
+type DBAASClickhouseUserRole struct {
+	Default         *bool  `json:"default,omitempty"`
+	Name            string `json:"name,omitempty"`
+	Uuid            UUID   `json:"uuid,omitempty"`
+	WithAdminOption *bool  `json:"with-admin-option,omitempty"`
+}
+
+type DBAASClickhouseUserRoleInput struct {
+	// Role UUID
+	Uuid UUID `json:"uuid" validate:"required"`
+}
+
+type DBAASClickhouseUsers struct {
+	Users []DBAASClickhouseUser `json:"users,omitempty"`
 }
 
 type DBAASDatabaseName string
@@ -953,8 +1105,90 @@ type DBAASServiceBackup struct {
 	BackupName string `json:"backup-name" validate:"required"`
 	// Backup timestamp (ISO 8601)
 	BackupTime time.Time `json:"backup-time" validate:"required"`
-	// Backup's original size before compression
+	// Backup's original size before compression, in bytes
 	DataSize int64 `json:"data-size" validate:"required,gte=0"`
+	// Amount of tiered storage data in bytes referenced by this backup
+	TieredStorageDataSize int64 `json:"tiered-storage-data-size,omitempty" validate:"omitempty,gte=0"`
+}
+
+type DBAASServiceClickhouseComponents struct {
+	// Service component name
+	Component string `json:"component" validate:"required"`
+	// DNS name for connecting to the service component
+	Host string `json:"host" validate:"required"`
+	// Port number for connecting to the service component
+	Port  int64              `json:"port" validate:"required,gte=0,lte=65535"`
+	Route EnumComponentRoute `json:"route" validate:"required"`
+	// Whether the endpoint is encrypted or accepts plaintext.
+	// By default endpoints are always encrypted and
+	// this property is only included for service components that may disable encryption.
+	SSL   *bool              `json:"ssl,omitempty"`
+	Usage EnumComponentUsage `json:"usage" validate:"required"`
+}
+
+// ClickHouse connection information properties
+type DBAASServiceClickhouseConnectionInfo struct {
+	ArrowflightURI string   `json:"arrowflight-uri,omitempty"`
+	MysqlURI       string   `json:"mysql-uri,omitempty"`
+	URI            []string `json:"uri,omitempty"`
+}
+
+// Prometheus integration URI
+type DBAASServiceClickhousePrometheusURI struct {
+	Host string `json:"host,omitempty"`
+	Port int64  `json:"port,omitempty" validate:"omitempty,gte=0,lte=65535"`
+}
+
+type DBAASServiceClickhouse struct {
+	// List of backups for the service
+	Backups []DBAASServiceBackup `json:"backups,omitempty"`
+	// ClickHouse settings
+	ClickhouseSettings *JSONSchemaClickhouse `json:"clickhouse-settings,omitempty"`
+	// Service component information objects
+	Components []DBAASServiceClickhouseComponents `json:"components,omitempty"`
+	// ClickHouse connection information properties
+	ConnectionInfo *DBAASServiceClickhouseConnectionInfo `json:"connection-info,omitempty"`
+	// Service creation timestamp (ISO 8601)
+	CreatedAT time.Time `json:"created-at,omitempty"`
+	// TODO UNIT disk space for data storage
+	DiskSize int64 `json:"disk-size,omitempty" validate:"omitempty,gte=0"`
+	// Service integrations
+	Integrations []DBAASIntegration `json:"integrations,omitempty"`
+	// Allowed CIDR address blocks for incoming connections
+	IPFilter []string `json:"ip-filter,omitempty"`
+	// Automatic maintenance settings
+	Maintenance *DBAASServiceMaintenance `json:"maintenance,omitempty"`
+	Name        DBAASServiceName         `json:"name" validate:"required,gte=0,lte=63"`
+	// Number of service nodes in the active plan
+	NodeCount int64 `json:"node-count,omitempty" validate:"omitempty,gte=0"`
+	// Number of CPUs for each node
+	NodeCPUCount int64 `json:"node-cpu-count,omitempty" validate:"omitempty,gte=0"`
+	// TODO UNIT of memory for each node
+	NodeMemory int64 `json:"node-memory,omitempty" validate:"omitempty,gte=0"`
+	// State of individual service nodes
+	NodeStates []DBAASNodeState `json:"node-states,omitempty"`
+	// Service notifications
+	Notifications []DBAASServiceNotification `json:"notifications,omitempty"`
+	// Subscription plan
+	Plan string `json:"plan" validate:"required"`
+	// Prometheus integration URI
+	PrometheusURI *DBAASServiceClickhousePrometheusURI `json:"prometheus-uri" validate:"required"`
+	State         EnumServiceState                     `json:"state,omitempty"`
+	// Service is protected against termination and powering off
+	TerminationProtection *bool                `json:"termination-protection,omitempty"`
+	Type                  DBAASServiceTypeName `json:"type" validate:"required,gte=0,lte=64"`
+	// Service last update timestamp (ISO 8601)
+	UpdatedAT time.Time `json:"updated-at,omitempty"`
+	// URI for connecting to the service (may be absent)
+	URI string `json:"uri,omitempty"`
+	// service_uri parameterized into key-value pairs
+	URIParams map[string]any `json:"uri-params,omitempty"`
+	// List of ClickHouse users
+	Users []DBAASClickhouseUser `json:"users,omitempty"`
+	// ClickHouse version
+	Version string `json:"version,omitempty"`
+	// The zone where the service is running
+	Zone string `json:"zone,omitempty"`
 }
 
 type DBAASServiceCommon struct {
@@ -1297,6 +1531,8 @@ type DBAASServiceMysql struct {
 	BackupSchedule *DBAASServiceMysqlBackupSchedule `json:"backup-schedule,omitempty"`
 	// List of backups for the service
 	Backups []DBAASServiceBackup `json:"backups,omitempty"`
+	// The minimum amount of time in seconds to keep binlog entries before deletion. This may be extended for services that require binlog entries for longer than the default for example if using the MySQL Debezium Kafka connector.
+	BinlogRetentionPeriod int64 `json:"binlog-retention-period,omitempty" validate:"omitempty,gt=0"`
 	// Service component information objects
 	Components []DBAASServiceMysqlComponents `json:"components,omitempty"`
 	// MySQL connection information properties
@@ -1599,6 +1835,8 @@ type DBAASServicePG struct {
 	Notifications []DBAASServiceNotification `json:"notifications,omitempty"`
 	// postgresql.conf configuration values
 	PGSettings *JSONSchemaPG `json:"pg-settings,omitempty"`
+	// System-wide settings for the pgaudit extension.
+	PgauditSettings *JSONSchemaPgaudit `json:"pgaudit-settings,omitempty"`
 	// System-wide settings for pgbouncer.
 	PgbouncerSettings *JSONSchemaPgbouncer `json:"pgbouncer-settings,omitempty"`
 	// System-wide settings for pglookout.
@@ -1852,6 +2090,14 @@ type DBAASTask struct {
 	TaskType    string                 `json:"task-type,omitempty"`
 }
 
+// ClickHouse User secrets
+type DBAASUserClickhouseSecrets struct {
+	// ClickHouse password
+	Password string `json:"password,omitempty"`
+	// ClickHouse username
+	Username string `json:"username,omitempty"`
+}
+
 // Grafana User secrets
 type DBAASUserGrafanaSecrets struct {
 	// Grafana password
@@ -1947,11 +2193,14 @@ type DBAASValkeyUsers struct {
 }
 
 type DecryptRequest struct {
-	Ciphertext        []byte  `json:"ciphertext" validate:"required"`
+	// The Base64-encoded ciphertext payload to be decrypted.
+	Ciphertext []byte `json:"ciphertext" validate:"required"`
+	// The exact Base64-encoded Additional Authenticated Data (AAD) used during encryption to verify data integrity.
 	EncryptionContext *[]byte `json:"encryption-context,omitempty"`
 }
 
 type DecryptResponse struct {
+	// The recovered Base64-encoded original plaintext payload.
 	Plaintext []byte `json:"plaintext" validate:"required"`
 }
 
@@ -2106,6 +2355,7 @@ type ElasticIPRef struct {
 }
 
 type EnableKmsKeyRotationRequest struct {
+	// The number of days between each automatic key rotation.
 	RotationPeriod int `json:"rotation-period,omitempty" validate:"omitempty,gte=90,lte=2560"`
 }
 
@@ -2114,11 +2364,14 @@ type EnableKmsKeyRotationResponse struct {
 }
 
 type EncryptRequest struct {
+	// Base64-encoded bytes to be used as the Additional Authenticated Data (AAD) for encryption integrity.
 	EncryptionContext *[]byte `json:"encryption-context,omitempty"`
-	Plaintext         []byte  `json:"plaintext" validate:"required"`
+	// The Base64-encoded plaintext data you wish to encrypt.
+	Plaintext []byte `json:"plaintext" validate:"required"`
 }
 
 type EncryptResponse struct {
+	// The resulting Base64-encoded ciphertext after encryption.
 	Ciphertext []byte `json:"ciphertext" validate:"required"`
 }
 
@@ -2305,21 +2558,15 @@ type EnvProduct struct {
 	Value string `json:"value,omitempty"`
 }
 
-type ErrorResponseErrors struct {
-	Detail   string `json:"detail,omitempty"`
-	Location string `json:"location,omitempty"`
-	Path     string `json:"path,omitempty"`
-	Pointer  string `json:"pointer,omitempty"`
-}
-
 // RFC 9457 Problem Details error response
 type ErrorResponse struct {
-	Detail   string                `json:"detail" validate:"required"`
-	Errors   []ErrorResponseErrors `json:"errors,omitempty"`
-	Instance string                `json:"instance,omitempty"`
-	Status   int                   `json:"status" validate:"required,gte=100,lte=599"`
-	Title    string                `json:"title" validate:"required"`
-	Type     string                `json:"type" validate:"required"`
+	// A highly contextual, readable explanation breaking down explicitly what triggered this error scenario.
+	Detail string `json:"detail" validate:"required"`
+	Status int    `json:"status" validate:"required,gte=100,lte=599"`
+	// A brief summary defining the class of failure, optimal for quick user interface groupings.
+	Title string `json:"title" validate:"required"`
+	// An absolute or relative URI reference pointing to human-readable documentation concerning the specific problem type encountered.
+	Type string `json:"type" validate:"required"`
 }
 
 // A notable Mutation Event which happened on the infrastructure
@@ -2356,18 +2603,12 @@ type Event struct {
 	Zone string `json:"zone,omitempty"`
 }
 
-type ForbiddenOperationResponseCode string
-
-const (
-	ForbiddenOperationResponseCodeForbiddenOperation ForbiddenOperationResponseCode = "forbidden_operation"
-)
-
-// Forbidden operation response
-type ForbiddenOperationResponse struct {
-	// Machine-readable forbidden error code
-	Code ForbiddenOperationResponseCode `json:"code" validate:"required"`
-	// Forbidden error message
-	Error string `json:"error" validate:"required"`
+// Focus report download URL
+type FocusReport struct {
+	// URL expiration in seconds
+	ExpiresIn int64 `json:"expires_in,omitempty" validate:"omitempty,gt=0"`
+	// Focus report presigned URL
+	PresignedURL string `json:"presigned_url,omitempty"`
 }
 
 type GenerateDataKeyRequestKeySpec string
@@ -2377,35 +2618,60 @@ const (
 )
 
 type GenerateDataKeyRequest struct {
-	BytesCount        int                           `json:"bytes-count,omitempty" validate:"omitempty,gte=1,lte=1024"`
+	BytesCount int `json:"bytes-count,omitempty" validate:"omitempty,gte=1,lte=1024"`
+	// Base64-encoded Additional Authenticated Data binding key generation parameters securely to operational scope.
 	EncryptionContext *[]byte                       `json:"encryption-context,omitempty"`
 	KeySpec           GenerateDataKeyRequestKeySpec `json:"key-spec,omitempty"`
 }
 
 type GenerateDataKeyResponse struct {
+	// The identical symmetric data key, returned safely wrapped/encrypted using the designated root parent KMS key.
 	Ciphertext []byte `json:"ciphertext" validate:"required"`
-	Plaintext  []byte `json:"plaintext" validate:"required"`
+	// The Base64-encoded raw symmetric data key payload. Expose only securely during active application setups.
+	Plaintext []byte `json:"plaintext" validate:"required"`
+}
+
+// Get AI API key response
+type GetAIAPIKeyResponse struct {
+	// True when the key has access to all deployments of the organization.
+	AllDeployments *bool `json:"all-deployments" validate:"required"`
+	// True when the key has access to all public models.
+	AllModels *bool `json:"all-models" validate:"required"`
+	// Creation timestamp
+	CreatedAT time.Time `json:"created-at" validate:"required"`
+	// Allowlist of deployments. An empty array denies access to all deployments. Grant access to all deployments with all-deployments instead.
+	Deployments *AIAPIKeyDeployments `json:"deployments" validate:"required"`
+	// AI API key ID
+	ID UUID `json:"id" validate:"required"`
+	// Allowlist of public model names. An empty array denies access to all public models. Grant access to all public models with all-models instead.
+	Models *AIAPIKeyModels `json:"models" validate:"required"`
+	// Human-readable name for the AI API key
+	Name string `json:"name" validate:"required"`
+	// Revocation timestamp. Null when the API key is active.
+	RevokedAT *time.Time `json:"revoked-at" validate:"required"`
+	// Last update timestamp
+	UpdatedAT time.Time `json:"updated-at" validate:"required"`
 }
 
 // GPU usage for all organizations
 type GetConfederatioUsageResponse struct {
-	OrganizationsUsages map[string]OrganizationUsage `json:"organizations_usages" validate:"required"`
+	OrganizationsUsages map[string]OrganizationUsage `json:"organizations-usages" validate:"required"`
 }
 
 // A single log entry
 type GetDeploymentLogsEntry struct {
 	// Log message content
-	Message string `json:"message,omitempty"`
+	Message string `json:"message" validate:"required"`
 	// Node identifier
-	Node string `json:"node,omitempty"`
+	Node string `json:"node" validate:"required"`
 	// Timestamp of the log entry
-	Time string `json:"time,omitempty"`
+	Time time.Time `json:"time" validate:"required"`
 }
 
 // Deployment logs
 type GetDeploymentLogsResponse struct {
 	// List of log entries
-	Logs []GetDeploymentLogsEntry `json:"logs,omitempty"`
+	Logs []GetDeploymentLogsEntry `json:"logs" validate:"required"`
 }
 
 type GetDeploymentResponseState string
@@ -2413,16 +2679,19 @@ type GetDeploymentResponseState string
 const (
 	GetDeploymentResponseStateReady     GetDeploymentResponseState = "ready"
 	GetDeploymentResponseStateCreating  GetDeploymentResponseState = "creating"
+	GetDeploymentResponseStatePreparing GetDeploymentResponseState = "preparing"
 	GetDeploymentResponseStateError     GetDeploymentResponseState = "error"
 	GetDeploymentResponseStateDeploying GetDeploymentResponseState = "deploying"
+	GetDeploymentResponseStateScaling   GetDeploymentResponseState = "scaling"
+	GetDeploymentResponseStateUpdating  GetDeploymentResponseState = "updating"
 )
 
 // AI deployment
 type GetDeploymentResponse struct {
 	// Creation time
 	CreatedAT time.Time `json:"created-at,omitempty"`
-	// Deployment URL (nullable)
-	DeploymentURL string `json:"deployment-url,omitempty"`
+	// Deployment inference endpoint URL
+	DeploymentURL string `json:"deployment-url" validate:"required"`
 	// Number of GPUs
 	GpuCount int64 `json:"gpu-count,omitempty" validate:"omitempty,gte=1"`
 	// GPU type family
@@ -2433,15 +2702,16 @@ type GetDeploymentResponse struct {
 	InferenceEngineParameters []string `json:"inference-engine-parameters,omitempty"`
 	// Inference engine version
 	InferenceEngineVersion InferenceEngineVersion `json:"inference-engine-version,omitempty"`
-	Model                  *ModelRef              `json:"model,omitempty"`
+	// Model reference. Provide either id or name.
+	Model *ModelRef `json:"model" validate:"required"`
 	// Deployment name
-	Name string `json:"name,omitempty" validate:"omitempty,gte=1"`
+	Name string `json:"name" validate:"required,gte=1"`
 	// Number of replicas (>=0)
 	Replicas int64 `json:"replicas,omitempty" validate:"omitempty,gte=0"`
 	// Service level
 	ServiceLevel string `json:"service-level,omitempty" validate:"omitempty,gte=1"`
 	// Deployment state
-	State GetDeploymentResponseState `json:"state,omitempty"`
+	State GetDeploymentResponseState `json:"state" validate:"required"`
 	// Deployment state details
 	StateDetails string `json:"state-details,omitempty"`
 	// Update time
@@ -2450,7 +2720,10 @@ type GetDeploymentResponse struct {
 
 // List of allowed inference-engine parameters
 type GetInferenceEngineHelpResponse struct {
-	Parameters []InferenceEngineParameterEntry `json:"parameters,omitempty"`
+	Parameters []InferenceEngineParameterEntry `json:"parameters" validate:"required"`
+}
+
+type GetKeyStoreResponse struct {
 }
 
 type GetKmsKeyResponseSource string
@@ -2468,22 +2741,43 @@ const (
 )
 
 type GetKmsKeyResponse struct {
-	CreatedAT      time.Time               `json:"created-at" validate:"required"`
-	Description    string                  `json:"description" validate:"required"`
-	ID             UUID                    `json:"id" validate:"required"`
-	Material       *KeyMaterial            `json:"material" validate:"required"`
-	MultiZone      *bool                   `json:"multi-zone" validate:"required"`
-	Name           string                  `json:"name" validate:"required"`
-	OriginZone     string                  `json:"origin-zone" validate:"required"`
-	Replicas       []string                `json:"replicas" validate:"required"`
+	// The UTC timestamp showing when the KMS key was originally provisioned.
+	CreatedAT time.Time `json:"created-at" validate:"required"`
+	DeleteAT  time.Time `json:"delete-at,omitempty"`
+	// An optional detailed description providing additional context about the key's intended use case.
+	Description string `json:"description,omitempty"`
+	// The globally unique identifier (UUID) of the retrieved KMS key.
+	ID       UUID         `json:"id" validate:"required"`
+	Material *KeyMaterial `json:"material" validate:"required"`
+	// True if this is a multi-zone key.
+	MultiZone *bool `json:"multi-zone" validate:"required"`
+	// The display name of the KMS key.
+	Name string `json:"name" validate:"required"`
+	// The creation zone of the KMS key.
+	OriginZone string `json:"origin-zone" validate:"required"`
+	// A list of availability zones where this specific key has active replica mirrors.
+	Replicas []string `json:"replicas,omitempty"`
+	// Detailed synchronization metrics for each regional replica mirror.
 	ReplicasStatus []ReplicaState          `json:"replicas-status,omitempty"`
 	Revision       *RevisionStamp          `json:"revision" validate:"required"`
 	Rotation       *KeyRotationConfig      `json:"rotation" validate:"required"`
 	Source         GetKmsKeyResponseSource `json:"source" validate:"required"`
 	Status         GetKmsKeyResponseStatus `json:"status" validate:"required"`
-	StatusSince    time.Time               `json:"status-since" validate:"required"`
-	Usage          string                  `json:"usage" validate:"required"`
+	// The timestamp indicating exactly when the current key status was last transitioned.
+	StatusSince time.Time `json:"status-since" validate:"required"`
+	// The cryptographic operation constraints allowed on this key.
+	Usage string `json:"usage" validate:"required"`
 }
+
+type GetModelResponseLifecycleStatus string
+
+const (
+	GetModelResponseLifecycleStatusPreview    GetModelResponseLifecycleStatus = "preview"
+	GetModelResponseLifecycleStatusActive     GetModelResponseLifecycleStatus = "active"
+	GetModelResponseLifecycleStatusDeprecated GetModelResponseLifecycleStatus = "deprecated"
+	GetModelResponseLifecycleStatusEol        GetModelResponseLifecycleStatus = "eol"
+	GetModelResponseLifecycleStatusNull       GetModelResponseLifecycleStatus = "null"
+)
 
 type GetModelResponseState string
 
@@ -2495,30 +2789,39 @@ const (
 	GetModelResponseStateCreated     GetModelResponseState = "created"
 )
 
+type GetModelResponseVisibility string
+
+const (
+	GetModelResponseVisibilityPrivate GetModelResponseVisibility = "private"
+	GetModelResponseVisibilityPublic  GetModelResponseVisibility = "public"
+)
+
 // AI model
 type GetModelResponse struct {
 	// Creation time
-	CreatedAT time.Time `json:"created-at,omitempty"`
+	CreatedAT time.Time `json:"created-at" validate:"required"`
+	// Model deprecation date
+	DeprecationDate *time.Time `json:"deprecation-date,omitempty"`
 	// Model ID
-	ID UUID `json:"id,omitempty"`
-	// Model size (nullable)
-	ModelSize int64 `json:"model-size,omitempty" validate:"omitempty,gte=0"`
+	ID UUID `json:"id" validate:"required"`
+	// Model lifecycle state
+	LifecycleStatus GetModelResponseLifecycleStatus `json:"lifecycle-status,omitempty"`
+	// Model size in bytes
+	ModelSize int64 `json:"model-size" validate:"required,gte=0"`
 	// Model name
-	Name string `json:"name,omitempty" validate:"omitempty,gte=1"`
+	Name string `json:"name" validate:"required,gte=1"`
 	// Model state
-	State GetModelResponseState `json:"state,omitempty"`
+	State GetModelResponseState `json:"state" validate:"required"`
 	// Update time
-	UpdatedAT time.Time `json:"updated-at,omitempty"`
-}
-
-// GPU usage for an organization
-type GetOrganizationUsageResponse struct {
-	// Total GPU count
-	Gpu int64 `json:"gpu,omitempty" validate:"omitempty,gte=0"`
+	UpdatedAT time.Time `json:"updated-at" validate:"required"`
+	// Model visibility
+	Visibility GetModelResponseVisibility `json:"visibility,omitempty"`
 }
 
 // IAM API Key
 type IAMAPIKey struct {
+	// IAM API Key creation timestamp
+	CreatedAT time.Time `json:"created-at,omitempty"`
 	// IAM API Key
 	Key string `json:"key,omitempty"`
 	// IAM API Key name
@@ -2529,6 +2832,8 @@ type IAMAPIKey struct {
 
 // IAM API Key
 type IAMAPIKeyCreated struct {
+	// IAM API Key creation timestamp
+	CreatedAT time.Time `json:"created-at,omitempty"`
 	// IAM API Key
 	Key string `json:"key,omitempty"`
 	// IAM API Key name
@@ -2537,6 +2842,12 @@ type IAMAPIKeyCreated struct {
 	RoleID UUID `json:"role-id,omitempty"`
 	// IAM API Key Secret
 	Secret string `json:"secret,omitempty"`
+}
+
+// Assume Role Policy
+type IAMAssumeRolePolicy struct {
+	// IAM Assume Role Policy rules
+	Rules []IAMServicePolicyRule `json:"rules,omitempty"`
 }
 
 type IAMPolicyDefaultServiceStrategy string
@@ -2556,8 +2867,8 @@ type IAMPolicy struct {
 
 // IAM Role
 type IAMRole struct {
-	// Policy
-	AssumeRolePolicy *IAMPolicy `json:"assume-role-policy,omitempty"`
+	// Assume Role Policy
+	AssumeRolePolicy *IAMAssumeRolePolicy `json:"assume-role-policy,omitempty"`
 	// IAM Role description
 	Description string `json:"description,omitempty" validate:"omitempty,gte=1,lte=255"`
 	// IAM Role mutability
@@ -2601,6 +2912,51 @@ type IAMServicePolicyRule struct {
 	Resources  []string                   `json:"resources,omitempty"`
 }
 
+// IAM System Role
+type IAMSystemRole struct {
+	// Assume Role Policy
+	AssumeRolePolicy *IAMAssumeRolePolicy `json:"assume-role-policy,omitempty"`
+	// IAM System Role description
+	Description string `json:"description,omitempty" validate:"omitempty,gte=1,lte=255"`
+	// IAM System Role mutability
+	Editable *bool `json:"editable,omitempty"`
+	// IAM System Role ID
+	ID     UUID   `json:"id,omitempty"`
+	Labels Labels `json:"labels,omitempty"`
+	// Maximum TTL requester is allowed to ask for when assuming a system role
+	MaxSessionTtl int64 `json:"max-session-ttl,omitempty" validate:"omitempty,gt=0"`
+	// IAM System Role name
+	Name string `json:"name,omitempty" validate:"omitempty,gte=1,lte=255"`
+	// IAM System Role permissions
+	Permissions []string `json:"permissions,omitempty"`
+	// Policy
+	Policy *IAMPolicy `json:"policy,omitempty"`
+}
+
+type ImpactBreakdown struct {
+	Impact map[string]ImpactValueWithUnit `json:"impact" validate:"required"`
+	Zones  map[string]ZoneImpact          `json:"zones" validate:"required"`
+}
+
+// Error response
+type ImpactErrorResponse struct {
+	Detail string `json:"detail" validate:"required"`
+	Status int    `json:"status" validate:"required,gte=100,lte=599"`
+	Title  string `json:"title" validate:"required"`
+}
+
+// Hierarchical breakdown of impact for a given level in the catalog tree
+type ImpactResourceTreeNode struct {
+	Impact    map[string]ImpactValueWithUnit    `json:"impact" validate:"required"`
+	Resources map[string]ImpactResourceTreeNode `json:"resources" validate:"required"`
+	Usage     *ImpactValueWithUnit              `json:"usage" validate:"required"`
+}
+
+type ImpactValueWithUnit struct {
+	Unit  string  `json:"unit" validate:"required"`
+	Value float64 `json:"value" validate:"required"`
+}
+
 // inference-engine parameter definition
 type InferenceEngineParameterEntry struct {
 	// Allowed values
@@ -2630,7 +2986,44 @@ const (
 	InferenceEngineVersion0180 InferenceEngineVersion = "0.18.0"
 	InferenceEngineVersion0181 InferenceEngineVersion = "0.18.1"
 	InferenceEngineVersion0190 InferenceEngineVersion = "0.19.0"
+	InferenceEngineVersion0191 InferenceEngineVersion = "0.19.1"
+	InferenceEngineVersion0200 InferenceEngineVersion = "0.20.0"
+	InferenceEngineVersion0201 InferenceEngineVersion = "0.20.1"
+	InferenceEngineVersion0202 InferenceEngineVersion = "0.20.2"
+	InferenceEngineVersion0210 InferenceEngineVersion = "0.21.0"
+	InferenceEngineVersion0220 InferenceEngineVersion = "0.22.0"
+	InferenceEngineVersion0221 InferenceEngineVersion = "0.22.1"
+	InferenceEngineVersion0230 InferenceEngineVersion = "0.23.0"
+	InferenceEngineVersion0240 InferenceEngineVersion = "0.24.0"
+	InferenceEngineVersion0250 InferenceEngineVersion = "0.25.0"
+	InferenceEngineVersion0251 InferenceEngineVersion = "0.25.1"
+	InferenceEngineVersion0260 InferenceEngineVersion = "0.26.0"
+	InferenceEngineVersion0270 InferenceEngineVersion = "0.27.0"
+	InferenceEngineVersion0271 InferenceEngineVersion = "0.27.1"
+	InferenceEngineVersion0280 InferenceEngineVersion = "0.28.0"
+	InferenceEngineVersion0290 InferenceEngineVersion = "0.29.0"
+	InferenceEngineVersion0300 InferenceEngineVersion = "0.30.0"
 )
+
+// Router flush payload: the router's full in-memory usage map with flush identity fields
+type IngestMeteringRequest struct {
+	// UUID identifying this flush; used for idempotent deduplication
+	FlushID UUID `json:"flush-id" validate:"required"`
+	// Router instance identifier that produced this flush
+	RouterID string `json:"router-id" validate:"required,gte=1"`
+	// ISO-8601 UTC timestamp when the flush snapshot was created (truncated to minute boundary for bucketing)
+	Timestamp time.Time `json:"timestamp" validate:"required"`
+	// Map of api-key-uuid to usage entry. Keys are API key UUIDs. Mirrors the router's in-memory accumulator structure directly.
+	Usage map[string]APIKeyUsageEntry `json:"usage" validate:"required"`
+}
+
+// Result of a metering ingest operation
+type IngestMeteringResponse struct {
+	// True if flush-id was already processed (idempotent retry)
+	Duplicate *bool `json:"duplicate,omitempty"`
+	// Number of rows affected (inserted or updated) in usage_minutely; 0 if duplicate flush-id
+	Upserted int `json:"upserted" validate:"required"`
+}
 
 // Private Network
 type InstancePrivateNetworks struct {
@@ -2638,6 +3031,26 @@ type InstancePrivateNetworks struct {
 	ID UUID `json:"id,omitempty"`
 	// Private Network MAC address
 	MACAddress string `json:"mac-address,omitempty"`
+}
+
+// VPC subnet
+type InstanceVpcSubnets struct {
+	// VPC subnet ID
+	ID UUID `json:"id,omitempty"`
+	// Instance Subnet ipv4 address
+	Ipv4 net.IP `json:"ipv4,omitempty"`
+	// VPC subnet name
+	Name string `json:"name,omitempty"`
+}
+
+// VPC
+type InstanceVpc struct {
+	// VPC ID
+	ID UUID `json:"id,omitempty"`
+	// VPC name
+	Name string `json:"name,omitempty"`
+	// Instances attached to the subnet
+	Subnets []InstanceVpcSubnets `json:"subnets,omitempty"`
 }
 
 // Instance
@@ -2650,6 +3063,8 @@ type Instance struct {
 	CreatedAT time.Time `json:"created-at,omitempty"`
 	// Deploy target reference
 	DeployTarget *DeployTarget `json:"deploy-target,omitempty"`
+	// Indicates if the root volume of the instance is encrypted
+	DiskEncrypted *bool `json:"disk-encrypted,omitempty"`
 	// Instance disk size in GiB
 	DiskSize int64 `json:"disk-size,omitempty" validate:"omitempty,gte=10,lte=51200"`
 	// Instance Elastic IPs
@@ -2658,6 +3073,8 @@ type Instance struct {
 	ID UUID `json:"id,omitempty"`
 	// Compute instance type
 	InstanceType *InstanceType `json:"instance-type,omitempty"`
+	// VPC ip forwarding
+	IPForwarding *bool `json:"ip-forwarding,omitempty"`
 	// Instance IPv6 address
 	Ipv6Address string `json:"ipv6-address,omitempty"`
 	Labels      Labels `json:"labels,omitempty"`
@@ -2689,12 +3106,24 @@ type Instance struct {
 	TpmEnabled *bool `json:"tpm-enabled,omitempty"`
 	// Instance Cloud-init user-data (base64 encoded)
 	UserData string `json:"user-data,omitempty" validate:"omitempty,gte=1"`
+	// VPC
+	Vpc *InstanceVpc `json:"vpc,omitempty"`
 }
 
 // Instance password
 type InstancePassword struct {
 	// Password
 	Password string `json:"password,omitempty"`
+}
+
+// Instance Pool Error Reason
+type InstancePoolErrorReason struct {
+	// Error cause
+	Cause string `json:"cause,omitempty"`
+	// Job ID at the origin of error
+	JobID string `json:"job-id,omitempty"`
+	// Error type
+	Type string `json:"type,omitempty"`
 }
 
 type InstancePoolState string
@@ -2707,6 +3136,7 @@ const (
 	InstancePoolStateSuspended   InstancePoolState = "suspended"
 	InstancePoolStateRunning     InstancePoolState = "running"
 	InstancePoolStateUpdating    InstancePoolState = "updating"
+	InstancePoolStateError       InstancePoolState = "error"
 )
 
 // Instance Pool
@@ -2723,6 +3153,8 @@ type InstancePool struct {
 	DiskSize int64 `json:"disk-size,omitempty" validate:"omitempty,gte=10,lte=51200"`
 	// Instances Elastic IPs
 	ElasticIPS []ElasticIP `json:"elastic-ips,omitempty"`
+	// Instance Pool Error Reason
+	ErrorReason *InstancePoolErrorReason `json:"error-reason,omitempty"`
 	// Instance Pool ID
 	ID UUID `json:"id,omitempty"`
 	// The instances created by the Instance Pool will be prefixed with this value (default: pool)
@@ -2795,6 +3227,7 @@ const (
 	InstanceTypeFamilyGpu           InstanceTypeFamily = "gpu"
 	InstanceTypeFamilyMemory        InstanceTypeFamily = "memory"
 	InstanceTypeFamilyGpua5000      InstanceTypeFamily = "gpua5000"
+	InstanceTypeFamilyGpub300       InstanceTypeFamily = "gpub300"
 	InstanceTypeFamilyGpurtx6000pro InstanceTypeFamily = "gpurtx6000pro"
 	InstanceTypeFamilyStorage       InstanceTypeFamily = "storage"
 	InstanceTypeFamilyStandard      InstanceTypeFamily = "standard"
@@ -2842,15 +3275,29 @@ type InstanceType struct {
 // Instance type with authorization status
 type InstanceTypeEntry struct {
 	// Whether this instance type is authorized based on server availability
-	Authorized *bool `json:"authorized,omitempty"`
+	Authorized *bool `json:"authorized" validate:"required"`
 	// GPU family name
-	Family string `json:"family,omitempty"`
+	Family string `json:"family" validate:"required"`
 }
 
 // Instance type reference
 type InstanceTypeRef struct {
 	// Instance type ID
 	ID UUID `json:"id,omitempty"`
+}
+
+// ClickHouse server settings, which can be found in the `system.server_settings` table.
+type JSONSchemaClickhouseServerSettings struct {
+	// Fraction of total server memory allocated to the vector similarity index cache. 0 disables the cache. Default is 0.07 (7% of server memory). Only effective on ClickHouse 25.8+.
+	VectorSimilarityIndexCacheSize float64 `json:"vector_similarity_index_cache_size,omitempty" validate:"omitempty,gte=0,lte=0.5"`
+}
+
+// ClickHouse settings
+type JSONSchemaClickhouse struct {
+	// ClickHouse server settings, which can be found in the `system.server_settings` table.
+	ServerSettings *JSONSchemaClickhouseServerSettings `json:"server_settings,omitempty"`
+	// The percentage of free disk space required on local storage before data is moved to object storage. A value of 0.2 means data is moved when local storage has less than 20% free space.
+	TieredStorageMoveFactor float64 `json:"tiered_storage_move_factor,omitempty" validate:"omitempty,gte=0,lte=1"`
 }
 
 type JSONSchemaGrafanaAlertingErrorORTimeout string
@@ -3461,6 +3908,63 @@ type JSONSchemaOpensearchAuthFailureListeners struct {
 	IPRateLimiting *JSONSchemaOpensearchAuthFailureListenersIPRateLimiting `json:"ip_rate_limiting,omitempty"`
 }
 
+type JSONSchemaOpensearchClusterClusterRemoteStore struct {
+	// The amount of time to wait for the cluster state upload to complete. Defaults to 20s.
+	StateGlobalMetadataUploadTimeout string `json:"state.global_metadata.upload_timeout,omitempty"`
+	// The amount of time to wait for the manifest file upload to complete. The manifest file contains the details of each of the files uploaded for a single cluster state, both index metadata files and global metadata files. Defaults to 20s.
+	StateMetadataManifestUploadTimeout string `json:"state.metadata_manifest.upload_timeout,omitempty"`
+	// The default value of the translog buffer interval used when performing periodic translog updates. This setting is only effective when the index setting `index.remote_store.translog.buffer_interval` is not present. Defaults to 650ms.
+	TranslogBufferInterval string `json:"translog.buffer_interval,omitempty"`
+	// Sets the maximum number of open translog files for remote-backed indexes. This limits the total number of translog files per shard. After reaching this limit, the remote store flushes the translog files. Default is 1000. The minimum required is 100.
+	TranslogMaxReaders int `json:"translog.max_readers,omitempty" validate:"omitempty,gte=100,lte=2.147483647e+09"`
+}
+
+type JSONSchemaOpensearchClusterClusterSearchRequestSlowlogLevel string
+
+const (
+	JSONSchemaOpensearchClusterClusterSearchRequestSlowlogLevelDebug JSONSchemaOpensearchClusterClusterSearchRequestSlowlogLevel = "debug"
+	JSONSchemaOpensearchClusterClusterSearchRequestSlowlogLevelInfo  JSONSchemaOpensearchClusterClusterSearchRequestSlowlogLevel = "info"
+	JSONSchemaOpensearchClusterClusterSearchRequestSlowlogLevelTrace JSONSchemaOpensearchClusterClusterSearchRequestSlowlogLevel = "trace"
+	JSONSchemaOpensearchClusterClusterSearchRequestSlowlogLevelWarn  JSONSchemaOpensearchClusterClusterSearchRequestSlowlogLevel = "warn"
+)
+
+type JSONSchemaOpensearchClusterClusterSearchRequestSlowlogThreshold struct {
+	// Debug threshold for total request took time. The value should be in the form count and unit, where unit one of (s,m,h,d,nanos,ms,micros) or -1. Default is -1
+	Debug string `json:"debug,omitempty"`
+	// Info threshold for total request took time. The value should be in the form count and unit, where unit one of (s,m,h,d,nanos,ms,micros) or -1. Default is -1
+	Info string `json:"info,omitempty"`
+	// Trace threshold for total request took time. The value should be in the form count and unit, where unit one of (s,m,h,d,nanos,ms,micros) or -1. Default is -1
+	Trace string `json:"trace,omitempty"`
+	// Warning threshold for total request took time. The value should be in the form count and unit, where unit one of (s,m,h,d,nanos,ms,micros) or -1. Default is -1
+	Warn string `json:"warn,omitempty"`
+}
+
+type JSONSchemaOpensearchClusterClusterSearchRequestSlowlog struct {
+	// Log level
+	Level     JSONSchemaOpensearchClusterClusterSearchRequestSlowlogLevel      `json:"level,omitempty"`
+	Threshold *JSONSchemaOpensearchClusterClusterSearchRequestSlowlogThreshold `json:"threshold,omitempty"`
+}
+
+// Cluster settings
+type JSONSchemaOpensearchCluster struct {
+	// Defines a limit of how much total remote data can be referenced as a ratio of the size of the disk reserved for the file cache. This is designed to be a safeguard to prevent oversubscribing a cluster. Defaults to 0.
+	ClusterFilecacheRemoteDataRatio *float64                                       `json:"cluster.filecache.remote_data_ratio,omitempty" validate:"omitempty,gte=0,lte=100"`
+	ClusterRemoteStore              *JSONSchemaOpensearchClusterClusterRemoteStore `json:"cluster.remote_store,omitempty"`
+	// When set to true, OpenSearch attempts to evenly distribute the primary shards between the cluster nodes. Enabling this setting does not always guarantee an equal number of primary shards on each node, especially in the event of a failover. Changing this setting to false after it was set to true does not invoke redistribution of primary shards. Default is false.
+	ClusterRoutingAllocationBalancePreferPrimary *bool                                                   `json:"cluster.routing.allocation.balance.prefer_primary,omitempty"`
+	ClusterSearchRequestSlowlog                  *JSONSchemaOpensearchClusterClusterSearchRequestSlowlog `json:"cluster.search.request.slowlog,omitempty"`
+}
+
+// Watermark settings
+type JSONSchemaOpensearchDiskWatermarks struct {
+	// The flood stage watermark for disk usage.
+	FloodStage int `json:"flood_stage" validate:"required"`
+	// The high watermark for disk usage.
+	High int `json:"high" validate:"required"`
+	// The low watermark for disk usage.
+	Low int `json:"low" validate:"required"`
+}
+
 // Opensearch Email Sender Settings
 type JSONSchemaOpensearchEmailSender struct {
 	// This should be identical to the Sender name defined in Opensearch dashboards
@@ -3485,6 +3989,66 @@ type JSONSchemaOpensearchIsmHistory struct {
 	IsmHistoryRolloverCheckPeriod int `json:"ism_history_rollover_check_period,omitempty" validate:"omitempty,gte=1,lte=2.147483647e+09"`
 	// How long audit history indices are kept in days.
 	IsmHistoryRolloverRetentionPeriod int `json:"ism_history_rollover_retention_period,omitempty" validate:"omitempty,gte=1,lte=2.147483647e+09"`
+}
+
+// ML Commons settings
+type JSONSchemaOpensearchMlCommons struct {
+	// Enable or disable model access control for ML Commons. When enabled, access to ML models is controlled by security permissions. Defaults to false.
+	MlCommonsModelAccessControlEnabled *bool `json:"ml_commons_model_access_control_enabled,omitempty"`
+	// Native memory threshold percentage for ML Commons. Controls the maximum percentage of native memory that can be used by ML Commons operations. Defaults to 90%.
+	MlCommonsNativeMemoryThreshold int `json:"ml_commons_native_memory_threshold,omitempty" validate:"omitempty,gte=1,lte=100"`
+	// Enable or disable running ML Commons tasks only on ML nodes. When enabled, ML tasks will only execute on nodes designated as ML nodes. Defaults to true.
+	MlCommonsOnlyRunOnMlNode *bool `json:"ml_commons_only_run_on_ml_node,omitempty"`
+}
+
+type JSONSchemaOpensearchRemoteStore struct {
+	// The variance factor that is used together with the moving average to calculate the dynamic bytes lag threshold for activating remote segment backpressure. Defaults to 10.
+	SegmentPressureBytesLagVarianceFactor float64 `json:"segment.pressure.bytes_lag.variance_factor,omitempty" validate:"omitempty,gte=1"`
+	// The minimum consecutive failure count for activating remote segment backpressure. Defaults to 5.
+	SegmentPressureConsecutiveFailuresLimit int `json:"segment.pressure.consecutive_failures.limit,omitempty" validate:"omitempty,gte=1,lte=2.147483647e+09"`
+	// Enables remote segment backpressure. Default is `true`
+	SegmentPressureEnabled *bool `json:"segment.pressure.enabled,omitempty"`
+	// The variance factor that is used together with the moving average to calculate the dynamic time lag threshold for activating remote segment backpressure. Defaults to 10.
+	SegmentPressureTimeLagVarianceFactor float64 `json:"segment.pressure.time_lag.variance_factor,omitempty" validate:"omitempty,gte=1"`
+}
+
+// Top N queries monitoring by CPU
+type JSONSchemaOpensearchSearchInsightsTopQueriesCPU struct {
+	// Enable or disable top N query monitoring by the metric
+	Enabled *bool `json:"enabled,omitempty"`
+	// Specify the value of N for the top N queries by the metric
+	TopNSize int `json:"top_n_size,omitempty" validate:"omitempty,gte=1"`
+	// Configure the window size of the top N queries. The value should be a time value with unit, e.g. 1m, 5s, 1h.
+	WindowSize string `json:"window_size,omitempty"`
+}
+
+// Top N queries monitoring by latency
+type JSONSchemaOpensearchSearchInsightsTopQueriesLatency struct {
+	// Enable or disable top N query monitoring by the metric
+	Enabled *bool `json:"enabled,omitempty"`
+	// Specify the value of N for the top N queries by the metric
+	TopNSize int `json:"top_n_size,omitempty" validate:"omitempty,gte=1"`
+	// Configure the window size of the top N queries. The value should be a time value with unit, e.g. 1m, 5s, 1h.
+	WindowSize string `json:"window_size,omitempty"`
+}
+
+// Top N queries monitoring by memory
+type JSONSchemaOpensearchSearchInsightsTopQueriesMemory struct {
+	// Enable or disable top N query monitoring by the metric
+	Enabled *bool `json:"enabled,omitempty"`
+	// Specify the value of N for the top N queries by the metric
+	TopNSize int `json:"top_n_size,omitempty" validate:"omitempty,gte=1"`
+	// Configure the window size of the top N queries. The value should be a time value with unit, e.g. 1m, 5s, 1h.
+	WindowSize string `json:"window_size,omitempty"`
+}
+
+type JSONSchemaOpensearchSearchInsightsTopQueries struct {
+	// Top N queries monitoring by CPU
+	CPU *JSONSchemaOpensearchSearchInsightsTopQueriesCPU `json:"cpu,omitempty"`
+	// Top N queries monitoring by latency
+	Latency *JSONSchemaOpensearchSearchInsightsTopQueriesLatency `json:"latency,omitempty"`
+	// Top N queries monitoring by memory
+	Memory *JSONSchemaOpensearchSearchInsightsTopQueriesMemory `json:"memory,omitempty"`
 }
 
 type JSONSchemaOpensearchSearchBackpressureMode string
@@ -3561,6 +4125,18 @@ type JSONSchemaOpensearchSearchBackpressure struct {
 	SearchTask *JSONSchemaOpensearchSearchBackpressureSearchTask `json:"search_task,omitempty"`
 }
 
+// Segment Replication Backpressure Settings
+type JSONSchemaOpensearchSegrep struct {
+	// The maximum number of indexing checkpoints that a replica shard can fall behind when copying from primary. Once `segrep.pressure.checkpoint.limit` is breached along with `segrep.pressure.time.limit`, the segment replication backpressure mechanism is initiated. Default is 4 checkpoints.
+	PressureCheckpointLimit int `json:"pressure.checkpoint.limit,omitempty" validate:"omitempty,gte=0"`
+	// Enables the segment replication backpressure mechanism. Default is false.
+	PressureEnabled *bool `json:"pressure.enabled,omitempty"`
+	// The maximum number of stale replica shards that can exist in a replication group. Once `segrep.pressure.replica.stale.limit` is breached, the segment replication backpressure mechanism is initiated. Default is .5, which is 50% of a replication group.
+	PressureReplicaStaleLimit float64 `json:"pressure.replica.stale.limit,omitempty" validate:"omitempty,gte=0,lte=1"`
+	// The maximum amount of time that a replica shard can take to copy from the primary shard. Once segrep.pressure.time.limit is breached along with segrep.pressure.checkpoint.limit, the segment replication backpressure mechanism is initiated. Default is 5 minutes.
+	PressureTimeLimit string `json:"pressure.time.limit,omitempty"`
+}
+
 // Operating factor
 type JSONSchemaOpensearchShardIndexingPressureOperatingFactor struct {
 	// Specify the lower occupancy limit of the allocated quota of memory for the shard. If the total memory usage of a shard is below this limit, shard indexing backpressure decreases the current allocated memory for that shard. Default is 0.75
@@ -3607,14 +4183,24 @@ type JSONSchemaOpensearch struct {
 	ActionDestructiveRequiresName *bool `json:"action_destructive_requires_name,omitempty"`
 	// Opensearch Security Plugin Settings
 	AuthFailureListeners *JSONSchemaOpensearchAuthFailureListeners `json:"auth_failure_listeners,omitempty"`
+	// Cluster settings
+	Cluster *JSONSchemaOpensearchCluster `json:"cluster,omitempty"`
 	// Controls the number of shards allowed in the cluster per data node
 	ClusterMaxShardsPerNode int `json:"cluster_max_shards_per_node,omitempty" validate:"omitempty,gte=100,lte=10000"`
 	// How many concurrent incoming/outgoing shard recoveries (normally replicas) are allowed to happen on a node. Defaults to 2.
 	ClusterRoutingAllocationNodeConcurrentRecoveries int `json:"cluster_routing_allocation_node_concurrent_recoveries,omitempty" validate:"omitempty,gte=2,lte=16"`
+	// Watermark settings
+	DiskWatermarks *JSONSchemaOpensearchDiskWatermarks `json:"disk_watermarks,omitempty"`
 	// Opensearch Email Sender Settings
 	EmailSender *JSONSchemaOpensearchEmailSender `json:"email-sender,omitempty"`
+	// Enable remote-backed storage
+	EnableRemoteBackedStorage *bool `json:"enable_remote_backed_storage,omitempty"`
+	// Enable searchable snapshots
+	EnableSearchableSnapshots *bool `json:"enable_searchable_snapshots,omitempty"`
 	// Enable/Disable security audit
 	EnableSecurityAudit *bool `json:"enable_security_audit,omitempty"`
+	// Enable/Disable snapshot API for custom repositories, this requires security management to be enabled
+	EnableSnapshotAPI *bool `json:"enable_snapshot_api,omitempty"`
 	// Maximum content length for HTTP requests to the OpenSearch HTTP API, in bytes.
 	HTTPMaxContentLength int `json:"http_max_content_length,omitempty" validate:"omitempty,gte=1,lte=2.147483647e+09"`
 	// The max size of allowed headers, in bytes
@@ -3643,18 +4229,26 @@ type JSONSchemaOpensearch struct {
 	KnnMemoryCircuitBreakerEnabled *bool `json:"knn_memory_circuit_breaker_enabled,omitempty"`
 	// Maximum amount of memory that can be used for KNN index. Defaults to 50% of the JVM heap size.
 	KnnMemoryCircuitBreakerLimit int `json:"knn_memory_circuit_breaker_limit,omitempty" validate:"omitempty,gte=3,lte=100"`
+	// ML Commons settings
+	MlCommons *JSONSchemaOpensearchMlCommons `json:"ml-commons,omitempty"`
+	// Defines a limit of how much total remote data can be referenced as a ratio of the size of the disk reserved for the file cache. This is designed to be a safeguard to prevent oversubscribing a cluster. Defaults to 5gb. Requires restarting all OpenSearch nodes.
+	NodeSearchCacheSize *string `json:"node.search.cache.size,omitempty"`
 	// Compatibility mode sets OpenSearch to report its version as 7.10 so clients continue to work. Default is false
 	OverrideMainResponseVersion *bool `json:"override_main_response_version,omitempty"`
 	// Enable or disable filtering of alerting by backend roles. Requires Security plugin. Defaults to false
 	PluginsAlertingFilterByBackendRoles *bool `json:"plugins_alerting_filter_by_backend_roles,omitempty"`
 	// Whitelisted addresses for reindexing. Changing this value will cause all OpenSearch instances to restart.
-	ReindexRemoteWhitelist []string `json:"reindex_remote_whitelist"`
+	ReindexRemoteWhitelist []string                         `json:"reindex_remote_whitelist"`
+	RemoteStore            *JSONSchemaOpensearchRemoteStore `json:"remote_store,omitempty"`
 	// Script compilation circuit breaker limits the number of inline script compilations within a period of time. Default is use-context
-	ScriptMaxCompilationsRate string `json:"script_max_compilations_rate,omitempty" validate:"omitempty,lte=1024"`
+	ScriptMaxCompilationsRate string                                        `json:"script_max_compilations_rate,omitempty" validate:"omitempty,lte=1024"`
+	SearchInsightsTopQueries  *JSONSchemaOpensearchSearchInsightsTopQueries `json:"search.insights.top_queries,omitempty"`
 	// Search Backpressure Settings
 	SearchBackpressure *JSONSchemaOpensearchSearchBackpressure `json:"search_backpressure,omitempty"`
 	// Maximum number of aggregation buckets allowed in a single response. OpenSearch default value is used when this is not defined.
 	SearchMaxBuckets *int `json:"search_max_buckets,omitempty" validate:"omitempty,gte=1,lte=1e+06"`
+	// Segment Replication Backpressure Settings
+	Segrep *JSONSchemaOpensearchSegrep `json:"segrep,omitempty"`
 	// Shard indexing back pressure settings
 	ShardIndexingPressure *JSONSchemaOpensearchShardIndexingPressure `json:"shard_indexing_pressure,omitempty"`
 	// Size for the thread pool queue. See documentation for exact details.
@@ -3875,6 +4469,58 @@ type JSONSchemaPG struct {
 	Wal *JSONSchemaPGWal `json:"wal,omitempty"`
 }
 
+type JSONSchemaPgauditLogLevel string
+
+const (
+	JSONSchemaPgauditLogLevelDebug1  JSONSchemaPgauditLogLevel = "debug1"
+	JSONSchemaPgauditLogLevelDebug2  JSONSchemaPgauditLogLevel = "debug2"
+	JSONSchemaPgauditLogLevelDebug3  JSONSchemaPgauditLogLevel = "debug3"
+	JSONSchemaPgauditLogLevelDebug4  JSONSchemaPgauditLogLevel = "debug4"
+	JSONSchemaPgauditLogLevelDebug5  JSONSchemaPgauditLogLevel = "debug5"
+	JSONSchemaPgauditLogLevelInfo    JSONSchemaPgauditLogLevel = "info"
+	JSONSchemaPgauditLogLevelNotice  JSONSchemaPgauditLogLevel = "notice"
+	JSONSchemaPgauditLogLevelWarning JSONSchemaPgauditLogLevel = "warning"
+	JSONSchemaPgauditLogLevelLog     JSONSchemaPgauditLogLevel = "log"
+)
+
+// System-wide settings for the pgaudit extension.
+type JSONSchemaPgaudit struct {
+	// Enable pgaudit extension. When enabled, pgaudit extension will be automatically installed.Otherwise, extension will be uninstalled but auditing configurations will be preserved.
+	FeatureEnabled *bool `json:"feature_enabled,omitempty"`
+	// Specifies which classes of statements will be logged by session audit logging.
+	Log []string `json:"log,omitempty"`
+	// Specifies that session logging should be enabled in the case where all relations
+	// in a statement are in pg_catalog.
+	LogCatalog *bool `json:"log_catalog,omitempty"`
+	// Specifies whether log messages will be visible to a client process such as psql.
+	LogClient *bool `json:"log_client,omitempty"`
+	// Specifies the log level that will be used for log entries.
+	LogLevel JSONSchemaPgauditLogLevel `json:"log_level,omitempty"`
+	// Crop parameters representation and whole statements if they exceed this threshold.
+	// A (default) value of -1 disable the truncation.
+	LogMaxStringLength int `json:"log_max_string_length,omitempty" validate:"omitempty,gte=-1,lte=102400"`
+	// This GUC allows to turn off logging nested statements, that is, statements that are
+	// executed as part of another ExecutorRun.
+	LogNestedStatements *bool `json:"log_nested_statements,omitempty"`
+	// Specifies that audit logging should include the parameters that were passed with the statement.
+	LogParameter *bool `json:"log_parameter,omitempty"`
+	// Specifies that parameter values longer than this setting (in bytes) should not be logged,
+	// but replaced with <long param suppressed>.
+	LogParameterMaxSize int `json:"log_parameter_max_size,omitempty"`
+	// Specifies whether session audit logging should create a separate log entry
+	// for each relation (TABLE, VIEW, etc.) referenced in a SELECT or DML statement.
+	LogRelation *bool `json:"log_relation,omitempty"`
+	// Log Rows
+	LogRows *bool `json:"log_rows,omitempty"`
+	// Specifies whether logging will include the statement text and parameters (if enabled).
+	LogStatement *bool `json:"log_statement,omitempty"`
+	// Specifies whether logging will include the statement text and parameters with
+	// the first log entry for a statement/substatement combination or with every entry.
+	LogStatementOnce *bool `json:"log_statement_once,omitempty"`
+	// Specifies the master role to use for object audit logging.
+	Role string `json:"role,omitempty" validate:"omitempty,lte=64"`
+}
+
 type JSONSchemaPgbouncerAutodbPoolMode string
 
 const (
@@ -3996,6 +4642,10 @@ const (
 type JSONSchemaValkey struct {
 	// Determines default pub/sub channels' ACL for new users if ACL is not supplied. When this option is not defined, all_channels is assumed to keep backward compatibility. This option doesn't affect Valkey configuration acl-pubsub-default.
 	AclChannelsDefault JSONSchemaValkeyAclChannelsDefault `json:"acl_channels_default,omitempty"`
+	// Valkey reclaims expired keys both when accessed and in the background. The background process scans for expired keys to free memory. Increasing the active-expire-effort setting (default 1, max 10) uses more CPU to reclaim expired keys faster, reducing memory usage but potentially increasing latency.
+	ActiveExpireEffort int `json:"active_expire_effort,omitempty" validate:"omitempty,gte=1,lte=10"`
+	// When enabled, Valkey will create frequent local RDB snapshots. When disabled, Valkey will only take RDB snapshots when a backup is created, based on the backup schedule. This setting is ignored when `valkey_persistence` is set to `off`.
+	FrequentSnapshots *bool `json:"frequent_snapshots,omitempty"`
 	// Set Valkey IO thread count. Changing this will cause a restart of the Valkey service.
 	IoThreads int `json:"io_threads,omitempty" validate:"omitempty,gte=1,lte=32"`
 	// LFU maxmemory-policy counter decay time in minutes
@@ -4019,16 +4669,68 @@ type JSONSchemaValkey struct {
 }
 
 type KeyMaterial struct {
-	Automatic *bool     `json:"automatic" validate:"required"`
+	// Flag stating whether an automation run handled this historic mutation or if manual actor keys initiated it.
+	Automatic *bool `json:"automatic" validate:"required"`
+	// The UTC date-time indicating when this particular generation of physical cryptographic material was seeded.
 	CreatedAT time.Time `json:"created-at" validate:"required"`
-	Version   int       `json:"version" validate:"required"`
+	// The incremental index tracing internal key rotation cycles for the key material.
+	Version int `json:"version" validate:"required"`
 }
 
 type KeyRotationConfig struct {
-	Automatic      *bool     `json:"automatic" validate:"required"`
-	ManualCount    int       `json:"manual-count" validate:"required"`
-	NextAT         time.Time `json:"next-at" validate:"required"`
-	RotationPeriod int       `json:"rotation-period" validate:"required"`
+	// When set to true, dictates that the system automatically rotates material periodically.
+	Automatic *bool `json:"automatic" validate:"required"`
+	// Total running tally of manual key rotation tasks executed by users over this key resource's lifecycle.
+	ManualCount int `json:"manual-count" validate:"required"`
+	// Scheduled deadline calculation pinpointing the next automated rotational iteration target date.
+	NextAT time.Time `json:"next-at" validate:"required"`
+	// The set frequency period (measured in days) for triggers monitoring auto-rotation loops.
+	RotationPeriod int `json:"rotation-period" validate:"required"`
+}
+
+type KeyStoreHealthStatus string
+
+const (
+	KeyStoreHealthStatusHealthy   KeyStoreHealthStatus = "healthy"
+	KeyStoreHealthStatusUnhealthy KeyStoreHealthStatus = "unhealthy"
+	KeyStoreHealthStatusUnknown   KeyStoreHealthStatus = "unknown"
+)
+
+type KeyStoreHealth struct {
+	// Timestamp of the latest completed health check.
+	CheckedAT time.Time `json:"checked-at,omitempty"`
+	// Normalized error detail for unhealthy observations.
+	ErrorDetail string `json:"error-detail,omitempty"`
+	// Base64-encoded raw successful AWS GetHealthStatus JSON metadata.
+	MetadataJSON []byte `json:"metadata-json,omitempty"`
+	// Latest normalized XKS proxy health status.
+	Status KeyStoreHealthStatus `json:"status,omitempty"`
+	// Normalized reason for the latest status.
+	StatusReason string `json:"status-reason,omitempty"`
+}
+
+type KeyStoreProxy struct {
+	Auth *KeyStoreProxyAuth `json:"auth" validate:"required"`
+	// Public URL used to route communication to the customer-managed XKS proxy.
+	Endpoint string `json:"endpoint" validate:"required"`
+}
+
+type KeyStoreProxyAuth struct {
+	// Access key used to sign requests sent to the XKS proxy.
+	Key string `json:"key" validate:"required"`
+	// Secret key used to sign requests sent to the XKS proxy. This value is never returned by the API.
+	Secret string `json:"secret" validate:"required"`
+}
+
+type KeyStoreProxyAuthResponse struct {
+	// Access key used to sign requests sent to the XKS proxy.
+	Key string `json:"key,omitempty"`
+}
+
+type KeyStoreProxyResponse struct {
+	Auth *KeyStoreProxyAuthResponse `json:"auth,omitempty"`
+	// Public URL used to route communication to the customer-managed XKS proxy.
+	Endpoint string `json:"endpoint,omitempty"`
 }
 
 // Kubelet image GC options
@@ -4042,17 +4744,35 @@ type Labels map[string]string
 
 // List of AI API keys
 type ListAIAPIKeysResponse struct {
-	AIAPIKeys []AIAPIKey `json:"ai-api-keys" validate:"required"`
+	AIAPIKeys []ListAIAPIKeysResponseEntry `json:"ai-api-keys" validate:"required"`
+}
+
+// AI API key list entry
+type ListAIAPIKeysResponseEntry struct {
+	// True when the key has access to all deployments of the organization.
+	AllDeployments *bool `json:"all-deployments" validate:"required"`
+	// True when the key has access to all public models.
+	AllModels *bool     `json:"all-models" validate:"required"`
+	CreatedAT time.Time `json:"created-at" validate:"required"`
+	// Allowlist of deployments. An empty array denies access to all deployments. Grant access to all deployments with all-deployments instead.
+	Deployments *AIAPIKeyDeployments `json:"deployments" validate:"required"`
+	ID          UUID                 `json:"id" validate:"required"`
+	// Allowlist of public model names. An empty array denies access to all public models. Grant access to all public models with all-models instead.
+	Models *AIAPIKeyModels `json:"models" validate:"required"`
+	Name   string          `json:"name" validate:"required"`
+	// Revocation timestamp. Null when the API key is active.
+	RevokedAT *time.Time `json:"revoked-at" validate:"required"`
+	UpdatedAT time.Time  `json:"updated-at" validate:"required"`
 }
 
 // List of available instance types with authorization status
 type ListAIInstanceTypesResponse struct {
-	InstanceTypes []InstanceTypeEntry `json:"instance-types,omitempty"`
+	InstanceTypes []InstanceTypeEntry `json:"instance-types" validate:"required"`
 }
 
-// AI model list
+// AI deployment list
 type ListDeploymentsResponse struct {
-	Deployments []ListDeploymentsResponseEntry `json:"deployments,omitempty"`
+	Deployments []ListDeploymentsResponseEntry `json:"deployments" validate:"required"`
 }
 
 type ListDeploymentsResponseEntryState string
@@ -4060,46 +4780,91 @@ type ListDeploymentsResponseEntryState string
 const (
 	ListDeploymentsResponseEntryStateReady     ListDeploymentsResponseEntryState = "ready"
 	ListDeploymentsResponseEntryStateCreating  ListDeploymentsResponseEntryState = "creating"
+	ListDeploymentsResponseEntryStatePreparing ListDeploymentsResponseEntryState = "preparing"
 	ListDeploymentsResponseEntryStateError     ListDeploymentsResponseEntryState = "error"
 	ListDeploymentsResponseEntryStateDeploying ListDeploymentsResponseEntryState = "deploying"
+	ListDeploymentsResponseEntryStateScaling   ListDeploymentsResponseEntryState = "scaling"
+	ListDeploymentsResponseEntryStateUpdating  ListDeploymentsResponseEntryState = "updating"
 )
 
 // AI deployment
 type ListDeploymentsResponseEntry struct {
 	// Creation time
 	CreatedAT time.Time `json:"created-at,omitempty"`
-	// Deployment URL (nullable)
-	DeploymentURL string `json:"deployment-url,omitempty"`
+	// Deployment inference endpoint URL
+	DeploymentURL string `json:"deployment-url" validate:"required"`
 	// Number of GPUs
 	GpuCount int64 `json:"gpu-count,omitempty" validate:"omitempty,gte=1"`
 	// GPU type family
 	GpuType string `json:"gpu-type,omitempty" validate:"omitempty,gte=1"`
 	// Deployment ID
-	ID    UUID      `json:"id,omitempty"`
-	Model *ModelRef `json:"model,omitempty"`
+	ID UUID `json:"id,omitempty"`
+	// Model reference. Provide either id or name.
+	Model *ModelRef `json:"model" validate:"required"`
 	// Deployment name
-	Name string `json:"name,omitempty" validate:"omitempty,gte=1"`
+	Name string `json:"name" validate:"required,gte=1"`
 	// Number of replicas (>=0)
 	Replicas int64 `json:"replicas,omitempty" validate:"omitempty,gte=0"`
 	// Service level
 	ServiceLevel string `json:"service-level,omitempty" validate:"omitempty,gte=1"`
 	// Deployment state
-	State ListDeploymentsResponseEntryState `json:"state,omitempty"`
+	State ListDeploymentsResponseEntryState `json:"state" validate:"required"`
 	// Update time
 	UpdatedAT time.Time `json:"updated-at,omitempty"`
 }
 
+type ListKeyStoresResponse struct {
+	// The key stores configured for the organization.
+	KeyStores []ListKeyStoresResponseEntry `json:"key-stores,omitempty"`
+}
+
+type ListKeyStoresResponseEntryStatus string
+
+const (
+	ListKeyStoresResponseEntryStatusConnected    ListKeyStoresResponseEntryStatus = "connected"
+	ListKeyStoresResponseEntryStatusDisconnected ListKeyStoresResponseEntryStatus = "disconnected"
+)
+
+type ListKeyStoresResponseEntryType string
+
+const (
+	ListKeyStoresResponseEntryTypeExternalKeyStore ListKeyStoresResponseEntryType = "external-key-store"
+)
+
+type ListKeyStoresResponseEntry struct {
+	// The creation timestamp.
+	CreatedAT time.Time `json:"created-at,omitempty"`
+	// An optional detailed description providing additional context about the key store's intended use case.
+	Description string `json:"description,omitempty"`
+	// The globally unique identifier assigned to the key store.
+	ID UUID `json:"id,omitempty"`
+	// The display name assigned to the key store.
+	Name  string                 `json:"name,omitempty"`
+	Proxy *KeyStoreProxyResponse `json:"proxy,omitempty"`
+	// The current connection status of the key store.
+	Status ListKeyStoresResponseEntryStatus `json:"status,omitempty"`
+	// The timestamp indicating when the current key store status last transitioned.
+	StatusSince time.Time `json:"status-since,omitempty"`
+	// The key store type.
+	Type ListKeyStoresResponseEntryType `json:"type,omitempty"`
+}
+
 type ListKmsKeyRotationsResponse struct {
+	// A chronologically ordered collection tracking historical rotation lifecycle occurrences for this resource.
 	Rotations []ListKmsKeyRotationsResponseEntry `json:"rotations" validate:"required"`
 }
 
 type ListKmsKeyRotationsResponseEntry struct {
-	Automatic *bool     `json:"automatic" validate:"required"`
+	// Flag stating whether an automation run handled this historic mutation or if manual actor keys initiated it.
+	Automatic *bool `json:"automatic" validate:"required"`
+	// The UTC timestamp tracking precisely when this historical adjustment pass finished processing.
 	RotatedAT time.Time `json:"rotated-at" validate:"required"`
-	Version   int       `json:"version" validate:"required"`
+	// The absolute increment index referencing this specific historical structural material setup.
+	Version int `json:"version" validate:"required"`
 }
 
 type ListKmsKeysResponse struct {
+	// An array containing metadata entries for all available keys for your organization in the requested zone.
 	KmsKeys []ListKmsKeysResponseEntry `json:"kms-keys" validate:"required"`
 }
 
@@ -4118,26 +4883,46 @@ const (
 )
 
 type ListKmsKeysResponseEntry struct {
-	CreatedAT   time.Time                      `json:"created-at" validate:"required"`
-	Description string                         `json:"description" validate:"required"`
-	ID          UUID                           `json:"id" validate:"required"`
-	Material    *KeyMaterial                   `json:"material" validate:"required"`
-	MultiZone   *bool                          `json:"multi-zone" validate:"required"`
-	Name        string                         `json:"name" validate:"required"`
-	OriginZone  string                         `json:"origin-zone" validate:"required"`
-	Replicas    []string                       `json:"replicas" validate:"required"`
-	Revision    *RevisionStamp                 `json:"revision" validate:"required"`
-	Rotation    *KeyRotationConfig             `json:"rotation" validate:"required"`
-	Source      ListKmsKeysResponseEntrySource `json:"source" validate:"required"`
-	Status      ListKmsKeysResponseEntryStatus `json:"status" validate:"required"`
-	StatusSince time.Time                      `json:"status-since" validate:"required"`
-	Usage       string                         `json:"usage" validate:"required"`
+	// The UTC timestamp showing when the KMS key was originally provisioned.
+	CreatedAT time.Time `json:"created-at" validate:"required"`
+	DeleteAT  time.Time `json:"delete-at,omitempty"`
+	// An optional detailed description providing additional context about the key's intended use case.
+	Description string `json:"description,omitempty"`
+	// The globally unique identifier (UUID) tracking this key entity.
+	ID       UUID         `json:"id" validate:"required"`
+	Material *KeyMaterial `json:"material" validate:"required"`
+	// True if this is a multi-zone key.
+	MultiZone *bool `json:"multi-zone" validate:"required"`
+	// The display name of the KMS key.
+	Name string `json:"name" validate:"required"`
+	// The creation zone of the KMS key.
+	OriginZone string `json:"origin-zone" validate:"required"`
+	// Array tracking target zones currently maintaining copies of this item.
+	Replicas []string                       `json:"replicas,omitempty"`
+	Revision *RevisionStamp                 `json:"revision" validate:"required"`
+	Rotation *KeyRotationConfig             `json:"rotation" validate:"required"`
+	Source   ListKmsKeysResponseEntrySource `json:"source" validate:"required"`
+	Status   ListKmsKeysResponseEntryStatus `json:"status" validate:"required"`
+	// The precise time when the key entered its current configuration phase.
+	StatusSince time.Time `json:"status-since" validate:"required"`
+	// The cryptographic operation constraints allowed on this key.
+	Usage string `json:"usage" validate:"required"`
 }
 
 // AI model list
 type ListModelsResponse struct {
-	Models []ListModelsResponseEntry `json:"models,omitempty"`
+	Models []ListModelsResponseEntry `json:"models" validate:"required"`
 }
+
+type ListModelsResponseEntryLifecycleStatus string
+
+const (
+	ListModelsResponseEntryLifecycleStatusPreview    ListModelsResponseEntryLifecycleStatus = "preview"
+	ListModelsResponseEntryLifecycleStatusActive     ListModelsResponseEntryLifecycleStatus = "active"
+	ListModelsResponseEntryLifecycleStatusDeprecated ListModelsResponseEntryLifecycleStatus = "deprecated"
+	ListModelsResponseEntryLifecycleStatusEol        ListModelsResponseEntryLifecycleStatus = "eol"
+	ListModelsResponseEntryLifecycleStatusNull       ListModelsResponseEntryLifecycleStatus = "null"
+)
 
 type ListModelsResponseEntryState string
 
@@ -4149,21 +4934,117 @@ const (
 	ListModelsResponseEntryStateCreated     ListModelsResponseEntryState = "created"
 )
 
+type ListModelsResponseEntryVisibility string
+
+const (
+	ListModelsResponseEntryVisibilityPrivate ListModelsResponseEntryVisibility = "private"
+	ListModelsResponseEntryVisibilityPublic  ListModelsResponseEntryVisibility = "public"
+)
+
 // AI model
 type ListModelsResponseEntry struct {
 	// Creation time
-	CreatedAT time.Time `json:"created-at,omitempty"`
+	CreatedAT time.Time `json:"created-at" validate:"required"`
 	// Model ID
-	ID UUID `json:"id,omitempty"`
-	// Model size (nullable)
-	ModelSize int64 `json:"model-size,omitempty" validate:"omitempty,gte=0"`
+	ID UUID `json:"id" validate:"required"`
+	// Model lifecycle state
+	LifecycleStatus ListModelsResponseEntryLifecycleStatus `json:"lifecycle-status,omitempty"`
+	// Model size in bytes
+	ModelSize int64 `json:"model-size" validate:"required,gte=0"`
 	// Model name
-	Name string `json:"name,omitempty" validate:"omitempty,gte=1"`
+	Name string `json:"name" validate:"required,gte=1"`
 	// Model state
-	State ListModelsResponseEntryState `json:"state,omitempty"`
+	State ListModelsResponseEntryState `json:"state" validate:"required"`
 	// Update time
-	UpdatedAT time.Time `json:"updated-at,omitempty"`
+	UpdatedAT time.Time `json:"updated-at" validate:"required"`
+	// Model visibility
+	Visibility ListModelsResponseEntryVisibility `json:"visibility,omitempty"`
 }
+
+type ListRouteEntryKind string
+
+const (
+	ListRouteEntryKindSubnet ListRouteEntryKind = "Subnet"
+	ListRouteEntryKindVpc    ListRouteEntryKind = "Vpc"
+)
+
+// Route
+type ListRouteEntry struct {
+	// Route description
+	Description string `json:"description,omitempty" validate:"omitempty,lte=4096"`
+	// Route destination CIDR
+	Destination string `json:"destination,omitempty"`
+	// Route ID
+	ID UUID `json:"id,omitempty"`
+	// Route kind
+	Kind ListRouteEntryKind `json:"kind,omitempty"`
+	// Route target
+	Target string `json:"target,omitempty"`
+}
+
+type ListSubnetEntryAddressSpace string
+
+const (
+	ListSubnetEntryAddressSpacePrivate ListSubnetEntryAddressSpace = "private"
+)
+
+type ListSubnetEntryAddressfamily string
+
+const (
+	ListSubnetEntryAddressfamilyInet4 ListSubnetEntryAddressfamily = "inet4"
+	ListSubnetEntryAddressfamilyDual  ListSubnetEntryAddressfamily = "dual"
+)
+
+// Subnet
+type ListSubnetEntry struct {
+	// Subnet address space
+	AddressSpace ListSubnetEntryAddressSpace `json:"address-space,omitempty"`
+	// Subnet address family
+	Addressfamily ListSubnetEntryAddressfamily `json:"addressfamily,omitempty"`
+	// Subnet creation date
+	CreatedAT time.Time `json:"created-at,omitempty"`
+	// Subnet description
+	Description string `json:"description,omitempty" validate:"omitempty,lte=4096"`
+	// Subnet ID
+	ID UUID `json:"id,omitempty"`
+	// Subnet ipv4 CIDR
+	Ipv4Block string `json:"ipv4-block,omitempty"`
+	Labels    Labels `json:"labels,omitempty"`
+	// Subnet name
+	Name string `json:"name,omitempty" validate:"omitempty,gte=1,lte=255"`
+}
+
+// VPC
+type ListVpcEntry struct {
+	// VPC creation date
+	CreatedAT time.Time `json:"created-at,omitempty"`
+	// Indicates if this is the organization's default VPC
+	Default *bool `json:"default,omitempty"`
+	// VPC description
+	Description string `json:"description,omitempty" validate:"omitempty,lte=4096"`
+	// VPC DHCP options
+	DHCPOptions *VpcDHCPOptions `json:"dhcp-options,omitempty"`
+	// VPC ID
+	ID     UUID   `json:"id,omitempty"`
+	Labels Labels `json:"labels,omitempty"`
+	// VPC name
+	Name string `json:"name,omitempty" validate:"omitempty,gte=1,lte=255"`
+}
+
+// Live balance
+type LiveBalance struct {
+	// Organization live balance
+	Balance float64 `json:"balance,omitempty"`
+	// Organization currency
+	Currency string `json:"currency,omitempty"`
+}
+
+type LoadBalancerAddressfamily string
+
+const (
+	LoadBalancerAddressfamilyInet4 LoadBalancerAddressfamily = "inet4"
+	LoadBalancerAddressfamilyInet6 LoadBalancerAddressfamily = "inet6"
+)
 
 type LoadBalancerState string
 
@@ -4178,6 +5059,8 @@ const (
 
 // Load Balancer
 type LoadBalancer struct {
+	// Load Balancer address family
+	Addressfamily LoadBalancerAddressfamily `json:"addressfamily,omitempty"`
 	// Load Balancer creation date
 	CreatedAT time.Time `json:"created-at,omitempty"`
 	// Load Balancer description
@@ -4302,6 +5185,7 @@ type Manager struct {
 	Type ManagerType `json:"type,omitempty"`
 }
 
+// Model reference. Provide either id or name.
 type ModelRef struct {
 	// Associated model ID
 	ID UUID `json:"id,omitempty"`
@@ -4309,18 +5193,73 @@ type ModelRef struct {
 	Name string `json:"name,omitempty" validate:"omitempty,gte=1"`
 }
 
-// Cluster networking configuration.
+// Accumulated Unit Of Measurement (UOM) counters for one model over a flush window
+type ModelUsageCounters struct {
+	// Number of inference calls in this flush window
+	CallCount int `json:"call-count" validate:"required,gte=1"`
+	// Total prompt/input Unit Of Measurement (UOM) across all calls in this flush window (e.g., tokens for LLMs, minutes for TTS, pages for OCR)
+	InputUom int `json:"input-uom" validate:"required,gte=0"`
+	// Total completion/output Unit Of Measurement (UOM) across all calls in this flush window (e.g., tokens for LLMs, minutes for TTS, pages for OCR)
+	OutputUom int `json:"output-uom" validate:"required,gte=0"`
+}
+
+// EXPERIMENTAL: Cluster networking configuration.
 type Networking struct {
 	// CIDR Range for Pods in cluster. This must not overlap with any IP ranges assigned to pods. Max of two, comma-separated, dual-stack CIDRs is allowed.
 	// If not specified, defaults to 192.168.0.0/16.
 	ClusterCidr string `json:"cluster-cidr,omitempty"`
-	// Mask size for node cidr in cluster. It must be larger than the Pod CIDR subnet mask. Defaults to 24
+	// Mask size for node cidr in cluster. It must be larger than, and at most 16 bits longer than, the Pod CIDR subnet mask. Defaults to 24
 	NodeCidrMaskSizeIpv4 int64 `json:"node-cidr-mask-size-ipv4,omitempty" validate:"omitempty,gt=0"`
-	// Mask size for node cidr in cluster. It must be larger than the Pod CIDR subnet mask. Defaults to 64
+	// Mask size for node cidr in cluster. It must be larger than, and at most 16 bits longer than, the Pod CIDR subnet mask. Defaults to 64
 	NodeCidrMaskSizeIpv6 int64 `json:"node-cidr-mask-size-ipv6,omitempty" validate:"omitempty,gt=0"`
-	// CIDR range for service cluster IPs. This must not overlap with any IP ranges assigned to nodes or pods. Max of two, comma-separated, dual-stack CIDRs is allowed.
+	// CIDR range for service cluster IPs. This must not overlap with any IP ranges assigned to nodes or pods. Max of two, comma-separated, dual-stack CIDRs is allowed. The IPv6 range must be no larger than a /108 (upstream Kubernetes apiserver limit).
 	// If not specified, defaults to 10.96.0.0/12.
 	ServiceClusterIPRange string `json:"service-cluster-ip-range,omitempty"`
+}
+
+type NvidiaMigProfileA3024gb string
+
+const (
+	NvidiaMigProfileA3024gb1G6Gb    NvidiaMigProfileA3024gb = "1g.6gb"
+	NvidiaMigProfileA3024gb1G6GbMe  NvidiaMigProfileA3024gb = "1g.6gb+me"
+	NvidiaMigProfileA3024gb2G12Gb   NvidiaMigProfileA3024gb = "2g.12gb"
+	NvidiaMigProfileA3024gb2G12GbMe NvidiaMigProfileA3024gb = "2g.12gb+me"
+	NvidiaMigProfileA3024gb4G24Gb   NvidiaMigProfileA3024gb = "4g.24gb"
+)
+
+type NvidiaMigProfileB300269gb string
+
+const (
+	NvidiaMigProfileB300269gb1G34Gb   NvidiaMigProfileB300269gb = "1g.34gb"
+	NvidiaMigProfileB300269gb1G34GbMe NvidiaMigProfileB300269gb = "1g.34gb+me"
+	NvidiaMigProfileB300269gb1G67Gb   NvidiaMigProfileB300269gb = "1g.67gb"
+	NvidiaMigProfileB300269gb2G67Gb   NvidiaMigProfileB300269gb = "2g.67gb"
+	NvidiaMigProfileB300269gb3G135Gb  NvidiaMigProfileB300269gb = "3g.135gb"
+	NvidiaMigProfileB300269gb4G135Gb  NvidiaMigProfileB300269gb = "4g.135gb"
+	NvidiaMigProfileB300269gb7G269Gb  NvidiaMigProfileB300269gb = "7g.269gb"
+)
+
+type NvidiaMigProfileRtxpro600096gb string
+
+const (
+	NvidiaMigProfileRtxpro600096gb1G24Gb      NvidiaMigProfileRtxpro600096gb = "1g.24gb"
+	NvidiaMigProfileRtxpro600096gb1G24GbMe    NvidiaMigProfileRtxpro600096gb = "1g.24gb+me"
+	NvidiaMigProfileRtxpro600096gb1G24GbGfx   NvidiaMigProfileRtxpro600096gb = "1g.24gb+gfx"
+	NvidiaMigProfileRtxpro600096gb1G24GbMeAll NvidiaMigProfileRtxpro600096gb = "1g.24gb+me.all"
+	NvidiaMigProfileRtxpro600096gb1G24GbNoMe  NvidiaMigProfileRtxpro600096gb = "1g.24gb-me"
+	NvidiaMigProfileRtxpro600096gb2G48Gb      NvidiaMigProfileRtxpro600096gb = "2g.48gb"
+	NvidiaMigProfileRtxpro600096gb2G48GbGfx   NvidiaMigProfileRtxpro600096gb = "2g.48gb+gfx"
+	NvidiaMigProfileRtxpro600096gb2G48GbMeAll NvidiaMigProfileRtxpro600096gb = "2g.48gb+me.all"
+	NvidiaMigProfileRtxpro600096gb2G48GbNoMe  NvidiaMigProfileRtxpro600096gb = "2g.48gb-me"
+	NvidiaMigProfileRtxpro600096gb4G96Gb      NvidiaMigProfileRtxpro600096gb = "4g.96gb"
+	NvidiaMigProfileRtxpro600096gb4G96GbGfx   NvidiaMigProfileRtxpro600096gb = "4g.96gb+gfx"
+)
+
+// Nvidia MIG Profiles enabled
+type NvidiaMigProfiles struct {
+	A3024gb        NvidiaMigProfileA3024gb        `json:"a30.24gb,omitempty"`
+	B300269gb      NvidiaMigProfileB300269gb      `json:"b300.269gb,omitempty"`
+	Rtxpro600096gb NvidiaMigProfileRtxpro600096gb `json:"rtxpro6000.96gb,omitempty"`
 }
 
 type OperationReason string
@@ -4372,17 +5311,17 @@ type Operation struct {
 	State OperationState `json:"state,omitempty"`
 }
 
-type OperationResourceRef struct {
-	Command string `json:"command" validate:"required"`
-	ID      UUID   `json:"id" validate:"required"`
-	Link    string `json:"link,omitempty"`
+// Per-org Unit Of Measurement (UOM) consumption quota response
+type OrgConsumptionQuotaResponse struct {
+	// Per-org Unit Of Measurement (UOM) consumption quota (UOM/min). Null means unlimited. UOM represents weighted units across different AI workloads (e.g., tokens for LLMs, minutes for TTS, pages for OCR).
+	QuotaUomPerMinute *int `json:"quota-uom-per-minute,omitempty" validate:"omitempty,gte=0"`
 }
 
 // Organization
 type Organization struct {
 	// Organization address
 	Address string `json:"address,omitempty"`
-	// Organization balance
+	// Organization balance. DEPRECATED: use the dedicated `live-balance` endpoint
 	Balance float64 `json:"balance,omitempty"`
 	// Organization city
 	City string `json:"city,omitempty"`
@@ -4398,10 +5337,20 @@ type Organization struct {
 	Postcode string `json:"postcode,omitempty"`
 }
 
-// Organization GPU usage
+// Organization usage
 type OrganizationUsage struct {
-	// Total GPU count
-	Gpu int64 `json:"gpu" validate:"required,gte=0"`
+	// Count of active AI API keys
+	AIAPIKey int64 `json:"ai-api-key,omitempty" validate:"omitempty,gte=0"`
+	// GPU3 count
+	Gpu3 int64 `json:"gpu3,omitempty" validate:"omitempty,gte=0"`
+	// GPU3080TI count
+	Gpu3080ti int64 `json:"gpu3080ti,omitempty" validate:"omitempty,gte=0"`
+	// GPUA30 count
+	Gpua30 int64 `json:"gpua30,omitempty" validate:"omitempty,gte=0"`
+	// GPUA5000 count
+	Gpua5000 int64 `json:"gpua5000,omitempty" validate:"omitempty,gte=0"`
+	// GPURTX6000PRO count
+	Gpurtx6000pro int64 `json:"gpurtx6000pro,omitempty" validate:"omitempty,gte=0"`
 }
 
 // Private Network
@@ -4471,18 +5420,27 @@ type Quota struct {
 	Usage int64 `json:"usage,omitempty"`
 }
 
+// Rate Limit
+type RateLimited struct {
+	// The error message
+	Error string `json:"error,omitempty"`
+	// The time in seconds to wait before the next request
+	RetryAfter float64 `json:"retry_after,omitempty"`
+}
+
 type ReEncryptRequestDestination struct {
-	// Optional encryption context appended to the AAD.
+	// Optional new Base64-encoded encryption context to apply under the target destination envelope.
 	EncryptionContext *[]byte `json:"encryption-context,omitempty"`
-	// The ID of the target key.
+	// The ID of the target key chosen to encapsulate the newly shifted data translation.
 	Key UUID `json:"key" validate:"required"`
 }
 
 type ReEncryptRequestSource struct {
+	// The Base64-encoded encrypted payload package ready to undergo source-side key decryption.
 	Ciphertext []byte `json:"ciphertext" validate:"required"`
-	// Optional encryption context appended to the AAD.
+	// Optional Base64-encoded encryption context originally appended to the AAD to confirm package validation rules.
 	EncryptionContext *[]byte `json:"encryption-context,omitempty"`
-	// The ID of the source key.
+	// The ID of the source key currently protecting the data payload.
 	Key UUID `json:"key" validate:"required"`
 }
 
@@ -4492,6 +5450,7 @@ type ReEncryptRequest struct {
 }
 
 type ReEncryptResponse struct {
+	// The new Base64-encoded ciphertext block safely wrapped by the chosen destination key parameters.
 	Ciphertext []byte `json:"ciphertext" validate:"required"`
 }
 
@@ -4502,19 +5461,35 @@ type RecomputeBundleResponse struct {
 }
 
 type ReplicaFailure struct {
-	AttemptedWatermark int       `json:"attempted-watermark" validate:"required"`
-	Error              string    `json:"error" validate:"required"`
-	FailedAT           time.Time `json:"failed-at" validate:"required"`
+	// The target sync sequence watermark that triggered the replication failure.
+	AttemptedWatermark int `json:"attempted-watermark" validate:"required"`
+	// A descriptive message containing error logs or system details regarding the sync failure.
+	Error string `json:"error" validate:"required"`
+	// The UTC timestamp showing exactly when the replication sync window failed.
+	FailedAT time.Time `json:"failed-at" validate:"required"`
 }
 
 type ReplicaState struct {
+	// The latest logical sequence number or state watermark successfully synced to this regional replica.
 	LastAppliedWatermark int             `json:"last-applied-watermark" validate:"required"`
 	LastFailure          *ReplicaFailure `json:"last-failure,omitempty"`
-	Zone                 string          `json:"zone" validate:"required"`
+	// The destination target zone tracking this specific replica instance.
+	Zone string `json:"zone" validate:"required"`
 }
 
 type ReplicateKmsKeyRequest struct {
+	// The targeted cloud zone where the KMS key should be replicated.
 	Zone string `json:"zone" validate:"required"`
+}
+
+// Resources reserved for kube or system components.
+type ReservedResources struct {
+	// CPU reservation, e.g., "200m"
+	CPU string `json:"cpu" validate:"required"`
+	// Ephemeral storage reservation, e.g., "1Gi"
+	EphemeralStorage string `json:"ephemeral-storage,omitempty"`
+	// Memory reservation, e.g., "512Mi"
+	Memory string `json:"memory,omitempty"`
 }
 
 // Resource
@@ -4527,7 +5502,8 @@ type Resource struct {
 
 // AI deployment inference endpoint authentication key
 type RevealDeploymentAPIKeyResponse struct {
-	APIKey string `json:"api-key,omitempty"`
+	// Inference endpoint authentication key
+	APIKey string `json:"api-key" validate:"required"`
 }
 
 type ReverseDNSRecord struct {
@@ -4535,12 +5511,35 @@ type ReverseDNSRecord struct {
 }
 
 type RevisionStamp struct {
-	AT  time.Time `json:"at" validate:"required"`
-	Seq int       `json:"seq" validate:"required,gte=0"`
+	// The timestamp recording exactly when this specific revision iteration occurred.
+	AT time.Time `json:"at" validate:"required"`
+	// Monotonically increasing sequencing value utilized for optimistic concurrency control locks.
+	Seq int `json:"seq" validate:"required,gte=0"`
 }
 
 type RotateKmsKeyResponse struct {
 	Rotation *KeyRotationConfig `json:"rotation" validate:"required"`
+}
+
+type RouteKind string
+
+const (
+	RouteKindSubnet RouteKind = "Subnet"
+	RouteKindVpc    RouteKind = "Vpc"
+)
+
+// Route
+type Route struct {
+	// Route description
+	Description string `json:"description,omitempty" validate:"omitempty,lte=4096"`
+	// Route destination CIDR
+	Destination string `json:"destination,omitempty"`
+	// Route ID
+	ID UUID `json:"id,omitempty"`
+	// Route kind
+	Kind RouteKind `json:"kind,omitempty"`
+	// Route target
+	Target string `json:"target,omitempty"`
 }
 
 // Scale AI deployment
@@ -4552,6 +5551,11 @@ type ScaleDeploymentRequest struct {
 type ScheduleKmsKeyDeletionRequest struct {
 	// Number of days to wait until deletion is final.
 	DelayDays int `json:"delay-days,omitempty" validate:"omitempty,gte=7,lte=30"`
+}
+
+type ScheduleKmsKeyDeletionResponse struct {
+	// Timestamp of the key deletion
+	DeleteAT time.Time `json:"delete-at,omitempty"`
 }
 
 // Security Group
@@ -4610,6 +5614,7 @@ type SecurityGroupRuleProtocol string
 const (
 	SecurityGroupRuleProtocolTCP    SecurityGroupRuleProtocol = "tcp"
 	SecurityGroupRuleProtocolEsp    SecurityGroupRuleProtocol = "esp"
+	SecurityGroupRuleProtocolAll    SecurityGroupRuleProtocol = "all"
 	SecurityGroupRuleProtocolICMP   SecurityGroupRuleProtocol = "icmp"
 	SecurityGroupRuleProtocolUDP    SecurityGroupRuleProtocol = "udp"
 	SecurityGroupRuleProtocolGre    SecurityGroupRuleProtocol = "gre"
@@ -4638,6 +5643,12 @@ type SecurityGroupRule struct {
 	SecurityGroup *SecurityGroupResource `json:"security-group,omitempty"`
 	// Start port of the range
 	StartPort int64 `json:"start-port,omitempty" validate:"omitempty,gte=1,lte=65535"`
+}
+
+// Request to set per-org Unit Of Measurement (UOM) consumption quota
+type SetOrgConsumptionQuotaRequest struct {
+	// Per-org Unit Of Measurement (UOM) consumption quota (UOM/min). Pass null to remove the limit. UOM represents weighted units across different AI workloads (e.g., tokens for LLMs, minutes for TTS, pages for OCR).
+	QuotaUomPerMinute *int `json:"quota-uom-per-minute,omitempty" validate:"omitempty,gte=0"`
 }
 
 // Kubernetes Audit parameters
@@ -4703,7 +5714,8 @@ const (
 // SKS Cluster
 type SKSCluster struct {
 	// Cluster addons
-	Addons []string `json:"addons,omitempty"`
+	Addons          []string                   `json:"addons,omitempty"`
+	AllowedNetworks *SKSClusterAllowedNetworks `json:"allowed-networks,omitempty"`
 	// Kubernetes Audit parameters
 	Audit *SKSAudit `json:"audit,omitempty"`
 	// Enable auto upgrade of the control plane to the latest patch version available
@@ -4725,19 +5737,25 @@ type SKSCluster struct {
 	// A list of Kubernetes-only Alpha features to enable for API server component
 	FeatureGates []string `json:"feature-gates,omitempty"`
 	// Cluster ID
-	ID     UUID             `json:"id,omitempty"`
-	Labels SKSClusterLabels `json:"labels,omitempty"`
+	ID UUID `json:"id,omitempty"`
+	// A list of Karpenter controller feature gates to enable for the Karpenter controller binary
+	KarpenterFeatureGates []string         `json:"karpenter-feature-gates,omitempty"`
+	Labels                SKSClusterLabels `json:"labels,omitempty"`
 	// Cluster level
 	Level SKSClusterLevel `json:"level,omitempty"`
 	// Cluster name
 	Name string `json:"name,omitempty" validate:"omitempty,gte=1,lte=255"`
 	// Cluster Nodepools
 	Nodepools []SKSNodepool `json:"nodepools,omitempty"`
+	// SKS Cluster OpenID config map
+	Oidc *SKSOidc `json:"oidc"`
 	// Cluster state
 	State SKSClusterState `json:"state,omitempty"`
 	// Control plane Kubernetes version
 	Version string `json:"version,omitempty"`
 }
+
+type SKSClusterAllowedNetworks []string
 
 type SKSClusterDeprecatedResource struct {
 	Group          string `json:"group,omitempty"`
@@ -4779,6 +5797,7 @@ const (
 	SKSNodepoolStateCreating      SKSNodepoolState = "creating"
 	SKSNodepoolStateDeleting      SKSNodepoolState = "deleting"
 	SKSNodepoolStateRunning       SKSNodepoolState = "running"
+	SKSNodepoolStateDegraded      SKSNodepoolState = "degraded"
 	SKSNodepoolStateScaling       SKSNodepoolState = "scaling"
 	SKSNodepoolStateUpdating      SKSNodepoolState = "updating"
 	SKSNodepoolStateError         SKSNodepoolState = "error"
@@ -4790,6 +5809,8 @@ type SKSNodepool struct {
 	Addons []string `json:"addons,omitempty"`
 	// Nodepool Anti-affinity Groups
 	AntiAffinityGroups []AntiAffinityGroup `json:"anti-affinity-groups,omitempty"`
+	// CPU manager config
+	CPUManagerConfig *CPUManagerConfig `json:"cpu-manager-config,omitempty"`
 	// Nodepool creation date
 	CreatedAT time.Time `json:"created-at,omitempty"`
 	// Deploy target reference
@@ -4807,10 +5828,14 @@ type SKSNodepool struct {
 	// Instance type reference
 	InstanceType *InstanceType `json:"instance-type,omitempty"`
 	// Kubelet image GC options
-	KubeletImageGC *KubeletImageGC   `json:"kubelet-image-gc,omitempty"`
+	KubeletImageGC *KubeletImageGC `json:"kubelet-image-gc,omitempty"`
+	// Maximum number of pods per node. Set to use a value other than the kubelet default.
+	KubeletMaxPods *int64            `json:"kubelet-max-pods,omitempty" validate:"omitempty,gte=1,lte=65535"`
 	Labels         SKSNodepoolLabels `json:"labels,omitempty"`
 	// Nodepool name
 	Name string `json:"name,omitempty" validate:"omitempty,gte=1,lte=255"`
+	// Nvidia MIG Profiles enabled
+	NvidiaMigProfiles *NvidiaMigProfiles `json:"nvidia-mig-profiles,omitempty"`
 	// Nodepool Private Networks
 	PrivateNetworks []PrivateNetwork `json:"private-networks,omitempty"`
 	// Nodepool public IP assignment of the Instances:
@@ -4939,11 +5964,56 @@ type SSHKeyRef struct {
 	Name string `json:"name,omitempty" validate:"omitempty,gte=1,lte=255"`
 }
 
+type SubnetAddressSpace string
+
+const (
+	SubnetAddressSpacePrivate SubnetAddressSpace = "private"
+)
+
+type SubnetAddressfamily string
+
+const (
+	SubnetAddressfamilyInet4 SubnetAddressfamily = "inet4"
+	SubnetAddressfamilyDual  SubnetAddressfamily = "dual"
+)
+
+// Subnet attachements
+type SubnetInstances struct {
+	// Instance uuid
+	ID UUID `json:"id,omitempty"`
+	// Instance Ipv4 address
+	Ipv4 net.IP `json:"ipv4,omitempty"`
+	// Instance name
+	Name string `json:"name,omitempty"`
+}
+
+// Subnet
+type Subnet struct {
+	// Subnet address space
+	AddressSpace SubnetAddressSpace `json:"address-space,omitempty"`
+	// Subnet address family
+	Addressfamily SubnetAddressfamily `json:"addressfamily,omitempty"`
+	// Subnet creation date
+	CreatedAT time.Time `json:"created-at,omitempty"`
+	// Subnet description
+	Description string `json:"description,omitempty" validate:"omitempty,lte=4096"`
+	// Subnet ID
+	ID UUID `json:"id,omitempty"`
+	// Instances attached to the subnet
+	Instances []SubnetInstances `json:"instances,omitempty"`
+	// Subnet ipv4 CIDR
+	Ipv4Block string `json:"ipv4-block,omitempty"`
+	Labels    Labels `json:"labels,omitempty"`
+	// Subnet name
+	Name string `json:"name,omitempty" validate:"omitempty,gte=1,lte=255"`
+}
+
 type SuccessResponseStatus string
 
 const (
 	SuccessResponseStatusSuccess          SuccessResponseStatus = "success"
 	SuccessResponseStatusTargetRegistered SuccessResponseStatus = "target-registered"
+	SuccessResponseStatusAlreadyApplied   SuccessResponseStatus = "already-applied"
 )
 
 type SuccessResponse struct {
@@ -5000,8 +6070,6 @@ type Template struct {
 	Version string `json:"version,omitempty"`
 	// Template visibility
 	Visibility TemplateVisibility `json:"visibility,omitempty"`
-	// Zones availability
-	Zones []ZoneName `json:"zones,omitempty"`
 }
 
 // Template reference
@@ -5010,12 +6078,31 @@ type TemplateRef struct {
 	ID UUID `json:"id,omitempty"`
 }
 
-// Request to update an AI API key (at least one property required)
+// Update the models and/or deployments accessible by an AI API key. Omitted properties are left unchanged.
 type UpdateAIAPIKeyRequest struct {
-	// Human-readable name for the AI API key
-	Name string `json:"name,omitempty"`
-	// Key scope: 'public' for all deployments, or a specific deployment UUID
-	Scope string `json:"scope,omitempty"`
+	// Grant or remove access to all deployments of the organization. Takes precedence over the deployments array, which is ignored when set.
+	AllDeployments *bool `json:"all-deployments,omitempty"`
+	// Grant or remove access to all public models. Takes precedence over the models array, which is ignored when set.
+	AllModels *bool `json:"all-models,omitempty"`
+	// Allowlist of deployments. An empty array denies access to all deployments. Grant access to all deployments with all-deployments instead.
+	Deployments *AIAPIKeyDeployments `json:"deployments,omitempty"`
+	// Allowlist of public model names. An empty array denies access to all public models. Grant access to all public models with all-models instead.
+	Models *AIAPIKeyModels `json:"models,omitempty"`
+}
+
+type UpdateAIAPIKeyResponse struct {
+	// True when the key has access to all deployments of the organization.
+	AllDeployments *bool `json:"all-deployments" validate:"required"`
+	// True when the key has access to all public models.
+	AllModels *bool     `json:"all-models" validate:"required"`
+	CreatedAT time.Time `json:"created-at" validate:"required"`
+	// Allowlist of deployments. An empty array denies access to all deployments. Grant access to all deployments with all-deployments instead.
+	Deployments *AIAPIKeyDeployments `json:"deployments" validate:"required"`
+	ID          UUID                 `json:"id" validate:"required"`
+	// Allowlist of public model names. An empty array denies access to all public models. Grant access to all public models with all-models instead.
+	Models    *AIAPIKeyModels `json:"models" validate:"required"`
+	Name      string          `json:"name" validate:"required"`
+	UpdatedAT time.Time       `json:"updated-at" validate:"required"`
 }
 
 // Update AI deployment
@@ -5026,6 +6113,20 @@ type UpdateDeploymentRequest struct {
 	InferenceEngineVersion InferenceEngineVersion `json:"inference-engine-version,omitempty"`
 	// Deployment name
 	Name string `json:"name,omitempty" validate:"omitempty,gte=1"`
+}
+
+// New customer-managed XKS proxy settings.
+type UpdateKeyStoreProxy struct {
+	Auth *KeyStoreProxyAuth `json:"auth,omitempty"`
+	// New public URL used to route communication to the customer-managed XKS proxy.
+	Endpoint string `json:"endpoint,omitempty"`
+}
+
+type UpdateKeyStoreRequest struct {
+	// A new detailed description providing additional context about the key store's intended use case.
+	Description string `json:"description,omitempty" validate:"omitempty,lte=1024"`
+	// New customer-managed XKS proxy settings.
+	Proxy *UpdateKeyStoreProxy `json:"proxy,omitempty"`
 }
 
 // User
@@ -5044,6 +6145,33 @@ type User struct {
 	TwoFactorAuthentication *bool `json:"two-factor-authentication,omitempty"`
 }
 
+// VPC
+type Vpc struct {
+	// VPC creation date
+	CreatedAT time.Time `json:"created-at,omitempty"`
+	// Indicates if this is the organization's default VPC
+	Default *bool `json:"default,omitempty"`
+	// VPC description
+	Description string `json:"description,omitempty" validate:"omitempty,lte=4096"`
+	// VPC DHCP options
+	DHCPOptions *VpcDHCPOptions `json:"dhcp-options,omitempty"`
+	// VPC ID
+	ID     UUID   `json:"id,omitempty"`
+	Labels Labels `json:"labels,omitempty"`
+	// VPC name
+	Name string `json:"name,omitempty" validate:"omitempty,gte=1,lte=255"`
+}
+
+// VPC DHCP options
+type VpcDHCPOptions struct {
+	// DNS Servers
+	DNSServers []net.IP `json:"dns-servers,omitempty"`
+	// Domain search list, limited to 255 octets post RFC3397 compression
+	DomainSearch []string `json:"domain-search,omitempty"`
+	// NTP Servers
+	NtpServers []net.IP `json:"ntp-servers,omitempty"`
+}
+
 // Zone
 type Zone struct {
 	// Zone API endpoint
@@ -5051,6 +6179,12 @@ type Zone struct {
 	Name        ZoneName `json:"name,omitempty"`
 	// Zone SOS endpoint
 	SOSEndpoint Endpoint `json:"sos-endpoint,omitempty"`
+}
+
+// Hierarchical breakdown of impact in a given zone
+type ZoneImpact struct {
+	Impact    map[string]ImpactValueWithUnit    `json:"impact" validate:"required"`
+	Resources map[string]ImpactResourceTreeNode `json:"resources" validate:"required"`
 }
 
 type ZoneName string
@@ -5063,6 +6197,7 @@ const (
 	ZoneNameDEFra1 ZoneName = "de-fra-1"
 	ZoneNameBGSof1 ZoneName = "bg-sof-1"
 	ZoneNameATVie2 ZoneName = "at-vie-2"
+	ZoneNameESMad1 ZoneName = "es-mad-1"
 	ZoneNameHrZag1 ZoneName = "hr-zag-1"
 )
 

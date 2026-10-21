@@ -56,7 +56,7 @@ func testResourceValkey(t *testing.T) {
 	dataCreate.MaintenanceDow = "monday"
 	dataCreate.MaintenanceTime = "01:23:00"
 	dataCreate.IpFilter = []string{"1.2.3.4/32"}
-	dataCreate.ValkeySettings = strconv.Quote(`{"io_threads":1,"lfu_decay_time":1,"lfu_log_factor":10,"maxmemory_policy":"noeviction","persistence":"rdb","ssl":true,"timeout":300}`)
+	dataCreate.ValkeySettings = strconv.Quote(`{"active_expire_effort":1,"frequent_snapshots":true,"io_threads":1,"lfu_decay_time":1,"lfu_log_factor":10,"maxmemory_policy":"noeviction","persistence":"rdb","ssl":true,"timeout":300}`)
 	buf := &bytes.Buffer{}
 	err = tpl.Execute(buf, &dataCreate)
 	if err != nil {
@@ -68,7 +68,7 @@ func testResourceValkey(t *testing.T) {
 	dataUpdate.MaintenanceDow = "tuesday"
 	dataUpdate.MaintenanceTime = "02:34:00"
 	dataUpdate.IpFilter = []string{"9.1.1.9/32"}
-	dataUpdate.ValkeySettings = strconv.Quote(`{"io_threads":1,"lfu_decay_time":1,"lfu_log_factor":10,"maxmemory_policy":"noeviction","persistence":"rdb","pubsub_client_output_buffer_limit":64,"ssl":true,"timeout":300}`)
+	dataUpdate.ValkeySettings = strconv.Quote(`{"active_expire_effort":1,"frequent_snapshots":true,"io_threads":1,"lfu_decay_time":1,"lfu_log_factor":10,"maxmemory_policy":"noeviction","persistence":"rdb","pubsub_client_output_buffer_limit":64,"ssl":true,"timeout":300}`)
 	buf = &bytes.Buffer{}
 	err = tpl.Execute(buf, &dataUpdate)
 	if err != nil {
@@ -92,12 +92,16 @@ func testResourceValkey(t *testing.T) {
 					resource.TestCheckResourceAttrSet(fullResourceName, "nodes"),
 					resource.TestCheckResourceAttrSet(fullResourceName, "ca_certificate"),
 					resource.TestCheckResourceAttrSet(fullResourceName, "updated_at"),
+					resource.TestCheckResourceAttrSet(fullResourceName, "uri"),
+					checkURIWellFormed(fullResourceName),
 				),
 			},
 			{
 				// Update
 				Config: configUpdate,
 				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet(fullResourceName, "uri"),
+					checkURIWellFormed(fullResourceName),
 					func(s *terraform.State) error {
 						err := CheckExistsValkey(dataBase.Name, &dataUpdate)
 						if err != nil {
@@ -167,7 +171,7 @@ func CheckExistsValkey(name string, data *TemplateModelValkey) error {
 	}
 
 	if data.ValkeySettings != "" {
-		var expectedSettings, actualSettings map[string]interface{}
+		var expectedSettings, actualSettings map[string]any
 
 		// Parse expected settings
 		s, err := strconv.Unquote(data.ValkeySettings)

@@ -37,47 +37,59 @@ directory for complete configuration examples.
 
 - `zone` (String) The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.
 
+### Optional
+
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-- `pools` (List of Object) The list of [exoscale_instance_pool](./instance_pool.md). (see [below for nested schema](#nestedatt--pools))
+- `pools` (Attributes List) The list of [exoscale_instance_pool](./instance_pool.md). (see [below for nested schema](#nestedatt--pools))
+
+<a id="nestedblock--timeouts"></a>
+### Nested Schema for `timeouts`
+
+Optional:
+
+- `read` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
+
 
 <a id="nestedatt--pools"></a>
 ### Nested Schema for `pools`
 
 Read-Only:
 
-- `affinity_group_ids` (Set of String)
-- `anti_affinity_group_ids` (Set of String)
-- `deploy_target_id` (String)
-- `description` (String)
-- `disk_size` (Number)
-- `elastic_ip_ids` (Set of String)
-- `id` (String)
-- `instance_prefix` (String)
-- `instance_type` (String)
-- `instances` (Set of Object) (see [below for nested schema](#nestedobjatt--pools--instances))
-- `ipv6` (Boolean)
-- `key_pair` (String)
-- `labels` (Map of String)
-- `min_available` (Number)
-- `name` (String)
-- `network_ids` (Set of String)
-- `security_group_ids` (Set of String)
-- `size` (Number)
-- `state` (String)
-- `template_id` (String)
-- `user_data` (String)
-- `zone` (String)
+- `affinity_group_ids` (Set of String) The list of attached [exoscale_anti_affinity_group](../resources/anti_affinity_group.md) (IDs). Use `anti_affinity_group_ids` instead.
+- `anti_affinity_group_ids` (Set of String) The list of attached [exoscale_anti_affinity_group](../resources/anti_affinity_group.md) (IDs).
+- `deploy_target_id` (String) The deploy target ID.
+- `description` (String) The instance pool description.
+- `disk_size` (Number) The managed instances disk size.
+- `elastic_ip_ids` (Set of String) The list of attached [exoscale_elastic_ip](../resources/elastic_ip.md) (IDs).
+- `id` (String) The instance pool ID.
+- `instance_prefix` (String) The string used to prefix the managed instances name.
+- `instance_type` (String) The managed instances type.
+- `instances` (Attributes Set) The list of managed instances. (see [below for nested schema](#nestedatt--pools--instances))
+- `ipv6` (Boolean) Whether IPv6 is enabled on managed instances.
+- `key_pair` (String) The [exoscale_ssh_key](../resources/ssh_key.md) (name) authorized on the managed instances.
+- `labels` (Map of String) A map of key/value labels.
+- `min_available` (Number) Minimum number of running Instances.
+- `name` (String) The instance pool name.
+- `network_ids` (Set of String) The list of attached [exoscale_private_network](../resources/private_network.md) (IDs).
+- `security_group_ids` (Set of String) The list of attached [exoscale_security_group](../resources/security_group.md) (IDs).
+- `size` (Number) The number managed instances.
+- `state` (String) The pool state.
+- `template_id` (String) The managed instances [exoscale_template](./template.md) ID.
+- `user_data` (String) [cloud-init](http://cloudinit.readthedocs.io/en/latest/) configuration.
+- `zone` (String) The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.
 
-<a id="nestedobjatt--pools--instances"></a>
+<a id="nestedatt--pools--instances"></a>
 ### Nested Schema for `pools.instances`
 
 Read-Only:
 
-- `id` (String)
-- `ipv6_address` (String)
-- `name` (String)
-- `public_ip_address` (String)
+- `id` (String) The compute instance ID.
+- `ipv6_address` (String) The instance (main network interface) IPv6 address.
+- `name` (String) The instance name.
+- `public_ip_address` (String) The instance (main network interface) IPv4 address.
 
 

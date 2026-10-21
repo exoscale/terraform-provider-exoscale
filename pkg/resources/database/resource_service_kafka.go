@@ -261,6 +261,13 @@ pooling:
 	data.State = types.StringPointerValue((*string)(apiService.State))
 	data.UpdatedAt = types.StringValue(apiService.UpdatedAt.String())
 
+	uri, err := uriWitoutCreds(apiService.Uri)
+	if err != nil {
+		diagnostics.AddError(err.Error(), "")
+		return
+	}
+	data.URI = types.StringPointerValue(uri)
+
 	if data.TerminationProtection.IsUnknown() {
 		data.TerminationProtection = types.BoolPointerValue(apiService.TerminationProtection)
 	}
@@ -400,6 +407,12 @@ func (r *ServiceResource) readKafka(ctx context.Context, data *ServiceResourceMo
 	data.State = types.StringPointerValue((*string)(apiService.State))
 	data.TerminationProtection = types.BoolPointerValue(apiService.TerminationProtection)
 	data.UpdatedAt = types.StringValue(apiService.UpdatedAt.String())
+	uri, err := uriWitoutCreds(apiService.Uri)
+	if err != nil {
+		diagnostics.AddError(err.Error(), "")
+		return
+	}
+	data.URI = types.StringPointerValue(uri)
 
 	if data.Plan.IsNull() || data.Plan.IsUnknown() {
 		data.Plan = types.StringValue(apiService.Plan)
@@ -669,6 +682,12 @@ func (r *ServiceResource) updateKafka(ctx context.Context, stateData *ServiceRes
 	stateData.NodeMemory = types.Int64PointerValue(apiService.NodeMemory)
 	stateData.Nodes = types.Int64PointerValue(apiService.NodeCount)
 	stateData.State = types.StringPointerValue((*string)(apiService.State))
+	uri, err := uriWitoutCreds(apiService.Uri)
+	if err != nil {
+		diagnostics.AddError(err.Error(), "")
+		return
+	}
+	stateData.URI = types.StringPointerValue(uri)
 	if apiService.UpdatedAt != nil {
 		stateData.UpdatedAt = types.StringValue(apiService.UpdatedAt.String())
 	}

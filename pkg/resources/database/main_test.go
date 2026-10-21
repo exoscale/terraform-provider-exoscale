@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -12,6 +13,7 @@ import (
 
 	"github.com/exoscale/egoscale/v2/api"
 	"github.com/exoscale/egoscale/v2/oapi"
+	v3 "github.com/exoscale/egoscale/v3"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/testutils"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
@@ -26,9 +28,14 @@ func TestDatabase(t *testing.T) {
 	t.Run("ResourceValkeyUser", testResourceValkeyUser)
 	t.Run("ResourceKafka", testResourceKafka)
 	t.Run("ResourceOpensearch", testResourceOpensearch)
-	t.Run("ResourceOpensearchVersionValidation", testResourceOpensearchVersionValidation)
 	t.Run("ResourceGrafana", testResourceGrafana)
 	t.Run("DataSourceURI", testDataSourceURI)
+	t.Run("ResourceDBAASExternalEndpointPrometheus", testResourceExternalEndpointPrometheus)
+	t.Run("ResourceDBAASExternalEndpointDatadog", testResourceExternalEndpointDatadog)
+	t.Run("ResourceDBAASExternalEndpointOpensearch", testResourceExternalEndpointOpensearch)
+	t.Run("ResourceDBAASExternalEndpointElasticsearch", testResourceExternalEndpointElasticsearch)
+	t.Run("ResourceDBAASExternalEndpointRsyslog", testResourceExternalEndpointRsyslog)
+	t.Run("ResourceDBAASExternalIntegration", testResourceExternalIntegration)
 }
 
 func CheckServiceDestroy(dbType, name string) resource.TestCheckFunc {
@@ -71,6 +78,8 @@ func CheckServiceDestroy(dbType, name string) resource.TestCheckFunc {
 			_, serviceErr = client.GetDbaasServicePgWithResponse(ctx, oapi.DbaasServiceName(name))
 		case "valkey":
 			_, serviceErr = clientV3.GetDBAASServiceValkey(ctxV3, name)
+		case "clickhouse":
+			_, serviceErr = clientV3.GetDBAASServiceClickhouse(ctxV3, name)
 		case "opensearch":
 			_, serviceErr = client.GetDbaasServiceOpensearchWithResponse(ctx, oapi.DbaasServiceName(name))
 		default:
@@ -83,12 +92,46 @@ func CheckServiceDestroy(dbType, name string) resource.TestCheckFunc {
 				return nil
 			}
 			// For V3 API
-			if strings.Contains(serviceErr.Error(), "Not Found: Service does not exist") {
+			if errors.Is(serviceErr, v3.ErrNotFound) {
 				return nil
 			}
 			return serviceErr
 		}
 
 		return fmt.Errorf("database service %q not deleted", name)
+	}
+}
+
+func checkURIWellFormed(resourceFullName string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[resourceFullName]
+		if !ok {
+			return fmt.Errorf("resource not found: %s", resourceFullName)
+		}
+
+		uri, ok := rs.Primary.Attributes["uri"]
+		if !ok || uri == "" {
+			return fmt.Errorf("%s: uri attribute is not set", resourceFullName)
+		}
+
+		if !strings.Contains(uri, "://") {
+			// url.Parse without scheme put the host in the URL.Scheme field and not in the URL.Host.
+			uri = "//" + uri
+		}
+
+		parsed, err := url.Parse(uri)
+		if err != nil {
+			return fmt.Errorf("%s: uri %q does not parse as a URL: %w", resourceFullName, uri, err)
+		}
+
+		if parsed.User != nil {
+			return fmt.Errorf("%s: uri %q unexpectedly still contains credentials", resourceFullName, uri)
+		}
+
+		if parsed.Hostname() == "" || parsed.Port() == "" {
+			return fmt.Errorf("%s: uri %q is missing a host or port", resourceFullName, uri)
+		}
+
+		return nil
 	}
 }

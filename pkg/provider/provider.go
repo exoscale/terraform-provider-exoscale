@@ -23,12 +23,23 @@ import (
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/anti_affinity_group"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/block_storage"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/database"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/domain"
+	elasticip "github.com/exoscale/terraform-provider-exoscale/pkg/resources/elastic_ip"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/iam"
-	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/nlb_service"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/instance"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/instance_pool"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/kms"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/nlb"
+	privatenetwork "github.com/exoscale/terraform-provider-exoscale/pkg/resources/private_network"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/security_group"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/sks"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/sos_bucket_policy"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/ssh_key"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/template"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/vpc"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/zones"
 	"github.com/exoscale/terraform-provider-exoscale/version"
 )
@@ -41,7 +52,6 @@ const (
 	EnvironmentAttrName = "environment"
 	SOSEndpointAttrName = "sos_endpoint"
 	TimeoutAttrName     = "timeout"
-	DelayAttrName       = "delay"
 )
 
 var _ provider.Provider = &ExoscaleProvider{}
@@ -53,7 +63,6 @@ type ExoscaleProviderModel struct {
 	Secret      types.String  `tfsdk:"secret"`
 	Environment types.String  `tfsdk:"environment"`
 	Timeout     types.Float64 `tfsdk:"timeout"`
-	Delay       types.Int64   `tfsdk:"delay"`
 	SOSEndpoint types.String  `tfsdk:"sos_endpoint"`
 }
 
@@ -84,10 +93,6 @@ func (p *ExoscaleProvider) Schema(ctx context.Context, req provider.SchemaReques
 				MarkdownDescription: fmt.Sprintf(
 					"Timeout in seconds for waiting on compute resources to become available (by default: %.0f)",
 					config.DefaultTimeout.Seconds()),
-			},
-			DelayAttrName: schema.Int64Attribute{
-				Optional:           true,
-				DeprecationMessage: "Does nothing",
 			},
 		},
 	}
@@ -164,9 +169,7 @@ func (p *ExoscaleProvider) Configure(ctx context.Context, req provider.Configure
 		SOSEndpoint: sosEndpoint,
 	}
 
-	clv2, err := exov2.NewClient(
-		baseConfig.Key,
-		baseConfig.Secret,
+	v2opts := []exov2.ClientOpt{
 		exov2.ClientOptWithTimeout(baseConfig.Timeout),
 		exov2.ClientOptWithHTTPClient(func() *http.Client {
 			rc := retryablehttp.NewClient()
@@ -176,7 +179,15 @@ func (p *ExoscaleProvider) Configure(ctx context.Context, req provider.Configure
 				hc.Transport = logging.NewSubsystemLoggingHTTPTransport("exoscale", hc.Transport)
 			}
 			return hc
-		}()))
+		}()),
+	}
+	// Honour EXOSCALE_API_ENDPOINT for the v2 client too, as the v3 one below
+	// already does. Without this a single apply splits across two API hosts.
+	if ep := os.Getenv("EXOSCALE_API_ENDPOINT"); ep != "" {
+		v2opts = append(v2opts, exov2.ClientOptWithAPIEndpoint(ep))
+	}
+
+	clv2, err := exov2.NewClient(baseConfig.Key, baseConfig.Secret, v2opts...)
 	if err != nil {
 		resp.Diagnostics.AddError(err.Error(), "")
 
@@ -223,22 +234,38 @@ func (p *ExoscaleProvider) DataSources(ctx context.Context) []func() datasource.
 		func() datasource.DataSource {
 			return &zones.ZonesDataSource{}
 		},
+		anti_affinity_group.NewDataSource,
 		database.NewDataSourceURI,
 		iam.NewDataSourceOrgPolicy,
 		iam.NewDataSourceRole,
 		iam.NewDataSourceAPIKey,
 		block_storage.NewDataSourceVolume,
 		block_storage.NewDataSourceSnapshot,
-		func() datasource.DataSource {
-			return &nlb_service.NLBServiceListDataSource{}
-		},
+		elasticip.NewDataSource,
+		instance.NewDataSource,
+		instance.NewDataSourceList,
+		instance_pool.NewDataSource,
+		instance_pool.NewDataSourceList,
+		nlb.NewDataSource,
+		nlb.NewDataSourceServiceList,
 		sos_bucket_policy.NewDataSourceSOSBucketPolicy,
 		security_group.NewDataSource,
+		sks.NewDataSource,
+		sks.NewDataSourceClusterList,
+		sks.NewDataSourceNodepool,
+		sks.NewDataSourceNodepoolList,
+		privatenetwork.NewDataSource,
+		domain.NewDataSource,
+		domain.NewDataSourceRecord,
+		vpc.NewDataSource,
+		vpc.NewDataSourceSubnet,
+		template.NewDataSourceTemplate,
 	}
 }
 
 func (p *ExoscaleProvider) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
+		anti_affinity_group.NewResource,
 		database.DeprecatedNewResource,
 		database.NewServiceResource,
 		database.NewMysqlUserResource,
@@ -246,9 +273,16 @@ func (p *ExoscaleProvider) Resources(ctx context.Context) []func() resource.Reso
 		database.NewOpensearchUserResource,
 		database.NewPGUserResource,
 		database.NewValkeyUserResource,
+		database.NewClickhouseUserResource,
 		database.NewPGDatabaseResource,
 		database.NewPGConnectionPoolResource,
 		database.NewMysqlDatabaseResource,
+		database.NewExternalEndpointPrometheusResource,
+		database.NewExternalEndpointDatadogResource,
+		database.NewExternalEndpointOpensearchResource,
+		database.NewExternalEndpointElasticsearchResource,
+		database.NewExternalEndpointRsyslogResource,
+		database.NewExternalIntegrationResource,
 		iam.NewResourceOrgPolicy,
 		iam.NewResourceRole,
 		iam.NewResourceAPIKey,
@@ -257,6 +291,23 @@ func (p *ExoscaleProvider) Resources(ctx context.Context) []func() resource.Reso
 		sos_bucket_policy.NewResourceSOSBucketPolicy,
 		security_group.NewResource,
 		security_group.NewResourceRule,
+		sks.NewResourceCluster,
+		sks.NewResourceNodepool,
+		sks.NewResourceKubeconfig,
+		privatenetwork.NewResource,
+		kms.NewResourceKMSKey,
+		domain.NewResource,
+		domain.NewResourceRecord,
+		vpc.NewResource,
+		vpc.NewResourceSubnet,
+		vpc.NewResourceRoute,
+		template.NewResourceTemplate,
+		elasticip.NewResource,
+		instance.NewResource,
+		instance_pool.NewResource,
+		nlb.NewResource,
+		nlb.NewResourceService,
+		ssh_key.NewResource,
 	}
 }
 
@@ -266,12 +317,12 @@ func New() func() provider.Provider {
 	}
 }
 
-var UserAgent = fmt.Sprintf("Exoscale-Terraform-Provider/%s (%s) Terraform-SDK/%s Terraform-framework/%s %s",
+var UserAgent = fmt.Sprintf("Exoscale-Terraform-Provider/%s (%s) Terraform-framework/%s %s",
 	version.Version,
 	version.Commit,
-	getModVersion("github.com/hashicorp/terraform-plugin-sdk/v2"),
 	getModVersion("github.com/hashicorp/terraform-plugin-framework"),
-	exov2.UserAgent)
+	exov2.UserAgent,
+)
 
 func getModVersion(module string) string {
 	// Read Build info

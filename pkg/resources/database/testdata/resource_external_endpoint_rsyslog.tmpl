@@ -1,0 +1,14 @@
+resource "exoscale_dbaas_external_endpoint_rsyslog" {{ .ResourceName }} {
+  name   = "{{ .Name }}"
+  zone   = "{{ .Zone }}"
+  server = "{{ .Server }}"
+  port   = {{ .Port }}
+  tls    = {{ .TLS }}
+  format = "{{ .Format }}"
+  {{- if .MaxMessageSize }}
+  max_message_size = {{ .MaxMessageSize }}
+  {{- end }}
+  {{- if .Logline }}
+  logline = "{{ .Logline }}"
+  {{- end }}
+}

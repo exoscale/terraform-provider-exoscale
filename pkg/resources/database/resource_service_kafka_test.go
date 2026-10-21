@@ -81,7 +81,7 @@ func testResourceKafka(t *testing.T) {
 		Plan:                  "business-4",
 		Zone:                  testutils.TestZoneName,
 		TerminationProtection: false,
-		Version:               "3.8",
+		Version:               "4.2",
 	}
 
 	userFullResourceName := "exoscale_dbaas_kafka_user.test_user"
@@ -155,6 +155,8 @@ func testResourceKafka(t *testing.T) {
 					resource.TestCheckResourceAttrSet(serviceFullResourceName, "nodes"),
 					resource.TestCheckResourceAttrSet(serviceFullResourceName, "ca_certificate"),
 					resource.TestCheckResourceAttrSet(serviceFullResourceName, "updated_at"),
+					resource.TestCheckResourceAttrSet(serviceFullResourceName, "uri"),
+					checkURIWellFormed(serviceFullResourceName),
 					func(s *terraform.State) error {
 						err := CheckExistsKafka(serviceDataBase.Name, &serviceDataCreate)
 						if err != nil {
@@ -185,6 +187,8 @@ func testResourceKafka(t *testing.T) {
 				Config: configUpdate,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					// Service
+					resource.TestCheckResourceAttrSet(serviceFullResourceName, "uri"),
+					checkURIWellFormed(serviceFullResourceName),
 					func(s *terraform.State) error {
 						err := CheckExistsKafka(serviceDataBase.Name, &serviceDataUpdate)
 						if err != nil {
@@ -297,7 +301,7 @@ func CheckExistsKafka(name string, data *TemplateModelKafka) error {
 	}
 
 	if data.KafkaSettings != "" {
-		obj := map[string]interface{}{}
+		obj := map[string]any{}
 		s, err := strconv.Unquote(data.KafkaSettings)
 		if err != nil {
 			return err
@@ -315,7 +319,7 @@ func CheckExistsKafka(name string, data *TemplateModelKafka) error {
 	}
 
 	if data.ConnectSettings != "" {
-		obj := map[string]interface{}{}
+		obj := map[string]any{}
 		s, err := strconv.Unquote(data.ConnectSettings)
 		if err != nil {
 			return err
@@ -333,7 +337,7 @@ func CheckExistsKafka(name string, data *TemplateModelKafka) error {
 	}
 
 	if data.RestSettings != "" {
-		obj := map[string]interface{}{}
+		obj := map[string]any{}
 		s, err := strconv.Unquote(data.RestSettings)
 		if err != nil {
 			return err
@@ -351,7 +355,7 @@ func CheckExistsKafka(name string, data *TemplateModelKafka) error {
 	}
 
 	if data.SchemaRegistrySettings != "" {
-		obj := map[string]interface{}{}
+		obj := map[string]any{}
 		s, err := strconv.Unquote(data.SchemaRegistrySettings)
 		if err != nil {
 			return err

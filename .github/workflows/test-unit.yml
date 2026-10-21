@@ -1,0 +1,30 @@
+name: Unit tests
+
+on:
+  push:
+    branches:
+    - '**'
+    paths:
+    - 'go.mod'
+    - 'go.sum'
+    - '**.go'
+    - '.github/workflows/test-unit.yml'
+    tags-ignore:
+    - 'v*' # Don't run on release tags
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: make go.mk
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+          cache-dependency-path: 'go.sum'
+      - uses: ./go.mk/.github/actions/pre-check
+      - name: Run unit tests
+        run: |
+          make test-verbose

@@ -94,11 +94,55 @@ var httpStatusCodeErrors = map[int]error{
 	http.StatusNetworkAuthenticationRequired: ErrNetworkAuthenticationRequired,
 }
 
+// APIError is the structured error returned for HTTP 4xx/5xx responses.
+// It wraps the HTTP sentinel error (e.g. ErrNotFound) so that errors.Is
+// checks against sentinels continue to work unchanged.
+type APIError struct {
+	// sentinel is the mapped HTTP status error (e.g. ErrNotFound).
+	sentinel error
+	// Message is the plain server message (from "message" or "error" fields).
+	Message string
+	// Title is the RFC 9457 "title" field.
+	Title string
+	// Detail is the RFC 9457 "detail" field.
+	Detail string
+	// Errors holds the RFC 9457 "errors" entries.
+	Errors []APIErrorEntry
+	// StatusCode is the HTTP response status code.
+	StatusCode int
+	// Response is the response body decoded into the schema the OpenAPI spec
+	// declares for StatusCode on this operation (e.g. *RateLimited for a 429).
+	// It is nil when the operation declares no schema for that status code
+	// or when the body cannot be decoded into it.
+	Response any
+
+	// body is the raw response body, kept to decode Response.
+	body []byte
+}
+
+// APIErrorEntry is one item from the RFC 9457 "errors" array.
+// Location is a JSONPath expression (e.g. "$['some-field']") when the server
+// provides field-level detail; it is empty for plain string error entries.
+type APIErrorEntry struct {
+	Detail   string
+	Location string
+}
+
+func (e *APIError) Error() string {
+	return fmt.Sprintf("%s: %s", e.sentinel.Error(), e.Message)
+}
+func (e *APIError) Unwrap() error { return e.sentinel }
+
 func handleHTTPErrorResp(resp *http.Response) error {
 	if resp.StatusCode >= 400 && resp.StatusCode <= 599 {
+		defer resp.Body.Close() // prevent connection leak on error responses
+
 		var res struct {
-			Message string `json:"message"`
-			Error   string `json:"error"`
+			Message string          `json:"message"`
+			Error   string          `json:"error"`
+			Title   string          `json:"title"`
+			Detail  string          `json:"detail"`
+			Errors  json.RawMessage `json:"errors"`
 		}
 
 		data, err := io.ReadAll(resp.Body)
@@ -114,17 +158,77 @@ func handleHTTPErrorResp(resp *http.Response) error {
 			res.Message = string(data)
 		}
 
-		message := res.Message
-		if message == "" && res.Error != "" {
-			message = res.Error
+		sentinel, ok := httpStatusCodeErrors[resp.StatusCode]
+		if !ok {
+			sentinel = fmt.Errorf("HTTP error %d", resp.StatusCode)
 		}
 
-		err, ok := httpStatusCodeErrors[resp.StatusCode]
-		if ok {
-			return fmt.Errorf("%w: %s", err, message)
+		apiErr := &APIError{
+			sentinel:   sentinel,
+			Message:    res.Message,
+			Title:      res.Title,
+			Detail:     res.Detail,
+			StatusCode: resp.StatusCode,
+			body:       data,
 		}
+		if res.Message == "" && res.Error != "" {
+			apiErr.Message = res.Error
+		}
+		apiErr.Errors = parseErrorEntries(res.Errors)
 
-		return fmt.Errorf("unmapped HTTP error: status code %d, message: %s", resp.StatusCode, message)
+		return apiErr
+	}
+
+	return nil
+}
+
+// decodeAPIErrorResponse decodes the body of an *APIError into the type the
+// OpenAPI spec declares for its status code, and stores it in APIError.Response.
+// responses maps each declared status code to a constructor of its body type.
+// err is returned as is, so the caller can wrap it unconditionally.
+func decodeAPIErrorResponse(err error, responses map[int]func() any) error {
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		return err
+	}
+
+	newResponse, ok := responses[apiErr.StatusCode]
+	if !ok {
+		return err
+	}
+
+	v := newResponse()
+	if json.Unmarshal(apiErr.body, v) == nil {
+		apiErr.Response = v
+	}
+
+	return err
+}
+
+func parseErrorEntries(raw json.RawMessage) []APIErrorEntry {
+	if len(raw) == 0 {
+		return nil
+	}
+
+	var objErrors []struct {
+		Detail   string `json:"detail"`
+		Location string `json:"location"`
+	}
+	if json.Unmarshal(raw, &objErrors) == nil && len(objErrors) > 0 {
+		entries := make([]APIErrorEntry, len(objErrors))
+		for i, e := range objErrors {
+			entries[i] = APIErrorEntry{Detail: e.Detail, Location: e.Location}
+		}
+		return entries
+	}
+
+	var strErrors []string
+	if json.Unmarshal(raw, &strErrors) == nil {
+		entries := make([]APIErrorEntry, len(strErrors))
+		for i, e := range strErrors {
+			entries[i] = APIErrorEntry{Detail: e}
+		}
+		return entries
 	}
 
 	return nil

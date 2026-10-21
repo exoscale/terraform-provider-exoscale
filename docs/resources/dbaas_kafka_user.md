@@ -3,12 +3,12 @@
 page_title: "exoscale_dbaas_kafka_user Resource - terraform-provider-exoscale"
 subcategory: ""
 description: |-
-  Manage service users for a Kafka Exoscale Database Services (DBaaS) https://community.exoscale.com/documentation/dbaas/.
+  Manage service users for a Kafka Exoscale Database Services (DBaaS) https://community.exoscale.com/product/dbaas/.
 ---
 
 # exoscale_dbaas_kafka_user (Resource)
 
-Manage service users for a Kafka Exoscale [Database Services (DBaaS)](https://community.exoscale.com/documentation/dbaas/).
+Manage service users for a Kafka Exoscale [Database Services (DBaaS)](https://community.exoscale.com/product/dbaas/).
 
 
 

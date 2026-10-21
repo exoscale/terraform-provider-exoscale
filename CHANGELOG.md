@@ -1,5 +1,213 @@
 # Changelog
 
+## Unreleased
+
+FORK:
+
+- `exoscale_instance_pool`: `private` ported to terraform-plugin-framework after upstream #620/#625 (public IP assignment `none`; forces replacement). `private = true` with `ipv6 = true` is rejected by value; `private = true` next to `ipv6 = false` is now accepted. The v0 to v1 state upgrade reads `private` from state written by the SDKv2 fork.
+
+BUG FIXES:
+
+- `exoscale_block_storage_volume`: deleting a volume that is already gone (API returned 404) no longer fails.
+- `exoscale_instance_pool`: removing `description`, `labels` or `user_data` from the configuration now clears them on the pool, they used to be left as they were.
+- `exoscale_instance_pool`: updating a pool configured with the deprecated `affinity_group_ids` no longer sends an empty anti-affinity group list.
+- `exoscale_instance_pool` and `exoscale_instance_pool_list` data sources: `instances.*.public_ip_address` is `""` for an instance without public IP, it used to be `"<nil>"`.
+
+IMPROVEMENTS:
+
+- Migrate the `exoscale_instance_pool` resource to terraform-plugin-framework.
+- Migrate the `exoscale_instance_pool` and `exoscale_instance_pool_list` data sources to terraform-plugin-framework.
+- The provider is now served by terraform-plugin-framework alone: the terraform-plugin-sdk provider server and the mux combining both are removed, as every resource and data source has been migrated. The User-Agent no longer reports a `Terraform-SDK/` version.
+- Documentation: links to the Exoscale documentation now point to the current pages on community.exoscale.com instead of legacy `/documentation/` URLs that only work through redirects.
+
+BREAKING CHANGES:
+
+- `exoscale_instance_pool`: the `service_offering` attribute, deprecated since 0.27.0, is removed and `instance_type` is now required: replace `service_offering = "<size>"` with `instance_type = "standard.<size>"`, check the [migration guide](docs/guides/migration-of-instance-pool-from-v0_75_x-to-v0_76_x.md).
+- `exoscale_instance_pool`: `instances` and `virtual_machines` are read-only and can no longer be set in the configuration (the values set were ignored), check the [migration guide](docs/guides/migration-of-instance-pool-from-v0_75_x-to-v0_76_x.md).
+- Remove the `exoscale_iam_access_key` resource, use `exoscale_iam_api_key` with `exoscale_iam_role` instead. Remove access keys from your state before upgrading, see the [migration guide](https://registry.terraform.io/providers/exoscale/exoscale/latest/docs/guides/migration-of-iam-access-key-from-v0_75_x-to-v0_76_x).
+
+DEPENDENCIES:
+
+- Remove `github.com/hashicorp/terraform-plugin-mux`
+
+## 0.75.0
+
+IMPROVEMENTS:
+
+- Migrate the `exoscale_compute_instance` resource and the `exoscale_compute_instance`/`exoscale_compute_instance_list` data sources to terraform-plugin-framework. Existing state loads unchanged; a configuration setting an optional list to an explicit `[]` (e.g. `elastic_ip_ids = []`) shows a one-time in-place update with no effect on the instance. (#608)
+- Migrate the `exoscale_template` data source to terraform-plugin-framework. (#616)
+- Migrate the `exoscale_ssh_key` resource to terraform-plugin-framework. Existing state loads unchanged. (#615)
+- Migrate the `exoscale_anti_affinity_group` resource and data source to terraform-plugin-framework. Existing state loads unchanged; removing `description` from the configuration no longer replaces the group. (#614)
+- Migrate the `exoscale_elastic_ip` resource and data source to terraform-plugin-framework & egoscale v3.
+
+FEATURES:
+
+BUG FIXES:
+
+- Fix timeout update for domain resource (#613)
+- `exoscale_private_network` labels and `exoscale_security_group` external sources removed outside of Terraform now show up as drift
+- `exoscale_compute_instance_list`: the `id`, `state`, `manager_id` and `manager_type` filters never matched any instance.
+- `exoscale_compute_instance`: deleting an instance honours the `delete` timeout instead of the `update` one.
+
+BREAKING CHANGES:
+
+- `exoscale_compute_instance` data source: an instance that does not exist is now an error, it used to return an empty result.
+- `exoscale_anti_affinity_group` data source: a `name` matching several groups is now an error, it used to return the first one.
+- `exoscale_elastic_ip`: `healthcheck` now uses attribute assignment syntax (`=`) instead of nested block syntax, in the resource and the data source (`healthcheck.port` instead of `healthcheck[0].port`), check the [migration guide](docs/guides/migration-of-elastic-ip-from-v0_74_x-to-v0_75_x.md)
+- `exoscale_elastic_ip`: adding a `healthcheck` to an existing Elastic IP or removing it now plans its replacement (an unmanaged Elastic IP can not become managed and vice versa). A managed Elastic IP whose configuration has no `healthcheck` is replaced, check the [migration guide](docs/guides/migration-of-elastic-ip-from-v0_74_x-to-v0_75_x.md).
+- `exoscale_elastic_ip`: removing `description` from the configuration now clears it on the Elastic IP, it used to be kept.
+
+DEPENDENCIES:
+
+## 0.74.2
+
+DEPENDENCIES:
+
+- Bump `github.com/exoscale/egoscale/v3` to v3.1.56
+
+## 0.74.1
+
+BUG FIXES:
+
+- Fix timeouts block update for security group rule (#607)
+
+## 0.74.0
+
+IMPROVEMENTS:
+
+- Migrate `nlb`/`nlb_service` resources and data sources to terraform-plugin-framework & egoscale v3 (#593)
+
+FEATURES:
+
+- `exoscale_nlb`: add `address_family` (`inet4`|`inet6`) to create IPv6 Network Load Balancers, also exposed by the data source (#606)
+
+DEPENDENCIES:
+
+- Bump `github.com/exoscale/egoscale/v3` to v3.1.54
+
+## 0.73.2
+FEATURES:
+
+- VPC integration: routes - #588
+- SKS: Karpenter feature-flags - #603
+
+BUG FIXES:
+
+- Fix sks nodepool create and update #605
+
+## 0.73.1
+
+BUG FIXES:
+
+- Fix security group drift introduced in 0.73.0 (#600)
+
+## 0.73.0
+
+IMPROVEMENTS:
+
+- Migrate SKS Cluster resource/datasource from sdk to framework
+- Migrate SKS Node Pool resource/datasource from sdk to framework
+- Migrate SKS Kubeconfig resource from sdk to framework
+- Migrate SKS Cluster List / Node Pool List data sources from sdk to framework
+
+FEATURES:
+
+- VPC integration: subnets - #585
+- networking: add `dns_servers`, `ntp_servers`, and `domain_search` attributes to `exoscale_vpc` resource - #596
+
+BUG FIXES:
+
+- Rework attribute value cleanup on private_network resource (#598)
+- fix: instance list by labels - #597
+- Rework SG resource and fix the dropped timeout on update (#599)
+
+BREAKING CHANGES:
+
+- `sks_nodepool`: `kubelet_image_gc` now uses attribute assignment syntax (`=`) instead of nested block syntax, check the [migration guide](docs/guides/migration-of-sks-nodepool-from-v0_72_x-to-v0_73_x.md)
+- `sks_cluster_list` / `sks_nodepool_list`: migrated from sdk to framework, generic per-attribute filtering has been removed and a few attributes changed on the returned list items, check the [migration guide](docs/guides/migration-of-sks-list-datasources-from-v0_72_x-to-v0_73_x.md)
+
+DEPENDENCIES:
+
+- Bump `google.golang.org/grpc` to v1.83.2, fixing GO-2026-6443 and GO-2026-6348
+
+## 0.72.0
+
+FEATURES:
+
+- `sks_nodepool`: add `kubelet_max_pods` attribute to set the maximum number of pods per node on the underlying instance pool (resource + data sources)
+- dbaas: support for clickhouse
+- `dbaas`: add exoscale_dbaas_clickhouse_user resource
+- networking: add `exoscale_vpc` resource, and `exoscale_vpc` data source
+- `template`: adding the corresponding resource type with a support of CRUD operations.
+
+## 0.71.0
+
+IMPROVEMENTS:
+
+- feat: add uri to every dbaas service #567
+- only use security group id for private security group rule #562
+- Migrate Domain resource/datasource to framework #575
+
+FEATURES:
+
+- `sks_cluster`: allows `major.minor` as input value for `version`, resolves to the latest patch version available on the platform #569
+
+BUG FIXES:
+
+- dbaas: prevent context deadline during Crossplane observe #571
+- `compute_instance`: `ipv6` attribute is not ignored on instance update #574
+- provider: honour `EXOSCALE_API_ENDPOINT` for v2-backed resources and data sources #576
+
+BREAKING CHANGES:
+
+- `domain`: remove the unused, already-deprecated `token`, `state`, `auto_renew` and `expires_on` attributes, check the [migration guide](docs/guides/migration-of-domain-from-v0_70_x-to-v0_71_x.md) #575
+
+## 0.70.0
+
+IMPROVEMENTS:
+
+- Resource compute_instance: clearify the default state value #538
+- Change zone for sks acceptance tests
+- Migrate Private Network resource/datasource to framework #542
+
+BUG FIXES:
+
+- fix: typo in security group rule import doc #559
+- dbaas: allows services with minor/patch version #563
+- improve acc test #563
+
+FEATURES:
+
+- `sks_nodepool`: add `nvidia_mig_profile` attribute to enable NVIDIA Multi-Instance GPU (MIG) partitioning on GPU nodepools (resource + data sources) #564
+- dbaas valkey: support active_expire_effort & frequent_snapshots settings #566
+
+DEPENDENCIES:
+
+- Bump `egoscale/v3` to v3.1.42
+
+## 0.69.3
+
+IMPROVEMENTS:
+
+- Removed deprecated and unused `delay` provider attribute #539
+
+BUG FIXES:
+
+- `block_storage_volume`: handle BS volume deletion in instance update #546
+- `compute_instance`: suppress user_data diffs for pre-encoded input #518
+- `security_group_rule`: allow portless protocols (ESP, AH, GRE, IPIP) #531
+- `template`: fall back to private visibility when name lookup returns not found #532
+- `elastic_ip`: tolerate missing instance during detach #549
+- `instance`: check instance state before stop/start #551
+
+DEPENDENCIES:
+
+- upgraded `golang/x/net` and related dependencies #540
+
+FEATURES:
+
+- `dbaas`: add exoscale_dbaas_valkey_user resource #528
+
 ## 0.69.2
 
 IMPROVEMENTS:

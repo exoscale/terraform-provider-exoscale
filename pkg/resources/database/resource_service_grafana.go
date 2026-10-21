@@ -158,6 +158,12 @@ pooling:
 	data.Nodes = types.Int64PointerValue(apiService.NodeCount)
 	data.State = types.StringPointerValue((*string)(apiService.State))
 	data.UpdatedAt = types.StringValue(apiService.UpdatedAt.String())
+	uri, err := uriWitoutCreds(apiService.Uri)
+	if err != nil {
+		diagnostics.AddError(err.Error(), "")
+		return
+	}
+	data.URI = types.StringPointerValue(uri)
 
 	if data.TerminationProtection.IsUnknown() {
 		data.TerminationProtection = types.BoolPointerValue(apiService.TerminationProtection)
@@ -231,6 +237,12 @@ func (r *ServiceResource) readGrafana(ctx context.Context, data *ServiceResource
 	data.State = types.StringPointerValue((*string)(apiService.State))
 	data.TerminationProtection = types.BoolPointerValue(apiService.TerminationProtection)
 	data.UpdatedAt = types.StringValue(apiService.UpdatedAt.String())
+	uri, err := uriWitoutCreds(apiService.Uri)
+	if err != nil {
+		diagnostics.AddError(err.Error(), "")
+		return
+	}
+	data.URI = types.StringPointerValue(uri)
 
 	data.MaintenanceDOW = types.StringNull()
 	data.MaintenanceTime = types.StringNull()
@@ -384,6 +396,12 @@ func (r *ServiceResource) updateGrafana(ctx context.Context, stateData *ServiceR
 	stateData.NodeMemory = types.Int64PointerValue(apiService.NodeMemory)
 	stateData.Nodes = types.Int64PointerValue(apiService.NodeCount)
 	stateData.State = types.StringPointerValue((*string)(apiService.State))
+	uri, err := uriWitoutCreds(apiService.Uri)
+	if err != nil {
+		diagnostics.AddError(err.Error(), "")
+		return
+	}
+	stateData.URI = types.StringPointerValue(uri)
 	if apiService.UpdatedAt != nil {
 		stateData.UpdatedAt = types.StringValue(apiService.UpdatedAt.String())
 	}

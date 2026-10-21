@@ -65,19 +65,19 @@ directory for complete configuration examples.
 
 Optional:
 
-- `create` (String)
-- `delete` (String)
-- `read` (String)
-- `update` (String)
+- `create` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours).
+- `delete` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Setting a timeout for a Delete operation is only applicable if changes are saved into state before the destroy operation occurs.
+- `read` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
+- `update` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours).
 
 -> The symbol ❗ in an attribute indicates that modifying it, will force the creation of a new resource.
 
 ## Import
 
 ```shell
-# An existing DNS domain record may be imported by `<ID>`:
+# An existing DNS domain record may be imported by `<domain-id>@<record-id>`:
 
 terraform import \
   exoscale_domain_record.my_host \
-  f81d4fae-7dec-11d0-a765-00a0c91e6bf6
+  0a1ecf9d-99e7-40ea-83e7-1666017a2dd0@f81d4fae-7dec-11d0-a765-00a0c91e6bf6
 ```

@@ -1,0 +1,9 @@
+resource "exoscale_anti_affinity_group" "test" {
+  name        = "terraform-provider-test-{{ .ID }}"
+  description = "description-test-updated"
+}
+
+resource "exoscale_anti_affinity_group" "test_no_description" {
+  name        = "terraform-provider-test-{{ .ID }}-no-description"
+  description = ""
+}

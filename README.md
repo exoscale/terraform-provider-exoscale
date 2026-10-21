@@ -84,6 +84,15 @@ website][tf-doc].
 make GO_TEST_EXTRA_ARGS="-v -run ^TestAccResourceCompute$" test-acc
 ```
 
+Acceptance tests need API credentials. Set them in the environment, or use the local helper that reads them from `~/.config/exoscale/exoscale.toml` (same file the `exo` CLI uses):
+
+```sh
+go test -tags=local_integration -run TestDatabaseLocal \
+  -account=owner-production -timeout 60m ./pkg/resources/database/
+```
+
+The `local_integration` build tag keeps the helper out of CI. Every acceptance test package exposes a `TestXxxLocal` entry point that way. See [exoscale/cli#837](https://github.com/exoscale/cli/pull/837) for the original.
+
 ### Development Setup
 
 If you would like to use the terraform provider you have built and try

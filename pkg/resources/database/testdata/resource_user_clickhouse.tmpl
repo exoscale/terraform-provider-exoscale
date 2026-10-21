@@ -1,0 +1,19 @@
+resource "exoscale_database" {{ .ResourceName }} {
+  name = "{{ .ServiceName }}"
+  type = "clickhouse"
+  plan = "{{ .Plan }}"
+  zone = "{{ .Zone }}"
+  termination_protection = false
+
+  clickhouse = {}
+}
+
+resource "exoscale_dbaas_clickhouse_user" {{ .ResourceName }} {
+  service  = exoscale_database.{{ .ResourceName }}.name
+  username = "{{ .Username }}"
+  zone     = "{{ .Zone }}"
+
+  {{- if .Password }}
+  password = "{{ .Password }}"
+  {{- end }}
+}

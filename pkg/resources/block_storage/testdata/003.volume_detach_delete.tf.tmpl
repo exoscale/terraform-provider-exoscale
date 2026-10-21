@@ -1,0 +1,21 @@
+data "exoscale_template" "test_template" {
+  zone = "{{ .Zone }}"
+  name = "Linux Ubuntu 22.04 LTS 64-bit"
+}
+
+data "exoscale_security_group" "default" {
+  name = "default"
+}
+
+resource "exoscale_compute_instance" "test_instance" {
+  zone = "{{ .Zone }}"
+  name = "terraform-provider-test-{{ .ID }}"
+
+  template_id = data.exoscale_template.test_template.id
+  type        = "standard.small"
+  disk_size   = 10
+
+  block_storage_volume_ids = []
+
+  security_group_ids = [data.exoscale_security_group.default.id]
+}

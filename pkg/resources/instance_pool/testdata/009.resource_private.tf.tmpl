@@ -1,0 +1,24 @@
+data "exoscale_template" "ubuntu" {
+  zone = "{{ .Zone }}"
+  name = "Linux Ubuntu 22.04 LTS 64-bit"
+}
+
+resource "exoscale_private_network" "test" {
+  zone = "{{ .Zone }}"
+  name = "terraform-provider-test-{{ .ID }}"
+}
+
+resource "exoscale_instance_pool" "test" {
+  zone          = "{{ .Zone }}"
+  name          = "terraform-provider-test-{{ .ID }}"
+  template_id   = data.exoscale_template.ubuntu.id
+  instance_type = "standard.tiny"
+  size          = 1
+  disk_size     = 10
+  private       = true
+  network_ids   = [exoscale_private_network.test.id]
+
+  timeouts {
+    delete = "10m"
+  }
+}

@@ -1,0 +1,47 @@
+locals {
+  zone = "{{ .Zone }}"
+}
+
+resource "exoscale_sks_cluster" "test" {
+  zone           = local.zone
+  name           = "terraform-provider-test-{{ .ID }}-updated"
+  description    = "description-test-updated"
+  exoscale_ccm   = true
+  exoscale_csi   = true
+  metrics_server = false
+  auto_upgrade   = true
+  labels = {
+    test = "acctest-updated"
+  }
+  feature_gates = []
+
+  enable_kube_proxy             = true
+  create_default_security_group = true
+
+  oidc {
+    client_id       = "test-client-updated"
+    groups_claim    = "test-groups-claim-updated"
+    groups_prefix   = "test-groups-prefix-updated"
+    issuer_url      = "https://id-updated.example.net"
+    required_claim  = { test = "test-required-claim-updated" }
+    username_claim  = "test-username-claim-updated"
+    username_prefix = "test-username-prefix-updated"
+  }
+
+  timeouts {
+    create = "10m"
+  }
+}
+
+resource "exoscale_sks_nodepool" "test" {
+  zone          = local.zone
+  cluster_id    = exoscale_sks_cluster.test.id
+  name          = "test"
+  instance_type = "standard.small"
+  disk_size     = 20
+  size          = 1
+
+  timeouts {
+    create = "10m"
+  }
+}

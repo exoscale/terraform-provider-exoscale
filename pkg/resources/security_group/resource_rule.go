@@ -409,7 +409,6 @@ func (r *ResourceRule) Create(
 		}
 		ruleReq.SecurityGroup = &exoscale.SecurityGroupResource{
 			ID:         sg.ID,
-			Name:       sg.Name,
 			Visibility: exoscale.SecurityGroupResourceVisibilityPrivate,
 		}
 	default: // validation must prevent reaching here
@@ -616,7 +615,14 @@ func (r *ResourceRule) Read(
 
 // Update resources in-place by receiving Terraform prior state, configuration, and plan data, performing update logic, and saving updated Terraform state data.
 func (r *ResourceRule) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	// Nothing to do as all SG rule attributes require replace.
+	// All attributes require replace but we still need to update timeouts block.
+	var plan ResourceRuleModel
+
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 // Delete resources by receiving Terraform prior state data and performing deletion logic.
@@ -737,8 +743,7 @@ func (r *ResourceRule) FindRemoteRule(
 			((item.SecurityGroup == nil && rule.SecurityGroup == nil) ||
 				(item.SecurityGroup != nil &&
 					rule.SecurityGroup != nil &&
-					item.SecurityGroup.ID == rule.SecurityGroup.ID &&
-					item.SecurityGroup.Name == rule.SecurityGroup.Name)) &&
+					item.SecurityGroup.ID == rule.SecurityGroup.ID)) &&
 			((item.ICMP == nil && rule.ICMP == nil) ||
 				(item.ICMP != nil && rule.ICMP != nil && *item.ICMP == *rule.ICMP)) {
 			return &item, nil

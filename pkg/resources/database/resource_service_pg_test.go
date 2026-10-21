@@ -312,6 +312,8 @@ func testResourcePg(t *testing.T) {
 					resource.TestCheckResourceAttrSet(serviceFullResourceName, "nodes"),
 					resource.TestCheckResourceAttrSet(serviceFullResourceName, "ca_certificate"),
 					resource.TestCheckResourceAttrSet(serviceFullResourceName, "updated_at"),
+					resource.TestCheckResourceAttrSet(serviceFullResourceName, "uri"),
+					checkURIWellFormed(serviceFullResourceName),
 					namedCheck("create/shared_buffers_percentage", resource.TestCheckResourceAttr(serviceFullResourceName, "pg.shared_buffers_percentage", "25")),
 					namedCheck("create/work_mem", resource.TestCheckResourceAttr(serviceFullResourceName, "pg.work_mem", "4")),
 					namedCheck("create/variant", resource.TestCheckResourceAttr(serviceFullResourceName, "pg.variant", "aiven")),
@@ -369,6 +371,8 @@ func testResourcePg(t *testing.T) {
 				Config: configUpdate,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					// Service
+					resource.TestCheckResourceAttrSet(serviceFullResourceName, "uri"),
+					checkURIWellFormed(serviceFullResourceName),
 					namedCheck("update/shared_buffers_percentage", resource.TestCheckResourceAttr(serviceFullResourceName, "pg.shared_buffers_percentage", "30")),
 					namedCheck("update/work_mem", resource.TestCheckResourceAttr(serviceFullResourceName, "pg.work_mem", "8")),
 					namedCheck("update/variant", resource.TestCheckResourceAttr(serviceFullResourceName, "pg.variant", "aiven")),
@@ -433,6 +437,8 @@ func testResourcePg(t *testing.T) {
 				Config: configScale,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					// Service
+					resource.TestCheckResourceAttrSet(serviceFullResourceName, "uri"),
+					checkURIWellFormed(serviceFullResourceName),
 					func(s *terraform.State) error {
 						err := CheckExistsPg(serviceDataBase.Name, &serviceDataScale)
 						if err != nil {

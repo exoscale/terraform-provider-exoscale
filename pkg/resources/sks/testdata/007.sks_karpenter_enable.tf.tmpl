@@ -1,0 +1,18 @@
+resource "exoscale_sks_cluster" "test-with-karpenter" {
+  zone           = "{{ .Zone }}"
+  name           = "terraform-provider-test-{{ .ID }}"
+  description    = "description-test"
+  exoscale_ccm   = true
+  metrics_server = false
+  auto_upgrade   = true
+  labels = {
+    test = "acctest"
+  }
+
+  enable_karpenter        = true
+  karpenter_feature_gates = ["NodeRepair"]
+
+  timeouts {
+    create = "10m"
+  }
+}

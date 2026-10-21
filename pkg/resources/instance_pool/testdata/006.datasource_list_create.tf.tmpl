@@ -1,0 +1,42 @@
+data "exoscale_template" "ubuntu" {
+  zone = "{{ .Zone }}"
+  name = "Linux Ubuntu 22.04 LTS 64-bit"
+}
+
+data "exoscale_security_group" "default" {
+  name = "default"
+}
+
+resource "exoscale_instance_pool" "minimal" {
+  zone               = "{{ .Zone }}"
+  name               = "terraform-provider-test-{{ .ID }}-minimal"
+  template_id        = data.exoscale_template.ubuntu.id
+  instance_type      = "standard.tiny"
+  size               = 1
+  disk_size          = 10
+  security_group_ids = [data.exoscale_security_group.default.id]
+
+  timeouts {
+    delete = "10m"
+  }
+}
+
+resource "exoscale_instance_pool" "labeled" {
+  zone               = "{{ .Zone }}"
+  name               = "terraform-provider-test-{{ .ID }}-labeled"
+  description        = "description-{{ .ID }}"
+  template_id        = data.exoscale_template.ubuntu.id
+  instance_type      = "standard.tiny"
+  size               = 1
+  disk_size          = 10
+  security_group_ids = [data.exoscale_security_group.default.id]
+  user_data          = "user-data-{{ .ID }}"
+
+  labels = {
+    test = "label-{{ .ID }}"
+  }
+
+  timeouts {
+    delete = "10m"
+  }
+}

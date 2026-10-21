@@ -40,12 +40,22 @@ directory for complete configuration examples.
 
 - `id` (String) The Network Load Balancers (NLB) ID to match (conflicts with `name`).
 - `name` (String) The NLB name to match (conflicts with `id`).
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
+- `address_family` (String) The NLB address family (`inet4` or `inet6`).
 - `created_at` (String) The NLB creation date.
 - `description` (String) The Network Load Balancers (NLB) description.
-- `ip_address` (String) The NLB public IPv4 address.
+- `ip_address` (String) The NLB public IP address (IPv4 or IPv6, depending on `address_family`).
+- `labels` (Map of String) A map of key/value labels.
 - `state` (String) The current NLB state.
+
+<a id="nestedblock--timeouts"></a>
+### Nested Schema for `timeouts`
+
+Optional:
+
+- `read` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
 
 

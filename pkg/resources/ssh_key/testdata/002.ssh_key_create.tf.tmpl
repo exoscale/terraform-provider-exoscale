@@ -1,0 +1,4 @@
+resource "exoscale_ssh_key" "test" {
+  name       = "terraform-provider-test-{{ .ID }}"
+  public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICXiNJSqQ6tKh+YWt4KCboyblT55oYJFf4qIZQ8Obpyb terraform-provider-test"
+}

@@ -4,11 +4,14 @@ page_title: "exoscale_nlb_service Resource - terraform-provider-exoscale"
 subcategory: ""
 description: |-
   Manage Exoscale Network Load Balancer (NLB) https://community.exoscale.com/product/networking/nlb/ Services.
+  Corresponding data source: exoscalenlbservice_list ../data-sources/nlb_service_list.md.
 ---
 
 # exoscale_nlb_service (Resource)
 
 Manage Exoscale [Network Load Balancer (NLB)](https://community.exoscale.com/product/networking/nlb/) Services.
+
+Corresponding data source: [exoscale_nlb_service_list](../data-sources/nlb_service_list.md).
 
 ## Example Usage
 
@@ -49,17 +52,17 @@ directory for complete configuration examples.
 
 ### Required
 
-- `healthcheck` (Block Set, Min: 1) The service health checking configuration. (see [below for nested schema](#nestedblock--healthcheck))
 - `instance_pool_id` (String) ❗ The [exoscale_instance_pool](./instance_pool.md) (ID) to forward traffic to.
 - `name` (String) The NLB service name.
 - `nlb_id` (String) ❗ The parent [exoscale_nlb](./nlb.md) ID.
-- `port` (Number) The healthcheck port.
+- `port` (Number) The NLB service (TCP/UDP) port.
 - `target_port` (Number) The (TCP/UDP) port to forward traffic to (on target instance pool members).
 - `zone` (String) ❗ The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.
 
 ### Optional
 
 - `description` (String) A free-form text describing the NLB service.
+- `healthcheck` (Block Set) The service health checking configuration. (see [below for nested schema](#nestedblock--healthcheck))
 - `protocol` (String) The protocol (`tcp`|`udp`; default: `tcp`).
 - `strategy` (String) The strategy (`round-robin`|`source-hash`; default: `round-robin`).
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
@@ -67,14 +70,14 @@ directory for complete configuration examples.
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-- `state` (String)
+- `state` (String) The current NLB service state.
 
 <a id="nestedblock--healthcheck"></a>
 ### Nested Schema for `healthcheck`
 
 Required:
 
-- `port` (Number) The NLB service (TCP/UDP) port.
+- `port` (Number) The healthcheck port.
 
 Optional:
 
@@ -91,10 +94,10 @@ Optional:
 
 Optional:
 
-- `create` (String)
-- `delete` (String)
-- `read` (String)
-- `update` (String)
+- `create` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours).
+- `delete` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Setting a timeout for a Delete operation is only applicable if changes are saved into state before the destroy operation occurs.
+- `read` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
+- `update` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours).
 
 -> The symbol ❗ in an attribute indicates that modifying it, will force the creation of a new resource.
 

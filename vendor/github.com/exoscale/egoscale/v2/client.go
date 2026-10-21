@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"net"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -254,21 +253,22 @@ func setUserAgent(ctx context.Context, req *http.Request) error {
 	return nil
 }
 
-// setEndpointFromContext is an HTTP client request interceptor that overrides the "Host" header
-// with information from a request endpoint optionally set in the context instance. If none is
-// found or host is an IP address, the request is left untouched.
+// setEndpointFromContext is an HTTP client request interceptor that overrides a generic API
+// endpoint with information from a request endpoint optionally set in the context instance.
+// Custom API endpoints are left untouched.
 func setEndpointFromContext(ctx context.Context, req *http.Request) error {
-	h, _, err := net.SplitHostPort(req.Host)
-	if err != nil {
-		h = req.Host
+	v, ok := ctx.Value(api.ReqEndpoint{}).(api.ReqEndpoint)
+	if !ok {
+		return nil
 	}
-	if net.ParseIP(h) == nil {
-		v, ok := ctx.Value(api.ReqEndpoint{}).(api.ReqEndpoint)
-		if ok {
-			req.Host = v.Host()
-			req.URL.Host = v.Host()
-		}
+
+	origin := req.URL.Scheme + "://" + req.URL.Host + "/"
+	if origin != api.EndpointURL && origin != "https://"+v.Env()+".exoscale.com/" {
+		return nil
 	}
+
+	req.Host = v.Host()
+	req.URL.Host = v.Host()
 
 	return nil
 }

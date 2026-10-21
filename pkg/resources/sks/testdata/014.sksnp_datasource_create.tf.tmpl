@@ -1,0 +1,29 @@
+locals {
+  zone = "{{ .Zone }}"
+}
+
+resource "exoscale_sks_cluster" "test" {
+  zone = local.zone
+  name = "terraform-provider-test-{{ .ID }}"
+
+  timeouts {
+    delete = "10m"
+  }
+}
+
+resource "exoscale_sks_nodepool" "test" {
+  zone          = local.zone
+  cluster_id    = exoscale_sks_cluster.test.id
+  name          = "terraform-provider-test-{{ .ID }}"
+  description   = "description-test"
+  instance_type = "standard.small"
+  disk_size     = 20
+  size          = 1
+  labels = {
+    test = "acctest"
+  }
+
+  timeouts {
+    delete = "10m"
+  }
+}

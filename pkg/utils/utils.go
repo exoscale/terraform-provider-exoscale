@@ -11,36 +11,14 @@ import (
 	"net"
 	"strings"
 
-	"github.com/hashicorp/go-cty/cty"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	exov2 "github.com/exoscale/egoscale/v2"
-	exov3 "github.com/exoscale/egoscale/v3"
+	exoscale "github.com/exoscale/egoscale/v3"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 )
-
-// ZonedStateContextFunc is an alternative resource importer function to be
-// used for importing zone-local resources, where the resource ID is expected
-// to be suffixed with "@ZONE" (e.g. "c01af84d-6ac6-4784-98bb-127c98be8258@ch-gva-2").
-// Upon successful execution, the returned resource state contains the ID of the
-// resource and the "zone" attribute set to the value parsed from the import ID.
-func ZonedStateContextFunc(_ context.Context, d *schema.ResourceData, _ any) ([]*schema.ResourceData, error) {
-	parts := strings.SplitN(d.Id(), "@", 2)
-	if len(parts) != 2 {
-		return nil, fmt.Errorf(`invalid ID %q, expected format "<ID>@<ZONE>"`, d.Id())
-	}
-
-	d.SetId(parts[0])
-
-	if err := d.Set("zone", parts[1]); err != nil {
-		return nil, err
-	}
-
-	return []*schema.ResourceData{d}, nil
-}
 
 type IDStringer interface {
 	Id() string
@@ -112,15 +90,6 @@ func NonEmptyStringPtr(s string) *string {
 	return nil
 }
 
-func SchemaSetToStringArray(set *schema.Set) []string {
-	array := make([]string, set.Len())
-	for i, group := range set.List() {
-		array[i] = group.(string)
-	}
-
-	return array
-}
-
 func Unique(s []string) []string {
 	inResult := map[string]struct{}{}
 	var result []string
@@ -131,12 +100,6 @@ func Unique(s []string) []string {
 		}
 	}
 	return result
-}
-
-// SuppressCaseFunc https://www.terraform.io/plugin/sdkv2/schemas/schema-behaviors#diffsuppressfunc
-// Do no show case differences between state and resource
-func SuppressCaseDiff(k, old, new string, d *schema.ResourceData) bool {
-	return strings.EqualFold(old, new)
 }
 
 // EncodeUserData does compression and base64 encoding, used in resource_exoscale_compute[_instance[_pool]]
@@ -188,81 +151,6 @@ func DecodeUserData(data string) (string, error) {
 	return string(userData), nil
 }
 
-// normalizeUserData decodes and optionally decompresses user data for comparison.
-func normalizeUserData(v string) string {
-	normalized, err := DecodeUserData(v)
-	if err != nil {
-		return v
-	}
-	return normalized
-}
-
-// SuppressUserDataDiff ignores diffs caused by the provider decoding user_data
-// on read when the user originally supplied it pre-encoded (base64 or gzip+base64).
-func SuppressUserDataDiff(_, old, new string, _ *schema.ResourceData) bool {
-	return normalizeUserData(old) == normalizeUserData(new)
-}
-
-// ParseIAMAccessKeyResource parses IAM key format
-func ParseIAMAccessKeyResource(v string) (*exov2.IAMAccessKeyResource, error) {
-	var iamAccessKeyResource exov2.IAMAccessKeyResource
-
-	parts := strings.SplitN(v, ":", 2)
-	if len(parts) != 2 {
-		return nil, fmt.Errorf("invalid format")
-	}
-	iamAccessKeyResource.ResourceName = parts[1]
-
-	parts = strings.SplitN(parts[0], "/", 2)
-	if len(parts) != 2 {
-		return nil, fmt.Errorf("invalid format")
-	}
-	iamAccessKeyResource.Domain = parts[0]
-	iamAccessKeyResource.ResourceType = parts[1]
-
-	if iamAccessKeyResource.Domain == "" ||
-		iamAccessKeyResource.ResourceType == "" ||
-		iamAccessKeyResource.ResourceName == "" {
-		return nil, fmt.Errorf("invalid format")
-	}
-
-	return &iamAccessKeyResource, nil
-}
-
-// ValidateZone validates zone string.
-func ValidateZone() schema.SchemaValidateDiagFunc {
-	return validation.ToDiagFunc(validation.StringInSlice(config.Zones, false))
-}
-
-// ValidateComputeInstanceType validates that the given field contains a valid Exoscale Compute instance type.
-func ValidateComputeInstanceType(v any, _ cty.Path) diag.Diagnostics {
-	value, ok := v.(string)
-	if !ok {
-		return diag.Errorf("expected field %q type to be string", v)
-	}
-
-	if !strings.Contains(value, ".") {
-		return diag.Errorf(`invalid value %q, expected format "FAMILY.SIZE"`, value)
-	}
-
-	return nil
-}
-
-// ValidateComputeUserData validates that the given field contains a valid data.
-func ValidateComputeUserData(v any, _ cty.Path) diag.Diagnostics {
-	value, ok := v.(string)
-	if !ok {
-		return diag.Errorf("expected field %q type to be string", v)
-	}
-
-	_, _, err := EncodeUserData(value)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	return nil
-}
-
 // ValidateLowercaseString validates that the given fields contains only lowercase characters
 func ValidateLowercaseString(val any, key string) (warns []string, errs []error) {
 	v := val.(string)
@@ -273,7 +161,7 @@ func ValidateLowercaseString(val any, key string) (warns []string, errs []error)
 }
 
 // SwitchClientZone clones the existing exoscale Client in the new zone.
-func SwitchClientZone(ctx context.Context, client *exov3.Client, zone exov3.ZoneName) (*exov3.Client, error) {
+func SwitchClientZone(ctx context.Context, client *exoscale.Client, zone exoscale.ZoneName) (*exoscale.Client, error) {
 	if zone == "" {
 		return client, nil
 	}
@@ -290,7 +178,7 @@ func SwitchClientZone(ctx context.Context, client *exov3.Client, zone exov3.Zone
 // FindInstanceType attempts to find an Instance type by family+size or ID.
 // To search by family+size, the expected format for v is "[FAMILY.]SIZE" (e.g. "large", "gpu.medium"),
 // with family defaulting to "standard" if not specified.
-func FindInstanceTypeByNameV3(ctx context.Context, client *exov3.Client, id string) (*exov3.InstanceType, error) {
+func FindInstanceTypeByNameV3(ctx context.Context, client *exoscale.Client, id string) (*exoscale.InstanceType, error) {
 
 	var typeFamily, typeSize string
 
@@ -314,13 +202,13 @@ func FindInstanceTypeByNameV3(ctx context.Context, client *exov3.Client, id stri
 		}
 	}
 
-	return nil, exov3.ErrNotFound
+	return nil, exoscale.ErrNotFound
 }
 
 // In the context of converting list of IDs to resources for egoscale V3 update and
 // creation requests, we're using a  lot of inline funcitons, increasing reading complexity
 // when one is called more than once, we should aim to regroup them here.
-func AntiAffiniGroupsToAntiAffinityGroupIDs(aags []exov3.AntiAffinityGroup) (ls []string) {
+func AntiAffiniGroupsToAntiAffinityGroupIDs(aags []exoscale.AntiAffinityGroup) (ls []string) {
 	ls = make([]string, len(aags))
 	for i, aag := range aags {
 		ls[i] = aag.ID.String()
@@ -328,17 +216,17 @@ func AntiAffiniGroupsToAntiAffinityGroupIDs(aags []exov3.AntiAffinityGroup) (ls 
 	return
 }
 
-func AntiAffinityGroupIDsToAntiAffinityGroups(ids []any) (ls []exov3.AntiAffinityGroup) {
-	ls = make([]exov3.AntiAffinityGroup, len(ids))
+func AntiAffinityGroupIDsToAntiAffinityGroups(ids []any) (ls []exoscale.AntiAffinityGroup) {
+	ls = make([]exoscale.AntiAffinityGroup, len(ids))
 	for i, id := range ids {
-		ls[i] = exov3.AntiAffinityGroup{
-			ID: exov3.UUID(id.(string)),
+		ls[i] = exoscale.AntiAffinityGroup{
+			ID: exoscale.UUID(id.(string)),
 		}
 	}
 	return
 }
 
-func PrivateNetworksToPrivateNetworkIDs(privnets []exov3.PrivateNetwork) (ls []string) {
+func PrivateNetworksToPrivateNetworkIDs(privnets []exoscale.PrivateNetwork) (ls []string) {
 	ls = make([]string, len(privnets))
 	for i, aag := range privnets {
 		ls[i] = aag.ID.String()
@@ -346,17 +234,17 @@ func PrivateNetworksToPrivateNetworkIDs(privnets []exov3.PrivateNetwork) (ls []s
 	return
 }
 
-func PrivateNetworkIDsToPrivateNetworks(ids []any) (ls []exov3.PrivateNetwork) {
-	ls = make([]exov3.PrivateNetwork, len(ids))
+func PrivateNetworkIDsToPrivateNetworks(ids []any) (ls []exoscale.PrivateNetwork) {
+	ls = make([]exoscale.PrivateNetwork, len(ids))
 	for i, id := range ids {
-		ls[i] = exov3.PrivateNetwork{
-			ID: exov3.UUID(id.(string)),
+		ls[i] = exoscale.PrivateNetwork{
+			ID: exoscale.UUID(id.(string)),
 		}
 	}
 	return
 }
 
-func SecurityGroupsToSecurityGroupIDs(sgs []exov3.SecurityGroup) (ls []string) {
+func SecurityGroupsToSecurityGroupIDs(sgs []exoscale.SecurityGroup) (ls []string) {
 	ls = make([]string, len(sgs))
 	for i, aag := range sgs {
 		ls[i] = aag.ID.String()
@@ -364,17 +252,17 @@ func SecurityGroupsToSecurityGroupIDs(sgs []exov3.SecurityGroup) (ls []string) {
 	return
 }
 
-func SecurityGroupIDsToSecurityGroups(ids []any) (ls []exov3.SecurityGroup) {
-	ls = make([]exov3.SecurityGroup, len(ids))
+func SecurityGroupIDsToSecurityGroups(ids []any) (ls []exoscale.SecurityGroup) {
+	ls = make([]exoscale.SecurityGroup, len(ids))
 	for i, id := range ids {
-		ls[i] = exov3.SecurityGroup{
-			ID: exov3.UUID(id.(string)),
+		ls[i] = exoscale.SecurityGroup{
+			ID: exoscale.UUID(id.(string)),
 		}
 	}
 	return
 }
 
-func ElasticIPsToElasticIPIDs(eips []exov3.ElasticIP) (ls []string) {
+func ElasticIPsToElasticIPIDs(eips []exoscale.ElasticIP) (ls []string) {
 	ls = make([]string, len(eips))
 	for i, aag := range eips {
 		ls[i] = aag.ID.String()
@@ -382,12 +270,64 @@ func ElasticIPsToElasticIPIDs(eips []exov3.ElasticIP) (ls []string) {
 	return
 }
 
-func ElasticIPIDsToElasticIPs(ids []any) (ls []exov3.ElasticIP) {
-	ls = make([]exov3.ElasticIP, len(ids))
+func ElasticIPIDsToElasticIPs(ids []any) (ls []exoscale.ElasticIP) {
+	ls = make([]exoscale.ElasticIP, len(ids))
 	for i, id := range ids {
-		ls[i] = exov3.ElasticIP{
-			ID: exov3.UUID(id.(string)),
+		ls[i] = exoscale.ElasticIP{
+			ID: exoscale.UUID(id.(string)),
 		}
 	}
 	return
+}
+
+// OptionalString returns a null value for an empty string.
+//
+// The SDKv2 provider persisted unset optional strings as "", while the
+// framework expects null. Normalising on read keeps state written before a
+// resource was migrated to the framework from producing a permanent diff.
+func OptionalString(s string) types.String {
+	if s == "" {
+		return types.StringNull()
+	}
+
+	return types.StringValue(s)
+}
+
+// ImportStatePassthroughZonedID is a helper function for importing zoned resources.
+// Works for all resources that can fully refresh with "id" and "zone" only.
+// Input format is id@zone
+func ImportStatePassthroughZonedID(
+	ctx context.Context,
+	req resource.ImportStateRequest,
+	resp *resource.ImportStateResponse,
+) {
+	idParts := strings.Split(req.ID, "@")
+	if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
+		resp.Diagnostics.AddError(
+			"unexpected import identifier",
+			fmt.Sprintf("Expected import identifier with format: id@zone. Got: %q", req.ID),
+		)
+		return
+	}
+
+	id, err := exoscale.ParseUUID(idParts[0])
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"unable to parse ID",
+			err.Error(),
+		)
+		return
+	}
+	zone := idParts[1]
+
+	resp.Diagnostics.Append(resp.State.SetAttribute(
+		ctx,
+		path.Root("id"),
+		types.StringValue(id.String()),
+	)...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(
+		ctx,
+		path.Root("zone"),
+		types.StringValue(zone),
+	)...)
 }

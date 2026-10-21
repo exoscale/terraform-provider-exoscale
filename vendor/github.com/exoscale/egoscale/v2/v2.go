@@ -1,5 +1,5 @@
 // Package v2 is the new Exoscale client API binding.
-// Reference: https://openapi-v2.exoscale.com/
+// Reference: https://community.exoscale.com/reference/api/
 package v2
 
 import (

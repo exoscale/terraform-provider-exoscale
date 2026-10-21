@@ -3,12 +3,12 @@
 page_title: "exoscale_dbaas Resource - terraform-provider-exoscale"
 subcategory: ""
 description: |-
-  Manage Exoscale Database Services (DBaaS) https://community.exoscale.com/documentation/dbaas/.
+  Manage Exoscale Database Services (DBaaS) https://community.exoscale.com/product/dbaas/.
 ---
 
 # exoscale_dbaas (Resource)
 
-Manage Exoscale [Database Services (DBaaS)](https://community.exoscale.com/documentation/dbaas/).
+Manage Exoscale [Database Services (DBaaS)](https://community.exoscale.com/product/dbaas/).
 
 
 
@@ -19,11 +19,12 @@ Manage Exoscale [Database Services (DBaaS)](https://community.exoscale.com/docum
 
 - `name` (String) ❗ The name of the database service.
 - `plan` (String) The plan of the database service (use the [Exoscale CLI](https://github.com/exoscale/cli/) - `exo dbaas type show <TYPE> --plans` - for reference).
-- `type` (String) ❗ The type of the database service (`kafka`, `mysql`, `opensearch`, `pg`, `valkey`, `grafana`).
+- `type` (String) The type of the database service (`clickhouse`, `kafka`, `mysql`, `opensearch`, `pg`, `valkey`, `grafana`).
 - `zone` (String) ❗ The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.
 
 ### Optional
 
+- `clickhouse` (Attributes) *clickhouse* database service type specific arguments. Structure is documented below. (see [below for nested schema](#nestedatt--clickhouse))
 - `grafana` (Attributes) *grafana* database service type specific arguments. Structure is documented below. (see [below for nested schema](#nestedatt--grafana))
 - `kafka` (Attributes) *kafka* database service type specific arguments. Structure is documented below. (see [below for nested schema](#nestedatt--kafka))
 - `maintenance_dow` (String) The day of week to perform the automated database service maintenance (`never`, `monday`, `tuesday`, `wednesday`, `thursday`, `friday`, `saturday`, `sunday`).
@@ -46,6 +47,19 @@ Manage Exoscale [Database Services (DBaaS)](https://community.exoscale.com/docum
 - `nodes` (Number) The number of nodes of the database service.
 - `state` (String) The current state of the database service.
 - `updated_at` (String) The date of the latest database service update.
+- `uri` (String) The service uri stripped from credentials
+
+<a id="nestedatt--clickhouse"></a>
+### Nested Schema for `clickhouse`
+
+Optional:
+
+- `clickhouse_settings` (String) ClickHouse configuration settings in JSON format (`exo dbaas type show clickhouse --settings=clickhouse` for reference).
+- `fork_from_service` (String) Name of an existing ClickHouse service to fork from. Cannot be changed after creation.
+- `ip_filter` (Set of String) A list of CIDR blocks to allow incoming connections from.
+- `recovery_backup_name` (String) Name of the backup to restore when forking from `fork_from_service`.
+- `version` (String) ClickHouse major version (`exo dbaas type show clickhouse` for reference).
+
 
 <a id="nestedatt--grafana"></a>
 ### Nested Schema for `grafana`

@@ -3,14 +3,14 @@
 page_title: "exoscale_compute_instance Resource - terraform-provider-exoscale"
 subcategory: ""
 description: |-
-  Manage Exoscale Compute Instances https://community.exoscale.com/documentation/compute/.
+  Manage Exoscale Compute Instances https://community.exoscale.com/product/compute/instances/.
   Corresponding data sources: exoscalecomputeinstance ../data-sources/compute_instance.md, exoscalecomputeinstance_list ../data-sources/compute_instance_list.md.
   After the creation, you can retrieve the password of an instance with Exoscale CLI https://github.com/exoscale/cli: exo compute instance reveal-password NAME.
 ---
 
 # exoscale_compute_instance (Resource)
 
-Manage Exoscale [Compute Instances](https://community.exoscale.com/documentation/compute/).
+Manage Exoscale [Compute Instances](https://community.exoscale.com/product/compute/instances/).
 
 Corresponding data sources: [exoscale_compute_instance](../data-sources/compute_instance.md), [exoscale_compute_instance_list](../data-sources/compute_instance_list.md).
 
@@ -57,7 +57,7 @@ directory for complete configuration examples.
 - `elastic_ip_ids` (Set of String) A list of [exoscale_elastic_ip](./elastic_ip.md) (IDs) to attach to the instance.
 - `enable_secure_boot` (Boolean) ❗ Enable secure boot on the instance (boolean; default: `false`). Can not be changed after the creation.
 - `enable_tpm` (Boolean) Enable TPM on the instance (boolean; default: `false`). Can not be disabled after the creation. **WARNING**: enabling this attribute stops/restarts the instance.
-- `ipv6` (Boolean) Enable IPv6 on the instance (boolean; default: `false`).
+- `ipv6` (Boolean) Enable IPv6 on the instance (boolean; default: `false`). Can not be disabled after being enabled.
 - `labels` (Map of String) A map of key/value labels.
 - `network_interface` (Block Set) Private network interfaces (may be specified multiple times). Structure is documented below. (see [below for nested schema](#nestedblock--network_interface))
 - `private` (Boolean) Whether the instance is private (no public IP addresses; default: false)
@@ -65,7 +65,7 @@ directory for complete configuration examples.
 - `security_group_ids` (Set of String) A list of [exoscale_security_group](./security_group.md) (IDs) to attach to the instance.
 - `ssh_key` (String, Deprecated) ❗ The [exoscale_ssh_key](./ssh_key.md) (name) to authorize in the instance (may only be set at creation time).
 - `ssh_keys` (Set of String) ❗ The list of [exoscale_ssh_key](./ssh_key.md) (name) to authorize in the instance (may only be set at creation time).
-- `state` (String) The instance state (`running` or `stopped`; default: `running`).
+- `state` (String) The instance state (`running` or `stopped`). If omitted, instance will start and reach `running` state.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `user_data` (String) [cloud-init](https://cloudinit.readthedocs.io/) configuration.
 
@@ -99,10 +99,10 @@ Read-Only:
 
 Optional:
 
-- `create` (String)
-- `delete` (String)
-- `read` (String)
-- `update` (String)
+- `create` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours).
+- `delete` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Setting a timeout for a Delete operation is only applicable if changes are saved into state before the destroy operation occurs.
+- `read` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
+- `update` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours).
 
 -> The symbol ❗ in an attribute indicates that modifying it, will force the creation of a new resource.
 

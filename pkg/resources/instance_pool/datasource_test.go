@@ -1,173 +1,66 @@
 package instance_pool_test
 
 import (
-	"errors"
 	"fmt"
 	"regexp"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
-	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/testutils"
-	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
-)
-
-var (
-	dsAntiAffinityGroupName = acctest.RandomWithPrefix(testutils.Prefix)
-	dsDescription           = acctest.RandString(10)
-	dsDiskSize              = "10"
-	dsInstancePrefix        = "test"
-	dsInstanceType          = "standard.tiny"
-	dsKeyPair               = acctest.RandomWithPrefix(testutils.Prefix)
-	dsLabelValue            = acctest.RandomWithPrefix(testutils.Prefix)
-	dsNetwork               = acctest.RandomWithPrefix(testutils.Prefix)
-	dsName                  = acctest.RandomWithPrefix(testutils.Prefix)
-	dsSize                  = "2"
-	dsTemplateName          = testutils.TestInstanceTemplateName
-	dsUserData              = acctest.RandString(10)
 )
 
 func testDataSource(t *testing.T) {
 	t.Parallel()
+
+	testdataSpec := testutils.TestdataSpec{
+		ID:   time.Now().UnixNano(),
+		Zone: testutils.TestZoneName,
+	}
+
+	checks := func(ds string) resource.TestCheckFunc {
+		return resource.ComposeAggregateTestCheckFunc(
+			resource.TestCheckResourceAttrPair(ds, "id", poolResource, "id"),
+			resource.TestCheckResourceAttr(ds, "name", testutils.ResourceName(testdataSpec.ID)),
+			resource.TestCheckResourceAttr(ds, "zone", testdataSpec.Zone),
+			resource.TestCheckResourceAttr(ds, "description", fmt.Sprintf("description-%d", testdataSpec.ID)),
+			resource.TestCheckResourceAttr(ds, "anti_affinity_group_ids.#", "1"),
+			resource.TestCheckTypeSetElemAttrPair(ds, "anti_affinity_group_ids.*", "exoscale_anti_affinity_group.test", "id"),
+			resource.TestCheckResourceAttr(ds, "affinity_group_ids.#", "1"),
+			resource.TestCheckResourceAttr(ds, "disk_size", "10"),
+			resource.TestCheckResourceAttr(ds, "instance_prefix", "test"),
+			resource.TestCheckResourceAttr(ds, "instance_type", "standard.tiny"),
+			resource.TestCheckResourceAttr(ds, "ipv6", "false"),
+			resource.TestCheckResourceAttrPair(ds, "key_pair", "exoscale_ssh_key.test", "name"),
+			resource.TestCheckResourceAttr(ds, "labels.%", "1"),
+			resource.TestCheckResourceAttr(ds, "labels.test", fmt.Sprintf("label-%d", testdataSpec.ID)),
+			resource.TestCheckResourceAttr(ds, "network_ids.#", "1"),
+			resource.TestCheckTypeSetElemAttrPair(ds, "network_ids.*", "exoscale_private_network.test", "id"),
+			resource.TestCheckResourceAttr(ds, "size", "1"),
+			resource.TestCheckResourceAttrPair(ds, "template_id", "data.exoscale_template.ubuntu", "id"),
+			resource.TestCheckResourceAttr(ds, "user_data", fmt.Sprintf("user-data-%d", testdataSpec.ID)),
+			resource.TestCheckResourceAttr(ds, "instances.#", "1"),
+			resource.TestCheckResourceAttrPair(ds, "instances.0.id", poolResource, "instances.0.id"),
+			resource.TestCheckResourceAttrPair(ds, "instances.0.name", poolResource, "instances.0.name"),
+		)
+	}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testutils.AccPreCheck(t) },
 		ProtoV6ProviderFactories: testutils.TestAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config:      `data "exoscale_instance_pool" "test" { zone = "ch-gva-2" }`,
-				ExpectError: regexp.MustCompile("either name or id must be specified"),
+				Config:      testutils.ParseTestdataConfig("./testdata/004.datasource_missing_lookup.tf.tmpl", &testdataSpec),
+				ExpectError: regexp.MustCompile(`Invalid Attribute Combination`),
 			},
 			{
-				Config: fmt.Sprintf(`
-locals {
-  zone = "%s"
-}
-
-data "exoscale_template" "template" {
-  zone = local.zone
-  name = "%s"
-}
-
-resource "exoscale_anti_affinity_group" "test" {
-  name = "%s"
-}
-
-resource "exoscale_private_network" "test" {
-  zone = local.zone
-  name = "%s"
-}
-
-resource "exoscale_ssh_key" "test" {
-  name = "%s"
-  public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINXaeIOCEq0WN7g0N0XB7aRZpyjjTjRTVsb386ZpCa6P test"
-}
-
-resource "exoscale_instance_pool" "test" {
-  zone               = local.zone
-  name               = "%s"
-  description        = "%s"
-  template_id        = data.exoscale_template.template.id
-  instance_type      = "%s"
-  instance_prefix    = "%s"
-  size               = %s
-  disk_size          = %s
-  ipv6               = false
-  key_pair           = exoscale_ssh_key.test.name
-  anti_affinity_group_ids = [exoscale_anti_affinity_group.test.id]
-  network_ids        = [exoscale_private_network.test.id]
-  user_data          = "%s"
-
-  labels = {
-    test = "%s"
-  }
-}
-
-data "exoscale_instance_pool" "by-id" {
-  zone = exoscale_instance_pool.test.zone
-  id   = exoscale_instance_pool.test.id
-}
-
-data "exoscale_instance_pool" "by-name" {
-  zone = exoscale_instance_pool.test.zone
-  name   = exoscale_instance_pool.test.name
-}`,
-					testutils.TestZoneName,
-					dsTemplateName,
-					dsAntiAffinityGroupName,
-					dsNetwork,
-					dsKeyPair,
-					dsName,
-					dsDescription,
-					dsInstanceType,
-					dsInstancePrefix,
-					dsSize,
-					dsDiskSize,
-					dsUserData,
-					dsLabelValue,
-				),
-				Check: resource.ComposeTestCheckFunc(
-					dsCheckAttrs("data.exoscale_instance_pool.by-id", testutils.TestAttrs{
-						"anti_affinity_group_ids.#": testutils.ValidateString("1"),
-						"anti_affinity_group_ids.0": validation.ToDiagFunc(validation.IsUUID),
-						"description":               testutils.ValidateString(dsDescription),
-						"disk_size":                 testutils.ValidateString(dsDiskSize),
-						"instance_type":             utils.ValidateComputeInstanceType,
-						"instance_prefix":           testutils.ValidateString(dsInstancePrefix),
-						"key_pair":                  testutils.ValidateString(dsKeyPair),
-						"labels.test":               testutils.ValidateString(dsLabelValue),
-						"id":                        validation.ToDiagFunc(validation.IsUUID),
-						"name":                      testutils.ValidateString(dsName),
-						"network_ids.#":             testutils.ValidateString("1"),
-						"network_ids.0":             validation.ToDiagFunc(validation.IsUUID),
-						"size":                      testutils.ValidateString(dsSize),
-						// NOTE: state is unreliable atm, improvement suggested in 54808
-						// "state":                testutils.ValidateString("running"),
-						"template_id":    validation.ToDiagFunc(validation.IsUUID),
-						"user_data":      testutils.ValidateString(dsUserData),
-						"instances.#":    testutils.ValidateString("2"),
-						"instances.0.id": validation.ToDiagFunc(validation.IsUUID),
-						"instances.1.id": validation.ToDiagFunc(validation.IsUUID),
-					}),
-					dsCheckAttrs("data.exoscale_instance_pool.by-name", testutils.TestAttrs{
-						"anti_affinity_group_ids.#": testutils.ValidateString("1"),
-						"anti_affinity_group_ids.0": validation.ToDiagFunc(validation.IsUUID),
-						"description":               testutils.ValidateString(dsDescription),
-						"disk_size":                 testutils.ValidateString(dsDiskSize),
-						"instance_type":             utils.ValidateComputeInstanceType,
-						"instance_prefix":           testutils.ValidateString(dsInstancePrefix),
-						"key_pair":                  testutils.ValidateString(dsKeyPair),
-						"labels.test":               testutils.ValidateString(dsLabelValue),
-						"id":                        validation.ToDiagFunc(validation.IsUUID),
-						"name":                      testutils.ValidateString(dsName),
-						"network_ids.#":             testutils.ValidateString("1"),
-						"network_ids.0":             validation.ToDiagFunc(validation.IsUUID),
-						"size":                      testutils.ValidateString(dsSize),
-						// NOTE: state is unreliable atm, improvement suggested in 54808
-						// "state":                testutils.ValidateString("running"),
-						"template_id":    validation.ToDiagFunc(validation.IsUUID),
-						"user_data":      testutils.ValidateString(dsUserData),
-						"instances.#":    testutils.ValidateString("2"),
-						"instances.0.id": validation.ToDiagFunc(validation.IsUUID),
-						"instances.1.id": validation.ToDiagFunc(validation.IsUUID),
-					}),
+				Config: testutils.ParseTestdataConfig("./testdata/005.datasource.tf.tmpl", &testdataSpec),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					checks("data.exoscale_instance_pool.by_id"),
+					checks("data.exoscale_instance_pool.by_name"),
 				),
 			},
 		},
 	})
-}
-
-func dsCheckAttrs(ds string, expected testutils.TestAttrs) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		for name, res := range s.RootModule().Resources {
-			if name == ds {
-				return testutils.CheckResourceAttributes(expected, res.Primary.Attributes)
-			}
-		}
-
-		return errors.New("exoscale_instance_pool data source not found in the state")
-	}
 }

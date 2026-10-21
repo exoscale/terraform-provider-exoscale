@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
@@ -89,6 +88,9 @@ var ResourceOpensearchSchema = schema.SingleNestedAttribute{
 			MarkdownDescription: "OpenSearch-specific settings, in json. e.g.`jsonencode({thread_pool_search_size: 64})`. Use `exo x get-dbaas-settings-opensearch` to get a list of available settings.",
 			Optional:            true,
 			Computed:            true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.UseStateForUnknown(),
+			},
 		},
 		"recovery_backup_name": schema.StringAttribute{
 			MarkdownDescription: "❗ Name of a backup to recover from",
@@ -101,10 +103,8 @@ var ResourceOpensearchSchema = schema.SingleNestedAttribute{
 			MarkdownDescription: "❗ OpenSearch major version (`exo dbaas type show opensearch` for reference)",
 			Optional:            true,
 			Computed:            true,
-			Validators: []validator.String{
-				validators.IsMajorVersionValidator,
-			},
 			PlanModifiers: []planmodifier.String{
+				versionUseStateUnlessChanged(),
 				stringplanmodifier.RequiresReplaceIfConfigured(),
 			},
 		},
@@ -353,6 +353,12 @@ pooling:
 	data.Nodes = types.Int64PointerValue(apiService.NodeCount)
 	data.State = types.StringPointerValue((*string)(apiService.State))
 	data.UpdatedAt = types.StringValue(apiService.UpdatedAt.String())
+	uri, err := uriWitoutCreds(apiService.Uri)
+	if err != nil {
+		diagnostics.AddError(err.Error(), "")
+		return
+	}
+	data.URI = types.StringPointerValue(uri)
 
 	if data.TerminationProtection.IsUnknown() {
 		data.TerminationProtection = types.BoolPointerValue(apiService.TerminationProtection)
@@ -383,7 +389,7 @@ pooling:
 	if data.Opensearch.Version.IsUnknown() {
 		data.Opensearch.Version = types.StringNull()
 		if apiService.Version != nil {
-			data.Opensearch.Version = types.StringValue(strings.SplitN(*apiService.Version, ".", 2)[0])
+			data.Opensearch.Version = types.StringValue(*apiService.Version)
 		}
 	}
 
@@ -434,6 +440,12 @@ func (r *ServiceResource) readOpensearch(ctx context.Context, data *ServiceResou
 	data.State = types.StringPointerValue((*string)(apiService.State))
 	data.TerminationProtection = types.BoolPointerValue(apiService.TerminationProtection)
 	data.UpdatedAt = types.StringValue(apiService.UpdatedAt.String())
+	uri, err := uriWitoutCreds(apiService.Uri)
+	if err != nil {
+		diagnostics.AddError(err.Error(), "")
+		return
+	}
+	data.URI = types.StringPointerValue(uri)
 
 	if data.Plan.IsNull() || data.Plan.IsUnknown() {
 		data.Plan = types.StringValue(apiService.Plan)
@@ -514,7 +526,7 @@ func (r *ServiceResource) readOpensearch(ctx context.Context, data *ServiceResou
 
 	data.Opensearch.Version = types.StringNull()
 	if apiService.Version != nil {
-		data.Opensearch.Version = types.StringValue(strings.SplitN(*apiService.Version, ".", 2)[0])
+		data.Opensearch.Version = types.StringValue(*apiService.Version)
 	}
 
 	data.Opensearch.Settings = types.StringNull()
@@ -717,6 +729,12 @@ func (r *ServiceResource) updateOpensearch(ctx context.Context, stateData *Servi
 	stateData.NodeMemory = types.Int64PointerValue(apiService.NodeMemory)
 	stateData.Nodes = types.Int64PointerValue(apiService.NodeCount)
 	stateData.State = types.StringPointerValue((*string)(apiService.State))
+	uri, err := uriWitoutCreds(apiService.Uri)
+	if err != nil {
+		diagnostics.AddError(err.Error(), "")
+		return
+	}
+	stateData.URI = types.StringPointerValue(uri)
 	if apiService.UpdatedAt != nil {
 		stateData.UpdatedAt = types.StringValue(apiService.UpdatedAt.String())
 	}
@@ -742,7 +760,7 @@ func (r *ServiceResource) updateOpensearch(ctx context.Context, stateData *Servi
 	if stateData.Opensearch.Version.IsUnknown() {
 		stateData.Opensearch.Version = types.StringNull()
 		if apiService.Version != nil {
-			stateData.Opensearch.Version = types.StringValue(strings.SplitN(*apiService.Version, ".", 2)[0])
+			stateData.Opensearch.Version = types.StringValue(*apiService.Version)
 		}
 	}
 

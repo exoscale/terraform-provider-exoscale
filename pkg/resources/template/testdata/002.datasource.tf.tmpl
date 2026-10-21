@@ -1,0 +1,9 @@
+data "exoscale_template" "by_name" {
+  zone = "{{ .Zone }}"
+  name = "Linux Ubuntu 22.04 LTS 64-bit"
+}
+
+data "exoscale_template" "by_id" {
+  zone = "{{ .Zone }}"
+  id   = data.exoscale_template.by_name.id
+}

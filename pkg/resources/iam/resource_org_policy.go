@@ -21,7 +21,7 @@ import (
 	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
 )
 
-const ResourceOrgPolicyDescription = `Manage Exoscale [IAM](https://community.exoscale.com/documentation/iam/) Organization Policy.`
+const ResourceOrgPolicyDescription = `Manage Exoscale [IAM](https://community.exoscale.com/product/security/iam/) Organization Policy.`
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &ResourceOrgPolicy{}
@@ -163,7 +163,7 @@ func (r *ResourceOrgPolicy) Create(ctx context.Context, req resource.CreateReque
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 
-	tflog.Trace(ctx, "resource created", map[string]interface{}{
+	tflog.Trace(ctx, "resource created", map[string]any{
 		"id": data.ID,
 	})
 }
@@ -196,7 +196,7 @@ func (r *ResourceOrgPolicy) Read(ctx context.Context, req resource.ReadRequest, 
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 
-	tflog.Trace(ctx, "resource read done", map[string]interface{}{
+	tflog.Trace(ctx, "resource read done", map[string]any{
 		"id": data.ID,
 	})
 }
@@ -237,7 +237,7 @@ func (r *ResourceOrgPolicy) Update(ctx context.Context, req resource.UpdateReque
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &stateData)...)
 
-	tflog.Trace(ctx, "resource updated", map[string]interface{}{
+	tflog.Trace(ctx, "resource updated", map[string]any{
 		"id": planData.ID,
 	})
 }

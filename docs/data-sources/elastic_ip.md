@@ -34,35 +34,44 @@ directory for complete configuration examples.
 
 ### Required
 
-- `zone` (String) The Exocale [Zone](https://www.exoscale.com/datacenters/) name.
+- `zone` (String) The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.
 
 ### Optional
 
 - `id` (String) The Elastic IP (EIP) ID to match (conflicts with `ip_address` and `labels`).
 - `ip_address` (String) The EIP IPv4 or IPv6 address to match (conflicts with `id` and `labels`).
 - `labels` (Map of String) The EIP labels to match (conflicts with `ip_address` and `id`).
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
 - `address_family` (String) The Elastic IP (EIP) address family (`inet4` or `inet6`).
 - `cidr` (String) The Elastic IP (EIP) CIDR.
 - `description` (String) The Elastic IP (EIP) description.
-- `healthcheck` (List of Object) The *managed* EIP healthcheck configuration. (see [below for nested schema](#nestedatt--healthcheck))
+- `healthcheck` (Attributes) The *managed* EIP healthcheck configuration. (see [below for nested schema](#nestedatt--healthcheck))
 - `reverse_dns` (String) Domain name for reverse DNS record.
+
+<a id="nestedblock--timeouts"></a>
+### Nested Schema for `timeouts`
+
+Optional:
+
+- `read` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
+
 
 <a id="nestedatt--healthcheck"></a>
 ### Nested Schema for `healthcheck`
 
 Read-Only:
 
-- `interval` (Number)
-- `mode` (String)
-- `port` (Number)
-- `strikes_fail` (Number)
-- `strikes_ok` (Number)
-- `timeout` (Number)
-- `tls_skip_verify` (Boolean)
-- `tls_sni` (String)
-- `uri` (String)
+- `interval` (Number) The healthcheck interval in seconds.
+- `mode` (String) The healthcheck mode.
+- `port` (Number) The healthcheck target port.
+- `strikes_fail` (Number) The number of failed healthcheck attempts before considering the target unhealthy.
+- `strikes_ok` (Number) The number of successful healthcheck attempts before considering the target healthy.
+- `timeout` (Number) The time in seconds before considering a healthcheck probing failed.
+- `tls_skip_verify` (Boolean) Disable TLS certificate verification for healthcheck in `https` mode.
+- `tls_sni` (String) The healthcheck server name to present with SNI in `https` mode.
+- `uri` (String) The healthcheck URI.
 
 

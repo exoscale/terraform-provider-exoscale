@@ -52,7 +52,7 @@ func (r *MysqlUserResource) Metadata(ctx context.Context, req resource.MetadataR
 func (r *MysqlUserResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		// This description is used by the documentation generator and the language server.
-		MarkdownDescription: "Manage service users for MySQL Exoscale [Database Services (DBaaS)](https://community.exoscale.com/documentation/dbaas/).",
+		MarkdownDescription: "Manage service users for MySQL Exoscale [Database Services (DBaaS)](https://community.exoscale.com/product/dbaas/).",
 		Attributes: buildUserAttributes(map[string]schema.Attribute{
 			"authentication": schema.StringAttribute{
 				MarkdownDescription: "❗ Authentication details. The possible values are `null`, `caching_sha2_password` and `mysql_native_password`.",
@@ -228,15 +228,7 @@ func (data *MysqlUserResourceModel) DeleteResource(ctx context.Context, client *
 func (data *MysqlUserResourceModel) ReadResource(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics) (clearState bool) {
 
 	svc, err := waitForDBAASServiceReadyForFn(ctx, client.GetDBAASServiceMysql, data.Service.ValueString(), func(t *exoscale.DBAASServiceMysql) bool {
-		if t.State != exoscale.EnumServiceStateRunning {
-			return false
-		}
-		for _, user := range t.Users {
-			if user.Username == data.Username.ValueString() {
-				return true
-			}
-		}
-		return false
+		return t.State == exoscale.EnumServiceStateRunning && len(t.Users) > 0
 	})
 	if err != nil {
 		if errors.Is(err, exoscale.ErrNotFound) {

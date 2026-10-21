@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"regexp"
 	"strconv"
 	"strings"
 	"testing"
@@ -91,7 +90,7 @@ func testResourceOpensearch(t *testing.T) {
 		Plan:                  "hobbyist-2",
 		Zone:                  testutils.TestZoneName,
 		TerminationProtection: false,
-		Version:               "2",
+		Version:               "3.6",
 	}
 
 	userFullResourceName := "exoscale_dbaas_opensearch_user.test_user"
@@ -171,6 +170,8 @@ func testResourceOpensearch(t *testing.T) {
 					resource.TestCheckResourceAttrSet(serviceFullResourceName, "nodes"),
 					resource.TestCheckResourceAttrSet(serviceFullResourceName, "ca_certificate"),
 					resource.TestCheckResourceAttrSet(serviceFullResourceName, "updated_at"),
+					resource.TestCheckResourceAttrSet(serviceFullResourceName, "uri"),
+					checkURIWellFormed(serviceFullResourceName),
 					func(s *terraform.State) error {
 						err := CheckExistsOpensearch(serviceDataBase.Name, &serviceDataCreate)
 						if err != nil {
@@ -197,6 +198,8 @@ func testResourceOpensearch(t *testing.T) {
 				Config: configUpdate,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					// Service
+					resource.TestCheckResourceAttrSet(serviceFullResourceName, "uri"),
+					checkURIWellFormed(serviceFullResourceName),
 					func(s *terraform.State) error {
 						err := CheckExistsOpensearch(serviceDataBase.Name, &serviceDataUpdate)
 						if err != nil {
@@ -320,7 +323,7 @@ func CheckExistsOpensearch(name string, data *TemplateModelOpensearch) error {
 	}
 
 	if data.OpensearchSettings != "" {
-		obj := map[string]interface{}{}
+		obj := map[string]any{}
 		s, err := strconv.Unquote(data.OpensearchSettings)
 		if err != nil {
 			return err
@@ -375,40 +378,4 @@ func CheckExistsOpensearchUser(service, username string, data *TemplateModelOpen
 	}
 
 	return fmt.Errorf("could not find user %s for service %s, found %v", username, service, serviceUsernames)
-}
-
-// testResourceOpensearchVersionValidation verifies that supplying a minor-
-// version string (e.g. "2.0") is rejected at plan time with a clear error
-// rather than causing the cryptic "Provider produced inconsistent result after
-// apply" error that was reported in issue #498.
-func testResourceOpensearchVersionValidation(t *testing.T) {
-	t.Parallel()
-
-	name := acctest.RandomWithPrefix(testutils.Prefix)
-
-	config := fmt.Sprintf(`
-resource "exoscale_dbaas" "version_norm" {
-  name = %q
-  type = "opensearch"
-  plan = "hobbyist-2"
-  zone = %q
-  termination_protection = false
-  opensearch = {
-    version = "2.0"
-  }
-}`, name, testutils.TestZoneName)
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { testutils.AccPreCheck(t) },
-		ProtoV6ProviderFactories: testutils.TestAccProtoV6ProviderFactories,
-		Steps: []resource.TestStep{
-			{
-				// "2.0" should be rejected at plan time with a validation error,
-				// not silently applied then marked tainted.
-				Config:      config,
-				ExpectError: regexp.MustCompile(`major version number`),
-				PlanOnly:    true,
-			},
-		},
-	})
 }

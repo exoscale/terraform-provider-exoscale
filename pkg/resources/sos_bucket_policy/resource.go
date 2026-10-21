@@ -168,7 +168,7 @@ func (r *ResourceSOSBucketPolicy) Create(ctx context.Context, req resource.Creat
 	// Save plan into Terraform state.
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 
-	tflog.Trace(ctx, "resource created", map[string]interface{}{
+	tflog.Trace(ctx, "resource created", map[string]any{
 		AttrBucket: plan.Bucket,
 	})
 }
@@ -225,7 +225,7 @@ func (r *ResourceSOSBucketPolicy) Read(ctx context.Context, req resource.ReadReq
 	// Save updated state into Terraform state.
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 
-	tflog.Trace(ctx, "resource read done", map[string]interface{}{
+	tflog.Trace(ctx, "resource read done", map[string]any{
 		AttrBucket: state.Bucket,
 	})
 }
@@ -287,7 +287,7 @@ func (r *ResourceSOSBucketPolicy) Update(ctx context.Context, req resource.Updat
 	// Save updated state into Terraform state.
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 
-	tflog.Trace(ctx, "resource update done", map[string]interface{}{
+	tflog.Trace(ctx, "resource update done", map[string]any{
 		AttrBucket: state.Bucket,
 	})
 }
@@ -331,7 +331,7 @@ func (r *ResourceSOSBucketPolicy) Delete(ctx context.Context, req resource.Delet
 		return
 	}
 
-	tflog.Trace(ctx, "resource deleted", map[string]interface{}{
+	tflog.Trace(ctx, "resource deleted", map[string]any{
 		AttrBucket: state.Bucket,
 	})
 }
@@ -365,7 +365,7 @@ func (r *ResourceSOSBucketPolicy) ImportState(ctx context.Context, req resource.
 	// Save state into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 
-	tflog.Trace(ctx, "resource imported", map[string]interface{}{
+	tflog.Trace(ctx, "resource imported", map[string]any{
 		AttrBucket: state.Bucket,
 	})
 }
