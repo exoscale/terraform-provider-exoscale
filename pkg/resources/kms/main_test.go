@@ -37,6 +37,9 @@ func TestKMSKey(t *testing.T) {
 					resource.TestCheckResourceAttr(fullResourceName, "zone", testutils.TestZoneName),
 					resource.TestCheckResourceAttr(fullResourceName, "usage", "encrypt-decrypt"),
 					resource.TestCheckResourceAttr(fullResourceName, "status", "enabled"),
+					resource.TestCheckResourceAttr(fullResourceName, "key_spec", "AES_256"),
+					resource.TestCheckResourceAttr(fullResourceName, "source", "exoscale-kms"),
+					resource.TestCheckNoResourceAttr(fullResourceName, "xks"),
 				),
 			},
 			// Import

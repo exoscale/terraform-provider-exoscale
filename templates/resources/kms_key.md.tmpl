@@ -1,0 +1,76 @@
+---
+page_title: "{{.Name}} {{.Type}} - {{.ProviderName}}"
+subcategory: ""
+description: |-
+{{ .Description | plainmarkdown | trimspace | prefixlines "  " }}
+---
+
+# {{.Name}} ({{.Type}})
+
+Manage Exoscale [KMS](https://community.exoscale.com/product/security/kms/) Keys.
+
+## Example Usage
+
+```terraform
+resource "exoscale_kms_key" "my_key" {
+  zone        = "ch-gva-2"
+  name        = "my-key"
+  description = "my key description"
+}
+```
+
+A signing key needs an asymmetric `key_spec`:
+
+```terraform
+resource "exoscale_kms_key" "my_signing_key" {
+  zone     = "ch-gva-2"
+  name     = "my-signing-key"
+  usage    = "sign-verify"
+  key_spec = "ECC_NIST_P256"
+}
+```
+
+Please refer to the [examples](https://github.com/exoscale/terraform-provider-exoscale/tree/master/examples/)
+directory for complete configuration examples.
+
+{{ .SchemaMarkdown | trimspace }}
+
+-> The symbol ❗ in an attribute indicates that modifying it, will force the creation of a new resource.
+
+## Deletion
+
+KMS keys cannot be deleted immediately. Destroying an `exoscale_kms_key` schedules the deletion of the key
+in 7 days; during that period the key is `pending-deletion`, can no longer be used, and is no longer
+tracked by Terraform.
+
+A pending-deletion key keeps its `name` until it is actually deleted. For that reason, a change that
+forces the creation of a new key (❗) must also change `name`, otherwise the plan fails. Data encrypted
+with the previous key can only be decrypted with that key.
+
+### Recover a key scheduled for deletion
+
+Terraform cannot cancel a scheduled deletion. To recover the key before the 7 days have passed:
+
+1. Cancel the deletion. The key is restored in the `disabled` state:
+
+```shell
+exo kms key cancel-deletion <key-id> --zone <zone>
+```
+
+2. Enable the key:
+
+```shell
+exo kms key enable <key-id> --zone <zone>
+```
+
+3. Import the key back into Terraform (see [Import](#import)).
+
+## Import
+
+An existing KMS key may be imported by `<ID>@<zone>`:
+
+```shell
+terraform import \
+  exoscale_kms_key.my_key \
+  019ef461-c0ae-7c9c-94bd-081e70fe2b08@ch-gva-2
+```
