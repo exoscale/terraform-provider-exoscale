@@ -1,5 +1,12 @@
 # Examples
 
+## [AI Dedicated Inference](./ai)
+
+This example demonstrates how to download
+[AI Models](https://community.exoscale.com/product/concrete-ai/dedicated-inference/overview/)
+from Hugging Face and serve one of them on GPUs, using the `exoscale_ai_model` and
+`exoscale_ai_deployment` resources.
+
 ## [Database](./database)
 
 This example demonstrates how to setup [DBaaS service](https://community.exoscale.com/product/dbaas/)
