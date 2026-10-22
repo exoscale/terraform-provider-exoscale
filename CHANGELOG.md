@@ -25,6 +25,7 @@ BREAKING CHANGES:
 DEPENDENCIES:
 
 - Remove `github.com/hashicorp/terraform-plugin-mux`
+- Build the provider with Go 1.27.3 to reject TLS certificate chains containing the compromised eMudhra intermediates (CVE-2026-111943). (#629)
 
 ## 0.75.0
 
