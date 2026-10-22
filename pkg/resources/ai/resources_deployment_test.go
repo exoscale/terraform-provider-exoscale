@@ -25,6 +25,7 @@ type aiDeploymentTestdataSpec struct {
 }
 
 func TestAIDeployment(t *testing.T) {
+	t.Skip("AI acc test disabled, waiting for an API change")
 	t.Parallel()
 
 	r := "exoscale_ai_deployment.test"
