@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+FEATURES:
+
+- Dedicated Inference: add `exoscale_ai_model` resource to manage AI models.
+- Dedicated Inference: add `exoscale_ai_deployment` resource to manage AI model deployments on GPU instances.
+
 BUG FIXES:
 
 - `exoscale_block_storage_volume`: deleting a volume that is already gone (API returned 404) no longer fails.
