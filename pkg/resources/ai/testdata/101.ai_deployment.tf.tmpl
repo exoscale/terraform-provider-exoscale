@@ -1,0 +1,18 @@
+resource "exoscale_ai_model" "test" {
+  zone = "{{ .Zone }}"
+  {{/* Tiny public safetensors model, to keep the download negligible. */}}
+  name = "hf-internal-testing/tiny-random-LlamaForCausalLM"
+}
+
+resource "exoscale_ai_deployment" "test" {
+  zone      = "{{ .Zone }}"
+  name      = "{{ .Name }}"
+  model_id  = exoscale_ai_model.test.id
+  gpu_type  = "{{ .GpuType }}"
+  gpu_count = 1
+  replicas  = 1
+
+  inference_engine_parameters = [
+    "{{ .Parameter }}",
+  ]
+}

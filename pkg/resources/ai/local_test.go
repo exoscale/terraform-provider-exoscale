@@ -15,3 +15,8 @@ func TestAIModelLocal(t *testing.T) {
 	testutils.LoadLocalCreds(t, *flagAccount)
 	TestAIModel(t)
 }
+
+func TestAIDeploymentLocal(t *testing.T) {
+	testutils.LoadLocalCreds(t, *flagAccount)
+	TestAIDeployment(t)
+}

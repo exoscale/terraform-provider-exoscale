@@ -326,6 +326,7 @@ func (p *ExoscaleProvider) Resources(ctx context.Context) []func() resource.Reso
 		ssh_key.NewResource,
 
 		ai.NewResourceAIModel,
+		ai.NewResourceAIDeployment,
 	}
 }
 
