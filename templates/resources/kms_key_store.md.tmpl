@@ -1,0 +1,106 @@
+---
+page_title: "{{.Name}} {{.Type}} - {{.ProviderName}}"
+subcategory: ""
+description: |-
+{{ .Description | plainmarkdown | trimspace | prefixlines "  " }}
+---
+
+# {{.Name}} ({{.Type}})
+
+Manage Exoscale [KMS](https://community.exoscale.com/product/security/kms/) External Key Stores.
+
+-> External Key Store is in beta and may change.
+
+An External Key Store connects Exoscale KMS to an XKS proxy that you operate, so that the key material of
+[exoscale_kms_key](./kms_key.md) resources can be held in your own key manager. See
+[Set Up an External Key Store](https://community.exoscale.com/product/security/kms/how-to/set-up-external-key-store/)
+for the proxy requirements.
+
+~> `proxy.secret_key_wo` is a write-only attribute: it requires Terraform 1.11 or later.
+
+## Example Usage
+
+```terraform
+resource "exoscale_kms_key_store" "my_key_store" {
+  zone = "ch-gva-2"
+  name = "my-key-store"
+
+  proxy = {
+    endpoint              = "https://xks.example.com/kms/xks/v1"
+    access_key            = var.xks_access_key
+    secret_key_wo         = var.xks_secret_key
+    secret_key_wo_version = 1
+  }
+
+  # KMS keys can only be created in a connected key store.
+  connected = true
+}
+
+resource "exoscale_kms_key" "my_external_key" {
+  zone = "ch-gva-2"
+  name = "my-external-key"
+
+  xks = {
+    key_store_id    = exoscale_kms_key_store.my_key_store.id
+    external_key_id = "<external-key-id>"
+  }
+}
+```
+
+Please refer to the [examples](https://github.com/exoscale/terraform-provider-exoscale/tree/master/examples/)
+directory for complete configuration examples.
+
+{{ .SchemaMarkdown | trimspace }}
+
+-> The symbol ❗ in an attribute indicates that modifying it, will force the creation of a new resource.
+
+## Connection
+
+A key store is created disconnected. While it is disconnected, KMS keys cannot be created in it and its keys
+cannot be used for cryptographic operations. Set `connected = true` to have the provider connect it: its keys
+can then be used, and Exoscale KMS checks the health of the proxy periodically. Set `connected = false` (the
+default) to keep it disconnected, or to suspend every key of the key store at once. If the key store is
+connected or disconnected outside of Terraform, the next apply restores the configured value.
+
+Creating, connecting or updating the endpoint or the credentials of a key store runs a health check against the
+proxy, and fails if the proxy is unhealthy: a key store is only created if its proxy passes the check.
+
+With `connected = true`, the provider connects the key store right after creating it, and retries for about
+30 seconds while the proxy fails the health check. If it still cannot connect, the key store is kept and the
+apply ends with a warning instead of an error, so that the key store is not deleted and created again. The key
+store then stays disconnected (`status = "disconnected"`), and the next apply tries to connect it again.
+
+The endpoint of a key store can only be changed while it is disconnected. When `proxy.endpoint` changes on a
+connected key store, the provider disconnects it, updates it and connects it again in the same apply: its
+keys cannot be used for cryptographic operations in the meantime. If the update fails, the provider connects
+the key store again with its previous settings.
+
+## Proxy credentials
+
+The secret key is never stored in the Terraform state, so Terraform cannot detect a change of
+`secret_key_wo`. To send new credentials, configure them on the proxy first, then change
+`secret_key_wo_version` (to any other value) together with `secret_key_wo` and, if needed, `access_key`.
+Changing `access_key` alone is rejected, as the API requires both keys together.
+
+## Description
+
+`description` is optional. Once set, it can be changed but not removed: removing it from the configuration
+keeps the current description.
+
+## Deletion
+
+A key store is deleted immediately, but only once no KMS key references it. KMS keys keep referencing it
+while they are scheduled for deletion (at least 7 days after being destroyed): until then, destroying the key
+store fails. Your proxy and external keys are not affected.
+
+## Import
+
+An existing key store may be imported by `<ID>@<zone>`:
+
+```shell
+terraform import \
+  exoscale_kms_key_store.my_key_store \
+  a1b2c3d4-e5f6-4a5b-8c9d-0123456789ab@ch-gva-2
+```
+
+The secret key cannot be imported: the first apply after the import sends `secret_key_wo` to the API.

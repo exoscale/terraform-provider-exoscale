@@ -19,6 +19,15 @@ resource "exoscale_kms_key" "my_key" {
 }
 ```
 
+The supported combinations of `usage` and `key_spec` are:
+
+| `key_spec` | `encrypt-decrypt` | `sign-verify` |
+| --- | --- | --- |
+| `AES_256` (default) | ✅ | |
+| `RSA_3072`, `RSA_4096` | ✅ | ✅ |
+| `ECC_NIST_P256`, `ECC_NIST_P384`, `ECC_NIST_P521`, `ECC_EDWARDS25519` | | ✅ |
+| `ML_DSA_65`, `ML_DSA_87` | | ✅ |
+
 A signing key needs an asymmetric `key_spec`:
 
 ```terraform
@@ -46,6 +55,11 @@ tracked by Terraform.
 A pending-deletion key keeps its `name` until it is actually deleted. For that reason, a change that
 forces the creation of a new key (❗) must also change `name`, otherwise the plan fails. Data encrypted
 with the previous key can only be decrypted with that key.
+
+~> `terraform apply -replace` and `terraform taint` force a new key without changing any attribute, so the
+provider cannot stop them: the current key is scheduled for deletion, then creating its replacement fails
+because the name is still reserved. Setting `lifecycle { create_before_destroy = true }` on the key makes
+Terraform create the replacement first, so that the failure happens before the current key is touched.
 
 ### Recover a key scheduled for deletion
 

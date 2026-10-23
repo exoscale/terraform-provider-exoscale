@@ -2,7 +2,6 @@ package kms
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"regexp"
 	"slices"
@@ -76,6 +75,17 @@ var kmsKeySpecs = []string{
 	string(exoscale.CreateKmsKeyRequestKeySpecECCEDWARDS25519),
 	string(exoscale.CreateKmsKeyRequestKeySpecRSA3072),
 	string(exoscale.CreateKmsKeyRequestKeySpecRSA4096),
+	string(exoscale.CreateKmsKeyRequestKeySpecMLDSA65),
+	string(exoscale.CreateKmsKeyRequestKeySpecMLDSA87),
+}
+
+// kmsSignOnlyKeySpecs are the key specs that only support the sign-verify usage.
+// AES_256 only supports encrypt-decrypt, and RSA specs support both.
+var kmsSignOnlyKeySpecs = []string{
+	string(exoscale.CreateKmsKeyRequestKeySpecECCNISTP256),
+	string(exoscale.CreateKmsKeyRequestKeySpecECCNISTP384),
+	string(exoscale.CreateKmsKeyRequestKeySpecECCNISTP521),
+	string(exoscale.CreateKmsKeyRequestKeySpecECCEDWARDS25519),
 	string(exoscale.CreateKmsKeyRequestKeySpecMLDSA65),
 	string(exoscale.CreateKmsKeyRequestKeySpecMLDSA87),
 }
@@ -248,6 +258,19 @@ func (r *ResourceKMSKey) ValidateConfig(ctx context.Context, req resource.Valida
 		)
 	}
 
+	// usage defaults to encrypt-decrypt, which ECC and ML-DSA keys do not support.
+	if slices.Contains(kmsSignOnlyKeySpecs, data.KeySpec.ValueString()) && !data.Usage.IsUnknown() &&
+		(data.Usage.IsNull() || data.Usage.ValueString() == string(exoscale.CreateKmsKeyRequestUsageEncryptDecrypt)) {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("usage"),
+			"Unsupported usage for key_spec",
+			fmt.Sprintf("Keys with key_spec %q only support usage %q.",
+				data.KeySpec.ValueString(),
+				exoscale.CreateKmsKeyRequestUsageSignVerify,
+			),
+		)
+	}
+
 	if data.Xks.IsNull() {
 		return
 	}
@@ -399,7 +422,7 @@ func (r *ResourceKMSKey) Create(ctx context.Context, req resource.CreateRequest,
 
 	key, err := client.CreateKmsKey(ctx, createReq)
 	if err != nil {
-		resp.Diagnostics.AddError("API error creating KMS key", err.Error())
+		resp.Diagnostics.AddError("API error creating KMS key", apiErrorMessage(err))
 		return
 	}
 
@@ -453,12 +476,12 @@ func (r *ResourceKMSKey) Read(ctx context.Context, req resource.ReadRequest, res
 
 	key, err := client.GetKmsKey(ctx, id)
 	if err != nil {
-		if errors.Is(err, exoscale.ErrNotFound) {
+		if isNotFound(err, kmsErrKeyNotFound) {
 			tflog.Info(ctx, "KMS key not found, removing from state", map[string]any{})
 			resp.State.RemoveResource(ctx)
 			return
 		}
-		resp.Diagnostics.AddError("API error reading KMS key", err.Error())
+		resp.Diagnostics.AddError("API error reading KMS key", apiErrorMessage(err))
 		return
 	}
 
@@ -477,10 +500,24 @@ func (r *ResourceKMSKey) Read(ctx context.Context, req resource.ReadRequest, res
 	state.KeySpec = types.StringValue(key.KeySpec)
 	state.Source = types.StringValue(string(key.Source))
 
+	var prevXks ResourceKMSKeyXksModel
+	if !state.Xks.IsNull() && !state.Xks.IsUnknown() {
+		resp.Diagnostics.Append(state.Xks.As(ctx, &prevXks, basetypes.ObjectAsOptions{})...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+	}
+
 	state.Xks = types.ObjectNull(ResourceKMSKeyXksModel{}.Types())
 	if key.Xks != nil {
+		keyStoreID := key.Xks.XksID.String()
+		// The API returns the UUID in lower case: keep the configured spelling to avoid a replacement.
+		if strings.EqualFold(prevXks.KeyStoreID.ValueString(), keyStoreID) {
+			keyStoreID = prevXks.KeyStoreID.ValueString()
+		}
+
 		xks, diags := types.ObjectValueFrom(ctx, ResourceKMSKeyXksModel{}.Types(), ResourceKMSKeyXksModel{
-			KeyStoreID:    types.StringValue(key.Xks.XksID.String()),
+			KeyStoreID:    types.StringValue(keyStoreID),
 			ExternalKeyID: types.StringValue(key.Xks.ExternalKeyID),
 		})
 		resp.Diagnostics.Append(diags...)
@@ -493,8 +530,17 @@ func (r *ResourceKMSKey) Read(ctx context.Context, req resource.ReadRequest, res
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-// Update is a no-op: all mutable attributes use RequiresReplace.
-func (r *ResourceKMSKey) Update(_ context.Context, _ resource.UpdateRequest, _ *resource.UpdateResponse) {
+// Update makes no API call: all attributes but timeouts use RequiresReplace,
+// so only the new timeouts have to be saved.
+func (r *ResourceKMSKey) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan ResourceKMSKeyModel
+
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 func (r *ResourceKMSKey) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
@@ -529,10 +575,11 @@ func (r *ResourceKMSKey) Delete(ctx context.Context, req resource.DeleteRequest,
 		DelayDays: kmsKeyDeletionDelayDays,
 	})
 	if err != nil {
-		if errors.Is(err, exoscale.ErrNotFound) {
+		// The key is already scheduled for deletion, which is all Delete does: nothing left to do.
+		if isNotFound(err, kmsErrKeyNotFound) || isAPIError(err, kmsErrKeyPendingDeletion) {
 			return
 		}
-		resp.Diagnostics.AddError("API error scheduling KMS key deletion", err.Error())
+		resp.Diagnostics.AddError("API error scheduling KMS key deletion", apiErrorMessage(err))
 		return
 	}
 }
@@ -558,6 +605,7 @@ func (r *ResourceKMSKey) ImportState(ctx context.Context, req resource.ImportSta
 	resp.Diagnostics.Append(resp.State.Set(ctx, &ResourceKMSKeyModel{
 		ID:       types.StringValue(idParts[0]),
 		Zone:     types.StringValue(idParts[1]),
+		Xks:      types.ObjectNull(ResourceKMSKeyXksModel{}.Types()),
 		Timeouts: t,
 	})...)
 }

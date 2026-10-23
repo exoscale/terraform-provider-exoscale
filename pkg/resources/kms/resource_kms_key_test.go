@@ -2,6 +2,8 @@ package kms
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -9,6 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
 )
 
@@ -114,6 +117,33 @@ func TestResourceKMSKeyValidateConfig(t *testing.T) {
 				"key_spec": str("AES_256"),
 			},
 			wantError: []path.Path{path.Root("key_spec")},
+		},
+		{
+			name:      "sign-only key_spec with default usage",
+			values:    map[string]tftypes.Value{"key_spec": str("ECC_NIST_P256")},
+			wantError: []path.Path{path.Root("usage")},
+		},
+		{
+			name: "sign-only key_spec with encrypt-decrypt",
+			values: map[string]tftypes.Value{
+				"usage":    str("encrypt-decrypt"),
+				"key_spec": str("ML_DSA_65"),
+			},
+			wantError: []path.Path{path.Root("usage")},
+		},
+		{
+			name: "RSA with encrypt-decrypt",
+			values: map[string]tftypes.Value{
+				"usage":    str("encrypt-decrypt"),
+				"key_spec": str("RSA_3072"),
+			},
+		},
+		{
+			name: "sign-only key_spec with unknown usage",
+			values: map[string]tftypes.Value{
+				"usage":    str(tftypes.UnknownValue),
+				"key_spec": str("ECC_NIST_P384"),
+			},
 		},
 		{
 			name:   "xks with defaults",
@@ -254,4 +284,118 @@ func TestResourceKMSKeyModifyPlan(t *testing.T) {
 			assertErrorPaths(t, resp.Diagnostics, tt.wantError)
 		})
 	}
+}
+
+const testKeyID = "019ef461-c0ae-7c9c-94bd-081e70fe2b08"
+
+// kmsKeyJSON is an External Key Store key as returned by the API.
+func kmsKeyJSON(status string) string {
+	return fmt.Sprintf(`{
+		"id": %q, "name": "my-key", "description": "", "status": %q,
+		"usage": "encrypt-decrypt", "key-spec": "AES_256", "multi-zone": false,
+		"source": "external-key-store", "xks": {"xks-id": %q, "external-key-id": "my-external-key"}
+	}`, testKeyID, status, testKeyStoreID)
+}
+
+func TestResourceKMSKeyRead(t *testing.T) {
+	// The API returns the key store ID in lower case.
+	configuredKeyStoreID := strings.ToUpper(testKeyStoreID)
+
+	tests := []struct {
+		name        string
+		status      int
+		body        string
+		wantRemoved bool
+	}{
+		{name: "xks key", status: 200, body: kmsKeyJSON("enabled")},
+		{name: "pending deletion", status: 200, body: kmsKeyJSON("pending-deletion"), wantRemoved: true},
+		{name: "not found", status: 400, body: mockProblem(kmsErrKeyNotFound, "Key not found"), wantRemoved: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			api := newMockAPI(t).expect("GET /kms-key/"+testKeyID, tt.status, tt.body)
+			s := kmsKeySchema(t)
+			state := kmsKeyValue(t, map[string]tftypes.Value{
+				"id":   str(testKeyID),
+				"zone": str(testZone),
+				"xks": tftypes.NewValue(xksType, map[string]tftypes.Value{
+					"key_store_id":    str(configuredKeyStoreID),
+					"external_key_id": str("my-external-key"),
+				}),
+			})
+
+			resp := &resource.ReadResponse{State: tfsdk.State{Schema: s, Raw: state}}
+			(&ResourceKMSKey{client: api.client()}).Read(context.Background(), resource.ReadRequest{
+				State: tfsdk.State{Schema: s, Raw: state},
+			}, resp)
+
+			if resp.Diagnostics.HasError() {
+				t.Fatal(resp.Diagnostics)
+			}
+			if tt.wantRemoved {
+				if !resp.State.Raw.IsNull() {
+					t.Error("key must be removed from the state")
+				}
+				return
+			}
+
+			var got ResourceKMSKeyModel
+			var gotXks ResourceKMSKeyXksModel
+			resp.Diagnostics.Append(resp.State.Get(context.Background(), &got)...)
+			resp.Diagnostics.Append(got.Xks.As(context.Background(), &gotXks, basetypes.ObjectAsOptions{})...)
+			if resp.Diagnostics.HasError() {
+				t.Fatal(resp.Diagnostics)
+			}
+			if gotXks.KeyStoreID.ValueString() != configuredKeyStoreID || gotXks.ExternalKeyID.ValueString() != "my-external-key" {
+				t.Errorf("unexpected xks %+v", gotXks)
+			}
+			if got.Source.ValueString() != "external-key-store" || got.KeySpec.ValueString() != "AES_256" {
+				t.Errorf("unexpected key %+v", got)
+			}
+		})
+	}
+}
+
+func TestResourceKMSKeyDelete(t *testing.T) {
+	tests := []struct {
+		name      string
+		status    int
+		body      string
+		wantError bool
+	}{
+		{name: "scheduled", status: 200, body: `{"delete-at":"2026-10-30T12:00:00Z"}`},
+		{
+			name:   "already pending deletion",
+			status: 400,
+			body:   mockProblem(kmsErrKeyPendingDeletion, "Operation not allowed on pending key deletion"),
+		},
+		{
+			name:      "other error",
+			status:    400,
+			body:      mockProblem("#/kms-key/operation-not-allowed-on-default-key", "Operation not allowed on default key"),
+			wantError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			api := newMockAPI(t).expect("POST /kms-key/"+testKeyID+"/schedule-deletion", tt.status, tt.body)
+			s := kmsKeySchema(t)
+			state := kmsKeyValue(t, map[string]tftypes.Value{"id": str(testKeyID), "zone": str(testZone)})
+
+			resp := &resource.DeleteResponse{State: tfsdk.State{Schema: s, Raw: state}}
+			(&ResourceKMSKey{client: api.client()}).Delete(context.Background(), resource.DeleteRequest{
+				State: tfsdk.State{Schema: s, Raw: state},
+			}, resp)
+
+			if resp.Diagnostics.HasError() != tt.wantError {
+				t.Errorf("got errors %v, want error: %t", resp.Diagnostics.Errors(), tt.wantError)
+			}
+		})
+	}
+}
+
+func TestResourceKMSKeyImportState(t *testing.T) {
+	assertImportState(t, &ResourceKMSKey{}, testKeyID)
 }
