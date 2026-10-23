@@ -36,6 +36,7 @@ DEPENDENCIES:
 
 - Remove `github.com/hashicorp/terraform-plugin-mux`
 - Bump `github.com/exoscale/egoscale/v3` to v3.1.59
+- Build the provider with Go 1.27.3 to reject TLS certificate chains containing the compromised eMudhra intermediates (CVE-2026-111943). (#629)
 
 ## 0.75.0
 
