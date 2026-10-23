@@ -1,0 +1,7 @@
+resource "exoscale_dbaas_kafka_topic_acl" {{ .ResourceName }} {
+  zone       = "{{ .Zone }}"
+  service    = {{ .Service }}
+  username   = "{{ .Username }}"
+  topic      = "{{ .Topic }}"
+  permission = "{{ .Permission }}"
+}
