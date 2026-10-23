@@ -60,6 +60,7 @@ directory for complete configuration examples.
 - `labels` (Map of String) A map of key/value labels.
 - `min_available` (Number) Minimum number of running Instances.
 - `network_ids` (Set of String) A list of [exoscale_private_network](./private_network.md) (IDs).
+- `private` (Boolean) ❗ Whether the instance pool is private (no public IP addresses; default: `false`). Cannot be changed after creation. Cannot be `true` together with `ipv6`.
 - `security_group_ids` (Set of String) A list of [exoscale_security_group](./security_group.md) (IDs).
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `user_data` (String) [cloud-init](http://cloudinit.readthedocs.io/) configuration to apply to the managed instances.

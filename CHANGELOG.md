@@ -6,6 +6,11 @@ FEATURES:
 
 - `exoscale_compute_instance`: new `vpc` block to attach the instance to VPC subnets, in strict interface order.
 
+FORK:
+
+- `exoscale_instance_pool`: `private` ported to terraform-plugin-framework after upstream #620/#625 (public IP assignment `none`; forces replacement). `private = true` with `ipv6 = true` is rejected by value; `private = true` next to `ipv6 = false` is now accepted. The v0 to v1 state upgrade reads `private` from state written by the SDKv2 fork.
+- `exoscale_security_group`: v0 to v1 state upgrade for state written between the framework migration (#493) and #526, which fails with "Unable to Upgrade Resource State" upstream. The SDKv2 v0 state (0.32.0 or older) is still not handled.
+
 BUG FIXES:
 
 - `exoscale_block_storage_volume`: deleting a volume that is already gone (API returned 404) no longer fails.
@@ -268,6 +273,8 @@ BREAKING CHANGES:
 - update dbaas schema, check the [migration guide](docs/guides/migration-of-dbaas-from-v0_67_x-to-v0_68_x.md) #488
 
 FEATURES:
+
+- resource/exoscale_instance_pool: Add `private` attribute to support private instance pools (no public IP addresses)
 
 ## 0.67.2
 
