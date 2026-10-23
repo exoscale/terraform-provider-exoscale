@@ -22,7 +22,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
-const markdownDescriptionSubnetResource = `Manage Exoscale [VPC](https://community.exoscale.ch/product/networking/vpc/) Subnets.
+const markdownDescriptionSubnetResource = `Manage Exoscale [VPC](https://community.exoscale.com/product/networking/vpc/) Subnets.
 
 Corresponding data source: [exoscale\_vpc\_subnet](../data-sources/vpc_subnet.md).
 `

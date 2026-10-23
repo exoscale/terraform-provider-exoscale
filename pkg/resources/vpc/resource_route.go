@@ -21,7 +21,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
-const markdownDescriptionRouteResource = `Manage Exoscale [VPC Subnet routes](https://community.exoscale.com/product/networking/vpc/how-to/using-routing-rules/).
+const markdownDescriptionRouteResource = `Manage Exoscale [VPC](https://community.exoscale.com/product/networking/vpc/) Subnet routes.
 
 Routes are immutable: any change to their attributes forces re-creation.
 
