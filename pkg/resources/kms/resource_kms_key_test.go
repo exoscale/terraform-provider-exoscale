@@ -262,6 +262,18 @@ func TestResourceKMSKeyModifyPlan(t *testing.T) {
 			}),
 		},
 		{
+			name:  "new zone with same name",
+			state: kmsKeyValue(t, existing),
+			plan: with(map[string]tftypes.Value{
+				"zone":        str("de-fra-1"),
+				"description": str("new description"),
+			}),
+			config: with(map[string]tftypes.Value{
+				"zone":        str("de-fra-1"),
+				"description": str("new description"),
+			}),
+		},
+		{
 			name:   "unconfigured computed value",
 			state:  kmsKeyValue(t, existing),
 			plan:   with(map[string]tftypes.Value{"description": str(tftypes.UnknownValue)}),
@@ -365,11 +377,7 @@ func TestResourceKMSKeyDelete(t *testing.T) {
 		wantError bool
 	}{
 		{name: "scheduled", status: 200, body: `{"delete-at":"2026-10-30T12:00:00Z"}`},
-		{
-			name:   "already pending deletion",
-			status: 400,
-			body:   mockProblem(kmsErrKeyPendingDeletion, "Operation not allowed on pending key deletion"),
-		},
+		{name: "already gone", status: 400, body: mockProblem(kmsErrKeyNotFound, "Key not found")},
 		{
 			name:      "other error",
 			status:    400,
@@ -398,4 +406,106 @@ func TestResourceKMSKeyDelete(t *testing.T) {
 
 func TestResourceKMSKeyImportState(t *testing.T) {
 	assertImportState(t, &ResourceKMSKey{}, testKeyID)
+}
+
+func TestResourceKMSKeyCreate(t *testing.T) {
+	ctx := context.Background()
+	api := newMockAPI(t).expect("POST /kms-key", 200, kmsKeyJSON("enabled"))
+	s := kmsKeySchema(t)
+
+	// An XKS key with every optional attribute left to the API.
+	values := map[string]tftypes.Value{
+		"name": str("my-key"),
+		"zone": str(testZone),
+		"xks": tftypes.NewValue(xksType, map[string]tftypes.Value{
+			"key_store_id":    str(testKeyStoreID),
+			"external_key_id": str("my-external-key"),
+		}),
+	}
+	plan := map[string]tftypes.Value{}
+	for k, v := range values {
+		plan[k] = v
+	}
+	for _, name := range []string{"id", "description", "multi_zone", "usage", "key_spec", "source", "status"} {
+		plan[name] = tftypes.NewValue(kmsKeyValue(t, nil).Type().(tftypes.Object).AttributeTypes[name], tftypes.UnknownValue)
+	}
+
+	resp := &resource.CreateResponse{State: tfsdk.State{Schema: s, Raw: tftypes.NewValue(kmsKeyValue(t, nil).Type(), nil)}}
+	(&ResourceKMSKey{client: api.client()}).Create(ctx, resource.CreateRequest{
+		Plan:   tfsdk.Plan{Schema: s, Raw: kmsKeyValue(t, plan)},
+		Config: tfsdk.Config{Schema: s, Raw: kmsKeyValue(t, values)},
+	}, resp)
+
+	if resp.Diagnostics.HasError() {
+		t.Fatal(resp.Diagnostics)
+	}
+	body := api.requestBody("POST /kms-key", 0)
+	xks, _ := body["xks"].(map[string]any)
+	if body["source"] != "external-key-store" || xks["xks-id"] != testKeyStoreID || xks["external-key-id"] != "my-external-key" {
+		t.Errorf("unexpected create body %v", body)
+	}
+	if body["usage"] != nil || body["key-spec"] != nil || body["multi-zone"] != nil {
+		t.Errorf("unset attributes must be left to the API: %v", body)
+	}
+	if !resp.State.Raw.IsFullyKnown() {
+		t.Errorf("state must be fully known after create: %s", resp.State.Raw)
+	}
+
+	var got ResourceKMSKeyModel
+	resp.Diagnostics.Append(resp.State.Get(ctx, &got)...)
+	if got.ID.ValueString() != testKeyID || got.Source.ValueString() != "external-key-store" ||
+		got.KeySpec.ValueString() != "AES_256" || got.Usage.ValueString() != "encrypt-decrypt" {
+		t.Errorf("unexpected state %+v", got)
+	}
+}
+
+func TestResourceKMSKeyUpdate(t *testing.T) {
+	ctx := context.Background()
+	s := kmsKeySchema(t)
+	objType := kmsKeyValue(t, nil).Type().(tftypes.Object)
+
+	state := map[string]tftypes.Value{
+		"id":          str(testKeyID),
+		"name":        str("my-key"),
+		"zone":        str(testZone),
+		"description": str(""),
+		"multi_zone":  tftypes.NewValue(tftypes.Bool, false),
+		"usage":       str("encrypt-decrypt"),
+		"key_spec":    str("AES_256"),
+		"source":      str("exoscale-kms"),
+		"status":      str("enabled"),
+	}
+	timeoutsType := objType.AttributeTypes["timeouts"].(tftypes.Object)
+	timeouts := map[string]tftypes.Value{}
+	for name, typ := range timeoutsType.AttributeTypes {
+		timeouts[name] = tftypes.NewValue(typ, nil)
+	}
+	timeouts["update"] = str("10m")
+
+	// Only timeouts changed: Terraform plans the computed attributes without plan modifier as unknown.
+	plan := map[string]tftypes.Value{"timeouts": tftypes.NewValue(timeoutsType, timeouts)}
+	for k, v := range state {
+		plan[k] = v
+	}
+	for _, name := range []string{"description", "multi_zone", "usage", "status"} {
+		plan[name] = tftypes.NewValue(objType.AttributeTypes[name], tftypes.UnknownValue)
+	}
+
+	resp := &resource.UpdateResponse{State: tfsdk.State{Schema: s, Raw: kmsKeyValue(t, state)}}
+	(&ResourceKMSKey{}).Update(ctx, resource.UpdateRequest{
+		State: tfsdk.State{Schema: s, Raw: kmsKeyValue(t, state)},
+		Plan:  tfsdk.Plan{Schema: s, Raw: kmsKeyValue(t, plan)},
+	}, resp)
+
+	if resp.Diagnostics.HasError() {
+		t.Fatal(resp.Diagnostics)
+	}
+	if !resp.State.Raw.IsFullyKnown() {
+		t.Fatalf("state must be fully known after update: %s", resp.State.Raw)
+	}
+	var got ResourceKMSKeyModel
+	resp.Diagnostics.Append(resp.State.Get(ctx, &got)...)
+	if got.Status.ValueString() != "enabled" || got.Timeouts.IsNull() {
+		t.Errorf("update must keep the state and save the new timeouts: %+v", got)
+	}
 }

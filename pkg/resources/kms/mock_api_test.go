@@ -31,7 +31,8 @@ type mockResponse struct {
 
 // mockAPI is a mock of the Exoscale API. It serves the responses expected for each route
 // ("METHOD /path") in order, records the calls and their JSON bodies, and fails the test on
-// an unexpected call. The zone lookups made to switch the client zone are answered but not recorded.
+// an unexpected call or on an expected call that was not made. The zone lookups made to
+// switch the client zone are answered but not recorded.
 type mockAPI struct {
 	t      *testing.T
 	server *httptest.Server
@@ -52,6 +53,7 @@ func newMockAPI(t *testing.T) *mockAPI {
 	}
 	m.server = httptest.NewServer(http.HandlerFunc(m.serve))
 	t.Cleanup(m.server.Close)
+	t.Cleanup(m.assertAllUsed)
 
 	return m
 }
@@ -89,6 +91,20 @@ func (m *mockAPI) assertCalls(want ...string) {
 
 	if fmt.Sprint(m.calls) != fmt.Sprint(want) {
 		m.t.Errorf("got calls %v, want %v", m.calls, want)
+	}
+}
+
+// assertAllUsed fails the test if a response expected for a route was not served.
+func (m *mockAPI) assertAllUsed() {
+	m.t.Helper()
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	for route, queue := range m.responses {
+		if len(queue) > 0 {
+			m.t.Errorf("%d expected call(s) to %s not made", len(queue), route)
+		}
 	}
 }
 

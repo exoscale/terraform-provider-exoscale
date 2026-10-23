@@ -9,7 +9,6 @@ FEATURES:
 
 BUG FIXES:
 
-- `exoscale_kms_key`: importing a key no longer fails.
 - `exoscale_kms_key`: a key deleted outside of Terraform is now removed from the state, it used to make every plan fail.
 - `exoscale_kms_key`: changing only `timeouts` no longer fails the apply.
 - `exoscale_kms_key`: a change that replaces a key without changing its `name` now fails at plan time. The key used to be scheduled for deletion, then its replacement failed to be created because the name stays reserved during the deletion delay.

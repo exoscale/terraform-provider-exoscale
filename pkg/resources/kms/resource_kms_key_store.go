@@ -2,8 +2,10 @@ package kms
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 
@@ -114,8 +116,8 @@ func (r *ResourceKMSKeyStore) Schema(ctx context.Context, _ resource.SchemaReque
 				},
 			},
 			"name": schema.StringAttribute{
-				MarkdownDescription: "❗ The name of the key store, unique within the organization.",
-				Description:         "The name of the key store, unique within the organization.",
+				MarkdownDescription: "❗ The name of the key store, unique within the organization in this zone.",
+				Description:         "The name of the key store, unique within the organization in this zone.",
 				Required:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -213,8 +215,8 @@ func (r *ResourceKMSKeyStore) Schema(ctx context.Context, _ resource.SchemaReque
 				},
 			},
 			"health": schema.SingleNestedAttribute{
-				MarkdownDescription: "The latest health check of the proxy, once one has completed.",
-				Description:         "The latest health check of the proxy, once one has completed.",
+				MarkdownDescription: "The latest periodic health check of the proxy. Only connected key stores are checked, every 10 minutes, and a change to the key store resets it: it is usually empty right after an apply.",
+				Description:         "The latest periodic health check of the proxy. Only connected key stores are checked, every 10 minutes, and a change to the key store resets it: it is usually empty right after an apply.",
 				Computed:            true,
 				Attributes: map[string]schema.Attribute{
 					"status": schema.StringAttribute{
@@ -413,9 +415,27 @@ func diagsSummary(diags diag.Diagnostics, found bool) string {
 	return strings.Join(msgs, "; ")
 }
 
-// connectKeyStoreRetryDelays are the waits between attempts to connect a new key store,
+// connectKeyStoreRetryDelays are the waits between attempts to connect a key store,
 // in case its proxy fails a health check for a short time.
 var connectKeyStoreRetryDelays = []time.Duration{2 * time.Second, 4 * time.Second, 8 * time.Second, 16 * time.Second}
+
+// transientProxyErrors are the XKS proxy errors that may clear on their own.
+// Others, such as AuthenticationFailedException, need a configuration change.
+var transientProxyErrors = []string{"ThrottlingException", "InternalException", "DependencyTimeoutException"}
+
+func isTransientProxyError(err error) bool {
+	if isAPIError(err, kmsErrKeyStoreProxyUnhealthy) {
+		return true
+	}
+	if !isAPIError(err, kmsErrKeyStoreProxyRequestFailed) {
+		return false
+	}
+
+	var apiErr *exoscale.APIError
+	errors.As(err, &apiErr)
+	resp, _ := apiErr.Response.(*exoscale.ErrorResponse)
+	return resp.XksProxyError == nil || slices.Contains(transientProxyErrors, resp.XksProxyError.ErrorName)
+}
 
 // connectKeyStoreWithRetry connects a key store, retrying while its proxy fails the health check.
 func connectKeyStoreWithRetry(ctx context.Context, client *exoscale.Client, id exoscale.UUID) error {
@@ -425,8 +445,7 @@ func connectKeyStoreWithRetry(ctx context.Context, client *exoscale.Client, id e
 			return nil
 		}
 
-		retryable := isAPIError(err, kmsErrKeyStoreProxyUnhealthy) || isAPIError(err, kmsErrKeyStoreProxyRequestFailed)
-		if !retryable || attempt >= len(connectKeyStoreRetryDelays) {
+		if !isTransientProxyError(err) || attempt >= len(connectKeyStoreRetryDelays) {
 			return err
 		}
 
@@ -746,7 +765,10 @@ func keyStoreHealthValue(ctx context.Context, h *exoscale.KeyStoreHealth) (types
 		Status:       types.StringValue(string(h.Status)),
 		StatusReason: types.StringValue(h.StatusReason),
 		CheckedAt:    types.StringNull(),
-		ErrorDetail:  types.StringValue(h.ErrorDetail),
+		ErrorDetail:  types.StringNull(),
+	}
+	if h.ErrorDetail != "" {
+		health.ErrorDetail = types.StringValue(h.ErrorDetail)
 	}
 	if !h.CheckedAT.IsZero() {
 		health.CheckedAt = types.StringValue(h.CheckedAT.Format(time.RFC3339))

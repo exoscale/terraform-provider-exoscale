@@ -141,8 +141,8 @@ func (d *DataSourceKMSKeyStore) Schema(ctx context.Context, _ datasource.SchemaR
 				Computed:            true,
 			},
 			"health": schema.SingleNestedAttribute{
-				MarkdownDescription: "The latest health check of the proxy, once one has completed.",
-				Description:         "The latest health check of the proxy, once one has completed.",
+				MarkdownDescription: "The latest periodic health check of the proxy. Only connected key stores are checked, every 10 minutes, and a change to the key store resets it.",
+				Description:         "The latest periodic health check of the proxy. Only connected key stores are checked, every 10 minutes, and a change to the key store resets it.",
 				Computed:            true,
 				Attributes: map[string]schema.Attribute{
 					"status": schema.StringAttribute{

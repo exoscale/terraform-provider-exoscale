@@ -37,17 +37,9 @@ resource "exoscale_kms_key_store" "my_key_store" {
   # KMS keys can only be created in a connected key store.
   connected = true
 }
-
-resource "exoscale_kms_key" "my_external_key" {
-  zone = "ch-gva-2"
-  name = "my-external-key"
-
-  xks = {
-    key_store_id    = exoscale_kms_key_store.my_key_store.id
-    external_key_id = "<external-key-id>"
-  }
-}
 ```
+
+Next step is to create [exoscale_kms_key](./kms_key.md)(s) backed by the key store, with `xks`.
 
 Please refer to the [examples](https://github.com/exoscale/terraform-provider-exoscale/tree/master/examples/)
 directory for complete configuration examples.

@@ -638,6 +638,13 @@ func TestConnectKeyStoreWithRetry(t *testing.T) {
 	unhealthy := mockResponse{400, mockProblem(kmsErrKeyStoreProxyUnhealthy, "Key store proxy is unhealthy")}
 	notFound := mockResponse{400, mockProblem(kmsErrKeyStoreNotFound, "Key store not found")}
 	connected := mockResponse{200, mockSuccess}
+	proxyError := func(name string) mockResponse {
+		return mockResponse{400, fmt.Sprintf(
+			`{"type":%q,"title":"Key store proxy request failed","status":400,"detail":"proxy health","xks-proxy-error":{"error-name":%q}}`,
+			kmsErrKeyStoreProxyRequestFailed, name,
+		)}
+	}
+	unreachable := mockResponse{400, mockProblem(kmsErrKeyStoreProxyRequestFailed, "Key store proxy request failed")}
 
 	tests := []struct {
 		name      string
@@ -647,6 +654,13 @@ func TestConnectKeyStoreWithRetry(t *testing.T) {
 		{name: "connected at once", responses: []mockResponse{connected}},
 		{name: "connected after retries", responses: []mockResponse{unhealthy, unhealthy, connected}},
 		{name: "not retried", responses: []mockResponse{notFound}, wantErr: kmsErrKeyStoreNotFound},
+		{name: "unreachable proxy retried", responses: []mockResponse{unreachable, connected}},
+		{name: "throttled proxy retried", responses: []mockResponse{proxyError("ThrottlingException"), connected}},
+		{
+			name:      "wrong credentials not retried",
+			responses: []mockResponse{proxyError("AuthenticationFailedException")},
+			wantErr:   kmsErrKeyStoreProxyRequestFailed,
+		},
 		{
 			name:      "retries exhausted",
 			responses: []mockResponse{unhealthy, unhealthy, unhealthy, unhealthy, unhealthy},

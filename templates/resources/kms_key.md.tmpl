@@ -48,7 +48,7 @@ resource "exoscale_kms_key" "my_external_key" {
   name = "my-external-key"
 
   xks = {
-    key_store_id    = exoscale_kms_key_store.my_key_store.id
+    key_store_id    = "<key-store-id>"
     external_key_id = "<external-key-id>"
   }
 }

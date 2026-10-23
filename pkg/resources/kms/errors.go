@@ -11,7 +11,6 @@ const kmsNoDetail = "no details."
 
 const (
 	kmsErrKeyNotFound          = "#/kms-key/not-found"
-	kmsErrKeyPendingDeletion   = "#/kms-key/operation-not-allowed-when-pending-deletion"
 	kmsErrKeyStoreNotFound     = "#/key-store/not-found"
 	kmsErrKeyStoreIsReferenced = "#/key-store/is-referenced-by-key"
 

@@ -21,14 +21,8 @@ data "exoscale_kms_key_store" "my_key_store" {
   name = "my-key-store"
 }
 
-resource "exoscale_kms_key" "my_external_key" {
-  zone = "ch-gva-2"
-  name = "my-external-key"
-
-  xks = {
-    key_store_id    = data.exoscale_kms_key_store.my_key_store.id
-    external_key_id = "<external-key-id>"
-  }
+output "my_key_store_id" {
+  value = data.exoscale_kms_key_store.my_key_store.id
 }
 ```
 
@@ -52,7 +46,7 @@ directory for complete configuration examples.
 
 - `created_at` (String) The creation date of the key store.
 - `description` (String) The description of the key store.
-- `health` (Attributes) The latest health check of the proxy, once one has completed. (see [below for nested schema](#nestedatt--health))
+- `health` (Attributes) The latest periodic health check of the proxy. Only connected key stores are checked, every 10 minutes, and a change to the key store resets it. (see [below for nested schema](#nestedatt--health))
 - `proxy` (Attributes) The customer-managed XKS proxy. The secret key is never returned. (see [below for nested schema](#nestedatt--proxy))
 - `status` (String) The connection status of the key store (`connected` or `disconnected`). KMS keys can only be created in, and used from, a connected key store.
 - `status_since` (String) When the status last changed.

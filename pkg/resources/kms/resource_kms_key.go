@@ -155,8 +155,8 @@ func (r *ResourceKMSKey) Schema(ctx context.Context, _ resource.SchemaRequest, r
 				},
 			},
 			"usage": schema.StringAttribute{
-				MarkdownDescription: "❗ The key usage purpose (`encrypt-decrypt` or `sign-verify`).",
-				Description:         "The key usage purpose (encrypt-decrypt or sign-verify).",
+				MarkdownDescription: "❗ The key usage purpose: `encrypt-decrypt` or `sign-verify` (default: `encrypt-decrypt`).",
+				Description:         "The key usage purpose: encrypt-decrypt or sign-verify (default: encrypt-decrypt).",
 				Optional:            true,
 				Computed:            true,
 				PlanModifiers: []planmodifier.String{
@@ -170,8 +170,8 @@ func (r *ResourceKMSKey) Schema(ctx context.Context, _ resource.SchemaRequest, r
 				},
 			},
 			"key_spec": schema.StringAttribute{
-				MarkdownDescription: "❗ The cryptographic key specification (e.g. `AES_256`).",
-				Description:         "The cryptographic key specification (e.g. AES_256).",
+				MarkdownDescription: "❗ The cryptographic key specification (default: `AES_256`).",
+				Description:         "The cryptographic key specification (default: AES_256).",
 				Optional:            true,
 				Computed:            true,
 				PlanModifiers: []planmodifier.String{
@@ -319,15 +319,14 @@ func (r *ResourceKMSKey) ModifyPlan(ctx context.Context, req resource.ModifyPlan
 		return
 	}
 
-	if !plan.Name.Equal(state.Name) {
+	// A new zone replaces the key with a new key in that zone: names are reserved per zone,
+	// so the name of the current key does not prevent creating the new one.
+	if !plan.Name.Equal(state.Name) || !plan.Zone.Equal(state.Zone) {
 		return
 	}
 
 	// Every attribute but timeouts requires a replacement (see Update): mirror their plan modifiers.
 	var changed []string
-	if !plan.Zone.IsUnknown() && !plan.Zone.Equal(state.Zone) {
-		changed = append(changed, "zone")
-	}
 	if !plan.Xks.IsUnknown() && !plan.Xks.Equal(state.Xks) {
 		changed = append(changed, "xks")
 	}
@@ -531,16 +530,19 @@ func (r *ResourceKMSKey) Read(ctx context.Context, req resource.ReadRequest, res
 }
 
 // Update makes no API call: all attributes but timeouts use RequiresReplace,
-// so only the new timeouts have to be saved.
+// so only the new timeouts have to be saved. The plan cannot be saved as is, as computed attributes
+// without a plan modifier (e.g. status) are unknown in it.
 func (r *ResourceKMSKey) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var plan ResourceKMSKeyModel
+	var state, plan ResourceKMSKeyModel
 
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+	state.Timeouts = plan.Timeouts
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
 func (r *ResourceKMSKey) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
@@ -575,8 +577,9 @@ func (r *ResourceKMSKey) Delete(ctx context.Context, req resource.DeleteRequest,
 		DelayDays: kmsKeyDeletionDelayDays,
 	})
 	if err != nil {
-		// The key is already scheduled for deletion, which is all Delete does: nothing left to do.
-		if isNotFound(err, kmsErrKeyNotFound) || isAPIError(err, kmsErrKeyPendingDeletion) {
+		// A key that no longer exists counts as deleted. A key already pending deletion needs no special
+		// case: scheduling its deletion again succeeds.
+		if isNotFound(err, kmsErrKeyNotFound) {
 			return
 		}
 		resp.Diagnostics.AddError("API error scheduling KMS key deletion", apiErrorMessage(err))

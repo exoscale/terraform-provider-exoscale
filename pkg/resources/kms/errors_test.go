@@ -73,7 +73,8 @@ func TestIsAPIError(t *testing.T) {
 }
 
 // TestAPIErrorTypes checks against the real API that KMS still answers with the problem types the provider
-// relies on, as they are copied from the KMS service. It runs with the acceptance tests (TF_ACC).
+// relies on, as they are copied from the KMS service, and that the API behaves as the provider expects.
+// It runs with the acceptance tests (TF_ACC).
 func TestAPIErrorTypes(t *testing.T) {
 	if os.Getenv("TF_ACC") == "" {
 		t.Skip("Acceptance tests skipped unless env 'TF_ACC' set")
@@ -136,7 +137,8 @@ func TestAPIErrorTypes(t *testing.T) {
 		assertType(t, err, kmsErrKeyStoreProxyRequestFailed, kmsErrKeyStoreProxyUnhealthy)
 	})
 
-	t.Run("key already pending deletion", func(t *testing.T) {
+	// The provider relies on this to destroy a key already pending deletion.
+	t.Run("key deletion scheduled twice", func(t *testing.T) {
 		key, err := client.CreateKmsKey(ctx, exoscale.CreateKmsKeyRequest{
 			Name:        name,
 			Description: "terraform provider error types test",
@@ -149,7 +151,8 @@ func TestAPIErrorTypes(t *testing.T) {
 		if _, err := client.ScheduleKmsKeyDeletion(ctx, key.ID, req); err != nil {
 			t.Fatal(apiErrorMessage(err))
 		}
-		_, err = client.ScheduleKmsKeyDeletion(ctx, key.ID, req)
-		assertType(t, err, kmsErrKeyPendingDeletion)
+		if _, err := client.ScheduleKmsKeyDeletion(ctx, key.ID, req); err != nil {
+			t.Errorf("scheduling the deletion of a key already pending deletion must succeed: %s", apiErrorMessage(err))
+		}
 	})
 }

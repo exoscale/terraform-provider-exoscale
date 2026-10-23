@@ -37,17 +37,9 @@ resource "exoscale_kms_key_store" "my_key_store" {
   # KMS keys can only be created in a connected key store.
   connected = true
 }
-
-resource "exoscale_kms_key" "my_external_key" {
-  zone = "ch-gva-2"
-  name = "my-external-key"
-
-  xks = {
-    key_store_id    = exoscale_kms_key_store.my_key_store.id
-    external_key_id = "<external-key-id>"
-  }
-}
 ```
+
+Next step is to create [exoscale_kms_key](./kms_key.md)(s) backed by the key store, with `xks`.
 
 Please refer to the [examples](https://github.com/exoscale/terraform-provider-exoscale/tree/master/examples/)
 directory for complete configuration examples.
@@ -57,7 +49,7 @@ directory for complete configuration examples.
 
 ### Required
 
-- `name` (String) ❗ The name of the key store, unique within the organization.
+- `name` (String) ❗ The name of the key store, unique within the organization in this zone.
 - `proxy` (Attributes) The customer-managed XKS proxy. A change of `endpoint` or of the credentials is only saved if the proxy passes a health check with the new settings. (see [below for nested schema](#nestedatt--proxy))
 - `zone` (String) ❗ The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.
 
@@ -70,7 +62,7 @@ directory for complete configuration examples.
 ### Read-Only
 
 - `created_at` (String) The creation date of the key store.
-- `health` (Attributes) The latest health check of the proxy, once one has completed. (see [below for nested schema](#nestedatt--health))
+- `health` (Attributes) The latest periodic health check of the proxy. Only connected key stores are checked, every 10 minutes, and a change to the key store resets it: it is usually empty right after an apply. (see [below for nested schema](#nestedatt--health))
 - `id` (String) The ID of this resource.
 - `status` (String) The connection status of the key store (`connected` or `disconnected`).
 - `status_since` (String) When the status last changed.

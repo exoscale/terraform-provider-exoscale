@@ -48,7 +48,7 @@ resource "exoscale_kms_key" "my_external_key" {
   name = "my-external-key"
 
   xks = {
-    key_store_id    = exoscale_kms_key_store.my_key_store.id
+    key_store_id    = "<key-store-id>"
     external_key_id = "<external-key-id>"
   }
 }
@@ -68,10 +68,10 @@ directory for complete configuration examples.
 ### Optional
 
 - `description` (String) ❗ A description of the KMS Key.
-- `key_spec` (String) ❗ The cryptographic key specification (e.g. `AES_256`).
+- `key_spec` (String) ❗ The cryptographic key specification (default: `AES_256`).
 - `multi_zone` (Boolean) ❗ Whether the key is replicated across multiple zones.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
-- `usage` (String) ❗ The key usage purpose (`encrypt-decrypt` or `sign-verify`).
+- `usage` (String) ❗ The key usage purpose: `encrypt-decrypt` or `sign-verify` (default: `encrypt-decrypt`).
 - `xks` (Attributes) ❗ [BETA] Back the key with a key held in an External Key Store. Only `usage = "encrypt-decrypt"`, `key_spec = "AES_256"` and single-zone keys are supported. (see [below for nested schema](#nestedatt--xks))
 
 ### Read-Only
