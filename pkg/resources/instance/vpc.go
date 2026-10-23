@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
 
 // vpcIPv4Auto lets the platform pick the IPv4 address of a VPC interface.
@@ -67,7 +68,10 @@ func (m VPCInterfaceModel) requestedIPv4() net.IP {
 func vpcInterfaces(ctx context.Context, list types.List) (*VPCModel, []VPCInterfaceModel, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
-	if list.IsNull() || list.IsUnknown() || len(list.Elements()) == 0 {
+	if list.Length(basetypes.CollectionLengthOptions{
+		UnhandledNullAsZero:    true,
+		UnhandledUnknownAsZero: true,
+	}) == 0 {
 		return nil, nil, diags
 	}
 

@@ -45,7 +45,7 @@ resource "exoscale_vpc_subnet" "my_other_vpc_subnet" {
 
 data "exoscale_template" "my_template" {
   zone = local.zone
-  name = "Linux Ubuntu 22.04 LTS 64-bit"
+  name = "Linux Ubuntu 26.04 LTS 64-bit"
 }
 
 # Instance attached to the VPC subnets. Interfaces are strictly ordered:
