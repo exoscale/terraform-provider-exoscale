@@ -39,6 +39,21 @@ resource "exoscale_kms_key" "my_signing_key" {
 }
 ```
 
+A key backed by an [External Key Store](./kms_key_store.md) (beta) only supports `usage = "encrypt-decrypt"`,
+`key_spec = "AES_256"` and single-zone keys. The key store must be connected:
+
+```terraform
+resource "exoscale_kms_key" "my_external_key" {
+  zone = "ch-gva-2"
+  name = "my-external-key"
+
+  xks = {
+    key_store_id    = exoscale_kms_key_store.my_key_store.id
+    external_key_id = "<external-key-id>"
+  }
+}
+```
+
 Please refer to the [examples](https://github.com/exoscale/terraform-provider-exoscale/tree/master/examples/)
 directory for complete configuration examples.
 
