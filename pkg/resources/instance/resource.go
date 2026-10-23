@@ -16,6 +16,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -24,6 +25,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -78,6 +80,7 @@ type ResourceModel struct {
 	TemplateID            types.String `tfsdk:"template_id"`
 	Type                  types.String `tfsdk:"type"`
 	UserData              types.String `tfsdk:"user_data"`
+	VPC                   types.List   `tfsdk:"vpc"`
 	Zone                  types.String `tfsdk:"zone"`
 
 	Timeouts timeouts.Value `tfsdk:"timeouts"`
@@ -399,6 +402,65 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 					},
 				},
 			},
+			"vpc": schema.ListNestedBlock{
+				Description:         "The VPC to attach the instance to (at most one block). Removing the block detaches the instance from every subnet. Structure is documented below.",
+				MarkdownDescription: "The [exoscale_vpc](./vpc.md) to attach the instance to (at most one block). Removing the block detaches the instance from every subnet. Structure is documented below.",
+				Validators: []validator.List{
+					listvalidator.SizeAtMost(1),
+				},
+				NestedObject: schema.NestedBlockObject{
+					Attributes: map[string]schema.Attribute{
+						"id": schema.StringAttribute{
+							Description:         "The exoscale_vpc (ID) the subnets belong to. An instance may only be attached to one VPC, thus changing it detaches the instance from every subnet of the previous VPC.",
+							MarkdownDescription: "The [exoscale_vpc](./vpc.md) (ID) the subnets belong to. An instance may only be attached to one VPC, thus changing it detaches the instance from every subnet of the previous VPC.",
+							Required:            true,
+						},
+						"interfaces": schema.ListNestedAttribute{
+							Description:         "The VPC subnets to attach the instance to. The order is strict: inserting, removing or reordering an element detaches every interface from that position on, then attaches them again in the configured order. Attachments made outside of Terraform are planned for removal, except those with a public IPv4 address: these are left alone unless listed here, which makes Terraform manage them (an attachment listed at its current position and IPv4 address is adopted as is). Positions only count the attachments managed by Terraform: unmanaged ones are skipped, so a position may differ from the NIC name on the instance. Attachment changes are not atomic: if an attachment fails, the interfaces detached before it stay detached until the next apply.",
+							MarkdownDescription: "The VPC subnets to attach the instance to. The order is strict: inserting, removing or reordering an element detaches every interface from that position on, then attaches them again in the configured order. Attachments made outside of Terraform are planned for removal, except those with a public IPv4 address: these are left alone unless listed here, which makes Terraform manage them (an attachment listed at its current position and IPv4 address is adopted as is). Positions only count the attachments managed by Terraform: unmanaged ones are skipped, so a position may differ from the NIC name on the instance. Attachment changes are not atomic: if an attachment fails, the interfaces detached before it stay detached until the next apply.",
+							Required:            true,
+							Validators: []validator.List{
+								listvalidator.SizeAtLeast(1),
+							},
+							NestedObject: schema.NestedAttributeObject{
+								Attributes: map[string]schema.Attribute{
+									"subnet_id": schema.StringAttribute{
+										Description:         "The exoscale_vpc_subnet (ID) to attach the instance to.",
+										MarkdownDescription: "The [exoscale_vpc_subnet](./vpc_subnet.md) (ID) to attach the instance to.",
+										Required:            true,
+									},
+									"ipv4_address": schema.StringAttribute{
+										Description:         "The IPv4 address to allocate to the instance in the subnet, or 'auto' to let the platform pick one (default: 'auto').",
+										MarkdownDescription: "The IPv4 address to allocate to the instance in the subnet, or `auto` to let the platform pick one (default: `auto`).",
+										Optional:            true,
+										Computed:            true,
+										Default:             stringdefault.StaticString(vpcIPv4Auto),
+										Validators: []validator.String{
+											stringFuncValidator{
+												description: "The value must be 'auto' or an IPv4 address.",
+												validate: func(v string) error {
+													if v == vpcIPv4Auto {
+														return nil
+													}
+													if ip := net.ParseIP(v); ip == nil || ip.To4() == nil {
+														return fmt.Errorf("expected %q or a valid IPv4 address, got %q", vpcIPv4Auto, v)
+													}
+													return nil
+												},
+											},
+										},
+									},
+									"ipv4_address_allocated": schema.StringAttribute{
+										Description:         "The IPv4 address allocated to the instance in the subnet.",
+										MarkdownDescription: "The IPv4 address allocated to the instance in the subnet.",
+										Computed:            true,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
 			"timeouts": timeouts.BlockAll(ctx),
 		},
 	}
@@ -433,11 +495,30 @@ func (r *Resource) ModifyPlan(ctx context.Context, req resource.ModifyPlanReques
 		plan.IPv6Address = state.IPv6Address
 	}
 
+	instance, diags := r.instanceForVPCAdoption(ctx, &plan, &state)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	vpcChanges, diags := planVPC(ctx, &plan, &state, instance)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	if vpcChanges != "" {
+		resp.Diagnostics.AddWarning("VPC subnet attachments", vpcChanges)
+	}
+
 	planned, diags := networkInterfaces(ctx, plan.NetworkInterface)
 	resp.Diagnostics.Append(diags...)
 	current, diags := networkInterfaces(ctx, state.NetworkInterface)
 	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() || plan.NetworkInterface.IsUnknown() {
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	if plan.NetworkInterface.IsUnknown() {
+		resp.Diagnostics.Append(resp.Plan.Set(ctx, &plan)...)
 		return
 	}
 
@@ -468,6 +549,47 @@ func (r *Resource) ModifyPlan(ctx context.Context, req resource.ModifyPlanReques
 	}
 
 	resp.Diagnostics.Append(resp.Plan.Set(ctx, &plan)...)
+}
+
+// instanceForVPCAdoption fetches the instance when the plan lists VPC subnets
+// missing from the state, which may be attachments to adopt; it returns nil
+// otherwise, sparing an API call.
+func (r *Resource) instanceForVPCAdoption(ctx context.Context, plan, state *ResourceModel) (*exoscale.Instance, diag.Diagnostics) {
+	_, planned, diags := vpcInterfaces(ctx, plan.VPC)
+	_, current, dg := vpcInterfaces(ctx, state.VPC)
+	diags.Append(dg...)
+	if diags.HasError() || r.client == nil {
+		return nil, diags
+	}
+
+	inState := hasSubnet(current)
+	adopting := false
+	for _, iface := range planned {
+		adopting = adopting || (!iface.SubnetID.IsUnknown() && !inState(iface.SubnetID.ValueString()))
+	}
+	if !adopting {
+		return nil, diags
+	}
+
+	id, err := exoscale.ParseUUID(state.ID.ValueString())
+	if err != nil {
+		diags.AddError("unable to parse ID", err.Error())
+		return nil, diags
+	}
+
+	client, err := utils.SwitchClientZone(ctx, r.client, exoscale.ZoneName(state.Zone.ValueString()))
+	if err != nil {
+		diags.AddError("unable to change exoscale client zone", err.Error())
+		return nil, diags
+	}
+
+	instance, err := client.GetInstance(ctx, id)
+	if err != nil {
+		diags.AddError("API returned an error while fetching instance", err.Error())
+		return nil, diags
+	}
+
+	return instance, diags
 }
 
 // findNetworkInterface returns the interface among current that the planned
@@ -551,6 +673,8 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 	blockStorageVolumeIDs, diags := stringSetValues(ctx, plan.BlockStorageVolumeIDs)
 	resp.Diagnostics.Append(diags...)
 	nifs, diags := networkInterfaces(ctx, plan.NetworkInterface)
+	resp.Diagnostics.Append(diags...)
+	request.Vpc, diags = createInstanceRequestVpc(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -936,6 +1060,13 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 		}
 	}
 
+	if !plan.VPC.Equal(state.VPC) {
+		resp.Diagnostics.Append(updateVPC(ctx, client, instance, &plan, &state)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+	}
+
 	if !plan.SecurityGroupIDs.Equal(state.SecurityGroupIDs) {
 		added, removed, diags := stringSetChange(ctx, state.SecurityGroupIDs, plan.SecurityGroupIDs)
 		resp.Diagnostics.Append(diags...)
@@ -1249,6 +1380,15 @@ func nullUnknown(ctx context.Context, model ResourceModel) *ResourceModel {
 		}
 	}
 	model.NetworkInterface, _ = networkInterfaceSet(ctx, nifs)
+
+	if vpc, ifaces, _ := vpcInterfaces(ctx, model.VPC); vpc != nil {
+		for i := range ifaces {
+			if ifaces[i].IPv4AddressAllocated.IsUnknown() {
+				ifaces[i].IPv4AddressAllocated = types.StringNull()
+			}
+		}
+		model.VPC, _ = vpcList(ctx, vpc.ID, ifaces)
+	}
 
 	return &model
 }
