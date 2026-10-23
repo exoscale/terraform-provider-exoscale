@@ -241,6 +241,7 @@ func (p *ExoscaleProvider) DataSources(ctx context.Context) []func() datasource.
 		iam.NewDataSourceAPIKey,
 		block_storage.NewDataSourceVolume,
 		block_storage.NewDataSourceSnapshot,
+		kms.NewDataSourceKMSKeyStore,
 		elasticip.NewDataSource,
 		instance.NewDataSource,
 		instance.NewDataSourceList,

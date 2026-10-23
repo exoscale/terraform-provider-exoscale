@@ -16,6 +16,8 @@ An External Key Store connects Exoscale KMS to an XKS proxy that you operate, so
 [Set Up an External Key Store](https://community.exoscale.com/product/security/kms/how-to/set-up-external-key-store/)
 for the proxy requirements.
 
+Corresponding data source: [exoscale_kms_key_store](../data-sources/kms_key_store.md).
+
 ~> `proxy.secret_key_wo` is a write-only attribute: it requires Terraform 1.11 or later.
 
 ## Example Usage

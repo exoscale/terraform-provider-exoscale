@@ -729,21 +729,28 @@ func (m *ResourceKMSKeyStoreModel) setFromAPI(ctx context.Context, keyStore *exo
 	diags.Append(d...)
 	m.Proxy = proxyObj
 
-	m.Health = types.ObjectNull(KMSKeyStoreHealthModel{}.Types())
-	if keyStore.Health != nil {
-		health := KMSKeyStoreHealthModel{
-			Status:       types.StringValue(string(keyStore.Health.Status)),
-			StatusReason: types.StringValue(keyStore.Health.StatusReason),
-			CheckedAt:    types.StringNull(),
-			ErrorDetail:  types.StringValue(keyStore.Health.ErrorDetail),
-		}
-		if !keyStore.Health.CheckedAT.IsZero() {
-			health.CheckedAt = types.StringValue(keyStore.Health.CheckedAT.Format(time.RFC3339))
-		}
-		healthObj, d := types.ObjectValueFrom(ctx, KMSKeyStoreHealthModel{}.Types(), health)
-		diags.Append(d...)
-		m.Health = healthObj
-	}
+	health, d := keyStoreHealthValue(ctx, keyStore.Health)
+	diags.Append(d...)
+	m.Health = health
 
 	return diags
+}
+
+// keyStoreHealthValue converts the latest health check of a key store, if any, to a Terraform object.
+func keyStoreHealthValue(ctx context.Context, h *exoscale.KeyStoreHealth) (types.Object, diag.Diagnostics) {
+	if h == nil {
+		return types.ObjectNull(KMSKeyStoreHealthModel{}.Types()), nil
+	}
+
+	health := KMSKeyStoreHealthModel{
+		Status:       types.StringValue(string(h.Status)),
+		StatusReason: types.StringValue(h.StatusReason),
+		CheckedAt:    types.StringNull(),
+		ErrorDetail:  types.StringValue(h.ErrorDetail),
+	}
+	if !h.CheckedAT.IsZero() {
+		health.CheckedAt = types.StringValue(h.CheckedAT.Format(time.RFC3339))
+	}
+
+	return types.ObjectValueFrom(ctx, KMSKeyStoreHealthModel{}.Types(), health)
 }
