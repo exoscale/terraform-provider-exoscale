@@ -6,6 +6,11 @@ FEATURES:
 
 - `exoscale_compute_instance`: new `vpc` block to attach the instance to VPC subnets, in strict interface order.
 
+FEATURES:
+
+- Dedicated Inference: add `exoscale_ai_model` resource to manage AI models.
+- Dedicated Inference: add `exoscale_ai_deployment` resource to manage AI model deployments on GPU instances.
+
 BUG FIXES:
 
 - `exoscale_block_storage_volume`: deleting a volume that is already gone (API returned 404) no longer fails.

@@ -23,6 +23,7 @@ import (
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/ai"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/anti_affinity_group"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/block_storage"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/database"
@@ -266,6 +267,7 @@ func (p *ExoscaleProvider) DataSources(ctx context.Context) []func() datasource.
 func (p *ExoscaleProvider) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		anti_affinity_group.NewResource,
+
 		database.DeprecatedNewResource,
 		database.NewServiceResource,
 		database.NewMysqlUserResource,
@@ -283,31 +285,48 @@ func (p *ExoscaleProvider) Resources(ctx context.Context) []func() resource.Reso
 		database.NewExternalEndpointElasticsearchResource,
 		database.NewExternalEndpointRsyslogResource,
 		database.NewExternalIntegrationResource,
+
 		iam.NewResourceOrgPolicy,
 		iam.NewResourceRole,
 		iam.NewResourceAPIKey,
+
 		block_storage.NewResourceVolume,
 		block_storage.NewResourceSnapshot,
+
 		sos_bucket_policy.NewResourceSOSBucketPolicy,
+
 		security_group.NewResource,
 		security_group.NewResourceRule,
+
 		sks.NewResourceCluster,
 		sks.NewResourceNodepool,
 		sks.NewResourceKubeconfig,
+
 		privatenetwork.NewResource,
+
 		kms.NewResourceKMSKey,
+
 		domain.NewResource,
 		domain.NewResourceRecord,
+
 		vpc.NewResource,
 		vpc.NewResourceSubnet,
 		vpc.NewResourceRoute,
+
 		template.NewResourceTemplate,
+
 		elasticip.NewResource,
+
 		instance.NewResource,
 		instance_pool.NewResource,
+
 		nlb.NewResource,
 		nlb.NewResourceService,
+
 		ssh_key.NewResource,
+
+		ai.NewResourceAIModel,
+		ai.NewResourceAIDeployment,
 	}
 }
 
