@@ -2,6 +2,7 @@ package kms
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -223,7 +224,14 @@ func (d *DataSourceKMSKeyStore) Read(ctx context.Context, req datasource.ReadReq
 		}
 		entry, err := keyStores.FindListKeyStoresResponseEntry(data.Name.ValueString())
 		if err != nil {
-			resp.Diagnostics.AddError(fmt.Sprintf("KMS key store %q not found", data.Name.ValueString()), err.Error())
+			if errors.Is(err, exoscale.ErrNotFound) {
+				resp.Diagnostics.AddError(
+					fmt.Sprintf("KMS key store %q not found", data.Name.ValueString()),
+					fmt.Sprintf("No key store named %q in zone %s.", data.Name.ValueString(), data.Zone.ValueString()),
+				)
+				return
+			}
+			resp.Diagnostics.AddError("unable to find KMS key store", err.Error())
 			return
 		}
 		id = entry.ID
