@@ -533,18 +533,15 @@ func (r *ResourceKMSKeyStore) Update(ctx context.Context, req resource.UpdateReq
 		return
 	}
 
-	updateReq := exoscale.UpdateKeyStoreRequest{}
-	updated := false
-
+	// Only the changed settings are sent.
+	var updateReq exoscale.UpdateKeyStoreRequest
 	if !plan.Description.Equal(state.Description) {
 		updateReq.Description = plan.Description.ValueString()
-		updated = true
 	}
 
-	proxyUpdate := exoscale.UpdateKeyStoreProxy{}
+	var proxyUpdate exoscale.UpdateKeyStoreProxy
 	if !planProxy.Endpoint.Equal(stateProxy.Endpoint) {
 		proxyUpdate.Endpoint = planProxy.Endpoint.ValueString()
-		updated = true
 	}
 	// The access key is only accepted together with the secret key, which can only be sent on a version change.
 	if !planProxy.SecretKeyWOVersion.Equal(stateProxy.SecretKeyWOVersion) {
@@ -552,9 +549,8 @@ func (r *ResourceKMSKeyStore) Update(ctx context.Context, req resource.UpdateReq
 			Key:    planProxy.AccessKey.ValueString(),
 			Secret: configProxy.SecretKeyWO.ValueString(),
 		}
-		updated = true
 	}
-	if proxyUpdate.Endpoint != "" || proxyUpdate.Auth != nil {
+	if proxyUpdate != (exoscale.UpdateKeyStoreProxy{}) {
 		updateReq.Proxy = &proxyUpdate
 	}
 
@@ -576,7 +572,7 @@ func (r *ResourceKMSKeyStore) Update(ctx context.Context, req resource.UpdateReq
 		disconnectedForUpdate = wantConnected
 	}
 
-	if updated {
+	if updateReq != (exoscale.UpdateKeyStoreRequest{}) {
 		if _, err := client.UpdateKeyStore(ctx, id, updateReq); err != nil {
 			resp.Diagnostics.AddError("API error updating KMS key store", apiErrorMessage(err))
 
@@ -728,14 +724,15 @@ func (m *ResourceKMSKeyStoreModel) setFromAPI(ctx context.Context, keyStore *exo
 	m.StatusSince = types.StringValue(keyStore.StatusSince.Format(time.RFC3339))
 	m.CreatedAt = types.StringValue(keyStore.CreatedAT.Format(time.RFC3339))
 
-	proxy := ResourceKMSKeyStoreProxyModel{
-		SecretKeyWO:        types.StringNull(),
-		SecretKeyWOVersion: types.Int64Null(),
-	}
+	// secret_key_wo_version only exists in Terraform: keep it from the current model
+	// (it stays null when there is none, e.g. after an import).
+	var proxy ResourceKMSKeyStoreProxyModel
 	if !m.Proxy.IsNull() && !m.Proxy.IsUnknown() {
 		diags.Append(m.Proxy.As(ctx, &proxy, basetypes.ObjectAsOptions{})...)
-		proxy.SecretKeyWO = types.StringNull()
 	}
+
+	// Everything else comes from the API, which never returns the secret.
+	proxy.SecretKeyWO = types.StringNull()
 	proxy.Endpoint = types.StringNull()
 	proxy.AccessKey = types.StringNull()
 	if keyStore.Proxy != nil {
