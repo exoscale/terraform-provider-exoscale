@@ -79,7 +79,7 @@ type keyStoreTestdataSpec struct {
 // The test XKS proxy that KMS deploys in each zone (sof1 is the location of testutils.TestZoneName),
 // with its dummy credentials: see .kargo/xks-proxy.edn in the KMS repository.
 const (
-	testXKSProxyEndpoint  = "https://kms-test-xks-proxy.sof1-prod.exoscale.ch/example/uri/path/prefix/kms/xks/v1"
+	testXKSProxyEndpoint  = "https://sof1.prod.kms-test.exoscale.ch/example/uri/path/prefix/kms/xks/v1"
 	testXKSProxyAccessKey = "BETWEEN2TENAND3TENCHARACTERS"
 	testXKSProxySecretKey = "PleaseReplaceThisWithSomeSecretOfLength43To64"
 )
