@@ -21,7 +21,7 @@ import (
 	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
 )
 
-const ResourceOrgPolicyDescription = `Manage Exoscale [IAM](https://community.exoscale.com/documentation/iam/) Organization Policy.`
+const ResourceOrgPolicyDescription = `Manage Exoscale [IAM](https://community.exoscale.com/product/security/iam/) Organization Policy.`
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &ResourceOrgPolicy{}

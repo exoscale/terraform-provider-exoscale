@@ -11,39 +11,14 @@ import (
 	"net"
 	"strings"
 
-	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
-	exov2 "github.com/exoscale/egoscale/v2"
 	exoscale "github.com/exoscale/egoscale/v3"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 )
-
-// ZonedStateContextFunc is an alternative resource importer function to be
-// used for importing zone-local resources, where the resource ID is expected
-// to be suffixed with "@ZONE" (e.g. "c01af84d-6ac6-4784-98bb-127c98be8258@ch-gva-2").
-// Upon successful execution, the returned resource state contains the ID of the
-// resource and the "zone" attribute set to the value parsed from the import ID.
-func ZonedStateContextFunc(_ context.Context, d *schema.ResourceData, _ any) ([]*schema.ResourceData, error) {
-	parts := strings.SplitN(d.Id(), "@", 2)
-	if len(parts) != 2 {
-		return nil, fmt.Errorf(`invalid ID %q, expected format "<ID>@<ZONE>"`, d.Id())
-	}
-
-	d.SetId(parts[0])
-
-	if err := d.Set("zone", parts[1]); err != nil {
-		return nil, err
-	}
-
-	return []*schema.ResourceData{d}, nil
-}
 
 type IDStringer interface {
 	Id() string
@@ -115,15 +90,6 @@ func NonEmptyStringPtr(s string) *string {
 	return nil
 }
 
-func SchemaSetToStringArray(set *schema.Set) []string {
-	array := make([]string, set.Len())
-	for i, group := range set.List() {
-		array[i] = group.(string)
-	}
-
-	return array
-}
-
 func Unique(s []string) []string {
 	inResult := map[string]struct{}{}
 	var result []string
@@ -134,12 +100,6 @@ func Unique(s []string) []string {
 		}
 	}
 	return result
-}
-
-// SuppressCaseFunc https://www.terraform.io/plugin/sdkv2/schemas/schema-behaviors#diffsuppressfunc
-// Do no show case differences between state and resource
-func SuppressCaseDiff(k, old, new string, d *schema.ResourceData) bool {
-	return strings.EqualFold(old, new)
 }
 
 // EncodeUserData does compression and base64 encoding, used in resource_exoscale_compute[_instance[_pool]]
@@ -189,81 +149,6 @@ func DecodeUserData(data string) (string, error) {
 	}
 
 	return string(userData), nil
-}
-
-// normalizeUserData decodes and optionally decompresses user data for comparison.
-func normalizeUserData(v string) string {
-	normalized, err := DecodeUserData(v)
-	if err != nil {
-		return v
-	}
-	return normalized
-}
-
-// SuppressUserDataDiff ignores diffs caused by the provider decoding user_data
-// on read when the user originally supplied it pre-encoded (base64 or gzip+base64).
-func SuppressUserDataDiff(_, old, new string, _ *schema.ResourceData) bool {
-	return normalizeUserData(old) == normalizeUserData(new)
-}
-
-// ParseIAMAccessKeyResource parses IAM key format
-func ParseIAMAccessKeyResource(v string) (*exov2.IAMAccessKeyResource, error) {
-	var iamAccessKeyResource exov2.IAMAccessKeyResource
-
-	parts := strings.SplitN(v, ":", 2)
-	if len(parts) != 2 {
-		return nil, fmt.Errorf("invalid format")
-	}
-	iamAccessKeyResource.ResourceName = parts[1]
-
-	parts = strings.SplitN(parts[0], "/", 2)
-	if len(parts) != 2 {
-		return nil, fmt.Errorf("invalid format")
-	}
-	iamAccessKeyResource.Domain = parts[0]
-	iamAccessKeyResource.ResourceType = parts[1]
-
-	if iamAccessKeyResource.Domain == "" ||
-		iamAccessKeyResource.ResourceType == "" ||
-		iamAccessKeyResource.ResourceName == "" {
-		return nil, fmt.Errorf("invalid format")
-	}
-
-	return &iamAccessKeyResource, nil
-}
-
-// ValidateZone validates zone string.
-func ValidateZone() schema.SchemaValidateDiagFunc {
-	return validation.ToDiagFunc(validation.StringInSlice(config.Zones, false))
-}
-
-// ValidateComputeInstanceType validates that the given field contains a valid Exoscale Compute instance type.
-func ValidateComputeInstanceType(v any, _ cty.Path) diag.Diagnostics {
-	value, ok := v.(string)
-	if !ok {
-		return diag.Errorf("expected field %q type to be string", v)
-	}
-
-	if !strings.Contains(value, ".") {
-		return diag.Errorf(`invalid value %q, expected format "FAMILY.SIZE"`, value)
-	}
-
-	return nil
-}
-
-// ValidateComputeUserData validates that the given field contains a valid data.
-func ValidateComputeUserData(v any, _ cty.Path) diag.Diagnostics {
-	value, ok := v.(string)
-	if !ok {
-		return diag.Errorf("expected field %q type to be string", v)
-	}
-
-	_, _, err := EncodeUserData(value)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	return nil
 }
 
 // ValidateLowercaseString validates that the given fields contains only lowercase characters

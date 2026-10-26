@@ -1,0 +1,11 @@
+resource "exoscale_anti_affinity_group" "test" {
+  name = "terraform-provider-test-{{ .ID }}"
+}
+
+data "exoscale_anti_affinity_group" "by_id" {
+  id = exoscale_anti_affinity_group.test.id
+}
+
+data "exoscale_anti_affinity_group" "by_name" {
+  name = exoscale_anti_affinity_group.test.name
+}

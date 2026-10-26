@@ -23,16 +23,21 @@ import (
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/anti_affinity_group"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/block_storage"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/database"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/domain"
+	elasticip "github.com/exoscale/terraform-provider-exoscale/pkg/resources/elastic_ip"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/iam"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/instance"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/instance_pool"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/kms"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/nlb"
 	privatenetwork "github.com/exoscale/terraform-provider-exoscale/pkg/resources/private_network"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/security_group"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/sks"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/sos_bucket_policy"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/ssh_key"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/template"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/vpc"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/zones"
@@ -232,12 +237,18 @@ func (p *ExoscaleProvider) DataSources(ctx context.Context) []func() datasource.
 		func() datasource.DataSource {
 			return &zones.ZonesDataSource{}
 		},
+		anti_affinity_group.NewDataSource,
 		database.NewDataSourceURI,
 		iam.NewDataSourceOrgPolicy,
 		iam.NewDataSourceRole,
 		iam.NewDataSourceAPIKey,
 		block_storage.NewDataSourceVolume,
 		block_storage.NewDataSourceSnapshot,
+		elasticip.NewDataSource,
+		instance.NewDataSource,
+		instance.NewDataSourceList,
+		instance_pool.NewDataSource,
+		instance_pool.NewDataSourceList,
 		nlb.NewDataSource,
 		nlb.NewDataSourceServiceList,
 		sos_bucket_policy.NewDataSourceSOSBucketPolicy,
@@ -251,11 +262,13 @@ func (p *ExoscaleProvider) DataSources(ctx context.Context) []func() datasource.
 		domain.NewDataSourceRecord,
 		vpc.NewDataSource,
 		vpc.NewDataSourceSubnet,
+		template.NewDataSourceTemplate,
 	}
 }
 
 func (p *ExoscaleProvider) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
+		anti_affinity_group.NewResource,
 		database.DeprecatedNewResource,
 		database.NewServiceResource,
 		database.NewMysqlUserResource,
@@ -292,8 +305,12 @@ func (p *ExoscaleProvider) Resources(ctx context.Context) []func() resource.Reso
 		vpc.NewResourceSubnet,
 		vpc.NewResourceRoute,
 		template.NewResourceTemplate,
+		elasticip.NewResource,
+		instance.NewResource,
+		instance_pool.NewResource,
 		nlb.NewResource,
 		nlb.NewResourceService,
+		ssh_key.NewResource,
 	}
 }
 
@@ -303,12 +320,12 @@ func New() func() provider.Provider {
 	}
 }
 
-var UserAgent = fmt.Sprintf("Exoscale-Terraform-Provider/%s (%s) Terraform-SDK/%s Terraform-framework/%s %s",
+var UserAgent = fmt.Sprintf("Exoscale-Terraform-Provider/%s (%s) Terraform-framework/%s %s",
 	version.Version,
 	version.Commit,
-	getModVersion("github.com/hashicorp/terraform-plugin-sdk/v2"),
 	getModVersion("github.com/hashicorp/terraform-plugin-framework"),
-	exov2.UserAgent)
+	exov2.UserAgent,
+)
 
 func getModVersion(module string) string {
 	// Read Build info

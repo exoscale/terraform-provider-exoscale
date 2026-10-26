@@ -1,0 +1,52 @@
+data "exoscale_template" "ubuntu" {
+  zone = "{{ .Zone }}"
+  name = "Linux Ubuntu 22.04 LTS 64-bit"
+}
+
+resource "exoscale_anti_affinity_group" "test" {
+  name = "terraform-provider-test-{{ .ID }}"
+}
+
+resource "exoscale_private_network" "test" {
+  zone = "{{ .Zone }}"
+  name = "terraform-provider-test-{{ .ID }}"
+}
+
+resource "exoscale_ssh_key" "test" {
+  name       = "terraform-provider-test-{{ .ID }}"
+  public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMFR4GXmZJ6vf9+ou0OS0kpiu8hMl/0F1meNk6G9+mkZ test"
+}
+
+resource "exoscale_instance_pool" "test" {
+  zone                    = "{{ .Zone }}"
+  name                    = "terraform-provider-test-{{ .ID }}"
+  description             = "description-{{ .ID }}"
+  template_id             = data.exoscale_template.ubuntu.id
+  instance_type           = "standard.tiny"
+  instance_prefix         = "test"
+  size                    = 1
+  disk_size               = 10
+  ipv6                    = false
+  key_pair                = exoscale_ssh_key.test.name
+  anti_affinity_group_ids = [exoscale_anti_affinity_group.test.id]
+  network_ids             = [exoscale_private_network.test.id]
+  user_data               = "user-data-{{ .ID }}"
+
+  labels = {
+    test = "label-{{ .ID }}"
+  }
+
+  timeouts {
+    delete = "10m"
+  }
+}
+
+data "exoscale_instance_pool" "by_id" {
+  zone = exoscale_instance_pool.test.zone
+  id   = exoscale_instance_pool.test.id
+}
+
+data "exoscale_instance_pool" "by_name" {
+  zone = exoscale_instance_pool.test.zone
+  name = exoscale_instance_pool.test.name
+}

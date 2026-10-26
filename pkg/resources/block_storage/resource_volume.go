@@ -547,6 +547,11 @@ func (r *ResourceVolume) Delete(ctx context.Context, req resource.DeleteRequest,
 		id,
 	)
 	if err != nil {
+		if errors.Is(err, exoscale.ErrNotFound) {
+			// Volume is already gone, nothing left to delete.
+			return
+		}
+
 		// Ideally we would have a custom error defined in OpenAPI spec & egoscale.
 		// For now we just check the error text.
 		if strings.HasSuffix(err.Error(), "Volume not attached") {
@@ -575,6 +580,10 @@ func (r *ResourceVolume) Delete(ctx context.Context, req resource.DeleteRequest,
 		id,
 	)
 	if err != nil {
+		if errors.Is(err, exoscale.ErrNotFound) {
+			return
+		}
+
 		resp.Diagnostics.AddError(
 			"Unable to delete volume",
 			err.Error(),

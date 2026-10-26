@@ -18,7 +18,7 @@ import (
 	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
 )
 
-const DataSourceRoleDescription = `Fetch Exoscale [IAM](https://community.exoscale.com/documentation/iam/) Role.
+const DataSourceRoleDescription = `Fetch Exoscale [IAM](https://community.exoscale.com/product/security/iam/) Role.
 
 Corresponding resource: [exoscale_iam_role](../resources/iam_role.md).`
 

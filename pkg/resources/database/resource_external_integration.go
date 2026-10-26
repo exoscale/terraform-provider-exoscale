@@ -58,7 +58,7 @@ func (r *ExternalIntegrationResource) Metadata(_ context.Context, req resource.M
 
 func (r *ExternalIntegrationResource) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Manage Exoscale DBaaS [External Integrations](https://community.exoscale.com/documentation/dbaas/) — attach a DBaaS service to an external endpoint for log/metrics forwarding.",
+		MarkdownDescription: "Manage Exoscale DBaaS [External Integrations](https://community.exoscale.com/product/dbaas/) — attach a DBaaS service to an external endpoint for log/metrics forwarding.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				MarkdownDescription: "The ID of this resource (integration UUID).",

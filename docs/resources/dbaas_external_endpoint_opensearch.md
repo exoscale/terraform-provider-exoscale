@@ -3,12 +3,12 @@
 page_title: "exoscale_dbaas_external_endpoint_opensearch Resource - terraform-provider-exoscale"
 subcategory: ""
 description: |-
-  Manage Exoscale DBaaS External Endpoint https://community.exoscale.com/documentation/dbaas/ for OpenSearch logs integration.
+  Manage Exoscale DBaaS External Endpoint https://community.exoscale.com/product/dbaas/ for OpenSearch logs integration.
 ---
 
 # exoscale_dbaas_external_endpoint_opensearch (Resource)
 
-Manage Exoscale DBaaS [External Endpoint](https://community.exoscale.com/documentation/dbaas/) for OpenSearch logs integration.
+Manage Exoscale DBaaS [External Endpoint](https://community.exoscale.com/product/dbaas/) for OpenSearch logs integration.
 
 
 

@@ -54,7 +54,7 @@ func (r *ExternalEndpointDatadogResource) Metadata(_ context.Context, req resour
 
 func (r *ExternalEndpointDatadogResource) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Manage Exoscale DBaaS [External Endpoint](https://community.exoscale.com/documentation/dbaas/) for Datadog integration.",
+		MarkdownDescription: "Manage Exoscale DBaaS [External Endpoint](https://community.exoscale.com/product/dbaas/) for Datadog integration.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				MarkdownDescription: "The ID of this resource.",

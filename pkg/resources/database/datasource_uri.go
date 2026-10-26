@@ -21,7 +21,7 @@ import (
 	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
 )
 
-const DataSourceURIDescription = `Fetch Exoscale [Database](https://community.exoscale.com/documentation/dbaas/) connection URI data.
+const DataSourceURIDescription = `Fetch Exoscale [Database](https://community.exoscale.com/product/dbaas/) connection URI data.
 
 This data source returns database conection details of the default (admin) user only.
 

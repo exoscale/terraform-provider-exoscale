@@ -1,149 +1,51 @@
 package instance_test
 
 import (
-	"bytes"
 	"fmt"
 	"regexp"
 	"testing"
-	"text/template"
+	"time"
 
-	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/testutils"
 )
 
-var computeInstanceResource = `
-data "exoscale_template" "my_template" {
-  zone = "{{.Zone}}"
-  name = "Linux Ubuntu 22.04 LTS 64-bit"
-}
-
-data "exoscale_security_group" "default" {
-  name = "default"
-}
-
-{{ if not .DeleteInstanceResource }}
-resource "exoscale_compute_instance" "my_instance" {
-  zone = "{{.Zone}}"
-  name = "{{.Name}}"
-
-  security_group_ids      = [
-    data.exoscale_security_group.default.id,
-  ]
-
-  template_id = data.exoscale_template.my_template.id
-  type        = "standard.micro"
-  disk_size   = 10
-
-{{ if .SetDestroyProtected }}
-  destroy_protected = {{.DestroyProtected}}
-{{ end }}
-}
-{{ end }}
-`
-
-var (
-	destroyProtectionTmpl  = template.Must(template.New("compute_instance").Parse(computeInstanceResource))
-	destroyProtectionError = regexp.MustCompile(`Forbidden: Operation delete-instance on resource .* is forbidden - reason: manual instance protection`)
-)
-
-type destroyProtectionTestData struct {
-	Zone                   string
-	SetDestroyProtected    bool
-	DestroyProtected       bool
-	Name                   string
-	DeleteInstanceResource bool
-}
-
-func buildTestConfig(t *testing.T, testData destroyProtectionTestData) string {
-	var tmplBuf bytes.Buffer
-
-	err := destroyProtectionTmpl.Execute(&tmplBuf, testData)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	return tmplBuf.String()
-}
-
-func checkDestroyProtection(expected string) func(s *terraform.State) error {
-	return func(s *terraform.State) error {
-		isDestroyProtected, err := testutils.AttrFromState(s, "exoscale_compute_instance.my_instance", "destroy_protected")
-		if err != nil {
-			return err
-		}
-
-		if expected != isDestroyProtected {
-			return fmt.Errorf("destroy_protected does not match expected value: %q; is %q", expected, isDestroyProtected)
-		}
-
-		return nil
-	}
-}
-
-func checkResourceDoesNotExist(name string) func(s *terraform.State) error {
-	return func(s *terraform.State) error {
-		if _, ok := s.RootModule().Resources[name]; ok {
-			return fmt.Errorf("compute instance was not deleted after destroy protection was removed")
-		}
-
-		return nil
-	}
-}
+// The error detail is wrapped by Terraform: words may be separated by a newline.
+var destroyProtectionError = regexp.MustCompile(`Forbidden: Operation delete-instance on\s+resource .* is forbidden - reason: manual\s+instance protection`)
 
 func testExplicitDestroyProtection(t *testing.T) {
 	t.Parallel()
 
-	instanceName := acctest.RandomWithPrefix(testutils.Prefix)
+	testdataSpec := testutils.TestdataSpec{
+		ID:   time.Now().UnixNano(),
+		Zone: testutils.TestZoneName,
+	}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testutils.AccPreCheck(t) },
 		ProtoV6ProviderFactories: testutils.TestAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
+			// 1 Create a protected instance.
 			{
-				// test instance creation with the destroy_protected field
-				Config: buildTestConfig(t, destroyProtectionTestData{
-					Zone:                testutils.TestZoneName,
-					SetDestroyProtected: true,
-					DestroyProtected:    true,
-					Name:                instanceName,
-				}),
-				Check: checkDestroyProtection("true"),
+				Config: testutils.ParseTestdataConfig("./testdata/013.destroy_protection_enabled.tf.tmpl", &testdataSpec),
+				Check:  resource.TestCheckResourceAttr(instanceResource, "destroy_protected", "true"),
 			},
+			// 2 The API refuses to delete it.
 			{
-				// test that the API returns an error if we try to delete the protected instance
-				Config: buildTestConfig(t, destroyProtectionTestData{
-					Zone:                   testutils.TestZoneName,
-					SetDestroyProtected:    true,
-					DestroyProtected:       true,
-					Name:                   instanceName,
-					DeleteInstanceResource: true,
-				}),
-				Check:       checkDestroyProtection("true"),
+				Config:      testutils.ParseTestdataConfig("./testdata/016.instance_removed.tf.tmpl", &testdataSpec),
 				ExpectError: destroyProtectionError,
 			},
+			// 3 Remove the protection.
 			{
-				// test that we can remove the destroy protection
-				Config: buildTestConfig(t, destroyProtectionTestData{
-					Zone:                testutils.TestZoneName,
-					SetDestroyProtected: true,
-					DestroyProtected:    false,
-					Name:                instanceName,
-				}),
-				Check: checkDestroyProtection("false"),
+				Config: testutils.ParseTestdataConfig("./testdata/014.destroy_protection_disabled.tf.tmpl", &testdataSpec),
+				Check:  resource.TestCheckResourceAttr(instanceResource, "destroy_protected", "false"),
 			},
+			// 4 The instance can be deleted.
 			{
-				// test that we can delete the instance after removing the destroy protection
-				Config: buildTestConfig(t, destroyProtectionTestData{
-					Zone:                   testutils.TestZoneName,
-					SetDestroyProtected:    true,
-					DestroyProtected:       false,
-					Name:                   instanceName,
-					DeleteInstanceResource: true,
-				}),
-				Check: checkResourceDoesNotExist("exoscale_compute_instance.my-instance"),
+				Config: testutils.ParseTestdataConfig("./testdata/016.instance_removed.tf.tmpl", &testdataSpec),
+				Check:  checkResourceDoesNotExist(instanceResource),
 			},
 		},
 	})
@@ -152,59 +54,48 @@ func testExplicitDestroyProtection(t *testing.T) {
 func testDefaultDestroyProtection(t *testing.T) {
 	t.Parallel()
 
-	instanceName := acctest.RandomWithPrefix(testutils.Prefix)
+	testdataSpec := testutils.TestdataSpec{
+		ID:   time.Now().UnixNano(),
+		Zone: testutils.TestZoneName,
+	}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testutils.AccPreCheck(t) },
 		ProtoV6ProviderFactories: testutils.TestAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
+			// 1 Create an instance without destroy_protected.
 			{
-				// test instance creation without the destroy_protected field
-				Config: buildTestConfig(t, destroyProtectionTestData{
-					Zone: testutils.TestZoneName,
-					Name: instanceName,
-				}),
+				Config: testutils.ParseTestdataConfig("./testdata/015.destroy_protection_unset.tf.tmpl", &testdataSpec),
 			},
-
-			// test updating an instance to set the destroy_protected field
+			// 2 Protect it.
 			{
-				Config: buildTestConfig(t, destroyProtectionTestData{
-					Zone:                testutils.TestZoneName,
-					SetDestroyProtected: true,
-					DestroyProtected:    true,
-					Name:                instanceName,
-				}),
-				Check: checkDestroyProtection("true"),
+				Config: testutils.ParseTestdataConfig("./testdata/013.destroy_protection_enabled.tf.tmpl", &testdataSpec),
+				Check:  resource.TestCheckResourceAttr(instanceResource, "destroy_protected", "true"),
 			},
+			// 3 The API refuses to delete it.
 			{
-				Config: buildTestConfig(t, destroyProtectionTestData{
-					Zone:                   testutils.TestZoneName,
-					SetDestroyProtected:    true,
-					DestroyProtected:       true,
-					Name:                   instanceName,
-					DeleteInstanceResource: true,
-				}),
-				Check:       checkDestroyProtection("true"),
+				Config:      testutils.ParseTestdataConfig("./testdata/016.instance_removed.tf.tmpl", &testdataSpec),
 				ExpectError: destroyProtectionError,
 			},
-
-			// test that removing the `destroy_protected` field removes the destroy protection
-			// behaving as if false were the default value.
+			// 4 Dropping destroy_protected from the configuration removes the
+			// protection, as if false were the default value.
 			{
-				Config: buildTestConfig(t, destroyProtectionTestData{
-					Zone:                testutils.TestZoneName,
-					SetDestroyProtected: false,
-					Name:                instanceName,
-				}),
+				Config: testutils.ParseTestdataConfig("./testdata/015.destroy_protection_unset.tf.tmpl", &testdataSpec),
 			},
+			// 5 The instance can be deleted.
 			{
-				Config: buildTestConfig(t, destroyProtectionTestData{
-					Zone:                   testutils.TestZoneName,
-					SetDestroyProtected:    false,
-					Name:                   instanceName,
-					DeleteInstanceResource: true,
-				}),
+				Config: testutils.ParseTestdataConfig("./testdata/016.instance_removed.tf.tmpl", &testdataSpec),
 			},
 		},
 	})
+}
+
+func checkResourceDoesNotExist(name string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		if _, ok := s.RootModule().Resources[name]; ok {
+			return fmt.Errorf("%s was not deleted after its destroy protection was removed", name)
+		}
+
+		return nil
+	}
 }

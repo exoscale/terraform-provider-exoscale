@@ -4,159 +4,243 @@ import (
 	"context"
 	"errors"
 
-	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
-	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
-
+	exoscale "github.com/exoscale/egoscale/v3"
+	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
+	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	egoscale "github.com/exoscale/egoscale/v2"
-	exoapi "github.com/exoscale/egoscale/v2/api"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
+	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
 )
 
-func Resource() *schema.Resource {
-	return &schema.Resource{
-		Description: `Manage Exoscale [Anti-Affinity Groups](https://community.exoscale.com/product/compute/instances/how-to/anti-affinity/).
+const markdownDescriptionResource = `Manage Exoscale [Anti-Affinity Groups](https://community.exoscale.com/product/compute/instances/how-to/anti-affinity/).
 
-Corresponding data source: [exoscale_anti_affinity_group](../data-sources/anti_affinity_group.md).`,
-		Schema: map[string]*schema.Schema{
-			AttrDescription: {
-				Description: "A free-form text describing the group.",
-				Type:        schema.TypeString,
-				Optional:    true,
-				ForceNew:    true,
+Corresponding data source: [exoscale_anti_affinity_group](../data-sources/anti_affinity_group.md).`
+
+var _ resource.ResourceWithConfigure = (*Resource)(nil)
+var _ resource.ResourceWithImportState = (*Resource)(nil)
+
+type Resource struct {
+	client *exoscale.Client
+}
+
+func NewResource() resource.Resource {
+	return &Resource{}
+}
+
+type ResourceModel struct {
+	ID          types.String `tfsdk:"id"`
+	Name        types.String `tfsdk:"name"`
+	Description types.String `tfsdk:"description"`
+
+	Timeouts timeouts.Value `tfsdk:"timeouts"`
+}
+
+func (r *Resource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_anti_affinity_group"
+}
+
+func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		Description:         "Manage Exoscale Anti-Affinity Groups.",
+		MarkdownDescription: markdownDescriptionResource,
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
+				Description:         "The anti-affinity group ID.",
+				MarkdownDescription: "The anti-affinity group ID.",
+				Computed:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
-			AttrName: {
-				Description: "The anti-affinity group name.",
-				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true,
+			"name": schema.StringAttribute{
+				Description:         "❗ The anti-affinity group name.",
+				MarkdownDescription: "❗ The anti-affinity group name.",
+				Required:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+			},
+			"description": schema.StringAttribute{
+				Description:         "❗ A free-form text describing the group.",
+				MarkdownDescription: "❗ A free-form text describing the group.",
+				Optional:            true,
+				Computed:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+					// The SDKv2 implementation wrote "" in the state for a
+					// group without description: null and "" are the same.
+					stringplanmodifier.RequiresReplaceIf(
+						func(_ context.Context, req planmodifier.StringRequest, resp *stringplanmodifier.RequiresReplaceIfFuncResponse) {
+							resp.RequiresReplace = !req.ConfigValue.IsNull() &&
+								req.ConfigValue.ValueString() != req.StateValue.ValueString()
+						},
+						"Changing the description replaces the anti-affinity group.",
+						"Changing the description replaces the anti-affinity group.",
+					),
+				},
 			},
 		},
-
-		CreateContext: rCreate,
-		ReadContext:   rRead,
-		DeleteContext: rDelete,
-
-		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
-		},
-
-		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(config.DefaultTimeout),
-			Read:   schema.DefaultTimeout(config.DefaultTimeout),
-			Delete: schema.DefaultTimeout(config.DefaultTimeout),
+		Blocks: map[string]schema.Block{
+			"timeouts": timeouts.BlockAll(ctx),
 		},
 	}
 }
 
-func rCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning create", map[string]any{
-		"id": utils.IDString(d, Name),
-	})
-
-	zone := config.DefaultZone
-
-	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutCreate))
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(config.GetEnvironment(meta), zone))
-	defer cancel()
-
-	client, err := config.GetClient(meta)
-	if err != nil {
-		return diag.FromErr(err)
+func (r *Resource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	if req.ProviderData == nil {
+		return
 	}
 
-	res, err := client.CreateAntiAffinityGroup(ctx, zone, &egoscale.AntiAffinityGroup{
-		Name:        utils.NonEmptyStringPtr(d.Get(AttrName).(string)),
-		Description: utils.NonEmptyStringPtr(d.Get(AttrDescription).(string)),
-	})
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	d.SetId(*res.ID)
-
-	tflog.Debug(ctx, "create finished successfully", map[string]any{
-		"id": utils.IDString(d, Name),
-	})
-
-	return rRead(ctx, d, meta)
+	r.client = req.ProviderData.(*providerConfig.ExoscaleProviderConfig).ClientV3
 }
 
-func rRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning read", map[string]any{
-		"id": utils.IDString(d, Name),
-	})
+func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var plan ResourceModel
 
-	zone := config.DefaultZone
-
-	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutRead))
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(config.GetEnvironment(meta), zone))
-	defer cancel()
-
-	client, err := config.GetClient(meta)
-	if err != nil {
-		return diag.FromErr(err)
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
-	res, err := client.GetAntiAffinityGroup(ctx, zone, d.Id())
+	timeout, diags := plan.Timeouts.Create(ctx, config.DefaultTimeout)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	op, err := r.client.CreateAntiAffinityGroup(ctx, exoscale.CreateAntiAffinityGroupRequest{
+		Name:        plan.Name.ValueString(),
+		Description: plan.Description.ValueString(),
+	})
 	if err != nil {
-		if errors.Is(err, exoapi.ErrNotFound) {
+		resp.Diagnostics.AddError("unable to create anti-affinity group", err.Error())
+		return
+	}
+
+	op, err = r.client.Wait(ctx, op, exoscale.OperationStateSuccess)
+	if err != nil {
+		resp.Diagnostics.AddError("create anti-affinity group operation failed", err.Error())
+		return
+	}
+
+	plan.ID = types.StringValue(op.Reference.ID.String())
+	if plan.Description.IsUnknown() {
+		plan.Description = types.StringNull()
+	}
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+
+	tflog.Trace(ctx, "resource created", map[string]any{
+		"id": plan.ID.ValueString(),
+	})
+}
+
+func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var state ResourceModel
+
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	timeout, diags := state.Timeouts.Read(ctx, config.DefaultTimeout)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	id, err := exoscale.ParseUUID(state.ID.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError("unable to parse anti-affinity group ID", err.Error())
+		return
+	}
+
+	aag, err := r.client.GetAntiAffinityGroup(ctx, id)
+	if err != nil {
+		if errors.Is(err, exoscale.ErrNotFound) {
 			// Resource doesn't exist anymore, signaling the core to remove it from the state.
-			d.SetId("")
-			return nil
+			resp.State.RemoveResource(ctx)
+			return
 		}
-		return diag.FromErr(err)
+		resp.Diagnostics.AddError("unable to get anti-affinity group", err.Error())
+		return
 	}
 
-	tflog.Debug(ctx, "read finished successfully", map[string]any{
-		"id": utils.IDString(d, Name),
-	})
+	utils.RefreshString(&state.Name, aag.Name)
+	utils.RefreshString(&state.Description, aag.Description)
 
-	return diag.FromErr(rApply(ctx, d, res))
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+
+	tflog.Trace(ctx, "resource read", map[string]any{
+		"id": state.ID.ValueString(),
+	})
 }
 
-func rDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
-	tflog.Debug(ctx, "beginning delete", map[string]any{
-		"id": utils.IDString(d, Name),
-	})
+// Update only saves the plan: every attribute of an anti-affinity group
+// either replaces it or is equivalent to its prior value (description "" vs null).
+func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan ResourceModel
 
-	zone := config.DefaultZone
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
-	ctx, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutDelete))
-	ctx = exoapi.WithEndpoint(ctx, exoapi.NewReqEndpoint(config.GetEnvironment(meta), zone))
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+}
+
+func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state ResourceModel
+
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	timeout, diags := state.Timeouts.Delete(ctx, config.DefaultTimeout)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	client, err := config.GetClient(meta)
+	id, err := exoscale.ParseUUID(state.ID.ValueString())
 	if err != nil {
-		return diag.FromErr(err)
+		resp.Diagnostics.AddError("unable to parse anti-affinity group ID", err.Error())
+		return
 	}
 
-	id := d.Id()
-	if err := client.DeleteAntiAffinityGroup(ctx, zone, &egoscale.AntiAffinityGroup{ID: &id}); err != nil {
-		return diag.FromErr(err)
+	op, err := r.client.DeleteAntiAffinityGroup(ctx, id)
+	if err != nil {
+		if errors.Is(err, exoscale.ErrNotFound) {
+			return
+		}
+		resp.Diagnostics.AddError("unable to delete anti-affinity group", err.Error())
+		return
 	}
 
-	tflog.Debug(ctx, "delete finished successfully", map[string]any{
-		"id": utils.IDString(d, Name),
+	if _, err := r.client.Wait(ctx, op, exoscale.OperationStateSuccess); err != nil {
+		resp.Diagnostics.AddError("delete anti-affinity group operation failed", err.Error())
+		return
+	}
+
+	tflog.Trace(ctx, "resource deleted", map[string]any{
+		"id": state.ID.ValueString(),
 	})
-
-	return nil
 }
 
-func rApply(
-	_ context.Context,
-	d *schema.ResourceData,
-	res *egoscale.AntiAffinityGroup,
-) error {
-	if err := d.Set(AttrName, *res.Name); err != nil {
-		return err
-	}
-
-	if err := d.Set(AttrDescription, utils.DefaultString(res.Description, "")); err != nil {
-		return err
-	}
-
-	return nil
+func (r *Resource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }

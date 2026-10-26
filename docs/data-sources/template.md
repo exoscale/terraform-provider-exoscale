@@ -40,10 +40,18 @@ directory for complete configuration examples.
 
 - `id` (String) The compute instance template ID to match (conflicts with `name`).
 - `name` (String) The template name to match (conflicts with `id`) (when multiple templates have the same name, the newest one will be returned).
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `visibility` (String) A template category filter (default: `public`); among: - `public` - official Exoscale templates - `private` - custom templates private to my organization
 
 ### Read-Only
 
 - `default_user` (String) Username to use to log into a compute instance based on this template
+
+<a id="nestedblock--timeouts"></a>
+### Nested Schema for `timeouts`
+
+Optional:
+
+- `read` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
 
 

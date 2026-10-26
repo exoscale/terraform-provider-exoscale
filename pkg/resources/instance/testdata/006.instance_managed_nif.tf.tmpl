@@ -1,0 +1,34 @@
+data "exoscale_template" "test_template" {
+  zone = "{{ .Zone }}"
+  name = "Linux Ubuntu 22.04 LTS 64-bit"
+}
+
+data "exoscale_security_group" "default" {
+  name = "default"
+}
+
+resource "exoscale_private_network" "test_pn" {
+  zone     = "{{ .Zone }}"
+  name     = "terraform-provider-test-{{ .ID }}"
+  netmask  = "255.255.255.0"
+  start_ip = "10.0.0.50"
+  end_ip   = "10.0.0.250"
+}
+
+resource "exoscale_compute_instance" "test_instance" {
+  zone               = "{{ .Zone }}"
+  name               = "terraform-provider-test-{{ .ID }}"
+  type               = "standard.tiny"
+  disk_size          = 10
+  template_id        = data.exoscale_template.test_template.id
+  security_group_ids = [data.exoscale_security_group.default.id]
+
+  network_interface {
+    network_id = exoscale_private_network.test_pn.id
+    ip_address = "10.0.0.100"
+  }
+
+  timeouts {
+    delete = "10m"
+  }
+}

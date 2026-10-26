@@ -70,7 +70,7 @@ func (r *PGConnectionPoolResource) Metadata(ctx context.Context, req resource.Me
 
 func (r *PGConnectionPoolResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Manage PostgreSQL PgBouncer connection pools for an Exoscale [Database Services (DBaaS)](https://community.exoscale.com/documentation/dbaas/).",
+		MarkdownDescription: "Manage PostgreSQL PgBouncer connection pools for an Exoscale [Database Services (DBaaS)](https://community.exoscale.com/product/dbaas/).",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				MarkdownDescription: "The ID of this resource, computed as `service/name`.",

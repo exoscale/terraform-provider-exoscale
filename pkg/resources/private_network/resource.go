@@ -22,7 +22,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
-const markdownDescriptionResource = `Manage Exoscale [Private Networks](https://community.exoscale.com/product/networking/private-network).
+const markdownDescriptionResource = `Manage Exoscale [Private Networks](https://community.exoscale.com/product/networking/private-network/).
 
 Corresponding data source: [exoscale_private_network](../data-sources/private_network.md).
 `

@@ -3,12 +3,12 @@
 page_title: "exoscale_dbaas Resource - terraform-provider-exoscale"
 subcategory: ""
 description: |-
-  Manage Exoscale Database Services (DBaaS) https://community.exoscale.com/documentation/dbaas/.
+  Manage Exoscale Database Services (DBaaS) https://community.exoscale.com/product/dbaas/.
 ---
 
 # exoscale_dbaas (Resource)
 
-Manage Exoscale [Database Services (DBaaS)](https://community.exoscale.com/documentation/dbaas/).
+Manage Exoscale [Database Services (DBaaS)](https://community.exoscale.com/product/dbaas/).
 
 
 

@@ -46,7 +46,7 @@ func (r *ValkeyUserResource) Metadata(ctx context.Context, req resource.Metadata
 
 func (r *ValkeyUserResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Manage service users for a Valkey Exoscale [Database Services (DBaaS)](https://community.exoscale.com/documentation/dbaas/).",
+		MarkdownDescription: "Manage service users for a Valkey Exoscale [Database Services (DBaaS)](https://community.exoscale.com/product/dbaas/).",
 		Attributes:          commonAttributes,
 		Blocks: map[string]schema.Block{
 			"timeouts": timeouts.BlockAll(ctx),

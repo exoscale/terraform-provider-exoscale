@@ -1,0 +1,45 @@
+data "exoscale_template" "debian" {
+  zone = "{{ .Zone }}"
+  name = "Linux Debian 12 (Bookworm) 64-bit"
+}
+
+resource "exoscale_private_network" "test" {
+  zone = "{{ .Zone }}"
+  name = "terraform-provider-test-{{ .ID }}"
+}
+
+resource "exoscale_ssh_key" "test" {
+  name       = "terraform-provider-test-{{ .ID }}"
+  public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB8bfA67mQWv4eGND/XVtPx1JW6RAqafub1lV1EcpB+b test"
+}
+
+resource "exoscale_anti_affinity_group" "test" {
+  name = "terraform-provider-test-{{ .ID }}"
+}
+
+# Rename, scale up, change the type, template, disk size and minimum
+# available instances, replace the Security Group with a Private Network, add
+# an SSH key, reset the instance prefix to its default.
+resource "exoscale_instance_pool" "test" {
+  zone                    = "{{ .Zone }}"
+  name                    = "terraform-provider-test-{{ .ID }}-updated"
+  description             = "description-{{ .ID }}-updated"
+  template_id             = data.exoscale_template.debian.id
+  instance_type           = "standard.small"
+  size                    = 2
+  min_available           = 1
+  disk_size               = 20
+  ipv6                    = true
+  key_pair                = exoscale_ssh_key.test.name
+  anti_affinity_group_ids = [exoscale_anti_affinity_group.test.id]
+  network_ids             = [exoscale_private_network.test.id]
+  user_data               = "user-data-{{ .ID }}-updated"
+
+  labels = {
+    test = "label-{{ .ID }}-updated"
+  }
+
+  timeouts {
+    delete = "10m"
+  }
+}

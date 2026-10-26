@@ -3,7 +3,9 @@
 // We must preserve the prior state value if the updated value is semantically equal.
 // This prevents Terraform from showing extraneous drift in plans.
 // Globally applied rules are:
-// - unknown value in state must be replaced.
+//   - unknown value in state must be replaced.
+//   - a value the remote no longer has must be removed from the state, so that
+//     the change shows up as drift.
 //
 // NOTE: Refresh helpers provide no protection against a nil pointer state argument.
 // This is unlikelly to happen by accident and panic is considered appropriate.
@@ -36,12 +38,12 @@ func RefreshString(state *basetypes.StringValue, remote string) {
 // RefreshStringPointer helper to update state value.
 //
 // Unset and empty string on remote is equal to empty string and nil in state.
+// A value unset on remote is null in state.
 func RefreshStringPointer(state *basetypes.StringValue, remote *string) {
-	if state.IsUnknown() {
-		*state = types.StringPointerValue(remote)
-	}
-
 	if remote == nil {
+		if state.IsUnknown() || state.ValueString() != "" {
+			*state = types.StringNull()
+		}
 		return
 	}
 
@@ -78,12 +80,12 @@ func RefreshInt64(state *basetypes.Int64Value, remote int64) {
 // RefreshInt64Pointer helper to update state value.
 //
 // Unset and zero on remote is equal to zero and nil in state.
+// A value unset on remote is null in state.
 func RefreshInt64Pointer(state *basetypes.Int64Value, remote *int64) {
-	if state.IsUnknown() {
-		*state = types.Int64PointerValue(remote)
-	}
-
 	if remote == nil {
+		if state.IsUnknown() || state.ValueInt64() != 0 {
+			*state = types.Int64Null()
+		}
 		return
 	}
 
@@ -99,7 +101,7 @@ func RefreshLabels(
 	labels map[string]string,
 ) (dg diag.Diagnostics) {
 	if len(labels) == 0 {
-		if state.IsUnknown() {
+		if state.IsUnknown() || len(state.Elements()) > 0 {
 			*state = types.MapNull(types.StringType)
 		}
 		return
@@ -130,7 +132,7 @@ func RefreshStringSet(
 	set []string,
 ) {
 	if len(set) == 0 {
-		if state.IsUnknown() {
+		if state.IsUnknown() || len(state.Elements()) > 0 {
 			*state = types.SetNull(types.StringType)
 		}
 		return

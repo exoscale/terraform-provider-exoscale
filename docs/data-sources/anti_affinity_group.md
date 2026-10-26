@@ -35,9 +35,17 @@ directory for complete configuration examples.
 
 - `id` (String) The anti-affinity group ID to match (conflicts with `name`).
 - `name` (String) The group name to match (conflicts with `id`).
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
 - `instances` (Set of String) The list of attached [exoscale_compute_instance](../resources/compute_instance.md) (IDs).
+
+<a id="nestedblock--timeouts"></a>
+### Nested Schema for `timeouts`
+
+Optional:
+
+- `read` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
 
 

@@ -49,7 +49,7 @@ func (r *KafkaUserResource) Metadata(ctx context.Context, req resource.MetadataR
 func (r *KafkaUserResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		// This description is used by the documentation generator and the language server.
-		MarkdownDescription: "Manage service users for a Kafka Exoscale [Database Services (DBaaS)](https://community.exoscale.com/documentation/dbaas/).",
+		MarkdownDescription: "Manage service users for a Kafka Exoscale [Database Services (DBaaS)](https://community.exoscale.com/product/dbaas/).",
 		Attributes: buildUserAttributes(map[string]schema.Attribute{
 			"access_key": schema.StringAttribute{
 				Description: "Access certificate key for the user.",

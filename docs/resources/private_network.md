@@ -2,7 +2,7 @@
 page_title: "exoscale_private_network Resource - terraform-provider-exoscale"
 subcategory: ""
 description: |-
-  Manage Exoscale Private Networks https://community.exoscale.com/product/networking/private-network.
+  Manage Exoscale Private Networks https://community.exoscale.com/product/networking/private-network/.
   Corresponding data source: exoscaleprivatenetwork ../data-sources/private_network.md.
 ---
 

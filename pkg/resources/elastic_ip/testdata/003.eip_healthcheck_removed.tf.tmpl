@@ -1,0 +1,18 @@
+resource "exoscale_elastic_ip" "test4" {
+  zone        = "{{ .Zone }}"
+  description = "terraform-provider-test-{{ .ID }}-updated"
+  reverse_dns = "tf-provider-test.exoscale.com"
+
+  labels = {
+    test = "terraform-provider-test-{{ .ID }}-updated"
+  }
+}
+
+resource "exoscale_elastic_ip" "test6" {
+  zone           = "{{ .Zone }}"
+  address_family = "inet6"
+
+  labels = {
+    test = "terraform-provider-test-{{ .ID }}-6-updated"
+  }
+}

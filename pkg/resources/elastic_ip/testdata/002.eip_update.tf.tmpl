@@ -1,0 +1,30 @@
+resource "exoscale_elastic_ip" "test4" {
+  zone        = "{{ .Zone }}"
+  description = "terraform-provider-test-{{ .ID }}-updated"
+  reverse_dns = "tf-provider-test.exoscale.com"
+
+  healthcheck = {
+    mode            = "https"
+    port            = 443
+    uri             = "/health-updated"
+    interval        = 6
+    timeout         = 4
+    strikes_ok      = 3
+    strikes_fail    = 2
+    tls_sni         = "example.net"
+    tls_skip_verify = true
+  }
+
+  labels = {
+    test = "terraform-provider-test-{{ .ID }}-updated"
+  }
+}
+
+resource "exoscale_elastic_ip" "test6" {
+  zone           = "{{ .Zone }}"
+  address_family = "inet6"
+
+  labels = {
+    test = "terraform-provider-test-{{ .ID }}-6-updated"
+  }
+}

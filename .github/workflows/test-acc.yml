@@ -26,7 +26,9 @@ on:
       - '.github/workflows/test-acc.yml'
 
 # Prevent parallel execution of acc tests
-concurrency: acc-tests
+concurrency:
+  group: acc-tests
+  queue: max # prevent new acc test to cancel old one.
 
 jobs:
   test:

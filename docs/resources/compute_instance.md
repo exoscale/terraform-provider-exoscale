@@ -3,14 +3,14 @@
 page_title: "exoscale_compute_instance Resource - terraform-provider-exoscale"
 subcategory: ""
 description: |-
-  Manage Exoscale Compute Instances https://community.exoscale.com/documentation/compute/.
+  Manage Exoscale Compute Instances https://community.exoscale.com/product/compute/instances/.
   Corresponding data sources: exoscalecomputeinstance ../data-sources/compute_instance.md, exoscalecomputeinstance_list ../data-sources/compute_instance_list.md.
   After the creation, you can retrieve the password of an instance with Exoscale CLI https://github.com/exoscale/cli: exo compute instance reveal-password NAME.
 ---
 
 # exoscale_compute_instance (Resource)
 
-Manage Exoscale [Compute Instances](https://community.exoscale.com/documentation/compute/).
+Manage Exoscale [Compute Instances](https://community.exoscale.com/product/compute/instances/).
 
 Corresponding data sources: [exoscale_compute_instance](../data-sources/compute_instance.md), [exoscale_compute_instance_list](../data-sources/compute_instance_list.md).
 
@@ -68,6 +68,7 @@ directory for complete configuration examples.
 - `state` (String) The instance state (`running` or `stopped`). If omitted, instance will start and reach `running` state.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `user_data` (String) [cloud-init](https://cloudinit.readthedocs.io/) configuration.
+- `vpc` (Block List) The [exoscale_vpc](./vpc.md) to attach the instance to (at most one block). Removing the block detaches the instance from every subnet. Structure is documented below. (see [below for nested schema](#nestedblock--vpc))
 
 ### Read-Only
 
@@ -99,10 +100,34 @@ Read-Only:
 
 Optional:
 
-- `create` (String)
-- `delete` (String)
-- `read` (String)
-- `update` (String)
+- `create` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours).
+- `delete` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Setting a timeout for a Delete operation is only applicable if changes are saved into state before the destroy operation occurs.
+- `read` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
+- `update` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours).
+
+
+<a id="nestedblock--vpc"></a>
+### Nested Schema for `vpc`
+
+Required:
+
+- `id` (String) The [exoscale_vpc](./vpc.md) (ID) the subnets belong to. An instance may only be attached to one VPC, thus changing it detaches the instance from every subnet of the previous VPC.
+- `interfaces` (Attributes List) The VPC subnets to attach the instance to. The order is strict: inserting, removing or reordering an element detaches every interface from that position on, then attaches them again in the configured order. Attachments made outside of Terraform are planned for removal, except those with a public IPv4 address: these are left alone unless listed here, which makes Terraform manage them (an attachment listed at its current position and IPv4 address is adopted as is). Positions only count the attachments managed by Terraform: unmanaged ones are skipped, so a position may differ from the NIC name on the instance. Attachment changes are not atomic: if an attachment fails, the interfaces detached before it stay detached until the next apply. (see [below for nested schema](#nestedatt--vpc--interfaces))
+
+<a id="nestedatt--vpc--interfaces"></a>
+### Nested Schema for `vpc.interfaces`
+
+Required:
+
+- `subnet_id` (String) The [exoscale_vpc_subnet](./vpc_subnet.md) (ID) to attach the instance to.
+
+Optional:
+
+- `ipv4_address` (String) The IPv4 address to allocate to the instance in the subnet, or `auto` to let the platform pick one (default: `auto`).
+
+Read-Only:
+
+- `ipv4_address_allocated` (String) The IPv4 address allocated to the instance in the subnet.
 
 -> The symbol ❗ in an attribute indicates that modifying it, will force the creation of a new resource.
 

@@ -6,6 +6,66 @@ BUG FIXES:
 
 - Preserve the last HTTP status when egoscale v3 retries are exhausted.
 
+## 0.76.0
+
+FEATURES:
+
+- `exoscale_compute_instance`: new `vpc` block to attach the instance to VPC subnets, in strict interface order.
+
+BUG FIXES:
+
+- `exoscale_block_storage_volume`: deleting a volume that is already gone (API returned 404) no longer fails.
+- `exoscale_instance_pool`: removing `description`, `labels` or `user_data` from the configuration now clears them on the pool, they used to be left as they were.
+- `exoscale_instance_pool`: updating a pool configured with the deprecated `affinity_group_ids` no longer sends an empty anti-affinity group list.
+- `exoscale_instance_pool` and `exoscale_instance_pool_list` data sources: `instances.*.public_ip_address` is `""` for an instance without public IP, it used to be `"<nil>"`.
+
+IMPROVEMENTS:
+
+- Migrate the `exoscale_instance_pool` resource to terraform-plugin-framework.
+- Migrate the `exoscale_instance_pool` and `exoscale_instance_pool_list` data sources to terraform-plugin-framework.
+- The provider is now served by terraform-plugin-framework alone: the terraform-plugin-sdk provider server and the mux combining both are removed, as every resource and data source has been migrated. The User-Agent no longer reports a `Terraform-SDK/` version.
+- Documentation: links to the Exoscale documentation now point to the current pages on community.exoscale.com instead of legacy `/documentation/` URLs that only work through redirects.
+
+BREAKING CHANGES:
+
+- `exoscale_instance_pool`: the `service_offering` attribute, deprecated since 0.27.0, is removed and `instance_type` is now required: replace `service_offering = "<size>"` with `instance_type = "standard.<size>"`, check the [migration guide](docs/guides/migration-of-instance-pool-from-v0_75_x-to-v0_76_x.md).
+- `exoscale_instance_pool`: `instances` and `virtual_machines` are read-only and can no longer be set in the configuration (the values set were ignored), check the [migration guide](docs/guides/migration-of-instance-pool-from-v0_75_x-to-v0_76_x.md).
+- Remove the `exoscale_iam_access_key` resource, use `exoscale_iam_api_key` with `exoscale_iam_role` instead. Remove access keys from your state before upgrading, see the [migration guide](https://registry.terraform.io/providers/exoscale/exoscale/latest/docs/guides/migration-of-iam-access-key-from-v0_75_x-to-v0_76_x).
+
+DEPENDENCIES:
+
+- Remove `github.com/hashicorp/terraform-plugin-mux`
+- Build the provider with Go 1.27.3 to reject TLS certificate chains containing the compromised eMudhra intermediates (CVE-2026-111943). (#629)
+
+## 0.75.0
+
+IMPROVEMENTS:
+
+- Migrate the `exoscale_compute_instance` resource and the `exoscale_compute_instance`/`exoscale_compute_instance_list` data sources to terraform-plugin-framework. Existing state loads unchanged; a configuration setting an optional list to an explicit `[]` (e.g. `elastic_ip_ids = []`) shows a one-time in-place update with no effect on the instance. (#608)
+- Migrate the `exoscale_template` data source to terraform-plugin-framework. (#616)
+- Migrate the `exoscale_ssh_key` resource to terraform-plugin-framework. Existing state loads unchanged. (#615)
+- Migrate the `exoscale_anti_affinity_group` resource and data source to terraform-plugin-framework. Existing state loads unchanged; removing `description` from the configuration no longer replaces the group. (#614)
+- Migrate the `exoscale_elastic_ip` resource and data source to terraform-plugin-framework & egoscale v3.
+
+FEATURES:
+
+BUG FIXES:
+
+- Fix timeout update for domain resource (#613)
+- `exoscale_private_network` labels and `exoscale_security_group` external sources removed outside of Terraform now show up as drift
+- `exoscale_compute_instance_list`: the `id`, `state`, `manager_id` and `manager_type` filters never matched any instance.
+- `exoscale_compute_instance`: deleting an instance honours the `delete` timeout instead of the `update` one.
+
+BREAKING CHANGES:
+
+- `exoscale_compute_instance` data source: an instance that does not exist is now an error, it used to return an empty result.
+- `exoscale_anti_affinity_group` data source: a `name` matching several groups is now an error, it used to return the first one.
+- `exoscale_elastic_ip`: `healthcheck` now uses attribute assignment syntax (`=`) instead of nested block syntax, in the resource and the data source (`healthcheck.port` instead of `healthcheck[0].port`), check the [migration guide](docs/guides/migration-of-elastic-ip-from-v0_74_x-to-v0_75_x.md)
+- `exoscale_elastic_ip`: adding a `healthcheck` to an existing Elastic IP or removing it now plans its replacement (an unmanaged Elastic IP can not become managed and vice versa). A managed Elastic IP whose configuration has no `healthcheck` is replaced, check the [migration guide](docs/guides/migration-of-elastic-ip-from-v0_74_x-to-v0_75_x.md).
+- `exoscale_elastic_ip`: removing `description` from the configuration now clears it on the Elastic IP, it used to be kept.
+
+DEPENDENCIES:
+
 ## 0.74.2
 
 DEPENDENCIES:

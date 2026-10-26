@@ -2,7 +2,7 @@
 page_title: "exoscale_database_uri Data Source - terraform-provider-exoscale"
 subcategory: ""
 description: |-
-  Fetch Exoscale Database https://community.exoscale.com/documentation/dbaas/ connection URI data.
+  Fetch Exoscale Database https://community.exoscale.com/product/dbaas/ connection URI data.
   This data source returns database conection details of the default (admin) user only.
   URI parts are also available individually for convenience.
   Corresponding resource: exoscale_dbaas ../resources/database.md.
@@ -10,7 +10,7 @@ description: |-
 
 # exoscale_database_uri (Data Source)
 
-Fetch Exoscale [Database](https://community.exoscale.com/documentation/dbaas/) URI data.
+Fetch Exoscale [Database](https://community.exoscale.com/product/dbaas/) URI data.
 
 Corresponding resource: [exoscale_database](../resources/database.md).
 
