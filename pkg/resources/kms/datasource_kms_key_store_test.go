@@ -96,6 +96,15 @@ func TestDataSourceKMSKeyStoreRead(t *testing.T) {
 			wantError: `KMS key store "other-key-store" not found`,
 		},
 		{
+			name:   "name matching another store's id",
+			config: map[string]tftypes.Value{"zone": str(testZone), "name": str(testKeyStoreID)},
+			expect: func(api *mockAPI) {
+				api.expect(routeListKeyStores, 200, keyStores)
+			},
+			wantCalls: []string{routeListKeyStores},
+			wantError: fmt.Sprintf(`KMS key store %q not found`, testKeyStoreID),
+		},
+		{
 			name:   "unknown id",
 			config: map[string]tftypes.Value{"zone": str(testZone), "id": str(testKeyStoreID)},
 			expect: func(api *mockAPI) {

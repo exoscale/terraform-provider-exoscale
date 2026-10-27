@@ -2,7 +2,6 @@ package kms
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -222,19 +221,20 @@ func (d *DataSourceKMSKeyStore) Read(ctx context.Context, req datasource.ReadReq
 			resp.Diagnostics.AddError("API error listing KMS key stores", apiErrorMessage(err))
 			return
 		}
-		entry, err := keyStores.FindListKeyStoresResponseEntry(data.Name.ValueString())
-		if err != nil {
-			if errors.Is(err, exoscale.ErrNotFound) {
-				resp.Diagnostics.AddError(
-					fmt.Sprintf("KMS key store %q not found", data.Name.ValueString()),
-					fmt.Sprintf("No key store named %q in zone %s.", data.Name.ValueString(), data.Zone.ValueString()),
-				)
-				return
+		// Names are unique per zone. The SDK's Find helper is not used, as it also matches IDs.
+		for _, entry := range keyStores.KeyStores {
+			if entry.Name == data.Name.ValueString() {
+				id = entry.ID
+				break
 			}
-			resp.Diagnostics.AddError("unable to find KMS key store", err.Error())
+		}
+		if id == "" {
+			resp.Diagnostics.AddError(
+				fmt.Sprintf("KMS key store %q not found", data.Name.ValueString()),
+				fmt.Sprintf("No key store named %q in zone %s.", data.Name.ValueString(), data.Zone.ValueString()),
+			)
 			return
 		}
-		id = entry.ID
 
 	default: // ExactlyOneOf prevents this, exit as a safe guard
 		resp.Diagnostics.AddError("missing values", "name and id are missing")
