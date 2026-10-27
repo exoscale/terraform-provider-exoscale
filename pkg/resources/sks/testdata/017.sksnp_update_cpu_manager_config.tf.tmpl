@@ -23,18 +23,18 @@ resource "exoscale_sks_nodepool" "test" {
   size            = 3
   storage_lvm     = false
 
-  cpu_manager_config {
+  cpu_manager_config = {
     cpu_manager_policy           = "static"
     cpu_manager_policy_options   = ["distribute-cpus-across-numa", "full-pcpus-only"]
     cpu_manager_reconcile_period = "15s"
 
-    kube_reserved {
+    kube_reserved = {
       cpu              = "150m"
       memory           = "256Mi"
       ephemeral_storage = "3Gi"
     }
 
-    system_reserved {
+    system_reserved = {
       cpu              = "75m"
       memory           = "128Mi"
       ephemeral_storage = "2Gi"
