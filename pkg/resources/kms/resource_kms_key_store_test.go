@@ -208,6 +208,15 @@ func TestResourceKMSKeyStoreModifyPlan(t *testing.T) {
 			plan:  with(proxyValue(testEndpoint, "new-access-key", nil, 2)),
 		},
 		{
+			name:  "new access key with new name",
+			state: kmsKeyStoreValue(t, existing),
+			plan: func() map[string]tftypes.Value {
+				values := with(proxyValue(testEndpoint, "new-access-key", nil, 1))
+				values["name"] = str("my-new-key-store")
+				return values
+			}(),
+		},
+		{
 			name:      "new access key without new secret version",
 			state:     kmsKeyStoreValue(t, existing),
 			plan:      with(proxyValue(testEndpoint, "new-access-key", nil, 1)),

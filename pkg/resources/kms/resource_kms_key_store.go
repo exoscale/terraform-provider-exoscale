@@ -270,6 +270,11 @@ func (r *ResourceKMSKeyStore) ModifyPlan(ctx context.Context, req resource.Modif
 		return
 	}
 
+	// A new name or zone replaces the key store, and its creation sends both keys.
+	if !plan.Name.Equal(state.Name) || !plan.Zone.Equal(state.Zone) {
+		return
+	}
+
 	if plan.Proxy.IsUnknown() || state.Proxy.IsNull() {
 		return
 	}
