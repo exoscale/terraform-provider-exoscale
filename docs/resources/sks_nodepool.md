@@ -12,8 +12,6 @@ Manage Exoscale [Scalable Kubernetes Service (SKS)](https://community.exoscale.c
 
 ## Example Usage
 
-### Basic node pool
-
 ```terraform
 resource "exoscale_sks_cluster" "my_sks_cluster" {
   zone = "ch-gva-2"
@@ -27,37 +25,6 @@ resource "exoscale_sks_nodepool" "my_sks_nodepool" {
 
   instance_type      = "standard.medium"
   size               = 3
-}
-```
-
-### Node pool with CPU manager configuration
-
-```terraform
-resource "exoscale_sks_nodepool" "with_cpu_manager" {
-  cluster_id         = exoscale_sks_cluster.my_sks_cluster.id
-  zone               = exoscale_sks_cluster.my_sks_cluster.zone
-  name               = "cpu-managed-pool"
-
-  instance_type      = "standard.medium"
-  size               = 3
-
-  cpu_manager_config {
-    cpu_manager_policy           = "static"
-    cpu_manager_policy_options   = ["distribute-cpus-across-numa"]
-    cpu_manager_reconcile_period = "10s"
-
-    kube_reserved {
-      cpu              = "100m"
-      memory           = "128Mi"
-      ephemeral_storage = "2Gi"
-    }
-
-    system_reserved {
-      cpu              = "50m"
-      memory           = "64Mi"
-      ephemeral_storage = "1Gi"
-    }
-  }
 }
 ```
 
@@ -123,6 +90,7 @@ Optional:
 - `ephemeral_storage` (String) Ephemeral storage reservation, e.g., `1Gi`
 - `memory` (String) Memory reservation, e.g., `512Mi`
 
+
 <a id="nestedatt--cpu_manager_config--system_reserved"></a>
 ### Nested Schema for `cpu_manager_config.system_reserved`
 
@@ -131,6 +99,8 @@ Optional:
 - `cpu` (String) CPU reservation, e.g., `200m`
 - `ephemeral_storage` (String) Ephemeral storage reservation, e.g., `1Gi`
 - `memory` (String) Memory reservation, e.g., `512Mi`
+
+
 
 <a id="nestedatt--kubelet_image_gc"></a>
 ### Nested Schema for `kubelet_image_gc`
