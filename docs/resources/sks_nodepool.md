@@ -12,6 +12,8 @@ Manage Exoscale [Scalable Kubernetes Service (SKS)](https://community.exoscale.c
 
 ## Example Usage
 
+### Basic node pool
+
 ```terraform
 resource "exoscale_sks_cluster" "my_sks_cluster" {
   zone = "ch-gva-2"
@@ -25,6 +27,37 @@ resource "exoscale_sks_nodepool" "my_sks_nodepool" {
 
   instance_type      = "standard.medium"
   size               = 3
+}
+```
+
+### Node pool with CPU manager configuration
+
+```terraform
+resource "exoscale_sks_nodepool" "with_cpu_manager" {
+  cluster_id         = exoscale_sks_cluster.my_sks_cluster.id
+  zone               = exoscale_sks_cluster.my_sks_cluster.zone
+  name               = "cpu-managed-pool"
+
+  instance_type      = "standard.medium"
+  size               = 3
+
+  cpu_manager_config {
+    cpu_manager_policy           = "static"
+    cpu_manager_policy_options   = ["distribute-cpus-across-numa"]
+    cpu_manager_reconcile_period = "10s"
+
+    kube_reserved {
+      cpu              = "100m"
+      memory           = "128Mi"
+      ephemeral_storage = "2Gi"
+    }
+
+    system_reserved {
+      cpu              = "50m"
+      memory           = "64Mi"
+      ephemeral_storage = "1Gi"
+    }
+  }
 }
 ```
 
@@ -45,6 +78,7 @@ directory for complete configuration examples.
 ### Optional
 
 - `anti_affinity_group_ids` (Set of String) A list of [exoscale_anti_affinity_group](./anti_affinity_group.md) (IDs) to be attached to the managed instances.
+- `cpu_manager_config` (Attributes) Configuration for the kubelet CPU manager. (see [below for nested schema](#nestedatt--cpu_manager_config))
 - `deploy_target_id` (String) A deploy target ID.
 - `description` (String) A free-form text describing the pool.
 - `disk_size` (Number) The managed instances disk size (GiB; default: `50`).
@@ -68,6 +102,35 @@ directory for complete configuration examples.
 - `state` (String) The current pool state.
 - `template_id` (String) The managed instances template ID.
 - `version` (String) The managed instances version.
+
+<a id="nestedatt--cpu_manager_config"></a>
+### Nested Schema for `cpu_manager_config`
+
+Optional:
+
+- `cpu_manager_policy` (String) CPU management policy used by the kubelet. The "static" policy grants exclusive CPUs to Guaranteed pods requesting integer CPU limits. When set to "static", a CPU reservation must be provided via `kube_reserved` or `system_reserved`.
+- `cpu_manager_policy_options` (Set of String) CPU manager policy options used by the kubelet. They refine the behavior of the "static" cpu-manager-policy and are only valid when the policy is "static". Supported options: `distribute-cpus-across-numa`, `full-pcpus-only`, `strict-cpu-reservation`, `align-by-socket`, `prefer-align-cpus-by-uncorecache`, `distribute-cpus-across-cores`.
+- `cpu_manager_reconcile_period` (String) CPU manager reconcile period used by the kubelet, as a duration string (for example `10s`).
+- `kube_reserved` (Attributes) Resources reserved for node components. (see [below for nested schema](#nestedatt--cpu_manager_config--kube_reserved))
+- `system_reserved` (Attributes) Resources reserved for system components. (see [below for nested schema](#nestedatt--cpu_manager_config--system_reserved))
+
+<a id="nestedatt--cpu_manager_config--kube_reserved"></a>
+### Nested Schema for `cpu_manager_config.kube_reserved`
+
+Optional:
+
+- `cpu` (String) CPU reservation, e.g., `200m`
+- `ephemeral_storage` (String) Ephemeral storage reservation, e.g., `1Gi`
+- `memory` (String) Memory reservation, e.g., `512Mi`
+
+<a id="nestedatt--cpu_manager_config--system_reserved"></a>
+### Nested Schema for `cpu_manager_config.system_reserved`
+
+Optional:
+
+- `cpu` (String) CPU reservation, e.g., `200m`
+- `ephemeral_storage` (String) Ephemeral storage reservation, e.g., `1Gi`
+- `memory` (String) Memory reservation, e.g., `512Mi`
 
 <a id="nestedatt--kubelet_image_gc"></a>
 ### Nested Schema for `kubelet_image_gc`
