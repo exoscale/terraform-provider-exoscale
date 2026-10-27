@@ -1264,7 +1264,6 @@ func (r *ResourceNodepool) Delete(ctx context.Context, req resource.DeleteReques
 	tflog.Debug(ctx, "delete finished successfully", map[string]any{"id": state.ID.ValueString()})
 }
 
-// kubeletGCBlock decodes the (at most one) "kubelet_image_gc" nested object from a model.
 func (r *ResourceNodepool) cpuManagerConfigBlock(ctx context.Context, m ResourceNodepoolModel, diags *diag.Diagnostics) (cpuManagerConfigModel, bool) {
 	if m.CPUManagerConfig.IsNull() || m.CPUManagerConfig.IsUnknown() {
 		return cpuManagerConfigModel{}, false
@@ -1291,6 +1290,7 @@ func (r *ResourceNodepool) reservedResourcesBlock(ctx context.Context, obj types
 	return &block, true
 }
 
+// kubeletGCBlock decodes the (at most one) "kubelet_image_gc" nested object from a model.
 func (r *ResourceNodepool) kubeletGCBlock(ctx context.Context, m ResourceNodepoolModel, diags *diag.Diagnostics) (kubeletGCModel, bool) {
 	if m.KubeletImageGC.IsNull() || m.KubeletImageGC.IsUnknown() {
 		return kubeletGCModel{}, false
