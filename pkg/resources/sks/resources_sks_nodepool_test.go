@@ -214,6 +214,110 @@ func testAccCheckResourceSKSNodepoolExists(r string, sksNodepool *egoscale.SKSNo
 	}
 }
 
+func TestAccResourceSKSNodepoolCPUManagerConfig(t *testing.T) {
+	t.Parallel()
+
+	if os.Getenv(resource.EnvTfAcc) == "" {
+		t.Skipf("Acceptance tests skipped unless env '%s' set", resource.EnvTfAcc)
+		return
+	}
+
+	var (
+		r           = "exoscale_sks_nodepool.test"
+		sksCluster  egoscale.SKSCluster
+		sksNodepool egoscale.SKSNodepool
+	)
+
+	td := sksTestdata{Zone: testZoneName, ID: time.Now().UnixNano()}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testutils.AccPreCheck(t) },
+		ProtoV6ProviderFactories: testutils.TestAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckResourceSKSNodepoolDestroy(r),
+		Steps: []resource.TestStep{
+			{
+				// Create with CPU manager config
+				Config: parseSKSConfig(t, "./testdata/016.sksnp_create_cpu_manager_config.tf.tmpl", td),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckResourceSKSClusterExists("exoscale_sks_cluster.test", &sksCluster),
+					testAccCheckResourceSKSNodepoolExists(r, &sksNodepool),
+					func(s *terraform.State) error {
+						a := assert.New(t)
+
+						if a.NotNil(sksNodepool.CPUManagerConfig) {
+							a.Equal(egoscale.CPUManagerConfigCPUManagerPolicyStatic, sksNodepool.CPUManagerConfig.CPUManagerPolicy)
+							a.Equal([]string{"distribute-cpus-across-numa"}, sksNodepool.CPUManagerConfig.CPUManagerPolicyOptions)
+							a.Equal("10s", sksNodepool.CPUManagerConfig.CPUManagerReconcilePeriod)
+
+							if a.NotNil(sksNodepool.CPUManagerConfig.KubeReserved) {
+								a.Equal("100m", sksNodepool.CPUManagerConfig.KubeReserved.CPU)
+								a.Equal("128Mi", sksNodepool.CPUManagerConfig.KubeReserved.Memory)
+								a.Equal("2Gi", sksNodepool.CPUManagerConfig.KubeReserved.EphemeralStorage)
+							}
+
+							if a.NotNil(sksNodepool.CPUManagerConfig.SystemReserved) {
+								a.Equal("50m", sksNodepool.CPUManagerConfig.SystemReserved.CPU)
+								a.Equal("64Mi", sksNodepool.CPUManagerConfig.SystemReserved.Memory)
+								a.Equal("1Gi", sksNodepool.CPUManagerConfig.SystemReserved.EphemeralStorage)
+							}
+						}
+						return nil
+					},
+					resource.TestCheckResourceAttr(r, "cpu_manager_config.cpu_manager_policy", "static"),
+					resource.TestCheckTypeSetElemAttr(r, "cpu_manager_config.cpu_manager_policy_options.*", "distribute-cpus-across-numa"),
+					resource.TestCheckResourceAttr(r, "cpu_manager_config.cpu_manager_reconcile_period", "10s"),
+					resource.TestCheckResourceAttr(r, "cpu_manager_config.kube_reserved.cpu", "100m"),
+					resource.TestCheckResourceAttr(r, "cpu_manager_config.kube_reserved.memory", "128Mi"),
+					resource.TestCheckResourceAttr(r, "cpu_manager_config.kube_reserved.ephemeral_storage", "2Gi"),
+					resource.TestCheckResourceAttr(r, "cpu_manager_config.system_reserved.cpu", "50m"),
+					resource.TestCheckResourceAttr(r, "cpu_manager_config.system_reserved.memory", "64Mi"),
+					resource.TestCheckResourceAttr(r, "cpu_manager_config.system_reserved.ephemeral_storage", "1Gi"),
+				),
+			},
+			{
+				// Update CPU manager config
+				Config: parseSKSConfig(t, "./testdata/017.sksnp_update_cpu_manager_config.tf.tmpl", td),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckResourceSKSNodepoolExists(r, &sksNodepool),
+					func(s *terraform.State) error {
+						a := assert.New(t)
+
+						if a.NotNil(sksNodepool.CPUManagerConfig) {
+							a.Equal(egoscale.CPUManagerConfigCPUManagerPolicyStatic, sksNodepool.CPUManagerConfig.CPUManagerPolicy)
+							a.Equal("15s", sksNodepool.CPUManagerConfig.CPUManagerReconcilePeriod)
+							a.True(slices.Contains(sksNodepool.CPUManagerConfig.CPUManagerPolicyOptions, "distribute-cpus-across-numa"))
+							a.True(slices.Contains(sksNodepool.CPUManagerConfig.CPUManagerPolicyOptions, "full-pcpus-only"))
+
+							if a.NotNil(sksNodepool.CPUManagerConfig.KubeReserved) {
+								a.Equal("150m", sksNodepool.CPUManagerConfig.KubeReserved.CPU)
+								a.Equal("256Mi", sksNodepool.CPUManagerConfig.KubeReserved.Memory)
+								a.Equal("3Gi", sksNodepool.CPUManagerConfig.KubeReserved.EphemeralStorage)
+							}
+
+							if a.NotNil(sksNodepool.CPUManagerConfig.SystemReserved) {
+								a.Equal("75m", sksNodepool.CPUManagerConfig.SystemReserved.CPU)
+								a.Equal("128Mi", sksNodepool.CPUManagerConfig.SystemReserved.Memory)
+								a.Equal("2Gi", sksNodepool.CPUManagerConfig.SystemReserved.EphemeralStorage)
+							}
+						}
+						return nil
+					},
+					resource.TestCheckResourceAttr(r, "cpu_manager_config.cpu_manager_policy", "static"),
+					resource.TestCheckTypeSetElemAttr(r, "cpu_manager_config.cpu_manager_policy_options.*", "distribute-cpus-across-numa"),
+					resource.TestCheckTypeSetElemAttr(r, "cpu_manager_config.cpu_manager_policy_options.*", "full-pcpus-only"),
+					resource.TestCheckResourceAttr(r, "cpu_manager_config.cpu_manager_reconcile_period", "15s"),
+					resource.TestCheckResourceAttr(r, "cpu_manager_config.kube_reserved.cpu", "150m"),
+					resource.TestCheckResourceAttr(r, "cpu_manager_config.kube_reserved.memory", "256Mi"),
+					resource.TestCheckResourceAttr(r, "cpu_manager_config.kube_reserved.ephemeral_storage", "3Gi"),
+					resource.TestCheckResourceAttr(r, "cpu_manager_config.system_reserved.cpu", "75m"),
+					resource.TestCheckResourceAttr(r, "cpu_manager_config.system_reserved.memory", "128Mi"),
+					resource.TestCheckResourceAttr(r, "cpu_manager_config.system_reserved.ephemeral_storage", "2Gi"),
+				),
+			},
+		},
+	})
+}
+
 func testAccCheckResourceSKSNodepoolDestroy(r string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[r]
