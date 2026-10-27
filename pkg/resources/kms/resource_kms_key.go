@@ -93,6 +93,9 @@ var kmsSignOnlyKeySpecs = []string{
 
 var externalKeyIDRegexp = regexp.MustCompile(`^[A-Za-z0-9_.-]+$`)
 
+// uuidRegexp accepts both cases: Read keeps the configured spelling of the key store ID.
+var uuidRegexp = regexp.MustCompile(`^(?i)[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)
+
 type ResourceKMSKey struct {
 	client *exoscale.Client
 }
@@ -203,6 +206,9 @@ func (r *ResourceKMSKey) Schema(ctx context.Context, _ resource.SchemaRequest, r
 						MarkdownDescription: "❗ The ID of the External Key Store.",
 						Description:         "The ID of the External Key Store.",
 						Required:            true,
+						Validators: []validator.String{
+							stringvalidator.RegexMatches(uuidRegexp, "must be a UUID"),
+						},
 					},
 					"external_key_id": schema.StringAttribute{
 						MarkdownDescription: "❗ The ID of the key as known to the XKS proxy.",
