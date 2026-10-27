@@ -6,6 +6,11 @@ IMPROVEMENTS:
 
 - chore(VPC): link the community docs for VPC correctly - #633
 
+
+BUG FIXES:
+
+- `exoscale_anti_affinity_group` and `exoscale_instance_pool`: refreshing a resource whose state has an empty ID removes it from the state instead of failing with `invalid UUID length: 0`, which broke resources created by Crossplane (upjet). Both were affected since their migration to terraform-plugin-framework.
+
 ## 0.76.0
 
 FEATURES:
