@@ -69,6 +69,38 @@ func kubeletGCAttrTypes() map[string]attr.Type {
 	}
 }
 
+func reservedResourcesAttrTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"cpu":              types.StringType,
+		"memory":           types.StringType,
+		"ephemeral_storage": types.StringType,
+	}
+}
+
+func cpuManagerConfigAttrTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"cpu_manager_policy":            types.StringType,
+		"cpu_manager_policy_options":    types.SetType{ElemType: types.StringType},
+		"cpu_manager_reconcile_period":  types.StringType,
+		"kube_reserved":                 types.ObjectType{AttrTypes: reservedResourcesAttrTypes()},
+		"system_reserved":               types.ObjectType{AttrTypes: reservedResourcesAttrTypes()},
+	}
+}
+
+type reservedResourcesModel struct {
+	CPU              types.String `tfsdk:"cpu"`
+	Memory           types.String `tfsdk:"memory"`
+	EphemeralStorage types.String `tfsdk:"ephemeral_storage"`
+}
+
+type cpuManagerConfigModel struct {
+	CPUManagerPolicy           types.String `tfsdk:"cpu_manager_policy"`
+	CPUManagerPolicyOptions    types.Set    `tfsdk:"cpu_manager_policy_options"`
+	CPUManagerReconcilePeriod  types.String `tfsdk:"cpu_manager_reconcile_period"`
+	KubeReserved              types.Object `tfsdk:"kube_reserved"`
+	SystemReserved            types.Object `tfsdk:"system_reserved"`
+}
+
 type ResourceNodepoolModel struct {
 	ID                   types.String `tfsdk:"id"`
 	ClusterID            types.String `tfsdk:"cluster_id"`
@@ -95,7 +127,8 @@ type ResourceNodepoolModel struct {
 	TemplateID           types.String `tfsdk:"template_id"`
 	Version              types.String `tfsdk:"version"`
 
-	KubeletImageGC types.Object `tfsdk:"kubelet_image_gc"`
+	CPUManagerConfig types.Object `tfsdk:"cpu_manager_config"`
+	KubeletImageGC   types.Object `tfsdk:"kubelet_image_gc"`
 
 	Timeouts timeouts.Value `tfsdk:"timeouts"`
 }
@@ -187,6 +220,88 @@ func (r *ResourceNodepool) Schema(ctx context.Context, req resource.SchemaReques
 				Required:            true,
 				Validators: []validator.String{
 					stringvalidator.RegexMatches(regexp.MustCompile(`\.`), `invalid value, expected format "FAMILY.SIZE"`),
+				},
+			},
+			"cpu_manager_config": schema.SingleNestedAttribute{
+				Description:         "Configuration for the kubelet CPU manager.",
+				MarkdownDescription: "Configuration for the kubelet CPU manager.",
+				Optional:            true,
+				Computed:            true,
+				PlanModifiers: []planmodifier.Object{
+					objectplanmodifier.UseStateForUnknown(),
+				},
+				Attributes: map[string]schema.Attribute{
+					"cpu_manager_policy": schema.StringAttribute{
+						Description:         "CPU management policy used by the kubelet. The \"static\" policy grants exclusive CPUs to Guaranteed pods requesting integer CPU limits. When set to \"static\", a CPU reservation must be provided via kube_reserved or system_reserved.",
+						MarkdownDescription: "CPU management policy used by the kubelet. The \"static\" policy grants exclusive CPUs to Guaranteed pods requesting integer CPU limits. When set to \"static\", a CPU reservation must be provided via `kube_reserved` or `system_reserved`.",
+						Optional:            true,
+						Computed:            true,
+					},
+					"cpu_manager_policy_options": schema.SetAttribute{
+						Description:         "CPU manager policy options used by the kubelet. They refine the behavior of the \"static\" cpu-manager-policy and are only valid when the policy is \"static\". Supported options: distribute-cpus-across-numa, full-pcpus-only, strict-cpu-reservation, align-by-socket, prefer-align-cpus-by-uncorecache, distribute-cpus-across-cores.",
+						MarkdownDescription: "CPU manager policy options used by the kubelet. They refine the behavior of the \"static\" cpu-manager-policy and are only valid when the policy is \"static\". Supported options: `distribute-cpus-across-numa`, `full-pcpus-only`, `strict-cpu-reservation`, `align-by-socket`, `prefer-align-cpus-by-uncorecache`, `distribute-cpus-across-cores`.",
+						ElementType:         types.StringType,
+						Optional:            true,
+						Computed:            true,
+					},
+					"cpu_manager_reconcile_period": schema.StringAttribute{
+						Description:         "CPU manager reconcile period used by the kubelet, as a duration string (for example \"10s\").",
+						MarkdownDescription: "CPU manager reconcile period used by the kubelet, as a duration string (for example `10s`).",
+						Optional:            true,
+						Computed:            true,
+					},
+					"kube_reserved": schema.SingleNestedAttribute{
+						Description:         "Resources reserved for node components.",
+						MarkdownDescription: "Resources reserved for node components.",
+						Optional:            true,
+						Computed:            true,
+						Attributes: map[string]schema.Attribute{
+							"cpu": schema.StringAttribute{
+								Description:         "CPU reservation, e.g., \"200m\"",
+								MarkdownDescription: "CPU reservation, e.g., `200m`",
+								Optional:            true,
+								Computed:            true,
+							},
+							"memory": schema.StringAttribute{
+								Description:         "Memory reservation, e.g., \"512Mi\"",
+								MarkdownDescription: "Memory reservation, e.g., `512Mi`",
+								Optional:            true,
+								Computed:            true,
+							},
+							"ephemeral_storage": schema.StringAttribute{
+								Description:         "Ephemeral storage reservation, e.g., \"1Gi\"",
+								MarkdownDescription: "Ephemeral storage reservation, e.g., `1Gi`",
+								Optional:            true,
+								Computed:            true,
+							},
+						},
+					},
+					"system_reserved": schema.SingleNestedAttribute{
+						Description:         "Resources reserved for system components.",
+						MarkdownDescription: "Resources reserved for system components.",
+						Optional:            true,
+						Computed:            true,
+						Attributes: map[string]schema.Attribute{
+							"cpu": schema.StringAttribute{
+								Description:         "CPU reservation, e.g., \"200m\"",
+								MarkdownDescription: "CPU reservation, e.g., `200m`",
+								Optional:            true,
+								Computed:            true,
+							},
+							"memory": schema.StringAttribute{
+								Description:         "Memory reservation, e.g., \"512Mi\"",
+								MarkdownDescription: "Memory reservation, e.g., `512Mi`",
+								Optional:            true,
+								Computed:            true,
+							},
+							"ephemeral_storage": schema.StringAttribute{
+								Description:         "Ephemeral storage reservation, e.g., \"1Gi\"",
+								MarkdownDescription: "Ephemeral storage reservation, e.g., `1Gi`",
+								Optional:            true,
+								Computed:            true,
+							},
+						},
+					},
 				},
 			},
 			"kubelet_image_gc": schema.SingleNestedAttribute{
@@ -355,6 +470,7 @@ func (r *ResourceNodepool) ImportState(ctx context.Context, req resource.ImportS
 		AntiAffinityGroupIDs: types.SetNull(types.StringType),
 		PrivateNetworkIDs:    types.SetNull(types.StringType),
 		SecurityGroupIDs:     types.SetNull(types.StringType),
+		CPUManagerConfig:     types.ObjectNull(cpuManagerConfigAttrTypes()),
 		KubeletImageGC:       types.ObjectNull(kubeletGCAttrTypes()),
 		Timeouts:             t,
 	})...)
@@ -556,6 +672,49 @@ func (r *ResourceNodepool) Create(ctx context.Context, req resource.CreateReques
 		return
 	}
 	createReq.InstanceType = &exoscale.InstanceType{ID: instanceType.ID}
+
+	if b, ok := r.cpuManagerConfigBlock(ctx, plan, &resp.Diagnostics); ok {
+		cpuMgrCfg := &exoscale.CPUManagerConfig{
+			CPUManagerPolicy:          exoscale.CPUManagerConfigCPUManagerPolicy(b.CPUManagerPolicy.ValueString()),
+			CPUManagerReconcilePeriod: b.CPUManagerReconcilePeriod.ValueString(),
+		}
+
+		if !b.CPUManagerPolicyOptions.IsNull() && !b.CPUManagerPolicyOptions.IsUnknown() {
+			var opts []string
+			resp.Diagnostics.Append(b.CPUManagerPolicyOptions.ElementsAs(ctx, &opts, false)...)
+			if resp.Diagnostics.HasError() {
+				return
+			}
+			cpuMgrCfg.CPUManagerPolicyOptions = opts
+		}
+
+		if kubeRes, ok := r.reservedResourcesBlock(ctx, b.KubeReserved, &resp.Diagnostics); ok {
+			cpuMgrCfg.KubeReserved = &exoscale.ReservedResources{
+				CPU:              kubeRes.CPU.ValueString(),
+				Memory:           kubeRes.Memory.ValueString(),
+				EphemeralStorage: kubeRes.EphemeralStorage.ValueString(),
+			}
+		}
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		if sysRes, ok := r.reservedResourcesBlock(ctx, b.SystemReserved, &resp.Diagnostics); ok {
+			cpuMgrCfg.SystemReserved = &exoscale.ReservedResources{
+				CPU:              sysRes.CPU.ValueString(),
+				Memory:           sysRes.Memory.ValueString(),
+				EphemeralStorage: sysRes.EphemeralStorage.ValueString(),
+			}
+		}
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		createReq.CPUManagerConfig = cpuMgrCfg
+	}
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	if b, ok := r.kubeletGCBlock(ctx, plan, &resp.Diagnostics); ok {
 		createReq.KubeletImageGC = &exoscale.KubeletImageGC{
@@ -905,6 +1064,54 @@ func (r *ResourceNodepool) Update(ctx context.Context, req resource.UpdateReques
 		updated = true
 	}
 
+	if !plan.CPUManagerConfig.Equal(state.CPUManagerConfig) {
+		if b, ok := r.cpuManagerConfigBlock(ctx, plan, &resp.Diagnostics); ok {
+			cpuMgrCfg := &exoscale.CPUManagerConfig{
+				CPUManagerPolicy:          exoscale.CPUManagerConfigCPUManagerPolicy(b.CPUManagerPolicy.ValueString()),
+				CPUManagerReconcilePeriod: b.CPUManagerReconcilePeriod.ValueString(),
+			}
+
+			if !b.CPUManagerPolicyOptions.IsNull() && !b.CPUManagerPolicyOptions.IsUnknown() {
+				var opts []string
+				resp.Diagnostics.Append(b.CPUManagerPolicyOptions.ElementsAs(ctx, &opts, false)...)
+				if resp.Diagnostics.HasError() {
+					return
+				}
+				cpuMgrCfg.CPUManagerPolicyOptions = opts
+			}
+
+			if kubeRes, ok := r.reservedResourcesBlock(ctx, b.KubeReserved, &resp.Diagnostics); ok {
+				cpuMgrCfg.KubeReserved = &exoscale.ReservedResources{
+					CPU:              kubeRes.CPU.ValueString(),
+					Memory:           kubeRes.Memory.ValueString(),
+					EphemeralStorage: kubeRes.EphemeralStorage.ValueString(),
+				}
+			}
+			if resp.Diagnostics.HasError() {
+				return
+			}
+
+			if sysRes, ok := r.reservedResourcesBlock(ctx, b.SystemReserved, &resp.Diagnostics); ok {
+				cpuMgrCfg.SystemReserved = &exoscale.ReservedResources{
+					CPU:              sysRes.CPU.ValueString(),
+					Memory:           sysRes.Memory.ValueString(),
+					EphemeralStorage: sysRes.EphemeralStorage.ValueString(),
+				}
+			}
+			if resp.Diagnostics.HasError() {
+				return
+			}
+
+			updateReq.CPUManagerConfig = cpuMgrCfg
+		} else {
+			updateReq.CPUManagerConfig = nil
+		}
+		if resp.Diagnostics.HasError() {
+			return
+		}
+		updated = true
+	}
+
 	if !plan.KubeletImageGC.Equal(state.KubeletImageGC) {
 		if b, ok := r.kubeletGCBlock(ctx, plan, &resp.Diagnostics); ok {
 			updateReq.KubeletImageGC = &exoscale.KubeletImageGC{
@@ -1058,6 +1265,32 @@ func (r *ResourceNodepool) Delete(ctx context.Context, req resource.DeleteReques
 }
 
 // kubeletGCBlock decodes the (at most one) "kubelet_image_gc" nested object from a model.
+func (r *ResourceNodepool) cpuManagerConfigBlock(ctx context.Context, m ResourceNodepoolModel, diags *diag.Diagnostics) (cpuManagerConfigModel, bool) {
+	if m.CPUManagerConfig.IsNull() || m.CPUManagerConfig.IsUnknown() {
+		return cpuManagerConfigModel{}, false
+	}
+	var block cpuManagerConfigModel
+	diags.Append(m.CPUManagerConfig.As(ctx, &block, basetypes.ObjectAsOptions{})...)
+	if diags.HasError() {
+		return cpuManagerConfigModel{}, false
+	}
+
+	return block, true
+}
+
+func (r *ResourceNodepool) reservedResourcesBlock(ctx context.Context, obj types.Object, diags *diag.Diagnostics) (*reservedResourcesModel, bool) {
+	if obj.IsNull() || obj.IsUnknown() {
+		return nil, false
+	}
+	var block reservedResourcesModel
+	diags.Append(obj.As(ctx, &block, basetypes.ObjectAsOptions{})...)
+	if diags.HasError() {
+		return nil, false
+	}
+
+	return &block, true
+}
+
 func (r *ResourceNodepool) kubeletGCBlock(ctx context.Context, m ResourceNodepoolModel, diags *diag.Diagnostics) (kubeletGCModel, bool) {
 	if m.KubeletImageGC.IsNull() || m.KubeletImageGC.IsUnknown() {
 		return kubeletGCModel{}, false
@@ -1126,6 +1359,113 @@ func (r *ResourceNodepool) applyNodepoolComputed(
 		if nodepool.KubeletMaxPods != nil {
 			model.KubeletMaxPods = types.Int64Value(*nodepool.KubeletMaxPods)
 		}
+	}
+
+	if model.CPUManagerConfig.IsUnknown() {
+		model.CPUManagerConfig = types.ObjectNull(cpuManagerConfigAttrTypes())
+		if nodepool.CPUManagerConfig != nil {
+			cpuMgrModel := cpuManagerConfigModel{
+				CPUManagerPolicy:          types.StringValue(string(nodepool.CPUManagerConfig.CPUManagerPolicy)),
+				CPUManagerReconcilePeriod: optionalString(nodepool.CPUManagerConfig.CPUManagerReconcilePeriod),
+			}
+
+			if len(nodepool.CPUManagerConfig.CPUManagerPolicyOptions) > 0 {
+				opts, d := types.SetValueFrom(ctx, types.StringType, nodepool.CPUManagerConfig.CPUManagerPolicyOptions)
+				diags.Append(d...)
+				cpuMgrModel.CPUManagerPolicyOptions = opts
+			} else {
+				cpuMgrModel.CPUManagerPolicyOptions = types.SetNull(types.StringType)
+			}
+
+			if nodepool.CPUManagerConfig.KubeReserved != nil {
+				kubeResObj, d := types.ObjectValueFrom(ctx, reservedResourcesAttrTypes(), reservedResourcesModel{
+					CPU:              types.StringValue(nodepool.CPUManagerConfig.KubeReserved.CPU),
+					Memory:           optionalString(nodepool.CPUManagerConfig.KubeReserved.Memory),
+					EphemeralStorage: optionalString(nodepool.CPUManagerConfig.KubeReserved.EphemeralStorage),
+				})
+				diags.Append(d...)
+				cpuMgrModel.KubeReserved = kubeResObj
+			} else {
+				cpuMgrModel.KubeReserved = types.ObjectNull(reservedResourcesAttrTypes())
+			}
+
+			if nodepool.CPUManagerConfig.SystemReserved != nil {
+				sysResObj, d := types.ObjectValueFrom(ctx, reservedResourcesAttrTypes(), reservedResourcesModel{
+					CPU:              types.StringValue(nodepool.CPUManagerConfig.SystemReserved.CPU),
+					Memory:           optionalString(nodepool.CPUManagerConfig.SystemReserved.Memory),
+					EphemeralStorage: optionalString(nodepool.CPUManagerConfig.SystemReserved.EphemeralStorage),
+				})
+				diags.Append(d...)
+				cpuMgrModel.SystemReserved = sysResObj
+			} else {
+				cpuMgrModel.SystemReserved = types.ObjectNull(reservedResourcesAttrTypes())
+			}
+
+			obj, d := types.ObjectValueFrom(ctx, cpuManagerConfigAttrTypes(), cpuMgrModel)
+			diags.Append(d...)
+			model.CPUManagerConfig = obj
+		}
+	} else if !model.CPUManagerConfig.IsNull() {
+		// The object is configured, but its nested attributes are
+		// Optional+Computed too: fill in those left unknown.
+		var block cpuManagerConfigModel
+		diags.Append(model.CPUManagerConfig.As(ctx, &block, basetypes.ObjectAsOptions{})...)
+		if diags.HasError() {
+			return diags
+		}
+
+		if block.CPUManagerPolicy.IsUnknown() {
+			block.CPUManagerPolicy = types.StringNull()
+			if nodepool.CPUManagerConfig != nil {
+				block.CPUManagerPolicy = types.StringValue(string(nodepool.CPUManagerConfig.CPUManagerPolicy))
+			}
+		}
+
+		if block.CPUManagerReconcilePeriod.IsUnknown() {
+			block.CPUManagerReconcilePeriod = types.StringNull()
+			if nodepool.CPUManagerConfig != nil {
+				block.CPUManagerReconcilePeriod = optionalString(nodepool.CPUManagerConfig.CPUManagerReconcilePeriod)
+			}
+		}
+
+		if block.CPUManagerPolicyOptions.IsUnknown() {
+			block.CPUManagerPolicyOptions = types.SetNull(types.StringType)
+			if nodepool.CPUManagerConfig != nil && len(nodepool.CPUManagerConfig.CPUManagerPolicyOptions) > 0 {
+				opts, d := types.SetValueFrom(ctx, types.StringType, nodepool.CPUManagerConfig.CPUManagerPolicyOptions)
+				diags.Append(d...)
+				block.CPUManagerPolicyOptions = opts
+			}
+		}
+
+		if block.KubeReserved.IsUnknown() {
+			block.KubeReserved = types.ObjectNull(reservedResourcesAttrTypes())
+			if nodepool.CPUManagerConfig != nil && nodepool.CPUManagerConfig.KubeReserved != nil {
+				kubeResObj, d := types.ObjectValueFrom(ctx, reservedResourcesAttrTypes(), reservedResourcesModel{
+					CPU:              types.StringValue(nodepool.CPUManagerConfig.KubeReserved.CPU),
+					Memory:           optionalString(nodepool.CPUManagerConfig.KubeReserved.Memory),
+					EphemeralStorage: optionalString(nodepool.CPUManagerConfig.KubeReserved.EphemeralStorage),
+				})
+				diags.Append(d...)
+				block.KubeReserved = kubeResObj
+			}
+		}
+
+		if block.SystemReserved.IsUnknown() {
+			block.SystemReserved = types.ObjectNull(reservedResourcesAttrTypes())
+			if nodepool.CPUManagerConfig != nil && nodepool.CPUManagerConfig.SystemReserved != nil {
+				sysResObj, d := types.ObjectValueFrom(ctx, reservedResourcesAttrTypes(), reservedResourcesModel{
+					CPU:              types.StringValue(nodepool.CPUManagerConfig.SystemReserved.CPU),
+					Memory:           optionalString(nodepool.CPUManagerConfig.SystemReserved.Memory),
+					EphemeralStorage: optionalString(nodepool.CPUManagerConfig.SystemReserved.EphemeralStorage),
+				})
+				diags.Append(d...)
+				block.SystemReserved = sysResObj
+			}
+		}
+
+		obj, d := types.ObjectValueFrom(ctx, cpuManagerConfigAttrTypes(), block)
+		diags.Append(d...)
+		model.CPUManagerConfig = obj
 	}
 
 	if model.KubeletImageGC.IsUnknown() {
@@ -1216,6 +1556,50 @@ func (r *ResourceNodepool) applyNodepool(
 		strings.ToLower(string(instanceType.Family)),
 		strings.ToLower(string(instanceType.Size)),
 	))
+
+	model.CPUManagerConfig = types.ObjectNull(cpuManagerConfigAttrTypes())
+	if nodepool.CPUManagerConfig != nil {
+		cpuMgrModel := cpuManagerConfigModel{
+			CPUManagerPolicy:          types.StringValue(string(nodepool.CPUManagerConfig.CPUManagerPolicy)),
+			CPUManagerReconcilePeriod: optionalString(nodepool.CPUManagerConfig.CPUManagerReconcilePeriod),
+		}
+
+		if len(nodepool.CPUManagerConfig.CPUManagerPolicyOptions) > 0 {
+			opts, d := types.SetValueFrom(ctx, types.StringType, nodepool.CPUManagerConfig.CPUManagerPolicyOptions)
+			diags.Append(d...)
+			cpuMgrModel.CPUManagerPolicyOptions = opts
+		} else {
+			cpuMgrModel.CPUManagerPolicyOptions = types.SetNull(types.StringType)
+		}
+
+		if nodepool.CPUManagerConfig.KubeReserved != nil {
+			kubeResObj, d := types.ObjectValueFrom(ctx, reservedResourcesAttrTypes(), reservedResourcesModel{
+				CPU:              types.StringValue(nodepool.CPUManagerConfig.KubeReserved.CPU),
+				Memory:           optionalString(nodepool.CPUManagerConfig.KubeReserved.Memory),
+				EphemeralStorage: optionalString(nodepool.CPUManagerConfig.KubeReserved.EphemeralStorage),
+			})
+			diags.Append(d...)
+			cpuMgrModel.KubeReserved = kubeResObj
+		} else {
+			cpuMgrModel.KubeReserved = types.ObjectNull(reservedResourcesAttrTypes())
+		}
+
+		if nodepool.CPUManagerConfig.SystemReserved != nil {
+			sysResObj, d := types.ObjectValueFrom(ctx, reservedResourcesAttrTypes(), reservedResourcesModel{
+				CPU:              types.StringValue(nodepool.CPUManagerConfig.SystemReserved.CPU),
+				Memory:           optionalString(nodepool.CPUManagerConfig.SystemReserved.Memory),
+				EphemeralStorage: optionalString(nodepool.CPUManagerConfig.SystemReserved.EphemeralStorage),
+			})
+			diags.Append(d...)
+			cpuMgrModel.SystemReserved = sysResObj
+		} else {
+			cpuMgrModel.SystemReserved = types.ObjectNull(reservedResourcesAttrTypes())
+		}
+
+		obj, d := types.ObjectValueFrom(ctx, cpuManagerConfigAttrTypes(), cpuMgrModel)
+		diags.Append(d...)
+		model.CPUManagerConfig = obj
+	}
 
 	model.KubeletImageGC = types.ObjectNull(kubeletGCAttrTypes())
 	if nodepool.KubeletImageGC != nil {
