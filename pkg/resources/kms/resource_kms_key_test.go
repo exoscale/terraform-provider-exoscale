@@ -274,6 +274,21 @@ func TestResourceKMSKeyModifyPlan(t *testing.T) {
 			}),
 		},
 		{
+			name: "new zone with same name for a multi-zone key",
+			state: kmsKeyValue(t, with(map[string]tftypes.Value{
+				"multi_zone": tftypes.NewValue(tftypes.Bool, true),
+			})),
+			plan: with(map[string]tftypes.Value{
+				"zone":       str("de-fra-1"),
+				"multi_zone": tftypes.NewValue(tftypes.Bool, true),
+			}),
+			config: with(map[string]tftypes.Value{
+				"zone":       str("de-fra-1"),
+				"multi_zone": tftypes.NewValue(tftypes.Bool, true),
+			}),
+			wantError: []path.Path{path.Root("name")},
+		},
+		{
 			name:   "unconfigured computed value",
 			state:  kmsKeyValue(t, existing),
 			plan:   with(map[string]tftypes.Value{"description": str(tftypes.UnknownValue)}),

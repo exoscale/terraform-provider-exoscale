@@ -319,14 +319,17 @@ func (r *ResourceKMSKey) ModifyPlan(ctx context.Context, req resource.ModifyPlan
 		return
 	}
 
-	// A new zone replaces the key with a new key in that zone: names are reserved per zone,
-	// so the name of the current key does not prevent creating the new one.
-	if !plan.Name.Equal(state.Name) || !plan.Zone.Equal(state.Zone) {
+	// A new zone replaces the key with a new key in that zone: names are reserved per zone, so the name of
+	// the current key does not prevent creating the new one, unless it is multi-zone (replicas hold the name).
+	if !plan.Name.Equal(state.Name) || (!plan.Zone.Equal(state.Zone) && !state.MultiZone.ValueBool()) {
 		return
 	}
 
 	// Every attribute but timeouts requires a replacement (see Update): mirror their plan modifiers.
 	var changed []string
+	if !plan.Zone.IsUnknown() && !plan.Zone.Equal(state.Zone) {
+		changed = append(changed, "zone")
+	}
 	if !plan.Xks.IsUnknown() && !plan.Xks.Equal(state.Xks) {
 		changed = append(changed, "xks")
 	}
