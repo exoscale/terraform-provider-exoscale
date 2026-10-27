@@ -45,7 +45,7 @@ var ResourceThanosSchema = schema.SingleNestedAttribute{
 			},
 		},
 		"thanos_settings": schema.StringAttribute{
-			MarkdownDescription: "Thanos configuration settings in JSON format (`exo dbaas type show thanos` for reference).",
+			MarkdownDescription: "Thanos configuration settings in JSON format (`exo dbaas type show thanos --settings=thanos` for reference).",
 			Optional:            true,
 			Computed:            true,
 		},
@@ -137,7 +137,8 @@ func (r *ServiceResource) createThanos(ctx context.Context, data *ServiceResourc
 	}
 
 	// Wait for the service to be ready: the connection URIs are only
-	// populated once the service is up.
+	// populated once the service is up. All thanos plans expose a
+	// query-frontend component, so its URI is the readiness signal.
 	res, err := waitForDBAASServiceReadyForFn(
 		ctx,
 		client.GetDBAASServiceThanos,
@@ -192,31 +193,33 @@ func (r *ServiceResource) createThanos(ctx context.Context, data *ServiceResourc
 		}
 	}
 
-	if data.Thanos.IPFilter.IsUnknown() {
-		data.Thanos.IPFilter = types.SetNull(types.StringType)
-		if apiService.IPFilter != nil {
-			v, dg := types.SetValueFrom(ctx, types.StringType, apiService.IPFilter)
-			if dg.HasError() {
-				diagnostics.Append(dg...)
-				return
+	if data.Thanos != nil {
+		if data.Thanos.IPFilter.IsUnknown() {
+			data.Thanos.IPFilter = types.SetNull(types.StringType)
+			if apiService.IPFilter != nil {
+				v, dg := types.SetValueFrom(ctx, types.StringType, apiService.IPFilter)
+				if dg.HasError() {
+					diagnostics.Append(dg...)
+					return
+				}
+				data.Thanos.IPFilter = v
 			}
-			data.Thanos.IPFilter = v
 		}
-	}
 
-	if data.Thanos.Settings.IsUnknown() {
-		data.Thanos.Settings = types.StringNull()
-		if apiService.ThanosSettings != nil {
-			settings, err := json.Marshal(*apiService.ThanosSettings)
-			if err != nil {
-				diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
-				return
+		if data.Thanos.Settings.IsUnknown() {
+			data.Thanos.Settings = types.StringNull()
+			if apiService.ThanosSettings != nil {
+				settings, err := json.Marshal(*apiService.ThanosSettings)
+				if err != nil {
+					diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
+					return
+				}
+				data.Thanos.Settings = types.StringValue(string(settings))
 			}
-			data.Thanos.Settings = types.StringValue(string(settings))
 		}
-	}
 
-	setThanosConnectionInfo(data.Thanos, apiService.ConnectionInfo)
+		setThanosConnectionInfo(data.Thanos, apiService.ConnectionInfo)
+	}
 }
 
 // readThanos function handles Thanos specific part of database resource Read logic.
@@ -353,7 +356,7 @@ func (r *ServiceResource) updateThanos(ctx context.Context, stateData *ServiceRe
 		}
 
 		if !planData.Thanos.Settings.Equal(stateData.Thanos.Settings) {
-			if planData.Thanos.Settings.ValueString() != "" {
+			if !planData.Thanos.Settings.IsUnknown() && !planData.Thanos.Settings.IsNull() {
 				settings, err := validatedThanosSettings(ctx, client, planData.Thanos.Settings.ValueString())
 				if err != nil {
 					diagnostics.AddError("Validation error", fmt.Sprintf("invalid Thanos settings: %s", err))

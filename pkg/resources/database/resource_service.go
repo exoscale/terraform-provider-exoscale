@@ -742,6 +742,24 @@ func (r *ServiceResource) Delete(ctx context.Context, req resource.DeleteRequest
 			return
 		}
 
+	case "thanos":
+		client, err := utils.SwitchClientZone(ctx, r.clientV3, v3.ZoneName(data.Zone.ValueString()))
+		if err != nil {
+			resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to init client, got error: %s", err))
+			return
+		}
+
+		op, err := client.DeleteDBAASServiceThanos(ctx, data.Id.ValueString())
+		if err != nil {
+			resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete database service thanos, got error: %s", err))
+			return
+		}
+
+		if _, err := client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
+			resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to wait for database service thanos deletion, got error: %s", err))
+			return
+		}
+
 	default:
 		err := r.client.DeleteDatabaseService(ctx, data.Zone.ValueString(), &exoscale.DatabaseService{Name: data.Id.ValueStringPointer()})
 		if err != nil {

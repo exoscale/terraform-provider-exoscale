@@ -195,12 +195,20 @@ func CheckExistsThanos(name string, data *TemplateModelThanos) error {
 		return fmt.Errorf("plan: expected %q, got %q", data.Plan, service.Plan)
 	}
 
-	if *service.TerminationProtection != false {
+	if service.TerminationProtection == nil {
+		return fmt.Errorf("termination_protection: expected false, got nil")
+	}
+
+	if *service.TerminationProtection {
 		return fmt.Errorf("termination_protection: expected false, got true")
 	}
 
 	if !cmp.Equal(data.IpFilter, service.IPFilter, cmpopts.EquateEmpty()) {
 		return fmt.Errorf("thanos.ip_filter: expected %q, got %q", data.IpFilter, service.IPFilter)
+	}
+
+	if service.Maintenance == nil {
+		return fmt.Errorf("thanos.maintenance: expected dow %q time %q, got nil", data.MaintenanceDow, data.MaintenanceTime)
 	}
 
 	if v := string(service.Maintenance.Dow); data.MaintenanceDow != v {

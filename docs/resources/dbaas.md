@@ -175,7 +175,7 @@ Optional:
 Optional:
 
 - `ip_filter` (Set of String) A list of CIDR blocks to allow incoming connections from.
-- `thanos_settings` (String) Thanos configuration settings in JSON format (`exo dbaas type show thanos` for reference).
+- `thanos_settings` (String) Thanos configuration settings in JSON format (`exo dbaas type show thanos --settings=thanos` for reference).
 
 Read-Only:
 
