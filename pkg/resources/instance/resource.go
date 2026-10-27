@@ -651,6 +651,10 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 		request.PublicIPAssignment = exoscale.PublicIPAssignmentDual
 	}
 
+	if plan.State.ValueString() == string(exoscale.InstanceStateStopped) {
+		request.AutoStart = new(false)
+	}
+
 	if plan.EnableTPM.ValueBool() {
 		request.TpmEnabled = exoscale.Ptr(true)
 	}
@@ -779,13 +783,6 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 		))
 		if err != nil {
 			resp.Diagnostics.AddError("unable to create Reverse DNS record", err.Error())
-			return
-		}
-	}
-
-	if plan.State.ValueString() == string(exoscale.InstanceStateStopped) {
-		if err := wait(ctx, client)(client.StopInstance(ctx, id)); err != nil {
-			resp.Diagnostics.AddError("unable to stop instance", err.Error())
 			return
 		}
 	}
