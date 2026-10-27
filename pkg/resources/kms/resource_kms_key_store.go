@@ -661,30 +661,7 @@ func (r *ResourceKMSKeyStore) Delete(ctx context.Context, req resource.DeleteReq
 }
 
 func (r *ResourceKMSKeyStore) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	idParts := strings.Split(req.ID, "@")
-
-	if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
-		resp.Diagnostics.AddError(
-			"unexpected import identifier",
-			fmt.Sprintf("Expected import identifier with format: id@zone. Got: %q", req.ID),
-		)
-		return
-	}
-
-	// Set timeouts (quirk https://github.com/hashicorp/terraform-plugin-framework-timeouts/issues/46)
-	var t timeouts.Value
-	resp.Diagnostics.Append(resp.State.GetAttribute(ctx, path.Root("timeouts"), &t)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	resp.Diagnostics.Append(resp.State.Set(ctx, &ResourceKMSKeyStoreModel{
-		ID:       types.StringValue(idParts[0]),
-		Zone:     types.StringValue(idParts[1]),
-		Proxy:    types.ObjectNull(ResourceKMSKeyStoreProxyModel{}.Types()),
-		Health:   types.ObjectNull(KMSKeyStoreHealthModel{}.Types()),
-		Timeouts: t,
-	})...)
+	utils.ImportStatePassthroughZonedID(ctx, req, resp)
 }
 
 // refresh reads the key store from the API into the model.
