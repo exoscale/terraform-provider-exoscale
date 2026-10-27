@@ -112,7 +112,7 @@ func checkExternalEndpointDestroy(name string) resource.TestCheckFunc {
 			return err
 		}
 
-		client, err := utils.SwitchClientZone(ctx, clientV3, testutils.TestZoneName)
+		client, err := utils.SwitchClientZone(ctx, clientV3, v3.ZoneName(testutils.TestZoneName))
 		if err != nil {
 			return err
 		}

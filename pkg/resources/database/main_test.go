@@ -59,7 +59,7 @@ func CheckServiceDestroy(dbType, name string) resource.TestCheckFunc {
 		clientV3, err := utils.SwitchClientZone(
 			ctxV3,
 			defaultClientV3,
-			testutils.TestZoneName,
+			v3.ZoneName(testutils.TestZoneName),
 		)
 
 		if err != nil {
