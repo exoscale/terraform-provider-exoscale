@@ -1,0 +1,47 @@
+locals {
+  zone = "{{ .Zone }}"
+}
+
+data "exoscale_security_group" "default" {
+  name = "default"
+}
+
+resource "exoscale_sks_cluster" "test" {
+  zone = local.zone
+  name = "terraform-provider-test-{{ .ID }}"
+
+  timeouts {
+    delete = "10m"
+  }
+}
+
+resource "exoscale_sks_nodepool" "test" {
+  zone            = local.zone
+  cluster_id      = exoscale_sks_cluster.test.id
+  name            = "terraform-provider-test-{{ .ID }}-updated"
+  instance_type   = "standard.small"
+  size            = 3
+  storage_lvm     = false
+
+  cpu_manager_config {
+    cpu_manager_policy           = "static"
+    cpu_manager_policy_options   = ["distribute-cpus-across-numa", "full-pcpus-only"]
+    cpu_manager_reconcile_period = "15s"
+
+    kube_reserved {
+      cpu              = "150m"
+      memory           = "256Mi"
+      ephemeral_storage = "3Gi"
+    }
+
+    system_reserved {
+      cpu              = "75m"
+      memory           = "128Mi"
+      ephemeral_storage = "2Gi"
+    }
+  }
+
+  timeouts {
+    delete = "10m"
+  }
+}
