@@ -71,6 +71,7 @@ type ServiceResourceModel struct {
 	Opensearch *ResourceOpensearchModel `tfsdk:"opensearch"`
 	Grafana    *ResourceGrafanaModel    `tfsdk:"grafana"`
 	Clickhouse *ResourceClickhouseModel `tfsdk:"clickhouse"`
+	Thanos     *ResourceThanosModel     `tfsdk:"thanos"`
 
 	Timeouts timeouts.Value `tfsdk:"timeouts"`
 }
@@ -179,7 +180,7 @@ func (r *ServiceResource) Schema(ctx context.Context, req resource.SchemaRequest
 				Default:             booldefault.StaticBool(true),
 			},
 			"type": schema.StringAttribute{
-				MarkdownDescription: "The type of the database service (`clickhouse`, `kafka`, `mysql`, `opensearch`, `pg`, `valkey`, `grafana`).",
+				MarkdownDescription: "The type of the database service (`clickhouse`, `kafka`, `mysql`, `opensearch`, `pg`, `valkey`, `grafana`, `thanos`).",
 				Required:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -212,6 +213,7 @@ func (r *ServiceResource) Schema(ctx context.Context, req resource.SchemaRequest
 			"mysql":      ResourceMysqlSchema,
 			"opensearch": ResourceOpensearchSchema,
 			"pg":         ResourcePgSchema,
+			"thanos":     ResourceThanosSchema,
 			"valkey":     ResourceValkeySchema,
 			"clickhouse": ResourceClickhouseSchema,
 		},
@@ -320,6 +322,12 @@ func (r *ServiceResource) ModifyPlan(ctx context.Context, req resource.ModifyPla
 		clickhouse.IPFilter = emptyIPFilter
 		normalized.Clickhouse = &clickhouse
 	}
+	if normalized.Thanos != nil && configData.Thanos != nil && configData.Thanos.IPFilter.IsNull() {
+		resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("thanos").AtName("ip_filter"), emptyIPFilter)...)
+		thanos := *normalized.Thanos
+		thanos.IPFilter = emptyIPFilter
+		normalized.Thanos = &thanos
+	}
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -408,6 +416,11 @@ func (r *ServiceResource) UpgradeState(ctx context.Context) map[int64]resource.S
 							Attributes: ResourceClickhouseSchema.Attributes,
 						},
 					},
+					"thanos": schema.ListNestedBlock{
+						NestedObject: schema.NestedBlockObject{
+							Attributes: ResourceThanosSchema.Attributes,
+						},
+					},
 					"timeouts": timeouts.BlockAll(ctx),
 				},
 			},
@@ -440,6 +453,7 @@ func (r *ServiceResource) UpgradeState(ctx context.Context) map[int64]resource.S
 					Opensearch            []ResourceOpensearchModel `tfsdk:"opensearch"`
 					Grafana               []ResourceGrafanaModel    `tfsdk:"grafana"`
 					Clickhouse            []ResourceClickhouseModel `tfsdk:"clickhouse"`
+					Thanos                []ResourceThanosModel     `tfsdk:"thanos"`
 					Timeouts              timeouts.Value            `tfsdk:"timeouts"`
 				}{}
 
@@ -487,6 +501,9 @@ func (r *ServiceResource) UpgradeState(ctx context.Context) map[int64]resource.S
 				}
 				if len(priorState.Clickhouse) > 0 {
 					upgradedStateData.Clickhouse = &priorState.Clickhouse[0]
+				}
+				if len(priorState.Thanos) > 0 {
+					upgradedStateData.Thanos = &priorState.Thanos[0]
 				}
 
 				resp.Diagnostics.Append(resp.State.Set(ctx, upgradedStateData)...)
@@ -563,6 +580,8 @@ func (r *ServiceResource) Create(ctx context.Context, req resource.CreateRequest
 		r.createGrafana(ctx, &data, &resp.Diagnostics)
 	case "clickhouse":
 		r.createClickhouse(ctx, &data, &resp.Diagnostics)
+	case "thanos":
+		r.createThanos(ctx, &data, &resp.Diagnostics)
 	}
 	if resp.Diagnostics.HasError() {
 		return
@@ -614,6 +633,8 @@ func (r *ServiceResource) Read(ctx context.Context, req resource.ReadRequest, re
 		clearState = r.readGrafana(ctx, &data, &resp.Diagnostics)
 	case "clickhouse":
 		clearState = r.readClickhouse(ctx, &data, &resp.Diagnostics)
+	case "thanos":
+		clearState = r.readThanos(ctx, &data, &resp.Diagnostics)
 	}
 	if resp.Diagnostics.HasError() {
 		return
@@ -668,6 +689,8 @@ func (r *ServiceResource) Update(ctx context.Context, req resource.UpdateRequest
 		r.updateGrafana(ctx, &stateData, &planData, &resp.Diagnostics)
 	case "clickhouse":
 		r.updateClickhouse(ctx, &stateData, &planData, &resp.Diagnostics)
+	case "thanos":
+		r.updateThanos(ctx, &stateData, &planData, &resp.Diagnostics)
 	}
 	if resp.Diagnostics.HasError() {
 		return

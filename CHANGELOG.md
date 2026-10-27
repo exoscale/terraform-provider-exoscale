@@ -2,6 +2,10 @@
 
 ## UNRELEASED
 
+FEATURES:
+
+- `exoscale_dbaas`: new `thanos` Database service type.
+
 IMPROVEMENTS:
 
 - chore(VPC): link the community docs for VPC correctly - #633
