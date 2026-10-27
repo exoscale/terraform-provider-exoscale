@@ -100,6 +100,12 @@ This example demonstrates how to configure Terraform to use a
 as [Terraform S3 backend](https://www.terraform.io/docs/backends/types/s3.html)
 to persist its state (`terraform.tfstate` object).
 
+## [KMS External Key Store (XKS)](./kms-external-key-store)
+
+This example demonstrates how to keep the key material of a
+[KMS](https://community.exoscale.com/product/security/kms/) key in your own key manager,
+using the `exoscale_kms_key_store` and `exoscale_kms_key` resources.
+
 
 # External examples
 
