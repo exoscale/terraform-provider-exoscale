@@ -1,6 +1,7 @@
 package kms
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"regexp"
@@ -244,9 +245,21 @@ func (r *ResourceKMSKey) ValidateConfig(ctx context.Context, req resource.Valida
 		return
 	}
 
-	// key_spec defaults to AES_256, which only supports encrypt-decrypt.
-	if data.Usage.ValueString() == string(exoscale.CreateKmsKeyRequestUsageSignVerify) && !data.KeySpec.IsUnknown() &&
-		(data.KeySpec.IsNull() || data.KeySpec.ValueString() == string(exoscale.CreateKmsKeyRequestKeySpecAES256)) {
+	// Values only known at apply time are left to the API.
+	if data.Usage.IsUnknown() || data.KeySpec.IsUnknown() {
+		return
+	}
+
+	// Resolve the API defaults.
+	usage := cmp.Or(data.Usage.ValueString(), string(exoscale.CreateKmsKeyRequestUsageEncryptDecrypt))
+	keySpec := cmp.Or(data.KeySpec.ValueString(), string(exoscale.CreateKmsKeyRequestKeySpecAES256))
+
+	isEncryptDecrypt := usage == string(exoscale.CreateKmsKeyRequestUsageEncryptDecrypt)
+	isSignVerify := usage == string(exoscale.CreateKmsKeyRequestUsageSignVerify)
+	isAES := keySpec == string(exoscale.CreateKmsKeyRequestKeySpecAES256)
+	isSignOnlySpec := slices.Contains(kmsSignOnlyKeySpecs, keySpec)
+
+	if isSignVerify && isAES {
 		resp.Diagnostics.AddAttributeError(
 			path.Root("key_spec"),
 			"Unsupported key_spec for sign-verify key",
@@ -258,25 +271,19 @@ func (r *ResourceKMSKey) ValidateConfig(ctx context.Context, req resource.Valida
 		)
 	}
 
-	// usage defaults to encrypt-decrypt, which ECC and ML-DSA keys do not support.
-	if slices.Contains(kmsSignOnlyKeySpecs, data.KeySpec.ValueString()) && !data.Usage.IsUnknown() &&
-		(data.Usage.IsNull() || data.Usage.ValueString() == string(exoscale.CreateKmsKeyRequestUsageEncryptDecrypt)) {
+	if isSignOnlySpec && isEncryptDecrypt {
 		resp.Diagnostics.AddAttributeError(
 			path.Root("usage"),
 			"Unsupported usage for key_spec",
-			fmt.Sprintf("Keys with key_spec %q only support usage %q.",
-				data.KeySpec.ValueString(),
-				exoscale.CreateKmsKeyRequestUsageSignVerify,
-			),
+			fmt.Sprintf("Keys with key_spec %q only support usage %q.", keySpec, exoscale.CreateKmsKeyRequestUsageSignVerify),
 		)
 	}
 
-	if data.Xks.IsNull() {
+	if data.Xks.IsNull() || data.Xks.IsUnknown() {
 		return
 	}
 
-	if !data.Usage.IsNull() && !data.Usage.IsUnknown() &&
-		data.Usage.ValueString() != string(exoscale.CreateKmsKeyRequestUsageEncryptDecrypt) {
+	if !isEncryptDecrypt {
 		resp.Diagnostics.AddAttributeError(
 			path.Root("usage"),
 			"Unsupported usage for External Key Store key",
@@ -284,8 +291,7 @@ func (r *ResourceKMSKey) ValidateConfig(ctx context.Context, req resource.Valida
 		)
 	}
 
-	if !data.KeySpec.IsNull() && !data.KeySpec.IsUnknown() &&
-		data.KeySpec.ValueString() != string(exoscale.CreateKmsKeyRequestKeySpecAES256) {
+	if !isAES {
 		resp.Diagnostics.AddAttributeError(
 			path.Root("key_spec"),
 			"Unsupported key_spec for External Key Store key",
@@ -293,7 +299,8 @@ func (r *ResourceKMSKey) ValidateConfig(ctx context.Context, req resource.Valida
 		)
 	}
 
-	if !data.MultiZone.IsNull() && !data.MultiZone.IsUnknown() && data.MultiZone.ValueBool() {
+	// ValueBool is false when multi_zone is unknown.
+	if data.MultiZone.ValueBool() {
 		resp.Diagnostics.AddAttributeError(
 			path.Root("multi_zone"),
 			"Unsupported multi_zone for External Key Store key",

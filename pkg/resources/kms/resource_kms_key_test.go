@@ -146,6 +146,14 @@ func TestResourceKMSKeyValidateConfig(t *testing.T) {
 			},
 		},
 		{
+			name: "unknown xks",
+			values: map[string]tftypes.Value{
+				"xks":      tftypes.NewValue(xksType, tftypes.UnknownValue),
+				"usage":    str("sign-verify"),
+				"key_spec": str("RSA_4096"),
+			},
+		},
+		{
 			name:   "xks with defaults",
 			values: map[string]tftypes.Value{"xks": xksValue()},
 		},
