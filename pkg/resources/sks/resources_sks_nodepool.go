@@ -71,19 +71,19 @@ func kubeletGCAttrTypes() map[string]attr.Type {
 
 func reservedResourcesAttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
-		"cpu":              types.StringType,
-		"memory":           types.StringType,
+		"cpu":               types.StringType,
+		"memory":            types.StringType,
 		"ephemeral_storage": types.StringType,
 	}
 }
 
 func cpuManagerConfigAttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
-		"cpu_manager_policy":            types.StringType,
-		"cpu_manager_policy_options":    types.SetType{ElemType: types.StringType},
-		"cpu_manager_reconcile_period":  types.StringType,
-		"kube_reserved":                 types.ObjectType{AttrTypes: reservedResourcesAttrTypes()},
-		"system_reserved":               types.ObjectType{AttrTypes: reservedResourcesAttrTypes()},
+		"cpu_manager_policy":           types.StringType,
+		"cpu_manager_policy_options":   types.SetType{ElemType: types.StringType},
+		"cpu_manager_reconcile_period": types.StringType,
+		"kube_reserved":                types.ObjectType{AttrTypes: reservedResourcesAttrTypes()},
+		"system_reserved":              types.ObjectType{AttrTypes: reservedResourcesAttrTypes()},
 	}
 }
 
@@ -94,9 +94,9 @@ type reservedResourcesModel struct {
 }
 
 type cpuManagerConfigModel struct {
-	CPUManagerPolicy           types.String `tfsdk:"cpu_manager_policy"`
-	CPUManagerPolicyOptions    types.Set    `tfsdk:"cpu_manager_policy_options"`
-	CPUManagerReconcilePeriod  types.String `tfsdk:"cpu_manager_reconcile_period"`
+	CPUManagerPolicy          types.String `tfsdk:"cpu_manager_policy"`
+	CPUManagerPolicyOptions   types.Set    `tfsdk:"cpu_manager_policy_options"`
+	CPUManagerReconcilePeriod types.String `tfsdk:"cpu_manager_reconcile_period"`
 	KubeReserved              types.Object `tfsdk:"kube_reserved"`
 	SystemReserved            types.Object `tfsdk:"system_reserved"`
 }
