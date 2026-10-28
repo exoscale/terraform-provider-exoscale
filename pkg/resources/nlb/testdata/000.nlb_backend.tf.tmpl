@@ -1,0 +1,13 @@
+resource "exoscale_nlb_service" "test_backend" {
+  zone             = "{{ .Zone }}"
+  name             = "terraform-provider-test-backend-{{ .ID }}"
+  nlb_id           = "00000000-0000-0000-0000-000000000001"
+  port             = 80
+  target_port      = 8080
+  instance_pool_id = {{ .InstancePoolID }}
+  label_selector   = {{ .LabelSelector }}
+
+  healthcheck {
+    port = 8080
+  }
+}
