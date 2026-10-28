@@ -3,13 +3,13 @@
 page_title: "exoscale_vpc Resource - terraform-provider-exoscale"
 subcategory: ""
 description: |-
-  Manage Exoscale Virtual Private Clouds (VPC).
+  Manage Exoscale Virtual Private Clouds (VPC https://community.exoscale.com/product/networking/vpc/).
   Corresponding data source: exoscale_vpc ../data-sources/vpc.md.
 ---
 
 # exoscale_vpc (Resource)
 
-Manage Exoscale Virtual Private Clouds (VPC).
+Manage Exoscale Virtual Private Clouds ([VPC](https://community.exoscale.com/product/networking/vpc/)).
 
 Corresponding data source: [exoscale_vpc](../data-sources/vpc.md).
 

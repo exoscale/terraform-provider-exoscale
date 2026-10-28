@@ -3,13 +3,13 @@
 page_title: "exoscale_vpc_subnet Resource - terraform-provider-exoscale"
 subcategory: ""
 description: |-
-  Manage Exoscale VPC https://community.exoscale.ch/product/networking/vpc/ Subnets.
+  Manage Exoscale VPC https://community.exoscale.com/product/networking/vpc/ Subnets.
   Corresponding data source: exoscale_vpc_subnet ../data-sources/vpc_subnet.md.
 ---
 
 # exoscale_vpc_subnet (Resource)
 
-Manage Exoscale [VPC](https://community.exoscale.ch/product/networking/vpc/) Subnets.
+Manage Exoscale [VPC](https://community.exoscale.com/product/networking/vpc/) Subnets.
 
 Corresponding data source: [exoscale\_vpc\_subnet](../data-sources/vpc_subnet.md).
 

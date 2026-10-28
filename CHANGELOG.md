@@ -1,5 +1,11 @@
 # Changelog
 
+## UNRELEASED
+
+IMPROVEMENTS:
+
+- chore(VPC): link the community docs for VPC correctly - #633
+
 ## 0.76.0
 
 FEATURES:
