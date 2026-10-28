@@ -6,6 +6,12 @@ IMPROVEMENTS:
 
 - chore(VPC): link the community docs for VPC correctly - #633
 
+
+BUG FIXES:
+
+- `exoscale_anti_affinity_group` and `exoscale_instance_pool`: refreshing a resource whose state has an empty ID removes it from the state instead of failing with `invalid UUID length: 0`, which broke resources created by Crossplane (upjet).
+- `exoscale_compute_instance`: an instance created with `state = "stopped"` is created stopped instead of being started then stopped, which could leave it running. It no longer boots at creation: cloud-init runs on its first start.
+
 ## 0.76.0
 
 FEATURES:

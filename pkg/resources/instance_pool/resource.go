@@ -554,6 +554,12 @@ func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *res
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
+	if state.ID.ValueString() == "" {
+		tflog.Info(ctx, "instance pool has no ID, deleting from state to report drift")
+		resp.State.RemoveResource(ctx)
+		return
+	}
+
 	id, err := exoscale.ParseUUID(state.ID.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("unable to parse ID", err.Error())
