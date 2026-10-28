@@ -614,13 +614,54 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 			return
 		}
 
-		// Thanos uses ConnectionInfo.QueryFrontendURI as the primary URI
-		// and doesn't have user/password authentication.
-		if res.ConnectionInfo != nil && res.ConnectionInfo.QueryFrontendURI != "" {
-			uri = res.ConnectionInfo.QueryFrontendURI
+		if res.ConnectionInfo == nil || res.ConnectionInfo.QueryFrontendURI == "" {
+			resp.Diagnostics.AddError(
+				"Client Error",
+				"Database Service Thanos has no query frontend URI",
+			)
+			return
 		}
+
 		params = res.URIParams
+		if i, ok := params["user"]; ok {
+			if s, ok := i.(string); ok {
+				user = s
+			}
+		}
+		if user == "" {
+			resp.Diagnostics.AddError(
+				"Client Error",
+				"Database Service Thanos user is empty",
+			)
+			return
+		}
 		data.Schema = types.StringValue("https")
+
+		creds, err := client.RevealDBAASThanosUserPassword(ctx, data.Name.ValueString(), user)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Client Error",
+				fmt.Sprintf("Unable to reveal Database Service Thanos secret: %s", err),
+			)
+			return
+		}
+
+		// Thanos is the one service type where the service-level `uri` is not
+		// the user-facing endpoint: the API reports the receiver remote-write
+		// URI there (same host and port as receiver-remote-write-uri), while
+		// queries go to the query-frontend component. Return the query
+		// endpoint here, as Console does in its connection data tab. The
+		// resource `uri` attribute keeps the API service URI, like every
+		// other service type.
+		uri, err = uriWithPassword(res.ConnectionInfo.QueryFrontendURI, creds.Username, creds.Password)
+		if err != nil {
+			resp.Diagnostics.AddError("Client Error",
+				fmt.Sprintf("Unable to parse Database Service Thanos secret: %s", err),
+			)
+			return
+		}
+
+		params["password"] = creds.Password
 	}
 
 	data.URI = types.StringValue(uri)

@@ -290,9 +290,41 @@ func (r *ServiceResource) readThanos(ctx context.Context, data *ServiceResourceM
 		data.Thanos.IPFilter = v
 	}
 
-	data.Thanos.Settings = types.StringNull()
-	if apiService.ThanosSettings != nil {
-		settings, err := json.Marshal(*apiService.ThanosSettings)
+	// Settings: when the user set them in config, only refresh the keys they
+	// specified. Server-injected defaults for other keys must not cause
+	// permanent drift, while a manual change to a user-set key is reported.
+	settingsValue := data.Thanos.Settings
+	settingsUnset := settingsValue.IsUnknown() || settingsValue.IsNull()
+	if settingsUnset || apiService.ThanosSettings == nil {
+		data.Thanos.Settings = types.StringNull()
+		if apiService.ThanosSettings != nil {
+			settings, err := json.Marshal(*apiService.ThanosSettings)
+			if err != nil {
+				diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
+				return false
+			}
+			data.Thanos.Settings = types.StringValue(string(settings))
+		}
+	} else if settingsValue.ValueString() != "" {
+		var userSettings map[string]any
+		if err := json.Unmarshal([]byte(settingsValue.ValueString()), &userSettings); err != nil {
+			diagnostics.AddError("Validation error", fmt.Sprintf("unable to unmarshal JSON: %s", err))
+			return false
+		}
+
+		apiSettingsJSON, err := json.Marshal(*apiService.ThanosSettings)
+		if err != nil {
+			diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
+			return false
+		}
+		var apiSettings map[string]any
+		if err := json.Unmarshal(apiSettingsJSON, &apiSettings); err != nil {
+			diagnostics.AddError("Validation error", fmt.Sprintf("unable to unmarshal JSON: %s", err))
+			return false
+		}
+
+		PartialSettingsPatch(userSettings, apiSettings)
+		settings, err := json.Marshal(userSettings)
 		if err != nil {
 			diagnostics.AddError("Validation error", fmt.Sprintf("invalid settings: %s", err))
 			return false
