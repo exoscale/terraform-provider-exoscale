@@ -24,3 +24,23 @@ resource "exoscale_nlb_service" "my_nlb_service" {
     retries  = 1
   }
 }
+
+# The backends can also be selected by instance labels, in which case the
+# instance pool can be omitted.
+resource "exoscale_nlb_service" "my_nlb_labels_service" {
+  nlb_id      = exoscale_nlb.my_nlb.id
+  zone        = exoscale_nlb.my_nlb.zone
+  name        = "my-nlb-labels-service"
+  protocol    = "tcp"
+  port        = 8053
+  target_port = 8053
+
+  label_selector = {
+    role                      = "web"
+    "exoscale.com/managed-by" = "terraform"
+  }
+
+  healthcheck {
+    port = 8053
+  }
+}

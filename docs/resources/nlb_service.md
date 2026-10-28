@@ -42,6 +42,26 @@ resource "exoscale_nlb_service" "my_nlb_service" {
     retries  = 1
   }
 }
+
+# The backends can also be selected by instance labels, in which case the
+# instance pool can be omitted.
+resource "exoscale_nlb_service" "my_nlb_labels_service" {
+  nlb_id      = exoscale_nlb.my_nlb.id
+  zone        = exoscale_nlb.my_nlb.zone
+  name        = "my-nlb-labels-service"
+  protocol    = "tcp"
+  port        = 8053
+  target_port = 8053
+
+  label_selector = {
+    role                      = "web"
+    "exoscale.com/managed-by" = "terraform"
+  }
+
+  healthcheck {
+    port = 8053
+  }
+}
 ```
 
 Please refer to the [examples](https://github.com/exoscale/terraform-provider-exoscale/tree/master/examples/)
@@ -52,7 +72,6 @@ directory for complete configuration examples.
 
 ### Required
 
-- `instance_pool_id` (String) ❗ The [exoscale_instance_pool](./instance_pool.md) (ID) to forward traffic to.
 - `name` (String) The NLB service name.
 - `nlb_id` (String) ❗ The parent [exoscale_nlb](./nlb.md) ID.
 - `port` (Number) The NLB service (TCP/UDP) port.
@@ -63,6 +82,8 @@ directory for complete configuration examples.
 
 - `description` (String) A free-form text describing the NLB service.
 - `healthcheck` (Block Set) The service health checking configuration. (see [below for nested schema](#nestedblock--healthcheck))
+- `instance_pool_id` (String) ❗ The [exoscale_instance_pool](./instance_pool.md) (ID) to forward traffic to. Either `instance_pool_id` or `label_selector` must be specified.
+- `label_selector` (Map of String) Labels of instances to forward traffic to, as key/value pairs. Labels are matched exactly, including case and trailing spaces. Only instances in the same organization and zone as the NLB are candidates. An instance is a backend when it carries **all** the listed pairs, and the map must hold at least one pair. If `instance_pool_id` is also specified, the backends are the union of both. Removing the attribute removes the selector, which is rejected by the API if the service has no `instance_pool_id`. Either `label_selector` or `instance_pool_id` must be specified.
 - `protocol` (String) The protocol (`tcp`|`udp`; default: `tcp`).
 - `strategy` (String) The strategy (`round-robin`|`source-hash`; default: `round-robin`).
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
