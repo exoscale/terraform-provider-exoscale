@@ -41,8 +41,8 @@ func nullAttrs(objType tftypes.Object) map[string]tftypes.Value {
 //     where comparison-based inference silently dropped a real clear.
 //
 // It's run once per engine block (mysql, pg, opensearch, kafka, grafana,
-// thanos), since ModifyPlan has a separate, hand-written branch resolving
-// ip_filter for each one.
+// valkey, clickhouse, thanos), since ModifyPlan has a separate, hand-written
+// branch resolving ip_filter for each one.
 func TestServiceResourceModifyPlan(t *testing.T) {
 	t.Parallel()
 
@@ -69,7 +69,7 @@ func TestServiceResourceModifyPlan(t *testing.T) {
 
 	ipFilterSetType := tftypes.Set{ElementType: tftypes.String}
 
-	engines := []string{"mysql", "pg", "opensearch", "kafka", "grafana", "thanos"}
+	engines := []string{"mysql", "pg", "opensearch", "kafka", "grafana", "valkey", "clickhouse", "thanos"}
 
 	for _, engine := range engines {
 		t.Run(engine, func(t *testing.T) {

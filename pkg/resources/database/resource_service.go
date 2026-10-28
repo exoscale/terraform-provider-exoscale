@@ -316,6 +316,12 @@ func (r *ServiceResource) ModifyPlan(ctx context.Context, req resource.ModifyPla
 		grafana.IpFilter = emptyIPFilter
 		normalized.Grafana = &grafana
 	}
+	if normalized.Valkey != nil && configData.Valkey != nil && configData.Valkey.IPFilter.IsNull() {
+		resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("valkey").AtName("ip_filter"), emptyIPFilter)...)
+		valkey := *normalized.Valkey
+		valkey.IPFilter = emptyIPFilter
+		normalized.Valkey = &valkey
+	}
 	if normalized.Clickhouse != nil && configData.Clickhouse != nil && configData.Clickhouse.IPFilter.IsNull() {
 		resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("clickhouse").AtName("ip_filter"), emptyIPFilter)...)
 		clickhouse := *normalized.Clickhouse
