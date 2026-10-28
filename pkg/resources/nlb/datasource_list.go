@@ -29,6 +29,7 @@ const (
 	NLBServiceAttrID             = "id"
 	NLBServiceAttrHealthcheck    = "healthcheck"
 	NLBServiceAttrInstancePoolID = "instance_pool_id"
+	NLBServiceAttrLabelSelector  = "label_selector"
 	NLBServiceAttrName           = "name"
 	NLBServiceAttrPort           = "port"
 	NLBServiceAttrProtocol       = "protocol"
@@ -78,6 +79,7 @@ type Service struct {
 	Healthcheck    HealthcheckModel `tfsdk:"healthcheck"`
 	ID             types.String     `tfsdk:"id"`
 	InstancePoolID types.String     `tfsdk:"instance_pool_id"`
+	LabelSelector  types.Map        `tfsdk:"label_selector"`
 	Name           types.String     `tfsdk:"name"`
 	Port           types.Int64      `tfsdk:"port"`
 	Protocol       types.String     `tfsdk:"protocol"`
@@ -153,7 +155,12 @@ Corresponding resource: [exoscale_nlb](../resources/nlb.md).`,
 							AttributeTypes: HealthcheckModel{}.Types(),
 						},
 						NLBServiceAttrInstancePoolID: schema.StringAttribute{
-							MarkdownDescription: "The [exoscale_instance_pool](./instance_pool.md) (ID) to forward traffic to.",
+							MarkdownDescription: "The [exoscale_instance_pool](./instance_pool.md) (ID) to forward traffic to. It is null for a service forwarding traffic to a label selector only.",
+							Computed:            true,
+						},
+						NLBServiceAttrLabelSelector: schema.MapAttribute{
+							MarkdownDescription: "The instance labels the service forwards traffic to, as key/value pairs. An instance is a backend when it carries all the listed pairs. It is null for a service without a label selector.",
+							ElementType:         types.StringType,
 							Computed:            true,
 						},
 						NLBServiceAttrName: schema.StringAttribute{
@@ -261,19 +268,26 @@ func (d *DataSourceServiceList) Read(ctx context.Context, req datasource.ReadReq
 	for i := range nlb.Services {
 		service := nlb.Services[i]
 
-		serviceState := Service{
-			Description: utils.OptionalString(service.Description),
-			Healthcheck: healthcheckFromAPI(service.Healthcheck),
-			ID:          types.StringValue(service.ID.String()),
-			Name:        types.StringValue(service.Name),
-			Port:        types.Int64Value(service.Port),
-			Protocol:    types.StringValue(string(service.Protocol)),
-			State:       types.StringValue(string(service.State)),
-			Strategy:    types.StringValue(string(service.Strategy)),
-			TargetPort:  types.Int64Value(service.TargetPort),
-
-			InstancePoolID: types.StringNull(),
+		labelSelector, dg := labelSelectorFromAPI(ctx, service.LabelSelector)
+		resp.Diagnostics.Append(dg...)
+		if resp.Diagnostics.HasError() {
+			return
 		}
+
+		serviceState := Service{
+			Description:    utils.OptionalString(service.Description),
+			Healthcheck:    healthcheckFromAPI(service.Healthcheck),
+			ID:             types.StringValue(service.ID.String()),
+			Name:           types.StringValue(service.Name),
+			InstancePoolID: types.StringNull(),
+			LabelSelector:  labelSelector,
+			Port:           types.Int64Value(service.Port),
+			Protocol:       types.StringValue(string(service.Protocol)),
+			State:          types.StringValue(string(service.State)),
+			Strategy:       types.StringValue(string(service.Strategy)),
+			TargetPort:     types.Int64Value(service.TargetPort),
+		}
+
 		if service.InstancePool != nil {
 			serviceState.InstancePoolID = types.StringValue(service.InstancePool.ID.String())
 		}
