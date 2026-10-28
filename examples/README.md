@@ -106,6 +106,14 @@ This example demonstrates how to keep the key material of a
 [KMS](https://community.exoscale.com/product/security/kms/) key in your own key manager,
 using the `exoscale_kms_key_store` and `exoscale_kms_key` resources.
 
+## [Virtual Private Cloud (VPC)](./resources/exoscale_vpc)
+
+This example demonstrates how to set up a
+[Virtual Private Cloud (VPC)](https://community.exoscale.com/product/networking/vpc/),
+using the `exoscale_vpc` resource. See also the
+[`exoscale_vpc` resource documentation](https://registry.terraform.io/providers/exoscale/exoscale/latest/docs/resources/vpc)
+in the Terraform Registry.
+
 
 # External examples
 

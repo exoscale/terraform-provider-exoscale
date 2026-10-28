@@ -5,7 +5,7 @@
 IMPROVEMENTS:
 
 - chore(VPC): link the community docs for VPC correctly - #633
-
+- docs(vpc): add VPC section to examples README - #640
 
 BUG FIXES:
 
