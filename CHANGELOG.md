@@ -31,7 +31,9 @@ BUG FIXES:
 
 DEPENDENCIES:
 
+- Upgrade `github.com/exoscale/egoscale` to v3.1.63 (#639)
 - Upgrade `github.com/andybalholm/brotli` to v1.2.7 (#644)
+
 
 ## 0.76.0
 
