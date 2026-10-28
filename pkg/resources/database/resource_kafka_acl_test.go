@@ -113,10 +113,10 @@ func testResourceKafkaACL(t *testing.T) {
 				// Create
 				Config: configCreate,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttrSet(topicACLFullResourceName, "acl_id"),
-					resource.TestCheckResourceAttrSet(schemaRegistryACLFullResourceName, "acl_id"),
+					resource.TestCheckResourceAttrSet(topicACLFullResourceName, "id"),
+					resource.TestCheckResourceAttrSet(schemaRegistryACLFullResourceName, "id"),
 					func(s *terraform.State) error {
-						createdTopicACLID = s.RootModule().Resources[topicACLFullResourceName].Primary.Attributes["acl_id"]
+						createdTopicACLID = s.RootModule().Resources[topicACLFullResourceName].Primary.Attributes["id"]
 
 						acls, err := getKafkaACLs(serviceData.Name)
 						if err != nil {
@@ -214,7 +214,7 @@ func kafkaACLImportStateID(resourceFullName string) resource.ImportStateIdFunc {
 
 		return fmt.Sprintf("%s/%s@%s",
 			rs.Primary.Attributes["service"],
-			rs.Primary.Attributes["acl_id"],
+			rs.Primary.Attributes["id"],
 			rs.Primary.Attributes["zone"],
 		), nil
 	}
@@ -258,7 +258,7 @@ func deleteKafkaTopicACL(service, aclID string) error {
 }
 
 func checkKafkaTopicACL(acls *v3.DBAASKafkaAcls, s *terraform.State, resourceFullName string, data *TemplateModelKafkaTopicACL) error {
-	aclID := s.RootModule().Resources[resourceFullName].Primary.Attributes["acl_id"]
+	aclID := s.RootModule().Resources[resourceFullName].Primary.Attributes["id"]
 
 	for _, acl := range acls.TopicAcl {
 		if string(acl.ID) != aclID {
@@ -277,7 +277,7 @@ func checkKafkaTopicACL(acls *v3.DBAASKafkaAcls, s *terraform.State, resourceFul
 }
 
 func checkKafkaSchemaRegistryACL(acls *v3.DBAASKafkaAcls, s *terraform.State, resourceFullName string, data *TemplateModelKafkaSchemaRegistryACL) error {
-	aclID := s.RootModule().Resources[resourceFullName].Primary.Attributes["acl_id"]
+	aclID := s.RootModule().Resources[resourceFullName].Primary.Attributes["id"]
 
 	for _, acl := range acls.SchemaRegistryAcl {
 		if string(acl.ID) != aclID {

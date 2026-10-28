@@ -58,8 +58,7 @@ directory for complete configuration examples.
 
 ### Read-Only
 
-- `acl_id` (String) The ID of the ACL entry, assigned by the service.
-- `id` (String) The ID of this resource, computed as `service/acl_id`.
+- `id` (String) The ID of the ACL entry, assigned by the service.
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
