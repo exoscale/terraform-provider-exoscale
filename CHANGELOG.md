@@ -6,8 +6,17 @@ FEATURES:
 
 - `exoscale_compute_instance`: new `vpc` block to attach the instance to VPC subnets, in strict interface order.
 
+FEATURES:
+
+- New `exoscale_kms_key_store` resource and data source (beta): manage KMS External Key Stores (XKS). The proxy secret key is write-only (`secret_key_wo`, requires Terraform 1.11 or later).
+- `exoscale_kms_key`: new `xks` attribute to create keys backed by an External Key Store, new `key_spec` attribute, read-only `source` attribute, and `usage = "sign-verify"`.
+
 BUG FIXES:
 
+- `exoscale_kms_key`: a key deleted outside of Terraform is now removed from the state, it used to make every plan fail.
+- `exoscale_kms_key`: changing only `timeouts` no longer fails the apply.
+- `exoscale_kms_key`: a change that replaces a key without changing its `name` now fails at plan time. The key used to be scheduled for deletion, then its replacement failed to be created because the name stays reserved during the deletion delay.
+- `exoscale_kms_key`: API errors now show their title and detail.
 - `exoscale_block_storage_volume`: deleting a volume that is already gone (API returned 404) no longer fails.
 - `exoscale_instance_pool`: removing `description`, `labels` or `user_data` from the configuration now clears them on the pool, they used to be left as they were.
 - `exoscale_instance_pool`: updating a pool configured with the deprecated `affinity_group_ids` no longer sends an empty anti-affinity group list.
@@ -29,6 +38,7 @@ BREAKING CHANGES:
 DEPENDENCIES:
 
 - Remove `github.com/hashicorp/terraform-plugin-mux`
+- Bump `github.com/exoscale/egoscale/v3` to v3.1.59
 - Build the provider with Go 1.27.3 to reject TLS certificate chains containing the compromised eMudhra intermediates (CVE-2026-111943). (#629)
 
 ## 0.75.0

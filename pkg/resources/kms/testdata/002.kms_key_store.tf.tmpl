@@ -1,0 +1,24 @@
+resource "exoscale_kms_key_store" "test" {
+  zone        = "{{ .Zone }}"
+  name        = "terraform-provider-test-{{ .ID }}"
+  description = "{{ .Description }}"
+
+  proxy = {
+    endpoint              = "{{ .ProxyEndpoint }}"
+    access_key            = "{{ .ProxyAccessKey }}"
+    secret_key_wo         = "{{ .ProxySecretKey }}"
+    secret_key_wo_version = {{ .SecretKeyVersion }}
+  }
+
+  connected = {{ .Connected }}
+}
+
+data "exoscale_kms_key_store" "by_name" {
+  zone = exoscale_kms_key_store.test.zone
+  name = exoscale_kms_key_store.test.name
+}
+
+data "exoscale_kms_key_store" "by_id" {
+  zone = exoscale_kms_key_store.test.zone
+  id   = exoscale_kms_key_store.test.id
+}
