@@ -63,6 +63,7 @@ Read-Only:
 - `healthcheck` (Object) (see [below for nested schema](#nestedatt--services--healthcheck))
 - `id` (String) NLB service ID.
 - `instance_pool_id` (String) The [exoscale_instance_pool](./instance_pool.md) (ID) to forward traffic to.
+- `label_selector` (Map of String) The instance labels the service forwards traffic to, as key/value pairs. An instance is a backend when it carries all the listed pairs.
 - `name` (String) NLB Service name.
 - `port` (Number) Port exposed on the NLB's public IP.
 - `protocol` (String) Network traffic protocol.
