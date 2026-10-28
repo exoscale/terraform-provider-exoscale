@@ -6,6 +6,10 @@ FEATURES:
 
 - `exoscale_dbaas`: new `thanos` Database service type.
 
+BUG FIXES:
+
+- `exoscale_dbaas`: removing `ip_filter` from a `valkey` service configuration now clears the filter, it used to be silently kept.
+
 IMPROVEMENTS:
 
 - chore(VPC): link the community docs for VPC correctly - #633
