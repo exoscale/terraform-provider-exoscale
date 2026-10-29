@@ -43,8 +43,8 @@ resource "exoscale_nlb_service" "my_nlb_service" {
   }
 }
 
-# The backends can also be picked by instance labels, in which case the
-# the instance pool can be omitted.
+# The backends can also be selected by instance labels, in which case the
+# instance pool can be omitted.
 resource "exoscale_nlb_service" "my_nlb_labels_service" {
   nlb_id      = exoscale_nlb.my_nlb.id
   zone        = exoscale_nlb.my_nlb.zone
@@ -82,8 +82,8 @@ directory for complete configuration examples.
 
 - `description` (String) A free-form text describing the NLB service.
 - `healthcheck` (Block Set) The service health checking configuration. (see [below for nested schema](#nestedblock--healthcheck))
-- `instance_pool_id` (String) ❗ The [exoscale_instance_pool](./instance_pool.md) (ID) to forward traffic to. At least one of `instance_pool_id` or `label_selector` must be set.
-- `label_selector` (Map of String) The instance labels to forward traffic to, as key/value pairs. An instance is a backend when it carries **all** the listed pairs, and keys are sent to the API as they are, prefix and all. The API resolves which instances match asynchronously, and the healthcheck status stays empty until it does. At least one of `instance_pool_id` or `label_selector` must be set, and the map must hold at least one pair. Removing the attribute removes the selector, which the API rejects when the service has no `instance_pool_id`.
+- `instance_pool_id` (String) ❗ The [exoscale_instance_pool](./instance_pool.md) (ID) to forward traffic to. Either `instance_pool_id` or `label_selector` must be specified.
+- `label_selector` (Map of String) Labels of instances to forward traffic to, as key/value pairs. Labels are matched exactly, including case and trailing spaces. Only instances in the same organization and zone as the NLB are candidates. An instance is a backend when it carries **all** the listed pairs, and the map must hold at least one pair. If `instance_pool_id` is also specified, the backends are the union of both. Removing the attribute removes the selector, which is rejected by the API if the service has no `instance_pool_id`. Either `label_selector` or `instance_pool_id` must be specified.
 - `protocol` (String) The protocol (`tcp`|`udp`; default: `tcp`).
 - `strategy` (String) The strategy (`round-robin`|`source-hash`; default: `round-robin`).
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))

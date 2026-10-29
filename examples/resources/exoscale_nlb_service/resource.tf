@@ -25,8 +25,8 @@ resource "exoscale_nlb_service" "my_nlb_service" {
   }
 }
 
-# The backends can also be picked by instance labels, in which case the
-# the instance pool can be omitted.
+# The backends can also be selected by instance labels, in which case the
+# instance pool can be omitted.
 resource "exoscale_nlb_service" "my_nlb_labels_service" {
   nlb_id      = exoscale_nlb.my_nlb.id
   zone        = exoscale_nlb.my_nlb.zone
