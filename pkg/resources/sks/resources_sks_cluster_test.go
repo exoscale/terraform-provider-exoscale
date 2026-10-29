@@ -20,9 +20,9 @@ import (
 	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
 )
 
-var testZoneName = testutils.TestZoneName
-
 const (
+	testZoneName = testutils.TestZoneName
+
 	defaultSKSClusterCNI              = "calico"
 	defaultSKSClusterServiceLevel     = "pro"
 	defaultSKSClusterAuditInitBackoff = "10s"

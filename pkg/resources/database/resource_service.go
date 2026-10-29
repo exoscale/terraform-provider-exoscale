@@ -277,6 +277,12 @@ func (r *ServiceResource) ModifyPlan(ctx context.Context, req resource.ModifyPla
 	// (e.g. updateMysql/readMysql) stores whatever the API reports, so a
 	// known-empty set is what a real clear actually ends up producing in
 	// state.
+	// TODO(egoscale): ip-filter is `omitempty` in every UpdateDBAASService*Request
+	// struct, so the empty set resolved below is dropped from the request body and
+	// the API keeps the previous filter: clearing ip_filter shows a plan diff that
+	// never applies. Once egoscale marks ip-filter as nullable (like feature-gates
+	// on the sks cluster update) and the API treats null as "unchanged", the empty
+	// list will be sent as [] and the clear will work.
 	emptyIPFilter := types.SetValueMust(types.StringType, []attr.Value{})
 
 	// Shallow-copy planData so we can resolve/neutralize fields for

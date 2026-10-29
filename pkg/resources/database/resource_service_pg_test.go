@@ -20,7 +20,6 @@ import (
 
 	exoapi "github.com/exoscale/egoscale/v2/api"
 	"github.com/exoscale/egoscale/v2/oapi"
-	v3 "github.com/exoscale/egoscale/v3"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/testutils"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
@@ -751,7 +750,7 @@ func CheckExistsPgConnectionPool(service, poolName string, data *TemplateModelPg
 		return err
 	}
 
-	client, err := utils.SwitchClientZone(context.Background(), defaultClientV3, v3.ZoneName(testutils.TestZoneName))
+	client, err := utils.SwitchClientZone(context.Background(), defaultClientV3, testutils.TestZoneName)
 	if err != nil {
 		return err
 	}
@@ -806,7 +805,7 @@ func CheckExistsPgConnectionPoolAny(service, poolName string) error {
 		return err
 	}
 
-	client, err := utils.SwitchClientZone(context.Background(), defaultClientV3, v3.ZoneName(testutils.TestZoneName))
+	client, err := utils.SwitchClientZone(context.Background(), defaultClientV3, testutils.TestZoneName)
 	if err != nil {
 		return err
 	}

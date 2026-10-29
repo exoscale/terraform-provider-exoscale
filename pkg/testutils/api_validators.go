@@ -35,7 +35,7 @@ func CheckAntiAffinityGroupExistsV3(r string, res *v3.AntiAffinityGroup) resourc
 		client, err := utils.SwitchClientZone(
 			ctx,
 			defaultClientV3,
-			v3.ZoneName(TestZoneName),
+			TestZoneName,
 		)
 		if err != nil {
 			return err
@@ -126,7 +126,7 @@ func CheckInstanceExistsV3(r string, testInstance *v3.Instance) resource.TestChe
 		client, err := utils.SwitchClientZone(
 			ctx,
 			defaultClientV3,
-			v3.ZoneName(TestZoneName),
+			TestZoneName,
 		)
 		if err != nil {
 			return err
@@ -186,7 +186,7 @@ func CheckInstanceDestroyV3(testInstance *v3.Instance) resource.TestCheckFunc {
 		client, err := utils.SwitchClientZone(
 			ctx,
 			defaultClientV3,
-			v3.ZoneName(TestZoneName),
+			TestZoneName,
 		)
 		if err != nil {
 			return err
@@ -252,7 +252,7 @@ func CheckSecurityGroupExistsV3(r string, securityGroup *v3.SecurityGroup) resou
 		client, err := utils.SwitchClientZone(
 			ctx,
 			defaultClientV3,
-			v3.ZoneName(TestZoneName),
+			TestZoneName,
 		)
 		if err != nil {
 			return err
@@ -340,7 +340,7 @@ func CheckPrivateNetworkExistsV3(r string, privateNetwork *v3.PrivateNetwork) re
 		client, err := utils.SwitchClientZone(
 			ctx,
 			defaultClientV3,
-			v3.ZoneName(TestZoneName),
+			TestZoneName,
 		)
 		if err != nil {
 			return err
@@ -427,7 +427,7 @@ func CheckElasticIPExistsV3(r string, elasticIP *v3.ElasticIP) resource.TestChec
 		client, err := utils.SwitchClientZone(
 			ctx,
 			defaultClientV3,
-			v3.ZoneName(TestZoneName),
+			TestZoneName,
 		)
 		if err != nil {
 			return err
@@ -515,7 +515,7 @@ func CheckSSHKeyExistsV3(r string, sshKey *v3.SSHKey) resource.TestCheckFunc {
 		client, err := utils.SwitchClientZone(
 			ctx,
 			defaultClientV3,
-			v3.ZoneName(TestZoneName),
+			TestZoneName,
 		)
 		if err != nil {
 			return err
@@ -576,7 +576,7 @@ func CheckInstancePoolExists(r string, pool *v3.InstancePool) resource.TestCheck
 		client, err := utils.SwitchClientZone(
 			ctx,
 			defaultClientV3,
-			v3.ZoneName(TestZoneName),
+			TestZoneName,
 		)
 		if err != nil {
 			return err

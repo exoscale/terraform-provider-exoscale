@@ -360,6 +360,7 @@ func (r *ServiceResource) updateThanos(ctx context.Context, stateData *ServiceRe
 
 	if !planData.Plan.Equal(stateData.Plan) {
 		service.Plan = planData.Plan.ValueString()
+		stateData.Plan = planData.Plan
 		updated = true
 	}
 

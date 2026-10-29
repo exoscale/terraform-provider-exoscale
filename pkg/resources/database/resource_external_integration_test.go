@@ -134,7 +134,7 @@ func checkExternalIntegrationDestroyed(integrationID string) error {
 		return err
 	}
 
-	client, err := utils.SwitchClientZone(ctx, clientV3, v3.ZoneName(testutils.TestZoneName))
+	client, err := utils.SwitchClientZone(ctx, clientV3, testutils.TestZoneName)
 	if err != nil {
 		return err
 	}
