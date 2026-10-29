@@ -16,6 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -44,6 +45,7 @@ const (
 
 var _ resource.Resource = (*ResourceService)(nil)
 var _ resource.ResourceWithImportState = (*ResourceService)(nil)
+var _ resource.ResourceWithValidateConfig = (*ResourceService)(nil)
 
 type ResourceService struct {
 	client *exoscale.Client
@@ -60,6 +62,7 @@ type ResourceServiceModel struct {
 	NLBID          types.String       `tfsdk:"nlb_id"`
 	Zone           types.String       `tfsdk:"zone"`
 	InstancePoolID types.String       `tfsdk:"instance_pool_id"`
+	LabelSelector  types.Map          `tfsdk:"label_selector"`
 	Name           types.String       `tfsdk:"name"`
 	Description    types.String       `tfsdk:"description"`
 	Port           types.Int64        `tfsdk:"port"`
@@ -112,12 +115,18 @@ func (r *ResourceService) Schema(ctx context.Context, req resource.SchemaRequest
 				},
 			},
 			"instance_pool_id": schema.StringAttribute{
-				Description:         "❗ The exoscale_instance_pool (ID) to forward traffic to.",
-				MarkdownDescription: "❗ The [exoscale_instance_pool](./instance_pool.md) (ID) to forward traffic to.",
-				Required:            true,
+				Description:         "❗ The exoscale_instance_pool (ID) to forward traffic to. Either instance_pool_id or label_selector must be specified.",
+				MarkdownDescription: "❗ The [exoscale_instance_pool](./instance_pool.md) (ID) to forward traffic to. Either `instance_pool_id` or `label_selector` must be specified.",
+				Optional:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+			},
+			"label_selector": schema.MapAttribute{
+				Description:         "Labels of instances to forward traffic to, as key/value pairs. Labels are matched exactly, including case and trailing spaces. Only instances in the same organization and zone as the NLB are candidates. An instance is a backend when it carries all the listed pairs, and the map must hold at least one pair. If instance_pool_id is also specified, the backends are the union of both. Removing the attribute removes the selector, which is rejected by the API if the service has no instance_pool_id. Either label_selector or instance_pool_id must be specified.",
+				MarkdownDescription: "Labels of instances to forward traffic to, as key/value pairs. Labels are matched exactly, including case and trailing spaces. Only instances in the same organization and zone as the NLB are candidates. An instance is a backend when it carries **all** the listed pairs, and the map must hold at least one pair. If `instance_pool_id` is also specified, the backends are the union of both. Removing the attribute removes the selector, which is rejected by the API if the service has no `instance_pool_id`. Either `label_selector` or `instance_pool_id` must be specified.",
+				ElementType:         types.StringType,
+				Optional:            true,
 			},
 			"name": schema.StringAttribute{
 				Description:         "The NLB service name.",
@@ -228,6 +237,53 @@ func (r *ResourceService) Configure(ctx context.Context, req resource.ConfigureR
 	r.client = req.ProviderData.(*providerConfig.ExoscaleProviderConfig).ClientV3
 }
 
+// ValidateConfig rejects two configurations that the API would refuse, so that
+// the problem surfaces during `terraform plan` rather than after the NLB and
+// the instance pool have been created. A service needs an instance pool, a
+// label selector, or both, and a label selector needs at least one label.
+//
+// An empty selector cannot be supported, as the API returns either label pairs
+// or no selector at all. `label_selector = {}` could therefore never be read
+// back, and the resource would report drift on every plan.
+func (r *ResourceService) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	// The configuration can arrive with no attributes at all, its object value
+	// null rather than an object whose attributes are each null. Get cannot
+	// decode a null object into the model, and neither check below has anything
+	// to go on, so return early.
+	if req.Config.Raw.IsNull() {
+		return
+	}
+
+	var data ResourceServiceModel
+
+	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// A value that is not yet known is not null, so an instance pool created in
+	// the same apply counts as set, and so does an unknown selector.
+	if data.InstancePoolID.IsNull() && data.LabelSelector.IsNull() {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("instance_pool_id"),
+			"missing NLB service backend",
+			"either `instance_pool_id` or `label_selector` must be set",
+		)
+	}
+
+	if data.LabelSelector.IsNull() || data.LabelSelector.IsUnknown() {
+		return
+	}
+
+	if len(data.LabelSelector.Elements()) == 0 {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("label_selector"),
+			"invalid NLB service label selector",
+			"the label selector requires at least one label pair: remove the attribute to remove the selector",
+		)
+	}
+}
+
 func (r *ResourceService) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan ResourceServiceModel
 
@@ -256,26 +312,40 @@ func (r *ResourceService) Create(ctx context.Context, req resource.CreateRequest
 		return
 	}
 
-	instancePoolID, err := exoscale.ParseUUID(plan.InstancePoolID.ValueString())
-	if err != nil {
-		resp.Diagnostics.AddError("unable to parse instance pool ID", err.Error())
-		return
-	}
-
 	if len(plan.Healthcheck) != 1 {
 		resp.Diagnostics.AddError("invalid healthcheck", "exactly one healthcheck block is required")
 		return
 	}
 
+	// The instance pool is optional, as a service can take its backends from a
+	// label selector alone. ValidateConfig makes sure that one of the two is
+	// set.
+	var ipool *exoscale.InstancePool
+	if !plan.InstancePoolID.IsNull() {
+		instancePoolID, err := exoscale.ParseUUID(plan.InstancePoolID.ValueString())
+		if err != nil {
+			resp.Diagnostics.AddError("unable to parse instance pool ID", err.Error())
+			return
+		}
+		ipool = &exoscale.InstancePool{ID: instancePoolID}
+	}
+
+	labelSelector, diags := labelSelectorToAPI(ctx, plan.LabelSelector)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	request := exoscale.AddServiceToLoadBalancerRequest{
-		Name:         plan.Name.ValueString(),
-		Description:  plan.Description.ValueString(),
-		Healthcheck:  plan.Healthcheck[0].toAPI(),
-		InstancePool: &exoscale.InstancePool{ID: instancePoolID},
-		Port:         plan.Port.ValueInt64(),
-		TargetPort:   plan.TargetPort.ValueInt64(),
-		Protocol:     exoscale.AddServiceToLoadBalancerRequestProtocol(plan.Protocol.ValueString()),
-		Strategy:     exoscale.AddServiceToLoadBalancerRequestStrategy(plan.Strategy.ValueString()),
+		Name:          plan.Name.ValueString(),
+		Description:   plan.Description.ValueString(),
+		Healthcheck:   plan.Healthcheck[0].toAPI(),
+		InstancePool:  ipool,
+		LabelSelector: labelSelector,
+		Port:          plan.Port.ValueInt64(),
+		TargetPort:    plan.TargetPort.ValueInt64(),
+		Protocol:      exoscale.AddServiceToLoadBalancerRequestProtocol(plan.Protocol.ValueString()),
+		Strategy:      exoscale.AddServiceToLoadBalancerRequestStrategy(plan.Strategy.ValueString()),
 	}
 
 	operation, err := client.AddServiceToLoadBalancer(ctx, nlbID, request)
@@ -353,7 +423,10 @@ func (r *ResourceService) Read(ctx context.Context, req resource.ReadRequest, re
 		return
 	}
 
-	applyService(&state, service)
+	resp.Diagnostics.Append(applyService(ctx, &state, service)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 	tflog.Trace(ctx, "resource read done", map[string]any{"id": state.ID})
@@ -435,6 +508,25 @@ func (r *ResourceService) Update(ctx context.Context, req resource.UpdateRequest
 		request.Strategy = exoscale.UpdateLoadBalancerServiceRequestStrategy(plan.Strategy.ValueString())
 	}
 
+	// A selector dropped from the configuration decodes to a null map, which the
+	// API reads as "keep the selector", so the removal is requested with an
+	// empty map.
+	if !plan.LabelSelector.Equal(state.LabelSelector) {
+		selector := plan.LabelSelector
+		if selector.IsNull() {
+			selector = types.MapValueMust(types.StringType, map[string]attr.Value{})
+		}
+
+		labelSelector, diags := labelSelectorToAPI(ctx, selector)
+		resp.Diagnostics.Append(diags...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		update = true
+		request.LabelSelector = labelSelector
+	}
+
 	if len(state.Healthcheck) != 1 || plan.Healthcheck[0] != state.Healthcheck[0] {
 		update = true
 		request.Healthcheck = plan.Healthcheck[0].toAPI()
@@ -456,6 +548,7 @@ func (r *ResourceService) Update(ctx context.Context, req resource.UpdateRequest
 	// the state. The state struct is what gets saved, never the plan itself.
 	state.Name = plan.Name
 	state.Description = plan.Description
+	state.LabelSelector = plan.LabelSelector
 	state.Port = plan.Port
 	state.TargetPort = plan.TargetPort
 	state.Protocol = plan.Protocol

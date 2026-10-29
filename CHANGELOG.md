@@ -7,6 +7,11 @@ FEATURES:
 - New `exoscale_kms_key_store` resource and data source (beta): manage KMS External Key Stores (XKS). The proxy secret key is write-only (`secret_key_wo`, requires Terraform 1.11 or later).
 - `exoscale_kms_key`: new `xks` attribute to create keys backed by an External Key Store, new `key_spec` attribute, read-only `source` attribute, and `usage = "sign-verify"`.
 
+FEATURES:
+
+- `exoscale_nlb_service`: new `label_selector` attribute to forward traffic to the instances carrying all the listed key/value labels. `instance_pool_id` becomes optional, as at least one of the two is required. Removing `label_selector` from the configuration removes the selector, which the API rejects when the service has no instance pool. An empty `label_selector` map is rejected at plan time, as the API holds either labels or no selector at all.
+- `exoscale_nlb_service_list`: new `label_selector` attribute; `instance_pool_id` is null for a service selecting instances by labels only.
+
 IMPROVEMENTS:
 
 - chore(VPC): link the community docs for VPC correctly - #633
@@ -20,6 +25,11 @@ BUG FIXES:
 - `exoscale_kms_key`: changing only `timeouts` no longer fails the apply.
 - `exoscale_kms_key`: a change that replaces a key without changing its `name` now fails at plan time. The key used to be scheduled for deletion, then its replacement failed to be created because the name stays reserved during the deletion delay.
 - `exoscale_kms_key`: API errors now show their title and detail.
+
+DEPENDENCIES:
+
+- Bump `github.com/exoscale/egoscale/v3` to v3.1... (A [WIP branch](https://github.com/exoscale/egoscale/pull/841) is currently used because the public-api changes haven't been deployed yet.)
+
 
 ## 0.76.0
 

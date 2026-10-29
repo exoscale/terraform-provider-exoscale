@@ -68,6 +68,57 @@ func healthcheckFromAPI(hc *exoscale.LoadBalancerServiceHealthcheck) Healthcheck
 	}
 }
 
+// labelSelectorToAPI converts the `label_selector` attribute of
+// exoscale_nlb_service into its API representation. The API reads an omitted
+// `label-selector` as "keep the selector", `{"labels": {}}` as "remove it" and a
+// non-empty object as "replace it". A null attribute returns nil, so Update
+// asks for the removal with an empty map.
+func labelSelectorToAPI(
+	ctx context.Context,
+	selector types.Map,
+) (*exoscale.LoadBalancerServiceLabelSelector, diag.Diagnostics) {
+	if selector.IsNull() {
+		return nil, nil
+	}
+
+	var diags diag.Diagnostics
+
+	labels := exoscale.Labels{}
+	diags.Append(selector.ElementsAs(ctx, &labels, false)...)
+	if diags.HasError() {
+		return nil, diags
+	}
+
+	// An empty attribute decodes to a nil Go map, which marshals as
+	// `{"labels": null}` and therefore removes nothing. Send an empty map
+	// instead.
+	if labels == nil {
+		labels = exoscale.Labels{}
+	}
+
+	return &exoscale.LoadBalancerServiceLabelSelector{Labels: labels}, diags
+}
+
+// labelSelectorFromAPI maps an API label selector onto the `label_selector`
+// attribute, which is null when the service has no selector. The API signals
+// that by leaving the `label-selector` key out of the response, and never
+// returns a selector with no labels.
+func labelSelectorFromAPI(
+	ctx context.Context,
+	selector *exoscale.LoadBalancerServiceLabelSelector,
+) (types.Map, diag.Diagnostics) {
+	if selector == nil || len(selector.Labels) == 0 {
+		return types.MapNull(types.StringType), nil
+	}
+
+	labels, diags := types.MapValueFrom(ctx, types.StringType, selector.Labels)
+	if diags.HasError() {
+		return types.MapNull(types.StringType), diags
+	}
+
+	return labels, diags
+}
+
 // addressFamily returns the NLB address family, `inet4` when the API omits it.
 func addressFamily(nlb *exoscale.LoadBalancer) types.String {
 	if nlb.Addressfamily == "" {
@@ -146,7 +197,11 @@ func applyServiceComputed(model *ResourceServiceModel, service *exoscale.LoadBal
 
 // applyService refreshes the whole service model from the API. Only Read
 // should use this; see applyServiceComputed.
-func applyService(model *ResourceServiceModel, service *exoscale.LoadBalancerService) {
+func applyService(
+	ctx context.Context,
+	model *ResourceServiceModel,
+	service *exoscale.LoadBalancerService,
+) diag.Diagnostics {
 	applyServiceComputed(model, service)
 
 	model.Name = types.StringValue(service.Name)
@@ -156,12 +211,21 @@ func applyService(model *ResourceServiceModel, service *exoscale.LoadBalancerSer
 	model.Protocol = types.StringValue(string(service.Protocol))
 	model.Strategy = types.StringValue(string(service.Strategy))
 
+	// The API omits `instance-pool` for a service that has a label selector only.
 	model.InstancePoolID = types.StringNull()
 	if service.InstancePool != nil {
 		model.InstancePoolID = types.StringValue(service.InstancePool.ID.String())
 	}
 
+	var diags diag.Diagnostics
+	model.LabelSelector, diags = labelSelectorFromAPI(ctx, service.LabelSelector)
+	if diags.HasError() {
+		return diags
+	}
+
 	model.Healthcheck = []HealthcheckModel{healthcheckFromAPI(service.Healthcheck)}
+
+	return diags
 }
 
 // findService resolves the service created by AddServiceToLoadBalancer.

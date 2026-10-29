@@ -19,10 +19,12 @@ func TestNLB(t *testing.T) {
 		nlbResource       = "exoscale_nlb.test_nlb"
 		nlb6Resource      = "exoscale_nlb.test_nlb6"
 		serviceResource   = "exoscale_nlb_service.test_service"
+		labelsResource    = "exoscale_nlb_service.test_service_labels"
 		nlbByID           = "data.exoscale_nlb.test_nlb_by_id"
 		nlbByName         = "data.exoscale_nlb.test_nlb_by_name"
 		serviceListByID   = "data.exoscale_nlb_service_list.test_service_list_by_id"
 		serviceListByName = "data.exoscale_nlb_service_list.test_service_list_by_name"
+		serviceListLabels = "data.exoscale_nlb_service_list.test_service_list_labels"
 	)
 
 	testdataSpec := testutils.TestdataSpec{
@@ -37,8 +39,10 @@ func TestNLB(t *testing.T) {
 		PreCheck:                 func() { testutils.AccPreCheck(t) },
 		ProtoV6ProviderFactories: testutils.TestAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
-			// 1 Create the NLB, one service, and read them back through both
-			// data sources (by id and by name) plus the service list.
+			// 1 Create two NLBs and two services. test_service has both an
+			// instance pool and a label selector, test_service_labels has a
+			// label selector only. The services are also read back through the
+			// NLB data sources and the service list data sources.
 			{
 				Config: testutils.ParseTestdataConfig("./testdata/001.nlb_create.tf.tmpl", &testdataSpec),
 				Check: resource.ComposeAggregateTestCheckFunc(
@@ -72,6 +76,15 @@ func TestNLB(t *testing.T) {
 					resource.TestCheckResourceAttr(serviceResource, "healthcheck.0.port", "8080"),
 					resource.TestCheckResourceAttr(serviceResource, "healthcheck.0.uri", "/health"),
 					resource.TestCheckResourceAttr(serviceResource, "healthcheck.0.tls_sni", "example.net"),
+					// Prefixed keys come back exactly as they were sent.
+					resource.TestCheckResourceAttr(serviceResource, "label_selector.%", "2"),
+					resource.TestCheckResourceAttr(serviceResource, "label_selector.role", "web"),
+					resource.TestCheckResourceAttr(serviceResource, "label_selector.exoscale.com/managed-by", "terraform"),
+
+					// A service whose backends come from labels only.
+					resource.TestCheckResourceAttr(labelsResource, "label_selector.%", "1"),
+					resource.TestCheckResourceAttr(labelsResource, "label_selector.role", "web"),
+					resource.TestCheckNoResourceAttr(labelsResource, "instance_pool_id"),
 
 					resource.TestCheckResourceAttrPair(nlbResource, "name", nlbByID, "name"),
 					resource.TestCheckResourceAttrPair(nlbResource, "description", nlbByID, "description"),
@@ -91,12 +104,19 @@ func TestNLB(t *testing.T) {
 					resource.TestCheckResourceAttr(serviceListByName, "services.#", "1"),
 					resource.TestCheckResourceAttrPair(serviceResource, "id", serviceListByName, "services.0.id"),
 					resource.TestCheckResourceAttrPair(nlbResource, "id", serviceListByName, "nlb_id"),
+					resource.TestCheckResourceAttrPair(serviceResource, "label_selector.role", serviceListByID, "services.0.label_selector.role"),
+
+					resource.TestCheckResourceAttr(serviceListLabels, "services.#", "1"),
+					resource.TestCheckResourceAttrPair(labelsResource, "id", serviceListLabels, "services.0.id"),
+					resource.TestCheckResourceAttr(serviceListLabels, "services.0.label_selector.%", "1"),
+					resource.TestCheckNoResourceAttr(serviceListLabels, "services.0.instance_pool_id"),
 				),
 			},
 
 			// 2 Update both the NLB and the service. The service switches its
 			// healthcheck away from https while dropping uri/tls_sni, which
-			// must clear them rather than leave the previous values in place.
+			// must clear them rather than leave the previous values in place,
+			// and replaces its label selector entirely.
 			{
 				Config: testutils.ParseTestdataConfig("./testdata/002.nlb_update.tf.tmpl", &testdataSpec),
 				Check: resource.ComposeAggregateTestCheckFunc(
@@ -121,18 +141,35 @@ func TestNLB(t *testing.T) {
 					resource.TestCheckResourceAttr(serviceResource, "healthcheck.0.retries", "2"),
 					resource.TestCheckNoResourceAttr(serviceResource, "healthcheck.0.uri"),
 					resource.TestCheckNoResourceAttr(serviceResource, "healthcheck.0.tls_sni"),
+					resource.TestCheckResourceAttr(serviceResource, "label_selector.%", "1"),
+					resource.TestCheckResourceAttr(serviceResource, "label_selector.tier", "frontend"),
+					resource.TestCheckNoResourceAttr(serviceResource, "label_selector.role"),
+					resource.TestCheckNoResourceAttr(serviceResource, "label_selector.exoscale.com/managed-by"),
+
+					// This service is not part of the change, so its selector must
+					// stay as it is.
+					resource.TestCheckResourceAttr(labelsResource, "label_selector.%", "1"),
+					resource.TestCheckResourceAttr(labelsResource, "label_selector.role", "web"),
 				),
 			},
 
-			// 3 Drop `labels` and `description` on the NLB, and `description` on
-			// the service: emptying an attribute must reach the API, otherwise
-			// the previous value surfaces as drift on the next plan.
+			// 3 Drop `labels` and `description` on the NLB, and `description`
+			// and `label_selector` on the service: emptying an attribute must
+			// reach the API, otherwise the previous value surfaces as drift on
+			// the next plan.
 			{
 				Config: testutils.ParseTestdataConfig("./testdata/003.nlb_clear.tf.tmpl", &testdataSpec),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(nlbResource, "labels.%", "0"),
 					resource.TestCheckNoResourceAttr(nlbResource, "description"),
 					resource.TestCheckNoResourceAttr(serviceResource, "description"),
+					resource.TestCheckResourceAttr(serviceResource, "label_selector.%", "0"),
+
+					// The labels-only service keeps its selector. Dropping it
+					// would leave that service with no backend at all, which the
+					// API rejects.
+					resource.TestCheckResourceAttr(labelsResource, "label_selector.%", "1"),
+					resource.TestCheckNoResourceAttr(labelsResource, "instance_pool_id"),
 
 					// Optional healthcheck attributes fall back to their defaults.
 					resource.TestCheckResourceAttr(serviceResource, "healthcheck.0.mode", "tcp"),
@@ -164,6 +201,21 @@ func TestNLB(t *testing.T) {
 						"%s/%s@%s",
 						s.RootModule().Resources[nlbResource].Primary.ID,
 						s.RootModule().Resources[serviceResource].Primary.ID,
+						testdataSpec.Zone,
+					), nil
+				},
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+
+			// 6 Import the service that has no instance pool.
+			{
+				ResourceName: labelsResource,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					return fmt.Sprintf(
+						"%s/%s@%s",
+						s.RootModule().Resources[nlb6Resource].Primary.ID,
+						s.RootModule().Resources[labelsResource].Primary.ID,
 						testdataSpec.Zone,
 					), nil
 				},
