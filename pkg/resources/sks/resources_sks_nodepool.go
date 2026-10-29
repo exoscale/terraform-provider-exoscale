@@ -1414,28 +1414,10 @@ func (r *ResourceNodepool) applyNodepoolComputed(
 			return diags
 		}
 
-		if block.CPUManagerPolicy.IsUnknown() {
-			block.CPUManagerPolicy = types.StringNull()
-			if nodepool.CPUManagerConfig != nil {
-				block.CPUManagerPolicy = types.StringValue(string(nodepool.CPUManagerConfig.CPUManagerPolicy))
-			}
-		}
+		utils.RefreshString(&block.CPUManagerPolicy, string(nodepool.CPUManagerConfig.CPUManagerPolicy))
+		utils.RefreshString(&block.CPUManagerReconcilePeriod, string(nodepool.CPUManagerConfig.CPUManagerReconcilePeriod))
+		utils.RefreshStringSet(ctx, &diags, &block.CPUManagerPolicyOptions, nodepool.CPUManagerConfig.CPUManagerPolicyOptions)
 
-		if block.CPUManagerReconcilePeriod.IsUnknown() {
-			block.CPUManagerReconcilePeriod = types.StringNull()
-			if nodepool.CPUManagerConfig != nil {
-				block.CPUManagerReconcilePeriod = optionalString(nodepool.CPUManagerConfig.CPUManagerReconcilePeriod)
-			}
-		}
-
-		if block.CPUManagerPolicyOptions.IsUnknown() {
-			block.CPUManagerPolicyOptions = types.SetNull(types.StringType)
-			if nodepool.CPUManagerConfig != nil && len(nodepool.CPUManagerConfig.CPUManagerPolicyOptions) > 0 {
-				opts, d := types.SetValueFrom(ctx, types.StringType, nodepool.CPUManagerConfig.CPUManagerPolicyOptions)
-				diags.Append(d...)
-				block.CPUManagerPolicyOptions = opts
-			}
-		}
 
 		if block.KubeReserved.IsUnknown() {
 			block.KubeReserved = types.ObjectNull(reservedResourcesAttrTypes())
