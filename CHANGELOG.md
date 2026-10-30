@@ -45,6 +45,10 @@ IMPROVEMENTS:
 - The provider is now served by terraform-plugin-framework alone: the terraform-plugin-sdk provider server and the mux combining both are removed, as every resource and data source has been migrated. The User-Agent no longer reports a `Terraform-SDK/` version.
 - Documentation: links to the Exoscale documentation now point to the current pages on community.exoscale.com instead of legacy `/documentation/` URLs that only work through redirects.
 
+FEATURES:
+
+- New `exoscale_dbaas_kafka_topic_acl` and `exoscale_dbaas_kafka_schema_registry_acl` resources to manage the ACL entries of a Kafka DBaaS service. The API has no update for an entry: changing any argument replaces it.
+
 BREAKING CHANGES:
 
 - `exoscale_instance_pool`: the `service_offering` attribute, deprecated since 0.27.0, is removed and `instance_type` is now required: replace `service_offering = "<size>"` with `instance_type = "standard.<size>"`, check the [migration guide](docs/guides/migration-of-instance-pool-from-v0_75_x-to-v0_76_x.md).
