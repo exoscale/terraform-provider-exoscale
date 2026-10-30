@@ -16,6 +16,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
+	v3 "github.com/exoscale/egoscale/v3"
+
 	"github.com/exoscale/terraform-provider-exoscale/pkg/testutils"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
 )
@@ -139,7 +141,7 @@ func CheckExistsValkey(name string, data *TemplateModelValkey) error {
 	client, err := utils.SwitchClientZone(
 		ctx,
 		defaultClientV3,
-		testutils.TestZoneName,
+		v3.ZoneName(testutils.TestZoneName),
 	)
 	if err != nil {
 		return err

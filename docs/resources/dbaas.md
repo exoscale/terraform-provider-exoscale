@@ -19,7 +19,7 @@ Manage Exoscale [Database Services (DBaaS)](https://community.exoscale.com/produ
 
 - `name` (String) ❗ The name of the database service.
 - `plan` (String) The plan of the database service (use the [Exoscale CLI](https://github.com/exoscale/cli/) - `exo dbaas type show <TYPE> --plans` - for reference).
-- `type` (String) The type of the database service (`clickhouse`, `kafka`, `mysql`, `opensearch`, `pg`, `valkey`, `grafana`).
+- `type` (String) The type of the database service (`clickhouse`, `kafka`, `mysql`, `opensearch`, `pg`, `valkey`, `grafana`, `thanos`).
 - `zone` (String) ❗ The Exoscale [Zone](https://www.exoscale.com/datacenters/) name.
 
 ### Optional
@@ -33,6 +33,7 @@ Manage Exoscale [Database Services (DBaaS)](https://community.exoscale.com/produ
 - `opensearch` (Attributes) *opensearch* database service type specific arguments. Structure is documented below. (see [below for nested schema](#nestedatt--opensearch))
 - `pg` (Attributes) *pg* database service type specific arguments. Structure is documented below. (see [below for nested schema](#nestedatt--pg))
 - `termination_protection` (Boolean) The database service protection boolean flag against termination/power-off.
+- `thanos` (Attributes) *thanos* database service type specific arguments. Structure is documented below. (see [below for nested schema](#nestedatt--thanos))
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `valkey` (Attributes) *valkey* database service type specific arguments. Structure is documented below. (see [below for nested schema](#nestedatt--valkey))
 
@@ -166,6 +167,22 @@ Optional:
 - `variant` (String) PostgreSQL variant (`timescale` or `aiven`). May only be set at creation time.
 - `version` (String) PostgreSQL major version (`exo dbaas type show pg` for reference; may only be set at creation time).
 - `work_mem` (Number) Sets the maximum amount of memory to be used by a query operation (such as a sort or hash table) before writing to temporary disk files, in MB. Default is 1MB + 0.075% of total RAM (up to 32MB).
+
+
+<a id="nestedatt--thanos"></a>
+### Nested Schema for `thanos`
+
+Optional:
+
+- `ip_filter` (Set of String) A list of CIDR blocks to allow incoming connections from.
+- `thanos_settings` (String) Thanos configuration settings in JSON format (`exo dbaas type show thanos --settings=thanos` for reference).
+
+Read-Only:
+
+- `query_frontend_uri` (String) Thanos Query Frontend URI.
+- `query_uri` (String) Thanos Query URI.
+- `receiver_remote_write_uri` (String) Thanos Receiver remote write URI.
+- `ruler_uri` (String) Thanos Ruler URI.
 
 
 <a id="nestedblock--timeouts"></a>

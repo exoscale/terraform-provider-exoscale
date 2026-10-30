@@ -7,6 +7,10 @@ FEATURES:
 - New `exoscale_kms_key_store` resource and data source (beta): manage KMS External Key Stores (XKS). The proxy secret key is write-only (`secret_key_wo`, requires Terraform 1.11 or later).
 - `exoscale_kms_key`: new `xks` attribute to create keys backed by an External Key Store, new `key_spec` attribute, read-only `source` attribute, and `usage = "sign-verify"`.
 
+FEATURES:
+
+- `exoscale_dbaas`: new `thanos` Database service type.
+
 IMPROVEMENTS:
 
 - chore(VPC): link the community docs for VPC correctly - #633

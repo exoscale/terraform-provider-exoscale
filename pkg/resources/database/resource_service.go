@@ -71,6 +71,7 @@ type ServiceResourceModel struct {
 	Opensearch *ResourceOpensearchModel `tfsdk:"opensearch"`
 	Grafana    *ResourceGrafanaModel    `tfsdk:"grafana"`
 	Clickhouse *ResourceClickhouseModel `tfsdk:"clickhouse"`
+	Thanos     *ResourceThanosModel     `tfsdk:"thanos"`
 
 	Timeouts timeouts.Value `tfsdk:"timeouts"`
 }
@@ -179,7 +180,7 @@ func (r *ServiceResource) Schema(ctx context.Context, req resource.SchemaRequest
 				Default:             booldefault.StaticBool(true),
 			},
 			"type": schema.StringAttribute{
-				MarkdownDescription: "The type of the database service (`clickhouse`, `kafka`, `mysql`, `opensearch`, `pg`, `valkey`, `grafana`).",
+				MarkdownDescription: "The type of the database service (`clickhouse`, `kafka`, `mysql`, `opensearch`, `pg`, `valkey`, `grafana`, `thanos`).",
 				Required:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -212,6 +213,7 @@ func (r *ServiceResource) Schema(ctx context.Context, req resource.SchemaRequest
 			"mysql":      ResourceMysqlSchema,
 			"opensearch": ResourceOpensearchSchema,
 			"pg":         ResourcePgSchema,
+			"thanos":     ResourceThanosSchema,
 			"valkey":     ResourceValkeySchema,
 			"clickhouse": ResourceClickhouseSchema,
 		},
@@ -275,6 +277,12 @@ func (r *ServiceResource) ModifyPlan(ctx context.Context, req resource.ModifyPla
 	// (e.g. updateMysql/readMysql) stores whatever the API reports, so a
 	// known-empty set is what a real clear actually ends up producing in
 	// state.
+	// TODO(egoscale): ip-filter is `omitempty` in every UpdateDBAASService*Request
+	// struct, so the empty set resolved below is dropped from the request body and
+	// the API keeps the previous filter: clearing ip_filter shows a plan diff that
+	// never applies. Once egoscale marks ip-filter as nullable (like feature-gates
+	// on the sks cluster update) and the API treats null as "unchanged", the empty
+	// list will be sent as [] and the clear will work.
 	emptyIPFilter := types.SetValueMust(types.StringType, []attr.Value{})
 
 	// Shallow-copy planData so we can resolve/neutralize fields for
@@ -314,11 +322,23 @@ func (r *ServiceResource) ModifyPlan(ctx context.Context, req resource.ModifyPla
 		grafana.IpFilter = emptyIPFilter
 		normalized.Grafana = &grafana
 	}
+	if normalized.Valkey != nil && configData.Valkey != nil && configData.Valkey.IPFilter.IsNull() {
+		resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("valkey").AtName("ip_filter"), emptyIPFilter)...)
+		valkey := *normalized.Valkey
+		valkey.IPFilter = emptyIPFilter
+		normalized.Valkey = &valkey
+	}
 	if normalized.Clickhouse != nil && configData.Clickhouse != nil && configData.Clickhouse.IPFilter.IsNull() {
 		resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("clickhouse").AtName("ip_filter"), emptyIPFilter)...)
 		clickhouse := *normalized.Clickhouse
 		clickhouse.IPFilter = emptyIPFilter
 		normalized.Clickhouse = &clickhouse
+	}
+	if normalized.Thanos != nil && configData.Thanos != nil && configData.Thanos.IPFilter.IsNull() {
+		resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("thanos").AtName("ip_filter"), emptyIPFilter)...)
+		thanos := *normalized.Thanos
+		thanos.IPFilter = emptyIPFilter
+		normalized.Thanos = &thanos
 	}
 	if resp.Diagnostics.HasError() {
 		return
@@ -408,6 +428,11 @@ func (r *ServiceResource) UpgradeState(ctx context.Context) map[int64]resource.S
 							Attributes: ResourceClickhouseSchema.Attributes,
 						},
 					},
+					"thanos": schema.ListNestedBlock{
+						NestedObject: schema.NestedBlockObject{
+							Attributes: ResourceThanosSchema.Attributes,
+						},
+					},
 					"timeouts": timeouts.BlockAll(ctx),
 				},
 			},
@@ -440,6 +465,7 @@ func (r *ServiceResource) UpgradeState(ctx context.Context) map[int64]resource.S
 					Opensearch            []ResourceOpensearchModel `tfsdk:"opensearch"`
 					Grafana               []ResourceGrafanaModel    `tfsdk:"grafana"`
 					Clickhouse            []ResourceClickhouseModel `tfsdk:"clickhouse"`
+					Thanos                []ResourceThanosModel     `tfsdk:"thanos"`
 					Timeouts              timeouts.Value            `tfsdk:"timeouts"`
 				}{}
 
@@ -487,6 +513,9 @@ func (r *ServiceResource) UpgradeState(ctx context.Context) map[int64]resource.S
 				}
 				if len(priorState.Clickhouse) > 0 {
 					upgradedStateData.Clickhouse = &priorState.Clickhouse[0]
+				}
+				if len(priorState.Thanos) > 0 {
+					upgradedStateData.Thanos = &priorState.Thanos[0]
 				}
 
 				resp.Diagnostics.Append(resp.State.Set(ctx, upgradedStateData)...)
@@ -563,6 +592,8 @@ func (r *ServiceResource) Create(ctx context.Context, req resource.CreateRequest
 		r.createGrafana(ctx, &data, &resp.Diagnostics)
 	case "clickhouse":
 		r.createClickhouse(ctx, &data, &resp.Diagnostics)
+	case "thanos":
+		r.createThanos(ctx, &data, &resp.Diagnostics)
 	}
 	if resp.Diagnostics.HasError() {
 		return
@@ -614,6 +645,8 @@ func (r *ServiceResource) Read(ctx context.Context, req resource.ReadRequest, re
 		clearState = r.readGrafana(ctx, &data, &resp.Diagnostics)
 	case "clickhouse":
 		clearState = r.readClickhouse(ctx, &data, &resp.Diagnostics)
+	case "thanos":
+		clearState = r.readThanos(ctx, &data, &resp.Diagnostics)
 	}
 	if resp.Diagnostics.HasError() {
 		return
@@ -668,6 +701,8 @@ func (r *ServiceResource) Update(ctx context.Context, req resource.UpdateRequest
 		r.updateGrafana(ctx, &stateData, &planData, &resp.Diagnostics)
 	case "clickhouse":
 		r.updateClickhouse(ctx, &stateData, &planData, &resp.Diagnostics)
+	case "thanos":
+		r.updateThanos(ctx, &stateData, &planData, &resp.Diagnostics)
 	}
 	if resp.Diagnostics.HasError() {
 		return
@@ -716,6 +751,24 @@ func (r *ServiceResource) Delete(ctx context.Context, req resource.DeleteRequest
 
 		if _, err := client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
 			resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to wait for database service clickhouse deletion, got error: %s", err))
+			return
+		}
+
+	case "thanos":
+		client, err := utils.SwitchClientZone(ctx, r.clientV3, v3.ZoneName(data.Zone.ValueString()))
+		if err != nil {
+			resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to init client, got error: %s", err))
+			return
+		}
+
+		op, err := client.DeleteDBAASServiceThanos(ctx, data.Id.ValueString())
+		if err != nil {
+			resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete database service thanos, got error: %s", err))
+			return
+		}
+
+		if _, err := client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
+			resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to wait for database service thanos deletion, got error: %s", err))
 			return
 		}
 

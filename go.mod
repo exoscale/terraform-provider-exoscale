@@ -5,7 +5,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.42
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.97.3
 	github.com/exoscale/egoscale v0.102.5
-	github.com/exoscale/egoscale/v3 v3.1.59
+	github.com/exoscale/egoscale/v3 v3.1.61
 	github.com/google/go-cmp v0.7.0
 	github.com/hashicorp/go-retryablehttp v0.7.8
 	github.com/hashicorp/terraform-plugin-docs v0.16.0
