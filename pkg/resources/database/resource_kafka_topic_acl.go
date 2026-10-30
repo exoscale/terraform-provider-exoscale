@@ -240,9 +240,16 @@ func (r *KafkaTopicACLResource) Read(ctx context.Context, req resource.ReadReque
 	resp.State.RemoveResource(ctx)
 }
 
-func (r *KafkaTopicACLResource) Update(_ context.Context, _ resource.UpdateRequest, _ *resource.UpdateResponse) {
-	// Nothing to do here: the API has no update operation for ACL entries, and every
-	// argument requires a replacement
+// Update only saves the plan: the API has no update operation for ACL entries, every
+// argument requires a replacement, and only the timeouts can change in place.
+func (r *KafkaTopicACLResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan KafkaTopicACLResourceModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 func (r *KafkaTopicACLResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
