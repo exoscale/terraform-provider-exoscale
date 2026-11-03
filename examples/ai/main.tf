@@ -39,6 +39,16 @@ resource "exoscale_ai_deployment" "my_deployment" {
   ]
 }
 
+# API key granted access to the deployment only
+resource "exoscale_ai_api_key" "my_api_key" {
+  zone = local.my_zone
+  name = "my-api-key"
+
+  deployment_ids = [
+    exoscale_ai_deployment.my_deployment.id,
+  ]
+}
+
 # Outputs
 output "my_deployment" {
   value = {
@@ -60,4 +70,9 @@ output "my_gated_model" {
     id    = exoscale_ai_model.my_gated_model.id
     state = exoscale_ai_model.my_gated_model.state
   }
+}
+
+output "my_api_key_secret" {
+  value     = exoscale_ai_api_key.my_api_key.secret
+  sensitive = true
 }

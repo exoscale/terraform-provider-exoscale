@@ -1,0 +1,8 @@
+resource "exoscale_ai_api_key" "test" {
+  zone = "{{ .Zone }}"
+  name = "terraform-provider-test-{{ .ID }}"
+
+  models = [
+    "Qwen/Qwen3-0.6B",
+  ]
+}

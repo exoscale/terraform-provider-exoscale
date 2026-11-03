@@ -20,3 +20,8 @@ func TestAIDeploymentLocal(t *testing.T) {
 	testutils.LoadLocalCreds(t, *flagAccount)
 	TestAIDeployment(t)
 }
+
+func TestAIAPIKeyLocal(t *testing.T) {
+	testutils.LoadLocalCreds(t, *flagAccount)
+	TestAIAPIKey(t)
+}

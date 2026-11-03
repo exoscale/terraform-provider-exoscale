@@ -327,6 +327,7 @@ func (p *ExoscaleProvider) Resources(ctx context.Context) []func() resource.Reso
 
 		ai.NewResourceAIModel,
 		ai.NewResourceAIDeployment,
+		ai.NewResourceAIAPIKey,
 	}
 }
 

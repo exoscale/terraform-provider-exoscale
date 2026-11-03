@@ -1,0 +1,5 @@
+resource "exoscale_ai_api_key" "test" {
+  zone       = "{{ .Zone }}"
+  name       = "terraform-provider-test-{{ .ID }}"
+  all_models = true
+}
