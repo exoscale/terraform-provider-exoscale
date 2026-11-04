@@ -18,5 +18,7 @@ jobs:
       - run: make go.mk
       - uses: ./go.mk/.github/actions/setup
       - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: 1.17.0
       - name: Check documentation is up to date
         run: './scripts/check-documentation-clean.sh'
