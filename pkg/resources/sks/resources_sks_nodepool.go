@@ -1290,6 +1290,47 @@ func (r *ResourceNodepool) reservedResourcesBlock(ctx context.Context, obj types
 	return &block, true
 }
 
+// applyReservedResourcesComputed returns the planned reserved resources object with its
+// unknown (or null) nested attributes filled in from remote. Known attributes are kept so
+// that user input takes precedence over the API value. When the planned object itself is
+// null or unknown, the remote value is applied wholesale.
+func (r *ResourceNodepool) applyReservedResourcesComputed(
+	ctx context.Context,
+	plan types.Object,
+	remote *exoscale.ReservedResources,
+	diags *diag.Diagnostics,
+) types.Object {
+	if plan.IsNull() || plan.IsUnknown() {
+		if remote == nil {
+			return types.ObjectNull(reservedResourcesAttrTypes())
+		}
+
+		obj, d := types.ObjectValueFrom(ctx, reservedResourcesAttrTypes(), reservedResourcesModel{
+			CPU:              types.StringValue(remote.CPU),
+			Memory:           optionalString(remote.Memory),
+			EphemeralStorage: optionalString(remote.EphemeralStorage),
+		})
+		diags.Append(d...)
+
+		return obj
+	}
+
+	var block reservedResourcesModel
+	diags.Append(plan.As(ctx, &block, basetypes.ObjectAsOptions{})...)
+	if diags.HasError() {
+		return plan
+	}
+
+	utils.RefreshString(&block.CPU, remote.CPU)
+	utils.RefreshString(&block.Memory, remote.Memory)
+	utils.RefreshString(&block.EphemeralStorage, remote.EphemeralStorage)
+
+	obj, d := types.ObjectValueFrom(ctx, reservedResourcesAttrTypes(), block)
+	diags.Append(d...)
+
+	return obj
+}
+
 // kubeletGCBlock decodes the (at most one) "kubelet_image_gc" nested object from a model.
 func (r *ResourceNodepool) kubeletGCBlock(ctx context.Context, m ResourceNodepoolModel, diags *diag.Diagnostics) (kubeletGCModel, bool) {
 	if m.KubeletImageGC.IsNull() || m.KubeletImageGC.IsUnknown() {
@@ -1418,32 +1459,8 @@ func (r *ResourceNodepool) applyNodepoolComputed(
 		utils.RefreshString(&block.CPUManagerReconcilePeriod, string(nodepool.CPUManagerConfig.CPUManagerReconcilePeriod))
 		utils.RefreshStringSet(ctx, &diags, &block.CPUManagerPolicyOptions, nodepool.CPUManagerConfig.CPUManagerPolicyOptions)
 
-
-		if block.KubeReserved.IsUnknown() {
-			block.KubeReserved = types.ObjectNull(reservedResourcesAttrTypes())
-			if nodepool.CPUManagerConfig != nil && nodepool.CPUManagerConfig.KubeReserved != nil {
-				kubeResObj, d := types.ObjectValueFrom(ctx, reservedResourcesAttrTypes(), reservedResourcesModel{
-					CPU:              types.StringValue(nodepool.CPUManagerConfig.KubeReserved.CPU),
-					Memory:           optionalString(nodepool.CPUManagerConfig.KubeReserved.Memory),
-					EphemeralStorage: optionalString(nodepool.CPUManagerConfig.KubeReserved.EphemeralStorage),
-				})
-				diags.Append(d...)
-				block.KubeReserved = kubeResObj
-			}
-		}
-
-		if block.SystemReserved.IsUnknown() {
-			block.SystemReserved = types.ObjectNull(reservedResourcesAttrTypes())
-			if nodepool.CPUManagerConfig != nil && nodepool.CPUManagerConfig.SystemReserved != nil {
-				sysResObj, d := types.ObjectValueFrom(ctx, reservedResourcesAttrTypes(), reservedResourcesModel{
-					CPU:              types.StringValue(nodepool.CPUManagerConfig.SystemReserved.CPU),
-					Memory:           optionalString(nodepool.CPUManagerConfig.SystemReserved.Memory),
-					EphemeralStorage: optionalString(nodepool.CPUManagerConfig.SystemReserved.EphemeralStorage),
-				})
-				diags.Append(d...)
-				block.SystemReserved = sysResObj
-			}
-		}
+		block.KubeReserved = r.applyReservedResourcesComputed(ctx, block.KubeReserved, nodepool.CPUManagerConfig.KubeReserved, &diags)
+		block.SystemReserved = r.applyReservedResourcesComputed(ctx, block.SystemReserved, nodepool.CPUManagerConfig.SystemReserved, &diags)
 
 		obj, d := types.ObjectValueFrom(ctx, cpuManagerConfigAttrTypes(), block)
 		diags.Append(d...)

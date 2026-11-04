@@ -314,6 +314,32 @@ func TestAccResourceSKSNodepoolCPUManagerConfig(t *testing.T) {
 					resource.TestCheckResourceAttr(r, "cpu_manager_config.system_reserved.ephemeral_storage", "2Gi"),
 				),
 			},
+			{
+				// Update CPU manager config with partial kube_reserved and system_reserved
+				// blocks: user-provided cpu values must be kept, remaining nested
+				// attributes are computed.
+				Config: parseSKSConfig(t, "./testdata/021.sksnp_update_cpu_manager_config_partial.tf.tmpl", td),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckResourceSKSNodepoolExists(r, &sksNodepool),
+					func(s *terraform.State) error {
+						a := assert.New(t)
+
+						if a.NotNil(sksNodepool.CPUManagerConfig) {
+							if a.NotNil(sksNodepool.CPUManagerConfig.KubeReserved) {
+								a.Equal("200m", sksNodepool.CPUManagerConfig.KubeReserved.CPU)
+							}
+
+							if a.NotNil(sksNodepool.CPUManagerConfig.SystemReserved) {
+								a.Equal("100m", sksNodepool.CPUManagerConfig.SystemReserved.CPU)
+							}
+						}
+						return nil
+					},
+					resource.TestCheckResourceAttr(r, "cpu_manager_config.cpu_manager_policy", "static"),
+					resource.TestCheckResourceAttr(r, "cpu_manager_config.kube_reserved.cpu", "200m"),
+					resource.TestCheckResourceAttr(r, "cpu_manager_config.system_reserved.cpu", "100m"),
+				),
+			},
 		},
 	})
 }
