@@ -325,6 +325,11 @@ func applyInstance( //nolint:gocyclo
 	} else if model.EnableTPM.IsNull() || model.EnableTPM.IsUnknown() {
 		model.EnableTPM = types.BoolValue(false)
 	}
+	if instance.IPForwarding != nil {
+		model.IPForwarding = types.BoolValue(*instance.IPForwarding)
+	} else if model.IPForwarding.IsNull() || model.IPForwarding.IsUnknown() {
+		model.IPForwarding = types.BoolValue(false)
+	}
 
 	diags.Append(utils.RefreshLabels(ctx, &model.Labels, instance.Labels)...)
 	utils.RefreshStringSet(

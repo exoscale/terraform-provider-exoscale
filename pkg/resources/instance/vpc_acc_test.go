@@ -53,6 +53,7 @@ func testResourceVPC(t *testing.T) {
 				Config: config(a, b),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testutils.CheckInstanceExistsV3(instanceResource, &testInstance),
+					resource.TestCheckResourceAttr(instanceResource, "ip_forwarding", "true"),
 					resource.TestCheckResourceAttrPair(instanceResource, "vpc.0.id", "exoscale_vpc.test_vpc", "id"),
 					resource.TestCheckResourceAttr(instanceResource, "vpc.0.interfaces.#", "2"),
 					resource.TestCheckResourceAttrPair(instanceResource, "vpc.0.interfaces.0.subnet_id", "exoscale_vpc_subnet.test_a", "id"),
