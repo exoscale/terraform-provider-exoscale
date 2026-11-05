@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- `exoscale_sks_nodepool`: new `cpu_manager_config` parameter
+
 ## 0.77.0
 
 FEATURES:
