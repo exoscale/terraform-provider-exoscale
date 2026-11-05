@@ -63,6 +63,7 @@ type ResourceModel struct {
 	ElasticIPIDs          types.Set    `tfsdk:"elastic_ip_ids"`
 	EnableSecureBoot      types.Bool   `tfsdk:"enable_secure_boot"`
 	EnableTPM             types.Bool   `tfsdk:"enable_tpm"`
+	IPForwarding          types.Bool   `tfsdk:"ip_forwarding"`
 	IPv6                  types.Bool   `tfsdk:"ipv6"`
 	IPv6Address           types.String `tfsdk:"ipv6_address"`
 	Labels                types.Map    `tfsdk:"labels"`
@@ -193,6 +194,25 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 				Optional:            true,
 				Computed:            true,
 				Default:             booldefault.StaticBool(false),
+			},
+			"ip_forwarding": schema.BoolAttribute{
+				Description:         "❗ Allow the instance to act as a router in a VPC network (boolean; default: 'false'). Can not be changed after the creation.",
+				MarkdownDescription: "❗ Allow the instance to act as a router in a VPC network (boolean; default: `false`). Can not be changed after the creation.",
+				Optional:            true,
+				Computed:            true,
+				Default:             booldefault.StaticBool(false),
+				PlanModifiers: []planmodifier.Bool{
+					// State written before this attribute existed holds no
+					// value until the next refresh: that must not replace the
+					// instance.
+					boolplanmodifier.RequiresReplaceIf(
+						func(_ context.Context, req planmodifier.BoolRequest, resp *boolplanmodifier.RequiresReplaceIfFuncResponse) {
+							resp.RequiresReplace = !req.StateValue.IsNull()
+						},
+						"Changing IP forwarding replaces the instance.",
+						"Changing IP forwarding replaces the instance.",
+					),
+				},
 			},
 			"ipv6": schema.BoolAttribute{
 				Description:         "Enable IPv6 on the instance (boolean; default: 'false'). Can not be disabled after being enabled.",
@@ -660,6 +680,9 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 	}
 	if plan.EnableSecureBoot.ValueBool() {
 		request.SecurebootEnabled = exoscale.Ptr(true)
+	}
+	if plan.IPForwarding.ValueBool() {
+		request.IPForwarding = exoscale.Ptr(true)
 	}
 
 	if v := plan.DeployTargetID.ValueString(); v != "" {
