@@ -3,6 +3,7 @@
 ## Unreleased
 
 - `exoscale_sks_nodepool`: new `cpu_manager_config` parameter
+- `exoscale_compute_instance`: new `ip_forwarding` parameter, to let an instance route VPC traffic (#638)
 
 ## 0.77.0
 
