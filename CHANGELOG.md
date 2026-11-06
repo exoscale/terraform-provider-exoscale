@@ -14,6 +14,7 @@ FEATURES:
 FEATURES:
 
 - `exoscale_dbaas`: new `thanos` Database service type.
+- `exoscale_nlb_service`: new `label_selector` attribute to forward traffic to the instances carrying all the listed key/value labels. `instance_pool_id` becomes optional, as at least one of the two is required. Removing `label_selector` from the configuration removes the selector, which the API rejects when the service has no instance pool. An empty `label_selector` map is rejected at plan time, as the API holds either labels or no selector at all. (#639)
 
 IMPROVEMENTS:
 
@@ -31,7 +32,9 @@ BUG FIXES:
 
 DEPENDENCIES:
 
+- Upgrade `github.com/exoscale/egoscale` to v3.1.63 (#639)
 - Upgrade `github.com/andybalholm/brotli` to v1.2.7 (#644)
+
 
 ## 0.76.0
 
