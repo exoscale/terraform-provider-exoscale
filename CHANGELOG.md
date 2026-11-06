@@ -29,6 +29,10 @@ BUG FIXES:
 - `exoscale_kms_key`: a change that replaces a key without changing its `name` now fails at plan time. The key used to be scheduled for deletion, then its replacement failed to be created because the name stays reserved during the deletion delay.
 - `exoscale_kms_key`: API errors now show their title and detail.
 
+DEPENDENCIES:
+
+- Upgrade `github.com/andybalholm/brotli` to v1.2.7 (#644)
+
 ## 0.76.0
 
 FEATURES:
