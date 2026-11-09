@@ -2,11 +2,14 @@
 page_title: "exoscale_private_network Resource - terraform-provider-exoscale"
 subcategory: ""
 description: |-
+  !> Deprecated: Private Networks will be replaced by VPC. Use the exoscale_vpc ./vpc.md, exoscalevpcsubnet ./vpc_subnet.md and exoscalevpcroute ./vpc_route.md resources instead.
   Manage Exoscale Private Networks https://community.exoscale.com/product/networking/private-network/.
   Corresponding data source: exoscaleprivatenetwork ../data-sources/private_network.md.
 ---
 
 # exoscale_private_network (Resource)
+
+!> **Deprecated:** Private Networks will be replaced by VPC. Use the [exoscale_vpc](./vpc.md), [exoscale_vpc_subnet](./vpc_subnet.md) and [exoscale_vpc_route](./vpc_route.md) resources instead.
 
 Manage Exoscale [Private Networks](https://community.exoscale.com/product/networking/private-network/).
 

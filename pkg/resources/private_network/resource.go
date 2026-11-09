@@ -22,7 +22,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
-const markdownDescriptionResource = `Manage Exoscale [Private Networks](https://community.exoscale.com/product/networking/private-network/).
+const markdownDescriptionResource = `!> **Deprecated:** Private Networks will be replaced by VPC. Use the [exoscale_vpc](./vpc.md), [exoscale_vpc_subnet](./vpc_subnet.md) and [exoscale_vpc_route](./vpc_route.md) resources instead.
+
+Manage Exoscale [Private Networks](https://community.exoscale.com/product/networking/private-network/).
 
 Corresponding data source: [exoscale_private_network](../data-sources/private_network.md).
 `
@@ -46,6 +48,7 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 	resp.Schema = schema.Schema{
 		Description:         "Manage Exoscale Private Networks.",
 		MarkdownDescription: markdownDescriptionResource,
+		DeprecationMessage:  "Privnet will be replaced by vpc",
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{

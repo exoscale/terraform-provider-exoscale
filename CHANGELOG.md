@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+DEPRECATIONS:
+
+- `exoscale_private_network`: the resource is deprecated, Private Networks will be replaced by VPC. Use the `exoscale_vpc`, `exoscale_vpc_subnet` and `exoscale_vpc_route` resources instead.
+
 ## 0.77.0
 
 FEATURES:
