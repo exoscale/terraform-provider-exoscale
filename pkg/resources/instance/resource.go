@@ -237,8 +237,8 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 				Default:             booldefault.StaticBool(false),
 			},
 			"private_network_ids": schema.SetAttribute{
-				Description:         "A list of private networks (IDs) attached to the instance. Please use the 'network_interface..network_id' argument instead.",
-				MarkdownDescription: "A list of private networks (IDs) attached to the instance. Please use the `network_interface.*.network_id` argument instead.",
+				Description:         "A list of private networks (IDs) attached to the instance. Please use the 'network_interface..network_id' argument instead. Private Networks are deprecated in favor of VPC.",
+				MarkdownDescription: "A list of private networks (IDs) attached to the instance. Please use the `network_interface.*.network_id` argument instead. Private Networks are deprecated in favor of [VPC](https://community.exoscale.com/product/networking/vpc/).",
 				DeprecationMessage:  "Use the network_interface block instead.",
 				ElementType:         types.StringType,
 				Computed:            true,
@@ -368,8 +368,8 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 		},
 		Blocks: map[string]schema.Block{
 			"network_interface": schema.SetNestedBlock{
-				Description:         "Private network interfaces (may be specified multiple times). Structure is documented below.",
-				MarkdownDescription: "Private network interfaces (may be specified multiple times). Structure is documented below.",
+				Description:         "Private network interfaces (may be specified multiple times). Structure is documented below. Private Networks are deprecated in favor of VPC: use the 'vpc' block instead.",
+				MarkdownDescription: "Private network interfaces (may be specified multiple times). Structure is documented below. Private Networks are deprecated in favor of [VPC](https://community.exoscale.com/product/networking/vpc/): use the `vpc` block instead.",
 				NestedObject: schema.NestedBlockObject{
 					Attributes: map[string]schema.Attribute{
 						"ip_address": schema.StringAttribute{

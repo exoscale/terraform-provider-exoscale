@@ -3,6 +3,7 @@
 ## Unreleased
 
 - `exoscale_sks_nodepool`: new `cpu_manager_config` parameter
+- docs: Private Networks (`exoscale_private_network`) are deprecated in favor of VPC (`exoscale_vpc`, `exoscale_vpc_subnet`)
 
 ## 0.77.0
 

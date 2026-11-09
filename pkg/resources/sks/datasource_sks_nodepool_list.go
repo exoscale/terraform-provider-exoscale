@@ -177,8 +177,8 @@ func (d *DataSourceNodepoolList) Schema(ctx context.Context, req datasource.Sche
 							Computed:            true,
 						},
 						"private_network_ids": schema.SetAttribute{
-							Description:         "A list of exoscale_private_network (IDs) attached to the managed instances.",
-							MarkdownDescription: "A list of [exoscale_private_network](../resources/private_network.md) (IDs) attached to the managed instances.",
+							Description:         "A list of exoscale_private_network (IDs) attached to the managed instances. Private Networks are deprecated in favor of VPC.",
+							MarkdownDescription: "A list of [exoscale_private_network](../resources/private_network.md) (IDs) attached to the managed instances. Private Networks are deprecated in favor of [VPC](https://community.exoscale.com/product/networking/vpc/).",
 							ElementType:         types.StringType,
 							Computed:            true,
 						},

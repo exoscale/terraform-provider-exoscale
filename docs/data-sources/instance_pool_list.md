@@ -74,7 +74,7 @@ Read-Only:
 - `labels` (Map of String) A map of key/value labels.
 - `min_available` (Number) Minimum number of running Instances.
 - `name` (String) The instance pool name.
-- `network_ids` (Set of String) The list of attached [exoscale_private_network](../resources/private_network.md) (IDs).
+- `network_ids` (Set of String) The list of attached [exoscale_private_network](../resources/private_network.md) (IDs). Private Networks are deprecated in favor of [VPC](https://community.exoscale.com/product/networking/vpc/).
 - `security_group_ids` (Set of String) The list of attached [exoscale_security_group](../resources/security_group.md) (IDs).
 - `size` (Number) The number managed instances.
 - `state` (String) The pool state.

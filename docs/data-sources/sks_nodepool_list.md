@@ -60,7 +60,7 @@ Read-Only:
 - `labels` (Map of String) A map of key/value labels.
 - `name` (String) The SKS node pool name.
 - `nvidia_mig_profile` (String) The NVIDIA [Multi-Instance GPU (MIG)](https://docs.nvidia.com/datacenter/tesla/mig-user-guide/) profile enabled on the managed GPUs.
-- `private_network_ids` (Set of String) A list of [exoscale_private_network](../resources/private_network.md) (IDs) attached to the managed instances.
+- `private_network_ids` (Set of String) A list of [exoscale_private_network](../resources/private_network.md) (IDs) attached to the managed instances. Private Networks are deprecated in favor of [VPC](https://community.exoscale.com/product/networking/vpc/).
 - `security_group_ids` (Set of String) A list of [exoscale_security_group](../resources/security_group.md) (IDs) attached to the managed instances.
 - `size` (Number) The number of managed instances.
 - `state` (String) The current pool state.

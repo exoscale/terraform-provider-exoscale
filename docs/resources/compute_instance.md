@@ -59,7 +59,7 @@ directory for complete configuration examples.
 - `enable_tpm` (Boolean) Enable TPM on the instance (boolean; default: `false`). Can not be disabled after the creation. **WARNING**: enabling this attribute stops/restarts the instance.
 - `ipv6` (Boolean) Enable IPv6 on the instance (boolean; default: `false`). Can not be disabled after being enabled.
 - `labels` (Map of String) A map of key/value labels.
-- `network_interface` (Block Set) Private network interfaces (may be specified multiple times). Structure is documented below. (see [below for nested schema](#nestedblock--network_interface))
+- `network_interface` (Block Set) Private network interfaces (may be specified multiple times). Structure is documented below. Private Networks are deprecated in favor of [VPC](https://community.exoscale.com/product/networking/vpc/): use the `vpc` block instead. (see [below for nested schema](#nestedblock--network_interface))
 - `private` (Boolean) Whether the instance is private (no public IP addresses; default: false)
 - `reverse_dns` (String) Domain name for reverse DNS record.
 - `security_group_ids` (Set of String) A list of [exoscale_security_group](./security_group.md) (IDs) to attach to the instance.
@@ -76,7 +76,7 @@ directory for complete configuration examples.
 - `id` (String) The ID of this resource.
 - `ipv6_address` (String) The instance (main network interface) IPv6 address (if enabled).
 - `mac_address` (String) MAC address
-- `private_network_ids` (Set of String, Deprecated) A list of private networks (IDs) attached to the instance. Please use the `network_interface.*.network_id` argument instead.
+- `private_network_ids` (Set of String, Deprecated) A list of private networks (IDs) attached to the instance. Please use the `network_interface.*.network_id` argument instead. Private Networks are deprecated in favor of [VPC](https://community.exoscale.com/product/networking/vpc/).
 - `public_ip_address` (String) The instance (main network interface) IPv4 address.
 
 <a id="nestedblock--network_interface"></a>

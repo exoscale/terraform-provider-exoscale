@@ -49,6 +49,9 @@ This example demonstrates how to setup and associate a
 to your compute instances, using the `exoscale_private_network` resource.
 It also shows how to tweak the configuration to turn it into a _unmanaged_ private network.
 
+**Deprecated:** Private Networks are deprecated in favor of [VPC](https://community.exoscale.com/product/networking/vpc/);
+see the [VPC example](./resources/exoscale_vpc).
+
 ## [Network Load Balancer (NLB)](./nlb)
 
 This example demonstrates how to setup and associate a

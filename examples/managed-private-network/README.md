@@ -4,6 +4,10 @@ This example demonstrates how to setup and associate a
 [(Managed) Private Network](https://community.exoscale.com/product/networking/private-network/)
 to your compute instances, using the `exoscale_private_network` resource.
 
+> **Deprecated:** Private Networks are deprecated in favor of [VPC](https://community.exoscale.com/product/networking/vpc/).
+> For new setups, use the `exoscale_vpc` and `exoscale_vpc_subnet` resources
+> (see the [VPC example](../resources/exoscale_vpc)).
+
 Please refer to the [main.tf](./main.tf) Terraform configuration file.
 
 One should note:

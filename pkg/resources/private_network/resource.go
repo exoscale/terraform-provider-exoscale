@@ -24,6 +24,8 @@ import (
 
 const markdownDescriptionResource = `Manage Exoscale [Private Networks](https://community.exoscale.com/product/networking/private-network/).
 
+~> **Deprecated:** Private Networks are deprecated in favor of [VPC](https://community.exoscale.com/product/networking/vpc/). Use the [exoscale_vpc](./vpc.md) and [exoscale_vpc_subnet](./vpc_subnet.md) resources instead, and the ` + "`vpc`" + ` block of [exoscale_compute_instance](./compute_instance.md) to attach instances to them.
+
 Corresponding data source: [exoscale_private_network](../data-sources/private_network.md).
 `
 
@@ -44,7 +46,7 @@ func (r *Resource) Metadata(ctx context.Context, req resource.MetadataRequest, r
 
 func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description:         "Manage Exoscale Private Networks.",
+		Description:         "Manage Exoscale Private Networks (deprecated in favor of VPC).",
 		MarkdownDescription: markdownDescriptionResource,
 
 		Attributes: map[string]schema.Attribute{

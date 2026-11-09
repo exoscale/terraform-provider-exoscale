@@ -230,8 +230,8 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 				Required:            true,
 			},
 			"network_ids": schema.SetAttribute{
-				Description:         "A list of exoscale_private_network (IDs).",
-				MarkdownDescription: "A list of [exoscale_private_network](./private_network.md) (IDs).",
+				Description:         "A list of exoscale_private_network (IDs). Private Networks are deprecated in favor of VPC.",
+				MarkdownDescription: "A list of [exoscale_private_network](./private_network.md) (IDs). Private Networks are deprecated in favor of [VPC](https://community.exoscale.com/product/networking/vpc/).",
 				ElementType:         types.StringType,
 				Optional:            true,
 			},
