@@ -20,6 +20,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
@@ -41,6 +42,7 @@ var _ resource.Resource = (*Resource)(nil)
 var _ resource.ResourceWithImportState = (*Resource)(nil)
 var _ resource.ResourceWithModifyPlan = (*Resource)(nil)
 var _ resource.ResourceWithUpgradeState = (*Resource)(nil)
+var _ resource.ResourceWithValidateConfig = (*Resource)(nil)
 
 type Resource struct {
 	client *exoscale.Client
@@ -69,6 +71,7 @@ type ResourceModel struct {
 	MinAvailable         types.Int64  `tfsdk:"min_available"`
 	Name                 types.String `tfsdk:"name"`
 	NetworkIDs           types.Set    `tfsdk:"network_ids"`
+	Private              types.Bool   `tfsdk:"private"`
 	SecurityGroupIDs     types.Set    `tfsdk:"security_group_ids"`
 	Size                 types.Int64  `tfsdk:"size"`
 	State                types.String `tfsdk:"state"`
@@ -235,6 +238,16 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 				ElementType:         types.StringType,
 				Optional:            true,
 			},
+			"private": schema.BoolAttribute{
+				Description:         "Whether the instance pool is private (no public IP addresses; default: false). Cannot be changed after creation. Cannot be true together with ipv6.",
+				MarkdownDescription: "❗ Whether the instance pool is private (no public IP addresses; default: `false`). Cannot be changed after creation. Cannot be `true` together with `ipv6`.",
+				Optional:            true,
+				Computed:            true,
+				Default:             booldefault.StaticBool(false),
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.RequiresReplace(),
+				},
+			},
 			"security_group_ids": schema.SetAttribute{
 				Description:         "A list of exoscale_security_group (IDs).",
 				MarkdownDescription: "A list of [exoscale_security_group](./security_group.md) (IDs).",
@@ -323,6 +336,7 @@ func (r *Resource) UpgradeState(ctx context.Context) map[int64]resource.StateUpg
 					"min_available":           schema.Int64Attribute{Optional: true, Computed: true},
 					"name":                    schema.StringAttribute{Required: true},
 					"network_ids":             schema.SetAttribute{ElementType: types.StringType, Optional: true},
+					"private":                 schema.BoolAttribute{Optional: true},
 					"security_group_ids":      schema.SetAttribute{ElementType: types.StringType, Optional: true},
 					"service_offering":        schema.StringAttribute{Optional: true, Computed: true},
 					"size":                    schema.Int64Attribute{Required: true},
@@ -362,6 +376,10 @@ func (r *Resource) UpgradeState(ctx context.Context) map[int64]resource.StateUpg
 				if len(state.Labels.Elements()) == 0 {
 					state.Labels = types.MapNull(types.StringType)
 				}
+				// Only the forked SDKv2 implementation wrote private.
+				if state.Private.IsNull() {
+					state.Private = types.BoolValue(false)
+				}
 
 				resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 			},
@@ -375,6 +393,27 @@ func (r *Resource) Configure(ctx context.Context, req resource.ConfigureRequest,
 	}
 
 	r.client = req.ProviderData.(*providerConfig.ExoscaleProviderConfig).ClientV3
+}
+
+// ValidateConfig rejects a private pool with IPv6: a private pool has no public
+// interface to carry an IPv6 address. Values are compared, not presence, so
+// private = true next to ipv6 = false is accepted.
+func (r *Resource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	var private, ipv6 types.Bool
+
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("private"), &private)...)
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("ipv6"), &ipv6)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if private.ValueBool() && ipv6.ValueBool() {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("ipv6"),
+			"invalid value",
+			"ipv6 cannot be enabled on a private instance pool",
+		)
+	}
 }
 
 // ModifyPlan keeps the computed attributes an update does not touch from
@@ -441,14 +480,21 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 	}
 
 	request := exoscale.CreateInstancePoolRequest{
-		Name:           plan.Name.ValueString(),
-		Description:    plan.Description.ValueString(),
-		DiskSize:       plan.DiskSize.ValueInt64(),
-		InstancePrefix: plan.InstancePrefix.ValueString(),
-		Ipv6Enabled:    exoscale.Ptr(plan.IPv6.ValueBool()),
-		MinAvailable:   plan.MinAvailable.ValueInt64(),
-		Size:           plan.Size.ValueInt64(),
-		Template:       &exoscale.Template{ID: exoscale.UUID(plan.TemplateID.ValueString())},
+		Name:               plan.Name.ValueString(),
+		Description:        plan.Description.ValueString(),
+		DiskSize:           plan.DiskSize.ValueInt64(),
+		InstancePrefix:     plan.InstancePrefix.ValueString(),
+		MinAvailable:       plan.MinAvailable.ValueInt64(),
+		PublicIPAssignment: exoscale.CreateInstancePoolRequestPublicIPAssignmentInet4,
+		Size:               plan.Size.ValueInt64(),
+		Template:           &exoscale.Template{ID: exoscale.UUID(plan.TemplateID.ValueString())},
+	}
+
+	switch {
+	case plan.Private.ValueBool():
+		request.PublicIPAssignment = exoscale.CreateInstancePoolRequestPublicIPAssignmentNone
+	case plan.IPv6.ValueBool():
+		request.PublicIPAssignment = exoscale.CreateInstancePoolRequestPublicIPAssignmentDual
 	}
 
 	if v := plan.DeployTargetID.ValueString(); v != "" {
