@@ -891,42 +891,42 @@ func (r *ResourceCluster) Update(ctx context.Context, req resource.UpdateRequest
 		updated = true
 	}
 
-	if !plan.Oidc.Equal(state.Oidc) {
-		var oidcBlock oidcModel
-		if b, ok := r.oidcBlock(ctx, plan, &resp.Diagnostics); ok {
-			oidcBlock = b
-		}
-		if resp.Diagnostics.HasError() {
-			return
-		}
-
+	// The API treats a null "oidc" as "clear", so a configured block must be
+	// resent on every update, even when unchanged. When the block is removed
+	// from the config, updateReq.Oidc stays nil so that "oidc" is serialized
+	// as null and the API clears the configuration.
+	if b, ok := r.oidcBlock(ctx, plan, &resp.Diagnostics); ok {
 		updateReq.Oidc = &exoscale.SKSOidc{}
-		if v := oidcBlock.ClientID.ValueString(); v != "" {
+		if v := b.ClientID.ValueString(); v != "" {
 			updateReq.Oidc.ClientID = v
 		}
-		if v := oidcBlock.GroupsClaim.ValueString(); v != "" {
+		if v := b.GroupsClaim.ValueString(); v != "" {
 			updateReq.Oidc.GroupsClaim = v
 		}
-		if v := oidcBlock.GroupsPrefix.ValueString(); v != "" {
+		if v := b.GroupsPrefix.ValueString(); v != "" {
 			updateReq.Oidc.GroupsPrefix = v
 		}
-		if v := oidcBlock.IssuerURL.ValueString(); v != "" {
+		if v := b.IssuerURL.ValueString(); v != "" {
 			updateReq.Oidc.IssuerURL = v
 		}
-		if !oidcBlock.RequiredClaim.IsNull() && !oidcBlock.RequiredClaim.IsUnknown() {
+		if !b.RequiredClaim.IsNull() && !b.RequiredClaim.IsUnknown() {
 			claims := map[string]string{}
-			resp.Diagnostics.Append(oidcBlock.RequiredClaim.ElementsAs(ctx, &claims, false)...)
+			resp.Diagnostics.Append(b.RequiredClaim.ElementsAs(ctx, &claims, false)...)
 			if resp.Diagnostics.HasError() {
 				return
 			}
 			updateReq.Oidc.RequiredClaim = claims
 		}
-		if v := oidcBlock.UsernameClaim.ValueString(); v != "" {
+		if v := b.UsernameClaim.ValueString(); v != "" {
 			updateReq.Oidc.UsernameClaim = v
 		}
-		if v := oidcBlock.UsernamePrefix.ValueString(); v != "" {
+		if v := b.UsernamePrefix.ValueString(); v != "" {
 			updateReq.Oidc.UsernamePrefix = v
 		}
+		if !plan.Oidc.Equal(state.Oidc) {
+			updated = true
+		}
+	} else if !plan.Oidc.Equal(state.Oidc) {
 		updated = true
 	}
 

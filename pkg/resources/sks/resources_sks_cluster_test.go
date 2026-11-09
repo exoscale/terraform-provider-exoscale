@@ -196,6 +196,31 @@ func TestAccResourceSKSCluster(t *testing.T) {
 				),
 			},
 			{
+				// Update a different attribute, keeping the oidc block unchanged.
+				// The API treats a null "oidc" as "clear", so the provider must
+				// resend the block to preserve the configuration.
+				Config: parseSKSConfig(t, "./testdata/022.sks_update_oidc_unchanged.tf.tmpl", td),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckResourceSKSClusterExists(r, &sksCluster),
+					func(s *terraform.State) error {
+						a := assert.New(t)
+
+						if a.NotNil(sksCluster.Oidc, "expected the API to keep the cluster's oidc configuration") {
+							a.Equal("test-client-updated", sksCluster.Oidc.ClientID)
+							a.Equal("https://id-updated.example.net", sksCluster.Oidc.IssuerURL)
+						}
+						return nil
+					},
+					resource.TestCheckResourceAttr(r, "description", "description-test-oidc-unchanged"),
+					resource.TestCheckResourceAttr(r, "oidc.0.client_id", "test-client-updated"),
+					resource.TestCheckResourceAttr(r, "oidc.0.groups_claim", "test-groups-claim-updated"),
+					resource.TestCheckResourceAttr(r, "oidc.0.groups_prefix", "test-groups-prefix-updated"),
+					resource.TestCheckResourceAttr(r, "oidc.0.issuer_url", "https://id-updated.example.net"),
+					resource.TestCheckResourceAttr(r, "oidc.0.username_claim", "test-username-claim-updated"),
+					resource.TestCheckResourceAttr(r, "oidc.0.username_prefix", "test-username-prefix-updated"),
+				),
+			},
+			{
 				// Import
 				ResourceName: r,
 				ImportStateIdFunc: func(sksCluster *egoscale.SKSCluster) resource.ImportStateIdFunc {
