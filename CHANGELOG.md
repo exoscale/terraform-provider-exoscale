@@ -4,7 +4,7 @@
 
 BUG FIXES:
 
-- `exoscale_sks_cluster` `oidc`: updating a cluster resource no longer resets the OIDC field
+- `exoscale_sks_cluster` `oidc`: updating a cluster resource no longer resets the OIDC field #649
 
 ## 0.77.0
 
