@@ -2,6 +2,7 @@ package block_storage
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -315,6 +316,12 @@ func (r *ResourceSnapshot) Read(ctx context.Context, req resource.ReadRequest, r
 		id,
 	)
 	if err != nil {
+		if errors.Is(err, exoscale.ErrNotFound) {
+			// Resource doesn't exist anymore, signaling the core to remove it from the state.
+			resp.State.RemoveResource(ctx)
+			return
+		}
+
 		resp.Diagnostics.AddError(
 			"unable to get storage snapshot",
 			err.Error(),

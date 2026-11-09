@@ -3,6 +3,7 @@
 ## Unreleased
 
 - `exoscale_sks_nodepool`: new `cpu_manager_config` parameter
+- `exoscale_block_storage_volume_snapshot`: a snapshot deleted outside of Terraform is now removed from the state, it used to make every plan fail.
 
 ## 0.77.0
 
