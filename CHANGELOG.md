@@ -3,7 +3,8 @@
 ## Unreleased
 
 - `exoscale_sks_nodepool`: new `cpu_manager_config` parameter
-- docs: Private Networks (`exoscale_private_network`) are deprecated in favor of VPC (`exoscale_vpc`, `exoscale_vpc_subnet`)
+- `exoscale_private_network` resource and data source: deprecated in favor of VPC (`exoscale_vpc`, `exoscale_vpc_subnet`). Using them now shows a deprecation warning.
+- `exoscale_compute_instance`: the `network_interface` block is deprecated in favor of the `vpc` block. Using it now shows a deprecation warning.
 
 ## 0.77.0
 

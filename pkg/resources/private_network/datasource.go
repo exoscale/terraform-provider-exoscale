@@ -54,6 +54,7 @@ func (d *DataSource) Metadata(ctx context.Context, req datasource.MetadataReques
 func (d *DataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: markdownDescriptionDatasource,
+		DeprecationMessage:  "Private Networks are deprecated in favor of VPC. Use the exoscale_vpc and exoscale_vpc_subnet data sources instead.",
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{

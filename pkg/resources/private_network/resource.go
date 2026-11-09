@@ -48,6 +48,7 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 	resp.Schema = schema.Schema{
 		Description:         "Manage Exoscale Private Networks (deprecated in favor of VPC).",
 		MarkdownDescription: markdownDescriptionResource,
+		DeprecationMessage:  "Private Networks are deprecated in favor of VPC. Use the exoscale_vpc and exoscale_vpc_subnet resources instead, and the vpc block of exoscale_compute_instance to attach instances to them.",
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{

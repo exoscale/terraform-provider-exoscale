@@ -370,6 +370,9 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 			"network_interface": schema.SetNestedBlock{
 				Description:         "Private network interfaces (may be specified multiple times). Structure is documented below. Private Networks are deprecated in favor of VPC: use the 'vpc' block instead.",
 				MarkdownDescription: "Private network interfaces (may be specified multiple times). Structure is documented below. Private Networks are deprecated in favor of [VPC](https://community.exoscale.com/product/networking/vpc/): use the `vpc` block instead.",
+				Validators: []validator.Set{
+					deprecatedSetBlockValidator{message: "Private Networks are deprecated in favor of VPC. Use the vpc block to attach the instance to VPC subnets instead."},
+				},
 				NestedObject: schema.NestedBlockObject{
 					Attributes: map[string]schema.Attribute{
 						"ip_address": schema.StringAttribute{
