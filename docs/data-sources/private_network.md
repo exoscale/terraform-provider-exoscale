@@ -4,12 +4,15 @@ page_title: "exoscale_private_network Data Source - terraform-provider-exoscale"
 subcategory: ""
 description: |-
   Fetch Exoscale Private Networks https://community.exoscale.com/product/networking/private-network/ data.
+  ~> Deprecated: Private Networks are deprecated in favor of VPC https://community.exoscale.com/product/networking/vpc/. Use the exoscale_vpc ./vpc.md and exoscalevpcsubnet ./vpc_subnet.md data sources instead.
   Corresponding resource: exoscaleprivatenetwork ../resources/private_network.md.
 ---
 
 # exoscale_private_network (Data Source)
 
 Fetch Exoscale [Private Networks](https://community.exoscale.com/product/networking/private-network/) data.
+
+~> **Deprecated:** Private Networks are deprecated in favor of [VPC](https://community.exoscale.com/product/networking/vpc/). Use the [exoscale_vpc](./vpc.md) and [exoscale_vpc_subnet](./vpc_subnet.md) data sources instead.
 
 Corresponding resource: [exoscale_private_network](../resources/private_network.md).
 

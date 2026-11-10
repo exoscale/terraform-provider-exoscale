@@ -255,8 +255,8 @@ func (r *ResourceNodepool) Schema(ctx context.Context, req resource.SchemaReques
 				Default:             booldefault.StaticBool(false),
 			},
 			"private_network_ids": schema.SetAttribute{
-				Description:         "A list of exoscale_private_network (IDs) to be attached to the managed instances.",
-				MarkdownDescription: "A list of [exoscale_private_network](./private_network.md) (IDs) to be attached to the managed instances.",
+				Description:         "A list of exoscale_private_network (IDs) to be attached to the managed instances. Private Networks are deprecated in favor of VPC.",
+				MarkdownDescription: "A list of [exoscale_private_network](./private_network.md) (IDs) to be attached to the managed instances. Private Networks are deprecated in favor of [VPC](https://community.exoscale.com/product/networking/vpc/).",
 				ElementType:         types.StringType,
 				Optional:            true,
 			},

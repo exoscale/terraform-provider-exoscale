@@ -201,3 +201,27 @@ func (v stringFuncValidator) ValidateString(_ context.Context, req validator.Str
 		resp.Diagnostics.AddAttributeError(req.Path, "invalid value", err.Error())
 	}
 }
+
+// deprecatedSetBlockValidator warns when a set block is configured at least
+// once. Use it instead of DeprecationMessage on set blocks: Terraform sends an
+// empty set (not null) when the block is absent, so DeprecationMessage would
+// warn on every resource, even those not using the block.
+type deprecatedSetBlockValidator struct {
+	message string
+}
+
+func (v deprecatedSetBlockValidator) Description(context.Context) string {
+	return v.message
+}
+
+func (v deprecatedSetBlockValidator) MarkdownDescription(context.Context) string {
+	return v.message
+}
+
+func (v deprecatedSetBlockValidator) ValidateSet(_ context.Context, req validator.SetRequest, resp *validator.SetResponse) {
+	if req.ConfigValue.IsNull() || req.ConfigValue.IsUnknown() || len(req.ConfigValue.Elements()) == 0 {
+		return
+	}
+
+	resp.Diagnostics.AddAttributeWarning(req.Path, "Block Deprecated", v.message)
+}
