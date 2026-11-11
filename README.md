@@ -17,12 +17,11 @@
 
 ## Installation
 
-### From the Terraformi / OpenTofu Registry (recommended)
+### From the Terraform / OpenTofu Registry (recommended)
 
 The Exoscale provider is available on the [Terraform Registry][tf-exo-registry].
-To use it, simply execute the `terraform init` command in a directory containing
-Terraform configuration files referencing [Exoscale provider
-resources][tf-exo-doc]:
+To use it, simply execute the `terraform init` (or `tofu init`) command in a directory
+containing Terraform configuration files referencing [Exoscale provider resources][tf-exo-doc]:
 
 ```console
 terraform init
