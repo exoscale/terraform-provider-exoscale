@@ -7,6 +7,7 @@
 - `exoscale_compute_instance`: the `network_interface` block is deprecated in favor of the `vpc` block. Using it now shows a deprecation warning.
 - `exoscale_sks_cluster` `oidc`: updating a cluster resource no longer resets the OIDC field #649
 - `exoscale_compute_instance`: new `ip_forwarding` parameter, to let an instance route VPC traffic (#638)
+- Build with Go 1.27.4 (#652)
 
 ## 0.77.0
 
