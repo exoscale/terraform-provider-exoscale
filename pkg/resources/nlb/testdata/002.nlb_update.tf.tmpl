@@ -41,11 +41,35 @@ resource "exoscale_nlb_service" "test_service" {
   protocol         = "udp"
   strategy         = "source-hash"
 
+  # The new selector replaces the old one completely. The keys set in the
+  # first step are gone, they are not merged into this one.
+  label_selector = {
+    tier = "frontend"
+  }
+
   healthcheck {
     mode     = "tcp"
     port     = 8443
     interval = 5
     timeout  = 3
     retries  = 2
+  }
+}
+
+# Nothing about this service changes, its selector included. An attribute the
+# configuration does not modify must not be sent to the API.
+resource "exoscale_nlb_service" "test_service_labels" {
+  zone        = "{{ .Zone }}"
+  name        = "terraform-provider-test-labels-{{ .ID }}"
+  nlb_id      = exoscale_nlb.test_nlb6.id
+  port        = 443
+  target_port = 8443
+
+  label_selector = {
+    role = "web"
+  }
+
+  healthcheck {
+    port = 8443
   }
 }
