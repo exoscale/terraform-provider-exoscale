@@ -139,13 +139,7 @@ func (r *ExternalEndpointPrometheusResource) Create(ctx context.Context, req res
 		payload.Settings = settings
 	}
 
-	op, err := client.CreateDBAASExternalEndpointPrometheus(ctx, data.Name.ValueString(), payload)
-	if err != nil {
-		resp.Diagnostics.AddError("create", fmt.Sprintf("error creating prometheus external endpoint: %s", err))
-		return
-	}
-
-	op, err = client.Wait(ctx, op, v3.OperationStateSuccess)
+	op, err := utils.WaitOperation(ctx, client)(client.CreateDBAASExternalEndpointPrometheus(ctx, data.Name.ValueString(), payload))
 	if err != nil {
 		resp.Diagnostics.AddError("create", fmt.Sprintf("error creating prometheus external endpoint: %s", err))
 		return
@@ -240,13 +234,7 @@ func (r *ExternalEndpointPrometheusResource) Update(ctx context.Context, req res
 		payload.Settings = settings
 	}
 
-	op, err := client.UpdateDBAASExternalEndpointPrometheus(ctx, endpointID, payload)
-	if err != nil {
-		resp.Diagnostics.AddError("update", fmt.Sprintf("error updating prometheus external endpoint: %s", err))
-		return
-	}
-
-	if _, err := client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
+	if err := utils.Wait(ctx, client)(client.UpdateDBAASExternalEndpointPrometheus(ctx, endpointID, payload)); err != nil {
 		resp.Diagnostics.AddError("update", fmt.Sprintf("error updating prometheus external endpoint: %s", err))
 		return
 	}
@@ -295,13 +283,7 @@ func (r *ExternalEndpointPrometheusResource) Delete(ctx context.Context, req res
 		return
 	}
 
-	op, err := client.DeleteDBAASExternalEndpointPrometheus(ctx, endpointID)
-	if err != nil {
-		resp.Diagnostics.AddError("delete", fmt.Sprintf("error deleting prometheus external endpoint: %s", err))
-		return
-	}
-
-	if _, err := client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
+	if err := utils.Wait(ctx, client)(client.DeleteDBAASExternalEndpointPrometheus(ctx, endpointID)); err != nil {
 		resp.Diagnostics.AddError("delete", fmt.Sprintf("error deleting prometheus external endpoint: %s", err))
 		return
 	}

@@ -9,6 +9,7 @@ import (
 
 	v3 "github.com/exoscale/egoscale/v3"
 	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -147,17 +148,7 @@ func (data *PGUserResourceModel) CreateResource(ctx context.Context, client *v3.
 		createRequest.AllowReplication = data.AllowReplication.ValueBoolPointer()
 	}
 
-	op, err := client.CreateDBAASPostgresUser(ctx, data.Service.ValueString(), createRequest)
-	if err != nil {
-		diagnostics.AddError(
-			"Client Error",
-			fmt.Sprintf("Unable to create service user, got error %s", err.Error()),
-		)
-		return
-	}
-
-	_, err = client.Wait(ctx, op, v3.OperationStateSuccess)
-	if err != nil {
+	if err := utils.Wait(ctx, client)(client.CreateDBAASPostgresUser(ctx, data.Service.ValueString(), createRequest)); err != nil {
 		diagnostics.AddError(
 			"Client Error",
 			fmt.Sprintf("Unable to create service user, got error %s", err.Error()),
@@ -214,17 +205,7 @@ func (data *PGUserResourceModel) DeleteResource(ctx context.Context, client *v3.
 		return
 	}
 
-	op, err := client.DeleteDBAASPostgresUser(ctx, data.Service.ValueString(), data.Username.ValueString())
-	if err != nil {
-		diagnostics.AddError(
-			"Client Error",
-			fmt.Sprintf("Unable to delete service user, got error %s", err.Error()),
-		)
-		return
-	}
-
-	_, err = client.Wait(ctx, op, v3.OperationStateSuccess)
-	if err != nil {
+	if err := utils.Wait(ctx, client)(client.DeleteDBAASPostgresUser(ctx, data.Service.ValueString(), data.Username.ValueString())); err != nil {
 		diagnostics.AddError(
 			"Client Error",
 			fmt.Sprintf("Unable to delete service user, got error %s", err.Error()),

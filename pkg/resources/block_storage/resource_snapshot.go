@@ -211,19 +211,10 @@ func (r *ResourceSnapshot) Create(ctx context.Context, req resource.CreateReques
 		request.Labels = labels
 	}
 
-	op, err := client.CreateBlockStorageSnapshot(ctx, vid, request)
+	op, err := utils.WaitOperation(ctx, client)(client.CreateBlockStorageSnapshot(ctx, vid, request))
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"unable to create volume snapshot",
-			err.Error(),
-		)
-		return
-	}
-
-	_, err = client.Wait(ctx, op, exoscale.OperationStateSuccess)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"failed to create volume snapshot",
 			err.Error(),
 		)
 		return
@@ -435,17 +426,7 @@ func (r *ResourceSnapshot) Update(ctx context.Context, req resource.UpdateReques
 	}
 
 	if update {
-		op, err := client.UpdateBlockStorageSnapshot(ctx, id, updateReq)
-		if err != nil {
-			resp.Diagnostics.AddError(
-				"unable to update block storage snapshot",
-				err.Error(),
-			)
-			return
-		}
-
-		_, err = client.Wait(ctx, op, exoscale.OperationStateSuccess)
-		if err != nil {
+		if err := utils.Wait(ctx, client)(client.UpdateBlockStorageSnapshot(ctx, id, updateReq)); err != nil {
 			resp.Diagnostics.AddError(
 				"unable to update block storage snapshot",
 				err.Error(),
@@ -508,22 +489,12 @@ func (r *ResourceSnapshot) Delete(ctx context.Context, req resource.DeleteReques
 	}
 
 	// Delete remote resource.
-	op, err := client.DeleteBlockStorageSnapshot(
+	if err := utils.Wait(ctx, client)(client.DeleteBlockStorageSnapshot(
 		ctx,
 		id,
-	)
-	if err != nil {
+	)); err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to delete snapshot",
-			err.Error(),
-		)
-		return
-	}
-
-	_, err = client.Wait(ctx, op, exoscale.OperationStateSuccess)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"failed to delete snapshot",
 			err.Error(),
 		)
 		return

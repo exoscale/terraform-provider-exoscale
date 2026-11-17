@@ -152,20 +152,12 @@ func (r *ServiceResource) createClickhouse(ctx context.Context, data *ServiceRes
 		}
 	}
 
-	op, err := client.CreateDBAASServiceClickhouse(
+	if err := utils.Wait(ctx, client)(client.CreateDBAASServiceClickhouse(
 		ctx,
 		data.Name.ValueString(),
 		service,
-	)
-
-	if err != nil {
+	)); err != nil {
 		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create database service clickhouse, got error: %s", err))
-		return
-	}
-
-	_, err = client.Wait(ctx, op, v3.OperationStateSuccess)
-	if err != nil {
-		diagnostics.AddError("Client Error", fmt.Sprintf("Unable to wait for database service clickhouse, got error: %s", err))
 		return
 	}
 

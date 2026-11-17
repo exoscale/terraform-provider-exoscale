@@ -153,17 +153,11 @@ func (r *KafkaSchemaRegistryACLResource) Create(ctx context.Context, req resourc
 		return
 	}
 
-	op, err := client.CreateDBAASKafkaSchemaRegistryAclConfig(ctx, data.Service.ValueString(), exoscale.DBAASKafkaSchemaRegistryAclEntry{
+	if err := utils.Wait(ctx, client)(client.CreateDBAASKafkaSchemaRegistryAclConfig(ctx, data.Service.ValueString(), exoscale.DBAASKafkaSchemaRegistryAclEntry{
 		Username:   data.Username.ValueString(),
 		Resource:   data.Resource.ValueString(),
 		Permission: exoscale.DBAASKafkaSchemaRegistryAclEntryPermission(data.Permission.ValueString()),
-	})
-	if err != nil {
-		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create Kafka Schema Registry ACL entry, got error %s", err))
-		return
-	}
-
-	if _, err := client.Wait(ctx, op, exoscale.OperationStateSuccess); err != nil {
+	})); err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create Kafka Schema Registry ACL entry, got error %s", err))
 		return
 	}
@@ -271,16 +265,11 @@ func (r *KafkaSchemaRegistryACLResource) Delete(ctx context.Context, req resourc
 		return
 	}
 
-	op, err := client.DeleteDBAASKafkaSchemaRegistryAclConfig(ctx, data.Service.ValueString(), data.ID.ValueString())
+	err = utils.Wait(ctx, client)(client.DeleteDBAASKafkaSchemaRegistryAclConfig(ctx, data.Service.ValueString(), data.ID.ValueString()))
 	if errors.Is(err, exoscale.ErrNotFound) {
 		return
 	}
 	if err != nil {
-		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete Kafka Schema Registry ACL entry, got error %s", err))
-		return
-	}
-
-	if _, err := client.Wait(ctx, op, exoscale.OperationStateSuccess); err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete Kafka Schema Registry ACL entry, got error %s", err))
 		return
 	}

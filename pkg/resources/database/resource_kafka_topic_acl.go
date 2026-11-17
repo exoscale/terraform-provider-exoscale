@@ -155,17 +155,11 @@ func (r *KafkaTopicACLResource) Create(ctx context.Context, req resource.CreateR
 		return
 	}
 
-	op, err := client.CreateDBAASKafkaTopicAclConfig(ctx, data.Service.ValueString(), exoscale.DBAASKafkaTopicAclEntry{
+	if err := utils.Wait(ctx, client)(client.CreateDBAASKafkaTopicAclConfig(ctx, data.Service.ValueString(), exoscale.DBAASKafkaTopicAclEntry{
 		Username:   data.Username.ValueString(),
 		Topic:      data.Topic.ValueString(),
 		Permission: exoscale.DBAASKafkaTopicAclEntryPermission(data.Permission.ValueString()),
-	})
-	if err != nil {
-		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create Kafka topic ACL entry, got error %s", err))
-		return
-	}
-
-	if _, err := client.Wait(ctx, op, exoscale.OperationStateSuccess); err != nil {
+	})); err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create Kafka topic ACL entry, got error %s", err))
 		return
 	}
@@ -273,16 +267,11 @@ func (r *KafkaTopicACLResource) Delete(ctx context.Context, req resource.DeleteR
 		return
 	}
 
-	op, err := client.DeleteDBAASKafkaTopicAclConfig(ctx, data.Service.ValueString(), data.ID.ValueString())
+	err = utils.Wait(ctx, client)(client.DeleteDBAASKafkaTopicAclConfig(ctx, data.Service.ValueString(), data.ID.ValueString()))
 	if errors.Is(err, exoscale.ErrNotFound) {
 		return
 	}
 	if err != nil {
-		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete Kafka topic ACL entry, got error %s", err))
-		return
-	}
-
-	if _, err := client.Wait(ctx, op, exoscale.OperationStateSuccess); err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete Kafka topic ACL entry, got error %s", err))
 		return
 	}

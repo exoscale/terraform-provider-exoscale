@@ -13,6 +13,7 @@ import (
 	v3 "github.com/exoscale/egoscale/v3"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -223,16 +224,7 @@ func (data PGDatabaseResourceModel) CreateResource(ctx context.Context, client *
 		createRequest.LCCollate = data.LcCollate.ValueString()
 	}
 
-	op, err := client.CreateDBAASPGDatabase(ctx, data.Service.ValueString(), createRequest)
-	if err != nil {
-		diagnostics.AddError(
-			"Client Error",
-			fmt.Sprintf("Unable to create service database, got error %s", err.Error()),
-		)
-		return
-	}
-
-	if _, err := client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
+	if err := utils.Wait(ctx, client)(client.CreateDBAASPGDatabase(ctx, data.Service.ValueString(), createRequest)); err != nil {
 		diagnostics.AddError(
 			"Client Error",
 			fmt.Sprintf("Unable to create service database, got error %s", err.Error()),
@@ -277,16 +269,7 @@ func (data PGDatabaseResourceModel) DeleteResource(ctx context.Context, client *
 		return
 	}
 
-	op, err := client.DeleteDBAASPGDatabase(ctx, data.Service.ValueString(), data.DatabaseName.ValueString())
-	if err != nil {
-		diagnostics.AddError(
-			"Client Error",
-			fmt.Sprintf("Unable to delete service database, got error %s", err.Error()),
-		)
-		return
-	}
-	_, err = client.Wait(ctx, op, v3.OperationStateSuccess)
-	if err != nil {
+	if err := utils.Wait(ctx, client)(client.DeleteDBAASPGDatabase(ctx, data.Service.ValueString(), data.DatabaseName.ValueString())); err != nil {
 		diagnostics.AddError(
 			"Client Error",
 			fmt.Sprintf("Unable to delete service database, got error %s", err.Error()),

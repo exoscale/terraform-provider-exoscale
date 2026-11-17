@@ -158,13 +158,7 @@ func (r *ExternalEndpointOpensearchResource) Create(ctx context.Context, req res
 		settings.CA = data.CA.ValueString()
 	}
 
-	op, err := client.CreateDBAASExternalEndpointOpensearch(ctx, data.Name.ValueString(), v3.DBAASEndpointOpensearchInputCreate{Settings: settings})
-	if err != nil {
-		resp.Diagnostics.AddError("create", fmt.Sprintf("error creating opensearch external endpoint: %s", err))
-		return
-	}
-
-	op, err = client.Wait(ctx, op, v3.OperationStateSuccess)
+	op, err := utils.WaitOperation(ctx, client)(client.CreateDBAASExternalEndpointOpensearch(ctx, data.Name.ValueString(), v3.DBAASEndpointOpensearchInputCreate{Settings: settings}))
 	if err != nil {
 		resp.Diagnostics.AddError("create", fmt.Sprintf("error creating opensearch external endpoint: %s", err))
 		return
@@ -264,13 +258,7 @@ func (r *ExternalEndpointOpensearchResource) Update(ctx context.Context, req res
 		settings.CA = planData.CA.ValueString()
 	}
 
-	op, err := client.UpdateDBAASExternalEndpointOpensearch(ctx, endpointID, v3.DBAASEndpointOpensearchInputUpdate{Settings: settings})
-	if err != nil {
-		resp.Diagnostics.AddError("update", fmt.Sprintf("error updating opensearch external endpoint: %s", err))
-		return
-	}
-
-	if _, err := client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
+	if err := utils.Wait(ctx, client)(client.UpdateDBAASExternalEndpointOpensearch(ctx, endpointID, v3.DBAASEndpointOpensearchInputUpdate{Settings: settings})); err != nil {
 		resp.Diagnostics.AddError("update", fmt.Sprintf("error updating opensearch external endpoint: %s", err))
 		return
 	}
@@ -319,13 +307,7 @@ func (r *ExternalEndpointOpensearchResource) Delete(ctx context.Context, req res
 		return
 	}
 
-	op, err := client.DeleteDBAASExternalEndpointOpensearch(ctx, endpointID)
-	if err != nil {
-		resp.Diagnostics.AddError("delete", fmt.Sprintf("error deleting opensearch external endpoint: %s", err))
-		return
-	}
-
-	if _, err := client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
+	if err := utils.Wait(ctx, client)(client.DeleteDBAASExternalEndpointOpensearch(ctx, endpointID)); err != nil {
 		resp.Diagnostics.AddError("delete", fmt.Sprintf("error deleting opensearch external endpoint: %s", err))
 		return
 	}

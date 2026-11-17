@@ -500,15 +500,9 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 		request.UserData = userData
 	}
 
-	operation, err := client.CreateInstancePool(ctx, request)
+	operation, err := utils.WaitOperation(ctx, client)(client.CreateInstancePool(ctx, request))
 	if err != nil {
 		resp.Diagnostics.AddError("API returned an error when creating instance pool", err.Error())
-		return
-	}
-
-	operation, err = client.Wait(ctx, operation, exoscale.OperationStateSuccess)
-	if err != nil {
-		resp.Diagnostics.AddError("create instance pool operation failed", err.Error())
 		return
 	}
 
@@ -740,21 +734,21 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 	}
 
 	if update {
-		if err := wait(ctx, client)(client.UpdateInstancePool(ctx, id, request)); err != nil {
+		if err := utils.Wait(ctx, client)(client.UpdateInstancePool(ctx, id, request)); err != nil {
 			resp.Diagnostics.AddError("unable to update instance pool", err.Error())
 			return
 		}
 	}
 
 	for _, field := range resets {
-		if err := wait(ctx, client)(client.ResetInstancePoolField(ctx, id, field)); err != nil {
+		if err := utils.Wait(ctx, client)(client.ResetInstancePoolField(ctx, id, field)); err != nil {
 			resp.Diagnostics.AddError("unable to reset instance pool "+string(field), err.Error())
 			return
 		}
 	}
 
 	if !plan.Size.Equal(state.Size) {
-		err := wait(ctx, client)(client.ScaleInstancePool(
+		err := utils.Wait(ctx, client)(client.ScaleInstancePool(
 			ctx,
 			id,
 			exoscale.ScaleInstancePoolRequest{Size: plan.Size.ValueInt64()},
@@ -808,7 +802,7 @@ func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp 
 		return
 	}
 
-	err = wait(ctx, client)(client.DeleteInstancePool(ctx, id))
+	err = utils.Wait(ctx, client)(client.DeleteInstancePool(ctx, id))
 	if err != nil {
 		if errors.Is(err, exoscale.ErrNotFound) {
 			return
@@ -822,20 +816,6 @@ func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp 
 
 func (r *Resource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	utils.ImportStatePassthroughZonedID(ctx, req, resp)
-}
-
-// wait returns a function waiting for the success of an operation, to be
-// wrapped around the API call starting it.
-func wait(ctx context.Context, client *exoscale.Client) func(*exoscale.Operation, error) error {
-	return func(operation *exoscale.Operation, err error) error {
-		if err != nil {
-			return err
-		}
-
-		_, err = client.Wait(ctx, operation, exoscale.OperationStateSuccess)
-
-		return err
-	}
 }
 
 // nullUnknown returns the model with the values still unknown set to null, so

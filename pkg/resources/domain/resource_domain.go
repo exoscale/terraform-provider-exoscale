@@ -126,14 +126,8 @@ func (r *Resource) Create(
 	// because the API always returns unicode names in listings.
 	inputName := plan.Name.ValueString()
 
-	op, err := client.CreateDNSDomain(ctx, exoscale.CreateDNSDomainRequest{UnicodeName: inputName})
-	if err != nil {
+	if err := utils.Wait(ctx, client)(client.CreateDNSDomain(ctx, exoscale.CreateDNSDomainRequest{UnicodeName: inputName})); err != nil {
 		resp.Diagnostics.AddError("API returned error when creating domain", err.Error())
-		return
-	}
-
-	if _, err := client.Wait(ctx, op, exoscale.OperationStateSuccess); err != nil {
-		resp.Diagnostics.AddError("create domain operation failed", err.Error())
 		return
 	}
 
@@ -251,17 +245,11 @@ func (r *Resource) Delete(
 		return
 	}
 
-	op, err := client.DeleteDNSDomain(ctx, id)
-	if err != nil {
+	if err := utils.Wait(ctx, client)(client.DeleteDNSDomain(ctx, id)); err != nil {
 		if errors.Is(err, exoscale.ErrNotFound) {
 			return
 		}
 		resp.Diagnostics.AddError("API returned error when deleting domain", err.Error())
-		return
-	}
-
-	if _, err := client.Wait(ctx, op, exoscale.OperationStateSuccess); err != nil {
-		resp.Diagnostics.AddError("delete domain operation failed", err.Error())
 		return
 	}
 }
