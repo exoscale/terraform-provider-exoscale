@@ -77,7 +77,7 @@ func poolInstanceType(ctx context.Context, client *exoscale.Client, pool *exosca
 		return "", err
 	}
 
-	return strings.ToLower(string(instanceType.Family)) + "." + strings.ToLower(string(instanceType.Size)), nil
+	return utils.InstanceTypeName(instanceType), nil
 }
 
 // poolInstances returns the `instances` and `virtual_machines` values of the

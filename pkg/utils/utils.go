@@ -205,6 +205,11 @@ func FindInstanceTypeByNameV3(ctx context.Context, client *exoscale.Client, id s
 	return nil, exoscale.ErrNotFound
 }
 
+// InstanceTypeName returns the `<family>.<size>` name of an instance type.
+func InstanceTypeName(instanceType *exoscale.InstanceType) string {
+	return strings.ToLower(string(instanceType.Family)) + "." + strings.ToLower(string(instanceType.Size))
+}
+
 // In the context of converting list of IDs to resources for egoscale V3 update and
 // creation requests, we're using a  lot of inline funcitons, increasing reading complexity
 // when one is called more than once, we should aim to regroup them here.

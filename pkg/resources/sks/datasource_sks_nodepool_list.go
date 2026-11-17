@@ -307,7 +307,7 @@ func (d *DataSourceNodepoolList) Read(ctx context.Context, req datasource.ReadRe
 			return "", err
 		}
 
-		t := fmt.Sprintf("%s.%s", strings.ToLower(string(instanceType.Family)), strings.ToLower(string(instanceType.Size)))
+		t := utils.InstanceTypeName(instanceType)
 		instanceTypes[id] = t
 
 		return t, nil

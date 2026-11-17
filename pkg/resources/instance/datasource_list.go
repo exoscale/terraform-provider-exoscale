@@ -458,7 +458,7 @@ func (d *DataSourceList) Read(ctx context.Context, req datasource.ReadRequest, r
 					resp.Diagnostics.AddError("unable to retrieve instance type", err.Error())
 					return
 				}
-				instanceTypes[tid] = instanceTypeName(instanceType)
+				instanceTypes[tid] = utils.InstanceTypeName(instanceType)
 			}
 
 			model.Type = types.StringValue(instanceTypes[tid])
