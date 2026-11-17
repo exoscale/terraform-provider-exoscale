@@ -11,6 +11,7 @@ import (
 	exoscale "github.com/exoscale/egoscale/v3"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/planmodifiers"
 	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/validators"
@@ -115,7 +116,7 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 				Optional:            true,
 				Computed:            true,
 				PlanModifiers: []planmodifier.Set{
-					emptySetIsNull{},
+					planmodifiers.EmptySetIsNull(),
 					setRequiresReplace(),
 				},
 			},
@@ -126,7 +127,7 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 				Optional:            true,
 				Computed:            true,
 				PlanModifiers: []planmodifier.Set{
-					emptySetIsNull{},
+					planmodifiers.EmptySetIsNull(),
 				},
 			},
 			"created_at": schema.StringAttribute{
@@ -143,7 +144,7 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 				Optional:            true,
 				Computed:            true,
 				PlanModifiers: []planmodifier.String{
-					emptyStringIsNull{},
+					planmodifiers.EmptyStringIsNull(),
 					stringRequiresReplace(),
 				},
 			},
@@ -167,7 +168,7 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 				Optional:            true,
 				Computed:            true,
 				PlanModifiers: []planmodifier.Set{
-					emptySetIsNull{},
+					planmodifiers.EmptySetIsNull(),
 				},
 			},
 			"enable_secure_boot": schema.BoolAttribute{
@@ -234,7 +235,7 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 				Optional:            true,
 				Computed:            true,
 				PlanModifiers: []planmodifier.Map{
-					emptyMapIsNull{},
+					planmodifiers.EmptyMapIsNull(),
 				},
 			},
 			"mac_address": schema.StringAttribute{
@@ -278,7 +279,7 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 				Optional:            true,
 				Computed:            true,
 				PlanModifiers: []planmodifier.String{
-					emptyStringIsNull{},
+					planmodifiers.EmptyStringIsNull(),
 				},
 			},
 			"ssh_key": schema.StringAttribute{
@@ -300,7 +301,7 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 				Optional:            true,
 				Computed:            true,
 				PlanModifiers: []planmodifier.Set{
-					emptySetIsNull{},
+					planmodifiers.EmptySetIsNull(),
 					setRequiresReplace(),
 				},
 			},
@@ -311,7 +312,7 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 				Optional:            true,
 				Computed:            true,
 				PlanModifiers: []planmodifier.Set{
-					emptySetIsNull{},
+					planmodifiers.EmptySetIsNull(),
 				},
 			},
 			"state": schema.StringAttribute{
@@ -344,7 +345,7 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 				MarkdownDescription: "The instance type (`<family>.<size>`, e.g. `standard.medium`; use the [Exoscale CLI](https://github.com/exoscale/cli/) - `exo compute instance-type list` - for the list of available types). **WARNING**: updating this attribute stops/restarts the instance.",
 				Required:            true,
 				PlanModifiers: []planmodifier.String{
-					ignoreCase(),
+					planmodifiers.IgnoreCase(),
 				},
 				Validators: []validator.String{
 					stringFuncValidator{
@@ -363,7 +364,7 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 				MarkdownDescription: "[cloud-init](https://cloudinit.readthedocs.io/) configuration.",
 				Optional:            true,
 				PlanModifiers: []planmodifier.String{
-					ignoreUserDataEncoding(),
+					planmodifiers.IgnoreUserDataEncoding(),
 				},
 				Validators: []validator.String{
 					stringFuncValidator{

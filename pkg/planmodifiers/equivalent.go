@@ -1,4 +1,4 @@
-package instance_pool
+package planmodifiers
 
 import (
 	"context"
@@ -8,6 +8,24 @@ import (
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
 )
+
+// IgnoreCase ignores case differences.
+func IgnoreCase() planmodifier.String {
+	return equivalentString{
+		description: "Case differences are ignored.",
+		equivalent:  strings.EqualFold,
+	}
+}
+
+// IgnoreUserDataEncoding ignores the differences caused by the provider
+// decoding user_data on read when it was supplied pre-encoded (base64 or
+// gzip+base64).
+func IgnoreUserDataEncoding() planmodifier.String {
+	return equivalentString{
+		description: "Encoding differences are ignored.",
+		equivalent:  utils.SameUserData,
+	}
+}
 
 // equivalentString plans the prior value of a string when the configured one
 // is equivalent to it, which is what DiffSuppressFunc did with the SDKv2.
@@ -32,37 +50,4 @@ func (m equivalentString) PlanModifyString(_ context.Context, req planmodifier.S
 	if m.equivalent(req.StateValue.ValueString(), req.ConfigValue.ValueString()) {
 		resp.PlanValue = req.StateValue
 	}
-}
-
-// ignoreCase ignores case differences.
-func ignoreCase() planmodifier.String {
-	return equivalentString{
-		description: "Case differences are ignored.",
-		equivalent:  strings.EqualFold,
-	}
-}
-
-// ignoreUserDataEncoding ignores the differences caused by the provider
-// decoding user_data on read when it was supplied pre-encoded (base64 or
-// gzip+base64).
-func ignoreUserDataEncoding() planmodifier.String {
-	return equivalentString{
-		description: "Encoding differences are ignored.",
-		equivalent:  sameUserData,
-	}
-}
-
-// sameUserData tells whether two user data hold the same content, whatever
-// their encoding.
-func sameUserData(a, b string) bool {
-	return normalizeUserData(a) == normalizeUserData(b)
-}
-
-func normalizeUserData(v string) string {
-	normalized, err := utils.DecodeUserData(v)
-	if err != nil {
-		return v
-	}
-
-	return normalized
 }

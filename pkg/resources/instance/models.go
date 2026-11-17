@@ -418,7 +418,7 @@ func applyInstance( //nolint:gocyclo
 			return diags
 		}
 		// Encoding differences with the configuration are not drift.
-		if model.UserData.IsNull() || !sameUserData(userData, model.UserData.ValueString()) {
+		if model.UserData.IsNull() || !utils.SameUserData(userData, model.UserData.ValueString()) {
 			model.UserData = types.StringValue(userData)
 		}
 	}

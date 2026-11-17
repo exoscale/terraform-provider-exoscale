@@ -9,6 +9,7 @@ import (
 	exoscale "github.com/exoscale/egoscale/v3"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/planmodifiers"
 	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
 
@@ -159,7 +160,7 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 				MarkdownDescription: "The managed compute instances type (`<family>.<size>`, e.g. `standard.medium`; use the [Exoscale CLI](https://github.com/exoscale/cli/) - `exo compute instance-type list` - for the list of available types).",
 				Required:            true,
 				PlanModifiers: []planmodifier.String{
-					ignoreCase(),
+					planmodifiers.IgnoreCase(),
 				},
 				Validators: []validator.String{
 					stringvalidator.RegexMatches(regexp.MustCompile(`\.`), `must be in the "FAMILY.SIZE" format`),
@@ -264,7 +265,7 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 				MarkdownDescription: "[cloud-init](http://cloudinit.readthedocs.io/) configuration to apply to the managed instances.",
 				Optional:            true,
 				PlanModifiers: []planmodifier.String{
-					ignoreUserDataEncoding(),
+					planmodifiers.IgnoreUserDataEncoding(),
 				},
 			},
 			"virtual_machines": schema.SetAttribute{
