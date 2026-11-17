@@ -13,6 +13,7 @@ import (
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/validators"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
@@ -401,15 +402,7 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 							Optional:            true,
 							Computed:            true,
 							Validators: []validator.String{
-								stringFuncValidator{
-									description: "The value must be an IPv4 address.",
-									validate: func(v string) error {
-										if ip := net.ParseIP(v); ip == nil || ip.To4() == nil {
-											return fmt.Errorf("expected a valid IPv4 address, got %q", v)
-										}
-										return nil
-									},
-								},
+								validators.IsIPv4Address(),
 							},
 						},
 						"mac_address": schema.StringAttribute{
