@@ -141,12 +141,5 @@ func detachBlockStorageVolume(ctx context.Context, client *exoscale.Client, _ ex
 		return fmt.Errorf("unable to parse block storage volume ID: %w", err)
 	}
 
-	err = utils.DetachBlockStorageVolume(ctx, client, volume)
-	// The volume was likely already deleted as part of its regular
-	// deletion process.
-	if errors.Is(err, exoscale.ErrNotFound) {
-		return nil
-	}
-
-	return err
+	return utils.DetachBlockStorageVolume(ctx, client, volume)
 }
