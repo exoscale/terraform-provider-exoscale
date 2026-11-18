@@ -57,6 +57,7 @@ type DataSourceNodepoolListItemModel struct {
 	InstanceType         types.String `tfsdk:"instance_type"`
 	KubeletMaxPods       types.Int64  `tfsdk:"kubelet_max_pods"`
 	Labels               types.Map    `tfsdk:"labels"`
+	NvidiaDraDriver      types.Bool   `tfsdk:"nvidia_dra_driver"`
 	NvidiaMigProfile     types.String `tfsdk:"nvidia_mig_profile"`
 	IPv6                 types.Bool   `tfsdk:"ipv6"`
 	PrivateNetworkIDs    types.Set    `tfsdk:"private_network_ids"`
@@ -164,6 +165,11 @@ func (d *DataSourceNodepoolList) Schema(ctx context.Context, req datasource.Sche
 							Description:         "A map of key/value labels.",
 							MarkdownDescription: "A map of key/value labels.",
 							ElementType:         types.StringType,
+							Computed:            true,
+						},
+						"nvidia_dra_driver": schema.BoolAttribute{
+							Description:         "Whether the managed GPUs are exposed with the NVIDIA Dynamic Resource Allocation (DRA) driver instead of the NVIDIA device plugin.",
+							MarkdownDescription: "Whether the managed GPUs are exposed with the NVIDIA [Dynamic Resource Allocation (DRA)](https://kubernetes.io/docs/concepts/scheduling-eviction/dynamic-resource-allocation/) driver instead of the NVIDIA device plugin.",
 							Computed:            true,
 						},
 						"nvidia_mig_profile": schema.StringAttribute{
@@ -337,6 +343,7 @@ func (d *DataSourceNodepoolList) Read(ctx context.Context, req datasource.ReadRe
 				IPv6:             types.BoolValue(nodepool.PublicIPAssignment == exoscale.SKSNodepoolPublicIPAssignmentDual),
 				StorageLVM:       types.BoolValue(in(nodepool.Addons, sksNodepoolAddonStorageLVM)),
 				NvidiaMigProfile: optionalString(sksNodepoolMIGProfile(nodepool.NvidiaMigProfiles)),
+				NvidiaDraDriver:  types.BoolValue(nodepool.NvidiaDraDriver != nil && *nodepool.NvidiaDraDriver),
 			}
 
 			item.DeployTargetID = types.StringNull()

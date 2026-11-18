@@ -84,6 +84,7 @@ type ResourceNodepoolModel struct {
 	KubeletMaxPods       types.Int64  `tfsdk:"kubelet_max_pods"`
 	Labels               types.Map    `tfsdk:"labels"`
 	Name                 types.String `tfsdk:"name"`
+	NvidiaDraDriver      types.Bool   `tfsdk:"nvidia_dra_driver"`
 	NvidiaMigProfile     types.String `tfsdk:"nvidia_mig_profile"`
 	IPv6                 types.Bool   `tfsdk:"ipv6"`
 	PrivateNetworkIDs    types.Set    `tfsdk:"private_network_ids"`
@@ -237,6 +238,13 @@ func (r *ResourceNodepool) Schema(ctx context.Context, req resource.SchemaReques
 				Description:         "The SKS node pool name.",
 				MarkdownDescription: "The SKS node pool name.",
 				Required:            true,
+			},
+			"nvidia_dra_driver": schema.BoolAttribute{
+				Description:         "Expose the managed GPUs with the NVIDIA Dynamic Resource Allocation (DRA) driver instead of the NVIDIA device plugin (boolean; default: 'false'). Requires a GPU instance type and Kubernetes 1.34 or later.",
+				MarkdownDescription: "Expose the managed GPUs with the NVIDIA [Dynamic Resource Allocation (DRA)](https://kubernetes.io/docs/concepts/scheduling-eviction/dynamic-resource-allocation/) driver instead of the NVIDIA device plugin (boolean; default: `false`). Requires a GPU instance type and Kubernetes 1.34 or later.",
+				Optional:            true,
+				Computed:            true,
+				Default:             booldefault.StaticBool(false),
 			},
 			"nvidia_mig_profile": schema.StringAttribute{
 				Description: "The NVIDIA Multi-Instance GPU (MIG) profile to enable on the managed GPUs. " +
@@ -584,6 +592,8 @@ func (r *ResourceNodepool) Create(ctx context.Context, req resource.CreateReques
 
 	createReq.Name = plan.Name.ValueString()
 
+	createReq.NvidiaDraDriver = plan.NvidiaDraDriver.ValueBoolPointer()
+
 	if profile := plan.NvidiaMigProfile.ValueString(); profile != "" {
 		profiles, err := sksNodepoolMIGProfiles(sksNodepoolInstanceTypeFamily(plan.InstanceType.ValueString()), profile)
 		if err != nil {
@@ -780,6 +790,7 @@ func (r *ResourceNodepool) Update(ctx context.Context, req resource.UpdateReques
 		KubeletMaxPods:     nodepool.KubeletMaxPods,
 		Labels:             nodepool.Labels,
 		Name:               nodepool.Name,
+		NvidiaDraDriver:    nodepool.NvidiaDraDriver,
 		NvidiaMigProfiles:  nodepool.NvidiaMigProfiles,
 		PrivateNetworks:    nodepool.PrivateNetworks,
 		PublicIPAssignment: exoscale.UpdateSKSNodepoolRequestPublicIPAssignment(nodepool.PublicIPAssignment),
@@ -865,6 +876,11 @@ func (r *ResourceNodepool) Update(ctx context.Context, req resource.UpdateReques
 		} else {
 			updateReq.NvidiaMigProfiles = nil
 		}
+		updated = true
+	}
+
+	if !plan.NvidiaDraDriver.Equal(state.NvidiaDraDriver) {
+		updateReq.NvidiaDraDriver = plan.NvidiaDraDriver.ValueBoolPointer()
 		updated = true
 	}
 
@@ -1218,6 +1234,7 @@ func (r *ResourceNodepool) applyNodepool(
 	model.Labels = labels
 
 	model.Name = types.StringValue(nodepool.Name)
+	model.NvidiaDraDriver = types.BoolValue(nodepool.NvidiaDraDriver != nil && *nodepool.NvidiaDraDriver)
 	model.NvidiaMigProfile = optionalString(sksNodepoolMIGProfile(nodepool.NvidiaMigProfiles))
 
 	model.PrivateNetworkIDs = types.SetNull(types.StringType)

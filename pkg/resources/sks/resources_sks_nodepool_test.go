@@ -84,6 +84,7 @@ func TestAccResourceSKSNodepool(t *testing.T) {
 					resource.TestCheckResourceAttr(r, "kubelet_max_pods", "210"),
 					resource.TestCheckResourceAttr(r, "labels.test", "acctest"),
 					resource.TestCheckResourceAttr(r, "name", name),
+					resource.TestCheckResourceAttr(r, "nvidia_dra_driver", "false"),
 					resource.TestCheckResourceAttr(r, "size", "2"),
 					resource.TestCheckResourceAttrSet(r, "state"),
 					resource.TestCheckResourceAttr(r, "storage_lvm", "true"),
