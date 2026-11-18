@@ -40,6 +40,9 @@ func TestAccDataSourceSKSCluster(t *testing.T) {
 					// data source by id
 					tftest.TestCheckResourceAttrPair(r, "id", dsByID, "id"),
 					tftest.TestCheckResourceAttrPair(r, "name", dsByID, "name"),
+					tftest.TestCheckResourceAttrPair(r, "allowed_networks.#", dsByID, "allowed_networks.#"),
+					tftest.TestCheckTypeSetElemAttr(dsByID, "allowed_networks.*", "0.0.0.0/0"),
+					tftest.TestCheckTypeSetElemAttr(dsByID, "allowed_networks.*", "203.0.113.0/24"),
 					tftest.TestCheckResourceAttrPair(r, "auto_upgrade", dsByID, "auto_upgrade"),
 					tftest.TestCheckResourceAttrPair(r, "cni", dsByID, "cni"),
 					tftest.TestCheckResourceAttrPair(r, "created_at", dsByID, "created_at"),
@@ -57,6 +60,9 @@ func TestAccDataSourceSKSCluster(t *testing.T) {
 					// data source by name
 					tftest.TestCheckResourceAttrPair(r, "id", dsByName, "id"),
 					tftest.TestCheckResourceAttrPair(r, "name", dsByName, "name"),
+					tftest.TestCheckResourceAttrPair(r, "allowed_networks.#", dsByName, "allowed_networks.#"),
+					tftest.TestCheckTypeSetElemAttr(dsByName, "allowed_networks.*", "0.0.0.0/0"),
+					tftest.TestCheckTypeSetElemAttr(dsByName, "allowed_networks.*", "203.0.113.0/24"),
 					tftest.TestCheckResourceAttrPair(r, "auto_upgrade", dsByName, "auto_upgrade"),
 					tftest.TestCheckResourceAttrPair(r, "cni", dsByName, "cni"),
 					tftest.TestCheckResourceAttrPair(r, "created_at", dsByName, "created_at"),

@@ -38,6 +38,7 @@ func TestAccDataSourceSKSClusterList(t *testing.T) {
 				Check: tftest.ComposeAggregateTestCheckFunc(
 					tftest.TestCheckResourceAttr(r, "name", name),
 					testAccCheckSKSClusterInList(ds, r),
+					testAccCheckSKSClusterAllowedNetworksInList(ds, r),
 				),
 			},
 		},
@@ -69,6 +70,43 @@ func testAccCheckSKSClusterInList(dsAddr, resAddr string) tftest.TestCheckFunc {
 
 		for i := 0; i < count; i++ {
 			if ds.Primary.Attributes[fmt.Sprintf("clusters.%d.id", i)] == wantID {
+				return nil
+			}
+		}
+
+		return fmt.Errorf("cluster %q not found in %s.clusters", wantID, dsAddr)
+	}
+}
+
+// testAccCheckSKSClusterAllowedNetworksInList asserts that the "clusters"
+// entry of the exoscale_sks_cluster_list data source at dsAddr that matches the
+// exoscale_sks_cluster resource at resAddr exposes the same allowed_networks
+// as the resource.
+func testAccCheckSKSClusterAllowedNetworksInList(dsAddr, resAddr string) tftest.TestCheckFunc {
+	return func(s *terraform.State) error {
+		ds, ok := s.RootModule().Resources[dsAddr]
+		if !ok {
+			return fmt.Errorf("data source not found: %s", dsAddr)
+		}
+
+		res, ok := s.RootModule().Resources[resAddr]
+		if !ok {
+			return fmt.Errorf("resource not found: %s", resAddr)
+		}
+		wantID := res.Primary.ID
+		wantCount := res.Primary.Attributes["allowed_networks.#"]
+
+		count, err := strconv.Atoi(ds.Primary.Attributes["clusters.#"])
+		if err != nil {
+			return fmt.Errorf("invalid clusters.# attribute: %s", err)
+		}
+
+		for i := 0; i < count; i++ {
+			if ds.Primary.Attributes[fmt.Sprintf("clusters.%d.id", i)] == wantID {
+				gotCount := ds.Primary.Attributes[fmt.Sprintf("clusters.%d.allowed_networks.#", i)]
+				if gotCount != wantCount {
+					return fmt.Errorf("cluster %q in %s.clusters has allowed_networks.# = %q, want %q", wantID, dsAddr, gotCount, wantCount)
+				}
 				return nil
 			}
 		}

@@ -9,6 +9,9 @@ resource "exoscale_sks_cluster" "test-with-karpenter" {
     test = "acctest"
   }
 
+  # "0.0.0.0/0" keeps the API server reachable from the test harness.
+  allowed_networks = ["0.0.0.0/0", "203.0.113.0/24"]
+
   enable_karpenter        = true
   karpenter_feature_gates = ["NodeRepair"]
 

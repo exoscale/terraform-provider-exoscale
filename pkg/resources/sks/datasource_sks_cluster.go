@@ -37,6 +37,7 @@ type DataSourceClusterModel struct {
 	Zone types.String `tfsdk:"zone"`
 
 	Addons                 types.Set    `tfsdk:"addons"`
+	AllowedNetworks        types.Set    `tfsdk:"allowed_networks"`
 	AutoUpgrade            types.Bool   `tfsdk:"auto_upgrade"`
 	CNI                    types.String `tfsdk:"cni"`
 	CreatedAt              types.String `tfsdk:"created_at"`
@@ -97,6 +98,12 @@ func (d *DataSourceCluster) Schema(ctx context.Context, req datasource.SchemaReq
 			"addons": schema.SetAttribute{
 				MarkdownDescription: "The list of enabled add-ons.",
 				Description:         "The list of enabled add-ons.",
+				ElementType:         types.StringType,
+				Computed:            true,
+			},
+			"allowed_networks": schema.SetAttribute{
+				MarkdownDescription: "The IP allowlist of the cluster: the list of CIDR blocks allowed to access the Kubernetes API server endpoint.",
+				Description:         "The IP allowlist of the cluster: the list of CIDR blocks allowed to access the Kubernetes API server endpoint.",
 				ElementType:         types.StringType,
 				Computed:            true,
 			},
@@ -271,6 +278,13 @@ func (d *DataSourceCluster) Read(ctx context.Context, req datasource.ReadRequest
 	addons, dg := types.SetValueFrom(ctx, types.StringType, sliceOrEmpty(cluster.Addons))
 	resp.Diagnostics.Append(dg...)
 	state.Addons = addons
+
+	state.AllowedNetworks = types.SetNull(types.StringType)
+	if cluster.AllowedNetworks != nil {
+		allowedNetworks, dga := types.SetValueFrom(ctx, types.StringType, *cluster.AllowedNetworks)
+		resp.Diagnostics.Append(dga...)
+		state.AllowedNetworks = allowedNetworks
+	}
 
 	featureGates, dg := types.SetValueFrom(ctx, types.StringType, sliceOrEmpty(cluster.FeatureGates))
 	resp.Diagnostics.Append(dg...)
