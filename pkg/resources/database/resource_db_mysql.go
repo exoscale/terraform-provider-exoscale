@@ -13,6 +13,7 @@ import (
 	v3 "github.com/exoscale/egoscale/v3"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -202,16 +203,7 @@ func (data MysqlDatabaseResourceModel) CreateResource(ctx context.Context, clien
 		DatabaseName: v3.DBAASDatabaseName(data.DatabaseName.ValueString()),
 	}
 
-	op, err := client.CreateDBAASMysqlDatabase(ctx, data.Service.ValueString(), createRequest)
-	if err != nil {
-		diagnostics.AddError(
-			"Client Error",
-			fmt.Sprintf("Unable to create service database, got error %s", err.Error()),
-		)
-		return
-	}
-
-	if _, err := client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
+	if err := utils.Wait(ctx, client)(client.CreateDBAASMysqlDatabase(ctx, data.Service.ValueString(), createRequest)); err != nil {
 		diagnostics.AddError(
 			"Client Error",
 			fmt.Sprintf("Unable to create service database, got error %s", err.Error()),
@@ -234,16 +226,7 @@ func (data MysqlDatabaseResourceModel) CreateResource(ctx context.Context, clien
 // DeleteResource deletes the resource
 func (data MysqlDatabaseResourceModel) DeleteResource(ctx context.Context, client *v3.Client, diagnostics *diag.Diagnostics) {
 
-	op, err := client.DeleteDBAASMysqlDatabase(ctx, data.Service.ValueString(), data.DatabaseName.ValueString())
-	if err != nil {
-		diagnostics.AddError(
-			"Client Error",
-			fmt.Sprintf("Unable to delete service database, got error %s", err.Error()),
-		)
-		return
-	}
-	_, err = client.Wait(ctx, op, v3.OperationStateSuccess)
-	if err != nil {
+	if err := utils.Wait(ctx, client)(client.DeleteDBAASMysqlDatabase(ctx, data.Service.ValueString(), data.DatabaseName.ValueString())); err != nil {
 		diagnostics.AddError(
 			"Client Error",
 			fmt.Sprintf("Unable to delete service database, got error %s", err.Error()),

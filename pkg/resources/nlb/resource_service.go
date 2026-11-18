@@ -278,15 +278,9 @@ func (r *ResourceService) Create(ctx context.Context, req resource.CreateRequest
 		Strategy:     exoscale.AddServiceToLoadBalancerRequestStrategy(plan.Strategy.ValueString()),
 	}
 
-	operation, err := client.AddServiceToLoadBalancer(ctx, nlbID, request)
+	operation, err := utils.WaitOperation(ctx, client)(client.AddServiceToLoadBalancer(ctx, nlbID, request))
 	if err != nil {
 		resp.Diagnostics.AddError("API returned an error when creating NLB service", err.Error())
-		return
-	}
-
-	operation, err = client.Wait(ctx, operation, exoscale.OperationStateSuccess)
-	if err != nil {
-		resp.Diagnostics.AddError("create NLB service operation failed", err.Error())
 		return
 	}
 
@@ -441,13 +435,8 @@ func (r *ResourceService) Update(ctx context.Context, req resource.UpdateRequest
 	}
 
 	if update {
-		operation, err := client.UpdateLoadBalancerService(ctx, nlbID, serviceID, request)
-		if err != nil {
+		if err := utils.Wait(ctx, client)(client.UpdateLoadBalancerService(ctx, nlbID, serviceID, request)); err != nil {
 			resp.Diagnostics.AddError("API returned an error when updating NLB service", err.Error())
-			return
-		}
-		if _, err := client.Wait(ctx, operation, exoscale.OperationStateSuccess); err != nil {
-			resp.Diagnostics.AddError("update NLB service operation failed", err.Error())
 			return
 		}
 	}
@@ -503,17 +492,11 @@ func (r *ResourceService) Delete(ctx context.Context, req resource.DeleteRequest
 		return
 	}
 
-	operation, err := client.DeleteLoadBalancerService(ctx, nlbID, serviceID)
-	if err != nil {
+	if err := utils.Wait(ctx, client)(client.DeleteLoadBalancerService(ctx, nlbID, serviceID)); err != nil {
 		if errors.Is(err, exoscale.ErrNotFound) {
 			return
 		}
 		resp.Diagnostics.AddError("API returned an error while deleting NLB service", err.Error())
-		return
-	}
-
-	if _, err := client.Wait(ctx, operation, exoscale.OperationStateSuccess); err != nil {
-		resp.Diagnostics.AddError("delete NLB service operation failed", err.Error())
 		return
 	}
 

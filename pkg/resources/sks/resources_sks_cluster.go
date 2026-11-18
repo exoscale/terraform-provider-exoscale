@@ -599,15 +599,9 @@ func (r *ResourceCluster) Create(ctx context.Context, req resource.CreateRequest
 		}
 	}
 
-	op, err := client.CreateSKSCluster(ctx, createReq)
+	op, err := utils.WaitOperation(ctx, client)(client.CreateSKSCluster(ctx, createReq))
 	if err != nil {
 		resp.Diagnostics.AddError("API returned an error when creating SKS cluster", err.Error())
-		return
-	}
-
-	op, err = client.Wait(ctx, op, exoscale.OperationStateSuccess)
-	if err != nil {
-		resp.Diagnostics.AddError("create SKS cluster operation failed", err.Error())
 		return
 	}
 
@@ -774,7 +768,7 @@ func (r *ResourceCluster) Update(ctx context.Context, req resource.UpdateRequest
 		return
 	}
 	if resolvedNewVersion != oldVersion {
-		if err := await(ctx, client)(client.UpgradeSKSCluster(ctx, clusterID, exoscale.UpgradeSKSClusterRequest{
+		if err := utils.Wait(ctx, client)(client.UpgradeSKSCluster(ctx, clusterID, exoscale.UpgradeSKSClusterRequest{
 			Version: resolvedNewVersion,
 		})); err != nil {
 			resp.Diagnostics.AddError("unable to upgrade SKS cluster", err.Error())
@@ -938,7 +932,7 @@ func (r *ResourceCluster) Update(ctx context.Context, req resource.UpdateRequest
 		getErrChan := make(chan error)
 
 		go func() {
-			updateErrChan <- await(ctx, client)(client.UpdateSKSCluster(ctx, clusterID, updateReq))
+			updateErrChan <- utils.Wait(ctx, client)(client.UpdateSKSCluster(ctx, clusterID, updateReq))
 		}()
 
 		go func() {
@@ -994,7 +988,7 @@ func (r *ResourceCluster) Delete(ctx context.Context, req resource.DeleteRequest
 	}
 
 	clusterID := exoscale.UUID(state.ID.ValueString())
-	if err := await(ctx, client)(client.DeleteSKSCluster(ctx, clusterID)); err != nil {
+	if err := utils.Wait(ctx, client)(client.DeleteSKSCluster(ctx, clusterID)); err != nil {
 		resp.Diagnostics.AddError("API returned an error when deleting SKS cluster", err.Error())
 		return
 	}

@@ -24,6 +24,7 @@ import (
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
 )
 
 const ResourceRuleDescription = `Manage [Exoscale Security Groups](https://community.exoscale.com/product/compute/instances/quick-start/#firewall-rules---security-groups) rules.
@@ -444,21 +445,13 @@ func (r *ResourceRule) Create(
 		}
 	}
 
-	op, err := r.client.AddRuleToSecurityGroup(
+	if err := utils.Wait(ctx, r.client)(r.client.AddRuleToSecurityGroup(
 		ctx,
 		parentID,
 		ruleReq,
-	)
-	if err != nil {
+	)); err != nil {
 		resp.Diagnostics.AddError(
 			"API returned error when adding rule to security group rule",
-			err.Error(),
-		)
-		return
-	}
-	if _, err := r.client.Wait(ctx, op, exoscale.OperationStateSuccess); err != nil {
-		resp.Diagnostics.AddError(
-			"create security group operation failed",
 			err.Error(),
 		)
 		return
@@ -663,8 +656,7 @@ func (r *ResourceRule) Delete(
 		return
 	}
 
-	op, err := r.client.DeleteRuleFromSecurityGroup(ctx, parentID, id)
-	if err != nil {
+	if err := utils.Wait(ctx, r.client)(r.client.DeleteRuleFromSecurityGroup(ctx, parentID, id)); err != nil {
 		if errors.Is(err, exoscale.ErrNotFound) {
 			tflog.Info(
 				ctx,
@@ -675,14 +667,6 @@ func (r *ResourceRule) Delete(
 		}
 		resp.Diagnostics.AddError(
 			"API returned error when deleting security group",
-			err.Error(),
-		)
-		return
-	}
-	_, err = r.client.Wait(ctx, op, exoscale.OperationStateSuccess)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"delete security group operation failed",
 			err.Error(),
 		)
 		return

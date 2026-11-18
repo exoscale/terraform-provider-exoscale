@@ -344,19 +344,13 @@ pooling:
 			return
 		}
 
-		op, err := clientV3.UpdateDBAASServicePG(
+		if err := utils.Wait(ctx, clientV3)(clientV3.UpdateDBAASServicePG(
 			ctx,
 			data.Id.ValueString(),
 			v3.UpdateDBAASServicePGRequest{
 				PgbouncerSettings: pgbouncerSettings,
 			},
-		)
-		if err != nil {
-			diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update database service pg, got error: %s", err))
-			return
-		}
-
-		if _, err := clientV3.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
+		)); err != nil {
 			diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update database service pg, got error: %s", err))
 			return
 		}

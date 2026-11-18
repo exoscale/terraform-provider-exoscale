@@ -647,14 +647,9 @@ func (r *ResourceNodepool) Create(ctx context.Context, req resource.CreateReques
 		createReq.Taints = taints
 	}
 
-	op, err := client.CreateSKSNodepool(ctx, cluster.ID, createReq)
+	op, err := utils.WaitOperation(ctx, client)(client.CreateSKSNodepool(ctx, cluster.ID, createReq))
 	if err != nil {
 		resp.Diagnostics.AddError("API returned an error when creating SKS nodepool", err.Error())
-		return
-	}
-	op, err = client.Wait(ctx, op, exoscale.OperationStateSuccess)
-	if err != nil {
-		resp.Diagnostics.AddError("create SKS nodepool operation failed", err.Error())
 		return
 	}
 
@@ -960,32 +955,22 @@ func (r *ResourceNodepool) Update(ctx context.Context, req resource.UpdateReques
 	}
 
 	if updated {
-		op, err := client.UpdateSKSNodepool(ctx, cluster.ID, nodepool.ID, updateReq)
-		if err != nil {
+		if err := utils.Wait(ctx, client)(client.UpdateSKSNodepool(ctx, cluster.ID, nodepool.ID, updateReq)); err != nil {
 			resp.Diagnostics.AddError("API returned an error when updating SKS nodepool", err.Error())
-			return
-		}
-		if _, err := client.Wait(ctx, op, exoscale.OperationStateSuccess); err != nil {
-			resp.Diagnostics.AddError("update SKS nodepool operation failed", err.Error())
 			return
 		}
 	}
 
 	if !plan.Size.Equal(state.Size) {
-		op, err := client.ScaleSKSNodepool(
+		if err := utils.Wait(ctx, client)(client.ScaleSKSNodepool(
 			ctx,
 			cluster.ID,
 			nodepool.ID,
 			exoscale.ScaleSKSNodepoolRequest{
 				Size: plan.Size.ValueInt64(),
 			},
-		)
-		if err != nil {
+		)); err != nil {
 			resp.Diagnostics.AddError("API returned an error when scaling SKS nodepool", err.Error())
-			return
-		}
-		if _, err = client.Wait(ctx, op, exoscale.OperationStateSuccess); err != nil {
-			resp.Diagnostics.AddError("scale SKS nodepool operation failed", err.Error())
 			return
 		}
 	}
@@ -1044,13 +1029,8 @@ func (r *ResourceNodepool) Delete(ctx context.Context, req resource.DeleteReques
 		return
 	}
 
-	op, err := client.DeleteSKSNodepool(ctx, cluster.ID, exoscale.UUID(state.ID.ValueString()))
-	if err != nil {
+	if err := utils.Wait(ctx, client)(client.DeleteSKSNodepool(ctx, cluster.ID, exoscale.UUID(state.ID.ValueString()))); err != nil {
 		resp.Diagnostics.AddError("API returned an error when deleting SKS nodepool", err.Error())
-		return
-	}
-	if _, err := client.Wait(ctx, op, exoscale.OperationStateSuccess); err != nil {
-		resp.Diagnostics.AddError("delete SKS nodepool operation failed", err.Error())
 		return
 	}
 

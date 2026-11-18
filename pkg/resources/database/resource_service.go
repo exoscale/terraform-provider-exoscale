@@ -743,14 +743,8 @@ func (r *ServiceResource) Delete(ctx context.Context, req resource.DeleteRequest
 			return
 		}
 
-		op, err := client.DeleteDBAASServiceClickhouse(ctx, data.Id.ValueString())
-		if err != nil {
+		if err := utils.Wait(ctx, client)(client.DeleteDBAASServiceClickhouse(ctx, data.Id.ValueString())); err != nil {
 			resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete database service clickhouse, got error: %s", err))
-			return
-		}
-
-		if _, err := client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
-			resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to wait for database service clickhouse deletion, got error: %s", err))
 			return
 		}
 
@@ -761,14 +755,8 @@ func (r *ServiceResource) Delete(ctx context.Context, req resource.DeleteRequest
 			return
 		}
 
-		op, err := client.DeleteDBAASServiceThanos(ctx, data.Id.ValueString())
-		if err != nil {
+		if err := utils.Wait(ctx, client)(client.DeleteDBAASServiceThanos(ctx, data.Id.ValueString())); err != nil {
 			resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete database service thanos, got error: %s", err))
-			return
-		}
-
-		if _, err := client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
-			resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to wait for database service thanos deletion, got error: %s", err))
 			return
 		}
 

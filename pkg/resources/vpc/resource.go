@@ -192,19 +192,10 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 		request.DHCPOptions = dhcpOptions
 	}
 
-	operation, err := client.CreateVpc(ctx, request)
+	operation, err := utils.WaitOperation(ctx, client)(client.CreateVpc(ctx, request))
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"API returned an error when creating VPC",
-			err.Error(),
-		)
-		return
-	}
-
-	operation, err = client.Wait(ctx, operation, exoscale.OperationStateSuccess)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"create VPC operation failed",
 			err.Error(),
 		)
 		return

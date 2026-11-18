@@ -205,13 +205,7 @@ func (r *ExternalEndpointRsyslogResource) Create(ctx context.Context, req resour
 		settings.Key = data.Key.ValueString()
 	}
 
-	op, err := client.CreateDBAASExternalEndpointRsyslog(ctx, data.Name.ValueString(), v3.DBAASEndpointRsyslogInputCreate{Settings: settings})
-	if err != nil {
-		resp.Diagnostics.AddError("create", fmt.Sprintf("error creating rsyslog external endpoint: %s", err))
-		return
-	}
-
-	op, err = client.Wait(ctx, op, v3.OperationStateSuccess)
+	op, err := utils.WaitOperation(ctx, client)(client.CreateDBAASExternalEndpointRsyslog(ctx, data.Name.ValueString(), v3.DBAASEndpointRsyslogInputCreate{Settings: settings}))
 	if err != nil {
 		resp.Diagnostics.AddError("create", fmt.Sprintf("error creating rsyslog external endpoint: %s", err))
 		return
@@ -320,13 +314,7 @@ func (r *ExternalEndpointRsyslogResource) Update(ctx context.Context, req resour
 		settings.Key = planData.Key.ValueString()
 	}
 
-	op, err := client.UpdateDBAASExternalEndpointRsyslog(ctx, endpointID, v3.DBAASEndpointRsyslogInputUpdate{Settings: settings})
-	if err != nil {
-		resp.Diagnostics.AddError("update", fmt.Sprintf("error updating rsyslog external endpoint: %s", err))
-		return
-	}
-
-	if _, err := client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
+	if err := utils.Wait(ctx, client)(client.UpdateDBAASExternalEndpointRsyslog(ctx, endpointID, v3.DBAASEndpointRsyslogInputUpdate{Settings: settings})); err != nil {
 		resp.Diagnostics.AddError("update", fmt.Sprintf("error updating rsyslog external endpoint: %s", err))
 		return
 	}
@@ -375,13 +363,7 @@ func (r *ExternalEndpointRsyslogResource) Delete(ctx context.Context, req resour
 		return
 	}
 
-	op, err := client.DeleteDBAASExternalEndpointRsyslog(ctx, endpointID)
-	if err != nil {
-		resp.Diagnostics.AddError("delete", fmt.Sprintf("error deleting rsyslog external endpoint: %s", err))
-		return
-	}
-
-	if _, err := client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
+	if err := utils.Wait(ctx, client)(client.DeleteDBAASExternalEndpointRsyslog(ctx, endpointID)); err != nil {
 		resp.Diagnostics.AddError("delete", fmt.Sprintf("error deleting rsyslog external endpoint: %s", err))
 		return
 	}

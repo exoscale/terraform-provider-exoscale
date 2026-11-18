@@ -743,15 +743,9 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 		request.UserData = userData
 	}
 
-	operation, err := client.CreateInstance(ctx, request)
+	operation, err := utils.WaitOperation(ctx, client)(client.CreateInstance(ctx, request))
 	if err != nil {
 		resp.Diagnostics.AddError("API returned an error when creating instance", err.Error())
-		return
-	}
-
-	operation, err = client.Wait(ctx, operation, exoscale.OperationStateSuccess)
-	if err != nil {
-		resp.Diagnostics.AddError("create instance operation failed", err.Error())
 		return
 	}
 
@@ -767,7 +761,7 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 	}
 
 	if plan.DestroyProtected.ValueBool() {
-		if err := wait(ctx, client)(client.AddInstanceProtection(ctx, id)); err != nil {
+		if err := utils.Wait(ctx, client)(client.AddInstanceProtection(ctx, id)); err != nil {
 			resp.Diagnostics.AddError("unable to make instance destroy protected", err.Error())
 			return
 		}
@@ -795,7 +789,7 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 	}
 
 	if v := plan.ReverseDNS.ValueString(); v != "" {
-		err := wait(ctx, client)(client.UpdateReverseDNSInstance(
+		err := utils.Wait(ctx, client)(client.UpdateReverseDNSInstance(
 			ctx,
 			id,
 			exoscale.UpdateReverseDNSInstanceRequest{DomainName: v},
@@ -964,7 +958,7 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 	}
 
 	if update {
-		if err := wait(ctx, client)(client.UpdateInstance(ctx, id, request)); err != nil {
+		if err := utils.Wait(ctx, client)(client.UpdateInstance(ctx, id, request)); err != nil {
 			resp.Diagnostics.AddError("unable to update instance", err.Error())
 			return
 		}
@@ -972,9 +966,9 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 
 	if plan.ReverseDNS.ValueString() != state.ReverseDNS.ValueString() {
 		if v := plan.ReverseDNS.ValueString(); v == "" {
-			err = wait(ctx, client)(client.DeleteReverseDNSInstance(ctx, id))
+			err = utils.Wait(ctx, client)(client.DeleteReverseDNSInstance(ctx, id))
 		} else {
-			err = wait(ctx, client)(client.UpdateReverseDNSInstance(
+			err = utils.Wait(ctx, client)(client.UpdateReverseDNSInstance(
 				ctx,
 				id,
 				exoscale.UpdateReverseDNSInstanceRequest{DomainName: v},
@@ -1024,7 +1018,7 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 		}
 
 		for _, elasticIPID := range removed {
-			err := wait(ctx, client)(client.DetachInstanceFromElasticIP(
+			err := utils.Wait(ctx, client)(client.DetachInstanceFromElasticIP(
 				ctx,
 				exoscale.UUID(elasticIPID),
 				exoscale.DetachInstanceFromElasticIPRequest{Instance: &exoscale.InstanceTarget{ID: id}},
@@ -1053,7 +1047,7 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 				continue
 			}
 
-			err := wait(ctx, client)(client.DetachInstanceFromPrivateNetwork(
+			err := utils.Wait(ctx, client)(client.DetachInstanceFromPrivateNetwork(
 				ctx,
 				exoscale.UUID(nif.NetworkID.ValueString()),
 				exoscale.DetachInstanceFromPrivateNetworkRequest{Instance: &exoscale.Instance{ID: id}},
@@ -1091,7 +1085,7 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 		}
 
 		for _, securityGroupID := range added {
-			err := wait(ctx, client)(client.AttachInstanceToSecurityGroup(
+			err := utils.Wait(ctx, client)(client.AttachInstanceToSecurityGroup(
 				ctx,
 				exoscale.UUID(securityGroupID),
 				exoscale.AttachInstanceToSecurityGroupRequest{Instance: &exoscale.Instance{ID: id}},
@@ -1103,7 +1097,7 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 		}
 
 		for _, securityGroupID := range removed {
-			err := wait(ctx, client)(client.DetachInstanceFromSecurityGroup(
+			err := utils.Wait(ctx, client)(client.DetachInstanceFromSecurityGroup(
 				ctx,
 				exoscale.UUID(securityGroupID),
 				exoscale.DetachInstanceFromSecurityGroupRequest{Instance: &exoscale.Instance{ID: id}},
@@ -1153,14 +1147,14 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 		shouldStop := instance.State == exoscale.InstanceStateRunning &&
 			(wantedState == string(exoscale.InstanceStateStopped) || diskSizeChanged || typeChanged || tpmChanged)
 		if shouldStop {
-			if err := wait(ctx, client)(client.StopInstance(ctx, id)); err != nil {
+			if err := utils.Wait(ctx, client)(client.StopInstance(ctx, id)); err != nil {
 				resp.Diagnostics.AddError("unable to stop instance", err.Error())
 				return
 			}
 		}
 
 		if diskSizeChanged {
-			err := wait(ctx, client)(client.ResizeInstanceDisk(
+			err := utils.Wait(ctx, client)(client.ResizeInstanceDisk(
 				ctx,
 				id,
 				exoscale.ResizeInstanceDiskRequest{DiskSize: plan.DiskSize.ValueInt64()},
@@ -1177,7 +1171,7 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 				resp.Diagnostics.AddError("unable to retrieve instance type", err.Error())
 				return
 			}
-			err = wait(ctx, client)(client.ScaleInstance(ctx, id, exoscale.ScaleInstanceRequest{InstanceType: instanceType}))
+			err = utils.Wait(ctx, client)(client.ScaleInstance(ctx, id, exoscale.ScaleInstanceRequest{InstanceType: instanceType}))
 			if err != nil {
 				resp.Diagnostics.AddError("unable to scale instance", err.Error())
 				return
@@ -1185,7 +1179,7 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 		}
 
 		if tpmChanged {
-			if err := wait(ctx, client)(client.EnableTpm(ctx, id)); err != nil {
+			if err := utils.Wait(ctx, client)(client.EnableTpm(ctx, id)); err != nil {
 				resp.Diagnostics.AddError("failed to enable TPM", err.Error())
 				return
 			}
@@ -1194,7 +1188,7 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 		shouldStart := wantedState == string(exoscale.InstanceStateRunning) &&
 			(shouldStop || instance.State != exoscale.InstanceStateRunning)
 		if shouldStart {
-			if err := wait(ctx, client)(client.StartInstance(ctx, id, exoscale.StartInstanceRequest{})); err != nil {
+			if err := utils.Wait(ctx, client)(client.StartInstance(ctx, id, exoscale.StartInstanceRequest{})); err != nil {
 				resp.Diagnostics.AddError("unable to start instance", err.Error())
 				return
 			}
@@ -1207,12 +1201,12 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 	// Therefore we simply apply what the practitioner configured
 	// If the field is absent, the protection will be removed
 	if plan.DestroyProtected.ValueBool() {
-		if err := wait(ctx, client)(client.AddInstanceProtection(ctx, id)); err != nil {
+		if err := utils.Wait(ctx, client)(client.AddInstanceProtection(ctx, id)); err != nil {
 			resp.Diagnostics.AddError("unable to make instance destroy protected", err.Error())
 			return
 		}
 	} else {
-		if err := wait(ctx, client)(client.RemoveInstanceProtection(ctx, id)); err != nil {
+		if err := utils.Wait(ctx, client)(client.RemoveInstanceProtection(ctx, id)); err != nil {
 			resp.Diagnostics.AddError("unable to remove destroy protection from instance", err.Error())
 			return
 		}
@@ -1261,13 +1255,13 @@ func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp 
 		return
 	}
 
-	err = wait(ctx, client)(client.DeleteReverseDNSInstance(ctx, id))
+	err = utils.Wait(ctx, client)(client.DeleteReverseDNSInstance(ctx, id))
 	if err != nil && !errors.Is(err, exoscale.ErrNotFound) {
 		resp.Diagnostics.AddError("unable to delete Reverse DNS record", err.Error())
 		return
 	}
 
-	err = wait(ctx, client)(client.DeleteInstance(ctx, id))
+	err = utils.Wait(ctx, client)(client.DeleteInstance(ctx, id))
 	if err != nil {
 		if errors.Is(err, exoscale.ErrNotFound) {
 			return
@@ -1281,20 +1275,6 @@ func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp 
 
 func (r *Resource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	utils.ImportStatePassthroughZonedID(ctx, req, resp)
-}
-
-// wait returns a function waiting for the success of an operation, to be
-// wrapped around the API call starting it.
-func wait(ctx context.Context, client *exoscale.Client) func(*exoscale.Operation, error) error {
-	return func(operation *exoscale.Operation, err error) error {
-		if err != nil {
-			return err
-		}
-
-		_, err = client.Wait(ctx, operation, exoscale.OperationStateSuccess)
-
-		return err
-	}
 }
 
 // stringSetChange returns the values added to and removed from a set of
@@ -1311,7 +1291,7 @@ func stringSetChange(ctx context.Context, state, plan types.Set) (added, removed
 }
 
 func attachElasticIP(ctx context.Context, client *exoscale.Client, id exoscale.UUID, elasticIPID string) error {
-	return wait(ctx, client)(client.AttachInstanceToElasticIP(
+	return utils.Wait(ctx, client)(client.AttachInstanceToElasticIP(
 		ctx,
 		exoscale.UUID(elasticIPID),
 		exoscale.AttachInstanceToElasticIPRequest{Instance: &exoscale.InstanceTarget{ID: id}},
@@ -1319,7 +1299,7 @@ func attachElasticIP(ctx context.Context, client *exoscale.Client, id exoscale.U
 }
 
 func attachPrivateNetwork(ctx context.Context, client *exoscale.Client, id exoscale.UUID, nif NetworkInterfaceModel) error {
-	return wait(ctx, client)(client.AttachInstanceToPrivateNetwork(
+	return utils.Wait(ctx, client)(client.AttachInstanceToPrivateNetwork(
 		ctx,
 		exoscale.UUID(nif.NetworkID.ValueString()),
 		exoscale.AttachInstanceToPrivateNetworkRequest{
@@ -1336,7 +1316,7 @@ func attachBlockStorageVolume(ctx context.Context, client *exoscale.Client, id e
 		return fmt.Errorf("unable to parse block storage volume ID: %w", err)
 	}
 
-	return wait(ctx, client)(client.AttachBlockStorageVolumeToInstance(
+	return utils.Wait(ctx, client)(client.AttachBlockStorageVolumeToInstance(
 		ctx,
 		volume,
 		exoscale.AttachBlockStorageVolumeToInstanceRequest{Instance: &exoscale.InstanceTarget{ID: id}},
@@ -1349,7 +1329,7 @@ func detachBlockStorageVolume(ctx context.Context, client *exoscale.Client, volu
 		return fmt.Errorf("unable to parse block storage volume ID: %w", err)
 	}
 
-	err = wait(ctx, client)(client.DetachBlockStorageVolume(ctx, volume))
+	err = utils.Wait(ctx, client)(client.DetachBlockStorageVolume(ctx, volume))
 	if err != nil {
 		// The volume was likely already deleted as part of its regular
 		// deletion process.

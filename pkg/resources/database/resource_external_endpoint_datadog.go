@@ -137,13 +137,7 @@ func (r *ExternalEndpointDatadogResource) Create(ctx context.Context, req resour
 		},
 	}
 
-	op, err := client.CreateDBAASExternalEndpointDatadog(ctx, data.Name.ValueString(), createReq)
-	if err != nil {
-		resp.Diagnostics.AddError("create", fmt.Sprintf("error creating datadog external endpoint: %s", err))
-		return
-	}
-
-	op, err = client.Wait(ctx, op, v3.OperationStateSuccess)
+	op, err := utils.WaitOperation(ctx, client)(client.CreateDBAASExternalEndpointDatadog(ctx, data.Name.ValueString(), createReq))
 	if err != nil {
 		resp.Diagnostics.AddError("create", fmt.Sprintf("error creating datadog external endpoint: %s", err))
 		return
@@ -233,13 +227,7 @@ func (r *ExternalEndpointDatadogResource) Update(ctx context.Context, req resour
 		},
 	}
 
-	op, err := client.UpdateDBAASExternalEndpointDatadog(ctx, endpointID, updateReq)
-	if err != nil {
-		resp.Diagnostics.AddError("update", fmt.Sprintf("error updating datadog external endpoint: %s", err))
-		return
-	}
-
-	if _, err := client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
+	if err := utils.Wait(ctx, client)(client.UpdateDBAASExternalEndpointDatadog(ctx, endpointID, updateReq)); err != nil {
 		resp.Diagnostics.AddError("update", fmt.Sprintf("error updating datadog external endpoint: %s", err))
 		return
 	}
@@ -288,13 +276,7 @@ func (r *ExternalEndpointDatadogResource) Delete(ctx context.Context, req resour
 		return
 	}
 
-	op, err := client.DeleteDBAASExternalEndpointDatadog(ctx, endpointID)
-	if err != nil {
-		resp.Diagnostics.AddError("delete", fmt.Sprintf("error deleting datadog external endpoint: %s", err))
-		return
-	}
-
-	if _, err := client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
+	if err := utils.Wait(ctx, client)(client.DeleteDBAASExternalEndpointDatadog(ctx, endpointID)); err != nil {
 		resp.Diagnostics.AddError("delete", fmt.Sprintf("error deleting datadog external endpoint: %s", err))
 		return
 	}
