@@ -2,14 +2,20 @@
 
 ## Unreleased
 
+FEATURES:
 - `exoscale_sks_cluster` resource and data sources: new `allowed_networks` attribute to manage the cluster's IP allowlist (CIDR blocks allowed to access the Kubernetes API server endpoint).
+- `exoscale_compute_instance`: the `network_interface` block is deprecated in favor of the `vpc` block. Using it now shows a deprecation warning.
+- `exoscale_compute_instance`: new `ip_forwarding` parameter, to let an instance route VPC traffic (#638)
+
+IMPROVEMENTS:
+
+- `exoscale_sks_cluster` `oidc`: updating a cluster resource no longer resets the OIDC field #649
+- Document OpenTofu compatibility in README.md (#651)
+
+DEPENDENCIES:
 - Upgrade `github.com/exoscale/egoscale/v3` to v3.1.63.
 - `exoscale_private_network` resource and data source: deprecated in favor of VPC (`exoscale_vpc`, `exoscale_vpc_subnet`). Using them now shows a deprecation warning.
-- `exoscale_compute_instance`: the `network_interface` block is deprecated in favor of the `vpc` block. Using it now shows a deprecation warning.
-- `exoscale_sks_cluster` `oidc`: updating a cluster resource no longer resets the OIDC field #649
-- `exoscale_compute_instance`: new `ip_forwarding` parameter, to let an instance route VPC traffic (#638)
 - Build with Go 1.27.4 (#652)
-- Document OpenTofu compatibility in README.md (#651)
 
 ## 0.77.0
 
@@ -17,9 +23,6 @@ FEATURES:
 
 - New `exoscale_kms_key_store` resource and data source (beta): manage KMS External Key Stores (XKS). The proxy secret key is write-only (`secret_key_wo`, requires Terraform 1.11 or later).
 - `exoscale_kms_key`: new `xks` attribute to create keys backed by an External Key Store, new `key_spec` attribute, read-only `source` attribute, and `usage = "sign-verify"`.
-
-FEATURES:
-
 - `exoscale_dbaas`: new `thanos` Database service type.
 
 IMPROVEMENTS:
