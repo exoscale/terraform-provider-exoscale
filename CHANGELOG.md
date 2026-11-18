@@ -8,6 +8,7 @@
 - `exoscale_compute_instance`: new `ip_forwarding` parameter, to let an instance route VPC traffic (#638)
 - Build with Go 1.27.4 (#652)
 - Document OpenTofu compatibility in README.md (#651)
+- `exoscale_compute_instance`: the empty values (`""`, `{}`, `[]`) that earlier versions stored for unset optional attributes are now normalised once, when the state is first loaded. A configuration that sets one of them explicitly (e.g. `reverse_dns = ""`, `labels = {}`) shows a one-time in-place update with no effect on the instance.
 
 ## 0.77.0
 

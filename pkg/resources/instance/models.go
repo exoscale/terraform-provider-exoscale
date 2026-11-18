@@ -355,9 +355,6 @@ func applyInstance( //nolint:gocyclo
 			return diags
 		}
 	}
-	if model.SSHKeys.IsUnknown() {
-		model.SSHKeys = types.SetNull(types.StringType)
-	}
 
 	remote, err := remoteNetworkInterfaces(ctx, client, instance, true)
 	if err != nil {

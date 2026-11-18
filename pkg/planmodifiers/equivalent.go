@@ -1,3 +1,5 @@
+// Package planmodifiers holds the plan modifiers shared by the resources
+// migrated from the SDKv2 to the plugin framework.
 package planmodifiers
 
 import (
