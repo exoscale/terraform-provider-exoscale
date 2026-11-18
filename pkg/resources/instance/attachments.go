@@ -8,6 +8,7 @@ import (
 
 	exoscale "github.com/exoscale/egoscale/v3"
 
+	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/block_storage"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -141,5 +142,5 @@ func detachBlockStorageVolume(ctx context.Context, client *exoscale.Client, _ ex
 		return fmt.Errorf("unable to parse block storage volume ID: %w", err)
 	}
 
-	return utils.DetachBlockStorageVolume(ctx, client, volume)
+	return block_storage.DetachVolume(ctx, client, volume)
 }
