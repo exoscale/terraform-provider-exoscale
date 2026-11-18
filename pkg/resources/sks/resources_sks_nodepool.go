@@ -1211,11 +1211,7 @@ func (r *ResourceNodepool) applyNodepool(
 		diags.AddError("error retrieving instance type", err.Error())
 		return diags
 	}
-	model.InstanceType = types.StringValue(fmt.Sprintf(
-		"%s.%s",
-		strings.ToLower(string(instanceType.Family)),
-		strings.ToLower(string(instanceType.Size)),
-	))
+	model.InstanceType = types.StringValue(utils.InstanceTypeName(instanceType))
 
 	model.KubeletImageGC = types.ObjectNull(kubeletGCAttrTypes())
 	if nodepool.KubeletImageGC != nil {

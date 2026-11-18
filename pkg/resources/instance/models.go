@@ -3,7 +3,6 @@ package instance
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strings"
 
 	exoscale "github.com/exoscale/egoscale/v3"
@@ -133,15 +132,6 @@ func stringSetDiff(old, cur []string) (added, removed []string) {
 	}
 
 	return added, removed
-}
-
-// instanceTypeName returns the `<family>.<size>` name of an instance type.
-func instanceTypeName(instanceType *exoscale.InstanceType) string {
-	return fmt.Sprintf(
-		"%s.%s",
-		strings.ToLower(string(instanceType.Family)),
-		strings.ToLower(string(instanceType.Size)),
-	)
 }
 
 // reverseDNS returns the reverse DNS record of the instance, "" if it has none.
@@ -413,7 +403,7 @@ func applyInstance( //nolint:gocyclo
 			return diags
 		}
 		// Case differences with the configuration are not drift.
-		if name := instanceTypeName(&instanceType); !strings.EqualFold(name, model.Type.ValueString()) {
+		if name := utils.InstanceTypeName(&instanceType); !strings.EqualFold(name, model.Type.ValueString()) {
 			model.Type = types.StringValue(name)
 		}
 	}

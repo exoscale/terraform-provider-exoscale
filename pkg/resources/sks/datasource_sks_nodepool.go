@@ -3,7 +3,6 @@ package sks
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	exoscale "github.com/exoscale/egoscale/v3"
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
@@ -351,11 +350,7 @@ func (d *DataSourceNodepool) Read(ctx context.Context, req datasource.ReadReques
 			resp.Diagnostics.AddError("error retrieving instance type", err.Error())
 			return
 		}
-		state.InstanceType = types.StringValue(fmt.Sprintf(
-			"%s.%s",
-			strings.ToLower(string(instanceType.Family)),
-			strings.ToLower(string(instanceType.Size)),
-		))
+		state.InstanceType = types.StringValue(utils.InstanceTypeName(instanceType))
 	}
 
 	aags, dg := types.SetValueFrom(ctx, types.StringType, utils.AntiAffiniGroupsToAntiAffinityGroupIDs(nodepool.AntiAffinityGroups))

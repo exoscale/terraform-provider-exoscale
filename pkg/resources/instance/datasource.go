@@ -312,7 +312,7 @@ func (d *DataSource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 			resp.Diagnostics.AddError("unable to retrieve instance type", err.Error())
 			return
 		}
-		model.Type = types.StringValue(instanceTypeName(instanceType))
+		model.Type = types.StringValue(utils.InstanceTypeName(instanceType))
 	}
 
 	rdns, err := reverseDNS(ctx, client, instance.ID)
