@@ -12,6 +12,7 @@ import (
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/block_storage"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/validators"
 
@@ -1329,7 +1330,7 @@ func detachBlockStorageVolume(ctx context.Context, client *exoscale.Client, volu
 		return fmt.Errorf("unable to parse block storage volume ID: %w", err)
 	}
 
-	return utils.DetachBlockStorageVolume(ctx, client, volume)
+	return block_storage.DetachVolume(ctx, client, volume)
 }
 
 // nullUnknown returns the model with the values still unknown set to null, so

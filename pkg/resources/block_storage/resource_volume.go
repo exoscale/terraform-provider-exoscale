@@ -523,7 +523,7 @@ func (r *ResourceVolume) Delete(ctx context.Context, req resource.DeleteRequest,
 	}
 
 	// Detach volume if attached.
-	if err := utils.DetachBlockStorageVolume(ctx, client, id); err != nil {
+	if err := DetachVolume(ctx, client, id); err != nil {
 		resp.Diagnostics.AddError(
 			"unable to detach volume",
 			err.Error(),
