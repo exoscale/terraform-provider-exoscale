@@ -9,6 +9,7 @@ import (
 	exoscale "github.com/exoscale/egoscale/v3"
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -27,6 +28,7 @@ import (
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/validators"
 )
 
 const (
@@ -101,6 +103,7 @@ type ResourceClusterModel struct {
 	Description                types.String `tfsdk:"description"`
 	Labels                     types.Map    `tfsdk:"labels"`
 	AggregationLayerCA         types.String `tfsdk:"aggregation_ca"`
+	AllowedNetworks            types.Set    `tfsdk:"allowed_networks"`
 	ControlPlaneCA             types.String `tfsdk:"control_plane_ca"`
 	KubeletCA                  types.String `tfsdk:"kubelet_ca"`
 	AutoUpgrade                types.Bool   `tfsdk:"auto_upgrade"`
@@ -177,6 +180,16 @@ func (r *ResourceCluster) Schema(ctx context.Context, req resource.SchemaRequest
 				MarkdownDescription: "The CA certificate (in PEM format) for TLS communications between the control plane and the aggregation layer (e.g. `metrics-server`).",
 				Computed:            true,
 				Sensitive:           true,
+			},
+			"allowed_networks": schema.SetAttribute{
+				Description:         "The IP allowlist of the cluster: a list of CIDR blocks allowed to access the Kubernetes API server endpoint.",
+				MarkdownDescription: "The IP allowlist of the cluster: a list of CIDR blocks allowed to access the Kubernetes API server endpoint.",
+				ElementType:         types.StringType,
+				Optional:            true,
+				Computed:            true,
+				Validators: []validator.Set{
+					setvalidator.ValueStringsAre(validators.IsCIDRNetworkValidator{Min: 0, Max: 128}),
+				},
 			},
 			"auto_upgrade": schema.BoolAttribute{
 				Description:         "Enable automatic upgrading of the control plane version.",
@@ -430,6 +443,7 @@ func (r *ResourceCluster) ImportState(ctx context.Context, req resource.ImportSt
 		ID:                    types.StringValue(idParts[0]),
 		Zone:                  types.StringValue(zone),
 		Labels:                types.MapNull(types.StringType),
+		AllowedNetworks:       types.SetNull(types.StringType),
 		FeatureGates:          types.SetNull(types.StringType),
 		KarpenterFeatureGates: types.SetNull(types.StringType),
 		Nodepools:             types.SetNull(types.StringType),
@@ -507,6 +521,15 @@ func (r *ResourceCluster) Create(ctx context.Context, req resource.CreateRequest
 		}
 	}
 	createReq.FeatureGates = featureGates
+
+	if !plan.AllowedNetworks.IsNull() && !plan.AllowedNetworks.IsUnknown() {
+		allowedNetworks := exoscale.SKSClusterAllowedNetworks{}
+		resp.Diagnostics.Append(plan.AllowedNetworks.ElementsAs(ctx, &allowedNetworks, false)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+		createReq.AllowedNetworks = &allowedNetworks
+	}
 
 	if !plan.KarpenterFeatureGates.IsNull() && !plan.KarpenterFeatureGates.IsUnknown() {
 		karpenterFeatureGates := []string{}
@@ -678,6 +701,13 @@ func (r *ResourceCluster) Read(ctx context.Context, req resource.ReadRequest, re
 	state.ControlPlaneCA = types.StringValue(certificates.ControlPlaneCA)
 	state.KubeletCA = types.StringValue(certificates.KubeletCA)
 
+	state.AllowedNetworks = types.SetNull(types.StringType)
+	if sksCluster.AllowedNetworks != nil {
+		allowedNetworks, d := types.SetValueFrom(ctx, types.StringType, *sksCluster.AllowedNetworks)
+		resp.Diagnostics.Append(d...)
+		state.AllowedNetworks = allowedNetworks
+	}
+
 	state.AutoUpgrade = types.BoolValue(defaultBool(sksCluster.AutoUpgrade, false))
 	state.CNI = types.StringValue(string(sksCluster.Cni))
 	state.CreatedAt = types.StringValue(sksCluster.CreatedAT.String())
@@ -788,6 +818,21 @@ func (r *ResourceCluster) Update(ctx context.Context, req resource.UpdateRequest
 			}
 		}
 		updateReq.FeatureGates = featureGates
+		updated = true
+	}
+
+	if !plan.AllowedNetworks.Equal(state.AllowedNetworks) {
+		// Send a pointer (possibly to an empty list) so that removing the
+		// attribute from the config clears the allowlist: the API field is
+		// omitted only when the pointer is nil.
+		allowedNetworks := exoscale.SKSClusterAllowedNetworks{}
+		if !plan.AllowedNetworks.IsNull() && !plan.AllowedNetworks.IsUnknown() {
+			resp.Diagnostics.Append(plan.AllowedNetworks.ElementsAs(ctx, &allowedNetworks, false)...)
+			if resp.Diagnostics.HasError() {
+				return
+			}
+		}
+		updateReq.AllowedNetworks = &allowedNetworks
 		updated = true
 	}
 
@@ -1045,6 +1090,15 @@ func (r *ResourceCluster) setUnknownAttributes(ctx context.Context, client *exos
 
 	if plan.AggregationLayerCA.IsUnknown() {
 		plan.AggregationLayerCA = types.StringValue(certificates.AggregationCA)
+	}
+	if plan.AllowedNetworks.IsUnknown() {
+		if sksCluster.AllowedNetworks != nil {
+			allowedNetworks, d := types.SetValueFrom(ctx, types.StringType, *sksCluster.AllowedNetworks)
+			diags.Append(d...)
+			plan.AllowedNetworks = allowedNetworks
+		} else {
+			plan.AllowedNetworks = types.SetNull(types.StringType)
+		}
 	}
 	if plan.ControlPlaneCA.IsUnknown() {
 		plan.ControlPlaneCA = types.StringValue(certificates.ControlPlaneCA)

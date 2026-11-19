@@ -31,6 +31,7 @@ Corresponding resource: [exoscale_sks_cluster](../resources/sks_cluster.md).
 ### Read-Only
 
 - `addons` (Set of String) The list of enabled add-ons.
+- `allowed_networks` (Set of String) The IP allowlist of the cluster: the list of CIDR blocks allowed to access the Kubernetes API server endpoint.
 - `auto_upgrade` (Boolean) Enable automatic upgrading of the control plane version.
 - `cni` (String) The CNI plugin that is to be used.
 - `created_at` (String) The cluster creation date.

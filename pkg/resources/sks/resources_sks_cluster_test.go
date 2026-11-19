@@ -447,6 +447,16 @@ func TestAccResourceSKSClusterWithKarpenter(t *testing.T) {
 		return false
 	}
 
+	// "0.0.0.0/0" keeps the API server reachable from the test harness.
+	allowedNetworks := []string{"0.0.0.0/0", "203.0.113.0/24"}
+	checkAllowedNetworks := func(_ *terraform.State) error {
+		a := assert.New(t)
+		if a.NotNil(sksCluster.AllowedNetworks, "expected the API to return allowed networks") {
+			a.ElementsMatch(allowedNetworks, []string(*sksCluster.AllowedNetworks))
+		}
+		return nil
+	}
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testutils.AccPreCheck(t) },
 		ProtoV6ProviderFactories: testutils.TestAccProtoV6ProviderFactories,
@@ -473,6 +483,10 @@ func TestAccResourceSKSClusterWithKarpenter(t *testing.T) {
 					resource.TestCheckResourceAttr(r, "exoscale_ccm", "true"),
 					resource.TestCheckResourceAttr(r, "metrics_server", "false"),
 					resource.TestCheckResourceAttr(r, "labels.test", "acctest"),
+					checkAllowedNetworks,
+					resource.TestCheckResourceAttr(r, "allowed_networks.#", "2"),
+					resource.TestCheckTypeSetElemAttr(r, "allowed_networks.*", "0.0.0.0/0"),
+					resource.TestCheckTypeSetElemAttr(r, "allowed_networks.*", "203.0.113.0/24"),
 					resource.TestCheckResourceAttr(r, "enable_karpenter", "true"),
 					resource.TestCheckResourceAttr(r, "karpenter_feature_gates.#", "1"),
 					resource.TestCheckTypeSetElemAttr(r, "karpenter_feature_gates.*", "NodeRepair"),
@@ -497,6 +511,10 @@ func TestAccResourceSKSClusterWithKarpenter(t *testing.T) {
 					resource.TestCheckResourceAttr(r, "exoscale_ccm", "true"),
 					resource.TestCheckResourceAttr(r, "metrics_server", "false"),
 					resource.TestCheckResourceAttr(r, "labels.test", "acctest"),
+					checkAllowedNetworks,
+					resource.TestCheckResourceAttr(r, "allowed_networks.#", "2"),
+					resource.TestCheckTypeSetElemAttr(r, "allowed_networks.*", "0.0.0.0/0"),
+					resource.TestCheckTypeSetElemAttr(r, "allowed_networks.*", "203.0.113.0/24"),
 					resource.TestCheckResourceAttr(r, "enable_karpenter", "false"),
 				),
 			},
@@ -520,9 +538,87 @@ func TestAccResourceSKSClusterWithKarpenter(t *testing.T) {
 					resource.TestCheckResourceAttr(r, "exoscale_ccm", "true"),
 					resource.TestCheckResourceAttr(r, "metrics_server", "false"),
 					resource.TestCheckResourceAttr(r, "labels.test", "acctest"),
+					checkAllowedNetworks,
+					resource.TestCheckResourceAttr(r, "allowed_networks.#", "2"),
+					resource.TestCheckTypeSetElemAttr(r, "allowed_networks.*", "0.0.0.0/0"),
+					resource.TestCheckTypeSetElemAttr(r, "allowed_networks.*", "203.0.113.0/24"),
 					resource.TestCheckResourceAttr(r, "enable_karpenter", "true"),
 					resource.TestCheckResourceAttr(r, "karpenter_feature_gates.#", "1"),
 					resource.TestCheckTypeSetElemAttr(r, "karpenter_feature_gates.*", "NodeRepair"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccResourceSKSClusterWithAllowedNetworks(t *testing.T) {
+	t.Parallel()
+
+	if os.Getenv(resource.EnvTfAcc) == "" {
+		t.Skipf("Acceptance tests skipped unless env '%s' set", resource.EnvTfAcc)
+		return
+	}
+
+	var (
+		r          = "exoscale_sks_cluster.test-with-allowed-networks"
+		sksCluster egoscale.SKSCluster
+	)
+
+	td := sksTestdata{Zone: testZoneName, ID: time.Now().UnixNano()}
+	name := testutils.ResourceName(td.ID)
+
+	checkAllowedNetworks := func(want []string) resource.TestCheckFunc {
+		return func(s *terraform.State) error {
+			a := assert.New(t)
+
+			if a.NotNil(sksCluster.AllowedNetworks, "expected the API to return allowed networks") {
+				a.ElementsMatch(want, []string(*sksCluster.AllowedNetworks))
+			}
+			return nil
+		}
+	}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testutils.AccPreCheck(t) },
+		ProtoV6ProviderFactories: testutils.TestAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckResourceSKSClusterDestroy(&sksCluster),
+		Steps: []resource.TestStep{
+			{
+				// Create cluster with an IP allowlist
+				Config: parseSKSConfig(t, "./testdata/023.sks_allowed_networks_create.tf.tmpl", td),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckResourceSKSClusterExists(r, &sksCluster),
+					checkAllowedNetworks([]string{"0.0.0.0/0", "203.0.113.0/24"}),
+					resource.TestCheckResourceAttr(r, "name", name),
+					resource.TestCheckResourceAttr(r, "description", "description-test"),
+					resource.TestCheckResourceAttr(r, "allowed_networks.#", "2"),
+					resource.TestCheckTypeSetElemAttr(r, "allowed_networks.*", "0.0.0.0/0"),
+					resource.TestCheckTypeSetElemAttr(r, "allowed_networks.*", "203.0.113.0/24"),
+				),
+			},
+			{
+				// Update the IP allowlist
+				Config: parseSKSConfig(t, "./testdata/024.sks_allowed_networks_update.tf.tmpl", td),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckResourceSKSClusterExists(r, &sksCluster),
+					checkAllowedNetworks([]string{"0.0.0.0/0", "198.51.100.0/24", "203.0.113.0/24"}),
+					resource.TestCheckResourceAttr(r, "name", name),
+					resource.TestCheckResourceAttr(r, "allowed_networks.#", "3"),
+					resource.TestCheckTypeSetElemAttr(r, "allowed_networks.*", "0.0.0.0/0"),
+					resource.TestCheckTypeSetElemAttr(r, "allowed_networks.*", "198.51.100.0/24"),
+					resource.TestCheckTypeSetElemAttr(r, "allowed_networks.*", "203.0.113.0/24"),
+				),
+			},
+			{
+				// Revert the IP allowlist
+				Config: parseSKSConfig(t, "./testdata/023.sks_allowed_networks_create.tf.tmpl", td),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckResourceSKSClusterExists(r, &sksCluster),
+					checkAllowedNetworks([]string{"0.0.0.0/0", "203.0.113.0/24"}),
+					resource.TestCheckResourceAttr(r, "name", name),
+					resource.TestCheckResourceAttr(r, "allowed_networks.#", "2"),
+					resource.TestCheckTypeSetElemAttr(r, "allowed_networks.*", "0.0.0.0/0"),
+					resource.TestCheckTypeSetElemAttr(r, "allowed_networks.*", "203.0.113.0/24"),
 				),
 			},
 		},

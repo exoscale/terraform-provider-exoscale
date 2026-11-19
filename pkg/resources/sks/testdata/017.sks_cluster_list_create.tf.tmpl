@@ -5,6 +5,7 @@ locals {
 resource "exoscale_sks_cluster" "test" {
   zone = local.zone
   name = "terraform-provider-test-{{ .ID }}"
+  allowed_networks = ["0.0.0.0/0", "203.0.113.0/24"]
 
   timeouts {
     create = "10m"
