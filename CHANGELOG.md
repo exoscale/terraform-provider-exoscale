@@ -3,19 +3,19 @@
 ## Unreleased
 
 FEATURES:
-- `exoscale_sks_cluster` resource and data sources: new `allowed_networks` attribute to manage the cluster's IP allowlist (CIDR blocks allowed to access the Kubernetes API server endpoint).
-- `exoscale_compute_instance`: the `network_interface` block is deprecated in favor of the `vpc` block. Using it now shows a deprecation warning.
+- `exoscale_sks_cluster` resource and data sources: new `allowed_networks` attribute to manage the cluster's IP allowlist (CIDR blocks allowed to access the Kubernetes API server endpoint). (#663)
+- `exoscale_compute_instance`: the `network_interface` block is deprecated in favor of the `vpc` block. Using it now shows a deprecation warning. (#647)
+- `exoscale_private_network` resource and data source: deprecated in favor of VPC (`exoscale_vpc`, `exoscale_vpc_subnet`). Using them now shows a deprecation warning. (#647)
 - `exoscale_compute_instance`: new `ip_forwarding` parameter, to let an instance route VPC traffic (#638)
 - `exoscale_nlb_service`: new `label_selector` attribute to forward traffic to the instances carrying all the listed key/value labels. `instance_pool_id` becomes optional, as at least one of the two is required. (#639)
 
 IMPROVEMENTS:
 
-- `exoscale_sks_cluster` `oidc`: updating a cluster resource no longer resets the OIDC field #649
+- `exoscale_sks_cluster` `oidc`: updating a cluster resource no longer resets the OIDC field (#649)
 - Document OpenTofu compatibility in README.md (#651)
 
 DEPENDENCIES:
-- Upgrade `github.com/exoscale/egoscale/v3` to v3.1.63.
-- `exoscale_private_network` resource and data source: deprecated in favor of VPC (`exoscale_vpc`, `exoscale_vpc_subnet`). Using them now shows a deprecation warning.
+- Upgrade `github.com/exoscale/egoscale/v3` to v3.1.63. (#639)
 - Build with Go 1.27.4 (#652)
 
 
@@ -43,7 +43,6 @@ BUG FIXES:
 
 DEPENDENCIES:
 
-- Upgrade `github.com/exoscale/egoscale` to v3.1.63 (#639)
 - Upgrade `github.com/andybalholm/brotli` to v1.2.7 (#644)
 
 
