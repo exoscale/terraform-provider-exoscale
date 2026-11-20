@@ -189,7 +189,7 @@ func TestAccResourceSKSNodepool(t *testing.T) {
 			},
 			{
 				// Detach from the VPC
-				Config: parseSKSConfig(t, "./testdata/013.sksnp_update_kubelet_gc.tf.tmpl", td),
+				Config: parseSKSConfig(t, "./testdata/026.sksnp_update_vpc_detach.tf.tmpl", td),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckResourceSKSNodepoolExists(r, &sksNodepool),
 					func(s *terraform.State) error {
