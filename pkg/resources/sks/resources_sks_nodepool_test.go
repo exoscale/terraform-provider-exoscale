@@ -165,6 +165,43 @@ func TestAccResourceSKSNodepool(t *testing.T) {
 					resource.TestCheckResourceAttr(r, "kubelet_image_gc.low_threshold", "75"),
 				),
 			},
+			{
+				// Attach to a VPC
+				Config: parseSKSConfig(t, "./testdata/025.sksnp_update_vpc.tf.tmpl", td),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckResourceSKSNodepoolExists(r, &sksNodepool),
+					func(s *terraform.State) error {
+						a := assert.New(t)
+
+						if a.NotNil(sksNodepool.IPForwarding) {
+							a.True(*sksNodepool.IPForwarding)
+						}
+						if a.NotNil(sksNodepool.Vpc) {
+							a.Len(sksNodepool.Vpc.Subnets, 1)
+						}
+						return nil
+					},
+					resource.TestCheckResourceAttr(r, "ip_forwarding", "true"),
+					resource.TestCheckResourceAttrPair(r, "vpc.id", "exoscale_vpc.test", "id"),
+					resource.TestCheckResourceAttr(r, "vpc.subnet_ids.#", "1"),
+					resource.TestCheckTypeSetElemAttrPair(r, "vpc.subnet_ids.*", "exoscale_vpc_subnet.test", "id"),
+				),
+			},
+			{
+				// Detach from the VPC
+				Config: parseSKSConfig(t, "./testdata/026.sksnp_update_vpc_detach.tf.tmpl", td),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckResourceSKSNodepoolExists(r, &sksNodepool),
+					func(s *terraform.State) error {
+						a := assert.New(t)
+
+						a.Nil(sksNodepool.Vpc)
+						return nil
+					},
+					resource.TestCheckResourceAttr(r, "ip_forwarding", "false"),
+					resource.TestCheckNoResourceAttr(r, "vpc"),
+				),
+			},
 		},
 	})
 }
