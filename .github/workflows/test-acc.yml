@@ -42,7 +42,7 @@ jobs:
           go-version-file: 'go.mod'
           cache: true
           cache-dependency-path: 'go.sum'
-      - uses: ./go.mk/.github/actions/pre-check
+      - run: make pre-check
       - name: Run acceptance tests
         run: |
           if [ -n "${EXTRA_ARGS}" ]; then
