@@ -12,6 +12,7 @@ IMPROVEMENTS:
 
 - `exoscale_sks_cluster` `oidc`: updating a cluster resource no longer resets the OIDC field #649
 - Document OpenTofu compatibility in README.md (#651)
+- `exoscale_compute_instance`: the empty values (`""`, `{}`, `[]`) that earlier versions stored for unset optional attributes are now normalised once, when the state is first loaded. A configuration that sets one of them explicitly (e.g. `reverse_dns = ""`, `labels = {}`) shows a one-time in-place update with no effect on the instance.
 
 DEPENDENCIES:
 - Upgrade `github.com/exoscale/egoscale/v3` to v3.1.63.
