@@ -4,16 +4,15 @@ import (
 	"context"
 	"crypto/md5" //nolint:gosec // used only to derive a stable synthetic data source ID, not for security purposes
 	"fmt"
-	"maps"
 	"sort"
 	"strings"
 
 	exoscale "github.com/exoscale/egoscale/v3"
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -39,37 +38,11 @@ func NewDataSourceList() datasource.DataSource {
 
 // DataSourceListModel defines the exoscale_instance_pool_list data source data model.
 type DataSourceListModel struct {
-	ID    types.String              `tfsdk:"id"`
-	Zone  types.String              `tfsdk:"zone"`
-	Pools []DataSourceListPoolModel `tfsdk:"pools"`
+	ID    types.String `tfsdk:"id"`
+	Zone  types.String `tfsdk:"zone"`
+	Pools []PoolModel  `tfsdk:"pools"`
 
 	Timeouts timeouts.Value `tfsdk:"timeouts"`
-}
-
-// DataSourceListPoolModel maps the elements of the `pools` attribute.
-type DataSourceListPoolModel struct {
-	ID                   types.String `tfsdk:"id"`
-	AffinityGroupIDs     types.Set    `tfsdk:"affinity_group_ids"`
-	AntiAffinityGroupIDs types.Set    `tfsdk:"anti_affinity_group_ids"`
-	DeployTargetID       types.String `tfsdk:"deploy_target_id"`
-	Description          types.String `tfsdk:"description"`
-	DiskSize             types.Int64  `tfsdk:"disk_size"`
-	ElasticIPIDs         types.Set    `tfsdk:"elastic_ip_ids"`
-	InstancePrefix       types.String `tfsdk:"instance_prefix"`
-	InstanceType         types.String `tfsdk:"instance_type"`
-	Instances            types.Set    `tfsdk:"instances"`
-	IPv6                 types.Bool   `tfsdk:"ipv6"`
-	KeyPair              types.String `tfsdk:"key_pair"`
-	Labels               types.Map    `tfsdk:"labels"`
-	MinAvailable         types.Int64  `tfsdk:"min_available"`
-	Name                 types.String `tfsdk:"name"`
-	NetworkIDs           types.Set    `tfsdk:"network_ids"`
-	SecurityGroupIDs     types.Set    `tfsdk:"security_group_ids"`
-	Size                 types.Int64  `tfsdk:"size"`
-	State                types.String `tfsdk:"state"`
-	TemplateID           types.String `tfsdk:"template_id"`
-	UserData             types.String `tfsdk:"user_data"`
-	Zone                 types.String `tfsdk:"zone"`
 }
 
 func (d *DataSourceList) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -292,7 +265,7 @@ func (d *DataSourceList) Read(ctx context.Context, req datasource.ReadRequest, r
 
 	ids := make([]string, 0, len(list.InstancePools))
 	instanceTypes := map[exoscale.UUID]string{}
-	data.Pools = make([]DataSourceListPoolModel, 0, len(list.InstancePools))
+	data.Pools = make([]PoolModel, 0, len(list.InstancePools))
 
 	for _, item := range list.InstancePools {
 		// we use ID to generate a resource ID, we cannot list instance pools without ID.
@@ -322,10 +295,33 @@ func (d *DataSourceList) Read(ctx context.Context, req datasource.ReadRequest, r
 			instanceType = instanceTypes[pool.InstanceType.ID]
 		}
 
-		model, diags := dataSourceListPool(ctx, client, pool, zone, instanceType)
+		model, diags := poolModel(ctx, client, pool, zone, instanceType)
 		resp.Diagnostics.Append(diags...)
 		if resp.Diagnostics.HasError() {
 			return
+		}
+
+		// Unlike exoscale_instance_pool, the elements of the list have always
+		// reported the values a pool does not have as empty rather than null.
+		for _, v := range []*types.String{&model.DeployTargetID, &model.KeyPair, &model.TemplateID, &model.UserData} {
+			if v.IsNull() {
+				*v = types.StringValue("")
+			}
+		}
+		for _, v := range []*types.Set{
+			&model.AffinityGroupIDs,
+			&model.AntiAffinityGroupIDs,
+			&model.ElasticIPIDs,
+			&model.Instances,
+			&model.NetworkIDs,
+			&model.SecurityGroupIDs,
+		} {
+			if v.IsNull() {
+				*v = types.SetValueMust(v.ElementType(ctx), []attr.Value{})
+			}
+		}
+		if model.Labels.IsNull() {
+			model.Labels = types.MapValueMust(types.StringType, map[string]attr.Value{})
 		}
 
 		data.Pools = append(data.Pools, model)
@@ -342,86 +338,4 @@ func (d *DataSourceList) Read(ctx context.Context, req datasource.ReadRequest, r
 	tflog.Trace(ctx, "data source read", map[string]any{
 		"id": data.ID.ValueString(),
 	})
-}
-
-// dataSourceListPool builds an element of `pools` from the API. Unlike
-// exoscale_instance_pool, the elements of the list have always reported the
-// values a pool does not have as empty strings, sets and maps rather than null.
-func dataSourceListPool(
-	ctx context.Context,
-	client *exoscale.Client,
-	pool *exoscale.InstancePool,
-	zone string,
-	instanceType string,
-) (DataSourceListPoolModel, diag.Diagnostics) {
-	var diags diag.Diagnostics
-
-	model := DataSourceListPoolModel{
-		ID:             types.StringValue(pool.ID.String()),
-		Name:           types.StringValue(pool.Name),
-		Description:    types.StringValue(pool.Description),
-		DiskSize:       types.Int64Value(pool.DiskSize),
-		InstancePrefix: types.StringValue(pool.InstancePrefix),
-		InstanceType:   types.StringValue(instanceType),
-		IPv6:           types.BoolValue(utils.DefaultBool(pool.Ipv6Enabled, false)),
-		MinAvailable:   types.Int64Value(pool.MinAvailable),
-		Size:           types.Int64Value(pool.Size),
-		State:          types.StringValue(string(pool.State)),
-		Zone:           types.StringValue(zone),
-	}
-
-	model.DeployTargetID = types.StringValue("")
-	if pool.DeployTarget != nil {
-		model.DeployTargetID = types.StringValue(pool.DeployTarget.ID.String())
-	}
-
-	model.KeyPair = types.StringValue("")
-	if pool.SSHKey != nil {
-		model.KeyPair = types.StringValue(pool.SSHKey.Name)
-	}
-
-	model.TemplateID = types.StringValue("")
-	if pool.Template != nil {
-		model.TemplateID = types.StringValue(pool.Template.ID.String())
-	}
-
-	labels := map[string]string{}
-	maps.Copy(labels, pool.Labels)
-
-	var dg diag.Diagnostics
-	model.Labels, dg = types.MapValueFrom(ctx, types.StringType, labels)
-	diags.Append(dg...)
-
-	model.AntiAffinityGroupIDs, dg = types.SetValueFrom(ctx, types.StringType, utils.AntiAffiniGroupsToAntiAffinityGroupIDs(pool.AntiAffinityGroups))
-	diags.Append(dg...)
-	model.AffinityGroupIDs = model.AntiAffinityGroupIDs
-
-	model.ElasticIPIDs, dg = types.SetValueFrom(ctx, types.StringType, utils.ElasticIPsToElasticIPIDs(pool.ElasticIPS))
-	diags.Append(dg...)
-
-	model.NetworkIDs, dg = types.SetValueFrom(ctx, types.StringType, utils.PrivateNetworksToPrivateNetworkIDs(pool.PrivateNetworks))
-	diags.Append(dg...)
-
-	model.SecurityGroupIDs, dg = types.SetValueFrom(ctx, types.StringType, utils.SecurityGroupsToSecurityGroupIDs(pool.SecurityGroups))
-	diags.Append(dg...)
-
-	if diags.HasError() {
-		return model, diags
-	}
-
-	model.UserData = types.StringValue("")
-	if pool.UserData != "" {
-		userData, err := utils.DecodeUserData(pool.UserData)
-		if err != nil {
-			diags.AddError("unable to decode user data", err.Error())
-			return model, diags
-		}
-		model.UserData = types.StringValue(userData)
-	}
-
-	instances, _, dg := poolInstances(ctx, client, pool)
-	diags.Append(dg...)
-	model.Instances = instances
-
-	return model, diags
 }
