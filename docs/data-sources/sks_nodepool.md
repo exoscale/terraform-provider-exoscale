@@ -43,6 +43,7 @@ Corresponding resource: [exoscale_sks_nodepool](../resources/sks_nodepool.md).
 - `kubelet_image_gc` (Attributes) Configuration for this nodepool's kubelet image garbage collector. (see [below for nested schema](#nestedatt--kubelet_image_gc))
 - `kubelet_max_pods` (Number) The maximum number of pods per node.
 - `labels` (Map of String) A map of key/value labels.
+- `nvidia_dra_driver` (Boolean) Whether the managed GPUs are exposed with the NVIDIA [Dynamic Resource Allocation (DRA)](https://kubernetes.io/docs/concepts/scheduling-eviction/dynamic-resource-allocation/) driver instead of the NVIDIA device plugin.
 - `nvidia_mig_profile` (String) The NVIDIA [Multi-Instance GPU (MIG)](https://docs.nvidia.com/datacenter/tesla/mig-user-guide/) profile enabled on the managed GPUs.
 - `private_network_ids` (Set of String) A list of [exoscale_private_network](../resources/private_network.md) (IDs) attached to the managed instances. Private Networks are deprecated in favor of [VPC](https://community.exoscale.com/product/networking/vpc/).
 - `security_group_ids` (Set of String) A list of [exoscale_security_group](../resources/security_group.md) (IDs) attached to the managed instances.
