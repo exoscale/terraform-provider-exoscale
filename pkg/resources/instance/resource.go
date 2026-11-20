@@ -691,10 +691,6 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 	resp.Diagnostics.Append(diags...)
 	sshKeys, diags := stringSetValues(ctx, plan.SSHKeys)
 	resp.Diagnostics.Append(diags...)
-	elasticIPIDs, diags := stringSetValues(ctx, plan.ElasticIPIDs)
-	resp.Diagnostics.Append(diags...)
-	blockStorageVolumeIDs, diags := stringSetValues(ctx, plan.BlockStorageVolumeIDs)
-	resp.Diagnostics.Append(diags...)
 	nifs, diags := networkInterfaces(ctx, plan.NetworkInterface)
 	resp.Diagnostics.Append(diags...)
 	request.Vpc, diags = createInstanceRequestVpc(ctx, &plan)
@@ -767,11 +763,9 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 		}
 	}
 
-	for _, elasticIPID := range elasticIPIDs {
-		if err := attachElasticIP(ctx, client, id, elasticIPID); err != nil {
-			resp.Diagnostics.AddError("unable to attach Elastic IP "+elasticIPID, err.Error())
-			return
-		}
+	resp.Diagnostics.Append(elasticIPs.update(ctx, client, id, types.SetNull(types.StringType), plan.ElasticIPIDs)...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
 	for _, nif := range nifs {
@@ -781,11 +775,9 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 		}
 	}
 
-	for _, volumeID := range blockStorageVolumeIDs {
-		if err := attachBlockStorageVolume(ctx, client, id, volumeID); err != nil {
-			resp.Diagnostics.AddError("unable to attach block storage volume "+volumeID, err.Error())
-			return
-		}
+	resp.Diagnostics.Append(blockStorageVolumes.update(ctx, client, id, types.SetNull(types.StringType), plan.BlockStorageVolumeIDs)...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
 	if v := plan.ReverseDNS.ValueString(); v != "" {
@@ -980,54 +972,14 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 		}
 	}
 
-	// Attach/detach Block Storage Volumes
-	if !plan.BlockStorageVolumeIDs.Equal(state.BlockStorageVolumeIDs) {
-		added, removed, diags := stringSetChange(ctx, state.BlockStorageVolumeIDs, plan.BlockStorageVolumeIDs)
-		resp.Diagnostics.Append(diags...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-
-		for _, volumeID := range added {
-			if err := attachBlockStorageVolume(ctx, client, id, volumeID); err != nil {
-				resp.Diagnostics.AddError("unable to attach block storage volume "+volumeID, err.Error())
-				return
-			}
-		}
-
-		for _, volumeID := range removed {
-			if err := detachBlockStorageVolume(ctx, client, volumeID); err != nil {
-				resp.Diagnostics.AddError("unable to detach block storage volume "+volumeID, err.Error())
-				return
-			}
-		}
+	resp.Diagnostics.Append(blockStorageVolumes.update(ctx, client, id, state.BlockStorageVolumeIDs, plan.BlockStorageVolumeIDs)...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
-	if !plan.ElasticIPIDs.Equal(state.ElasticIPIDs) {
-		added, removed, diags := stringSetChange(ctx, state.ElasticIPIDs, plan.ElasticIPIDs)
-		resp.Diagnostics.Append(diags...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-
-		for _, elasticIPID := range added {
-			if err := attachElasticIP(ctx, client, id, elasticIPID); err != nil {
-				resp.Diagnostics.AddError("unable to attach Elastic IP "+elasticIPID, err.Error())
-				return
-			}
-		}
-
-		for _, elasticIPID := range removed {
-			err := utils.Wait(ctx, client)(client.DetachInstanceFromElasticIP(
-				ctx,
-				exoscale.UUID(elasticIPID),
-				exoscale.DetachInstanceFromElasticIPRequest{Instance: &exoscale.InstanceTarget{ID: id}},
-			))
-			if err != nil && !errors.Is(err, exoscale.ErrNotFound) {
-				resp.Diagnostics.AddError("unable to detach Elastic IP "+elasticIPID, err.Error())
-				return
-			}
-		}
+	resp.Diagnostics.Append(elasticIPs.update(ctx, client, id, state.ElasticIPIDs, plan.ElasticIPIDs)...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
 	if !plan.NetworkInterface.Equal(state.NetworkInterface) {
@@ -1047,11 +999,7 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 				continue
 			}
 
-			err := utils.Wait(ctx, client)(client.DetachInstanceFromPrivateNetwork(
-				ctx,
-				exoscale.UUID(nif.NetworkID.ValueString()),
-				exoscale.DetachInstanceFromPrivateNetworkRequest{Instance: &exoscale.Instance{ID: id}},
-			))
+			err := detachPrivateNetwork(ctx, client, id, nif.NetworkID.ValueString())
 			if err != nil && !errors.Is(err, exoscale.ErrNotFound) {
 				resp.Diagnostics.AddError("unable to detach Private Network "+nif.NetworkID.ValueString(), err.Error())
 				return
@@ -1077,36 +1025,9 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 		}
 	}
 
-	if !plan.SecurityGroupIDs.Equal(state.SecurityGroupIDs) {
-		added, removed, diags := stringSetChange(ctx, state.SecurityGroupIDs, plan.SecurityGroupIDs)
-		resp.Diagnostics.Append(diags...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-
-		for _, securityGroupID := range added {
-			err := utils.Wait(ctx, client)(client.AttachInstanceToSecurityGroup(
-				ctx,
-				exoscale.UUID(securityGroupID),
-				exoscale.AttachInstanceToSecurityGroupRequest{Instance: &exoscale.Instance{ID: id}},
-			))
-			if err != nil {
-				resp.Diagnostics.AddError("unable to attach Security Group "+securityGroupID, err.Error())
-				return
-			}
-		}
-
-		for _, securityGroupID := range removed {
-			err := utils.Wait(ctx, client)(client.DetachInstanceFromSecurityGroup(
-				ctx,
-				exoscale.UUID(securityGroupID),
-				exoscale.DetachInstanceFromSecurityGroupRequest{Instance: &exoscale.Instance{ID: id}},
-			))
-			if err != nil && !errors.Is(err, exoscale.ErrNotFound) {
-				resp.Diagnostics.AddError("unable to detach Security Group "+securityGroupID, err.Error())
-				return
-			}
-		}
+	resp.Diagnostics.Append(securityGroups.update(ctx, client, id, state.SecurityGroupIDs, plan.SecurityGroupIDs)...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
 	var (
@@ -1275,76 +1196,6 @@ func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp 
 
 func (r *Resource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	utils.ImportStatePassthroughZonedID(ctx, req, resp)
-}
-
-// stringSetChange returns the values added to and removed from a set of
-// strings between the state and the plan.
-func stringSetChange(ctx context.Context, state, plan types.Set) (added, removed []string, diags diag.Diagnostics) {
-	old, dg := stringSetValues(ctx, state)
-	diags.Append(dg...)
-	cur, dg := stringSetValues(ctx, plan)
-	diags.Append(dg...)
-
-	added, removed = stringSetDiff(old, cur)
-
-	return added, removed, diags
-}
-
-func attachElasticIP(ctx context.Context, client *exoscale.Client, id exoscale.UUID, elasticIPID string) error {
-	return utils.Wait(ctx, client)(client.AttachInstanceToElasticIP(
-		ctx,
-		exoscale.UUID(elasticIPID),
-		exoscale.AttachInstanceToElasticIPRequest{Instance: &exoscale.InstanceTarget{ID: id}},
-	))
-}
-
-func attachPrivateNetwork(ctx context.Context, client *exoscale.Client, id exoscale.UUID, nif NetworkInterfaceModel) error {
-	return utils.Wait(ctx, client)(client.AttachInstanceToPrivateNetwork(
-		ctx,
-		exoscale.UUID(nif.NetworkID.ValueString()),
-		exoscale.AttachInstanceToPrivateNetworkRequest{
-			Instance: &exoscale.AttachInstanceToPrivateNetworkRequestInstance{ID: id},
-			// The IP address is unknown or null unless the configuration sets one.
-			IP: net.ParseIP(nif.IPAddress.ValueString()),
-		},
-	))
-}
-
-func attachBlockStorageVolume(ctx context.Context, client *exoscale.Client, id exoscale.UUID, volumeID string) error {
-	volume, err := exoscale.ParseUUID(volumeID)
-	if err != nil {
-		return fmt.Errorf("unable to parse block storage volume ID: %w", err)
-	}
-
-	return utils.Wait(ctx, client)(client.AttachBlockStorageVolumeToInstance(
-		ctx,
-		volume,
-		exoscale.AttachBlockStorageVolumeToInstanceRequest{Instance: &exoscale.InstanceTarget{ID: id}},
-	))
-}
-
-func detachBlockStorageVolume(ctx context.Context, client *exoscale.Client, volumeID string) error {
-	volume, err := exoscale.ParseUUID(volumeID)
-	if err != nil {
-		return fmt.Errorf("unable to parse block storage volume ID: %w", err)
-	}
-
-	err = utils.Wait(ctx, client)(client.DetachBlockStorageVolume(ctx, volume))
-	if err != nil {
-		// The volume was likely already deleted as part of its regular
-		// deletion process.
-		if errors.Is(err, exoscale.ErrNotFound) {
-			return nil
-		}
-
-		// Ideally we would have a custom error defined in OpenAPI spec & egoscale.
-		// For now we just check the error text.
-		if strings.HasSuffix(err.Error(), "Volume not attached") {
-			return nil
-		}
-	}
-
-	return err
 }
 
 // nullUnknown returns the model with the values still unknown set to null, so
