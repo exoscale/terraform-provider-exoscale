@@ -46,6 +46,7 @@ type DataSourceNodepoolModel struct {
 	InstancePoolID       types.String `tfsdk:"instance_pool_id"`
 	InstancePrefix       types.String `tfsdk:"instance_prefix"`
 	InstanceType         types.String `tfsdk:"instance_type"`
+	IPForwarding         types.Bool   `tfsdk:"ip_forwarding"`
 	KubeletMaxPods       types.Int64  `tfsdk:"kubelet_max_pods"`
 	Labels               types.Map    `tfsdk:"labels"`
 	NvidiaDraDriver      types.Bool   `tfsdk:"nvidia_dra_driver"`
@@ -61,6 +62,7 @@ type DataSourceNodepoolModel struct {
 	Version              types.String `tfsdk:"version"`
 
 	KubeletImageGC types.Object `tfsdk:"kubelet_image_gc"`
+	VPC            types.Object `tfsdk:"vpc"`
 
 	Timeouts timeouts.Value `tfsdk:"timeouts"`
 }
@@ -150,6 +152,11 @@ func (d *DataSourceNodepool) Schema(ctx context.Context, req datasource.SchemaRe
 				MarkdownDescription: "The managed compute instances type (`<family>.<size>`, e.g. `standard.medium`).",
 				Computed:            true,
 			},
+			"ip_forwarding": schema.BoolAttribute{
+				Description:         "Whether the managed instances may act as routers in their VPC.",
+				MarkdownDescription: "Whether the managed instances may act as routers in their VPC.",
+				Computed:            true,
+			},
 			"kubelet_max_pods": schema.Int64Attribute{
 				Description:         "The maximum number of pods per node.",
 				MarkdownDescription: "The maximum number of pods per node.",
@@ -218,6 +225,24 @@ func (d *DataSourceNodepool) Schema(ctx context.Context, req datasource.SchemaRe
 				Description:         "The managed instances version.",
 				MarkdownDescription: "The managed instances version.",
 				Computed:            true,
+			},
+			"vpc": schema.SingleNestedAttribute{
+				Description:         "The VPC the managed instances are attached to.",
+				MarkdownDescription: "The [VPC](https://community.exoscale.com/product/networking/vpc/) the managed instances are attached to.",
+				Computed:            true,
+				Attributes: map[string]schema.Attribute{
+					"id": schema.StringAttribute{
+						Description:         "The exoscale_vpc (ID) the subnets belong to.",
+						MarkdownDescription: "The [exoscale_vpc](../resources/vpc.md) (ID) the subnets belong to.",
+						Computed:            true,
+					},
+					"subnet_ids": schema.SetAttribute{
+						Description:         "A list of exoscale_vpc_subnet (IDs) the managed instances are attached to.",
+						MarkdownDescription: "A list of [exoscale_vpc_subnet](../resources/vpc_subnet.md) (IDs) the managed instances are attached to.",
+						ElementType:         types.StringType,
+						Computed:            true,
+					},
+				},
 			},
 			"kubelet_image_gc": schema.SingleNestedAttribute{
 				Description:         "Configuration for this nodepool's kubelet image garbage collector.",
@@ -329,6 +354,7 @@ func (d *DataSourceNodepool) Read(ctx context.Context, req datasource.ReadReques
 	state.StorageLVM = types.BoolValue(in(nodepool.Addons, sksNodepoolAddonStorageLVM))
 	state.NvidiaMigProfile = optionalString(sksNodepoolMIGProfile(nodepool.NvidiaMigProfiles))
 	state.NvidiaDraDriver = types.BoolValue(nodepool.NvidiaDraDriver != nil && *nodepool.NvidiaDraDriver)
+	state.IPForwarding = types.BoolValue(nodepool.IPForwarding != nil && *nodepool.IPForwarding)
 
 	state.DeployTargetID = types.StringNull()
 	if nodepool.DeployTarget != nil {
@@ -400,6 +426,10 @@ func (d *DataSourceNodepool) Read(ctx context.Context, req datasource.ReadReques
 		resp.Diagnostics.Append(d...)
 		state.KubeletImageGC = obj
 	}
+
+	vpc, dg := sksNodepoolVPC(ctx, nodepool.Vpc)
+	resp.Diagnostics.Append(dg...)
+	state.VPC = vpc
 
 	if resp.Diagnostics.HasError() {
 		return

@@ -54,6 +54,7 @@ Read-Only:
 - `instance_pool_id` (String) The underlying [exoscale_instance_pool](../resources/instance_pool.md) ID.
 - `instance_prefix` (String) The string used to prefix the managed instances name.
 - `instance_type` (String) The managed compute instances type (`<family>.<size>`, e.g. `standard.medium`).
+- `ip_forwarding` (Boolean) Whether the managed instances may act as routers in their VPC.
 - `ipv6` (Boolean) Whether IPv6 is enabled for the nodepool nodes.
 - `kubelet_image_gc` (Attributes) Configuration for this nodepool's kubelet image garbage collector. (see [below for nested schema](#nestedatt--nodepools--kubelet_image_gc))
 - `kubelet_max_pods` (Number) The maximum number of pods per node.
@@ -69,6 +70,7 @@ Read-Only:
 - `taints` (Map of String) A map of key/value Kubernetes [taints](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/) ('<value>:<effect>").
 - `template_id` (String) The managed instances template ID.
 - `version` (String) The managed instances version.
+- `vpc` (Attributes) The [VPC](https://community.exoscale.com/product/networking/vpc/) the managed instances are attached to. (see [below for nested schema](#nestedatt--nodepools--vpc))
 
 <a id="nestedatt--nodepools--kubelet_image_gc"></a>
 ### Nested Schema for `nodepools.kubelet_image_gc`
@@ -78,5 +80,14 @@ Read-Only:
 - `high_threshold` (Number) The percent of disk usage after which image garbage collection is always run
 - `low_threshold` (Number) The percent of disk usage before which image garbage collection is never run
 - `min_age` (String) The minimum age for an unused image before it is garbage collected (k8s duration format, eg. 1h)
+
+
+<a id="nestedatt--nodepools--vpc"></a>
+### Nested Schema for `nodepools.vpc`
+
+Read-Only:
+
+- `id` (String) The [exoscale_vpc](../resources/vpc.md) (ID) the subnets belong to.
+- `subnet_ids` (Set of String) A list of [exoscale_vpc_subnet](../resources/vpc_subnet.md) (IDs) the managed instances are attached to.
 
 
