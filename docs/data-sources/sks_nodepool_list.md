@@ -68,6 +68,7 @@ Read-Only:
 - `storage_lvm` (Boolean) Whether nodes were created with non-standard partitioning for persistent storage.
 - `taints` (Map of String) A map of key/value Kubernetes [taints](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/) ('<value>:<effect>").
 - `template_id` (String) The managed instances template ID.
+- `template_selection` (String) How the managed instances template is selected: `pinned` or `auto` (the latest template of the nodepool Kubernetes version).
 - `version` (String) The managed instances version.
 
 <a id="nestedatt--nodepools--kubelet_image_gc"></a>

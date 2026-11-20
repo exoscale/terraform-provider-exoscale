@@ -90,6 +90,7 @@ func TestAccResourceSKSNodepool(t *testing.T) {
 					resource.TestCheckResourceAttr(r, "storage_lvm", "true"),
 					resource.TestCheckResourceAttr(r, "taints.test", "test:NoSchedule"),
 					resource.TestMatchResourceAttr(r, "template_id", testUUIDRegex),
+					resource.TestCheckResourceAttr(r, "template_selection", "auto"),
 					resource.TestCheckResourceAttrSet(r, "version"),
 				),
 			},
@@ -163,6 +164,32 @@ func TestAccResourceSKSNodepool(t *testing.T) {
 					resource.TestCheckResourceAttr(r, "kubelet_image_gc.min_age", "5m"),
 					resource.TestCheckResourceAttr(r, "kubelet_image_gc.high_threshold", "85"),
 					resource.TestCheckResourceAttr(r, "kubelet_image_gc.low_threshold", "75"),
+				),
+			},
+			{
+				// Pin the template
+				Config: parseSKSConfig(t, "./testdata/023.sksnp_update_template_pinned.tf.tmpl", td),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckResourceSKSNodepoolExists(r, &sksNodepool),
+					func(s *terraform.State) error {
+						assert.Equal(t, egoscale.SKSNodepoolTemplateSelectionPinned, sksNodepool.TemplateSelection)
+						return nil
+					},
+					resource.TestCheckResourceAttrPair(r, "template_id", "data.exoscale_sks_nodepool_template.test", "id"),
+					resource.TestCheckResourceAttr(r, "template_selection", "pinned"),
+				),
+			},
+			{
+				// Unpin the template
+				Config: parseSKSConfig(t, "./testdata/013.sksnp_update_kubelet_gc.tf.tmpl", td),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckResourceSKSNodepoolExists(r, &sksNodepool),
+					func(s *terraform.State) error {
+						assert.Equal(t, egoscale.SKSNodepoolTemplateSelectionAuto, sksNodepool.TemplateSelection)
+						return nil
+					},
+					resource.TestMatchResourceAttr(r, "template_id", testUUIDRegex),
+					resource.TestCheckResourceAttr(r, "template_selection", "auto"),
 				),
 			},
 		},

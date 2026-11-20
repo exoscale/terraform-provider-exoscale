@@ -67,6 +67,7 @@ type DataSourceNodepoolListItemModel struct {
 	StorageLVM           types.Bool   `tfsdk:"storage_lvm"`
 	Taints               types.Map    `tfsdk:"taints"`
 	TemplateID           types.String `tfsdk:"template_id"`
+	TemplateSelection    types.String `tfsdk:"template_selection"`
 	Version              types.String `tfsdk:"version"`
 
 	KubeletImageGC types.Object `tfsdk:"kubelet_image_gc"`
@@ -220,6 +221,11 @@ func (d *DataSourceNodepoolList) Schema(ctx context.Context, req datasource.Sche
 							MarkdownDescription: "The managed instances template ID.",
 							Computed:            true,
 						},
+						"template_selection": schema.StringAttribute{
+							Description:         "How the managed instances template is selected: 'pinned' or 'auto' (the latest template of the nodepool Kubernetes version).",
+							MarkdownDescription: "How the managed instances template is selected: `pinned` or `auto` (the latest template of the nodepool Kubernetes version).",
+							Computed:            true,
+						},
 						"version": schema.StringAttribute{
 							Description:         "The managed instances version.",
 							MarkdownDescription: "The managed instances version.",
@@ -330,20 +336,21 @@ func (d *DataSourceNodepoolList) Read(ctx context.Context, req datasource.ReadRe
 			ids = append(ids, nodepool.ID.String())
 
 			item := DataSourceNodepoolListItemModel{
-				ID:               types.StringValue(nodepool.ID.String()),
-				ClusterID:        types.StringValue(cluster.ID.String()),
-				Name:             types.StringValue(nodepool.Name),
-				CreatedAt:        types.StringValue(nodepool.CreatedAT.String()),
-				Description:      types.StringValue(nodepool.Description),
-				DiskSize:         types.Int64Value(nodepool.DiskSize),
-				InstancePrefix:   types.StringValue(nodepool.InstancePrefix),
-				Size:             types.Int64Value(nodepool.Size),
-				State:            types.StringValue(string(nodepool.State)),
-				Version:          types.StringValue(nodepool.Version),
-				IPv6:             types.BoolValue(nodepool.PublicIPAssignment == exoscale.SKSNodepoolPublicIPAssignmentDual),
-				StorageLVM:       types.BoolValue(in(nodepool.Addons, sksNodepoolAddonStorageLVM)),
-				NvidiaMigProfile: optionalString(sksNodepoolMIGProfile(nodepool.NvidiaMigProfiles)),
-				NvidiaDraDriver:  types.BoolValue(nodepool.NvidiaDraDriver != nil && *nodepool.NvidiaDraDriver),
+				ID:                types.StringValue(nodepool.ID.String()),
+				ClusterID:         types.StringValue(cluster.ID.String()),
+				Name:              types.StringValue(nodepool.Name),
+				CreatedAt:         types.StringValue(nodepool.CreatedAT.String()),
+				Description:       types.StringValue(nodepool.Description),
+				DiskSize:          types.Int64Value(nodepool.DiskSize),
+				InstancePrefix:    types.StringValue(nodepool.InstancePrefix),
+				Size:              types.Int64Value(nodepool.Size),
+				State:             types.StringValue(string(nodepool.State)),
+				Version:           types.StringValue(nodepool.Version),
+				IPv6:              types.BoolValue(nodepool.PublicIPAssignment == exoscale.SKSNodepoolPublicIPAssignmentDual),
+				StorageLVM:        types.BoolValue(in(nodepool.Addons, sksNodepoolAddonStorageLVM)),
+				NvidiaMigProfile:  optionalString(sksNodepoolMIGProfile(nodepool.NvidiaMigProfiles)),
+				NvidiaDraDriver:   types.BoolValue(nodepool.NvidiaDraDriver != nil && *nodepool.NvidiaDraDriver),
+				TemplateSelection: types.StringValue(string(nodepool.TemplateSelection)),
 			}
 
 			item.DeployTargetID = types.StringNull()

@@ -9,10 +9,13 @@ FEATURES:
 - `exoscale_compute_instance`: new `ip_forwarding` parameter, to let an instance route VPC traffic (#638)
 - `exoscale_nlb_service`: new `label_selector` attribute to forward traffic to the instances carrying all the listed key/value labels. `instance_pool_id` becomes optional, as at least one of the two is required. (#639)
 - `exoscale_sks_nodepool` resource and data sources: new `nvidia_dra_driver` attribute, to expose the GPUs with the NVIDIA DRA driver instead of the NVIDIA device plugin.
+- `exoscale_sks_nodepool`: `template_id` can be set to pin the node pool on a template; new read-only `template_selection` attribute (`pinned` or `auto`), also in the data sources.
+- New `exoscale_sks_nodepool_template` and `exoscale_sks_nodepool_template_list` data sources.
 
 IMPROVEMENTS:
 
 - `exoscale_sks_cluster` `oidc`: updating a cluster resource no longer resets the OIDC field (#649)
+- `exoscale_sks_nodepool`: updating a node pool no longer resets its CPU manager configuration.
 - Document OpenTofu compatibility in README.md (#651)
 
 DEPENDENCIES:

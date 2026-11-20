@@ -1,0 +1,37 @@
+locals {
+  zone = "{{ .Zone }}"
+}
+
+resource "exoscale_sks_cluster" "test" {
+  zone = local.zone
+  name = "terraform-provider-test-{{ .ID }}"
+
+  timeouts {
+    delete = "10m"
+  }
+}
+
+data "exoscale_sks_nodepool_template" "test" {
+  zone         = local.zone
+  kube_version = exoscale_sks_cluster.test.version
+}
+
+data "exoscale_sks_nodepool_template_list" "test" {
+  zone         = local.zone
+  kube_version = exoscale_sks_cluster.test.version
+  variant      = "standard"
+}
+
+resource "exoscale_sks_nodepool" "test" {
+  zone          = local.zone
+  cluster_id    = exoscale_sks_cluster.test.id
+  name          = "terraform-provider-test-{{ .ID }}"
+  instance_type = "standard.small"
+  disk_size     = 20
+  size          = 1
+  template_id   = data.exoscale_sks_nodepool_template.test.id
+
+  timeouts {
+    delete = "10m"
+  }
+}

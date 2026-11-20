@@ -58,6 +58,7 @@ type DataSourceNodepoolModel struct {
 	StorageLVM           types.Bool   `tfsdk:"storage_lvm"`
 	Taints               types.Map    `tfsdk:"taints"`
 	TemplateID           types.String `tfsdk:"template_id"`
+	TemplateSelection    types.String `tfsdk:"template_selection"`
 	Version              types.String `tfsdk:"version"`
 
 	KubeletImageGC types.Object `tfsdk:"kubelet_image_gc"`
@@ -214,6 +215,11 @@ func (d *DataSourceNodepool) Schema(ctx context.Context, req datasource.SchemaRe
 				MarkdownDescription: "The managed instances template ID.",
 				Computed:            true,
 			},
+			"template_selection": schema.StringAttribute{
+				Description:         "How the managed instances template is selected: 'pinned' or 'auto' (the latest template of the nodepool Kubernetes version).",
+				MarkdownDescription: "How the managed instances template is selected: `pinned` or `auto` (the latest template of the nodepool Kubernetes version).",
+				Computed:            true,
+			},
 			"version": schema.StringAttribute{
 				Description:         "The managed instances version.",
 				MarkdownDescription: "The managed instances version.",
@@ -329,6 +335,7 @@ func (d *DataSourceNodepool) Read(ctx context.Context, req datasource.ReadReques
 	state.StorageLVM = types.BoolValue(in(nodepool.Addons, sksNodepoolAddonStorageLVM))
 	state.NvidiaMigProfile = optionalString(sksNodepoolMIGProfile(nodepool.NvidiaMigProfiles))
 	state.NvidiaDraDriver = types.BoolValue(nodepool.NvidiaDraDriver != nil && *nodepool.NvidiaDraDriver)
+	state.TemplateSelection = types.StringValue(string(nodepool.TemplateSelection))
 
 	state.DeployTargetID = types.StringNull()
 	if nodepool.DeployTarget != nil {
