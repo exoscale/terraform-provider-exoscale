@@ -12,6 +12,7 @@ import (
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
 	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/block_storage"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/validators"
 
@@ -1329,22 +1330,7 @@ func detachBlockStorageVolume(ctx context.Context, client *exoscale.Client, volu
 		return fmt.Errorf("unable to parse block storage volume ID: %w", err)
 	}
 
-	err = utils.Wait(ctx, client)(client.DetachBlockStorageVolume(ctx, volume))
-	if err != nil {
-		// The volume was likely already deleted as part of its regular
-		// deletion process.
-		if errors.Is(err, exoscale.ErrNotFound) {
-			return nil
-		}
-
-		// Ideally we would have a custom error defined in OpenAPI spec & egoscale.
-		// For now we just check the error text.
-		if strings.HasSuffix(err.Error(), "Volume not attached") {
-			return nil
-		}
-	}
-
-	return err
+	return block_storage.DetachVolume(ctx, client, volume)
 }
 
 // nullUnknown returns the model with the values still unknown set to null, so
