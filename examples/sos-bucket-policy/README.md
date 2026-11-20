@@ -16,5 +16,5 @@ my_bucket_uri = <<EOT
 https://sos-ch-gva-2.exo.io/my-bucket-6bed6744-c98e-aaba-1710-3ac09522348e
 
 EOT
-my_data_policy = "{\"default-service-strategy\":\"allow\",\"services\":{\"sos\":{\"type\":\"allow\"}}}"
+my_data_policy = "{\"default-service-strategy\":\"deny\",\"services\":{\"sos\":{\"type\":\"allow\"}}}"
 ```
