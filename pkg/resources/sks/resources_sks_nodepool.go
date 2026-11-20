@@ -94,6 +94,7 @@ type ResourceNodepoolModel struct {
 	StorageLVM           types.Bool   `tfsdk:"storage_lvm"`
 	Taints               types.Map    `tfsdk:"taints"`
 	TemplateID           types.String `tfsdk:"template_id"`
+	TemplateSelection    types.String `tfsdk:"template_selection"`
 	Version              types.String `tfsdk:"version"`
 
 	KubeletImageGC types.Object `tfsdk:"kubelet_image_gc"`
@@ -296,9 +297,21 @@ func (r *ResourceNodepool) Schema(ctx context.Context, req resource.SchemaReques
 				Optional:            true,
 			},
 			"template_id": schema.StringAttribute{
-				Description:         "The managed instances template ID.",
-				MarkdownDescription: "The managed instances template ID.",
+				Description:         "The managed instances template ID. Set it to pin the nodepool on this template (see the exoscale_sks_nodepool_template data source); otherwise the nodepool uses the latest template of its Kubernetes version. A new template only applies to the instances created afterwards.",
+				MarkdownDescription: "The managed instances template ID. Set it to pin the nodepool on this template (see the [exoscale_sks_nodepool_template](../data-sources/sks_nodepool_template.md) data source); otherwise the nodepool uses the latest template of its Kubernetes version. A new template only applies to the instances created afterwards.",
+				Optional:            true,
 				Computed:            true,
+				PlanModifiers: []planmodifier.String{
+					nodepoolTemplateIDUnpinned{},
+				},
+			},
+			"template_selection": schema.StringAttribute{
+				Description:         "How the managed instances template is selected: 'pinned' (set with 'template_id') or 'auto' (the latest template of the nodepool Kubernetes version).",
+				MarkdownDescription: "How the managed instances template is selected: `pinned` (set with `template_id`) or `auto` (the latest template of the nodepool Kubernetes version).",
+				Computed:            true,
+				PlanModifiers: []planmodifier.String{
+					nodepoolTemplateSelection{},
+				},
 			},
 			"version": schema.StringAttribute{
 				Description:         "The managed instances version.",
@@ -629,7 +642,13 @@ func (r *ResourceNodepool) Create(ctx context.Context, req resource.CreateReques
 	}
 	createReq.SecurityGroups = securityGroups
 
-	createReq.Size = plan.Size.ValueInt64()
+	// ponytail: CreateSKSNodepoolRequest can't set the template yet: a pinned
+	// nodepool is created empty, then pinned, then scaled, so that all its
+	// instances use the pinned template. Set it at creation once egoscale can.
+	pinned := plan.TemplateSelection.ValueString() == string(exoscale.SKSNodepoolTemplateSelectionPinned)
+	if !pinned {
+		createReq.Size = plan.Size.ValueInt64()
+	}
 
 	var addOns []string
 	if plan.StorageLVM.ValueBool() {
@@ -664,6 +683,28 @@ func (r *ResourceNodepool) Create(ctx context.Context, req resource.CreateReques
 	}
 
 	plan.ID = types.StringValue(op.Reference.ID.String())
+
+	if pinned {
+		nodepoolID := op.Reference.ID
+		if err := utils.Wait(ctx, client)(client.UpdateSKSNodepool(ctx, cluster.ID, nodepoolID, exoscale.UpdateSKSNodepoolRequest{
+			// The API resets the attributes sent as null.
+			DeployTarget:      createReq.DeployTarget,
+			NvidiaMigProfiles: createReq.NvidiaMigProfiles,
+			Template:          &exoscale.TemplateRef{ID: exoscale.UUID(plan.TemplateID.ValueString())},
+		})); err != nil {
+			resp.Diagnostics.AddError("API returned an error when pinning SKS nodepool template", err.Error())
+			return
+		}
+
+		if plan.Size.ValueInt64() > 0 {
+			if err := utils.Wait(ctx, client)(client.ScaleSKSNodepool(ctx, cluster.ID, nodepoolID, exoscale.ScaleSKSNodepoolRequest{
+				Size: plan.Size.ValueInt64(),
+			})); err != nil {
+				resp.Diagnostics.AddError("API returned an error when scaling SKS nodepool", err.Error())
+				return
+			}
+		}
+	}
 
 	tflog.Debug(ctx, "create finished successfully", map[string]any{"id": plan.ID.ValueString()})
 
@@ -782,6 +823,7 @@ func (r *ResourceNodepool) Update(ctx context.Context, req resource.UpdateReques
 
 	updateReq := exoscale.UpdateSKSNodepoolRequest{
 		AntiAffinityGroups: nodepool.AntiAffinityGroups,
+		CPUManagerConfig:   nodepool.CPUManagerConfig,
 		DeployTarget:       nodepool.DeployTarget,
 		Description:        nodepool.Description,
 		DiskSize:           nodepool.DiskSize,
@@ -881,6 +923,16 @@ func (r *ResourceNodepool) Update(ctx context.Context, req resource.UpdateReques
 
 	if !plan.NvidiaDraDriver.Equal(state.NvidiaDraDriver) {
 		updateReq.NvidiaDraDriver = plan.NvidiaDraDriver.ValueBoolPointer()
+		updated = true
+	}
+
+	pinned := plan.TemplateSelection.ValueString() == string(exoscale.SKSNodepoolTemplateSelectionPinned)
+	if !plan.TemplateSelection.Equal(state.TemplateSelection) || (pinned && !plan.TemplateID.Equal(state.TemplateID)) {
+		// An empty template reference unpins the template.
+		updateReq.Template = &exoscale.TemplateRef{}
+		if pinned {
+			updateReq.Template.ID = exoscale.UUID(plan.TemplateID.ValueString())
+		}
 		updated = true
 	}
 
@@ -1288,6 +1340,7 @@ func (r *ResourceNodepool) applyNodepool(
 	}
 
 	model.IPv6 = types.BoolValue(nodepool.PublicIPAssignment == exoscale.SKSNodepoolPublicIPAssignmentDual)
+	model.TemplateSelection = types.StringValue(string(nodepool.TemplateSelection))
 
 	return diags
 }

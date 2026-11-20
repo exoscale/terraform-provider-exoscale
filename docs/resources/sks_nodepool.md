@@ -28,6 +28,20 @@ resource "exoscale_sks_nodepool" "my_sks_nodepool" {
 }
 ```
 
+To pin the node pool on a template instead of following the latest one of its Kubernetes version, set `template_id`, e.g. from the [exoscale_sks_nodepool_template](../data-sources/sks_nodepool_template.md) data source:
+
+```terraform
+data "exoscale_sks_nodepool_template" "my_template" {
+  zone         = exoscale_sks_cluster.my_sks_cluster.zone
+  kube_version = exoscale_sks_cluster.my_sks_cluster.version
+}
+
+resource "exoscale_sks_nodepool" "my_sks_nodepool" {
+  # ...
+  template_id = data.exoscale_sks_nodepool_template.my_template.id
+}
+```
+
 Please refer to the [examples](https://github.com/exoscale/terraform-provider-exoscale/tree/master/examples/)
 directory for complete configuration examples.
 
@@ -59,6 +73,7 @@ directory for complete configuration examples.
 - `security_group_ids` (Set of String) A list of exoscale_security_group (IDs) to be attached to the managed instances.
 - `storage_lvm` (Boolean) Create nodes with non-standard partitioning for persistent storage (requires min 100G of disk space) (may only be set at creation time).
 - `taints` (Map of String) A map of key/value Kubernetes [taints](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/) ('taints = { <key> = "<value>:<effect>" }').
+- `template_id` (String) The managed instances template ID. Set it to pin the nodepool on this template (see the [exoscale_sks_nodepool_template](../data-sources/sks_nodepool_template.md) data source). Otherwise the nodepool uses the latest template of its Kubernetes version. A new template only applies to the instances created afterwards.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
@@ -67,7 +82,7 @@ directory for complete configuration examples.
 - `id` (String) The SKS node pool ID.
 - `instance_pool_id` (String) The underlying [exoscale_instance_pool](./instance_pool.md) ID.
 - `state` (String) The current pool state.
-- `template_id` (String) The managed instances template ID.
+- `template_selection` (String) How the managed instances template is selected: `pinned` (set with `template_id`) or `auto` (the latest template of the nodepool Kubernetes version).
 - `version` (String) The managed instances version.
 
 <a id="nestedatt--kubelet_image_gc"></a>

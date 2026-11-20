@@ -52,6 +52,7 @@ func TestAccDataSourceSKSNodepool(t *testing.T) {
 					tftest.TestCheckResourceAttrPair(r, "size", dsByID, "size"),
 					tftest.TestCheckResourceAttrPair(r, "state", dsByID, "state"),
 					tftest.TestCheckResourceAttrPair(r, "template_id", dsByID, "template_id"),
+					tftest.TestCheckResourceAttrPair(r, "template_selection", dsByID, "template_selection"),
 					tftest.TestCheckResourceAttrPair(r, "version", dsByID, "version"),
 
 					// data source by name
@@ -69,6 +70,7 @@ func TestAccDataSourceSKSNodepool(t *testing.T) {
 					tftest.TestCheckResourceAttrPair(r, "size", dsByName, "size"),
 					tftest.TestCheckResourceAttrPair(r, "state", dsByName, "state"),
 					tftest.TestCheckResourceAttrPair(r, "template_id", dsByName, "template_id"),
+					tftest.TestCheckResourceAttrPair(r, "template_selection", dsByName, "template_selection"),
 					tftest.TestCheckResourceAttrPair(r, "version", dsByName, "version"),
 				),
 			},
