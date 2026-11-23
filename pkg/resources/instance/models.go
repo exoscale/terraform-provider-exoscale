@@ -355,9 +355,6 @@ func applyInstance( //nolint:gocyclo
 			return diags
 		}
 	}
-	if model.SSHKeys.IsUnknown() {
-		model.SSHKeys = types.SetNull(types.StringType)
-	}
 
 	remote, err := remoteNetworkInterfaces(ctx, client, instance, true)
 	if err != nil {
@@ -418,7 +415,7 @@ func applyInstance( //nolint:gocyclo
 			return diags
 		}
 		// Encoding differences with the configuration are not drift.
-		if model.UserData.IsNull() || !sameUserData(userData, model.UserData.ValueString()) {
+		if model.UserData.IsNull() || !utils.SameUserData(userData, model.UserData.ValueString()) {
 			model.UserData = types.StringValue(userData)
 		}
 	}

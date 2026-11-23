@@ -11,6 +11,7 @@ import (
 	exoscale "github.com/exoscale/egoscale/v3"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/planmodifiers"
 	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/validators"
@@ -42,6 +43,7 @@ After the creation, you can retrieve the password of an instance with [Exoscale 
 var _ resource.Resource = (*Resource)(nil)
 var _ resource.ResourceWithImportState = (*Resource)(nil)
 var _ resource.ResourceWithModifyPlan = (*Resource)(nil)
+var _ resource.ResourceWithUpgradeState = (*Resource)(nil)
 
 type Resource struct {
 	client *exoscale.Client
@@ -96,6 +98,9 @@ func (r *Resource) Metadata(ctx context.Context, req resource.MetadataRequest, r
 // Schema defines the resource attributes.
 func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		// Version 1: legacy SDKv2 empty values normalised, see UpgradeState.
+		Version: 1,
+
 		Description:         "Manage Exoscale Compute Instances.",
 		MarkdownDescription: markdownDescriptionResource,
 
@@ -113,9 +118,7 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 				MarkdownDescription: "❗ A list of [exoscale_anti_affinity_group](./anti_affinity_group.md) (IDs) to attach to the instance (may only be set at creation time).",
 				ElementType:         types.StringType,
 				Optional:            true,
-				Computed:            true,
 				PlanModifiers: []planmodifier.Set{
-					emptySetIsNull{},
 					setRequiresReplace(),
 				},
 			},
@@ -124,10 +127,6 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 				MarkdownDescription: "A list of [exoscale_block_storage_volume](./block_storage_volume.md) (ID) to attach to the instance.",
 				ElementType:         types.StringType,
 				Optional:            true,
-				Computed:            true,
-				PlanModifiers: []planmodifier.Set{
-					emptySetIsNull{},
-				},
 			},
 			"created_at": schema.StringAttribute{
 				Description:         "The instance creation date.",
@@ -141,9 +140,7 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 				Description:         "❗ A deploy target ID.",
 				MarkdownDescription: "❗ A deploy target ID.",
 				Optional:            true,
-				Computed:            true,
 				PlanModifiers: []planmodifier.String{
-					emptyStringIsNull{},
 					stringRequiresReplace(),
 				},
 			},
@@ -165,10 +162,6 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 				MarkdownDescription: "A list of [exoscale_elastic_ip](./elastic_ip.md) (IDs) to attach to the instance.",
 				ElementType:         types.StringType,
 				Optional:            true,
-				Computed:            true,
-				PlanModifiers: []planmodifier.Set{
-					emptySetIsNull{},
-				},
 			},
 			"enable_secure_boot": schema.BoolAttribute{
 				Description:         "❗ Enable secure boot on the instance (boolean; default: 'false'). Can not be changed after the creation.",
@@ -232,10 +225,6 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 				MarkdownDescription: "A map of key/value labels.",
 				ElementType:         types.StringType,
 				Optional:            true,
-				Computed:            true,
-				PlanModifiers: []planmodifier.Map{
-					emptyMapIsNull{},
-				},
 			},
 			"mac_address": schema.StringAttribute{
 				Description:         "MAC address",
@@ -276,10 +265,6 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 				Description:         "Domain name for reverse DNS record.",
 				MarkdownDescription: "Domain name for reverse DNS record.",
 				Optional:            true,
-				Computed:            true,
-				PlanModifiers: []planmodifier.String{
-					emptyStringIsNull{},
-				},
 			},
 			"ssh_key": schema.StringAttribute{
 				Description:         "❗ The exoscale_ssh_key (name) to authorize in the instance (may only be set at creation time).",
@@ -298,9 +283,7 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 				MarkdownDescription: "❗ The list of [exoscale_ssh_key](./ssh_key.md) (name) to authorize in the instance (may only be set at creation time).",
 				ElementType:         types.StringType,
 				Optional:            true,
-				Computed:            true,
 				PlanModifiers: []planmodifier.Set{
-					emptySetIsNull{},
 					setRequiresReplace(),
 				},
 			},
@@ -309,10 +292,6 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 				MarkdownDescription: "A list of [exoscale_security_group](./security_group.md) (IDs) to attach to the instance.",
 				ElementType:         types.StringType,
 				Optional:            true,
-				Computed:            true,
-				PlanModifiers: []planmodifier.Set{
-					emptySetIsNull{},
-				},
 			},
 			"state": schema.StringAttribute{
 				Description:         "The instance state ('running' or 'stopped'). If omitted, instance will start and reach 'running' state.",
@@ -344,7 +323,7 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 				MarkdownDescription: "The instance type (`<family>.<size>`, e.g. `standard.medium`; use the [Exoscale CLI](https://github.com/exoscale/cli/) - `exo compute instance-type list` - for the list of available types). **WARNING**: updating this attribute stops/restarts the instance.",
 				Required:            true,
 				PlanModifiers: []planmodifier.String{
-					ignoreCase(),
+					planmodifiers.IgnoreCase(),
 				},
 				Validators: []validator.String{
 					stringFuncValidator{
@@ -363,7 +342,7 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 				MarkdownDescription: "[cloud-init](https://cloudinit.readthedocs.io/) configuration.",
 				Optional:            true,
 				PlanModifiers: []planmodifier.String{
-					ignoreUserDataEncoding(),
+					planmodifiers.IgnoreUserDataEncoding(),
 				},
 				Validators: []validator.String{
 					stringFuncValidator{
@@ -478,6 +457,51 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 				},
 			},
 			"timeouts": timeouts.BlockAll(ctx),
+		},
+	}
+}
+
+// UpgradeState normalises to null, once, the empty values written for unset
+// attributes by the SDKv2 (and kept by the framework releases up to v0.77.0).
+func (r *Resource) UpgradeState(ctx context.Context) map[int64]resource.StateUpgrader {
+	// Version 0 only differs by Computed flags, its states decode with the
+	// current schema.
+	var current resource.SchemaResponse
+	r.Schema(ctx, resource.SchemaRequest{}, &current)
+
+	return map[int64]resource.StateUpgrader{
+		0: {
+			PriorSchema: &current.Schema,
+			StateUpgrader: func(ctx context.Context, req resource.UpgradeStateRequest, resp *resource.UpgradeStateResponse) {
+				var state ResourceModel
+
+				resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+				if resp.Diagnostics.HasError() {
+					return
+				}
+
+				for _, v := range []*types.String{&state.DeployTargetID, &state.ReverseDNS} {
+					if v.ValueString() == "" {
+						*v = types.StringNull()
+					}
+				}
+				for _, v := range []*types.Set{
+					&state.AntiAffinityGroupIDs,
+					&state.BlockStorageVolumeIDs,
+					&state.ElasticIPIDs,
+					&state.SSHKeys,
+					&state.SecurityGroupIDs,
+				} {
+					if len(v.Elements()) == 0 {
+						*v = types.SetNull(types.StringType)
+					}
+				}
+				if len(state.Labels.Elements()) == 0 {
+					state.Labels = types.MapNull(types.StringType)
+				}
+
+				resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+			},
 		},
 	}
 }
