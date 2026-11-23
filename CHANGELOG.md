@@ -9,6 +9,7 @@ FEATURES:
 - `exoscale_compute_instance`: new `ip_forwarding` parameter, to let an instance route VPC traffic (#638)
 - `exoscale_nlb_service`: new `label_selector` attribute to forward traffic to the instances carrying all the listed key/value labels. `instance_pool_id` becomes optional, as at least one of the two is required. (#639)
 - `exoscale_sks_nodepool` resource and data sources: new `nvidia_dra_driver` attribute, to expose the GPUs with the NVIDIA DRA driver instead of the NVIDIA device plugin.
+- `exoscale_sks_nodepool` resource and data sources: new `vpc` attribute (`id` and `subnet_ids`) to attach the managed instances to VPC subnets, and new `ip_forwarding` attribute to let them route VPC traffic.
 
 IMPROVEMENTS:
 

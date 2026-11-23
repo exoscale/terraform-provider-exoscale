@@ -49,6 +49,7 @@ directory for complete configuration examples.
 - `description` (String) A free-form text describing the pool.
 - `disk_size` (Number) The managed instances disk size (GiB; default: `50`).
 - `instance_prefix` (String) The string used to prefix the managed instances name (default `pool`).
+- `ip_forwarding` (Boolean) Allow the managed instances to act as routers in their VPC (boolean; default: `false`). A change only applies to the instances created afterwards.
 - `ipv6` (Boolean) Enable IPV6 for the nodepool nodes
 - `kubelet_image_gc` (Attributes) Configuration for this nodepool's kubelet image garbage collector. (see [below for nested schema](#nestedatt--kubelet_image_gc))
 - `kubelet_max_pods` (Number) The maximum number of pods per node (default is 110).
@@ -60,6 +61,7 @@ directory for complete configuration examples.
 - `storage_lvm` (Boolean) Create nodes with non-standard partitioning for persistent storage (requires min 100G of disk space) (may only be set at creation time).
 - `taints` (Map of String) A map of key/value Kubernetes [taints](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/) ('taints = { <key> = "<value>:<effect>" }').
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `vpc` (Attributes) The [VPC](https://community.exoscale.com/product/networking/vpc/) to attach the managed instances to. Removing it detaches them from the VPC. (see [below for nested schema](#nestedatt--vpc))
 
 ### Read-Only
 
@@ -89,6 +91,15 @@ Optional:
 - `delete` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Setting a timeout for a Delete operation is only applicable if changes are saved into state before the destroy operation occurs.
 - `read` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
 - `update` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours).
+
+
+<a id="nestedatt--vpc"></a>
+### Nested Schema for `vpc`
+
+Required:
+
+- `id` (String) The [exoscale_vpc](./vpc.md) (ID) the subnets belong to.
+- `subnet_ids` (Set of String) A list of [exoscale_vpc_subnet](./vpc_subnet.md) (IDs) to attach the managed instances to.
 
 -> The symbol ❗ in an attribute indicates that modifying it, will force the creation of a new resource.
 
