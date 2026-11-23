@@ -5,10 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	"strings"
 
 	exoscale "github.com/exoscale/egoscale/v3"
 
+	"github.com/exoscale/terraform-provider-exoscale/pkg/resources/block_storage"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -142,20 +142,5 @@ func detachBlockStorageVolume(ctx context.Context, client *exoscale.Client, _ ex
 		return fmt.Errorf("unable to parse block storage volume ID: %w", err)
 	}
 
-	err = utils.Wait(ctx, client)(client.DetachBlockStorageVolume(ctx, volume))
-	if err != nil {
-		// The volume was likely already deleted as part of its regular
-		// deletion process.
-		if errors.Is(err, exoscale.ErrNotFound) {
-			return nil
-		}
-
-		// Ideally we would have a custom error defined in OpenAPI spec & egoscale.
-		// For now we just check the error text.
-		if strings.HasSuffix(err.Error(), "Volume not attached") {
-			return nil
-		}
-	}
-
-	return err
+	return block_storage.DetachVolume(ctx, client, volume)
 }
