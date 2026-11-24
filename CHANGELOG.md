@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+IMPROVEMENTS:
+
+- `exoscale_sks_nodepool` resource and data sources: `vpc.subnet_ids` is now a list instead of a set, so the subnet order is preserved. Expressions that need a set (e.g. `for_each`) must wrap it in `toset()`.
+
 ## 0.78.0
 
 FEATURES:
