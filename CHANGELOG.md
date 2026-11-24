@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+FEATURES:
+
+- `exoscale_instance_pool` resource and data sources: new `private` attribute, for pools whose instances have no public IP address. Changing it replaces the pool. (#671)
+
 BUG FIXES:
 
 - `exoscale_security_group`: state written by 0.69.0 and 0.69.1 no longer fails to load with "Unable to Upgrade Resource State". (#670)

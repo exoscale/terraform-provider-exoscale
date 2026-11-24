@@ -55,6 +55,7 @@ func testListDataSource(t *testing.T) {
 						"instance_prefix":           "pool",
 						"instance_type":             "standard.tiny",
 						"ipv6":                      "false",
+						"private":                   "false",
 						"key_pair":                  "",
 						"size":                      "1",
 						"user_data":                 "",

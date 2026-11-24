@@ -32,6 +32,7 @@ func testDataSource(t *testing.T) {
 			resource.TestCheckResourceAttr(ds, "instance_prefix", "test"),
 			resource.TestCheckResourceAttr(ds, "instance_type", "standard.tiny"),
 			resource.TestCheckResourceAttr(ds, "ipv6", "false"),
+			resource.TestCheckResourceAttr(ds, "private", "false"),
 			resource.TestCheckResourceAttrPair(ds, "key_pair", "exoscale_ssh_key.test", "name"),
 			resource.TestCheckResourceAttr(ds, "labels.%", "1"),
 			resource.TestCheckResourceAttr(ds, "labels.test", fmt.Sprintf("label-%d", testdataSpec.ID)),

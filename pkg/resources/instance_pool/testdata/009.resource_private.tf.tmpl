@@ -1,0 +1,23 @@
+data "exoscale_template" "ubuntu" {
+  zone = "{{ .Zone }}"
+  name = "Linux Ubuntu 22.04 LTS 64-bit"
+}
+
+resource "exoscale_instance_pool" "test" {
+  zone          = "{{ .Zone }}"
+  name          = "terraform-provider-test-{{ .ID }}"
+  template_id   = data.exoscale_template.ubuntu.id
+  instance_type = "standard.tiny"
+  size          = 1
+  disk_size     = 10
+  private       = {{ .Private }}
+
+  timeouts {
+    delete = "10m"
+  }
+}
+
+data "exoscale_instance_pool" "test" {
+  zone = "{{ .Zone }}"
+  id   = exoscale_instance_pool.test.id
+}

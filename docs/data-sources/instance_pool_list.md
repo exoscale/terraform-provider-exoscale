@@ -75,6 +75,7 @@ Read-Only:
 - `min_available` (Number) Minimum number of running Instances.
 - `name` (String) The instance pool name.
 - `network_ids` (Set of String) The list of attached [exoscale_private_network](../resources/private_network.md) (IDs). Private Networks are deprecated in favor of [VPC](https://community.exoscale.com/product/networking/vpc/).
+- `private` (Boolean) Whether the managed instances are private, without public IP address.
 - `security_group_ids` (Set of String) The list of attached [exoscale_security_group](../resources/security_group.md) (IDs).
 - `size` (Number) The number managed instances.
 - `state` (String) The pool state.

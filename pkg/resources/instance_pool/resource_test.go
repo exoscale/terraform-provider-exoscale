@@ -75,6 +75,7 @@ func testResource(t *testing.T) {
 					resource.TestCheckResourceAttr(poolResource, "description", description),
 					resource.TestCheckResourceAttr(poolResource, "disk_size", "10"),
 					resource.TestCheckResourceAttr(poolResource, "ipv6", "true"),
+					resource.TestCheckResourceAttr(poolResource, "private", "false"),
 					resource.TestCheckResourceAttr(poolResource, "instance_prefix", "test"),
 					resource.TestCheckResourceAttr(poolResource, "instance_type", "standard.tiny"),
 					resource.TestCheckResourceAttr(poolResource, "labels.%", "1"),

@@ -183,6 +183,7 @@ func applyPool( //nolint:gocyclo
 	model.State = types.StringValue(string(pool.State))
 	model.InstancePrefix = types.StringValue(pool.InstancePrefix)
 	model.IPv6 = types.BoolValue(utils.DefaultBool(pool.Ipv6Enabled, false))
+	model.Private = types.BoolValue(pool.PublicIPAssignment == exoscale.PublicIPAssignmentNone)
 
 	if pool.Template != nil {
 		model.TemplateID = types.StringValue(pool.Template.ID.String())

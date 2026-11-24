@@ -182,6 +182,11 @@ func (d *DataSourceList) Schema(ctx context.Context, req datasource.SchemaReques
 							ElementType:         types.StringType,
 							Computed:            true,
 						},
+						"private": schema.BoolAttribute{
+							Description:         "Whether the managed instances are private, without public IP address.",
+							MarkdownDescription: "Whether the managed instances are private, without public IP address.",
+							Computed:            true,
+						},
 						"security_group_ids": schema.SetAttribute{
 							Description:         "The list of attached exoscale_security_group (IDs).",
 							MarkdownDescription: "The list of attached [exoscale_security_group](../resources/security_group.md) (IDs).",
