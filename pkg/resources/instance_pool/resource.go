@@ -15,8 +15,10 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -76,6 +78,7 @@ type ResourceModel struct {
 	TemplateID           types.String `tfsdk:"template_id"`
 	UserData             types.String `tfsdk:"user_data"`
 	VirtualMachines      types.Set    `tfsdk:"virtual_machines"`
+	VPC                  types.List   `tfsdk:"vpc"`
 	Zone                 types.String `tfsdk:"zone"`
 
 	Timeouts timeouts.Value `tfsdk:"timeouts"`
@@ -288,6 +291,32 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 			},
 		},
 		Blocks: map[string]schema.Block{
+			"vpc": schema.ListNestedBlock{
+				Description:         "The VPC to attach the managed instances to (at most one block). Removing the block detaches the instances from every subnet. Structure is documented below.",
+				MarkdownDescription: "The [exoscale_vpc](./vpc.md) to attach the managed instances to (at most one block). Removing the block detaches the instances from every subnet. Structure is documented below.",
+				Validators: []validator.List{
+					listvalidator.SizeAtMost(1),
+				},
+				NestedObject: schema.NestedBlockObject{
+					Attributes: map[string]schema.Attribute{
+						"id": schema.StringAttribute{
+							Description:         "The exoscale_vpc (ID) the subnets belong to. Changing it detaches the managed instances from every subnet of the previous VPC.",
+							MarkdownDescription: "The [exoscale_vpc](./vpc.md) (ID) the subnets belong to. Changing it detaches the managed instances from every subnet of the previous VPC.",
+							Required:            true,
+						},
+						"subnet_ids": schema.ListAttribute{
+							Description:         "The exoscale_vpc_subnet (IDs) to attach the managed instances to. The order is strict: inserting, removing or reordering an element detaches the instances from every subnet from that position on, then attaches them again in the configured order. The IPv4 addresses are allocated by the platform. Subnets attached outside of Terraform are planned for removal, except those with public IPv4 addresses: these are left alone unless listed here, which makes Terraform manage them.",
+							MarkdownDescription: "The [exoscale_vpc_subnet](./vpc_subnet.md) (IDs) to attach the managed instances to. The order is strict: inserting, removing or reordering an element detaches the instances from every subnet from that position on, then attaches them again in the configured order. The IPv4 addresses are allocated by the platform. Subnets attached outside of Terraform are planned for removal, except those with public IPv4 addresses: these are left alone unless listed here, which makes Terraform manage them.",
+							ElementType:         types.StringType,
+							Required:            true,
+							Validators: []validator.List{
+								listvalidator.SizeAtLeast(1),
+								listvalidator.UniqueValues(),
+							},
+						},
+					},
+				},
+			},
 			"timeouts": timeouts.BlockAll(ctx),
 		},
 	}
@@ -345,6 +374,14 @@ func (r *Resource) UpgradeState(ctx context.Context) map[int64]resource.StateUpg
 						},
 					},
 					"timeouts": timeouts.BlockAll(ctx),
+					"vpc": schema.ListNestedBlock{
+						NestedObject: schema.NestedBlockObject{
+							Attributes: map[string]schema.Attribute{
+								"id":         schema.StringAttribute{Optional: true},
+								"subnet_ids": schema.ListAttribute{ElementType: types.StringType, Optional: true},
+							},
+						},
+					},
 				},
 			},
 			StateUpgrader: func(ctx context.Context, req resource.UpgradeStateRequest, resp *resource.UpgradeStateResponse) {
@@ -363,6 +400,9 @@ func (r *Resource) UpgradeState(ctx context.Context) map[int64]resource.StateUpg
 				if len(state.Labels.Elements()) == 0 {
 					state.Labels = types.MapNull(types.StringType)
 				}
+				if state.VPC.IsNull() {
+					state.VPC = noVPC()
+				}
 
 				resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 			},
@@ -380,7 +420,7 @@ func (r *Resource) Configure(ctx context.Context, req resource.ConfigureRequest,
 
 // ModifyPlan keeps the computed attributes an update does not touch from
 // being planned as unknown: the managed instances only change with the size
-// of the pool.
+// of the pool. It also warns about the VPC subnet attachments being changed.
 func (r *Resource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
 	// Nothing to do on creation or deletion.
 	if req.State.Raw.IsNull() || req.Plan.Raw.IsNull() {
@@ -393,6 +433,21 @@ func (r *Resource) ModifyPlan(ctx context.Context, req resource.ModifyPlanReques
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
+	}
+
+	adopted, diags := r.vpcForAdoption(ctx, &plan, &state)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	vpcChanges, diags := planVPC(ctx, &plan, &state, adopted)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	if vpcChanges != "" {
+		resp.Diagnostics.AddWarning("VPC subnet attachments", vpcChanges)
 	}
 
 	if plan.Size.Equal(state.Size) {
@@ -485,6 +540,12 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 	request.SecurityGroups = utils.SecurityGroupIDsToSecurityGroups(securityGroups)
 	request.PrivateNetworks = utils.PrivateNetworkIDsToPrivateNetworks(privateNetworks)
 	request.ElasticIPS = utils.ElasticIPIDsToElasticIPs(elasticIPs)
+
+	request.Vpc, diags = createRequestVPC(ctx, &plan)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	request.InstanceType, err = utils.FindInstanceTypeByNameV3(ctx, client, plan.InstanceType.ValueString())
 	if err != nil {
@@ -651,6 +712,7 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 		!plan.SecurityGroupIDs.Equal(state.SecurityGroupIDs) ||
 		!plan.NetworkIDs.Equal(state.NetworkIDs) ||
 		!plan.ElasticIPIDs.Equal(state.ElasticIPIDs) ||
+		!plan.VPC.Equal(state.VPC) ||
 		plan.KeyPair.ValueString() != state.KeyPair.ValueString() ||
 		plan.DeployTargetID.ValueString() != state.DeployTargetID.ValueString() {
 		update = true
@@ -735,6 +797,33 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 	}
 
 	if update {
+		// The API detaches the pool from its VPC when it is left out (null),
+		// and from the subnets left out: send along the ones left alone.
+		current, err := client.GetInstancePool(ctx, id)
+		if err != nil {
+			resp.Diagnostics.AddError("API returned an error while fetching instance pool", err.Error())
+			return
+		}
+		// The subnets in the state are managed too: those removed from the
+		// configuration are to be detached, even public ones.
+		_, planned, diags := vpcSubnets(ctx, plan.VPC)
+		resp.Diagnostics.Append(diags...)
+		_, managed, diags := vpcSubnets(ctx, state.VPC)
+		resp.Diagnostics.Append(diags...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+		_, hidden, err := splitVPCSubnets(current.Vpc, containsAny(managed, planned), subnetLookupFor(ctx, client, current.Vpc))
+		if err != nil {
+			resp.Diagnostics.AddError("unable to retrieve the VPC subnets of the instance pool", err.Error())
+			return
+		}
+		request.Vpc, diags = updateRequestVPC(ctx, &plan, current.Vpc, hidden)
+		resp.Diagnostics.Append(diags...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
 		if err := utils.Wait(ctx, client)(client.UpdateInstancePool(ctx, id, request)); err != nil {
 			resp.Diagnostics.AddError("unable to update instance pool", err.Error())
 			return
@@ -843,4 +932,54 @@ func nullUnknown(model ResourceModel) *ResourceModel {
 	}
 
 	return &model
+}
+
+// vpcForAdoption fetches the VPC of the pool when the plan lists subnets
+// missing from the state, which may be attachments to adopt (public ones, left
+// alone otherwise); it returns nil otherwise, sparing an API call.
+func (r *Resource) vpcForAdoption(ctx context.Context, plan, state *ResourceModel) (*apiVPC, diag.Diagnostics) {
+	_, planned, diags := vpcSubnets(ctx, plan.VPC)
+	_, current, dg := vpcSubnets(ctx, state.VPC)
+	diags.Append(dg...)
+	if diags.HasError() || r.client == nil {
+		return nil, diags
+	}
+
+	inState := containsAny(current)
+	adopting := false
+	for _, id := range planned {
+		adopting = adopting || !inState(id)
+	}
+	if !adopting {
+		return nil, diags
+	}
+
+	id, err := exoscale.ParseUUID(state.ID.ValueString())
+	if err != nil {
+		diags.AddError("unable to parse ID", err.Error())
+		return nil, diags
+	}
+
+	client, err := utils.SwitchClientZone(ctx, r.client, exoscale.ZoneName(state.Zone.ValueString()))
+	if err != nil {
+		diags.AddError("unable to change exoscale client zone", err.Error())
+		return nil, diags
+	}
+
+	pool, err := client.GetInstancePool(ctx, id)
+	if err != nil {
+		diags.AddError("API returned an error while fetching instance pool", err.Error())
+		return nil, diags
+	}
+	if pool.Vpc == nil {
+		return &apiVPC{}, diags
+	}
+
+	visible, _, err := splitVPCSubnets(pool.Vpc, containsAny(current, planned), subnetLookupFor(ctx, client, pool.Vpc))
+	if err != nil {
+		diags.AddError("unable to retrieve the VPC subnets of the instance pool", err.Error())
+		return nil, diags
+	}
+
+	return &apiVPC{ID: pool.Vpc.ID.String(), Subnets: visible}, diags
 }

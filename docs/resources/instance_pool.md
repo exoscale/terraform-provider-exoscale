@@ -63,6 +63,7 @@ directory for complete configuration examples.
 - `security_group_ids` (Set of String) A list of [exoscale_security_group](./security_group.md) (IDs).
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `user_data` (String) [cloud-init](http://cloudinit.readthedocs.io/) configuration to apply to the managed instances.
+- `vpc` (Block List) The [exoscale_vpc](./vpc.md) to attach the managed instances to (at most one block). Removing the block detaches the instances from every subnet. Structure is documented below. (see [below for nested schema](#nestedblock--vpc))
 
 ### Read-Only
 
@@ -80,6 +81,15 @@ Optional:
 - `delete` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Setting a timeout for a Delete operation is only applicable if changes are saved into state before the destroy operation occurs.
 - `read` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
 - `update` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours).
+
+
+<a id="nestedblock--vpc"></a>
+### Nested Schema for `vpc`
+
+Required:
+
+- `id` (String) The [exoscale_vpc](./vpc.md) (ID) the subnets belong to. Changing it detaches the managed instances from every subnet of the previous VPC.
+- `subnet_ids` (List of String) The [exoscale_vpc_subnet](./vpc_subnet.md) (IDs) to attach the managed instances to. The order is strict: inserting, removing or reordering an element detaches the instances from every subnet from that position on, then attaches them again in the configured order. The IPv4 addresses are allocated by the platform. Subnets attached outside of Terraform are planned for removal, except those with public IPv4 addresses: these are left alone unless listed here, which makes Terraform manage them.
 
 
 <a id="nestedatt--instances"></a>

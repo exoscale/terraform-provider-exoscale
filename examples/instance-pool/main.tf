@@ -20,6 +20,33 @@ data "exoscale_security_group" "default" {
 # SSH
 # -> ssh.tf
 
+# VPC
+resource "exoscale_vpc" "my_vpc" {
+  zone = local.my_zone
+  name = "my-vpc"
+}
+
+resource "exoscale_vpc_subnet" "my_vpc_subnet" {
+  zone       = local.my_zone
+  vpc_id     = exoscale_vpc.my_vpc.id
+  name       = "my-vpc-subnet"
+  ipv4_block = "10.0.0.0/24"
+}
+
+resource "exoscale_vpc_subnet" "my_other_vpc_subnet" {
+  zone       = local.my_zone
+  vpc_id     = exoscale_vpc.my_vpc.id
+  name       = "my-other-vpc-subnet"
+  ipv4_block = "10.0.1.0/24"
+}
+
+resource "exoscale_vpc_subnet" "subnet2" {
+  zone       = local.my_zone
+  vpc_id     = exoscale_vpc.my_vpc.id
+  name       = "subnet2"
+  ipv4_block = "10.0.2.0/24"
+}
+
 # Sample instance pool
 resource "exoscale_instance_pool" "my_instance_pool" {
   zone = local.my_zone
@@ -36,6 +63,16 @@ resource "exoscale_instance_pool" "my_instance_pool" {
     data.exoscale_security_group.default.id,
     exoscale_security_group.my_ssh_security_group.id,
   ]
+
+  vpc {
+    id = exoscale_vpc.my_vpc.id
+
+    subnet_ids = [
+      exoscale_vpc_subnet.my_vpc_subnet.id,
+      exoscale_vpc_subnet.subnet2.id,
+      # exoscale_vpc_subnet.my_other_vpc_subnet.id,
+    ]
+  }
 }
 
 # Outputs
