@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.78.0
 
 FEATURES:
 - `exoscale_sks_cluster` resource and data sources: new `allowed_networks` attribute to manage the cluster's IP allowlist (CIDR blocks allowed to access the Kubernetes API server endpoint). (#663)
