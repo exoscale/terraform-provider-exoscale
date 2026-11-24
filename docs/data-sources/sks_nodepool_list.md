@@ -88,6 +88,6 @@ Read-Only:
 Read-Only:
 
 - `id` (String) The [exoscale_vpc](../resources/vpc.md) (ID) the subnets belong to.
-- `subnet_ids` (Set of String) A list of [exoscale_vpc_subnet](../resources/vpc_subnet.md) (IDs) the managed instances are attached to.
+- `subnet_ids` (List of String) A list of [exoscale_vpc_subnet](../resources/vpc_subnet.md) (IDs) the managed instances are attached to.
 
 

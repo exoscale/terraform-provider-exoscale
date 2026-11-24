@@ -99,7 +99,7 @@ Optional:
 Required:
 
 - `id` (String) The [exoscale_vpc](./vpc.md) (ID) the subnets belong to.
-- `subnet_ids` (Set of String) A list of [exoscale_vpc_subnet](./vpc_subnet.md) (IDs) to attach the managed instances to.
+- `subnet_ids` (List of String) A list of [exoscale_vpc_subnet](./vpc_subnet.md) (IDs) to attach the managed instances to, in this order.
 
 -> The symbol ❗ in an attribute indicates that modifying it, will force the creation of a new resource.
 

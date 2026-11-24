@@ -184,7 +184,7 @@ func TestAccResourceSKSNodepool(t *testing.T) {
 					resource.TestCheckResourceAttr(r, "ip_forwarding", "true"),
 					resource.TestCheckResourceAttrPair(r, "vpc.id", "exoscale_vpc.test", "id"),
 					resource.TestCheckResourceAttr(r, "vpc.subnet_ids.#", "1"),
-					resource.TestCheckTypeSetElemAttrPair(r, "vpc.subnet_ids.*", "exoscale_vpc_subnet.test", "id"),
+					resource.TestCheckResourceAttrPair(r, "vpc.subnet_ids.0", "exoscale_vpc_subnet.test", "id"),
 				),
 			},
 			{
