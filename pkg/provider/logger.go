@@ -12,6 +12,7 @@ import (
 )
 
 var envLogLevelMap = map[string]slog.Level{
+	"JSON":  slog.LevelDebug,
 	"TRACE": slog.LevelDebug,
 	"DEBUG": slog.LevelDebug,
 	"INFO":  slog.LevelInfo,
