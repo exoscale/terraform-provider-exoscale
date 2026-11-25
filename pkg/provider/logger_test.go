@@ -53,9 +53,11 @@ func TestLogHandlerLevels(t *testing.T) {
 			)
 		}
 	}
+	os.Unsetenv("TF_LOG")
 }
 
 func TestLogHandlerFormating(t *testing.T) {
+	os.Setenv("TF_LOG", "TRACE")
 	var output bytes.Buffer
 	ctx := tflogtest.RootLogger(context.Background(), &output)
 	logger := slog.New(&provider.TflogHandler{})
@@ -116,4 +118,5 @@ func TestLogHandlerFormating(t *testing.T) {
 		}
 		output.Reset()
 	}
+	os.Unsetenv("TF_LOG")
 }
