@@ -23,13 +23,13 @@ var envLogLevelMap = map[string]slog.Level{
 // func envSlogLevel converts terraform log level to slog.Level
 // Terraform log level is defined using environment variable which is what this function does as well.
 func envSlogLevel() slog.Level {
-	envLevel := strings.ToUpper(os.Getenv("TF_LOG"))
-	level, ok := envLogLevelMap[envLevel]
-	if !ok {
-		return slog.LevelError + 1 // makes h.Enabled() always return false
+	for _, varName := range []string{"TF_LOG_PROVIDER", "TF_LOG"} {
+		envLevel := strings.ToUpper(os.Getenv(varName))
+		if level, ok := envLogLevelMap[envLevel]; ok {
+			return level
+		}
 	}
-
-	return level
+	return slog.LevelError + 1 // makes h.Enabled() always return false
 }
 
 // groupOrAttrs holds either a group name or a list of slog.Attrs.
