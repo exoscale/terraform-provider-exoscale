@@ -63,7 +63,7 @@ func (h *TflogHandler) Handle(ctx context.Context, record slog.Record) error {
 		} else {
 			for _, attr := range goa.attrs {
 				if prefix != "" {
-					attr.Key = fmt.Sprintf("%s.%s", prefix, goa.group)
+					attr.Key = fmt.Sprintf("%s.%s", prefix, attr.Key)
 				}
 
 				maps.Copy(fields, attrResolver(attr))
@@ -112,6 +112,14 @@ func (h *TflogHandler) WithGroup(name string) slog.Handler {
 	return h.withGroupOrAttrs(groupOrAttrs{group: name})
 }
 
+func (h *TflogHandler) withGroupOrAttrs(goa groupOrAttrs) *TflogHandler {
+	h2 := *h
+	h2.goas = make([]groupOrAttrs, len(h.goas)+1)
+	copy(h2.goas, h.goas)
+	h2.goas[len(h2.goas)-1] = goa
+	return &h2
+}
+
 func attrResolver(attr slog.Attr) map[string]any {
 	fields := map[string]any{}
 
@@ -134,12 +142,4 @@ func attrResolver(attr slog.Attr) map[string]any {
 	}
 
 	return fields
-}
-
-func (h *TflogHandler) withGroupOrAttrs(goa groupOrAttrs) *TflogHandler {
-	h2 := *h
-	h2.goas = make([]groupOrAttrs, len(h.goas)+1)
-	copy(h2.goas, h.goas)
-	h2.goas[len(h2.goas)-1] = goa
-	return &h2
 }
