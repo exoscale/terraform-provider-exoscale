@@ -33,6 +33,10 @@ func (h *TflogHandler) Handle(ctx context.Context, record slog.Record) error {
 		return true
 	})
 
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
 	for _, attr := range h.commons {
 		if attr.Equal(slog.Attr{}) || attr.Key == "" { // silently ignore junk
 			continue
@@ -43,14 +47,16 @@ func (h *TflogHandler) Handle(ctx context.Context, record slog.Record) error {
 		maps.Copy(fields, attrResolver(attr))
 	}
 
-	switch record.Level {
-	case slog.LevelDebug:
+	switch {
+	case record.Level < slog.LevelDebug:
+		tflog.Trace(ctx, record.Message, fields)
+	case record.Level >= slog.LevelDebug && record.Level < slog.LevelInfo:
 		tflog.Debug(ctx, record.Message, fields)
-	case slog.LevelInfo:
+	case record.Level >= slog.LevelInfo && record.Level < slog.LevelWarn:
 		tflog.Info(ctx, record.Message, fields)
-	case slog.LevelWarn:
+	case record.Level >= slog.LevelWarn && record.Level < slog.LevelError:
 		tflog.Warn(ctx, record.Message, fields)
-	case slog.LevelError:
+	case record.Level >= slog.LevelError:
 		tflog.Error(ctx, record.Message, fields)
 	}
 
