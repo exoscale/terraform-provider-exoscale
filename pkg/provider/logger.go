@@ -5,14 +5,22 @@ import (
 	"fmt"
 	"log/slog"
 	"maps"
-	"slices"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
+// groupOrAttrs holds either a group name or a list of slog.Attrs.
+type groupOrAttrs struct {
+	group string      // group name if non-empty
+	attrs []slog.Attr // attrs if non-empty
+}
+
+// TflogHandler implements logs/slog.Handler interace and outputs logs using tflog library.
+// Implementation is based on official slog [example].
+//
+// [example]: https://github.com/golang/example/blob/master/slog-handler-guide/README.md
 type TflogHandler struct {
-	prefix  string      // log key prefix built from group names when WithGroup is invoked
-	commons []slog.Attr // default log attributes, added with WithAttrs
+	goas []groupOrAttrs
 }
 
 func (*TflogHandler) Enabled(context.Context, slog.Level) bool {
@@ -21,31 +29,34 @@ func (*TflogHandler) Enabled(context.Context, slog.Level) bool {
 
 func (h *TflogHandler) Handle(ctx context.Context, record slog.Record) error {
 	fields := map[string]any{}
+	var prefix string
+
+	for _, goa := range h.goas {
+		if goa.group != "" {
+			if prefix != "" {
+				prefix = fmt.Sprintf("%s.%s", prefix, goa.group)
+			} else {
+				prefix = goa.group
+			}
+		} else {
+			for _, attr := range goa.attrs {
+				if prefix != "" {
+					attr.Key = fmt.Sprintf("%s.%s", prefix, goa.group)
+				}
+
+				maps.Copy(fields, attrResolver(attr))
+			}
+		}
+	}
+
 	record.Attrs(func(attr slog.Attr) bool {
 		attr.Value = attr.Value.Resolve()
-		if attr.Equal(slog.Attr{}) || attr.Key == "" { // silently ignore junk
-			return true
-		}
-		if h.prefix != "" {
-			attr.Key = fmt.Sprintf("%s.%s", h.prefix, attr.Key)
+		if prefix != "" {
+			attr.Key = fmt.Sprintf("%s.%s", prefix, attr.Key)
 		}
 		maps.Copy(fields, attrResolver(attr))
 		return true
 	})
-
-	if ctx == nil {
-		ctx = context.Background()
-	}
-
-	for _, attr := range h.commons {
-		if attr.Equal(slog.Attr{}) || attr.Key == "" { // silently ignore junk
-			continue
-		}
-		if h.prefix != "" {
-			attr.Key = fmt.Sprintf("%s.%s", h.prefix, attr.Key)
-		}
-		maps.Copy(fields, attrResolver(attr))
-	}
 
 	switch {
 	case record.Level < slog.LevelDebug:
@@ -68,10 +79,7 @@ func (h *TflogHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
 		return h
 	}
 
-	return &TflogHandler{
-		prefix:  h.prefix,
-		commons: attrs,
-	}
+	return h.withGroupOrAttrs(groupOrAttrs{attrs: attrs})
 }
 
 func (h *TflogHandler) WithGroup(name string) slog.Handler {
@@ -79,14 +87,7 @@ func (h *TflogHandler) WithGroup(name string) slog.Handler {
 		return h
 	}
 
-	if h.prefix != "" {
-		name = fmt.Sprintf("%s.%s", h.prefix, name)
-	}
-
-	return &TflogHandler{
-		prefix:  name,
-		commons: slices.Clone(h.commons),
-	}
+	return h.withGroupOrAttrs(groupOrAttrs{group: name})
 }
 
 func attrResolver(attr slog.Attr) map[string]any {
@@ -111,4 +112,12 @@ func attrResolver(attr slog.Attr) map[string]any {
 	}
 
 	return fields
+}
+
+func (h *TflogHandler) withGroupOrAttrs(goa groupOrAttrs) *TflogHandler {
+	h2 := *h
+	h2.goas = make([]groupOrAttrs, len(h.goas)+1)
+	copy(h2.goas, h.goas)
+	h2.goas[len(h2.goas)-1] = goa
+	return &h2
 }
