@@ -5,9 +5,31 @@ import (
 	"fmt"
 	"log/slog"
 	"maps"
+	"os"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
+
+var envLogLevelMap = map[string]slog.Level{
+	"TRACE": slog.LevelDebug,
+	"DEBUG": slog.LevelDebug,
+	"INFO":  slog.LevelInfo,
+	"WARN":  slog.LevelWarn,
+	"ERROR": slog.LevelError,
+}
+
+// func envSlogLevel converts terraform log level to slog.Level
+// Terraform log level is defined using environment variable which is what this function does as well.
+func envSlogLevel() slog.Level {
+	envLevel := strings.ToUpper(os.Getenv("TF_LOG"))
+	level, ok := envLogLevelMap[envLevel]
+	if !ok {
+		return slog.LevelError + 1 // makes h.Enabled() always return false
+	}
+
+	return level
+}
 
 // groupOrAttrs holds either a group name or a list of slog.Attrs.
 type groupOrAttrs struct {
@@ -23,8 +45,8 @@ type TflogHandler struct {
 	goas []groupOrAttrs
 }
 
-func (*TflogHandler) Enabled(context.Context, slog.Level) bool {
-	return true // we will let tflog decide when to print logs
+func (*TflogHandler) Enabled(ctx context.Context, level slog.Level) bool {
+	return level >= envSlogLevel()
 }
 
 func (h *TflogHandler) Handle(ctx context.Context, record slog.Record) error {
