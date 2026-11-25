@@ -29,7 +29,7 @@ func (h *TflogHandler) Handle(ctx context.Context, record slog.Record) error {
 		if h.prefix != "" {
 			attr.Key = fmt.Sprintf("%s.%s", h.prefix, attr.Key)
 		}
-		fields = attrResolver(attr)
+		maps.Copy(fields, attrResolver(attr))
 		return true
 	})
 
