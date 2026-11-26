@@ -271,4 +271,51 @@ func testDataSourceURI(t *testing.T) {
 			},
 		},
 	})
+
+	// Test database Thanos URI
+	tplResourceThanos, err := template.ParseFiles("testdata/resource_thanos.tmpl")
+	if err != nil {
+		t.Fatal(err)
+	}
+	resourceThanos := TemplateModelThanos{
+		ResourceName:          "test",
+		Name:                  acctest.RandomWithPrefix(testutils.Prefix),
+		Plan:                  "startup-4",
+		Zone:                  testutils.TestZoneName,
+		TerminationProtection: false,
+	}
+	buf = &bytes.Buffer{}
+	err = tplResourceThanos.Execute(buf, &resourceThanos)
+	if err != nil {
+		t.Fatal(err)
+	}
+	part = buf.String()
+
+	data.Type = "thanos"
+	buf = &bytes.Buffer{}
+	err = tplData.Execute(buf, &data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	config = fmt.Sprintf("%s\n%s", part, buf.String())
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testutils.AccPreCheck(t) },
+		CheckDestroy:             CheckServiceDestroy("thanos", resourceThanos.Name),
+		ProtoV6ProviderFactories: testutils.TestAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet(fullResourceName, "uri"),
+					resource.TestCheckResourceAttr(fullResourceName, "schema", "https"),
+					resource.TestCheckResourceAttr(fullResourceName, "username", "avnadmin"),
+					resource.TestCheckResourceAttrSet(fullResourceName, "password"),
+					resource.TestCheckResourceAttrSet(fullResourceName, "host"),
+					resource.TestCheckResourceAttrSet(fullResourceName, "port"),
+					resource.TestCheckNoResourceAttr(fullResourceName, "db_name"),
+				),
+			},
+		},
+	})
 }

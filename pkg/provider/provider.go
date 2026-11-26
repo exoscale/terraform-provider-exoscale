@@ -202,13 +202,15 @@ func (p *ExoscaleProvider) Configure(ctx context.Context, req provider.Configure
 		secret,
 	)
 
-	rc := retryablehttp.NewClient()
-	rc.Logger = LeveledTFLogger{Verbose: logging.IsDebugOrHigher()}
-	rc.CheckRetry = retryablehttp.ErrorPropagatedRetryPolicy
-	opts := []exov3.ClientOpt{exov3.ClientOptWithHTTPClient(rc.StandardClient())}
+	opts := []exov3.ClientOpt{}
 	if ep := os.Getenv("EXOSCALE_API_ENDPOINT"); ep != "" {
 		opts = append(opts, exov3.ClientOptWithEndpoint(exov3.Endpoint(ep)), exov3.ClientOptWithUserAgent(UserAgent))
 	}
+
+	rc := retryablehttp.NewClient()
+	rc.Logger = LeveledTFLogger{Verbose: logging.IsDebugOrHigher()}
+	rc.CheckRetry = retryablehttp.ErrorPropagatedRetryPolicy
+	opts = append(opts, exov3.ClientOptWithHTTPClient(rc.StandardClient()))
 
 	clv3, err := exov3.NewClient(creds, opts...)
 	if err != nil {
@@ -244,6 +246,7 @@ func (p *ExoscaleProvider) DataSources(ctx context.Context) []func() datasource.
 		iam.NewDataSourceAPIKey,
 		block_storage.NewDataSourceVolume,
 		block_storage.NewDataSourceSnapshot,
+		kms.NewDataSourceKMSKeyStore,
 		elasticip.NewDataSource,
 		instance.NewDataSource,
 		instance.NewDataSourceList,
@@ -273,6 +276,8 @@ func (p *ExoscaleProvider) Resources(ctx context.Context) []func() resource.Reso
 		database.NewServiceResource,
 		database.NewMysqlUserResource,
 		database.NewKafkaUserResource,
+		database.NewKafkaTopicACLResource,
+		database.NewKafkaSchemaRegistryACLResource,
 		database.NewOpensearchUserResource,
 		database.NewPGUserResource,
 		database.NewValkeyUserResource,
@@ -299,6 +304,7 @@ func (p *ExoscaleProvider) Resources(ctx context.Context) []func() resource.Reso
 		sks.NewResourceKubeconfig,
 		privatenetwork.NewResource,
 		kms.NewResourceKMSKey,
+		kms.NewResourceKMSKeyStore,
 		domain.NewResource,
 		domain.NewResourceRecord,
 		vpc.NewResource,

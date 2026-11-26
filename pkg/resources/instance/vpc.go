@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	exoscale "github.com/exoscale/egoscale/v3"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
 
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -415,7 +416,7 @@ func updateVPC(
 	// All the detachments come first, so that their IP addresses can be
 	// reused by the attachments.
 	for _, iface := range detach {
-		err := wait(ctx, client)(client.DetachInstanceFromSubnet(
+		err := utils.Wait(ctx, client)(client.DetachInstanceFromSubnet(
 			ctx,
 			exoscale.UUID(currentVPC.ID.ValueString()),
 			exoscale.UUID(iface.SubnetID.ValueString()),
@@ -428,7 +429,7 @@ func updateVPC(
 	}
 
 	for _, iface := range attach {
-		err := wait(ctx, client)(client.AttachInstanceToSubnet(
+		err := utils.Wait(ctx, client)(client.AttachInstanceToSubnet(
 			ctx,
 			exoscale.UUID(plannedVPC.ID.ValueString()),
 			exoscale.UUID(iface.SubnetID.ValueString()),

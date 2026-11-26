@@ -33,6 +33,8 @@ resource "exoscale_compute_instance" "test_instance" {
   type        = "standard.tiny"
   disk_size   = 10
 
+  ip_forwarding = true
+
   security_group_ids = [data.exoscale_security_group.default.id]
 {{ if .Interfaces }}
   vpc {

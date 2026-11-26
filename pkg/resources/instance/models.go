@@ -3,7 +3,6 @@ package instance
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strings"
 
 	exoscale "github.com/exoscale/egoscale/v3"
@@ -133,15 +132,6 @@ func stringSetDiff(old, cur []string) (added, removed []string) {
 	}
 
 	return added, removed
-}
-
-// instanceTypeName returns the `<family>.<size>` name of an instance type.
-func instanceTypeName(instanceType *exoscale.InstanceType) string {
-	return fmt.Sprintf(
-		"%s.%s",
-		strings.ToLower(string(instanceType.Family)),
-		strings.ToLower(string(instanceType.Size)),
-	)
 }
 
 // reverseDNS returns the reverse DNS record of the instance, "" if it has none.
@@ -325,6 +315,11 @@ func applyInstance( //nolint:gocyclo
 	} else if model.EnableTPM.IsNull() || model.EnableTPM.IsUnknown() {
 		model.EnableTPM = types.BoolValue(false)
 	}
+	if instance.IPForwarding != nil {
+		model.IPForwarding = types.BoolValue(*instance.IPForwarding)
+	} else if model.IPForwarding.IsNull() || model.IPForwarding.IsUnknown() {
+		model.IPForwarding = types.BoolValue(false)
+	}
 
 	diags.Append(utils.RefreshLabels(ctx, &model.Labels, instance.Labels)...)
 	utils.RefreshStringSet(
@@ -359,9 +354,6 @@ func applyInstance( //nolint:gocyclo
 		if diags.HasError() {
 			return diags
 		}
-	}
-	if model.SSHKeys.IsUnknown() {
-		model.SSHKeys = types.SetNull(types.StringType)
 	}
 
 	remote, err := remoteNetworkInterfaces(ctx, client, instance, true)
@@ -408,7 +400,7 @@ func applyInstance( //nolint:gocyclo
 			return diags
 		}
 		// Case differences with the configuration are not drift.
-		if name := instanceTypeName(&instanceType); !strings.EqualFold(name, model.Type.ValueString()) {
+		if name := utils.InstanceTypeName(&instanceType); !strings.EqualFold(name, model.Type.ValueString()) {
 			model.Type = types.StringValue(name)
 		}
 	}
@@ -423,7 +415,7 @@ func applyInstance( //nolint:gocyclo
 			return diags
 		}
 		// Encoding differences with the configuration are not drift.
-		if model.UserData.IsNull() || !sameUserData(userData, model.UserData.ValueString()) {
+		if model.UserData.IsNull() || !utils.SameUserData(userData, model.UserData.ValueString()) {
 			model.UserData = types.StringValue(userData)
 		}
 	}

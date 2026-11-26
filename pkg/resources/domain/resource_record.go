@@ -205,15 +205,9 @@ func (r *ResourceRecord) Create(
 		createReq.Priority = plan.Prio.ValueInt64()
 	}
 
-	op, err := client.CreateDNSDomainRecord(ctx, domainID, createReq)
+	op, err := utils.WaitOperation(ctx, client)(client.CreateDNSDomainRecord(ctx, domainID, createReq))
 	if err != nil {
 		resp.Diagnostics.AddError("API returned error when creating domain record", err.Error())
-		return
-	}
-
-	op, err = client.Wait(ctx, op, exoscale.OperationStateSuccess)
-	if err != nil {
-		resp.Diagnostics.AddError("create domain record operation failed", err.Error())
 		return
 	}
 
@@ -364,13 +358,8 @@ func (r *ResourceRecord) Update(ctx context.Context, req resource.UpdateRequest,
 		updateReq.Priority = plan.Prio.ValueInt64()
 	}
 
-	op, err := client.UpdateDNSDomainRecord(ctx, domainID, id, updateReq)
-	if err != nil {
+	if err := utils.Wait(ctx, client)(client.UpdateDNSDomainRecord(ctx, domainID, id, updateReq)); err != nil {
 		resp.Diagnostics.AddError("API returned error when updating domain record", err.Error())
-		return
-	}
-	if _, err := client.Wait(ctx, op, exoscale.OperationStateSuccess); err != nil {
-		resp.Diagnostics.AddError("update domain record operation failed", err.Error())
 		return
 	}
 
@@ -438,18 +427,12 @@ func (r *ResourceRecord) Delete(
 		return
 	}
 
-	op, err := client.DeleteDNSDomainRecord(ctx, domainID, id)
-	if err != nil {
+	if err := utils.Wait(ctx, client)(client.DeleteDNSDomainRecord(ctx, domainID, id)); err != nil {
 		if errors.Is(err, exoscale.ErrNotFound) {
 			resp.State.RemoveResource(ctx)
 			return
 		}
 		resp.Diagnostics.AddError("API returned error when deleting domain record", err.Error())
-		return
-	}
-
-	if _, err := client.Wait(ctx, op, exoscale.OperationStateSuccess); err != nil {
-		resp.Diagnostics.AddError("delete domain record operation failed", err.Error())
 		return
 	}
 }

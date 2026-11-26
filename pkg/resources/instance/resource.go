@@ -11,8 +11,10 @@ import (
 	exoscale "github.com/exoscale/egoscale/v3"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/planmodifiers"
 	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/validators"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
@@ -41,6 +43,7 @@ After the creation, you can retrieve the password of an instance with [Exoscale 
 var _ resource.Resource = (*Resource)(nil)
 var _ resource.ResourceWithImportState = (*Resource)(nil)
 var _ resource.ResourceWithModifyPlan = (*Resource)(nil)
+var _ resource.ResourceWithUpgradeState = (*Resource)(nil)
 
 type Resource struct {
 	client *exoscale.Client
@@ -63,6 +66,7 @@ type ResourceModel struct {
 	ElasticIPIDs          types.Set    `tfsdk:"elastic_ip_ids"`
 	EnableSecureBoot      types.Bool   `tfsdk:"enable_secure_boot"`
 	EnableTPM             types.Bool   `tfsdk:"enable_tpm"`
+	IPForwarding          types.Bool   `tfsdk:"ip_forwarding"`
 	IPv6                  types.Bool   `tfsdk:"ipv6"`
 	IPv6Address           types.String `tfsdk:"ipv6_address"`
 	Labels                types.Map    `tfsdk:"labels"`
@@ -94,6 +98,9 @@ func (r *Resource) Metadata(ctx context.Context, req resource.MetadataRequest, r
 // Schema defines the resource attributes.
 func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		// Version 1: legacy SDKv2 empty values normalised, see UpgradeState.
+		Version: 1,
+
 		Description:         "Manage Exoscale Compute Instances.",
 		MarkdownDescription: markdownDescriptionResource,
 
@@ -111,9 +118,7 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 				MarkdownDescription: "❗ A list of [exoscale_anti_affinity_group](./anti_affinity_group.md) (IDs) to attach to the instance (may only be set at creation time).",
 				ElementType:         types.StringType,
 				Optional:            true,
-				Computed:            true,
 				PlanModifiers: []planmodifier.Set{
-					emptySetIsNull{},
 					setRequiresReplace(),
 				},
 			},
@@ -122,10 +127,6 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 				MarkdownDescription: "A list of [exoscale_block_storage_volume](./block_storage_volume.md) (ID) to attach to the instance.",
 				ElementType:         types.StringType,
 				Optional:            true,
-				Computed:            true,
-				PlanModifiers: []planmodifier.Set{
-					emptySetIsNull{},
-				},
 			},
 			"created_at": schema.StringAttribute{
 				Description:         "The instance creation date.",
@@ -139,9 +140,7 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 				Description:         "❗ A deploy target ID.",
 				MarkdownDescription: "❗ A deploy target ID.",
 				Optional:            true,
-				Computed:            true,
 				PlanModifiers: []planmodifier.String{
-					emptyStringIsNull{},
 					stringRequiresReplace(),
 				},
 			},
@@ -163,10 +162,6 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 				MarkdownDescription: "A list of [exoscale_elastic_ip](./elastic_ip.md) (IDs) to attach to the instance.",
 				ElementType:         types.StringType,
 				Optional:            true,
-				Computed:            true,
-				PlanModifiers: []planmodifier.Set{
-					emptySetIsNull{},
-				},
 			},
 			"enable_secure_boot": schema.BoolAttribute{
 				Description:         "❗ Enable secure boot on the instance (boolean; default: 'false'). Can not be changed after the creation.",
@@ -194,6 +189,25 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 				Computed:            true,
 				Default:             booldefault.StaticBool(false),
 			},
+			"ip_forwarding": schema.BoolAttribute{
+				Description:         "❗ Allow the instance to act as a router in a VPC network (boolean; default: 'false'). Can not be changed after the creation.",
+				MarkdownDescription: "❗ Allow the instance to act as a router in a VPC network (boolean; default: `false`). Can not be changed after the creation.",
+				Optional:            true,
+				Computed:            true,
+				Default:             booldefault.StaticBool(false),
+				PlanModifiers: []planmodifier.Bool{
+					// State written before this attribute existed holds no
+					// value until the next refresh: that must not replace the
+					// instance.
+					boolplanmodifier.RequiresReplaceIf(
+						func(_ context.Context, req planmodifier.BoolRequest, resp *boolplanmodifier.RequiresReplaceIfFuncResponse) {
+							resp.RequiresReplace = !req.StateValue.IsNull()
+						},
+						"Changing IP forwarding replaces the instance.",
+						"Changing IP forwarding replaces the instance.",
+					),
+				},
+			},
 			"ipv6": schema.BoolAttribute{
 				Description:         "Enable IPv6 on the instance (boolean; default: 'false'). Can not be disabled after being enabled.",
 				MarkdownDescription: "Enable IPv6 on the instance (boolean; default: `false`). Can not be disabled after being enabled.",
@@ -211,10 +225,6 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 				MarkdownDescription: "A map of key/value labels.",
 				ElementType:         types.StringType,
 				Optional:            true,
-				Computed:            true,
-				PlanModifiers: []planmodifier.Map{
-					emptyMapIsNull{},
-				},
 			},
 			"mac_address": schema.StringAttribute{
 				Description:         "MAC address",
@@ -237,8 +247,8 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 				Default:             booldefault.StaticBool(false),
 			},
 			"private_network_ids": schema.SetAttribute{
-				Description:         "A list of private networks (IDs) attached to the instance. Please use the 'network_interface..network_id' argument instead.",
-				MarkdownDescription: "A list of private networks (IDs) attached to the instance. Please use the `network_interface.*.network_id` argument instead.",
+				Description:         "A list of private networks (IDs) attached to the instance. Please use the 'network_interface..network_id' argument instead. Private Networks are deprecated in favor of VPC.",
+				MarkdownDescription: "A list of private networks (IDs) attached to the instance. Please use the `network_interface.*.network_id` argument instead. Private Networks are deprecated in favor of [VPC](https://community.exoscale.com/product/networking/vpc/).",
 				DeprecationMessage:  "Use the network_interface block instead.",
 				ElementType:         types.StringType,
 				Computed:            true,
@@ -255,10 +265,6 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 				Description:         "Domain name for reverse DNS record.",
 				MarkdownDescription: "Domain name for reverse DNS record.",
 				Optional:            true,
-				Computed:            true,
-				PlanModifiers: []planmodifier.String{
-					emptyStringIsNull{},
-				},
 			},
 			"ssh_key": schema.StringAttribute{
 				Description:         "❗ The exoscale_ssh_key (name) to authorize in the instance (may only be set at creation time).",
@@ -277,9 +283,7 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 				MarkdownDescription: "❗ The list of [exoscale_ssh_key](./ssh_key.md) (name) to authorize in the instance (may only be set at creation time).",
 				ElementType:         types.StringType,
 				Optional:            true,
-				Computed:            true,
 				PlanModifiers: []planmodifier.Set{
-					emptySetIsNull{},
 					setRequiresReplace(),
 				},
 			},
@@ -288,10 +292,6 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 				MarkdownDescription: "A list of [exoscale_security_group](./security_group.md) (IDs) to attach to the instance.",
 				ElementType:         types.StringType,
 				Optional:            true,
-				Computed:            true,
-				PlanModifiers: []planmodifier.Set{
-					emptySetIsNull{},
-				},
 			},
 			"state": schema.StringAttribute{
 				Description:         "The instance state ('running' or 'stopped'). If omitted, instance will start and reach 'running' state.",
@@ -323,7 +323,7 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 				MarkdownDescription: "The instance type (`<family>.<size>`, e.g. `standard.medium`; use the [Exoscale CLI](https://github.com/exoscale/cli/) - `exo compute instance-type list` - for the list of available types). **WARNING**: updating this attribute stops/restarts the instance.",
 				Required:            true,
 				PlanModifiers: []planmodifier.String{
-					ignoreCase(),
+					planmodifiers.IgnoreCase(),
 				},
 				Validators: []validator.String{
 					stringFuncValidator{
@@ -342,7 +342,7 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 				MarkdownDescription: "[cloud-init](https://cloudinit.readthedocs.io/) configuration.",
 				Optional:            true,
 				PlanModifiers: []planmodifier.String{
-					ignoreUserDataEncoding(),
+					planmodifiers.IgnoreUserDataEncoding(),
 				},
 				Validators: []validator.String{
 					stringFuncValidator{
@@ -368,8 +368,11 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 		},
 		Blocks: map[string]schema.Block{
 			"network_interface": schema.SetNestedBlock{
-				Description:         "Private network interfaces (may be specified multiple times). Structure is documented below.",
-				MarkdownDescription: "Private network interfaces (may be specified multiple times). Structure is documented below.",
+				Description:         "Private network interfaces (may be specified multiple times). Structure is documented below. Private Networks are deprecated in favor of VPC: use the 'vpc' block instead.",
+				MarkdownDescription: "Private network interfaces (may be specified multiple times). Structure is documented below. Private Networks are deprecated in favor of [VPC](https://community.exoscale.com/product/networking/vpc/): use the `vpc` block instead.",
+				Validators: []validator.Set{
+					deprecatedSetBlockValidator{message: "Private Networks are deprecated in favor of VPC. Use the vpc block to attach the instance to VPC subnets instead."},
+				},
 				NestedObject: schema.NestedBlockObject{
 					Attributes: map[string]schema.Attribute{
 						"ip_address": schema.StringAttribute{
@@ -378,15 +381,7 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 							Optional:            true,
 							Computed:            true,
 							Validators: []validator.String{
-								stringFuncValidator{
-									description: "The value must be an IPv4 address.",
-									validate: func(v string) error {
-										if ip := net.ParseIP(v); ip == nil || ip.To4() == nil {
-											return fmt.Errorf("expected a valid IPv4 address, got %q", v)
-										}
-										return nil
-									},
-								},
+								validators.IsIPv4Address(),
 							},
 						},
 						"mac_address": schema.StringAttribute{
@@ -462,6 +457,51 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 				},
 			},
 			"timeouts": timeouts.BlockAll(ctx),
+		},
+	}
+}
+
+// UpgradeState normalises to null, once, the empty values written for unset
+// attributes by the SDKv2 (and kept by the framework releases up to v0.77.0).
+func (r *Resource) UpgradeState(ctx context.Context) map[int64]resource.StateUpgrader {
+	// Version 0 only differs by Computed flags, its states decode with the
+	// current schema.
+	var current resource.SchemaResponse
+	r.Schema(ctx, resource.SchemaRequest{}, &current)
+
+	return map[int64]resource.StateUpgrader{
+		0: {
+			PriorSchema: &current.Schema,
+			StateUpgrader: func(ctx context.Context, req resource.UpgradeStateRequest, resp *resource.UpgradeStateResponse) {
+				var state ResourceModel
+
+				resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+				if resp.Diagnostics.HasError() {
+					return
+				}
+
+				for _, v := range []*types.String{&state.DeployTargetID, &state.ReverseDNS} {
+					if v.ValueString() == "" {
+						*v = types.StringNull()
+					}
+				}
+				for _, v := range []*types.Set{
+					&state.AntiAffinityGroupIDs,
+					&state.BlockStorageVolumeIDs,
+					&state.ElasticIPIDs,
+					&state.SSHKeys,
+					&state.SecurityGroupIDs,
+				} {
+					if len(v.Elements()) == 0 {
+						*v = types.SetNull(types.StringType)
+					}
+				}
+				if len(state.Labels.Elements()) == 0 {
+					state.Labels = types.MapNull(types.StringType)
+				}
+
+				resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+			},
 		},
 	}
 }
@@ -651,11 +691,18 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 		request.PublicIPAssignment = exoscale.PublicIPAssignmentDual
 	}
 
+	if plan.State.ValueString() == string(exoscale.InstanceStateStopped) {
+		request.AutoStart = new(false)
+	}
+
 	if plan.EnableTPM.ValueBool() {
 		request.TpmEnabled = exoscale.Ptr(true)
 	}
 	if plan.EnableSecureBoot.ValueBool() {
 		request.SecurebootEnabled = exoscale.Ptr(true)
+	}
+	if plan.IPForwarding.ValueBool() {
+		request.IPForwarding = exoscale.Ptr(true)
 	}
 
 	if v := plan.DeployTargetID.ValueString(); v != "" {
@@ -667,10 +714,6 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 	securityGroupIDs, diags := stringSetValues(ctx, plan.SecurityGroupIDs)
 	resp.Diagnostics.Append(diags...)
 	sshKeys, diags := stringSetValues(ctx, plan.SSHKeys)
-	resp.Diagnostics.Append(diags...)
-	elasticIPIDs, diags := stringSetValues(ctx, plan.ElasticIPIDs)
-	resp.Diagnostics.Append(diags...)
-	blockStorageVolumeIDs, diags := stringSetValues(ctx, plan.BlockStorageVolumeIDs)
 	resp.Diagnostics.Append(diags...)
 	nifs, diags := networkInterfaces(ctx, plan.NetworkInterface)
 	resp.Diagnostics.Append(diags...)
@@ -720,15 +763,9 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 		request.UserData = userData
 	}
 
-	operation, err := client.CreateInstance(ctx, request)
+	operation, err := utils.WaitOperation(ctx, client)(client.CreateInstance(ctx, request))
 	if err != nil {
 		resp.Diagnostics.AddError("API returned an error when creating instance", err.Error())
-		return
-	}
-
-	operation, err = client.Wait(ctx, operation, exoscale.OperationStateSuccess)
-	if err != nil {
-		resp.Diagnostics.AddError("create instance operation failed", err.Error())
 		return
 	}
 
@@ -744,17 +781,15 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 	}
 
 	if plan.DestroyProtected.ValueBool() {
-		if err := wait(ctx, client)(client.AddInstanceProtection(ctx, id)); err != nil {
+		if err := utils.Wait(ctx, client)(client.AddInstanceProtection(ctx, id)); err != nil {
 			resp.Diagnostics.AddError("unable to make instance destroy protected", err.Error())
 			return
 		}
 	}
 
-	for _, elasticIPID := range elasticIPIDs {
-		if err := attachElasticIP(ctx, client, id, elasticIPID); err != nil {
-			resp.Diagnostics.AddError("unable to attach Elastic IP "+elasticIPID, err.Error())
-			return
-		}
+	resp.Diagnostics.Append(elasticIPs.update(ctx, client, id, types.SetNull(types.StringType), plan.ElasticIPIDs)...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
 	for _, nif := range nifs {
@@ -764,28 +799,19 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 		}
 	}
 
-	for _, volumeID := range blockStorageVolumeIDs {
-		if err := attachBlockStorageVolume(ctx, client, id, volumeID); err != nil {
-			resp.Diagnostics.AddError("unable to attach block storage volume "+volumeID, err.Error())
-			return
-		}
+	resp.Diagnostics.Append(blockStorageVolumes.update(ctx, client, id, types.SetNull(types.StringType), plan.BlockStorageVolumeIDs)...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
 	if v := plan.ReverseDNS.ValueString(); v != "" {
-		err := wait(ctx, client)(client.UpdateReverseDNSInstance(
+		err := utils.Wait(ctx, client)(client.UpdateReverseDNSInstance(
 			ctx,
 			id,
 			exoscale.UpdateReverseDNSInstanceRequest{DomainName: v},
 		))
 		if err != nil {
 			resp.Diagnostics.AddError("unable to create Reverse DNS record", err.Error())
-			return
-		}
-	}
-
-	if plan.State.ValueString() == string(exoscale.InstanceStateStopped) {
-		if err := wait(ctx, client)(client.StopInstance(ctx, id)); err != nil {
-			resp.Diagnostics.AddError("unable to stop instance", err.Error())
 			return
 		}
 	}
@@ -948,7 +974,7 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 	}
 
 	if update {
-		if err := wait(ctx, client)(client.UpdateInstance(ctx, id, request)); err != nil {
+		if err := utils.Wait(ctx, client)(client.UpdateInstance(ctx, id, request)); err != nil {
 			resp.Diagnostics.AddError("unable to update instance", err.Error())
 			return
 		}
@@ -956,9 +982,9 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 
 	if plan.ReverseDNS.ValueString() != state.ReverseDNS.ValueString() {
 		if v := plan.ReverseDNS.ValueString(); v == "" {
-			err = wait(ctx, client)(client.DeleteReverseDNSInstance(ctx, id))
+			err = utils.Wait(ctx, client)(client.DeleteReverseDNSInstance(ctx, id))
 		} else {
-			err = wait(ctx, client)(client.UpdateReverseDNSInstance(
+			err = utils.Wait(ctx, client)(client.UpdateReverseDNSInstance(
 				ctx,
 				id,
 				exoscale.UpdateReverseDNSInstanceRequest{DomainName: v},
@@ -970,54 +996,14 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 		}
 	}
 
-	// Attach/detach Block Storage Volumes
-	if !plan.BlockStorageVolumeIDs.Equal(state.BlockStorageVolumeIDs) {
-		added, removed, diags := stringSetChange(ctx, state.BlockStorageVolumeIDs, plan.BlockStorageVolumeIDs)
-		resp.Diagnostics.Append(diags...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-
-		for _, volumeID := range added {
-			if err := attachBlockStorageVolume(ctx, client, id, volumeID); err != nil {
-				resp.Diagnostics.AddError("unable to attach block storage volume "+volumeID, err.Error())
-				return
-			}
-		}
-
-		for _, volumeID := range removed {
-			if err := detachBlockStorageVolume(ctx, client, volumeID); err != nil {
-				resp.Diagnostics.AddError("unable to detach block storage volume "+volumeID, err.Error())
-				return
-			}
-		}
+	resp.Diagnostics.Append(blockStorageVolumes.update(ctx, client, id, state.BlockStorageVolumeIDs, plan.BlockStorageVolumeIDs)...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
-	if !plan.ElasticIPIDs.Equal(state.ElasticIPIDs) {
-		added, removed, diags := stringSetChange(ctx, state.ElasticIPIDs, plan.ElasticIPIDs)
-		resp.Diagnostics.Append(diags...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-
-		for _, elasticIPID := range added {
-			if err := attachElasticIP(ctx, client, id, elasticIPID); err != nil {
-				resp.Diagnostics.AddError("unable to attach Elastic IP "+elasticIPID, err.Error())
-				return
-			}
-		}
-
-		for _, elasticIPID := range removed {
-			err := wait(ctx, client)(client.DetachInstanceFromElasticIP(
-				ctx,
-				exoscale.UUID(elasticIPID),
-				exoscale.DetachInstanceFromElasticIPRequest{Instance: &exoscale.InstanceTarget{ID: id}},
-			))
-			if err != nil && !errors.Is(err, exoscale.ErrNotFound) {
-				resp.Diagnostics.AddError("unable to detach Elastic IP "+elasticIPID, err.Error())
-				return
-			}
-		}
+	resp.Diagnostics.Append(elasticIPs.update(ctx, client, id, state.ElasticIPIDs, plan.ElasticIPIDs)...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
 	if !plan.NetworkInterface.Equal(state.NetworkInterface) {
@@ -1037,11 +1023,7 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 				continue
 			}
 
-			err := wait(ctx, client)(client.DetachInstanceFromPrivateNetwork(
-				ctx,
-				exoscale.UUID(nif.NetworkID.ValueString()),
-				exoscale.DetachInstanceFromPrivateNetworkRequest{Instance: &exoscale.Instance{ID: id}},
-			))
+			err := detachPrivateNetwork(ctx, client, id, nif.NetworkID.ValueString())
 			if err != nil && !errors.Is(err, exoscale.ErrNotFound) {
 				resp.Diagnostics.AddError("unable to detach Private Network "+nif.NetworkID.ValueString(), err.Error())
 				return
@@ -1067,36 +1049,9 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 		}
 	}
 
-	if !plan.SecurityGroupIDs.Equal(state.SecurityGroupIDs) {
-		added, removed, diags := stringSetChange(ctx, state.SecurityGroupIDs, plan.SecurityGroupIDs)
-		resp.Diagnostics.Append(diags...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-
-		for _, securityGroupID := range added {
-			err := wait(ctx, client)(client.AttachInstanceToSecurityGroup(
-				ctx,
-				exoscale.UUID(securityGroupID),
-				exoscale.AttachInstanceToSecurityGroupRequest{Instance: &exoscale.Instance{ID: id}},
-			))
-			if err != nil {
-				resp.Diagnostics.AddError("unable to attach Security Group "+securityGroupID, err.Error())
-				return
-			}
-		}
-
-		for _, securityGroupID := range removed {
-			err := wait(ctx, client)(client.DetachInstanceFromSecurityGroup(
-				ctx,
-				exoscale.UUID(securityGroupID),
-				exoscale.DetachInstanceFromSecurityGroupRequest{Instance: &exoscale.Instance{ID: id}},
-			))
-			if err != nil && !errors.Is(err, exoscale.ErrNotFound) {
-				resp.Diagnostics.AddError("unable to detach Security Group "+securityGroupID, err.Error())
-				return
-			}
-		}
+	resp.Diagnostics.Append(securityGroups.update(ctx, client, id, state.SecurityGroupIDs, plan.SecurityGroupIDs)...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
 	var (
@@ -1137,14 +1092,14 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 		shouldStop := instance.State == exoscale.InstanceStateRunning &&
 			(wantedState == string(exoscale.InstanceStateStopped) || diskSizeChanged || typeChanged || tpmChanged)
 		if shouldStop {
-			if err := wait(ctx, client)(client.StopInstance(ctx, id)); err != nil {
+			if err := utils.Wait(ctx, client)(client.StopInstance(ctx, id)); err != nil {
 				resp.Diagnostics.AddError("unable to stop instance", err.Error())
 				return
 			}
 		}
 
 		if diskSizeChanged {
-			err := wait(ctx, client)(client.ResizeInstanceDisk(
+			err := utils.Wait(ctx, client)(client.ResizeInstanceDisk(
 				ctx,
 				id,
 				exoscale.ResizeInstanceDiskRequest{DiskSize: plan.DiskSize.ValueInt64()},
@@ -1161,7 +1116,7 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 				resp.Diagnostics.AddError("unable to retrieve instance type", err.Error())
 				return
 			}
-			err = wait(ctx, client)(client.ScaleInstance(ctx, id, exoscale.ScaleInstanceRequest{InstanceType: instanceType}))
+			err = utils.Wait(ctx, client)(client.ScaleInstance(ctx, id, exoscale.ScaleInstanceRequest{InstanceType: instanceType}))
 			if err != nil {
 				resp.Diagnostics.AddError("unable to scale instance", err.Error())
 				return
@@ -1169,7 +1124,7 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 		}
 
 		if tpmChanged {
-			if err := wait(ctx, client)(client.EnableTpm(ctx, id)); err != nil {
+			if err := utils.Wait(ctx, client)(client.EnableTpm(ctx, id)); err != nil {
 				resp.Diagnostics.AddError("failed to enable TPM", err.Error())
 				return
 			}
@@ -1178,7 +1133,7 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 		shouldStart := wantedState == string(exoscale.InstanceStateRunning) &&
 			(shouldStop || instance.State != exoscale.InstanceStateRunning)
 		if shouldStart {
-			if err := wait(ctx, client)(client.StartInstance(ctx, id, exoscale.StartInstanceRequest{})); err != nil {
+			if err := utils.Wait(ctx, client)(client.StartInstance(ctx, id, exoscale.StartInstanceRequest{})); err != nil {
 				resp.Diagnostics.AddError("unable to start instance", err.Error())
 				return
 			}
@@ -1191,12 +1146,12 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 	// Therefore we simply apply what the practitioner configured
 	// If the field is absent, the protection will be removed
 	if plan.DestroyProtected.ValueBool() {
-		if err := wait(ctx, client)(client.AddInstanceProtection(ctx, id)); err != nil {
+		if err := utils.Wait(ctx, client)(client.AddInstanceProtection(ctx, id)); err != nil {
 			resp.Diagnostics.AddError("unable to make instance destroy protected", err.Error())
 			return
 		}
 	} else {
-		if err := wait(ctx, client)(client.RemoveInstanceProtection(ctx, id)); err != nil {
+		if err := utils.Wait(ctx, client)(client.RemoveInstanceProtection(ctx, id)); err != nil {
 			resp.Diagnostics.AddError("unable to remove destroy protection from instance", err.Error())
 			return
 		}
@@ -1245,13 +1200,13 @@ func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp 
 		return
 	}
 
-	err = wait(ctx, client)(client.DeleteReverseDNSInstance(ctx, id))
+	err = utils.Wait(ctx, client)(client.DeleteReverseDNSInstance(ctx, id))
 	if err != nil && !errors.Is(err, exoscale.ErrNotFound) {
 		resp.Diagnostics.AddError("unable to delete Reverse DNS record", err.Error())
 		return
 	}
 
-	err = wait(ctx, client)(client.DeleteInstance(ctx, id))
+	err = utils.Wait(ctx, client)(client.DeleteInstance(ctx, id))
 	if err != nil {
 		if errors.Is(err, exoscale.ErrNotFound) {
 			return
@@ -1265,90 +1220,6 @@ func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp 
 
 func (r *Resource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	utils.ImportStatePassthroughZonedID(ctx, req, resp)
-}
-
-// wait returns a function waiting for the success of an operation, to be
-// wrapped around the API call starting it.
-func wait(ctx context.Context, client *exoscale.Client) func(*exoscale.Operation, error) error {
-	return func(operation *exoscale.Operation, err error) error {
-		if err != nil {
-			return err
-		}
-
-		_, err = client.Wait(ctx, operation, exoscale.OperationStateSuccess)
-
-		return err
-	}
-}
-
-// stringSetChange returns the values added to and removed from a set of
-// strings between the state and the plan.
-func stringSetChange(ctx context.Context, state, plan types.Set) (added, removed []string, diags diag.Diagnostics) {
-	old, dg := stringSetValues(ctx, state)
-	diags.Append(dg...)
-	cur, dg := stringSetValues(ctx, plan)
-	diags.Append(dg...)
-
-	added, removed = stringSetDiff(old, cur)
-
-	return added, removed, diags
-}
-
-func attachElasticIP(ctx context.Context, client *exoscale.Client, id exoscale.UUID, elasticIPID string) error {
-	return wait(ctx, client)(client.AttachInstanceToElasticIP(
-		ctx,
-		exoscale.UUID(elasticIPID),
-		exoscale.AttachInstanceToElasticIPRequest{Instance: &exoscale.InstanceTarget{ID: id}},
-	))
-}
-
-func attachPrivateNetwork(ctx context.Context, client *exoscale.Client, id exoscale.UUID, nif NetworkInterfaceModel) error {
-	return wait(ctx, client)(client.AttachInstanceToPrivateNetwork(
-		ctx,
-		exoscale.UUID(nif.NetworkID.ValueString()),
-		exoscale.AttachInstanceToPrivateNetworkRequest{
-			Instance: &exoscale.AttachInstanceToPrivateNetworkRequestInstance{ID: id},
-			// The IP address is unknown or null unless the configuration sets one.
-			IP: net.ParseIP(nif.IPAddress.ValueString()),
-		},
-	))
-}
-
-func attachBlockStorageVolume(ctx context.Context, client *exoscale.Client, id exoscale.UUID, volumeID string) error {
-	volume, err := exoscale.ParseUUID(volumeID)
-	if err != nil {
-		return fmt.Errorf("unable to parse block storage volume ID: %w", err)
-	}
-
-	return wait(ctx, client)(client.AttachBlockStorageVolumeToInstance(
-		ctx,
-		volume,
-		exoscale.AttachBlockStorageVolumeToInstanceRequest{Instance: &exoscale.InstanceTarget{ID: id}},
-	))
-}
-
-func detachBlockStorageVolume(ctx context.Context, client *exoscale.Client, volumeID string) error {
-	volume, err := exoscale.ParseUUID(volumeID)
-	if err != nil {
-		return fmt.Errorf("unable to parse block storage volume ID: %w", err)
-	}
-
-	err = wait(ctx, client)(client.DetachBlockStorageVolume(ctx, volume))
-	if err != nil {
-		// The volume was likely already deleted as part of its regular
-		// deletion process.
-		if errors.Is(err, exoscale.ErrNotFound) {
-			return nil
-		}
-
-		// Ideally we would have a custom error defined in OpenAPI spec & egoscale.
-		// For now we just check the error text.
-		if strings.HasSuffix(err.Error(), "Volume not attached") {
-			return nil
-		}
-	}
-
-	return err
 }
 
 // nullUnknown returns the model with the values still unknown set to null, so

@@ -77,7 +77,7 @@ func poolInstanceType(ctx context.Context, client *exoscale.Client, pool *exosca
 		return "", err
 	}
 
-	return strings.ToLower(string(instanceType.Family)) + "." + strings.ToLower(string(instanceType.Size)), nil
+	return utils.InstanceTypeName(instanceType), nil
 }
 
 // poolInstances returns the `instances` and `virtual_machines` values of the
@@ -239,7 +239,7 @@ func applyPool( //nolint:gocyclo
 			return diags
 		}
 		// Encoding differences with the configuration are not drift.
-		if model.UserData.IsNull() || !sameUserData(userData, model.UserData.ValueString()) {
+		if model.UserData.IsNull() || !utils.SameUserData(userData, model.UserData.ValueString()) {
 			model.UserData = types.StringValue(userData)
 		}
 	}

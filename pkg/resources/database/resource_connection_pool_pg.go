@@ -405,16 +405,7 @@ func (data *PGConnectionPoolResourceModel) CreateResource(ctx context.Context, c
 		createRequest.Username = v3.DBAASPGPoolUsername(data.Username.ValueString())
 	}
 
-	op, err := client.CreateDBAASPGConnectionPool(ctx, data.Service.ValueString(), createRequest)
-	if err != nil {
-		diagnostics.AddError(
-			"Client Error",
-			fmt.Sprintf("Unable to create service connection pool, got error %s", err.Error()),
-		)
-		return
-	}
-
-	if _, err := client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
+	if err := utils.Wait(ctx, client)(client.CreateDBAASPGConnectionPool(ctx, data.Service.ValueString(), createRequest)); err != nil {
 		diagnostics.AddError(
 			"Client Error",
 			fmt.Sprintf("Unable to create service connection pool, got error %s", err.Error()),
@@ -444,16 +435,7 @@ func (data *PGConnectionPoolResourceModel) UpdateResource(ctx context.Context, c
 		updateRequest.Username = v3.DBAASPGPoolUsername(data.Username.ValueString())
 	}
 
-	op, err := client.UpdateDBAASPGConnectionPool(ctx, data.Service.ValueString(), data.Name.ValueString(), updateRequest)
-	if err != nil {
-		diagnostics.AddError(
-			"Client Error",
-			fmt.Sprintf("Unable to update service connection pool, got error %s", err.Error()),
-		)
-		return
-	}
-
-	if _, err := client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
+	if err := utils.Wait(ctx, client)(client.UpdateDBAASPGConnectionPool(ctx, data.Service.ValueString(), data.Name.ValueString(), updateRequest)); err != nil {
 		diagnostics.AddError(
 			"Client Error",
 			fmt.Sprintf("Unable to update service connection pool, got error %s", err.Error()),
@@ -467,16 +449,7 @@ func (data *PGConnectionPoolResourceModel) UpdateResource(ctx context.Context, c
 }
 
 func (data *PGConnectionPoolResourceModel) DeleteResource(ctx context.Context, client *v3.Client, diagnostics *diag.Diagnostics) {
-	op, err := client.DeleteDBAASPGConnectionPool(ctx, data.Service.ValueString(), data.Name.ValueString())
-	if err != nil {
-		diagnostics.AddError(
-			"Client Error",
-			fmt.Sprintf("Unable to delete service connection pool, got error %s", err.Error()),
-		)
-		return
-	}
-
-	if _, err := client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
+	if err := utils.Wait(ctx, client)(client.DeleteDBAASPGConnectionPool(ctx, data.Service.ValueString(), data.Name.ValueString())); err != nil {
 		diagnostics.AddError(
 			"Client Error",
 			fmt.Sprintf("Unable to delete service connection pool, got error %s", err.Error()),

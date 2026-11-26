@@ -110,7 +110,7 @@ func (d *DataSourceURI) Schema(
 				Required:            true,
 			},
 			"type": schema.StringAttribute{
-				MarkdownDescription: "The type of the database service (`clickhouse`, `kafka`, `mysql`, `opensearch`, `pg`, `valkey`, `grafana`).",
+				MarkdownDescription: "The type of the database service (`clickhouse`, `kafka`, `mysql`, `opensearch`, `pg`, `valkey`, `grafana`, `thanos`).",
 				Required:            true,
 				Validators: []validator.String{
 					stringvalidator.OneOf(ServicesList...),
@@ -594,6 +594,69 @@ func (d *DataSourceURI) Read(ctx context.Context, req datasource.ReadRequest, re
 			resp.Diagnostics.AddError(
 				"Client Error",
 				fmt.Sprintf("Unable to reveal Database Service Grafana secret: %s", err),
+			)
+			return
+		}
+
+		params["password"] = creds.Password
+	case "thanos":
+		res, err := waitForDBAASService(
+			ctx,
+			client.GetDBAASServiceThanos,
+			data.Name.ValueString(),
+			func(s *exoscale.DBAASServiceThanos) string { return string(s.State) },
+		)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Client Error",
+				fmt.Sprintf("Unable to read Database Service Thanos: %s", err),
+			)
+			return
+		}
+
+		if res.ConnectionInfo == nil || res.ConnectionInfo.QueryFrontendURI == "" {
+			resp.Diagnostics.AddError(
+				"Client Error",
+				"Database Service Thanos has no query frontend URI",
+			)
+			return
+		}
+
+		params = res.URIParams
+		if i, ok := params["user"]; ok {
+			if s, ok := i.(string); ok {
+				user = s
+			}
+		}
+		if user == "" {
+			resp.Diagnostics.AddError(
+				"Client Error",
+				"Database Service Thanos user is empty",
+			)
+			return
+		}
+		data.Schema = types.StringValue("https")
+
+		creds, err := client.RevealDBAASThanosUserPassword(ctx, data.Name.ValueString(), user)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Client Error",
+				fmt.Sprintf("Unable to reveal Database Service Thanos secret: %s", err),
+			)
+			return
+		}
+
+		// Thanos is the one service type where the service-level `uri` is not
+		// the user-facing endpoint: the API reports the receiver remote-write
+		// URI there (same host and port as receiver-remote-write-uri), while
+		// queries go to the query-frontend component. Return the query
+		// endpoint here, as Console does in its connection data tab. The
+		// resource `uri` attribute keeps the API service URI, like every
+		// other service type.
+		uri, err = uriWithPassword(res.ConnectionInfo.QueryFrontendURI, creds.Username, creds.Password)
+		if err != nil {
+			resp.Diagnostics.AddError("Client Error",
+				fmt.Sprintf("Unable to parse Database Service Thanos secret: %s", err),
 			)
 			return
 		}

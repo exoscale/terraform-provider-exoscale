@@ -50,17 +50,9 @@ func (c Client) ListAIAPIKeys(ctx context.Context) (*ListAIAPIKeysResponse, erro
 		return nil, fmt.Errorf("ListAIAPIKeys: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-ai-api-keys")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ListAIAPIKeys: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -103,17 +95,9 @@ func (c Client) CreateAIAPIKey(ctx context.Context, req CreateAIAPIKeyRequest) (
 		return nil, fmt.Errorf("CreateAIAPIKey: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-ai-api-key")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("CreateAIAPIKey: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -151,17 +135,9 @@ func (c Client) GetAIAPIKey(ctx context.Context, id UUID) (*GetAIAPIKeyResponse,
 		return nil, fmt.Errorf("GetAIAPIKey: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-ai-api-key")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetAIAPIKey: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -205,17 +181,9 @@ func (c Client) UpdateAIAPIKey(ctx context.Context, id UUID, req UpdateAIAPIKeyR
 		return nil, fmt.Errorf("UpdateAIAPIKey: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-ai-api-key")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateAIAPIKey: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -253,17 +221,9 @@ func (c Client) RevokeAIAPIKey(ctx context.Context, id UUID) (*Operation, error)
 		return nil, fmt.Errorf("RevokeAIAPIKey: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "revoke-ai-api-key")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("RevokeAIAPIKey: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -320,17 +280,9 @@ func (c Client) ListDeployments(ctx context.Context) (*ListDeploymentsResponse, 
 		return nil, fmt.Errorf("ListDeployments: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-deployments")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ListDeployments: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -373,17 +325,9 @@ func (c Client) CreateDeployment(ctx context.Context, req CreateDeploymentReques
 		return nil, fmt.Errorf("CreateDeployment: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-deployment")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("CreateDeployment: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -421,17 +365,9 @@ func (c Client) DeleteDeployment(ctx context.Context, id UUID) (*Operation, erro
 		return nil, fmt.Errorf("DeleteDeployment: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-deployment")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDeployment: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -469,17 +405,9 @@ func (c Client) GetDeployment(ctx context.Context, id UUID) (*GetDeploymentRespo
 		return nil, fmt.Errorf("GetDeployment: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-deployment")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetDeployment: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -522,17 +450,9 @@ func (c Client) UpdateDeployment(ctx context.Context, id UUID, req UpdateDeploym
 		return nil, fmt.Errorf("UpdateDeployment: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-deployment")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateDeployment: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -552,52 +472,6 @@ func (c Client) UpdateDeployment(ctx context.Context, id UUID, req UpdateDeploym
 	return bodyresp, nil
 }
 
-// Get Deployment API Key
-func (c Client) RevealDeploymentAPIKey(ctx context.Context, id UUID) (*RevealDeploymentAPIKeyResponse, error) {
-	path := fmt.Sprintf("/ai/deployment/%v/api-key", id)
-
-	request, err := http.NewRequestWithContext(ctx, "GET", c.serverEndpoint+path, nil)
-	if err != nil {
-		return nil, fmt.Errorf("RevealDeploymentAPIKey: new request: %w", err)
-	}
-
-	request.Header.Add("User-Agent", c.getUserAgent())
-
-	if err := c.executeRequestInterceptors(ctx, request); err != nil {
-		return nil, fmt.Errorf("RevealDeploymentAPIKey: execute request editors: %w", err)
-	}
-
-	if err := c.signRequest(request); err != nil {
-		return nil, fmt.Errorf("RevealDeploymentAPIKey: sign request: %w", err)
-	}
-
-	if c.trace {
-		dumpRequest(request, "reveal-deployment-api-key")
-	}
-
-	response, err := c.httpClient.Do(request)
-	if err != nil {
-		return nil, fmt.Errorf("RevealDeploymentAPIKey: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
-	}
-
-	if err := handleHTTPErrorResp(response); err != nil {
-		return nil, fmt.Errorf("RevealDeploymentAPIKey: http response: %w", decodeAPIErrorResponse(err, map[int]func() any{
-			404: func() any { return new(ErrorResponse) },
-		}))
-	}
-
-	bodyresp := new(RevealDeploymentAPIKeyResponse)
-	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("RevealDeploymentAPIKey: prepare JSON response: %w", err)
-	}
-
-	return bodyresp, nil
-}
-
 type GetDeploymentLogsOpt func(url.Values)
 
 func GetDeploymentLogsWithStream(stream bool) GetDeploymentLogsOpt {
@@ -612,7 +486,7 @@ func GetDeploymentLogsWithTail(tail int64) GetDeploymentLogsOpt {
 	}
 }
 
-// Return logs for the vLLM deployment (deploy/<release-name>--deployment-vllm). Optional ?stream=true to request streaming (may not be supported).
+// Return logs for the vLLM deployment (dedicated inference: deploy/<release-name>--deployment-vllm; llm-d: deploy/<release-name>-vllm). Optional ?stream=true to request streaming (may not be supported).
 func (c Client) GetDeploymentLogs(ctx context.Context, id UUID, opts ...GetDeploymentLogsOpt) (*GetDeploymentLogsResponse, error) {
 	path := fmt.Sprintf("/ai/deployment/%v/logs", id)
 
@@ -639,17 +513,9 @@ func (c Client) GetDeploymentLogs(ctx context.Context, id UUID, opts ...GetDeplo
 		return nil, fmt.Errorf("GetDeploymentLogs: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-deployment-logs")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetDeploymentLogs: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -694,17 +560,9 @@ func (c Client) ScaleDeployment(ctx context.Context, id UUID, req ScaleDeploymen
 		return nil, fmt.Errorf("ScaleDeployment: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "scale-deployment")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ScaleDeployment: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -759,17 +617,9 @@ func (c Client) GetInferenceEngineHelp(ctx context.Context, opts ...GetInference
 		return nil, fmt.Errorf("GetInferenceEngineHelp: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-inference-engine-help")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetInferenceEngineHelp: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -803,17 +653,9 @@ func (c Client) ListAIInstanceTypes(ctx context.Context) (*ListAIInstanceTypesRe
 		return nil, fmt.Errorf("ListAIInstanceTypes: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-ai-instance-types")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ListAIInstanceTypes: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -882,17 +724,9 @@ func (c Client) ListModels(ctx context.Context, opts ...ListModelsOpt) (*ListMod
 		return nil, fmt.Errorf("ListModels: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-models")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ListModels: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -935,17 +769,9 @@ func (c Client) CreateModel(ctx context.Context, req CreateModelRequest) (*Opera
 		return nil, fmt.Errorf("CreateModel: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-model")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("CreateModel: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -981,17 +807,9 @@ func (c Client) DeleteModel(ctx context.Context, id UUID) (*Operation, error) {
 		return nil, fmt.Errorf("DeleteModel: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-model")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteModel: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -1029,17 +847,9 @@ func (c Client) GetModel(ctx context.Context, id UUID) (*GetModelResponse, error
 		return nil, fmt.Errorf("GetModel: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-model")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetModel: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -1075,17 +885,9 @@ func (c Client) GetUserOrgConsumptionQuota(ctx context.Context) (*OrgConsumption
 		return nil, fmt.Errorf("GetUserOrgConsumptionQuota: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-user-org-consumption-quota")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetUserOrgConsumptionQuota: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -1144,17 +946,9 @@ func (c Client) ListAntiAffinityGroups(ctx context.Context) (*ListAntiAffinityGr
 		return nil, fmt.Errorf("ListAntiAffinityGroups: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-anti-affinity-groups")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ListAntiAffinityGroups: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -1202,17 +996,9 @@ func (c Client) CreateAntiAffinityGroup(ctx context.Context, req CreateAntiAffin
 		return nil, fmt.Errorf("CreateAntiAffinityGroup: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-anti-affinity-group")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("CreateAntiAffinityGroup: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -1246,17 +1032,9 @@ func (c Client) DeleteAntiAffinityGroup(ctx context.Context, id UUID) (*Operatio
 		return nil, fmt.Errorf("DeleteAntiAffinityGroup: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-anti-affinity-group")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteAntiAffinityGroup: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -1290,17 +1068,9 @@ func (c Client) GetAntiAffinityGroup(ctx context.Context, id UUID) (*AntiAffinit
 		return nil, fmt.Errorf("GetAntiAffinityGroup: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-anti-affinity-group")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetAntiAffinityGroup: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -1356,17 +1126,9 @@ func (c Client) ListAPIKeys(ctx context.Context) (*ListAPIKeysResponse, error) {
 		return nil, fmt.Errorf("ListAPIKeys: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-api-keys")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ListAPIKeys: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -1413,17 +1175,9 @@ func (c Client) CreateAPIKey(ctx context.Context, req CreateAPIKeyRequest) (*IAM
 		return nil, fmt.Errorf("CreateAPIKey: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-api-key")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("CreateAPIKey: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -1456,17 +1210,9 @@ func (c Client) DeleteAPIKey(ctx context.Context, id string) (*Operation, error)
 		return nil, fmt.Errorf("DeleteAPIKey: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-api-key")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteAPIKey: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -1499,17 +1245,9 @@ func (c Client) GetAPIKey(ctx context.Context, id string) (*IAMAPIKey, error) {
 		return nil, fmt.Errorf("GetAPIKey: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-api-key")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetAPIKey: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -1582,17 +1320,9 @@ func (c Client) ListBlockStorageVolumes(ctx context.Context, opts ...ListBlockSt
 		return nil, fmt.Errorf("ListBlockStorageVolumes: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-block-storage-volumes")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ListBlockStorageVolumes: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -1644,17 +1374,9 @@ func (c Client) CreateBlockStorageVolume(ctx context.Context, req CreateBlockSto
 		return nil, fmt.Errorf("CreateBlockStorageVolume: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-block-storage-volume")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("CreateBlockStorageVolume: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -1711,17 +1433,9 @@ func (c Client) ListBlockStorageSnapshots(ctx context.Context) (*ListBlockStorag
 		return nil, fmt.Errorf("ListBlockStorageSnapshots: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-block-storage-snapshots")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ListBlockStorageSnapshots: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -1755,17 +1469,9 @@ func (c Client) DeleteBlockStorageSnapshot(ctx context.Context, id UUID) (*Opera
 		return nil, fmt.Errorf("DeleteBlockStorageSnapshot: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-block-storage-snapshot")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteBlockStorageSnapshot: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -1799,17 +1505,9 @@ func (c Client) GetBlockStorageSnapshot(ctx context.Context, id UUID) (*BlockSto
 		return nil, fmt.Errorf("GetBlockStorageSnapshot: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-block-storage-snapshot")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetBlockStorageSnapshot: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -1856,17 +1554,9 @@ func (c Client) UpdateBlockStorageSnapshot(ctx context.Context, id UUID, req Upd
 		return nil, fmt.Errorf("UpdateBlockStorageSnapshot: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-block-storage-snapshot")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateBlockStorageSnapshot: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -1900,17 +1590,9 @@ func (c Client) DeleteBlockStorageVolume(ctx context.Context, id UUID) (*Operati
 		return nil, fmt.Errorf("DeleteBlockStorageVolume: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-block-storage-volume")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteBlockStorageVolume: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -1944,17 +1626,9 @@ func (c Client) GetBlockStorageVolume(ctx context.Context, id UUID) (*BlockStora
 		return nil, fmt.Errorf("GetBlockStorageVolume: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-block-storage-volume")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetBlockStorageVolume: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -2001,17 +1675,9 @@ func (c Client) UpdateBlockStorageVolume(ctx context.Context, id UUID, req Updat
 		return nil, fmt.Errorf("UpdateBlockStorageVolume: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-block-storage-volume")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateBlockStorageVolume: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -2057,17 +1723,9 @@ func (c Client) AttachBlockStorageVolumeToInstance(ctx context.Context, id UUID,
 		return nil, fmt.Errorf("AttachBlockStorageVolumeToInstance: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "attach-block-storage-volume-to-instance")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("AttachBlockStorageVolumeToInstance: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -2114,17 +1772,9 @@ func (c Client) CreateBlockStorageSnapshot(ctx context.Context, id UUID, req Cre
 		return nil, fmt.Errorf("CreateBlockStorageSnapshot: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-block-storage-snapshot")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("CreateBlockStorageSnapshot: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -2158,17 +1808,9 @@ func (c Client) DetachBlockStorageVolume(ctx context.Context, id UUID) (*Operati
 		return nil, fmt.Errorf("DetachBlockStorageVolume: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "detach-block-storage-volume")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DetachBlockStorageVolume: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -2214,17 +1856,9 @@ func (c Client) ResizeBlockStorageVolume(ctx context.Context, id UUID, req Resiz
 		return nil, fmt.Errorf("ResizeBlockStorageVolume: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "resize-block-storage-volume")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ResizeBlockStorageVolume: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -2264,17 +1898,9 @@ func (c Client) GetConsoleProxyURL(ctx context.Context, id UUID) (*GetConsolePro
 		return nil, fmt.Errorf("GetConsoleProxyURL: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-console-proxy-url")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetConsoleProxyURL: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -2312,17 +1938,9 @@ func (c Client) GetDBAASCACertificate(ctx context.Context) (*GetDBAASCACertifica
 		return nil, fmt.Errorf("GetDBAASCACertificate: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dbaas-ca-certificate")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASCACertificate: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -2355,17 +1973,9 @@ func (c Client) DeleteDBAASServiceClickhouse(ctx context.Context, name string) (
 		return nil, fmt.Errorf("DeleteDBAASServiceClickhouse: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-dbaas-service-clickhouse")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASServiceClickhouse: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -2398,17 +2008,9 @@ func (c Client) GetDBAASServiceClickhouse(ctx context.Context, name string) (*DB
 		return nil, fmt.Errorf("GetDBAASServiceClickhouse: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dbaas-service-clickhouse")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASServiceClickhouse: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -2449,7 +2051,7 @@ type CreateDBAASServiceClickhouseRequest struct {
 	ClickhouseSettings *JSONSchemaClickhouse `json:"clickhouse-settings,omitempty"`
 	ForkFromService    DBAASServiceName      `json:"fork-from-service,omitempty" validate:"omitempty,gte=0,lte=63"`
 	// Allow incoming connections from CIDR address block, e.g. '10.20.0.0/16'
-	IPFilter []string `json:"ip-filter,omitempty"`
+	IPFilter []string `json:"ip-filter"`
 	// Automatic maintenance settings
 	Maintenance *CreateDBAASServiceClickhouseRequestMaintenance `json:"maintenance,omitempty"`
 	// Subscription plan
@@ -2487,17 +2089,9 @@ func (c Client) CreateDBAASServiceClickhouse(ctx context.Context, name string, r
 		return nil, fmt.Errorf("CreateDBAASServiceClickhouse: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-dbaas-service-clickhouse")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASServiceClickhouse: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -2537,7 +2131,7 @@ type UpdateDBAASServiceClickhouseRequest struct {
 	// ClickHouse settings
 	ClickhouseSettings *JSONSchemaClickhouse `json:"clickhouse-settings,omitempty"`
 	// Allow incoming connections from CIDR address block, e.g. '10.20.0.0/16'
-	IPFilter []string `json:"ip-filter,omitempty"`
+	IPFilter []string `json:"ip-filter"`
 	// Automatic maintenance settings
 	Maintenance *UpdateDBAASServiceClickhouseRequestMaintenance `json:"maintenance,omitempty"`
 	// Subscription plan
@@ -2573,17 +2167,9 @@ func (c Client) UpdateDBAASServiceClickhouse(ctx context.Context, name string, r
 		return nil, fmt.Errorf("UpdateDBAASServiceClickhouse: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-dbaas-service-clickhouse")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateDBAASServiceClickhouse: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -2616,17 +2202,9 @@ func (c Client) StartDBAASClickhouseMaintenance(ctx context.Context, name string
 		return nil, fmt.Errorf("StartDBAASClickhouseMaintenance: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "start-dbaas-clickhouse-maintenance")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("StartDBAASClickhouseMaintenance: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -2659,17 +2237,9 @@ func (c Client) GetDBAASClickhouseAclConfig(ctx context.Context, serviceName str
 		return nil, fmt.Errorf("GetDBAASClickhouseAclConfig: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dbaas-clickhouse-acl-config")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASClickhouseAclConfig: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -2702,17 +2272,9 @@ func (c Client) ListDBAASClickhouseRoles(ctx context.Context, serviceName string
 		return nil, fmt.Errorf("ListDBAASClickhouseRoles: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-dbaas-clickhouse-roles")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ListDBAASClickhouseRoles: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -2745,17 +2307,9 @@ func (c Client) DeleteDBAASClickhouseRole(ctx context.Context, serviceName strin
 		return nil, fmt.Errorf("DeleteDBAASClickhouseRole: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-dbaas-clickhouse-role")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASClickhouseRole: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -2788,17 +2342,9 @@ func (c Client) ListDBAASClickhouseUsers(ctx context.Context, serviceName string
 		return nil, fmt.Errorf("ListDBAASClickhouseUsers: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-dbaas-clickhouse-users")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ListDBAASClickhouseUsers: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -2845,17 +2391,9 @@ func (c Client) CreateDBAASClickhouseUser(ctx context.Context, serviceName strin
 		return nil, fmt.Errorf("CreateDBAASClickhouseUser: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-dbaas-clickhouse-user")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASClickhouseUser: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -2888,17 +2426,9 @@ func (c Client) DeleteDBAASClickhouseUser(ctx context.Context, serviceName strin
 		return nil, fmt.Errorf("DeleteDBAASClickhouseUser: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-dbaas-clickhouse-user")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASClickhouseUser: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -2942,17 +2472,9 @@ func (c Client) ResetDBAASClickhouseUserPassword(ctx context.Context, serviceNam
 		return nil, fmt.Errorf("ResetDBAASClickhouseUserPassword: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "reset-dbaas-clickhouse-user-password")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ResetDBAASClickhouseUserPassword: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -2985,17 +2507,9 @@ func (c Client) RevealDBAASClickhouseUserPassword(ctx context.Context, serviceNa
 		return nil, fmt.Errorf("RevealDBAASClickhouseUserPassword: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "reveal-dbaas-clickhouse-user-password")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("RevealDBAASClickhouseUserPassword: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -3029,17 +2543,9 @@ func (c Client) DeleteDBAASExternalEndpointDatadog(ctx context.Context, endpoint
 		return nil, fmt.Errorf("DeleteDBAASExternalEndpointDatadog: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-dbaas-external-endpoint-datadog")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASExternalEndpointDatadog: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -3073,17 +2579,9 @@ func (c Client) GetDBAASExternalEndpointDatadog(ctx context.Context, endpointID 
 		return nil, fmt.Errorf("GetDBAASExternalEndpointDatadog: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dbaas-external-endpoint-datadog")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASExternalEndpointDatadog: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -3124,17 +2622,9 @@ func (c Client) UpdateDBAASExternalEndpointDatadog(ctx context.Context, endpoint
 		return nil, fmt.Errorf("UpdateDBAASExternalEndpointDatadog: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-dbaas-external-endpoint-datadog")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateDBAASExternalEndpointDatadog: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -3175,17 +2665,9 @@ func (c Client) CreateDBAASExternalEndpointDatadog(ctx context.Context, name str
 		return nil, fmt.Errorf("CreateDBAASExternalEndpointDatadog: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-dbaas-external-endpoint-datadog")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASExternalEndpointDatadog: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -3219,17 +2701,9 @@ func (c Client) DeleteDBAASExternalEndpointElasticsearch(ctx context.Context, en
 		return nil, fmt.Errorf("DeleteDBAASExternalEndpointElasticsearch: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-dbaas-external-endpoint-elasticsearch")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASExternalEndpointElasticsearch: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -3263,17 +2737,9 @@ func (c Client) GetDBAASExternalEndpointElasticsearch(ctx context.Context, endpo
 		return nil, fmt.Errorf("GetDBAASExternalEndpointElasticsearch: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dbaas-external-endpoint-elasticsearch")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASExternalEndpointElasticsearch: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -3314,17 +2780,9 @@ func (c Client) UpdateDBAASExternalEndpointElasticsearch(ctx context.Context, en
 		return nil, fmt.Errorf("UpdateDBAASExternalEndpointElasticsearch: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-dbaas-external-endpoint-elasticsearch")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateDBAASExternalEndpointElasticsearch: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -3365,17 +2823,9 @@ func (c Client) CreateDBAASExternalEndpointElasticsearch(ctx context.Context, na
 		return nil, fmt.Errorf("CreateDBAASExternalEndpointElasticsearch: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-dbaas-external-endpoint-elasticsearch")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASExternalEndpointElasticsearch: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -3409,17 +2859,9 @@ func (c Client) DeleteDBAASExternalEndpointOpensearch(ctx context.Context, endpo
 		return nil, fmt.Errorf("DeleteDBAASExternalEndpointOpensearch: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-dbaas-external-endpoint-opensearch")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASExternalEndpointOpensearch: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -3453,17 +2895,9 @@ func (c Client) GetDBAASExternalEndpointOpensearch(ctx context.Context, endpoint
 		return nil, fmt.Errorf("GetDBAASExternalEndpointOpensearch: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dbaas-external-endpoint-opensearch")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASExternalEndpointOpensearch: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -3504,17 +2938,9 @@ func (c Client) UpdateDBAASExternalEndpointOpensearch(ctx context.Context, endpo
 		return nil, fmt.Errorf("UpdateDBAASExternalEndpointOpensearch: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-dbaas-external-endpoint-opensearch")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateDBAASExternalEndpointOpensearch: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -3555,17 +2981,9 @@ func (c Client) CreateDBAASExternalEndpointOpensearch(ctx context.Context, name 
 		return nil, fmt.Errorf("CreateDBAASExternalEndpointOpensearch: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-dbaas-external-endpoint-opensearch")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASExternalEndpointOpensearch: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -3599,17 +3017,9 @@ func (c Client) DeleteDBAASExternalEndpointPrometheus(ctx context.Context, endpo
 		return nil, fmt.Errorf("DeleteDBAASExternalEndpointPrometheus: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-dbaas-external-endpoint-prometheus")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASExternalEndpointPrometheus: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -3643,17 +3053,9 @@ func (c Client) GetDBAASExternalEndpointPrometheus(ctx context.Context, endpoint
 		return nil, fmt.Errorf("GetDBAASExternalEndpointPrometheus: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dbaas-external-endpoint-prometheus")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASExternalEndpointPrometheus: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -3694,17 +3096,9 @@ func (c Client) UpdateDBAASExternalEndpointPrometheus(ctx context.Context, endpo
 		return nil, fmt.Errorf("UpdateDBAASExternalEndpointPrometheus: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-dbaas-external-endpoint-prometheus")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateDBAASExternalEndpointPrometheus: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -3745,17 +3139,9 @@ func (c Client) CreateDBAASExternalEndpointPrometheus(ctx context.Context, name 
 		return nil, fmt.Errorf("CreateDBAASExternalEndpointPrometheus: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-dbaas-external-endpoint-prometheus")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASExternalEndpointPrometheus: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -3789,17 +3175,9 @@ func (c Client) DeleteDBAASExternalEndpointRsyslog(ctx context.Context, endpoint
 		return nil, fmt.Errorf("DeleteDBAASExternalEndpointRsyslog: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-dbaas-external-endpoint-rsyslog")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASExternalEndpointRsyslog: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -3833,17 +3211,9 @@ func (c Client) GetDBAASExternalEndpointRsyslog(ctx context.Context, endpointID 
 		return nil, fmt.Errorf("GetDBAASExternalEndpointRsyslog: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dbaas-external-endpoint-rsyslog")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASExternalEndpointRsyslog: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -3884,17 +3254,9 @@ func (c Client) UpdateDBAASExternalEndpointRsyslog(ctx context.Context, endpoint
 		return nil, fmt.Errorf("UpdateDBAASExternalEndpointRsyslog: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-dbaas-external-endpoint-rsyslog")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateDBAASExternalEndpointRsyslog: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -3935,17 +3297,9 @@ func (c Client) CreateDBAASExternalEndpointRsyslog(ctx context.Context, name str
 		return nil, fmt.Errorf("CreateDBAASExternalEndpointRsyslog: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-dbaas-external-endpoint-rsyslog")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASExternalEndpointRsyslog: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -3989,17 +3343,9 @@ func (c Client) ListDBAASExternalEndpointTypes(ctx context.Context) (*ListDBAASE
 		return nil, fmt.Errorf("ListDBAASExternalEndpointTypes: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-dbaas-external-endpoint-types")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ListDBAASExternalEndpointTypes: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -4046,17 +3392,9 @@ func (c Client) AttachDBAASServiceToEndpoint(ctx context.Context, sourceServiceN
 		return nil, fmt.Errorf("AttachDBAASServiceToEndpoint: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "attach-dbaas-service-to-endpoint")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("AttachDBAASServiceToEndpoint: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -4102,17 +3440,9 @@ func (c Client) DetachDBAASServiceFromEndpoint(ctx context.Context, sourceServic
 		return nil, fmt.Errorf("DetachDBAASServiceFromEndpoint: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "detach-dbaas-service-from-endpoint")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DetachDBAASServiceFromEndpoint: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -4169,17 +3499,9 @@ func (c Client) ListDBAASExternalEndpoints(ctx context.Context) (*ListDBAASExter
 		return nil, fmt.Errorf("ListDBAASExternalEndpoints: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-dbaas-external-endpoints")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ListDBAASExternalEndpoints: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -4217,17 +3539,9 @@ func (c Client) GetDBAASExternalIntegrationSettingsDatadog(ctx context.Context, 
 		return nil, fmt.Errorf("GetDBAASExternalIntegrationSettingsDatadog: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dbaas-external-integration-settings-datadog")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASExternalIntegrationSettingsDatadog: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -4272,17 +3586,9 @@ func (c Client) UpdateDBAASExternalIntegrationSettingsDatadog(ctx context.Contex
 		return nil, fmt.Errorf("UpdateDBAASExternalIntegrationSettingsDatadog: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-dbaas-external-integration-settings-datadog")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateDBAASExternalIntegrationSettingsDatadog: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -4316,17 +3622,9 @@ func (c Client) GetDBAASExternalIntegration(ctx context.Context, integrationID U
 		return nil, fmt.Errorf("GetDBAASExternalIntegration: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dbaas-external-integration")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASExternalIntegration: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -4364,17 +3662,9 @@ func (c Client) ListDBAASExternalIntegrations(ctx context.Context, serviceName s
 		return nil, fmt.Errorf("ListDBAASExternalIntegrations: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-dbaas-external-integrations")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ListDBAASExternalIntegrations: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -4407,17 +3697,9 @@ func (c Client) DeleteDBAASServiceGrafana(ctx context.Context, name string) (*Op
 		return nil, fmt.Errorf("DeleteDBAASServiceGrafana: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-dbaas-service-grafana")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASServiceGrafana: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -4450,17 +3732,9 @@ func (c Client) GetDBAASServiceGrafana(ctx context.Context, name string) (*DBAAS
 		return nil, fmt.Errorf("GetDBAASServiceGrafana: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dbaas-service-grafana")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASServiceGrafana: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -4501,7 +3775,7 @@ type CreateDBAASServiceGrafanaRequest struct {
 	// Grafana settings
 	GrafanaSettings *JSONSchemaGrafana `json:"grafana-settings,omitempty"`
 	// Allowed CIDR address blocks for incoming connections
-	IPFilter []string `json:"ip-filter,omitempty"`
+	IPFilter []string `json:"ip-filter"`
 	// Automatic maintenance settings
 	Maintenance *CreateDBAASServiceGrafanaRequestMaintenance `json:"maintenance,omitempty"`
 	// Subscription plan
@@ -4536,17 +3810,9 @@ func (c Client) CreateDBAASServiceGrafana(ctx context.Context, name string, req 
 		return nil, fmt.Errorf("CreateDBAASServiceGrafana: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-dbaas-service-grafana")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASServiceGrafana: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -4586,7 +3852,7 @@ type UpdateDBAASServiceGrafanaRequest struct {
 	// Grafana settings
 	GrafanaSettings *JSONSchemaGrafana `json:"grafana-settings,omitempty"`
 	// Allowed CIDR address blocks for incoming connections
-	IPFilter []string `json:"ip-filter,omitempty"`
+	IPFilter []string `json:"ip-filter"`
 	// Automatic maintenance settings
 	Maintenance *UpdateDBAASServiceGrafanaRequestMaintenance `json:"maintenance,omitempty"`
 	// Subscription plan
@@ -4620,17 +3886,9 @@ func (c Client) UpdateDBAASServiceGrafana(ctx context.Context, name string, req 
 		return nil, fmt.Errorf("UpdateDBAASServiceGrafana: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-dbaas-service-grafana")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateDBAASServiceGrafana: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -4663,17 +3921,9 @@ func (c Client) StartDBAASGrafanaMaintenance(ctx context.Context, name string) (
 		return nil, fmt.Errorf("StartDBAASGrafanaMaintenance: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "start-dbaas-grafana-maintenance")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("StartDBAASGrafanaMaintenance: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -4718,17 +3968,9 @@ func (c Client) ResetDBAASGrafanaUserPassword(ctx context.Context, serviceName s
 		return nil, fmt.Errorf("ResetDBAASGrafanaUserPassword: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "reset-dbaas-grafana-user-password")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ResetDBAASGrafanaUserPassword: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -4761,17 +4003,9 @@ func (c Client) RevealDBAASGrafanaUserPassword(ctx context.Context, serviceName 
 		return nil, fmt.Errorf("RevealDBAASGrafanaUserPassword: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "reveal-dbaas-grafana-user-password")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("RevealDBAASGrafanaUserPassword: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -4820,17 +4054,9 @@ func (c Client) CreateDBAASIntegration(ctx context.Context, req CreateDBAASInteg
 		return nil, fmt.Errorf("CreateDBAASIntegration: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-dbaas-integration")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASIntegration: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -4877,17 +4103,9 @@ func (c Client) ListDBAASIntegrationSettings(ctx context.Context, integrationTyp
 		return nil, fmt.Errorf("ListDBAASIntegrationSettings: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-dbaas-integration-settings")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ListDBAASIntegrationSettings: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -4925,17 +4143,9 @@ func (c Client) ListDBAASIntegrationTypes(ctx context.Context) (*ListDBAASIntegr
 		return nil, fmt.Errorf("ListDBAASIntegrationTypes: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-dbaas-integration-types")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ListDBAASIntegrationTypes: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -4969,17 +4179,9 @@ func (c Client) DeleteDBAASIntegration(ctx context.Context, id UUID) (*Operation
 		return nil, fmt.Errorf("DeleteDBAASIntegration: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-dbaas-integration")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASIntegration: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -5013,17 +4215,9 @@ func (c Client) GetDBAASIntegration(ctx context.Context, id UUID) (*DBAASIntegra
 		return nil, fmt.Errorf("GetDBAASIntegration: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dbaas-integration")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASIntegration: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -5043,7 +4237,7 @@ type UpdateDBAASIntegrationRequest struct {
 	Settings map[string]any `json:"settings" validate:"required"`
 }
 
-// [BETA] Update a existing DBaaS integration
+// [BETA] Update an existing DBaaS integration
 func (c Client) UpdateDBAASIntegration(ctx context.Context, id UUID, req UpdateDBAASIntegrationRequest) (*Operation, error) {
 	path := fmt.Sprintf("/dbaas-integration/%v", id)
 
@@ -5069,17 +4263,9 @@ func (c Client) UpdateDBAASIntegration(ctx context.Context, id UUID, req UpdateD
 		return nil, fmt.Errorf("UpdateDBAASIntegration: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-dbaas-integration")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateDBAASIntegration: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -5112,17 +4298,9 @@ func (c Client) DeleteDBAASServiceKafka(ctx context.Context, name string) (*Oper
 		return nil, fmt.Errorf("DeleteDBAASServiceKafka: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-dbaas-service-kafka")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASServiceKafka: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -5155,17 +4333,9 @@ func (c Client) GetDBAASServiceKafka(ctx context.Context, name string) (*DBAASSe
 		return nil, fmt.Errorf("GetDBAASServiceKafka: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dbaas-service-kafka")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASServiceKafka: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -5213,7 +4383,7 @@ type CreateDBAASServiceKafkaRequest struct {
 	// Kafka authentication methods
 	AuthenticationMethods *CreateDBAASServiceKafkaRequestAuthenticationMethods `json:"authentication-methods,omitempty"`
 	// Allow incoming connections from CIDR address block, e.g. '10.20.0.0/16'
-	IPFilter []string `json:"ip-filter,omitempty"`
+	IPFilter []string `json:"ip-filter"`
 	// Allow clients to connect to kafka_connect from the public internet for service nodes that are in a project VPC or another type of private network
 	KafkaConnectEnabled *bool `json:"kafka-connect-enabled,omitempty"`
 	// Kafka Connect configuration values
@@ -5264,17 +4434,9 @@ func (c Client) CreateDBAASServiceKafka(ctx context.Context, name string, req Cr
 		return nil, fmt.Errorf("CreateDBAASServiceKafka: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-dbaas-service-kafka")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASServiceKafka: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -5322,7 +4484,7 @@ type UpdateDBAASServiceKafkaRequest struct {
 	// Kafka authentication methods
 	AuthenticationMethods *UpdateDBAASServiceKafkaRequestAuthenticationMethods `json:"authentication-methods,omitempty"`
 	// Allow incoming connections from CIDR address block, e.g. '10.20.0.0/16'
-	IPFilter []string `json:"ip-filter,omitempty"`
+	IPFilter []string `json:"ip-filter"`
 	// Allow clients to connect to kafka_connect from the public internet for service nodes that are in a project VPC or another type of private network
 	KafkaConnectEnabled *bool `json:"kafka-connect-enabled,omitempty"`
 	// Kafka Connect configuration values
@@ -5373,17 +4535,9 @@ func (c Client) UpdateDBAASServiceKafka(ctx context.Context, name string, req Up
 		return nil, fmt.Errorf("UpdateDBAASServiceKafka: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-dbaas-service-kafka")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateDBAASServiceKafka: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -5416,17 +4570,9 @@ func (c Client) GetDBAASKafkaAclConfig(ctx context.Context, name string) (*DBAAS
 		return nil, fmt.Errorf("GetDBAASKafkaAclConfig: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dbaas-kafka-acl-config")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASKafkaAclConfig: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -5459,17 +4605,9 @@ func (c Client) StartDBAASKafkaMaintenance(ctx context.Context, name string) (*O
 		return nil, fmt.Errorf("StartDBAASKafkaMaintenance: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "start-dbaas-kafka-maintenance")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("StartDBAASKafkaMaintenance: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -5509,17 +4647,9 @@ func (c Client) CreateDBAASKafkaSchemaRegistryAclConfig(ctx context.Context, nam
 		return nil, fmt.Errorf("CreateDBAASKafkaSchemaRegistryAclConfig: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-dbaas-kafka-schema-registry-acl-config")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASKafkaSchemaRegistryAclConfig: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -5552,17 +4682,9 @@ func (c Client) DeleteDBAASKafkaSchemaRegistryAclConfig(ctx context.Context, nam
 		return nil, fmt.Errorf("DeleteDBAASKafkaSchemaRegistryAclConfig: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-dbaas-kafka-schema-registry-acl-config")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASKafkaSchemaRegistryAclConfig: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -5602,17 +4724,9 @@ func (c Client) CreateDBAASKafkaTopicAclConfig(ctx context.Context, name string,
 		return nil, fmt.Errorf("CreateDBAASKafkaTopicAclConfig: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-dbaas-kafka-topic-acl-config")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASKafkaTopicAclConfig: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -5645,17 +4759,9 @@ func (c Client) DeleteDBAASKafkaTopicAclConfig(ctx context.Context, name string,
 		return nil, fmt.Errorf("DeleteDBAASKafkaTopicAclConfig: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-dbaas-kafka-topic-acl-config")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASKafkaTopicAclConfig: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -5688,17 +4794,9 @@ func (c Client) RevealDBAASKafkaConnectPassword(ctx context.Context, serviceName
 		return nil, fmt.Errorf("RevealDBAASKafkaConnectPassword: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "reveal-dbaas-kafka-connect-password")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("RevealDBAASKafkaConnectPassword: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -5742,17 +4840,9 @@ func (c Client) CreateDBAASKafkaUser(ctx context.Context, serviceName string, re
 		return nil, fmt.Errorf("CreateDBAASKafkaUser: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-dbaas-kafka-user")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASKafkaUser: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -5785,17 +4875,9 @@ func (c Client) DeleteDBAASKafkaUser(ctx context.Context, serviceName string, us
 		return nil, fmt.Errorf("DeleteDBAASKafkaUser: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-dbaas-kafka-user")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASKafkaUser: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -5840,17 +4922,9 @@ func (c Client) ResetDBAASKafkaUserPassword(ctx context.Context, serviceName str
 		return nil, fmt.Errorf("ResetDBAASKafkaUserPassword: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "reset-dbaas-kafka-user-password")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ResetDBAASKafkaUserPassword: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -5883,17 +4957,9 @@ func (c Client) RevealDBAASKafkaUserPassword(ctx context.Context, serviceName st
 		return nil, fmt.Errorf("RevealDBAASKafkaUserPassword: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "reveal-dbaas-kafka-user-password")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("RevealDBAASKafkaUserPassword: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -5927,17 +4993,9 @@ func (c Client) GetDBAASMigrationStatus(ctx context.Context, name string) (*DBAA
 		return nil, fmt.Errorf("GetDBAASMigrationStatus: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dbaas-migration-status")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASMigrationStatus: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -5970,17 +5028,9 @@ func (c Client) DeleteDBAASServiceMysql(ctx context.Context, name string) (*Oper
 		return nil, fmt.Errorf("DeleteDBAASServiceMysql: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-dbaas-service-mysql")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASServiceMysql: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -6014,17 +5064,9 @@ func (c Client) GetDBAASServiceMysql(ctx context.Context, name string) (*DBAASSe
 		return nil, fmt.Errorf("GetDBAASServiceMysql: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dbaas-service-mysql")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASServiceMysql: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -6112,7 +5154,7 @@ type CreateDBAASServiceMysqlRequest struct {
 	// Service integrations to be enabled when creating the service.
 	Integrations []CreateDBAASServiceMysqlRequestIntegrations `json:"integrations,omitempty"`
 	// Allow incoming connections from CIDR address block, e.g. '10.20.0.0/16'
-	IPFilter []string `json:"ip-filter,omitempty"`
+	IPFilter []string `json:"ip-filter"`
 	// Automatic maintenance settings
 	Maintenance *CreateDBAASServiceMysqlRequestMaintenance `json:"maintenance,omitempty"`
 	// Migrate data from existing server
@@ -6155,17 +5197,9 @@ func (c Client) CreateDBAASServiceMysql(ctx context.Context, name string, req Cr
 		return nil, fmt.Errorf("CreateDBAASServiceMysql: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-dbaas-service-mysql")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASServiceMysql: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -6232,7 +5266,7 @@ type UpdateDBAASServiceMysqlRequest struct {
 	// The minimum amount of time in seconds to keep binlog entries before deletion. This may be extended for services that require binlog entries for longer than the default for example if using the MySQL Debezium Kafka connector.
 	BinlogRetentionPeriod int64 `json:"binlog-retention-period,omitempty" validate:"omitempty,gte=600,lte=86400"`
 	// Allow incoming connections from CIDR address block, e.g. '10.20.0.0/16'
-	IPFilter []string `json:"ip-filter,omitempty"`
+	IPFilter []string `json:"ip-filter"`
 	// Automatic maintenance settings
 	Maintenance *UpdateDBAASServiceMysqlRequestMaintenance `json:"maintenance,omitempty"`
 	// Migrate data from existing server
@@ -6273,17 +5307,9 @@ func (c Client) UpdateDBAASServiceMysql(ctx context.Context, name string, req Up
 		return nil, fmt.Errorf("UpdateDBAASServiceMysql: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-dbaas-service-mysql")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateDBAASServiceMysql: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -6316,17 +5342,9 @@ func (c Client) EnableDBAASMysqlWrites(ctx context.Context, name string) (*Opera
 		return nil, fmt.Errorf("EnableDBAASMysqlWrites: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "enable-dbaas-mysql-writes")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("EnableDBAASMysqlWrites: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -6359,17 +5377,9 @@ func (c Client) StartDBAASMysqlMaintenance(ctx context.Context, name string) (*O
 		return nil, fmt.Errorf("StartDBAASMysqlMaintenance: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "start-dbaas-mysql-maintenance")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("StartDBAASMysqlMaintenance: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -6402,17 +5412,9 @@ func (c Client) StopDBAASMysqlMigration(ctx context.Context, name string) (*Oper
 		return nil, fmt.Errorf("StopDBAASMysqlMigration: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "stop-dbaas-mysql-migration")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("StopDBAASMysqlMigration: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -6456,17 +5458,9 @@ func (c Client) CreateDBAASMysqlDatabase(ctx context.Context, serviceName string
 		return nil, fmt.Errorf("CreateDBAASMysqlDatabase: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-dbaas-mysql-database")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASMysqlDatabase: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -6499,17 +5493,9 @@ func (c Client) DeleteDBAASMysqlDatabase(ctx context.Context, serviceName string
 		return nil, fmt.Errorf("DeleteDBAASMysqlDatabase: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-dbaas-mysql-database")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASMysqlDatabase: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -6519,6 +5505,54 @@ func (c Client) DeleteDBAASMysqlDatabase(ctx context.Context, serviceName string
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
 		return nil, fmt.Errorf("DeleteDBAASMysqlDatabase: prepare JSON response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+type CreateDBAASMysqlUpgradeCheckRequest struct {
+	// Target version for upgrade
+	TargetVersion string `json:"target-version" validate:"required,gte=1,lte=32"`
+}
+
+// Check whether you can upgrade MySQL service to a newer version
+func (c Client) CreateDBAASMysqlUpgradeCheck(ctx context.Context, serviceName string, req CreateDBAASMysqlUpgradeCheckRequest) (*DBAASTask, error) {
+	path := fmt.Sprintf("/dbaas-mysql/%v/upgrade-check", serviceName)
+
+	body, err := prepareJSONBody(req)
+	if err != nil {
+		return nil, fmt.Errorf("CreateDBAASMysqlUpgradeCheck: prepare JSON body: %w", err)
+	}
+
+	request, err := http.NewRequestWithContext(ctx, "POST", c.serverEndpoint+path, body)
+	if err != nil {
+		return nil, fmt.Errorf("CreateDBAASMysqlUpgradeCheck: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	request.Header.Add("Content-Type", "application/json")
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("CreateDBAASMysqlUpgradeCheck: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("CreateDBAASMysqlUpgradeCheck: sign request: %w", err)
+	}
+
+	response, err := c.do(request)
+	if err != nil {
+		return nil, fmt.Errorf("CreateDBAASMysqlUpgradeCheck: http client do: %w", err)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("CreateDBAASMysqlUpgradeCheck: http response: %w", err)
+	}
+
+	bodyresp := new(DBAASTask)
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("CreateDBAASMysqlUpgradeCheck: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -6554,17 +5588,9 @@ func (c Client) CreateDBAASMysqlUser(ctx context.Context, serviceName string, re
 		return nil, fmt.Errorf("CreateDBAASMysqlUser: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-dbaas-mysql-user")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASMysqlUser: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -6597,17 +5623,9 @@ func (c Client) DeleteDBAASMysqlUser(ctx context.Context, serviceName string, us
 		return nil, fmt.Errorf("DeleteDBAASMysqlUser: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-dbaas-mysql-user")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASMysqlUser: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -6653,17 +5671,9 @@ func (c Client) ResetDBAASMysqlUserPassword(ctx context.Context, serviceName str
 		return nil, fmt.Errorf("ResetDBAASMysqlUserPassword: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "reset-dbaas-mysql-user-password")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ResetDBAASMysqlUserPassword: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -6696,17 +5706,9 @@ func (c Client) RevealDBAASMysqlUserPassword(ctx context.Context, serviceName st
 		return nil, fmt.Errorf("RevealDBAASMysqlUserPassword: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "reveal-dbaas-mysql-user-password")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("RevealDBAASMysqlUserPassword: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -6739,17 +5741,9 @@ func (c Client) DeleteDBAASServiceOpensearch(ctx context.Context, name string) (
 		return nil, fmt.Errorf("DeleteDBAASServiceOpensearch: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-dbaas-service-opensearch")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASServiceOpensearch: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -6783,17 +5777,9 @@ func (c Client) GetDBAASServiceOpensearch(ctx context.Context, name string) (*DB
 		return nil, fmt.Errorf("GetDBAASServiceOpensearch: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dbaas-service-opensearch")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASServiceOpensearch: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -6872,7 +5858,7 @@ type CreateDBAASServiceOpensearchRequest struct {
 	// Template settings for all new indexes
 	IndexTemplate *CreateDBAASServiceOpensearchRequestIndexTemplate `json:"index-template,omitempty"`
 	// Allow incoming connections from CIDR address block, e.g. '10.20.0.0/16'
-	IPFilter []string `json:"ip-filter,omitempty"`
+	IPFilter []string `json:"ip-filter"`
 	// Aiven automation resets index.refresh_interval to default value for every index to be sure that indices are always visible to search. If it doesn't fit your case, you can disable this by setting up this flag to true.
 	KeepIndexRefreshInterval *bool `json:"keep-index-refresh-interval,omitempty"`
 	// Automatic maintenance settings
@@ -6919,17 +5905,9 @@ func (c Client) CreateDBAASServiceOpensearch(ctx context.Context, name string, r
 		return nil, fmt.Errorf("CreateDBAASServiceOpensearch: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-dbaas-service-opensearch")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASServiceOpensearch: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -7007,7 +5985,7 @@ type UpdateDBAASServiceOpensearchRequest struct {
 	// Template settings for all new indexes
 	IndexTemplate *UpdateDBAASServiceOpensearchRequestIndexTemplate `json:"index-template,omitempty"`
 	// Allow incoming connections from CIDR address block, e.g. '10.20.0.0/16'
-	IPFilter []string `json:"ip-filter,omitempty"`
+	IPFilter []string `json:"ip-filter"`
 	// Aiven automation resets index.refresh_interval to default value for every index to be sure that indices are always visible to search. If it doesn't fit your case, you can disable this by setting up this flag to true.
 	KeepIndexRefreshInterval *bool `json:"keep-index-refresh-interval,omitempty"`
 	// Automatic maintenance settings
@@ -7052,17 +6030,9 @@ func (c Client) UpdateDBAASServiceOpensearch(ctx context.Context, name string, r
 		return nil, fmt.Errorf("UpdateDBAASServiceOpensearch: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-dbaas-service-opensearch")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateDBAASServiceOpensearch: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -7095,17 +6065,9 @@ func (c Client) GetDBAASOpensearchAclConfig(ctx context.Context, name string) (*
 		return nil, fmt.Errorf("GetDBAASOpensearchAclConfig: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dbaas-opensearch-acl-config")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASOpensearchAclConfig: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -7145,17 +6107,9 @@ func (c Client) UpdateDBAASOpensearchAclConfig(ctx context.Context, name string,
 		return nil, fmt.Errorf("UpdateDBAASOpensearchAclConfig: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-dbaas-opensearch-acl-config")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateDBAASOpensearchAclConfig: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -7188,17 +6142,9 @@ func (c Client) StartDBAASOpensearchMaintenance(ctx context.Context, name string
 		return nil, fmt.Errorf("StartDBAASOpensearchMaintenance: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "start-dbaas-opensearch-maintenance")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("StartDBAASOpensearchMaintenance: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -7242,17 +6188,9 @@ func (c Client) CreateDBAASOpensearchUser(ctx context.Context, serviceName strin
 		return nil, fmt.Errorf("CreateDBAASOpensearchUser: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-dbaas-opensearch-user")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASOpensearchUser: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -7285,17 +6223,9 @@ func (c Client) DeleteDBAASOpensearchUser(ctx context.Context, serviceName strin
 		return nil, fmt.Errorf("DeleteDBAASOpensearchUser: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-dbaas-opensearch-user")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASOpensearchUser: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -7340,17 +6270,9 @@ func (c Client) ResetDBAASOpensearchUserPassword(ctx context.Context, serviceNam
 		return nil, fmt.Errorf("ResetDBAASOpensearchUserPassword: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "reset-dbaas-opensearch-user-password")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ResetDBAASOpensearchUserPassword: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -7383,17 +6305,9 @@ func (c Client) RevealDBAASOpensearchUserPassword(ctx context.Context, serviceNa
 		return nil, fmt.Errorf("RevealDBAASOpensearchUserPassword: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "reveal-dbaas-opensearch-user-password")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("RevealDBAASOpensearchUserPassword: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -7426,17 +6340,9 @@ func (c Client) DeleteDBAASServicePG(ctx context.Context, name string) (*Operati
 		return nil, fmt.Errorf("DeleteDBAASServicePG: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-dbaas-service-pg")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASServicePG: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -7470,17 +6376,9 @@ func (c Client) GetDBAASServicePG(ctx context.Context, name string) (*DBAASServi
 		return nil, fmt.Errorf("GetDBAASServicePG: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dbaas-service-pg")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASServicePG: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -7567,7 +6465,7 @@ type CreateDBAASServicePGRequest struct {
 	// Service integrations to be enabled when creating the service.
 	Integrations []CreateDBAASServicePGRequestIntegrations `json:"integrations,omitempty"`
 	// Allow incoming connections from CIDR address block, e.g. '10.20.0.0/16'
-	IPFilter []string `json:"ip-filter,omitempty"`
+	IPFilter []string `json:"ip-filter"`
 	// Automatic maintenance settings
 	Maintenance *CreateDBAASServicePGRequestMaintenance `json:"maintenance,omitempty"`
 	// Migrate data from existing server
@@ -7622,17 +6520,9 @@ func (c Client) CreateDBAASServicePG(ctx context.Context, name string, req Creat
 		return nil, fmt.Errorf("CreateDBAASServicePG: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-dbaas-service-pg")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASServicePG: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -7697,7 +6587,7 @@ type UpdateDBAASServicePGRequestMigration struct {
 type UpdateDBAASServicePGRequest struct {
 	BackupSchedule *UpdateDBAASServicePGRequestBackupSchedule `json:"backup-schedule,omitempty"`
 	// Allow incoming connections from CIDR address block, e.g. '10.20.0.0/16'
-	IPFilter []string `json:"ip-filter,omitempty"`
+	IPFilter []string `json:"ip-filter"`
 	// Automatic maintenance settings
 	Maintenance *UpdateDBAASServicePGRequestMaintenance `json:"maintenance,omitempty"`
 	// Migrate data from existing server
@@ -7752,17 +6642,9 @@ func (c Client) UpdateDBAASServicePG(ctx context.Context, name string, req Updat
 		return nil, fmt.Errorf("UpdateDBAASServicePG: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-dbaas-service-pg")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateDBAASServicePG: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -7795,17 +6677,9 @@ func (c Client) StartDBAASPGMaintenance(ctx context.Context, name string) (*Oper
 		return nil, fmt.Errorf("StartDBAASPGMaintenance: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "start-dbaas-pg-maintenance")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("StartDBAASPGMaintenance: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -7838,17 +6712,9 @@ func (c Client) StopDBAASPGMigration(ctx context.Context, name string) (*Operati
 		return nil, fmt.Errorf("StopDBAASPGMigration: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "stop-dbaas-pg-migration")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("StopDBAASPGMigration: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -7897,17 +6763,9 @@ func (c Client) CreateDBAASPGConnectionPool(ctx context.Context, serviceName str
 		return nil, fmt.Errorf("CreateDBAASPGConnectionPool: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-dbaas-pg-connection-pool")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASPGConnectionPool: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -7941,17 +6799,9 @@ func (c Client) DeleteDBAASPGConnectionPool(ctx context.Context, serviceName str
 		return nil, fmt.Errorf("DeleteDBAASPGConnectionPool: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-dbaas-pg-connection-pool")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASPGConnectionPool: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -7999,17 +6849,9 @@ func (c Client) UpdateDBAASPGConnectionPool(ctx context.Context, serviceName str
 		return nil, fmt.Errorf("UpdateDBAASPGConnectionPool: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-dbaas-pg-connection-pool")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateDBAASPGConnectionPool: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -8057,17 +6899,9 @@ func (c Client) CreateDBAASPGDatabase(ctx context.Context, serviceName string, r
 		return nil, fmt.Errorf("CreateDBAASPGDatabase: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-dbaas-pg-database")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASPGDatabase: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -8100,17 +6934,9 @@ func (c Client) DeleteDBAASPGDatabase(ctx context.Context, serviceName string, d
 		return nil, fmt.Errorf("DeleteDBAASPGDatabase: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-dbaas-pg-database")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASPGDatabase: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -8155,17 +6981,9 @@ func (c Client) CreateDBAASPostgresUser(ctx context.Context, serviceName string,
 		return nil, fmt.Errorf("CreateDBAASPostgresUser: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-dbaas-postgres-user")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASPostgresUser: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -8198,17 +7016,9 @@ func (c Client) DeleteDBAASPostgresUser(ctx context.Context, serviceName string,
 		return nil, fmt.Errorf("DeleteDBAASPostgresUser: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-dbaas-postgres-user")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASPostgresUser: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -8252,17 +7062,9 @@ func (c Client) UpdateDBAASPostgresAllowReplication(ctx context.Context, service
 		return nil, fmt.Errorf("UpdateDBAASPostgresAllowReplication: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-dbaas-postgres-allow-replication")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateDBAASPostgresAllowReplication: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -8307,17 +7109,9 @@ func (c Client) ResetDBAASPostgresUserPassword(ctx context.Context, serviceName 
 		return nil, fmt.Errorf("ResetDBAASPostgresUserPassword: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "reset-dbaas-postgres-user-password")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ResetDBAASPostgresUserPassword: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -8350,17 +7144,9 @@ func (c Client) RevealDBAASPostgresUserPassword(ctx context.Context, serviceName
 		return nil, fmt.Errorf("RevealDBAASPostgresUserPassword: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "reveal-dbaas-postgres-user-password")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("RevealDBAASPostgresUserPassword: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -8405,17 +7191,9 @@ func (c Client) CreateDBAASPGUpgradeCheck(ctx context.Context, service string, r
 		return nil, fmt.Errorf("CreateDBAASPGUpgradeCheck: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-dbaas-pg-upgrade-check")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASPGUpgradeCheck: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -8472,17 +7250,9 @@ func (c Client) ListDBAASServices(ctx context.Context) (*ListDBAASServicesRespon
 		return nil, fmt.Errorf("ListDBAASServices: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-dbaas-services")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ListDBAASServices: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -8531,17 +7301,9 @@ func (c Client) GetDBAASServiceLogs(ctx context.Context, serviceName string, req
 		return nil, fmt.Errorf("GetDBAASServiceLogs: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dbaas-service-logs")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASServiceLogs: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -8601,17 +7363,9 @@ func (c Client) GetDBAASServiceMetrics(ctx context.Context, serviceName string, 
 		return nil, fmt.Errorf("GetDBAASServiceMetrics: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dbaas-service-metrics")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASServiceMetrics: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -8668,17 +7422,9 @@ func (c Client) ListDBAASServiceTypes(ctx context.Context) (*ListDBAASServiceTyp
 		return nil, fmt.Errorf("ListDBAASServiceTypes: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-dbaas-service-types")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ListDBAASServiceTypes: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -8712,17 +7458,9 @@ func (c Client) GetDBAASServiceType(ctx context.Context, serviceTypeName string)
 		return nil, fmt.Errorf("GetDBAASServiceType: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dbaas-service-type")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASServiceType: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -8756,17 +7494,9 @@ func (c Client) DeleteDBAASService(ctx context.Context, name string) (*Operation
 		return nil, fmt.Errorf("DeleteDBAASService: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-dbaas-service")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASService: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -8816,17 +7546,9 @@ func (c Client) GetDBAASSettingsClickhouse(ctx context.Context) (*GetDBAASSettin
 		return nil, fmt.Errorf("GetDBAASSettingsClickhouse: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dbaas-settings-clickhouse")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASSettingsClickhouse: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -8877,17 +7599,9 @@ func (c Client) GetDBAASSettingsGrafana(ctx context.Context) (*GetDBAASSettingsG
 		return nil, fmt.Errorf("GetDBAASSettingsGrafana: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dbaas-settings-grafana")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASSettingsGrafana: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -8968,17 +7682,9 @@ func (c Client) GetDBAASSettingsKafka(ctx context.Context) (*GetDBAASSettingsKaf
 		return nil, fmt.Errorf("GetDBAASSettingsKafka: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dbaas-settings-kafka")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASSettingsKafka: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -9029,17 +7735,9 @@ func (c Client) GetDBAASSettingsMysql(ctx context.Context) (*GetDBAASSettingsMys
 		return nil, fmt.Errorf("GetDBAASSettingsMysql: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dbaas-settings-mysql")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASSettingsMysql: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -9090,17 +7788,9 @@ func (c Client) GetDBAASSettingsOpensearch(ctx context.Context) (*GetDBAASSettin
 		return nil, fmt.Errorf("GetDBAASSettingsOpensearch: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dbaas-settings-opensearch")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASSettingsOpensearch: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -9181,17 +7871,9 @@ func (c Client) GetDBAASSettingsPG(ctx context.Context) (*GetDBAASSettingsPGResp
 		return nil, fmt.Errorf("GetDBAASSettingsPG: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dbaas-settings-pg")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASSettingsPG: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -9242,17 +7924,9 @@ func (c Client) GetDBAASSettingsThanos(ctx context.Context) (*GetDBAASSettingsTh
 		return nil, fmt.Errorf("GetDBAASSettingsThanos: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dbaas-settings-thanos")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASSettingsThanos: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -9303,17 +7977,9 @@ func (c Client) GetDBAASSettingsValkey(ctx context.Context) (*GetDBAASSettingsVa
 		return nil, fmt.Errorf("GetDBAASSettingsValkey: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dbaas-settings-valkey")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASSettingsValkey: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -9362,17 +8028,9 @@ func (c Client) CreateDBAASTaskMigrationCheck(ctx context.Context, service strin
 		return nil, fmt.Errorf("CreateDBAASTaskMigrationCheck: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-dbaas-task-migration-check")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASTaskMigrationCheck: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -9406,17 +8064,9 @@ func (c Client) GetDBAASTask(ctx context.Context, service string, id UUID) (*DBA
 		return nil, fmt.Errorf("GetDBAASTask: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dbaas-task")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASTask: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -9449,17 +8099,9 @@ func (c Client) DeleteDBAASServiceThanos(ctx context.Context, name string) (*Ope
 		return nil, fmt.Errorf("DeleteDBAASServiceThanos: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-dbaas-service-thanos")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASServiceThanos: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -9493,17 +8135,9 @@ func (c Client) GetDBAASServiceThanos(ctx context.Context, name string) (*DBAASS
 		return nil, fmt.Errorf("GetDBAASServiceThanos: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dbaas-service-thanos")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASServiceThanos: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -9541,7 +8175,7 @@ type CreateDBAASServiceThanosRequestMaintenance struct {
 
 type CreateDBAASServiceThanosRequest struct {
 	// Allowed CIDR address blocks for incoming connections
-	IPFilter []string `json:"ip-filter,omitempty"`
+	IPFilter []string `json:"ip-filter"`
 	// Automatic maintenance settings
 	Maintenance *CreateDBAASServiceThanosRequestMaintenance `json:"maintenance,omitempty"`
 	// Subscription plan
@@ -9578,17 +8212,9 @@ func (c Client) CreateDBAASServiceThanos(ctx context.Context, name string, req C
 		return nil, fmt.Errorf("CreateDBAASServiceThanos: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-dbaas-service-thanos")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASServiceThanos: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -9626,7 +8252,7 @@ type UpdateDBAASServiceThanosRequestMaintenance struct {
 
 type UpdateDBAASServiceThanosRequest struct {
 	// Allowed CIDR address blocks for incoming connections
-	IPFilter []string `json:"ip-filter,omitempty"`
+	IPFilter []string `json:"ip-filter"`
 	// Automatic maintenance settings
 	Maintenance *UpdateDBAASServiceThanosRequestMaintenance `json:"maintenance,omitempty"`
 	// Subscription plan
@@ -9663,17 +8289,9 @@ func (c Client) UpdateDBAASServiceThanos(ctx context.Context, name string, req U
 		return nil, fmt.Errorf("UpdateDBAASServiceThanos: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-dbaas-service-thanos")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateDBAASServiceThanos: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -9706,17 +8324,9 @@ func (c Client) StartDBAASThanosMaintenance(ctx context.Context, name string) (*
 		return nil, fmt.Errorf("StartDBAASThanosMaintenance: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "start-dbaas-thanos-maintenance")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("StartDBAASThanosMaintenance: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -9749,17 +8359,9 @@ func (c Client) RevealDBAASThanosUserPassword(ctx context.Context, serviceName s
 		return nil, fmt.Errorf("RevealDBAASThanosUserPassword: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "reveal-dbaas-thanos-user-password")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("RevealDBAASThanosUserPassword: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -9792,17 +8394,9 @@ func (c Client) DeleteDBAASServiceValkey(ctx context.Context, name string) (*Ope
 		return nil, fmt.Errorf("DeleteDBAASServiceValkey: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-dbaas-service-valkey")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASServiceValkey: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -9836,17 +8430,9 @@ func (c Client) GetDBAASServiceValkey(ctx context.Context, name string) (*DBAASS
 		return nil, fmt.Errorf("GetDBAASServiceValkey: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dbaas-service-valkey")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetDBAASServiceValkey: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -9904,7 +8490,7 @@ type CreateDBAASServiceValkeyRequestMigration struct {
 type CreateDBAASServiceValkeyRequest struct {
 	ForkFromService DBAASServiceName `json:"fork-from-service,omitempty" validate:"omitempty,gte=0,lte=63"`
 	// Allow incoming connections from CIDR address block, e.g. '10.20.0.0/16'
-	IPFilter []string `json:"ip-filter,omitempty"`
+	IPFilter []string `json:"ip-filter"`
 	// Automatic maintenance settings
 	Maintenance *CreateDBAASServiceValkeyRequestMaintenance `json:"maintenance,omitempty"`
 	// Migrate data from existing server
@@ -9947,17 +8533,9 @@ func (c Client) CreateDBAASServiceValkey(ctx context.Context, name string, req C
 		return nil, fmt.Errorf("CreateDBAASServiceValkey: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-dbaas-service-valkey")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASServiceValkey: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -10014,7 +8592,7 @@ type UpdateDBAASServiceValkeyRequestMigration struct {
 
 type UpdateDBAASServiceValkeyRequest struct {
 	// Allow incoming connections from CIDR address block, e.g. '10.20.0.0/16'
-	IPFilter []string `json:"ip-filter,omitempty"`
+	IPFilter []string `json:"ip-filter"`
 	// Automatic maintenance settings
 	Maintenance *UpdateDBAASServiceValkeyRequestMaintenance `json:"maintenance,omitempty"`
 	// Migrate data from existing server
@@ -10055,17 +8633,9 @@ func (c Client) UpdateDBAASServiceValkey(ctx context.Context, name string, req U
 		return nil, fmt.Errorf("UpdateDBAASServiceValkey: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-dbaas-service-valkey")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateDBAASServiceValkey: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -10098,17 +8668,9 @@ func (c Client) StartDBAASValkeyMaintenance(ctx context.Context, name string) (*
 		return nil, fmt.Errorf("StartDBAASValkeyMaintenance: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "start-dbaas-valkey-maintenance")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("StartDBAASValkeyMaintenance: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -10141,17 +8703,9 @@ func (c Client) StopDBAASValkeyMigration(ctx context.Context, name string) (*Ope
 		return nil, fmt.Errorf("StopDBAASValkeyMigration: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "stop-dbaas-valkey-migration")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("StopDBAASValkeyMigration: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -10184,17 +8738,9 @@ func (c Client) ListDBAASValkeyUsers(ctx context.Context, serviceName string) (*
 		return nil, fmt.Errorf("ListDBAASValkeyUsers: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-dbaas-valkey-users")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ListDBAASValkeyUsers: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -10239,17 +8785,9 @@ func (c Client) CreateDBAASValkeyUser(ctx context.Context, serviceName string, r
 		return nil, fmt.Errorf("CreateDBAASValkeyUser: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-dbaas-valkey-user")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("CreateDBAASValkeyUser: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -10282,17 +8820,9 @@ func (c Client) DeleteDBAASValkeyUser(ctx context.Context, serviceName string, u
 		return nil, fmt.Errorf("DeleteDBAASValkeyUser: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-dbaas-valkey-user")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDBAASValkeyUser: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -10336,17 +8866,9 @@ func (c Client) UpdateDBAASValkeyUserAccessControl(ctx context.Context, serviceN
 		return nil, fmt.Errorf("UpdateDBAASValkeyUserAccessControl: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-dbaas-valkey-user-access-control")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateDBAASValkeyUserAccessControl: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -10391,17 +8913,9 @@ func (c Client) ResetDBAASValkeyUserPassword(ctx context.Context, serviceName st
 		return nil, fmt.Errorf("ResetDBAASValkeyUserPassword: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "reset-dbaas-valkey-user-password")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ResetDBAASValkeyUserPassword: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -10434,17 +8948,9 @@ func (c Client) RevealDBAASValkeyUserPassword(ctx context.Context, serviceName s
 		return nil, fmt.Errorf("RevealDBAASValkeyUserPassword: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "reveal-dbaas-valkey-user-password")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("RevealDBAASValkeyUserPassword: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -10501,17 +9007,9 @@ func (c Client) ListDeployTargets(ctx context.Context) (*ListDeployTargetsRespon
 		return nil, fmt.Errorf("ListDeployTargets: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-deploy-targets")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ListDeployTargets: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -10545,17 +9043,9 @@ func (c Client) GetDeployTarget(ctx context.Context, id UUID) (*DeployTarget, er
 		return nil, fmt.Errorf("GetDeployTarget: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-deploy-target")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetDeployTarget: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -10612,17 +9102,9 @@ func (c Client) ListDNSDomains(ctx context.Context) (*ListDNSDomainsResponse, er
 		return nil, fmt.Errorf("ListDNSDomains: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-dns-domains")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ListDNSDomains: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -10669,17 +9151,9 @@ func (c Client) CreateDNSDomain(ctx context.Context, req CreateDNSDomainRequest)
 		return nil, fmt.Errorf("CreateDNSDomain: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-dns-domain")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("CreateDNSDomain: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -10736,17 +9210,9 @@ func (c Client) ListDNSDomainRecords(ctx context.Context, domainID UUID) (*ListD
 		return nil, fmt.Errorf("ListDNSDomainRecords: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-dns-domain-records")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ListDNSDomainRecords: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -10819,17 +9285,9 @@ func (c Client) CreateDNSDomainRecord(ctx context.Context, domainID UUID, req Cr
 		return nil, fmt.Errorf("CreateDNSDomainRecord: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-dns-domain-record")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("CreateDNSDomainRecord: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -10863,17 +9321,9 @@ func (c Client) DeleteDNSDomainRecord(ctx context.Context, domainID UUID, record
 		return nil, fmt.Errorf("DeleteDNSDomainRecord: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-dns-domain-record")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDNSDomainRecord: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -10907,17 +9357,9 @@ func (c Client) GetDNSDomainRecord(ctx context.Context, domainID UUID, recordID 
 		return nil, fmt.Errorf("GetDNSDomainRecord: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dns-domain-record")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetDNSDomainRecord: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -10969,17 +9411,9 @@ func (c Client) UpdateDNSDomainRecord(ctx context.Context, domainID UUID, record
 		return nil, fmt.Errorf("UpdateDNSDomainRecord: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-dns-domain-record")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateDNSDomainRecord: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -11013,17 +9447,9 @@ func (c Client) DeleteDNSDomain(ctx context.Context, id UUID) (*Operation, error
 		return nil, fmt.Errorf("DeleteDNSDomain: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-dns-domain")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteDNSDomain: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -11057,17 +9483,9 @@ func (c Client) GetDNSDomain(ctx context.Context, id UUID) (*DNSDomain, error) {
 		return nil, fmt.Errorf("GetDNSDomain: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dns-domain")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetDNSDomain: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -11105,17 +9523,9 @@ func (c Client) GetDNSDomainZoneFile(ctx context.Context, id UUID) (*GetDNSDomai
 		return nil, fmt.Errorf("GetDNSDomainZoneFile: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-dns-domain-zone-file")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetDNSDomainZoneFile: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -11172,17 +9582,9 @@ func (c Client) ListElasticIPS(ctx context.Context) (*ListElasticIPSResponse, er
 		return nil, fmt.Errorf("ListElasticIPS: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-elastic-ips")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ListElasticIPS: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -11240,17 +9642,9 @@ func (c Client) CreateElasticIP(ctx context.Context, req CreateElasticIPRequest)
 		return nil, fmt.Errorf("CreateElasticIP: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-elastic-ip")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("CreateElasticIP: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -11284,17 +9678,9 @@ func (c Client) DeleteElasticIP(ctx context.Context, id UUID) (*Operation, error
 		return nil, fmt.Errorf("DeleteElasticIP: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-elastic-ip")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteElasticIP: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -11328,17 +9714,9 @@ func (c Client) GetElasticIP(ctx context.Context, id UUID) (*ElasticIP, error) {
 		return nil, fmt.Errorf("GetElasticIP: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-elastic-ip")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetElasticIP: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -11387,17 +9765,9 @@ func (c Client) UpdateElasticIP(ctx context.Context, id UUID, req UpdateElasticI
 		return nil, fmt.Errorf("UpdateElasticIP: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-elastic-ip")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateElasticIP: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -11437,17 +9807,9 @@ func (c Client) ResetElasticIPField(ctx context.Context, id UUID, field ResetEla
 		return nil, fmt.Errorf("ResetElasticIPField: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "reset-elastic-ip-field")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ResetElasticIPField: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -11493,17 +9855,9 @@ func (c Client) AttachInstanceToElasticIP(ctx context.Context, id UUID, req Atta
 		return nil, fmt.Errorf("AttachInstanceToElasticIP: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "attach-instance-to-elastic-ip")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("AttachInstanceToElasticIP: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -11549,17 +9903,9 @@ func (c Client) DetachInstanceFromElasticIP(ctx context.Context, id UUID, req De
 		return nil, fmt.Errorf("DetachInstanceFromElasticIP: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "detach-instance-from-elastic-ip")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DetachInstanceFromElasticIP: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -11574,53 +9920,50 @@ func (c Client) DetachInstanceFromElasticIP(ctx context.Context, id UUID, req De
 	return bodyresp, nil
 }
 
-// [DEPRECATED] use get-impact-report endpoint
-func (c Client) GetEnvImpact(ctx context.Context, period string) (*EnvImpactReport, error) {
+// Endpoint removed
+type GetEnvImpactResponse410 struct {
+	// Explains that the endpoint was removed
+	Message string `json:"message,omitempty"`
+}
+
+// [REMOVED] This endpoint is no longer available: it always returns 410 Gone with a message. Use get-impact-report endpoint instead.
+func (c Client) GetEnvImpact(ctx context.Context, period string) error {
 	path := fmt.Sprintf("/env-impact/%v", period)
 
 	request, err := http.NewRequestWithContext(ctx, "GET", c.serverEndpoint+path, nil)
 	if err != nil {
-		return nil, fmt.Errorf("GetEnvImpact: new request: %w", err)
+		return fmt.Errorf("GetEnvImpact: new request: %w", err)
 	}
 
 	request.Header.Add("User-Agent", c.getUserAgent())
 
 	if err := c.executeRequestInterceptors(ctx, request); err != nil {
-		return nil, fmt.Errorf("GetEnvImpact: execute request editors: %w", err)
+		return fmt.Errorf("GetEnvImpact: execute request editors: %w", err)
 	}
 
 	if err := c.signRequest(request); err != nil {
-		return nil, fmt.Errorf("GetEnvImpact: sign request: %w", err)
+		return fmt.Errorf("GetEnvImpact: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-env-impact")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
-		return nil, fmt.Errorf("GetEnvImpact: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
+		return fmt.Errorf("GetEnvImpact: http client do: %w", err)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
-		return nil, fmt.Errorf("GetEnvImpact: http response: %w", err)
+		return fmt.Errorf("GetEnvImpact: http response: %w", decodeAPIErrorResponse(err, map[int]func() any{
+			410: func() any { return new(GetEnvImpactResponse410) },
+		}))
 	}
 
-	bodyresp := new(EnvImpactReport)
-	if err := prepareJSONResponse(response, bodyresp); err != nil {
-		return nil, fmt.Errorf("GetEnvImpact: prepare JSON response: %w", err)
-	}
-
-	return bodyresp, nil
+	_ = response.Body.Close()
+	return nil
 }
 
 type GetImpactEstimateResponseImpact map[string]ImpactValueWithUnit
 
 type GetImpactEstimateResponse struct {
+	CalculationDate string `json:"calculation-date" validate:"required"`
 	// Map of SKUs to their different impact indicators
 	Impact map[string]GetImpactEstimateResponseImpact `json:"impact" validate:"required"`
 }
@@ -11658,17 +10001,9 @@ func (c Client) GetImpactEstimate(ctx context.Context, req GetImpactEstimateRequ
 		return nil, fmt.Errorf("GetImpactEstimate: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-impact-estimate")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetImpactEstimate: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -11727,17 +10062,9 @@ func (c Client) GetImpactReport(ctx context.Context, opts ...GetImpactReportOpt)
 		return nil, fmt.Errorf("GetImpactReport: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-impact-report")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetImpactReport: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -11771,7 +10098,7 @@ func ListEventsWithTo(to time.Time) ListEventsOpt {
 
 // Retrieve Mutation Events for a given date range. Defaults to retrieving Events for the past 24 hours.
 // Both a `from` and `to` arguments can be specified to filter Events over a specific period.
-// Events will be the the most descriptive possible but not all fields are mandatory
+// Events will be the most descriptive possible but not all fields are mandatory
 func (c Client) ListEvents(ctx context.Context, opts ...ListEventsOpt) ([]Event, error) {
 	path := "/event"
 
@@ -11798,17 +10125,9 @@ func (c Client) ListEvents(ctx context.Context, opts ...ListEventsOpt) ([]Event,
 		return nil, fmt.Errorf("ListEvents: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-events")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ListEvents: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -11842,17 +10161,9 @@ func (c Client) GetFocusReport(ctx context.Context, period string) (*FocusReport
 		return nil, fmt.Errorf("GetFocusReport: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-focus-report")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetFocusReport: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -11886,17 +10197,9 @@ func (c Client) GetIAMOrganizationPolicy(ctx context.Context) (*IAMPolicy, error
 		return nil, fmt.Errorf("GetIAMOrganizationPolicy: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-iam-organization-policy")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetIAMOrganizationPolicy: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -11937,17 +10240,9 @@ func (c Client) UpdateIAMOrganizationPolicy(ctx context.Context, req IAMPolicy) 
 		return nil, fmt.Errorf("UpdateIAMOrganizationPolicy: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-iam-organization-policy")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateIAMOrganizationPolicy: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -11981,17 +10276,9 @@ func (c Client) ResetIAMOrganizationPolicy(ctx context.Context) (*Operation, err
 		return nil, fmt.Errorf("ResetIAMOrganizationPolicy: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "reset-iam-organization-policy")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ResetIAMOrganizationPolicy: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -12048,17 +10335,9 @@ func (c Client) ListIAMRoles(ctx context.Context) (*ListIAMRolesResponse, error)
 		return nil, fmt.Errorf("ListIAMRoles: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-iam-roles")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ListIAMRoles: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -12117,17 +10396,9 @@ func (c Client) CreateIAMRole(ctx context.Context, req CreateIAMRoleRequest) (*O
 		return nil, fmt.Errorf("CreateIAMRole: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-iam-role")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("CreateIAMRole: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -12161,17 +10432,9 @@ func (c Client) DeleteIAMRole(ctx context.Context, id UUID) (*Operation, error) 
 		return nil, fmt.Errorf("DeleteIAMRole: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-iam-role")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteIAMRole: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -12205,17 +10468,9 @@ func (c Client) GetIAMRole(ctx context.Context, id UUID) (*IAMRole, error) {
 		return nil, fmt.Errorf("GetIAMRole: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-iam-role")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetIAMRole: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -12268,17 +10523,9 @@ func (c Client) UpdateIAMRole(ctx context.Context, id UUID, req UpdateIAMRoleReq
 		return nil, fmt.Errorf("UpdateIAMRole: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-iam-role")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateIAMRole: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -12335,17 +10582,9 @@ func (c Client) AssumeIAMRole(ctx context.Context, id UUID, req AssumeIAMRoleReq
 		return nil, fmt.Errorf("AssumeIAMRole: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "assume-iam-role")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("AssumeIAMRole: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -12386,17 +10625,9 @@ func (c Client) UpdateIAMRolePolicy(ctx context.Context, id UUID, req IAMPolicy)
 		return nil, fmt.Errorf("UpdateIAMRolePolicy: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-iam-role-policy")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateIAMRolePolicy: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -12453,17 +10684,9 @@ func (c Client) ListIAMSystemRoles(ctx context.Context) (*ListIAMSystemRolesResp
 		return nil, fmt.Errorf("ListIAMSystemRoles: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-iam-system-roles")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ListIAMSystemRoles: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -12601,17 +10824,9 @@ func (c Client) ListInstances(ctx context.Context, opts ...ListInstancesOpt) (*L
 		return nil, fmt.Errorf("ListInstances: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-instances")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ListInstances: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -12655,9 +10870,9 @@ type CreateInstanceRequest struct {
 	DiskSize int64 `json:"disk-size" validate:"required,gte=10,lte=51200"`
 	// Instance type reference
 	InstanceType *InstanceType `json:"instance-type" validate:"required"`
-	// VPC ip forwarding
+	// Whether the instance can act as a router in a VPC network
 	IPForwarding *bool `json:"ip-forwarding,omitempty"`
-	// Enable IPv6. DEPRECATED: use `public-ip-assignments`.
+	// Enable IPv6. DEPRECATED: use `public-ip-assignment`.
 	Ipv6Enabled *bool  `json:"ipv6-enabled,omitempty"`
 	Labels      Labels `json:"labels,omitempty"`
 	// Instance name
@@ -12707,17 +10922,9 @@ func (c Client) CreateInstance(ctx context.Context, req CreateInstanceRequest) (
 		return nil, fmt.Errorf("CreateInstance: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-instance")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("CreateInstance: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -12774,17 +10981,9 @@ func (c Client) ListInstancePools(ctx context.Context) (*ListInstancePoolsRespon
 		return nil, fmt.Errorf("ListInstancePools: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-instance-pools")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ListInstancePools: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -12807,6 +11006,20 @@ const (
 	CreateInstancePoolRequestPublicIPAssignmentNone  CreateInstancePoolRequestPublicIPAssignment = "none"
 )
 
+// VPC Subnet
+type CreateInstancePoolRequestVpcSubnets struct {
+	// Subnet ID
+	ID UUID `json:"id" validate:"required"`
+}
+
+// Instance Pool VPC
+type CreateInstancePoolRequestVpc struct {
+	// VPC ID
+	ID UUID `json:"id" validate:"required"`
+	// VPC Subnets to attach the Instances to
+	Subnets []CreateInstancePoolRequestVpcSubnets `json:"subnets" validate:"required"`
+}
+
 type CreateInstancePoolRequest struct {
 	// Instance Pool Anti-affinity Groups
 	AntiAffinityGroups []AntiAffinityGroup `json:"anti-affinity-groups,omitempty"`
@@ -12824,6 +11037,8 @@ type CreateInstancePoolRequest struct {
 	InstancePrefix string `json:"instance-prefix,omitempty" validate:"omitempty,gte=1,lte=30"`
 	// Instance type reference
 	InstanceType *InstanceType `json:"instance-type" validate:"required"`
+	// Enable IP forwarding on the Instances VPC interfaces
+	IPForwarding *bool `json:"ip-forwarding,omitempty"`
 	// Enable IPv6. DEPRECATED: use `public-ip-assignments`.
 	Ipv6Enabled *bool  `json:"ipv6-enabled,omitempty"`
 	Labels      Labels `json:"labels,omitempty"`
@@ -12847,6 +11062,8 @@ type CreateInstancePoolRequest struct {
 	Template *Template `json:"template" validate:"required"`
 	// Instances Cloud-init user-data
 	UserData string `json:"user-data,omitempty" validate:"omitempty,gte=1,lte=32768"`
+	// Instance Pool VPC
+	Vpc *CreateInstancePoolRequestVpc `json:"vpc,omitempty"`
 }
 
 // Create an Instance Pool
@@ -12875,17 +11092,9 @@ func (c Client) CreateInstancePool(ctx context.Context, req CreateInstancePoolRe
 		return nil, fmt.Errorf("CreateInstancePool: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-instance-pool")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("CreateInstancePool: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -12919,17 +11128,9 @@ func (c Client) DeleteInstancePool(ctx context.Context, id UUID) (*Operation, er
 		return nil, fmt.Errorf("DeleteInstancePool: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-instance-pool")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteInstancePool: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -12963,17 +11164,9 @@ func (c Client) GetInstancePool(ctx context.Context, id UUID) (*InstancePool, er
 		return nil, fmt.Errorf("GetInstancePool: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-instance-pool")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetInstancePool: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -12995,6 +11188,20 @@ const (
 	UpdateInstancePoolRequestPublicIPAssignmentDual  UpdateInstancePoolRequestPublicIPAssignment = "dual"
 )
 
+// VPC Subnet
+type UpdateInstancePoolRequestVpcSubnets struct {
+	// Subnet ID
+	ID UUID `json:"id" validate:"required"`
+}
+
+// Instance Pool VPC
+type UpdateInstancePoolRequestVpc struct {
+	// VPC ID
+	ID UUID `json:"id" validate:"required"`
+	// VPC Subnets to attach the Instances to
+	Subnets []UpdateInstancePoolRequestVpcSubnets `json:"subnets" validate:"required"`
+}
+
 type UpdateInstancePoolRequest struct {
 	// Instance Pool Anti-affinity Groups
 	AntiAffinityGroups []AntiAffinityGroup `json:"anti-affinity-groups"`
@@ -13012,6 +11219,8 @@ type UpdateInstancePoolRequest struct {
 	InstancePrefix *string `json:"instance-prefix,omitempty"`
 	// Instance type reference
 	InstanceType *InstanceType `json:"instance-type,omitempty"`
+	// Enable IP forwarding on the Instances VPC interfaces
+	IPForwarding *bool `json:"ip-forwarding,omitempty"`
 	// Enable IPv6. DEPRECATED: use `public-ip-assignments`.
 	Ipv6Enabled *bool  `json:"ipv6-enabled,omitempty"`
 	Labels      Labels `json:"labels,omitempty"`
@@ -13033,6 +11242,8 @@ type UpdateInstancePoolRequest struct {
 	Template *Template `json:"template,omitempty"`
 	// Instances Cloud-init user-data
 	UserData *string `json:"user-data,omitempty" validate:"omitempty,gte=1"`
+	// Instance Pool VPC
+	Vpc *UpdateInstancePoolRequestVpc `json:"vpc"`
 }
 
 // Update an Instance Pool
@@ -13061,17 +11272,9 @@ func (c Client) UpdateInstancePool(ctx context.Context, id UUID, req UpdateInsta
 		return nil, fmt.Errorf("UpdateInstancePool: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-instance-pool")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateInstancePool: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -13099,6 +11302,8 @@ const (
 	ResetInstancePoolFieldFieldUserData           ResetInstancePoolFieldField = "user-data"
 	ResetInstancePoolFieldFieldDeployTarget       ResetInstancePoolFieldField = "deploy-target"
 	ResetInstancePoolFieldFieldIpv6Enabled        ResetInstancePoolFieldField = "ipv6-enabled"
+	ResetInstancePoolFieldFieldVpc                ResetInstancePoolFieldField = "vpc"
+	ResetInstancePoolFieldFieldIPForwarding       ResetInstancePoolFieldField = "ip-forwarding"
 )
 
 // Reset an Instance Pool field to its default value
@@ -13120,17 +11325,9 @@ func (c Client) ResetInstancePoolField(ctx context.Context, id UUID, field Reset
 		return nil, fmt.Errorf("ResetInstancePoolField: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "reset-instance-pool-field")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ResetInstancePoolField: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -13175,17 +11372,9 @@ func (c Client) EvictInstancePoolMembers(ctx context.Context, id UUID, req Evict
 		return nil, fmt.Errorf("EvictInstancePoolMembers: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "evict-instance-pool-members")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("EvictInstancePoolMembers: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -13231,17 +11420,9 @@ func (c Client) ScaleInstancePool(ctx context.Context, id UUID, req ScaleInstanc
 		return nil, fmt.Errorf("ScaleInstancePool: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "scale-instance-pool")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ScaleInstancePool: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -13298,17 +11479,9 @@ func (c Client) ListInstanceTypes(ctx context.Context) (*ListInstanceTypesRespon
 		return nil, fmt.Errorf("ListInstanceTypes: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-instance-types")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ListInstanceTypes: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -13342,17 +11515,9 @@ func (c Client) GetInstanceType(ctx context.Context, id UUID) (*InstanceType, er
 		return nil, fmt.Errorf("GetInstanceType: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-instance-type")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetInstanceType: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -13386,17 +11551,9 @@ func (c Client) DeleteInstance(ctx context.Context, id UUID) (*Operation, error)
 		return nil, fmt.Errorf("DeleteInstance: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-instance")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteInstance: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -13430,17 +11587,9 @@ func (c Client) GetInstance(ctx context.Context, id UUID) (*Instance, error) {
 		return nil, fmt.Errorf("GetInstance: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-instance")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetInstance: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -13492,17 +11641,9 @@ func (c Client) UpdateInstance(ctx context.Context, id UUID, req UpdateInstanceR
 		return nil, fmt.Errorf("UpdateInstance: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-instance")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateInstance: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -13542,17 +11683,9 @@ func (c Client) ResetInstanceField(ctx context.Context, id UUID, field ResetInst
 		return nil, fmt.Errorf("ResetInstanceField: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "reset-instance-field")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ResetInstanceField: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -13586,17 +11719,9 @@ func (c Client) AddInstanceProtection(ctx context.Context, id UUID) (*Operation,
 		return nil, fmt.Errorf("AddInstanceProtection: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "add-instance-protection")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("AddInstanceProtection: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -13630,17 +11755,9 @@ func (c Client) CreateSnapshot(ctx context.Context, id UUID) (*Operation, error)
 		return nil, fmt.Errorf("CreateSnapshot: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-snapshot")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("CreateSnapshot: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -13674,17 +11791,9 @@ func (c Client) EnableTpm(ctx context.Context, id UUID) (*Operation, error) {
 		return nil, fmt.Errorf("EnableTpm: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "enable-tpm")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("EnableTpm: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -13722,17 +11831,9 @@ func (c Client) RevealInstancePassword(ctx context.Context, id UUID) (*InstanceP
 		return nil, fmt.Errorf("RevealInstancePassword: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "reveal-instance-password")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("RevealInstancePassword: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -13766,17 +11867,9 @@ func (c Client) RebootInstance(ctx context.Context, id UUID) (*Operation, error)
 		return nil, fmt.Errorf("RebootInstance: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "reboot-instance")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("RebootInstance: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -13810,17 +11903,9 @@ func (c Client) RemoveInstanceProtection(ctx context.Context, id UUID) (*Operati
 		return nil, fmt.Errorf("RemoveInstanceProtection: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "remove-instance-protection")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("RemoveInstanceProtection: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -13868,17 +11953,9 @@ func (c Client) ResetInstance(ctx context.Context, id UUID, req ResetInstanceReq
 		return nil, fmt.Errorf("ResetInstance: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "reset-instance")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ResetInstance: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -13912,17 +11989,9 @@ func (c Client) ResetInstancePassword(ctx context.Context, id UUID) (*Operation,
 		return nil, fmt.Errorf("ResetInstancePassword: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "reset-instance-password")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ResetInstancePassword: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -13968,17 +12037,9 @@ func (c Client) ResizeInstanceDisk(ctx context.Context, id UUID, req ResizeInsta
 		return nil, fmt.Errorf("ResizeInstanceDisk: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "resize-instance-disk")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ResizeInstanceDisk: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -14024,17 +12085,9 @@ func (c Client) ScaleInstance(ctx context.Context, id UUID, req ScaleInstanceReq
 		return nil, fmt.Errorf("ScaleInstance: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "scale-instance")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ScaleInstance: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -14087,17 +12140,9 @@ func (c Client) StartInstance(ctx context.Context, id UUID, req StartInstanceReq
 		return nil, fmt.Errorf("StartInstance: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "start-instance")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("StartInstance: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -14131,17 +12176,9 @@ func (c Client) StopInstance(ctx context.Context, id UUID) (*Operation, error) {
 		return nil, fmt.Errorf("StopInstance: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "stop-instance")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("StopInstance: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -14188,17 +12225,9 @@ func (c Client) RevertInstanceToSnapshot(ctx context.Context, instanceID UUID, r
 		return nil, fmt.Errorf("RevertInstanceToSnapshot: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "revert-instance-to-snapshot")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("RevertInstanceToSnapshot: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -14251,17 +12280,9 @@ func (c Client) ListKeyStores(ctx context.Context) (*ListKeyStoresResponse, erro
 		return nil, fmt.Errorf("ListKeyStores: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-key-stores")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ListKeyStores: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -14304,17 +12325,9 @@ func (c Client) CreateKeyStore(ctx context.Context, req CreateKeyStoreRequest) (
 		return nil, fmt.Errorf("CreateKeyStore: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-key-store")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("CreateKeyStore: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -14350,17 +12363,9 @@ func (c Client) DeleteKeyStore(ctx context.Context, id UUID) (*SuccessResponse, 
 		return nil, fmt.Errorf("DeleteKeyStore: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-key-store")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteKeyStore: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -14396,17 +12401,9 @@ func (c Client) GetKeyStore(ctx context.Context, id UUID) (*GetKeyStoreResponse,
 		return nil, fmt.Errorf("GetKeyStore: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-key-store")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetKeyStore: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -14423,7 +12420,7 @@ func (c Client) GetKeyStore(ctx context.Context, id UUID) (*GetKeyStoreResponse,
 	return bodyresp, nil
 }
 
-// Connects an External Key Store after validating the configured customer-managed XKS proxy, and resumes periodic proxy health checks.
+// Connects an External Key Store once its customer-managed XKS proxy passes a health check, then resumes periodic proxy health checks and lets keys backed by this store be used for cryptographic operations.
 func (c Client) ConnectKeyStore(ctx context.Context, id UUID) (*SuccessResponse, error) {
 	path := fmt.Sprintf("/key-store/%v/connect", id)
 
@@ -14442,17 +12439,9 @@ func (c Client) ConnectKeyStore(ctx context.Context, id UUID) (*SuccessResponse,
 		return nil, fmt.Errorf("ConnectKeyStore: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "connect-key-store")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ConnectKeyStore: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -14469,7 +12458,7 @@ func (c Client) ConnectKeyStore(ctx context.Context, id UUID) (*SuccessResponse,
 	return bodyresp, nil
 }
 
-// Disconnects an External Key Store and suspends periodic proxy health checks.
+// Disconnects an External Key Store and suspends periodic proxy health checks; keys backed by this store remain intact but cannot be used for cryptographic operations until it is reconnected.
 func (c Client) DisconnectKeyStore(ctx context.Context, id UUID) (*SuccessResponse, error) {
 	path := fmt.Sprintf("/key-store/%v/disconnect", id)
 
@@ -14488,17 +12477,9 @@ func (c Client) DisconnectKeyStore(ctx context.Context, id UUID) (*SuccessRespon
 		return nil, fmt.Errorf("DisconnectKeyStore: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "disconnect-key-store")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DisconnectKeyStore: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -14541,17 +12522,9 @@ func (c Client) UpdateKeyStore(ctx context.Context, id UUID, req UpdateKeyStoreR
 		return nil, fmt.Errorf("UpdateKeyStore: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-key-store")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateKeyStore: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -14606,17 +12579,9 @@ func (c Client) ListKmsKeys(ctx context.Context) (*ListKmsKeysResponse, error) {
 		return nil, fmt.Errorf("ListKmsKeys: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-kms-keys")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ListKmsKeys: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -14659,17 +12624,9 @@ func (c Client) CreateKmsKey(ctx context.Context, req CreateKmsKeyRequest) (*Cre
 		return nil, fmt.Errorf("CreateKmsKey: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-kms-key")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("CreateKmsKey: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -14705,17 +12662,9 @@ func (c Client) GetKmsKey(ctx context.Context, id UUID) (*GetKmsKeyResponse, err
 		return nil, fmt.Errorf("GetKmsKey: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-kms-key")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetKmsKey: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -14751,17 +12700,9 @@ func (c Client) CancelKmsKeyDeletion(ctx context.Context, id UUID) (*SuccessResp
 		return nil, fmt.Errorf("CancelKmsKeyDeletion: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "cancel-kms-key-deletion")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("CancelKmsKeyDeletion: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -14804,17 +12745,9 @@ func (c Client) Decrypt(ctx context.Context, id UUID, req DecryptRequest) (*Decr
 		return nil, fmt.Errorf("Decrypt: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "decrypt")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("Decrypt: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -14850,17 +12783,9 @@ func (c Client) DisableKmsKey(ctx context.Context, id UUID) (*SuccessResponse, e
 		return nil, fmt.Errorf("DisableKmsKey: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "disable-kms-key")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DisableKmsKey: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -14896,17 +12821,9 @@ func (c Client) DisableKmsKeyRotation(ctx context.Context, id UUID) (*DisableKms
 		return nil, fmt.Errorf("DisableKmsKeyRotation: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "disable-kms-key-rotation")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DisableKmsKeyRotation: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -14942,17 +12859,9 @@ func (c Client) EnableKmsKey(ctx context.Context, id UUID) (*SuccessResponse, er
 		return nil, fmt.Errorf("EnableKmsKey: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "enable-kms-key")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("EnableKmsKey: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -14995,17 +12904,9 @@ func (c Client) EnableKmsKeyRotation(ctx context.Context, id UUID, req EnableKms
 		return nil, fmt.Errorf("EnableKmsKeyRotation: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "enable-kms-key-rotation")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("EnableKmsKeyRotation: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -15048,17 +12949,9 @@ func (c Client) Encrypt(ctx context.Context, id UUID, req EncryptRequest) (*Encr
 		return nil, fmt.Errorf("Encrypt: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "encrypt")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("Encrypt: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -15101,17 +12994,9 @@ func (c Client) GenerateDataKey(ctx context.Context, id UUID, req GenerateDataKe
 		return nil, fmt.Errorf("GenerateDataKey: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "generate-data-key")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GenerateDataKey: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -15123,6 +13008,44 @@ func (c Client) GenerateDataKey(ctx context.Context, id UUID, req GenerateDataKe
 	bodyresp := new(GenerateDataKeyResponse)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
 		return nil, fmt.Errorf("GenerateDataKey: prepare JSON response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+// Retrieve the public key material of an asymmetric KMS key.
+func (c Client) GetPublicKey(ctx context.Context, id UUID) (*GetPublicKeyResponse, error) {
+	path := fmt.Sprintf("/kms-key/%v/get-public-key", id)
+
+	request, err := http.NewRequestWithContext(ctx, "GET", c.serverEndpoint+path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("GetPublicKey: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("GetPublicKey: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("GetPublicKey: sign request: %w", err)
+	}
+
+	response, err := c.do(request)
+	if err != nil {
+		return nil, fmt.Errorf("GetPublicKey: http client do: %w", err)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("GetPublicKey: http response: %w", decodeAPIErrorResponse(err, map[int]func() any{
+			400: func() any { return new(ErrorResponse) },
+		}))
+	}
+
+	bodyresp := new(GetPublicKeyResponse)
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("GetPublicKey: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -15147,17 +13070,9 @@ func (c Client) ListKmsKeyRotations(ctx context.Context, id UUID) (*ListKmsKeyRo
 		return nil, fmt.Errorf("ListKmsKeyRotations: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-kms-key-rotations")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ListKmsKeyRotations: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -15174,7 +13089,7 @@ func (c Client) ListKmsKeyRotations(ctx context.Context, id UUID) (*ListKmsKeyRo
 	return bodyresp, nil
 }
 
-// Decrypts an existing ciphertext using its original key material and re-encrypts the underlying plaintext using a specified KMS key or the latest key material of the same KMS Key.
+// Decrypts an existing ciphertext using its original key material and re-encrypts the underlying plaintext using a specified KMS key or the latest key material of the same KMS Key. Source and destination keys must belong to the same key family. IAM policies are evaluated for both the source and the destination key.
 func (c Client) ReEncrypt(ctx context.Context, id UUID, req ReEncryptRequest) (*ReEncryptResponse, error) {
 	path := fmt.Sprintf("/kms-key/%v/re-encrypt", id)
 
@@ -15200,17 +13115,9 @@ func (c Client) ReEncrypt(ctx context.Context, id UUID, req ReEncryptRequest) (*
 		return nil, fmt.Errorf("ReEncrypt: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "re-encrypt")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ReEncrypt: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -15253,17 +13160,9 @@ func (c Client) ReplicateKmsKey(ctx context.Context, id UUID, req ReplicateKmsKe
 		return nil, fmt.Errorf("ReplicateKmsKey: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "replicate-kms-key")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ReplicateKmsKey: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -15299,17 +13198,9 @@ func (c Client) RotateKmsKey(ctx context.Context, id UUID) (*RotateKmsKeyRespons
 		return nil, fmt.Errorf("RotateKmsKey: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "rotate-kms-key")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("RotateKmsKey: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -15352,17 +13243,9 @@ func (c Client) ScheduleKmsKeyDeletion(ctx context.Context, id UUID, req Schedul
 		return nil, fmt.Errorf("ScheduleKmsKeyDeletion: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "schedule-kms-key-deletion")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ScheduleKmsKeyDeletion: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -15374,6 +13257,96 @@ func (c Client) ScheduleKmsKeyDeletion(ctx context.Context, id UUID, req Schedul
 	bodyresp := new(ScheduleKmsKeyDeletionResponse)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
 		return nil, fmt.Errorf("ScheduleKmsKeyDeletion: prepare JSON response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+// Signs a message or digest using a KMS key with usage `sign-verify`.
+func (c Client) Sign(ctx context.Context, id UUID, req SignRequest) (*SignResponse, error) {
+	path := fmt.Sprintf("/kms-key/%v/sign", id)
+
+	body, err := prepareJSONBody(req)
+	if err != nil {
+		return nil, fmt.Errorf("Sign: prepare JSON body: %w", err)
+	}
+
+	request, err := http.NewRequestWithContext(ctx, "POST", c.serverEndpoint+path, body)
+	if err != nil {
+		return nil, fmt.Errorf("Sign: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	request.Header.Add("Content-Type", "application/json")
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("Sign: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("Sign: sign request: %w", err)
+	}
+
+	response, err := c.do(request)
+	if err != nil {
+		return nil, fmt.Errorf("Sign: http client do: %w", err)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("Sign: http response: %w", decodeAPIErrorResponse(err, map[int]func() any{
+			400: func() any { return new(ErrorResponse) },
+		}))
+	}
+
+	bodyresp := new(SignResponse)
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("Sign: prepare JSON response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+// Verifies a signature against the public key of a KMS key with usage `sign-verify`.
+func (c Client) Verify(ctx context.Context, id UUID, req VerifyRequest) (*VerifyResponse, error) {
+	path := fmt.Sprintf("/kms-key/%v/verify", id)
+
+	body, err := prepareJSONBody(req)
+	if err != nil {
+		return nil, fmt.Errorf("Verify: prepare JSON body: %w", err)
+	}
+
+	request, err := http.NewRequestWithContext(ctx, "POST", c.serverEndpoint+path, body)
+	if err != nil {
+		return nil, fmt.Errorf("Verify: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	request.Header.Add("Content-Type", "application/json")
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("Verify: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("Verify: sign request: %w", err)
+	}
+
+	response, err := c.do(request)
+	if err != nil {
+		return nil, fmt.Errorf("Verify: http client do: %w", err)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("Verify: http response: %w", decodeAPIErrorResponse(err, map[int]func() any{
+			400: func() any { return new(ErrorResponse) },
+		}))
+	}
+
+	bodyresp := new(VerifyResponse)
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("Verify: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -15398,17 +13371,9 @@ func (c Client) GetLiveBalance(ctx context.Context) (*LiveBalance, error) {
 		return nil, fmt.Errorf("GetLiveBalance: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-live-balance")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetLiveBalance: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -15467,17 +13432,9 @@ func (c Client) ListLoadBalancers(ctx context.Context) (*ListLoadBalancersRespon
 		return nil, fmt.Errorf("ListLoadBalancers: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-load-balancers")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ListLoadBalancers: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -15535,17 +13492,9 @@ func (c Client) CreateLoadBalancer(ctx context.Context, req CreateLoadBalancerRe
 		return nil, fmt.Errorf("CreateLoadBalancer: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-load-balancer")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("CreateLoadBalancer: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -15579,17 +13528,9 @@ func (c Client) DeleteLoadBalancer(ctx context.Context, id UUID) (*Operation, er
 		return nil, fmt.Errorf("DeleteLoadBalancer: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-load-balancer")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteLoadBalancer: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -15623,17 +13564,9 @@ func (c Client) GetLoadBalancer(ctx context.Context, id UUID) (*LoadBalancer, er
 		return nil, fmt.Errorf("GetLoadBalancer: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-load-balancer")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetLoadBalancer: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -15682,17 +13615,9 @@ func (c Client) UpdateLoadBalancer(ctx context.Context, id UUID, req UpdateLoadB
 		return nil, fmt.Errorf("UpdateLoadBalancer: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-load-balancer")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateLoadBalancer: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -15728,7 +13653,9 @@ type AddServiceToLoadBalancerRequest struct {
 	// Load Balancer Service healthcheck
 	Healthcheck *LoadBalancerServiceHealthcheck `json:"healthcheck" validate:"required"`
 	// Instance Pool
-	InstancePool *InstancePool `json:"instance-pool" validate:"required"`
+	InstancePool *InstancePool `json:"instance-pool,omitempty"`
+	// Label selector: the instances carrying all of its labels are backends
+	LabelSelector *LoadBalancerServiceLabelSelector `json:"label-selector,omitempty"`
 	// Load Balancer Service name
 	Name string `json:"name" validate:"required,gte=1,lte=255"`
 	// Port exposed on the Load Balancer's public IP
@@ -15767,17 +13694,9 @@ func (c Client) AddServiceToLoadBalancer(ctx context.Context, id UUID, req AddSe
 		return nil, fmt.Errorf("AddServiceToLoadBalancer: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "add-service-to-load-balancer")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("AddServiceToLoadBalancer: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -15811,17 +13730,9 @@ func (c Client) DeleteLoadBalancerService(ctx context.Context, id UUID, serviceI
 		return nil, fmt.Errorf("DeleteLoadBalancerService: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-load-balancer-service")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteLoadBalancerService: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -15855,17 +13766,9 @@ func (c Client) GetLoadBalancerService(ctx context.Context, id UUID, serviceID U
 		return nil, fmt.Errorf("GetLoadBalancerService: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-load-balancer-service")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetLoadBalancerService: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -15900,6 +13803,8 @@ type UpdateLoadBalancerServiceRequest struct {
 	Description *string `json:"description,omitempty" validate:"omitempty,lte=255"`
 	// Load Balancer Service healthcheck
 	Healthcheck *LoadBalancerServiceHealthcheck `json:"healthcheck,omitempty"`
+	// Label selector: the instances carrying all of its labels are backends
+	LabelSelector *LoadBalancerServiceLabelSelector `json:"label-selector"`
 	// Load Balancer Service name
 	Name *string `json:"name,omitempty" validate:"omitempty,lte=255"`
 	// Port exposed on the Load Balancer's public IP
@@ -15938,17 +13843,9 @@ func (c Client) UpdateLoadBalancerService(ctx context.Context, id UUID, serviceI
 		return nil, fmt.Errorf("UpdateLoadBalancerService: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-load-balancer-service")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateLoadBalancerService: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -15966,7 +13863,8 @@ func (c Client) UpdateLoadBalancerService(ctx context.Context, id UUID, serviceI
 type ResetLoadBalancerServiceFieldField string
 
 const (
-	ResetLoadBalancerServiceFieldFieldDescription ResetLoadBalancerServiceFieldField = "description"
+	ResetLoadBalancerServiceFieldFieldDescription   ResetLoadBalancerServiceFieldField = "description"
+	ResetLoadBalancerServiceFieldFieldLabelSelector ResetLoadBalancerServiceFieldField = "label-selector"
 )
 
 // Reset a Load Balancer Service field to its default value
@@ -15988,17 +13886,9 @@ func (c Client) ResetLoadBalancerServiceField(ctx context.Context, id UUID, serv
 		return nil, fmt.Errorf("ResetLoadBalancerServiceField: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "reset-load-balancer-service-field")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ResetLoadBalancerServiceField: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -16039,17 +13929,9 @@ func (c Client) ResetLoadBalancerField(ctx context.Context, id UUID, field Reset
 		return nil, fmt.Errorf("ResetLoadBalancerField: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "reset-load-balancer-field")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ResetLoadBalancerField: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -16083,17 +13965,9 @@ func (c Client) GetOperation(ctx context.Context, id UUID) (*Operation, error) {
 		return nil, fmt.Errorf("GetOperation: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-operation")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetOperation: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -16127,17 +14001,9 @@ func (c Client) GetOrganization(ctx context.Context) (*Organization, error) {
 		return nil, fmt.Errorf("GetOrganization: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-organization")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetOrganization: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -16175,7 +14041,7 @@ func (l ListPrivateNetworksResponse) FindPrivateNetwork(nameOrID string) (Privat
 	return PrivateNetwork{}, fmt.Errorf("%q not found in ListPrivateNetworksResponse: %w", nameOrID, ErrNotFound)
 }
 
-// List Private Networks
+// Private Networks are deprecated in favor of VPC.
 func (c Client) ListPrivateNetworks(ctx context.Context) (*ListPrivateNetworksResponse, error) {
 	path := "/private-network"
 
@@ -16194,17 +14060,9 @@ func (c Client) ListPrivateNetworks(ctx context.Context) (*ListPrivateNetworksRe
 		return nil, fmt.Errorf("ListPrivateNetworks: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-private-networks")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ListPrivateNetworks: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -16235,7 +14093,7 @@ type CreatePrivateNetworkRequest struct {
 	StartIP net.IP `json:"start-ip,omitempty"`
 }
 
-// Create a Private Network
+// Private Networks are deprecated in favor of VPC.
 func (c Client) CreatePrivateNetwork(ctx context.Context, req CreatePrivateNetworkRequest) (*Operation, error) {
 	path := "/private-network"
 
@@ -16261,17 +14119,9 @@ func (c Client) CreatePrivateNetwork(ctx context.Context, req CreatePrivateNetwo
 		return nil, fmt.Errorf("CreatePrivateNetwork: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-private-network")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("CreatePrivateNetwork: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -16286,7 +14136,7 @@ func (c Client) CreatePrivateNetwork(ctx context.Context, req CreatePrivateNetwo
 	return bodyresp, nil
 }
 
-// Delete a Private Network
+// Private Networks are deprecated in favor of VPC.
 func (c Client) DeletePrivateNetwork(ctx context.Context, id UUID) (*Operation, error) {
 	path := fmt.Sprintf("/private-network/%v", id)
 
@@ -16305,17 +14155,9 @@ func (c Client) DeletePrivateNetwork(ctx context.Context, id UUID) (*Operation, 
 		return nil, fmt.Errorf("DeletePrivateNetwork: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-private-network")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DeletePrivateNetwork: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -16330,7 +14172,7 @@ func (c Client) DeletePrivateNetwork(ctx context.Context, id UUID) (*Operation, 
 	return bodyresp, nil
 }
 
-// Retrieve Private Network details
+// Private Networks are deprecated in favor of VPC.
 func (c Client) GetPrivateNetwork(ctx context.Context, id UUID) (*PrivateNetwork, error) {
 	path := fmt.Sprintf("/private-network/%v", id)
 
@@ -16349,17 +14191,9 @@ func (c Client) GetPrivateNetwork(ctx context.Context, id UUID) (*PrivateNetwork
 		return nil, fmt.Errorf("GetPrivateNetwork: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-private-network")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetPrivateNetwork: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -16390,7 +14224,7 @@ type UpdatePrivateNetworkRequest struct {
 	StartIP net.IP `json:"start-ip,omitempty"`
 }
 
-// Update a Private Network
+// Private Networks are deprecated in favor of VPC.
 func (c Client) UpdatePrivateNetwork(ctx context.Context, id UUID, req UpdatePrivateNetworkRequest) (*Operation, error) {
 	path := fmt.Sprintf("/private-network/%v", id)
 
@@ -16416,17 +14250,9 @@ func (c Client) UpdatePrivateNetwork(ctx context.Context, id UUID, req UpdatePri
 		return nil, fmt.Errorf("UpdatePrivateNetwork: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-private-network")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("UpdatePrivateNetwork: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -16447,7 +14273,7 @@ const (
 	ResetPrivateNetworkFieldFieldLabels ResetPrivateNetworkFieldField = "labels"
 )
 
-// Reset Private Network field
+// Private Networks are deprecated in favor of VPC.
 func (c Client) ResetPrivateNetworkField(ctx context.Context, id UUID, field ResetPrivateNetworkFieldField) (*Operation, error) {
 	path := fmt.Sprintf("/private-network/%v/%v", id, field)
 
@@ -16466,17 +14292,9 @@ func (c Client) ResetPrivateNetworkField(ctx context.Context, id UUID, field Res
 		return nil, fmt.Errorf("ResetPrivateNetworkField: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "reset-private-network-field")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ResetPrivateNetworkField: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -16504,7 +14322,7 @@ type AttachInstanceToPrivateNetworkRequest struct {
 	IP net.IP `json:"ip,omitempty"`
 }
 
-// Attach a Compute instance to a Private Network
+// Private Networks are deprecated in favor of VPC.
 func (c Client) AttachInstanceToPrivateNetwork(ctx context.Context, id UUID, req AttachInstanceToPrivateNetworkRequest) (*Operation, error) {
 	path := fmt.Sprintf("/private-network/%v:attach", id)
 
@@ -16530,17 +14348,9 @@ func (c Client) AttachInstanceToPrivateNetwork(ctx context.Context, id UUID, req
 		return nil, fmt.Errorf("AttachInstanceToPrivateNetwork: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "attach-instance-to-private-network")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("AttachInstanceToPrivateNetwork: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -16560,7 +14370,7 @@ type DetachInstanceFromPrivateNetworkRequest struct {
 	Instance *Instance `json:"instance" validate:"required"`
 }
 
-// Detach a Compute instance from a Private Network
+// Private Networks are deprecated in favor of VPC.
 func (c Client) DetachInstanceFromPrivateNetwork(ctx context.Context, id UUID, req DetachInstanceFromPrivateNetworkRequest) (*Operation, error) {
 	path := fmt.Sprintf("/private-network/%v:detach", id)
 
@@ -16586,17 +14396,9 @@ func (c Client) DetachInstanceFromPrivateNetwork(ctx context.Context, id UUID, r
 		return nil, fmt.Errorf("DetachInstanceFromPrivateNetwork: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "detach-instance-from-private-network")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DetachInstanceFromPrivateNetwork: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -16622,7 +14424,7 @@ type UpdatePrivateNetworkInstanceIPRequest struct {
 	IP net.IP `json:"ip,omitempty"`
 }
 
-// Update the IP address of an instance attached to a managed private network
+// Private Networks are deprecated in favor of VPC.
 func (c Client) UpdatePrivateNetworkInstanceIP(ctx context.Context, id UUID, req UpdatePrivateNetworkInstanceIPRequest) (*Operation, error) {
 	path := fmt.Sprintf("/private-network/%v:update-ip", id)
 
@@ -16648,17 +14450,9 @@ func (c Client) UpdatePrivateNetworkInstanceIP(ctx context.Context, id UUID, req
 		return nil, fmt.Errorf("UpdatePrivateNetworkInstanceIP: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-private-network-instance-ip")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("UpdatePrivateNetworkInstanceIP: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -16696,17 +14490,9 @@ func (c Client) ListQuotas(ctx context.Context) (*ListQuotasResponse, error) {
 		return nil, fmt.Errorf("ListQuotas: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-quotas")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ListQuotas: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -16740,17 +14526,9 @@ func (c Client) GetQuota(ctx context.Context, entity string) (*Quota, error) {
 		return nil, fmt.Errorf("GetQuota: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-quota")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetQuota: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -16784,17 +14562,9 @@ func (c Client) DeleteReverseDNSElasticIP(ctx context.Context, id UUID) (*Operat
 		return nil, fmt.Errorf("DeleteReverseDNSElasticIP: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-reverse-dns-elastic-ip")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteReverseDNSElasticIP: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -16828,17 +14598,9 @@ func (c Client) GetReverseDNSElasticIP(ctx context.Context, id UUID) (*ReverseDN
 		return nil, fmt.Errorf("GetReverseDNSElasticIP: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-reverse-dns-elastic-ip")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetReverseDNSElasticIP: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -16883,17 +14645,9 @@ func (c Client) UpdateReverseDNSElasticIP(ctx context.Context, id UUID, req Upda
 		return nil, fmt.Errorf("UpdateReverseDNSElasticIP: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-reverse-dns-elastic-ip")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateReverseDNSElasticIP: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -16927,17 +14681,9 @@ func (c Client) DeleteReverseDNSInstance(ctx context.Context, id UUID) (*Operati
 		return nil, fmt.Errorf("DeleteReverseDNSInstance: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-reverse-dns-instance")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteReverseDNSInstance: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -16971,17 +14717,9 @@ func (c Client) GetReverseDNSInstance(ctx context.Context, id UUID) (*ReverseDNS
 		return nil, fmt.Errorf("GetReverseDNSInstance: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-reverse-dns-instance")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetReverseDNSInstance: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -17026,17 +14764,9 @@ func (c Client) UpdateReverseDNSInstance(ctx context.Context, id UUID, req Updat
 		return nil, fmt.Errorf("UpdateReverseDNSInstance: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-reverse-dns-instance")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateReverseDNSInstance: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -17119,17 +14849,9 @@ func (c Client) ListSecurityGroups(ctx context.Context, opts ...ListSecurityGrou
 		return nil, fmt.Errorf("ListSecurityGroups: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-security-groups")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ListSecurityGroups: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -17177,17 +14899,9 @@ func (c Client) CreateSecurityGroup(ctx context.Context, req CreateSecurityGroup
 		return nil, fmt.Errorf("CreateSecurityGroup: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-security-group")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("CreateSecurityGroup: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -17221,17 +14935,9 @@ func (c Client) DeleteSecurityGroup(ctx context.Context, id UUID) (*Operation, e
 		return nil, fmt.Errorf("DeleteSecurityGroup: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-security-group")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteSecurityGroup: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -17265,17 +14971,9 @@ func (c Client) GetSecurityGroup(ctx context.Context, id UUID) (*SecurityGroup, 
 		return nil, fmt.Errorf("GetSecurityGroup: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-security-group")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetSecurityGroup: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -17285,6 +14983,56 @@ func (c Client) GetSecurityGroup(ctx context.Context, id UUID) (*SecurityGroup, 
 	bodyresp := new(SecurityGroup)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
 		return nil, fmt.Errorf("GetSecurityGroup: prepare JSON response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+type UpdateSecurityGroupRequest struct {
+	// Security Group description
+	Description string `json:"description,omitempty" validate:"omitempty,lte=255"`
+	// Security Group name
+	Name string `json:"name,omitempty" validate:"omitempty,gte=1,lte=255"`
+}
+
+// Update a Security Group
+func (c Client) UpdateSecurityGroup(ctx context.Context, id UUID, req UpdateSecurityGroupRequest) (*Operation, error) {
+	path := fmt.Sprintf("/security-group/%v", id)
+
+	body, err := prepareJSONBody(req)
+	if err != nil {
+		return nil, fmt.Errorf("UpdateSecurityGroup: prepare JSON body: %w", err)
+	}
+
+	request, err := http.NewRequestWithContext(ctx, "PUT", c.serverEndpoint+path, body)
+	if err != nil {
+		return nil, fmt.Errorf("UpdateSecurityGroup: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	request.Header.Add("Content-Type", "application/json")
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("UpdateSecurityGroup: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("UpdateSecurityGroup: sign request: %w", err)
+	}
+
+	response, err := c.do(request)
+	if err != nil {
+		return nil, fmt.Errorf("UpdateSecurityGroup: http client do: %w", err)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("UpdateSecurityGroup: http response: %w", err)
+	}
+
+	bodyresp := new(Operation)
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("UpdateSecurityGroup: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -17362,17 +15110,9 @@ func (c Client) AddRuleToSecurityGroup(ctx context.Context, id UUID, req AddRule
 		return nil, fmt.Errorf("AddRuleToSecurityGroup: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "add-rule-to-security-group")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("AddRuleToSecurityGroup: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -17406,17 +15146,9 @@ func (c Client) DeleteRuleFromSecurityGroup(ctx context.Context, id UUID, ruleID
 		return nil, fmt.Errorf("DeleteRuleFromSecurityGroup: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-rule-from-security-group")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteRuleFromSecurityGroup: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -17462,17 +15194,9 @@ func (c Client) AddExternalSourceToSecurityGroup(ctx context.Context, id UUID, r
 		return nil, fmt.Errorf("AddExternalSourceToSecurityGroup: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "add-external-source-to-security-group")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("AddExternalSourceToSecurityGroup: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -17518,17 +15242,9 @@ func (c Client) AttachInstanceToSecurityGroup(ctx context.Context, id UUID, req 
 		return nil, fmt.Errorf("AttachInstanceToSecurityGroup: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "attach-instance-to-security-group")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("AttachInstanceToSecurityGroup: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -17574,17 +15290,9 @@ func (c Client) DetachInstanceFromSecurityGroup(ctx context.Context, id UUID, re
 		return nil, fmt.Errorf("DetachInstanceFromSecurityGroup: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "detach-instance-from-security-group")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DetachInstanceFromSecurityGroup: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -17630,17 +15338,9 @@ func (c Client) RemoveExternalSourceFromSecurityGroup(ctx context.Context, id UU
 		return nil, fmt.Errorf("RemoveExternalSourceFromSecurityGroup: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "remove-external-source-from-security-group")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("RemoveExternalSourceFromSecurityGroup: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -17697,17 +15397,9 @@ func (c Client) ListSKSClusters(ctx context.Context) (*ListSKSClustersResponse, 
 		return nil, fmt.Errorf("ListSKSClusters: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-sks-clusters")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ListSKSClusters: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -17795,17 +15487,9 @@ func (c Client) CreateSKSCluster(ctx context.Context, req CreateSKSClusterReques
 		return nil, fmt.Errorf("CreateSKSCluster: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-sks-cluster")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("CreateSKSCluster: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -17839,17 +15523,9 @@ func (c Client) ListSKSClusterDeprecatedResources(ctx context.Context, id UUID) 
 		return nil, fmt.Errorf("ListSKSClusterDeprecatedResources: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-sks-cluster-deprecated-resources")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ListSKSClusterDeprecatedResources: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -17894,17 +15570,9 @@ func (c Client) GenerateSKSClusterKubeconfig(ctx context.Context, id UUID, req S
 		return nil, fmt.Errorf("GenerateSKSClusterKubeconfig: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "generate-sks-cluster-kubeconfig")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GenerateSKSClusterKubeconfig: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -17958,17 +15626,9 @@ func (c Client) ListSKSClusterVersions(ctx context.Context, opts ...ListSKSClust
 		return nil, fmt.Errorf("ListSKSClusterVersions: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-sks-cluster-versions")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ListSKSClusterVersions: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -18002,17 +15662,9 @@ func (c Client) DeleteSKSCluster(ctx context.Context, id UUID) (*Operation, erro
 		return nil, fmt.Errorf("DeleteSKSCluster: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-sks-cluster")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteSKSCluster: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -18046,17 +15698,9 @@ func (c Client) GetSKSCluster(ctx context.Context, id UUID) (*SKSCluster, error)
 		return nil, fmt.Errorf("GetSKSCluster: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-sks-cluster")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetSKSCluster: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -18120,17 +15764,9 @@ func (c Client) UpdateSKSCluster(ctx context.Context, id UUID, req UpdateSKSClus
 		return nil, fmt.Errorf("UpdateSKSCluster: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-sks-cluster")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateSKSCluster: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -18176,17 +15812,9 @@ func (c Client) GetSKSClusterAuthorityCert(ctx context.Context, id UUID, authori
 		return nil, fmt.Errorf("GetSKSClusterAuthorityCert: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-sks-cluster-authority-cert")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetSKSClusterAuthorityCert: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -18224,17 +15852,9 @@ func (c Client) GenerateSKSKarpenterExoscaleNodeclass(ctx context.Context, id UU
 		return nil, fmt.Errorf("GenerateSKSKarpenterExoscaleNodeclass: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "generate-sks-karpenter-exoscale-nodeclass")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GenerateSKSKarpenterExoscaleNodeclass: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -18272,17 +15892,9 @@ func (c Client) GenerateSKSKarpenterNodepool(ctx context.Context, id UUID) (*Gen
 		return nil, fmt.Errorf("GenerateSKSKarpenterNodepool: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "generate-sks-karpenter-nodepool")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GenerateSKSKarpenterNodepool: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -18318,17 +15930,9 @@ func (c Client) GetSKSClusterInspection(ctx context.Context, id UUID) (*GetSKSCl
 		return nil, fmt.Errorf("GetSKSClusterInspection: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-sks-cluster-inspection")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetSKSClusterInspection: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -18355,8 +15959,8 @@ type CreateSKSNodepoolRequest struct {
 	Addons []string `json:"addons,omitempty"`
 	// Nodepool Anti-affinity Groups
 	AntiAffinityGroups []AntiAffinityGroup `json:"anti-affinity-groups,omitempty"`
-	// CPU manager config
-	CPUManagerConfig *CPUManagerConfig `json:"cpu-manager-config"`
+	// CPU manager (kubelet settings)
+	CPUManager *CPUManager `json:"cpu-manager"`
 	// Deploy target reference
 	DeployTarget *DeployTarget `json:"deploy-target,omitempty"`
 	// Nodepool description
@@ -18367,6 +15971,10 @@ type CreateSKSNodepoolRequest struct {
 	InstancePrefix string `json:"instance-prefix,omitempty" validate:"omitempty,gte=1,lte=30"`
 	// Instance type reference
 	InstanceType *InstanceType `json:"instance-type" validate:"required"`
+	// Allow the Instances to act as routers in their VPC (IP forwarding). Only applies to new Instances
+	IPForwarding *bool `json:"ip-forwarding,omitempty"`
+	// Resources reserved for kube or system components.
+	KubeReserved *ReservedResources `json:"kube-reserved"`
 	// Kubelet image GC options
 	KubeletImageGC *KubeletImageGC `json:"kubelet-image-gc,omitempty"`
 	// Maximum number of pods per node (kubelet setting)
@@ -18374,6 +15982,8 @@ type CreateSKSNodepoolRequest struct {
 	Labels         SKSNodepoolLabels `json:"labels,omitempty"`
 	// Nodepool name, lowercase only
 	Name string `json:"name" validate:"required,gte=1,lte=255"`
+	// Expose the GPUs with the NVIDIA DRA driver instead of the NVIDIA device plugin. Requires a GPU instance type and Kubernetes 1.34 or greater.
+	NvidiaDraDriver *bool `json:"nvidia-dra-driver,omitempty"`
 	// Nvidia MIG Profiles enabled
 	NvidiaMigProfiles *NvidiaMigProfiles `json:"nvidia-mig-profiles,omitempty"`
 	// Nodepool Private Networks
@@ -18385,8 +15995,14 @@ type CreateSKSNodepoolRequest struct {
 	// Nodepool Security Groups
 	SecurityGroups []SecurityGroup `json:"security-groups,omitempty"`
 	// Number of instances
-	Size   int64             `json:"size" validate:"required,gt=0"`
-	Taints SKSNodepoolTaints `json:"taints,omitempty"`
+	Size int64 `json:"size" validate:"required,gt=0"`
+	// Resources reserved for kube or system components.
+	SystemReserved *ReservedResources `json:"system-reserved"`
+	Taints         SKSNodepoolTaints  `json:"taints,omitempty"`
+	// Template reference
+	Template *TemplateRef `json:"template,omitempty"`
+	// VPC
+	Vpc *VpcRef `json:"vpc,omitempty"`
 }
 
 // Create a new SKS Nodepool
@@ -18415,17 +16031,9 @@ func (c Client) CreateSKSNodepool(ctx context.Context, id UUID, req CreateSKSNod
 		return nil, fmt.Errorf("CreateSKSNodepool: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-sks-nodepool")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("CreateSKSNodepool: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -18459,17 +16067,9 @@ func (c Client) DeleteSKSNodepool(ctx context.Context, id UUID, sksNodepoolID UU
 		return nil, fmt.Errorf("DeleteSKSNodepool: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-sks-nodepool")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteSKSNodepool: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -18503,17 +16103,9 @@ func (c Client) GetSKSNodepool(ctx context.Context, id UUID, sksNodepoolID UUID)
 		return nil, fmt.Errorf("GetSKSNodepool: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-sks-nodepool")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetSKSNodepool: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -18535,11 +16127,19 @@ const (
 	UpdateSKSNodepoolRequestPublicIPAssignmentDual  UpdateSKSNodepoolRequestPublicIPAssignment = "dual"
 )
 
+// Nodepool VPC: the Instances are attached to the given Subnets of the VPC, or none (`null` or `{}`) to detach them
+type UpdateSKSNodepoolRequestVpc struct {
+	// VPC ID, required with `subnets`
+	ID UUID `json:"id,omitempty"`
+	// VPC Subnets to attach the Instances to, required with `id`
+	Subnets []VpcSubnetRef `json:"subnets,omitempty"`
+}
+
 type UpdateSKSNodepoolRequest struct {
 	// Nodepool Anti-affinity Groups
 	AntiAffinityGroups []AntiAffinityGroup `json:"anti-affinity-groups,omitempty"`
-	// CPU manager config
-	CPUManagerConfig *CPUManagerConfig `json:"cpu-manager-config"`
+	// CPU manager (kubelet settings)
+	CPUManager *CPUManager `json:"cpu-manager"`
 	// Deploy target reference
 	DeployTarget *DeployTarget `json:"deploy-target"`
 	// Nodepool description
@@ -18550,6 +16150,10 @@ type UpdateSKSNodepoolRequest struct {
 	InstancePrefix string `json:"instance-prefix,omitempty" validate:"omitempty,gte=1,lte=30"`
 	// Instance type reference
 	InstanceType *InstanceType `json:"instance-type,omitempty"`
+	// Allow the Instances to act as routers in their VPC (IP forwarding). Only applies to new Instances
+	IPForwarding *bool `json:"ip-forwarding,omitempty"`
+	// Resources reserved for kube or system components.
+	KubeReserved *ReservedResources `json:"kube-reserved"`
 	// Kubelet image GC options
 	KubeletImageGC *KubeletImageGC `json:"kubelet-image-gc,omitempty"`
 	// Maximum number of pods per node (kubelet setting)
@@ -18557,6 +16161,8 @@ type UpdateSKSNodepoolRequest struct {
 	Labels         SKSNodepoolLabels `json:"labels,omitempty"`
 	// Nodepool name, lowercase only
 	Name string `json:"name,omitempty" validate:"omitempty,gte=1,lte=255"`
+	// Expose the GPUs with the NVIDIA DRA driver instead of the NVIDIA device plugin. Requires a GPU instance type and Kubernetes 1.34 or greater.
+	NvidiaDraDriver *bool `json:"nvidia-dra-driver,omitempty"`
 	// Nvidia MIG Profiles enabled
 	NvidiaMigProfiles *NvidiaMigProfiles `json:"nvidia-mig-profiles"`
 	// Nodepool Private Networks
@@ -18566,8 +16172,14 @@ type UpdateSKSNodepoolRequest struct {
 	// * both IPv4 and IPv6 (`dual`) addressing.
 	PublicIPAssignment UpdateSKSNodepoolRequestPublicIPAssignment `json:"public-ip-assignment,omitempty"`
 	// Nodepool Security Groups
-	SecurityGroups []SecurityGroup   `json:"security-groups,omitempty"`
-	Taints         SKSNodepoolTaints `json:"taints,omitempty"`
+	SecurityGroups []SecurityGroup `json:"security-groups,omitempty"`
+	// Resources reserved for kube or system components.
+	SystemReserved *ReservedResources `json:"system-reserved"`
+	Taints         SKSNodepoolTaints  `json:"taints,omitempty"`
+	// Template reference
+	Template *TemplateRef `json:"template,omitempty"`
+	// Nodepool VPC: the Instances are attached to the given Subnets of the VPC, or none (`null` or `{}`) to detach them
+	Vpc *UpdateSKSNodepoolRequestVpc `json:"vpc"`
 }
 
 // Update an SKS Nodepool
@@ -18596,17 +16208,9 @@ func (c Client) UpdateSKSNodepool(ctx context.Context, id UUID, sksNodepoolID UU
 		return nil, fmt.Errorf("UpdateSKSNodepool: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-sks-nodepool")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateSKSNodepool: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -18651,17 +16255,9 @@ func (c Client) EvictSKSNodepoolMembers(ctx context.Context, id UUID, sksNodepoo
 		return nil, fmt.Errorf("EvictSKSNodepoolMembers: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "evict-sks-nodepool-members")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("EvictSKSNodepoolMembers: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -18707,17 +16303,9 @@ func (c Client) ScaleSKSNodepool(ctx context.Context, id UUID, sksNodepoolID UUI
 		return nil, fmt.Errorf("ScaleSKSNodepool: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "scale-sks-nodepool")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ScaleSKSNodepool: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -18751,17 +16339,9 @@ func (c Client) RotateSKSCcmCredentials(ctx context.Context, id UUID) (*Operatio
 		return nil, fmt.Errorf("RotateSKSCcmCredentials: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "rotate-sks-ccm-credentials")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("RotateSKSCcmCredentials: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -18795,17 +16375,9 @@ func (c Client) RotateSKSCsiCredentials(ctx context.Context, id UUID) (*Operatio
 		return nil, fmt.Errorf("RotateSKSCsiCredentials: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "rotate-sks-csi-credentials")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("RotateSKSCsiCredentials: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -18839,17 +16411,9 @@ func (c Client) RotateSKSKarpenterCredentials(ctx context.Context, id UUID) (*Op
 		return nil, fmt.Errorf("RotateSKSKarpenterCredentials: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "rotate-sks-karpenter-credentials")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("RotateSKSKarpenterCredentials: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -18883,17 +16447,9 @@ func (c Client) RotateSKSOperatorsCA(ctx context.Context, id UUID) (*Operation, 
 		return nil, fmt.Errorf("RotateSKSOperatorsCA: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "rotate-sks-operators-ca")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("RotateSKSOperatorsCA: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -18939,17 +16495,9 @@ func (c Client) UpgradeSKSCluster(ctx context.Context, id UUID, req UpgradeSKSCl
 		return nil, fmt.Errorf("UpgradeSKSCluster: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "upgrade-sks-cluster")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("UpgradeSKSCluster: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -18983,17 +16531,9 @@ func (c Client) UpgradeSKSClusterServiceLevel(ctx context.Context, id UUID) (*Op
 		return nil, fmt.Errorf("UpgradeSKSClusterServiceLevel: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "upgrade-sks-cluster-service-level")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("UpgradeSKSClusterServiceLevel: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -19003,6 +16543,88 @@ func (c Client) UpgradeSKSClusterServiceLevel(ctx context.Context, id UUID) (*Op
 	bodyresp := new(Operation)
 	if err := prepareJSONResponse(response, bodyresp); err != nil {
 		return nil, fmt.Errorf("UpgradeSKSClusterServiceLevel: prepare JSON response: %w", err)
+	}
+
+	return bodyresp, nil
+}
+
+type ListSKSNodepoolTemplatesResponse struct {
+	SKSNodepoolTemplates []SKSNodepoolTemplate `json:"sks-nodepool-templates,omitempty"`
+}
+
+// FindSKSNodepoolTemplate attempts to find an SKSNodepoolTemplate by nameOrID.
+func (l ListSKSNodepoolTemplatesResponse) FindSKSNodepoolTemplate(nameOrID string) (SKSNodepoolTemplate, error) {
+	var result []SKSNodepoolTemplate
+	for i, elem := range l.SKSNodepoolTemplates {
+		if string(elem.Name) == nameOrID || string(elem.ID) == nameOrID {
+			result = append(result, l.SKSNodepoolTemplates[i])
+		}
+	}
+	if len(result) == 1 {
+		return result[0], nil
+	}
+
+	if len(result) > 1 {
+		return SKSNodepoolTemplate{}, fmt.Errorf("%q too many found in ListSKSNodepoolTemplatesResponse: %w", nameOrID, ErrConflict)
+	}
+
+	return SKSNodepoolTemplate{}, fmt.Errorf("%q not found in ListSKSNodepoolTemplatesResponse: %w", nameOrID, ErrNotFound)
+}
+
+type ListSKSNodepoolTemplatesVariant string
+
+const (
+	ListSKSNodepoolTemplatesVariantStandard ListSKSNodepoolTemplatesVariant = "standard"
+	ListSKSNodepoolTemplatesVariantNvidia   ListSKSNodepoolTemplatesVariant = "nvidia"
+)
+
+type ListSKSNodepoolTemplatesOpt func(url.Values)
+
+func ListSKSNodepoolTemplatesWithVariant(variant ListSKSNodepoolTemplatesVariant) ListSKSNodepoolTemplatesOpt {
+	return func(q url.Values) {
+		q.Add("variant", fmt.Sprint(variant))
+	}
+}
+
+// List the available templates for a given kube version (major.minor or major.minor.patch), of the given variant (standard | nvidia) when provided, latest first
+func (c Client) ListSKSNodepoolTemplates(ctx context.Context, kubeVersion string, opts ...ListSKSNodepoolTemplatesOpt) (*ListSKSNodepoolTemplatesResponse, error) {
+	path := fmt.Sprintf("/sks-template/%v", kubeVersion)
+
+	request, err := http.NewRequestWithContext(ctx, "GET", c.serverEndpoint+path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("ListSKSNodepoolTemplates: new request: %w", err)
+	}
+
+	request.Header.Add("User-Agent", c.getUserAgent())
+
+	if len(opts) > 0 {
+		q := request.URL.Query()
+		for _, opt := range opts {
+			opt(q)
+		}
+		request.URL.RawQuery = q.Encode()
+	}
+
+	if err := c.executeRequestInterceptors(ctx, request); err != nil {
+		return nil, fmt.Errorf("ListSKSNodepoolTemplates: execute request editors: %w", err)
+	}
+
+	if err := c.signRequest(request); err != nil {
+		return nil, fmt.Errorf("ListSKSNodepoolTemplates: sign request: %w", err)
+	}
+
+	response, err := c.do(request)
+	if err != nil {
+		return nil, fmt.Errorf("ListSKSNodepoolTemplates: http client do: %w", err)
+	}
+
+	if err := handleHTTPErrorResp(response); err != nil {
+		return nil, fmt.Errorf("ListSKSNodepoolTemplates: http response: %w", err)
+	}
+
+	bodyresp := new(ListSKSNodepoolTemplatesResponse)
+	if err := prepareJSONResponse(response, bodyresp); err != nil {
+		return nil, fmt.Errorf("ListSKSNodepoolTemplates: prepare JSON response: %w", err)
 	}
 
 	return bodyresp, nil
@@ -19038,17 +16660,9 @@ func (c Client) GetActiveNodepoolTemplate(ctx context.Context, kubeVersion strin
 		return nil, fmt.Errorf("GetActiveNodepoolTemplate: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-active-nodepool-template")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetActiveNodepoolTemplate: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -19105,17 +16719,9 @@ func (c Client) ListSnapshots(ctx context.Context) (*ListSnapshotsResponse, erro
 		return nil, fmt.Errorf("ListSnapshots: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-snapshots")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ListSnapshots: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -19149,17 +16755,9 @@ func (c Client) DeleteSnapshot(ctx context.Context, id UUID) (*Operation, error)
 		return nil, fmt.Errorf("DeleteSnapshot: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-snapshot")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteSnapshot: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -19193,17 +16791,9 @@ func (c Client) GetSnapshot(ctx context.Context, id UUID) (*Snapshot, error) {
 		return nil, fmt.Errorf("GetSnapshot: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-snapshot")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetSnapshot: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -19237,17 +16827,9 @@ func (c Client) ExportSnapshot(ctx context.Context, id UUID) (*Operation, error)
 		return nil, fmt.Errorf("ExportSnapshot: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "export-snapshot")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ExportSnapshot: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -19301,17 +16883,9 @@ func (c Client) PromoteSnapshotToTemplate(ctx context.Context, id UUID, req Prom
 		return nil, fmt.Errorf("PromoteSnapshotToTemplate: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "promote-snapshot-to-template")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("PromoteSnapshotToTemplate: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -19368,17 +16942,9 @@ func (c Client) ListSOSBucketsUsage(ctx context.Context) (*ListSOSBucketsUsageRe
 		return nil, fmt.Errorf("ListSOSBucketsUsage: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-sos-buckets-usage")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ListSOSBucketsUsage: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -19432,17 +16998,9 @@ func (c Client) GetSOSPresignedURL(ctx context.Context, bucket string, opts ...G
 		return nil, fmt.Errorf("GetSOSPresignedURL: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-sos-presigned-url")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetSOSPresignedURL: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -19499,17 +17057,9 @@ func (c Client) ListSSHKeys(ctx context.Context) (*ListSSHKeysResponse, error) {
 		return nil, fmt.Errorf("ListSSHKeys: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-ssh-keys")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ListSSHKeys: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -19557,17 +17107,9 @@ func (c Client) RegisterSSHKey(ctx context.Context, req RegisterSSHKeyRequest) (
 		return nil, fmt.Errorf("RegisterSSHKey: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "register-ssh-key")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("RegisterSSHKey: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -19601,17 +17143,9 @@ func (c Client) DeleteSSHKey(ctx context.Context, name string) (*Operation, erro
 		return nil, fmt.Errorf("DeleteSSHKey: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-ssh-key")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteSSHKey: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -19645,17 +17179,9 @@ func (c Client) GetSSHKey(ctx context.Context, name string) (*SSHKey, error) {
 		return nil, fmt.Errorf("GetSSHKey: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-ssh-key")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetSSHKey: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -19741,17 +17267,9 @@ func (c Client) ListTemplates(ctx context.Context, opts ...ListTemplatesOpt) (*L
 		return nil, fmt.Errorf("ListTemplates: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-templates")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ListTemplates: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -19828,17 +17346,9 @@ func (c Client) RegisterTemplate(ctx context.Context, req RegisterTemplateReques
 		return nil, fmt.Errorf("RegisterTemplate: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "register-template")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("RegisterTemplate: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -19872,17 +17382,9 @@ func (c Client) DeleteTemplate(ctx context.Context, id UUID) (*Operation, error)
 		return nil, fmt.Errorf("DeleteTemplate: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-template")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteTemplate: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -19916,17 +17418,9 @@ func (c Client) GetTemplate(ctx context.Context, id UUID) (*Template, error) {
 		return nil, fmt.Errorf("GetTemplate: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-template")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetTemplate: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -19972,17 +17466,9 @@ func (c Client) CopyTemplate(ctx context.Context, id UUID, req CopyTemplateReque
 		return nil, fmt.Errorf("CopyTemplate: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "copy-template")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("CopyTemplate: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -20030,17 +17516,9 @@ func (c Client) UpdateTemplate(ctx context.Context, id UUID, req UpdateTemplateR
 		return nil, fmt.Errorf("UpdateTemplate: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-template")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateTemplate: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -20112,17 +17590,9 @@ func (c Client) GetUsageReport(ctx context.Context, opts ...GetUsageReportOpt) (
 		return nil, fmt.Errorf("GetUsageReport: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-usage-report")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetUsageReport: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -20178,17 +17648,9 @@ func (c Client) ListUsers(ctx context.Context) (*ListUsersResponse, error) {
 		return nil, fmt.Errorf("ListUsers: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-users")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ListUsers: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -20235,17 +17697,9 @@ func (c Client) CreateUser(ctx context.Context, req CreateUserRequest) (*Operati
 		return nil, fmt.Errorf("CreateUser: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-user")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("CreateUser: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -20278,17 +17732,9 @@ func (c Client) DeleteUser(ctx context.Context, id UUID) (*Operation, error) {
 		return nil, fmt.Errorf("DeleteUser: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-user")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DeleteUser: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -20333,17 +17779,9 @@ func (c Client) UpdateUserRole(ctx context.Context, id UUID, req UpdateUserRoleR
 		return nil, fmt.Errorf("UpdateUserRole: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-user-role")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateUserRole: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -20381,7 +17819,7 @@ func (l ListVpcsResponse) FindListVpcEntry(nameOrID string) (ListVpcEntry, error
 	return ListVpcEntry{}, fmt.Errorf("%q not found in ListVpcsResponse: %w", nameOrID, ErrNotFound)
 }
 
-// [BETA] List VPCs
+// List VPCs
 func (c Client) ListVpcs(ctx context.Context) (*ListVpcsResponse, error) {
 	path := "/vpc"
 
@@ -20400,17 +17838,9 @@ func (c Client) ListVpcs(ctx context.Context) (*ListVpcsResponse, error) {
 		return nil, fmt.Errorf("ListVpcs: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-vpcs")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ListVpcs: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -20426,16 +17856,15 @@ func (c Client) ListVpcs(ctx context.Context) (*ListVpcsResponse, error) {
 }
 
 type CreateVpcRequest struct {
-	// VPC description
 	Description string `json:"description,omitempty" validate:"omitempty,lte=4096"`
 	// VPC DHCP options
 	DHCPOptions *VpcDHCPOptions `json:"dhcp-options,omitempty"`
 	Labels      Labels          `json:"labels,omitempty"`
-	// VPC name
+	// VPC name, up to 255 characters. Must be unique within its zone
 	Name string `json:"name" validate:"required,gte=1,lte=255"`
 }
 
-// [BETA] Create a VPC
+// Create a VPC
 func (c Client) CreateVpc(ctx context.Context, req CreateVpcRequest) (*Operation, error) {
 	path := "/vpc"
 
@@ -20461,17 +17890,9 @@ func (c Client) CreateVpc(ctx context.Context, req CreateVpcRequest) (*Operation
 		return nil, fmt.Errorf("CreateVpc: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-vpc")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("CreateVpc: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -20486,7 +17907,7 @@ func (c Client) CreateVpc(ctx context.Context, req CreateVpcRequest) (*Operation
 	return bodyresp, nil
 }
 
-// [BETA] Delete a VPC
+// Delete a VPC
 func (c Client) DeleteVpc(ctx context.Context, id UUID) error {
 	path := fmt.Sprintf("/vpc/%v", id)
 
@@ -20505,17 +17926,9 @@ func (c Client) DeleteVpc(ctx context.Context, id UUID) error {
 		return fmt.Errorf("DeleteVpc: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-vpc")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return fmt.Errorf("DeleteVpc: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -20526,7 +17939,7 @@ func (c Client) DeleteVpc(ctx context.Context, id UUID) error {
 	return nil
 }
 
-// [BETA] Retrieve VPC details
+// Retrieve VPC details
 func (c Client) GetVpc(ctx context.Context, id UUID) (*Vpc, error) {
 	path := fmt.Sprintf("/vpc/%v", id)
 
@@ -20545,17 +17958,9 @@ func (c Client) GetVpc(ctx context.Context, id UUID) (*Vpc, error) {
 		return nil, fmt.Errorf("GetVpc: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-vpc")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetVpc: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -20571,16 +17976,14 @@ func (c Client) GetVpc(ctx context.Context, id UUID) (*Vpc, error) {
 }
 
 type UpdateVpcRequest struct {
-	// VPC description
 	Description *string `json:"description,omitempty" validate:"omitempty,lte=4096"`
 	// VPC DHCP options
 	DHCPOptions *VpcDHCPOptions `json:"dhcp-options,omitempty"`
 	Labels      Labels          `json:"labels"`
-	// VPC name
-	Name *string `json:"name,omitempty" validate:"omitempty,gte=1,lte=255"`
+	Name        *string         `json:"name,omitempty" validate:"omitempty,gte=1,lte=255"`
 }
 
-// [BETA] Update a VPC
+// Update a VPC
 func (c Client) UpdateVpc(ctx context.Context, id UUID, req UpdateVpcRequest) (*Vpc, error) {
 	path := fmt.Sprintf("/vpc/%v", id)
 
@@ -20606,17 +18009,9 @@ func (c Client) UpdateVpc(ctx context.Context, id UUID, req UpdateVpcRequest) (*
 		return nil, fmt.Errorf("UpdateVpc: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-vpc")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateVpc: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -20654,7 +18049,7 @@ func (l ListVpcRoutesResponse) FindListRouteEntry(id string) (ListRouteEntry, er
 	return ListRouteEntry{}, fmt.Errorf("%q not found in ListVpcRoutesResponse: %w", id, ErrNotFound)
 }
 
-// [BETA] List VPC routes
+// List VPC routes
 func (c Client) ListVpcRoutes(ctx context.Context, vpcID UUID) (*ListVpcRoutesResponse, error) {
 	path := fmt.Sprintf("/vpc/%v/route", vpcID)
 
@@ -20673,17 +18068,9 @@ func (c Client) ListVpcRoutes(ctx context.Context, vpcID UUID) (*ListVpcRoutesRe
 		return nil, fmt.Errorf("ListVpcRoutes: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-vpc-routes")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ListVpcRoutes: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -20721,7 +18108,7 @@ func (l ListSubnetsResponse) FindListSubnetEntry(nameOrID string) (ListSubnetEnt
 	return ListSubnetEntry{}, fmt.Errorf("%q not found in ListSubnetsResponse: %w", nameOrID, ErrNotFound)
 }
 
-// [BETA] List Subnets
+// List Subnets
 func (c Client) ListSubnets(ctx context.Context, vpcID UUID) (*ListSubnetsResponse, error) {
 	path := fmt.Sprintf("/vpc/%v/subnet", vpcID)
 
@@ -20740,17 +18127,9 @@ func (c Client) ListSubnets(ctx context.Context, vpcID UUID) (*ListSubnetsRespon
 		return nil, fmt.Errorf("ListSubnets: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-subnets")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ListSubnets: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -20778,20 +18157,19 @@ const (
 )
 
 type CreateSubnetRequest struct {
-	// Subnet address space
+	// Whether the subnet is private or public
 	AddressSpace CreateSubnetRequestAddressSpace `json:"address-space" validate:"required"`
-	// Subnet address family
+	// Whether the subnet supports IPv4 and/or IPv6
 	Addressfamily CreateSubnetRequestAddressfamily `json:"addressfamily" validate:"required"`
-	// Subnet description
-	Description string `json:"description,omitempty" validate:"omitempty,lte=4096"`
-	// Subnet ipv4 CIDR
+	Description   string                           `json:"description,omitempty" validate:"omitempty,lte=4096"`
+	// Subnet ipv4 CIDR. Must not overlap with other CIDRs of this VPC
 	Ipv4Block string `json:"ipv4-block,omitempty"`
 	Labels    Labels `json:"labels,omitempty"`
-	// Subnet name
+	// Subnet name, up to 255 characters. Must be unique between the subnet of the parent VPC
 	Name string `json:"name" validate:"required,gte=1,lte=255"`
 }
 
-// [BETA] Create a Subnet
+// Create a Subnet
 func (c Client) CreateSubnet(ctx context.Context, vpcID UUID, req CreateSubnetRequest) (*Operation, error) {
 	path := fmt.Sprintf("/vpc/%v/subnet", vpcID)
 
@@ -20817,17 +18195,9 @@ func (c Client) CreateSubnet(ctx context.Context, vpcID UUID, req CreateSubnetRe
 		return nil, fmt.Errorf("CreateSubnet: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-subnet")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("CreateSubnet: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -20842,7 +18212,7 @@ func (c Client) CreateSubnet(ctx context.Context, vpcID UUID, req CreateSubnetRe
 	return bodyresp, nil
 }
 
-// [BETA] Delete a Subnet
+// Delete a Subnet
 func (c Client) DeleteSubnet(ctx context.Context, vpcID UUID, id UUID) error {
 	path := fmt.Sprintf("/vpc/%v/subnet/%v", vpcID, id)
 
@@ -20861,17 +18231,9 @@ func (c Client) DeleteSubnet(ctx context.Context, vpcID UUID, id UUID) error {
 		return fmt.Errorf("DeleteSubnet: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-subnet")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return fmt.Errorf("DeleteSubnet: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -20882,7 +18244,7 @@ func (c Client) DeleteSubnet(ctx context.Context, vpcID UUID, id UUID) error {
 	return nil
 }
 
-// [BETA] Retrieve Subnet details
+// Retrieve Subnet details
 func (c Client) GetSubnet(ctx context.Context, vpcID UUID, id UUID) (*Subnet, error) {
 	path := fmt.Sprintf("/vpc/%v/subnet/%v", vpcID, id)
 
@@ -20901,17 +18263,9 @@ func (c Client) GetSubnet(ctx context.Context, vpcID UUID, id UUID) (*Subnet, er
 		return nil, fmt.Errorf("GetSubnet: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "get-subnet")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GetSubnet: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -20927,14 +18281,12 @@ func (c Client) GetSubnet(ctx context.Context, vpcID UUID, id UUID) (*Subnet, er
 }
 
 type UpdateSubnetRequest struct {
-	// Subnet description
 	Description *string `json:"description,omitempty" validate:"omitempty,lte=4096"`
 	Labels      Labels  `json:"labels"`
-	// Subnet name
-	Name *string `json:"name,omitempty" validate:"omitempty,gte=1,lte=255"`
+	Name        *string `json:"name,omitempty" validate:"omitempty,gte=1,lte=255"`
 }
 
-// [BETA] Update a Subnet
+// Update a Subnet
 func (c Client) UpdateSubnet(ctx context.Context, vpcID UUID, id UUID, req UpdateSubnetRequest) (*Subnet, error) {
 	path := fmt.Sprintf("/vpc/%v/subnet/%v", vpcID, id)
 
@@ -20960,17 +18312,9 @@ func (c Client) UpdateSubnet(ctx context.Context, vpcID UUID, id UUID, req Updat
 		return nil, fmt.Errorf("UpdateSubnet: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "update-subnet")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateSubnet: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -20988,11 +18332,11 @@ func (c Client) UpdateSubnet(ctx context.Context, vpcID UUID, id UUID, req Updat
 type AttachInstanceToSubnetRequest struct {
 	// Target Instance
 	Instance *InstanceRef `json:"instance" validate:"required"`
-	// Instance IPv4
+	// An optional IPv4 address assign to the instance
 	Ipv4 net.IP `json:"ipv4,omitempty"`
 }
 
-// [BETA] Attach a Compute instance to a Subnet
+// Attach a Compute instance to a Subnet
 func (c Client) AttachInstanceToSubnet(ctx context.Context, vpcID UUID, subnetID UUID, req AttachInstanceToSubnetRequest) (*Operation, error) {
 	path := fmt.Sprintf("/vpc/%v/subnet/%v/attach", vpcID, subnetID)
 
@@ -21018,17 +18362,9 @@ func (c Client) AttachInstanceToSubnet(ctx context.Context, vpcID UUID, subnetID
 		return nil, fmt.Errorf("AttachInstanceToSubnet: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "attach-instance-to-subnet")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("AttachInstanceToSubnet: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -21048,7 +18384,7 @@ type DetachInstanceFromSubnetRequest struct {
 	Instance *InstanceRef `json:"instance" validate:"required"`
 }
 
-// [BETA] Detach a Compute instance from a Subnet
+// Detach a Compute instance from a Subnet
 func (c Client) DetachInstanceFromSubnet(ctx context.Context, vpcID UUID, subnetID UUID, req DetachInstanceFromSubnetRequest) (*Operation, error) {
 	path := fmt.Sprintf("/vpc/%v/subnet/%v/detach", vpcID, subnetID)
 
@@ -21074,17 +18410,9 @@ func (c Client) DetachInstanceFromSubnet(ctx context.Context, vpcID UUID, subnet
 		return nil, fmt.Errorf("DetachInstanceFromSubnet: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "detach-instance-from-subnet")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("DetachInstanceFromSubnet: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -21122,7 +18450,7 @@ func (l ListRoutesResponse) FindListRouteEntry(id string) (ListRouteEntry, error
 	return ListRouteEntry{}, fmt.Errorf("%q not found in ListRoutesResponse: %w", id, ErrNotFound)
 }
 
-// [BETA] List Subnet routes
+// List Subnet routes
 func (c Client) ListRoutes(ctx context.Context, vpcID UUID, subnetID UUID) (*ListRoutesResponse, error) {
 	path := fmt.Sprintf("/vpc/%v/subnet/%v/route", vpcID, subnetID)
 
@@ -21141,17 +18469,9 @@ func (c Client) ListRoutes(ctx context.Context, vpcID UUID, subnetID UUID) (*Lis
 		return nil, fmt.Errorf("ListRoutes: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-routes")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ListRoutes: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -21167,15 +18487,14 @@ func (c Client) ListRoutes(ctx context.Context, vpcID UUID, subnetID UUID) (*Lis
 }
 
 type CreateRouteRequest struct {
-	// Route description
 	Description string `json:"description,omitempty" validate:"omitempty,lte=4096"`
-	// Route destination CIDR
+	// The CIDR used to match on which packets the routing rule should be applied
 	Destination string `json:"destination" validate:"required"`
-	// Route target
+	// Where the packets should be sent to. More details on the format can be found here https://community.exoscale.com/product/networking/vpc/how-to/using-routing-rules/
 	Target string `json:"target" validate:"required"`
 }
 
-// [BETA] Create a route
+// Create a route
 func (c Client) CreateRoute(ctx context.Context, vpcID UUID, subnetID UUID, req CreateRouteRequest) (*Route, error) {
 	path := fmt.Sprintf("/vpc/%v/subnet/%v/route", vpcID, subnetID)
 
@@ -21201,17 +18520,9 @@ func (c Client) CreateRoute(ctx context.Context, vpcID UUID, subnetID UUID, req 
 		return nil, fmt.Errorf("CreateRoute: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "create-route")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("CreateRoute: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -21226,7 +18537,7 @@ func (c Client) CreateRoute(ctx context.Context, vpcID UUID, subnetID UUID, req 
 	return bodyresp, nil
 }
 
-// [BETA] Delete a route
+// Delete a route
 func (c Client) DeleteRoute(ctx context.Context, vpcID UUID, subnetID UUID, id UUID) error {
 	path := fmt.Sprintf("/vpc/%v/subnet/%v/route/%v", vpcID, subnetID, id)
 
@@ -21245,17 +18556,9 @@ func (c Client) DeleteRoute(ctx context.Context, vpcID UUID, subnetID UUID, id U
 		return fmt.Errorf("DeleteRoute: sign request: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "delete-route")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return fmt.Errorf("DeleteRoute: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {
@@ -21304,17 +18607,9 @@ func (c Client) ListZones(ctx context.Context) (*ListZonesResponse, error) {
 		return nil, fmt.Errorf("ListZones: execute request editors: %w", err)
 	}
 
-	if c.trace {
-		dumpRequest(request, "list-zones")
-	}
-
-	response, err := c.httpClient.Do(request)
+	response, err := c.do(request)
 	if err != nil {
 		return nil, fmt.Errorf("ListZones: http client do: %w", err)
-	}
-
-	if c.trace {
-		dumpResponse(response)
 	}
 
 	if err := handleHTTPErrorResp(response); err != nil {

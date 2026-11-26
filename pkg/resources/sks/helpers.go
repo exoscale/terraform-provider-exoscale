@@ -157,22 +157,6 @@ func waitForClusterUpdateToSucceed(ctx context.Context, client *v3.Client, clust
 	}
 }
 
-// await waits for the given operation to reach the success state.
-func await(ctx context.Context, client *v3.Client) func(op *v3.Operation, err error) error {
-	return func(op *v3.Operation, err error) error {
-		if err != nil {
-			return err
-		}
-
-		_, err = client.Wait(ctx, op, v3.OperationStateSuccess)
-		if err != nil {
-			return err
-		}
-
-		return nil
-	}
-}
-
 // sliceOrEmpty returns a non-nil slice so that types.SetValueFrom yields an
 // empty set (rather than a null one) when the input is empty.
 func sliceOrEmpty(s []string) []string {

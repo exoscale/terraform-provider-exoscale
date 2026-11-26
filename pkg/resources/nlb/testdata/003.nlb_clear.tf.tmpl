@@ -25,8 +25,8 @@ resource "exoscale_nlb" "test_nlb6" {
   address_family = "inet6"
 }
 
-# `description` is dropped here too. Every optional healthcheck attribute is
-# omitted: the schema defaults must apply and must not produce a perpetual diff.
+# `description` and `label_selector` are dropped here too. The service keeps its
+# instance pool, so removing the selector does not leave it without backends.
 resource "exoscale_nlb_service" "test_service" {
   zone             = "{{ .Zone }}"
   name             = "terraform-provider-test-updated-{{ .ID }}"
@@ -36,6 +36,22 @@ resource "exoscale_nlb_service" "test_service" {
   target_port      = 8443
   protocol         = "udp"
   strategy         = "source-hash"
+
+  healthcheck {
+    port = 8443
+  }
+}
+
+resource "exoscale_nlb_service" "test_service_labels" {
+  zone        = "{{ .Zone }}"
+  name        = "terraform-provider-test-labels-{{ .ID }}"
+  nlb_id      = exoscale_nlb.test_nlb6.id
+  port        = 443
+  target_port = 8443
+
+  label_selector = {
+    role = "web"
+  }
 
   healthcheck {
     port = 8443

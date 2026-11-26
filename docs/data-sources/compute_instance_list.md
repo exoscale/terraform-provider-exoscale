@@ -100,7 +100,7 @@ Read-Only:
 - `manager_id` (String) The instance manager ID, if any.
 - `manager_type` (String) The instance manager type (instance pool, SKS node pool, etc.), if any.
 - `name` (String) The instance name.
-- `private_network_ids` (Set of String) The list of attached [exoscale_private_network](../resources/private_network.md) (IDs).
+- `private_network_ids` (Set of String) The list of attached [exoscale_private_network](../resources/private_network.md) (IDs). Private Networks are deprecated in favor of [VPC](https://community.exoscale.com/product/networking/vpc/).
 - `public_ip_address` (String) The instance (main network interface) IPv4 address.
 - `reverse_dns` (String) Domain name for reverse DNS record.
 - `security_group_ids` (Set of String) The list of attached [exoscale_security_group](../resources/security_group.md) (IDs).

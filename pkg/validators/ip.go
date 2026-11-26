@@ -37,6 +37,35 @@ func (v IsIPAddressValidator) ValidateString(_ context.Context, req validator.St
 	}
 }
 
+var _ validator.String = (*IsIPv4AddressValidator)(nil)
+
+type IsIPv4AddressValidator struct{}
+
+func IsIPv4Address() validator.String {
+	return IsIPv4AddressValidator{}
+}
+
+func (v IsIPv4AddressValidator) Description(_ context.Context) string {
+	return "Value must be a valid IPv4 address."
+}
+
+func (v IsIPv4AddressValidator) MarkdownDescription(ctx context.Context) string {
+	return v.Description(ctx)
+}
+
+func (v IsIPv4AddressValidator) ValidateString(_ context.Context, req validator.StringRequest, resp *validator.StringResponse) {
+	if req.ConfigValue.IsNull() || req.ConfigValue.IsUnknown() {
+		return
+	}
+	if ip := net.ParseIP(req.ConfigValue.ValueString()); ip == nil || ip.To4() == nil {
+		resp.Diagnostics.AddAttributeError(
+			req.Path,
+			"Invalid IPv4 Address",
+			fmt.Sprintf("Value must be a valid IPv4 address, got: %q", req.ConfigValue.ValueString()),
+		)
+	}
+}
+
 type IsNetmaskValidator struct{}
 
 func IsNetmask() validator.String {

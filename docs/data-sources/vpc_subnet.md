@@ -3,13 +3,13 @@
 page_title: "exoscale_vpc_subnet Data Source - terraform-provider-exoscale"
 subcategory: ""
 description: |-
-  Fetch Exoscale VPC https://community.exoscale.ch/product/networking/vpc/ Subnet data.
+  Fetch Exoscale VPC https://community.exoscale.com/product/networking/vpc/ Subnet data.
   Corresponding resource: exoscalevpcsubnet ../resources/vpc_subnet.md.
 ---
 
 # exoscale_vpc_subnet (Data Source)
 
-Fetch Exoscale [VPC](https://community.exoscale.ch/product/networking/vpc/) Subnet data.
+Fetch Exoscale [VPC](https://community.exoscale.com/product/networking/vpc/) Subnet data.
 
 Corresponding resource: [exoscale_vpc_subnet](../resources/vpc_subnet.md).
 

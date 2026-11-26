@@ -9,6 +9,7 @@ import (
 
 	exoscale "github.com/exoscale/egoscale/v3"
 	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -126,17 +127,7 @@ func (data *ValkeyUserResourceModel) CreateResource(ctx context.Context, client 
 		Username: exoscale.DBAASUserUsername(data.Username.ValueString()),
 	}
 
-	op, err := client.CreateDBAASValkeyUser(ctx, data.Service.ValueString(), createRequest)
-	if err != nil {
-		diagnostics.AddError(
-			"Client Error",
-			fmt.Sprintf("Unable to create service user, got error %s", err.Error()),
-		)
-		return
-	}
-
-	_, err = client.Wait(ctx, op, exoscale.OperationStateSuccess)
-	if err != nil {
+	if err := utils.Wait(ctx, client)(client.CreateDBAASValkeyUser(ctx, data.Service.ValueString(), createRequest)); err != nil {
 		diagnostics.AddError(
 			"Client Error",
 			fmt.Sprintf("Unable to create service user, got error %s", err.Error()),
@@ -170,17 +161,7 @@ func (data *ValkeyUserResourceModel) CreateResource(ctx context.Context, client 
 
 func (data *ValkeyUserResourceModel) DeleteResource(ctx context.Context, client *exoscale.Client, diagnostics *diag.Diagnostics) {
 
-	op, err := client.DeleteDBAASValkeyUser(ctx, data.Service.ValueString(), data.Username.ValueString())
-	if err != nil {
-		diagnostics.AddError(
-			"Client Error",
-			fmt.Sprintf("Unable to delete service user, got error %s", err.Error()),
-		)
-		return
-	}
-
-	_, err = client.Wait(ctx, op, exoscale.OperationStateSuccess)
-	if err != nil {
+	if err := utils.Wait(ctx, client)(client.DeleteDBAASValkeyUser(ctx, data.Service.ValueString(), data.Username.ValueString())); err != nil {
 		diagnostics.AddError(
 			"Client Error",
 			fmt.Sprintf("Unable to delete service user, got error %s", err.Error()),

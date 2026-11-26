@@ -1,0 +1,4 @@
+# labstack/echo is transitive (egoscale); provider never serves HTTP, so it can't be exploited.
+GO-2026-6872
+# labstack/echo is transitive (egoscale); provider never serves HTTP, so it can't be exploited.
+GO-2026-6875

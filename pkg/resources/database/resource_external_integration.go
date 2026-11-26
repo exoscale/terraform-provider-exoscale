@@ -157,20 +157,14 @@ func (r *ExternalIntegrationResource) Create(ctx context.Context, req resource.C
 		return
 	}
 
-	op, err := client.AttachDBAASServiceToEndpoint(
+	op, err := utils.WaitOperation(ctx, client)(client.AttachDBAASServiceToEndpoint(
 		ctx,
 		data.SourceServiceName.ValueString(),
 		v3.AttachDBAASServiceToEndpointRequest{
 			DestEndpointID: endpointID,
 			Type:           v3.EnumExternalEndpointTypes(data.Type.ValueString()),
 		},
-	)
-	if err != nil {
-		resp.Diagnostics.AddError("create", fmt.Sprintf("error creating dbaas external integration: %s", err))
-		return
-	}
-
-	op, err = client.Wait(ctx, op, v3.OperationStateSuccess)
+	))
 	if err != nil {
 		resp.Diagnostics.AddError("create", fmt.Sprintf("error creating dbaas external integration: %s", err))
 		return
@@ -268,19 +262,13 @@ func (r *ExternalIntegrationResource) Delete(ctx context.Context, req resource.D
 		return
 	}
 
-	op, err := client.DetachDBAASServiceFromEndpoint(
+	if err := utils.Wait(ctx, client)(client.DetachDBAASServiceFromEndpoint(
 		ctx,
 		data.SourceServiceName.ValueString(),
 		v3.DetachDBAASServiceFromEndpointRequest{
 			IntegrationID: integrationID,
 		},
-	)
-	if err != nil {
-		resp.Diagnostics.AddError("delete", fmt.Sprintf("error deleting dbaas external integration: %s", err))
-		return
-	}
-
-	if _, err := client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
+	)); err != nil {
 		resp.Diagnostics.AddError("delete", fmt.Sprintf("error deleting dbaas external integration: %s", err))
 		return
 	}

@@ -158,13 +158,7 @@ func (r *ExternalEndpointElasticsearchResource) Create(ctx context.Context, req 
 		settings.CA = data.CA.ValueString()
 	}
 
-	op, err := client.CreateDBAASExternalEndpointElasticsearch(ctx, data.Name.ValueString(), v3.DBAASEndpointElasticsearchInputCreate{Settings: settings})
-	if err != nil {
-		resp.Diagnostics.AddError("create", fmt.Sprintf("error creating elasticsearch external endpoint: %s", err))
-		return
-	}
-
-	op, err = client.Wait(ctx, op, v3.OperationStateSuccess)
+	op, err := utils.WaitOperation(ctx, client)(client.CreateDBAASExternalEndpointElasticsearch(ctx, data.Name.ValueString(), v3.DBAASEndpointElasticsearchInputCreate{Settings: settings}))
 	if err != nil {
 		resp.Diagnostics.AddError("create", fmt.Sprintf("error creating elasticsearch external endpoint: %s", err))
 		return
@@ -264,13 +258,7 @@ func (r *ExternalEndpointElasticsearchResource) Update(ctx context.Context, req 
 		settings.CA = planData.CA.ValueString()
 	}
 
-	op, err := client.UpdateDBAASExternalEndpointElasticsearch(ctx, endpointID, v3.DBAASEndpointElasticsearchInputUpdate{Settings: settings})
-	if err != nil {
-		resp.Diagnostics.AddError("update", fmt.Sprintf("error updating elasticsearch external endpoint: %s", err))
-		return
-	}
-
-	if _, err := client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
+	if err := utils.Wait(ctx, client)(client.UpdateDBAASExternalEndpointElasticsearch(ctx, endpointID, v3.DBAASEndpointElasticsearchInputUpdate{Settings: settings})); err != nil {
 		resp.Diagnostics.AddError("update", fmt.Sprintf("error updating elasticsearch external endpoint: %s", err))
 		return
 	}
@@ -319,13 +307,7 @@ func (r *ExternalEndpointElasticsearchResource) Delete(ctx context.Context, req 
 		return
 	}
 
-	op, err := client.DeleteDBAASExternalEndpointElasticsearch(ctx, endpointID)
-	if err != nil {
-		resp.Diagnostics.AddError("delete", fmt.Sprintf("error deleting elasticsearch external endpoint: %s", err))
-		return
-	}
-
-	if _, err := client.Wait(ctx, op, v3.OperationStateSuccess); err != nil {
+	if err := utils.Wait(ctx, client)(client.DeleteDBAASExternalEndpointElasticsearch(ctx, endpointID)); err != nil {
 		resp.Diagnostics.AddError("delete", fmt.Sprintf("error deleting elasticsearch external endpoint: %s", err))
 		return
 	}

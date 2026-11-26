@@ -8,6 +8,7 @@ import (
 
 	exoscale "github.com/exoscale/egoscale/v3"
 	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -311,20 +312,10 @@ func (data *ClickhouseUserResourceModel) DeleteResource(ctx context.Context, cli
 		return
 	}
 
-	op, err := client.DeleteDBAASClickhouseUser(ctx, data.Service.ValueString(), exoscale.UUID(data.UserUUID.ValueString()))
-	if err != nil {
+	if err := utils.Wait(ctx, client)(client.DeleteDBAASClickhouseUser(ctx, data.Service.ValueString(), exoscale.UUID(data.UserUUID.ValueString()))); err != nil {
 		diagnostics.AddError(
 			"Client Error",
 			fmt.Sprintf("Unable to delete service user, got error %s", err.Error()),
-		)
-		return
-	}
-
-	_, err = client.Wait(ctx, op, exoscale.OperationStateSuccess)
-	if err != nil {
-		diagnostics.AddError(
-			"Client Error",
-			fmt.Sprintf("Unable to wait for service user deletion, got error %s", err.Error()),
 		)
 		return
 	}

@@ -399,15 +399,9 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 		request.Labels = labels
 	}
 
-	op, err := client.CreateElasticIP(ctx, request)
+	op, err := utils.WaitOperation(ctx, client)(client.CreateElasticIP(ctx, request))
 	if err != nil {
 		resp.Diagnostics.AddError("API returned an error when creating Elastic IP", err.Error())
-		return
-	}
-
-	op, err = client.Wait(ctx, op, exoscale.OperationStateSuccess)
-	if err != nil {
-		resp.Diagnostics.AddError("create Elastic IP operation failed", err.Error())
 		return
 	}
 
@@ -423,13 +417,8 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 	}
 
 	if v := plan.ReverseDNS.ValueString(); v != "" {
-		op, err := client.UpdateReverseDNSElasticIP(ctx, id, exoscale.UpdateReverseDNSElasticIPRequest{DomainName: v})
-		if err != nil {
+		if err := utils.Wait(ctx, client)(client.UpdateReverseDNSElasticIP(ctx, id, exoscale.UpdateReverseDNSElasticIPRequest{DomainName: v})); err != nil {
 			resp.Diagnostics.AddError("unable to create Reverse DNS record", err.Error())
-			return
-		}
-		if _, err := client.Wait(ctx, op, exoscale.OperationStateSuccess); err != nil {
-			resp.Diagnostics.AddError("create Reverse DNS record operation failed", err.Error())
 			return
 		}
 	}
@@ -576,38 +565,23 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 	}
 
 	if update {
-		op, err := client.UpdateElasticIP(ctx, id, request)
-		if err != nil {
+		if err := utils.Wait(ctx, client)(client.UpdateElasticIP(ctx, id, request)); err != nil {
 			resp.Diagnostics.AddError("API returned an error when updating Elastic IP", err.Error())
-			return
-		}
-		if _, err := client.Wait(ctx, op, exoscale.OperationStateSuccess); err != nil {
-			resp.Diagnostics.AddError("update Elastic IP operation failed", err.Error())
 			return
 		}
 	}
 
 	if resetDescription {
-		op, err := client.ResetElasticIPField(ctx, id, exoscale.ResetElasticIPFieldFieldDescription)
-		if err != nil {
+		if err := utils.Wait(ctx, client)(client.ResetElasticIPField(ctx, id, exoscale.ResetElasticIPFieldFieldDescription)); err != nil {
 			resp.Diagnostics.AddError("API returned an error when resetting Elastic IP description", err.Error())
-			return
-		}
-		if _, err := client.Wait(ctx, op, exoscale.OperationStateSuccess); err != nil {
-			resp.Diagnostics.AddError("reset Elastic IP description operation failed", err.Error())
 			return
 		}
 	}
 
 	if !plan.ReverseDNS.Equal(state.ReverseDNS) {
 		if v := plan.ReverseDNS.ValueString(); v != "" {
-			op, err := client.UpdateReverseDNSElasticIP(ctx, id, exoscale.UpdateReverseDNSElasticIPRequest{DomainName: v})
-			if err != nil {
+			if err := utils.Wait(ctx, client)(client.UpdateReverseDNSElasticIP(ctx, id, exoscale.UpdateReverseDNSElasticIPRequest{DomainName: v})); err != nil {
 				resp.Diagnostics.AddError("unable to update Reverse DNS record", err.Error())
-				return
-			}
-			if _, err := client.Wait(ctx, op, exoscale.OperationStateSuccess); err != nil {
-				resp.Diagnostics.AddError("update Reverse DNS record operation failed", err.Error())
 				return
 			}
 		} else {
@@ -668,16 +642,11 @@ func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp 
 		return
 	}
 
-	op, err := client.DeleteElasticIP(ctx, id)
-	if err != nil {
+	if err := utils.Wait(ctx, client)(client.DeleteElasticIP(ctx, id)); err != nil {
 		if errors.Is(err, exoscale.ErrNotFound) {
 			return
 		}
 		resp.Diagnostics.AddError("API returned an error when deleting Elastic IP", err.Error())
-		return
-	}
-	if _, err := client.Wait(ctx, op, exoscale.OperationStateSuccess); err != nil {
-		resp.Diagnostics.AddError("delete Elastic IP operation failed", err.Error())
 		return
 	}
 
@@ -752,15 +721,11 @@ func nullUnknown(model ResourceModel) *ResourceModel {
 
 // deleteReverseDNS deletes the Elastic IP reverse DNS record, if any.
 func deleteReverseDNS(ctx context.Context, client *exoscale.Client, id exoscale.UUID) error {
-	op, err := client.DeleteReverseDNSElasticIP(ctx, id)
-	if err != nil {
-		if errors.Is(err, exoscale.ErrNotFound) {
-			return nil
-		}
-		return err
+	err := utils.Wait(ctx, client)(client.DeleteReverseDNSElasticIP(ctx, id))
+	if errors.Is(err, exoscale.ErrNotFound) {
+		return nil
 	}
 
-	_, err = client.Wait(ctx, op, exoscale.OperationStateSuccess)
 	return err
 }
 
@@ -799,13 +764,9 @@ func detachInstances(ctx context.Context, client *exoscale.Client, id exoscale.U
 			"elastic_ip_id": id,
 		})
 
-		op, err := client.DetachInstanceFromElasticIP(ctx, id, exoscale.DetachInstanceFromElasticIPRequest{
+		if err := utils.Wait(ctx, client)(client.DetachInstanceFromElasticIP(ctx, id, exoscale.DetachInstanceFromElasticIPRequest{
 			Instance: &exoscale.InstanceTarget{ID: instance.ID},
-		})
-		if err != nil {
-			return err
-		}
-		if _, err := client.Wait(ctx, op, exoscale.OperationStateSuccess); err != nil {
+		})); err != nil {
 			return err
 		}
 	}

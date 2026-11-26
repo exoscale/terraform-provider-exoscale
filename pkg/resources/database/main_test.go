@@ -27,8 +27,10 @@ func TestDatabase(t *testing.T) {
 	t.Run("ResourceValkey", testResourceValkey)
 	t.Run("ResourceValkeyUser", testResourceValkeyUser)
 	t.Run("ResourceKafka", testResourceKafka)
+	t.Run("ResourceKafkaACL", testResourceKafkaACL)
 	t.Run("ResourceOpensearch", testResourceOpensearch)
 	t.Run("ResourceGrafana", testResourceGrafana)
+	t.Run("ResourceThanos", testResourceThanos)
 	t.Run("DataSourceURI", testDataSourceURI)
 	t.Run("ResourceDBAASExternalEndpointPrometheus", testResourceExternalEndpointPrometheus)
 	t.Run("ResourceDBAASExternalEndpointDatadog", testResourceExternalEndpointDatadog)
@@ -59,7 +61,7 @@ func CheckServiceDestroy(dbType, name string) resource.TestCheckFunc {
 		clientV3, err := utils.SwitchClientZone(
 			ctxV3,
 			defaultClientV3,
-			testutils.TestZoneName,
+			v3.ZoneName(testutils.TestZoneName),
 		)
 
 		if err != nil {
@@ -80,6 +82,8 @@ func CheckServiceDestroy(dbType, name string) resource.TestCheckFunc {
 			_, serviceErr = clientV3.GetDBAASServiceValkey(ctxV3, name)
 		case "clickhouse":
 			_, serviceErr = clientV3.GetDBAASServiceClickhouse(ctxV3, name)
+		case "thanos":
+			_, serviceErr = clientV3.GetDBAASServiceThanos(ctxV3, name)
 		case "opensearch":
 			_, serviceErr = client.GetDbaasServiceOpensearchWithResponse(ctx, oapi.DbaasServiceName(name))
 		default:

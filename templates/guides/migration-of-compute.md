@@ -10,6 +10,8 @@ description: |-
 
 This page helps you migrate from an `exoscale_compute`, `exoscale_network` and `exoscale_nic` resources (which are deprecated) to the `exoscale_compute_instance` and `exoscale_private_network` resources.
 
+~> **Deprecated:** `exoscale_private_network` is deprecated in favor of [VPC](https://community.exoscale.com/product/networking/vpc/). For new setups, use the [exoscale_vpc](../resources/vpc.md) and [exoscale_vpc_subnet](../resources/vpc_subnet.md) resources, and the `vpc` block of [exoscale_compute_instance](../resources/compute_instance.md).
+
 ~> **Note:** Before migrating resources you need to ensure you use the latest version of Terraform and have a clean configuration.
 
 Before proceeding, please:

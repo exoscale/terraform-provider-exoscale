@@ -10,19 +10,18 @@
 
 ## Requirements
 
-- [Terraform](https://www.terraform.io/downloads.html) 0.15+
+- [Terraform](https://www.terraform.io/downloads.html) 0.15+ or [OpenTofu](https://opentofu.org/docs/intro/install/) 1.6.0+
 - [Go](https://golang.org/doc/install) 1.16+ (to build the provider plugin)
 - An [Exoscale](https://portal.exoscale.com/register) account
 
 
 ## Installation
 
-### From the Terraform Registry (recommended)
+### From the Terraform / OpenTofu Registry (recommended)
 
 The Exoscale provider is available on the [Terraform Registry][tf-exo-registry].
-To use it, simply execute the `terraform init` command in a directory containing
-Terraform configuration files referencing [Exoscale provider
-resources][tf-exo-doc]:
+To use it, simply execute the `terraform init` (or `tofu init`) command in a directory
+containing Terraform configuration files referencing [Exoscale provider resources][tf-exo-doc]:
 
 ```console
 terraform init
@@ -84,6 +83,14 @@ website][tf-doc].
 make GO_TEST_EXTRA_ARGS="-v -run ^TestAccResourceCompute$" test-acc
 ```
 
+To run accepteance tests using OpenTofu, setup local environment [per docs][opentofu-testing]:
+
+```bash
+export TF_ACC_TERRAFORM_PATH=$(which tofu)
+export TF_ACC_PROVIDER_NAMESPACE="hashicorp"
+export TF_ACC_PROVIDER_HOST="registry.opentofu.org"
+```
+
 Acceptance tests need API credentials. Set them in the environment, or use the local helper that reads them from `~/.config/exoscale/exoscale.toml` (same file the `exo` CLI uses):
 
 ```sh
@@ -123,3 +130,4 @@ compiled into a provider binary in the root directory of the repository.
 [tf-exo-doc]: https://registry.terraform.io/providers/exoscale/exoscale/latest/docs
 [tf-exo-gh-ci]: https://github.com/exoscale/terraform-provider-exoscale/actions?query=workflow%3ACI
 [tf-exo-registry]: https://registry.terraform.io/providers/exoscale/exoscale/latest
+[opentofu-testing]: https://opentofu.org/docs/language/providers/#running-acceptance-tests-with-opentofu-cli

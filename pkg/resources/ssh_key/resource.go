@@ -113,17 +113,11 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	op, err := r.client.RegisterSSHKey(ctx, exoscale.RegisterSSHKeyRequest{
+	if err := utils.Wait(ctx, r.client)(r.client.RegisterSSHKey(ctx, exoscale.RegisterSSHKeyRequest{
 		Name:      plan.Name.ValueString(),
 		PublicKey: plan.PublicKey.ValueString(),
-	})
-	if err != nil {
+	})); err != nil {
 		resp.Diagnostics.AddError("unable to register SSH key", err.Error())
-		return
-	}
-
-	if _, err := r.client.Wait(ctx, op, exoscale.OperationStateSuccess); err != nil {
-		resp.Diagnostics.AddError("register SSH key operation failed", err.Error())
 		return
 	}
 
@@ -221,17 +215,11 @@ func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp 
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	op, err := r.client.DeleteSSHKey(ctx, state.ID.ValueString())
-	if err != nil {
+	if err := utils.Wait(ctx, r.client)(r.client.DeleteSSHKey(ctx, state.ID.ValueString())); err != nil {
 		if errors.Is(err, exoscale.ErrNotFound) {
 			return
 		}
 		resp.Diagnostics.AddError("unable to delete SSH key", err.Error())
-		return
-	}
-
-	if _, err := r.client.Wait(ctx, op, exoscale.OperationStateSuccess); err != nil {
-		resp.Diagnostics.AddError("delete SSH key operation failed", err.Error())
 		return
 	}
 

@@ -9,6 +9,7 @@ import (
 	exoscale "github.com/exoscale/egoscale/v3"
 
 	"github.com/exoscale/terraform-provider-exoscale/pkg/config"
+	"github.com/exoscale/terraform-provider-exoscale/pkg/planmodifiers"
 	providerConfig "github.com/exoscale/terraform-provider-exoscale/pkg/provider/config"
 	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
 
@@ -159,7 +160,7 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 				MarkdownDescription: "The managed compute instances type (`<family>.<size>`, e.g. `standard.medium`; use the [Exoscale CLI](https://github.com/exoscale/cli/) - `exo compute instance-type list` - for the list of available types).",
 				Required:            true,
 				PlanModifiers: []planmodifier.String{
-					ignoreCase(),
+					planmodifiers.IgnoreCase(),
 				},
 				Validators: []validator.String{
 					stringvalidator.RegexMatches(regexp.MustCompile(`\.`), `must be in the "FAMILY.SIZE" format`),
@@ -230,8 +231,8 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 				Required:            true,
 			},
 			"network_ids": schema.SetAttribute{
-				Description:         "A list of exoscale_private_network (IDs).",
-				MarkdownDescription: "A list of [exoscale_private_network](./private_network.md) (IDs).",
+				Description:         "A list of exoscale_private_network (IDs). Private Networks are deprecated in favor of VPC.",
+				MarkdownDescription: "A list of [exoscale_private_network](./private_network.md) (IDs). Private Networks are deprecated in favor of [VPC](https://community.exoscale.com/product/networking/vpc/).",
 				ElementType:         types.StringType,
 				Optional:            true,
 			},
@@ -264,7 +265,7 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 				MarkdownDescription: "[cloud-init](http://cloudinit.readthedocs.io/) configuration to apply to the managed instances.",
 				Optional:            true,
 				PlanModifiers: []planmodifier.String{
-					ignoreUserDataEncoding(),
+					planmodifiers.IgnoreUserDataEncoding(),
 				},
 			},
 			"virtual_machines": schema.SetAttribute{
@@ -500,15 +501,9 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 		request.UserData = userData
 	}
 
-	operation, err := client.CreateInstancePool(ctx, request)
+	operation, err := utils.WaitOperation(ctx, client)(client.CreateInstancePool(ctx, request))
 	if err != nil {
 		resp.Diagnostics.AddError("API returned an error when creating instance pool", err.Error())
-		return
-	}
-
-	operation, err = client.Wait(ctx, operation, exoscale.OperationStateSuccess)
-	if err != nil {
-		resp.Diagnostics.AddError("create instance pool operation failed", err.Error())
 		return
 	}
 
@@ -553,6 +548,12 @@ func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *res
 	}
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
+
+	if state.ID.ValueString() == "" {
+		tflog.Info(ctx, "instance pool has no ID, deleting from state to report drift")
+		resp.State.RemoveResource(ctx)
+		return
+	}
 
 	id, err := exoscale.ParseUUID(state.ID.ValueString())
 	if err != nil {
@@ -734,21 +735,21 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 	}
 
 	if update {
-		if err := wait(ctx, client)(client.UpdateInstancePool(ctx, id, request)); err != nil {
+		if err := utils.Wait(ctx, client)(client.UpdateInstancePool(ctx, id, request)); err != nil {
 			resp.Diagnostics.AddError("unable to update instance pool", err.Error())
 			return
 		}
 	}
 
 	for _, field := range resets {
-		if err := wait(ctx, client)(client.ResetInstancePoolField(ctx, id, field)); err != nil {
+		if err := utils.Wait(ctx, client)(client.ResetInstancePoolField(ctx, id, field)); err != nil {
 			resp.Diagnostics.AddError("unable to reset instance pool "+string(field), err.Error())
 			return
 		}
 	}
 
 	if !plan.Size.Equal(state.Size) {
-		err := wait(ctx, client)(client.ScaleInstancePool(
+		err := utils.Wait(ctx, client)(client.ScaleInstancePool(
 			ctx,
 			id,
 			exoscale.ScaleInstancePoolRequest{Size: plan.Size.ValueInt64()},
@@ -802,7 +803,7 @@ func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp 
 		return
 	}
 
-	err = wait(ctx, client)(client.DeleteInstancePool(ctx, id))
+	err = utils.Wait(ctx, client)(client.DeleteInstancePool(ctx, id))
 	if err != nil {
 		if errors.Is(err, exoscale.ErrNotFound) {
 			return
@@ -816,20 +817,6 @@ func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp 
 
 func (r *Resource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	utils.ImportStatePassthroughZonedID(ctx, req, resp)
-}
-
-// wait returns a function waiting for the success of an operation, to be
-// wrapped around the API call starting it.
-func wait(ctx context.Context, client *exoscale.Client) func(*exoscale.Operation, error) error {
-	return func(operation *exoscale.Operation, err error) error {
-		if err != nil {
-			return err
-		}
-
-		_, err = client.Wait(ctx, operation, exoscale.OperationStateSuccess)
-
-		return err
-	}
 }
 
 // nullUnknown returns the model with the values still unknown set to null, so

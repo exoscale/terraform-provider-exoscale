@@ -231,19 +231,10 @@ func (r *ResourceVolume) Create(ctx context.Context, req resource.CreateRequest,
 		}
 	}
 
-	op, err := client.CreateBlockStorageVolume(ctx, request)
+	op, err := utils.WaitOperation(ctx, client)(client.CreateBlockStorageVolume(ctx, request))
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to create Volume",
-			err.Error(),
-		)
-		return
-	}
-
-	_, err = client.Wait(ctx, op, exoscale.OperationStateSuccess)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"failed to create block storage",
 			err.Error(),
 		)
 		return
@@ -469,17 +460,7 @@ func (r *ResourceVolume) Update(ctx context.Context, req resource.UpdateRequest,
 	}
 
 	if update {
-		op, err := client.UpdateBlockStorageVolume(ctx, id, updateReq)
-		if err != nil {
-			resp.Diagnostics.AddError(
-				"unable to update block storage volume",
-				err.Error(),
-			)
-			return
-		}
-
-		_, err = client.Wait(ctx, op, exoscale.OperationStateSuccess)
-		if err != nil {
+		if err := utils.Wait(ctx, client)(client.UpdateBlockStorageVolume(ctx, id, updateReq)); err != nil {
 			resp.Diagnostics.AddError(
 				"unable to update block storage volume",
 				err.Error(),
@@ -542,59 +523,25 @@ func (r *ResourceVolume) Delete(ctx context.Context, req resource.DeleteRequest,
 	}
 
 	// Detach volume if attached.
-	op, err := client.DetachBlockStorageVolume(
-		ctx,
-		id,
-	)
-	if err != nil {
-		if errors.Is(err, exoscale.ErrNotFound) {
-			// Volume is already gone, nothing left to delete.
-			return
-		}
-
-		// Ideally we would have a custom error defined in OpenAPI spec & egoscale.
-		// For now we just check the error text.
-		if strings.HasSuffix(err.Error(), "Volume not attached") {
-			tflog.Debug(ctx, "volume not attached")
-		} else {
-			resp.Diagnostics.AddError(
-				"unable to detach volume",
-				err.Error(),
-			)
-			return
-		}
-	} else {
-		_, err = client.Wait(ctx, op, exoscale.OperationStateSuccess)
-		if err != nil {
-			resp.Diagnostics.AddError(
-				"failed to create block storage",
-				err.Error(),
-			)
-			return
-		}
+	if err := DetachVolume(ctx, client, id); err != nil {
+		resp.Diagnostics.AddError(
+			"unable to detach volume",
+			err.Error(),
+		)
+		return
 	}
 
 	// Delete remote resource.
-	op, err = client.DeleteBlockStorageVolume(
+	if err := utils.Wait(ctx, client)(client.DeleteBlockStorageVolume(
 		ctx,
 		id,
-	)
-	if err != nil {
+	)); err != nil {
 		if errors.Is(err, exoscale.ErrNotFound) {
 			return
 		}
 
 		resp.Diagnostics.AddError(
 			"Unable to delete volume",
-			err.Error(),
-		)
-		return
-	}
-
-	_, err = client.Wait(ctx, op, exoscale.OperationStateSuccess)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"failed to delete block storage",
 			err.Error(),
 		)
 		return

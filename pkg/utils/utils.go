@@ -151,6 +151,21 @@ func DecodeUserData(data string) (string, error) {
 	return string(userData), nil
 }
 
+// SameUserData tells whether two user data hold the same content, whatever
+// their encoding (plain, base64 or gzip+base64).
+func SameUserData(a, b string) bool {
+	return normalizeUserData(a) == normalizeUserData(b)
+}
+
+func normalizeUserData(v string) string {
+	normalized, err := DecodeUserData(v)
+	if err != nil {
+		return v
+	}
+
+	return normalized
+}
+
 // ValidateLowercaseString validates that the given fields contains only lowercase characters
 func ValidateLowercaseString(val any, key string) (warns []string, errs []error) {
 	v := val.(string)
@@ -203,6 +218,11 @@ func FindInstanceTypeByNameV3(ctx context.Context, client *exoscale.Client, id s
 	}
 
 	return nil, exoscale.ErrNotFound
+}
+
+// InstanceTypeName returns the `<family>.<size>` name of an instance type.
+func InstanceTypeName(instanceType *exoscale.InstanceType) string {
+	return strings.ToLower(string(instanceType.Family)) + "." + strings.ToLower(string(instanceType.Size))
 }
 
 // In the context of converting list of IDs to resources for egoscale V3 update and

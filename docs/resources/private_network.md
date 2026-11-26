@@ -3,12 +3,15 @@ page_title: "exoscale_private_network Resource - terraform-provider-exoscale"
 subcategory: ""
 description: |-
   Manage Exoscale Private Networks https://community.exoscale.com/product/networking/private-network/.
+  ~> Deprecated: Private Networks are deprecated in favor of VPC https://community.exoscale.com/product/networking/vpc/. Use the exoscale_vpc ./vpc.md and exoscalevpcsubnet ./vpc_subnet.md resources instead, and the vpc block of exoscalecomputeinstance ./compute_instance.md to attach instances to them.
   Corresponding data source: exoscaleprivatenetwork ../data-sources/private_network.md.
 ---
 
 # exoscale_private_network (Resource)
 
 Manage Exoscale [Private Networks](https://community.exoscale.com/product/networking/private-network/).
+
+~> **Deprecated:** Private Networks are deprecated in favor of [VPC](https://community.exoscale.com/product/networking/vpc/). Use the [exoscale_vpc](./vpc.md) and [exoscale_vpc_subnet](./vpc_subnet.md) resources instead, and the `vpc` block of [exoscale_compute_instance](./compute_instance.md) to attach instances to them.
 
 Corresponding data source: [exoscale_private_network](../data-sources/private_network.md).
 

@@ -117,18 +117,12 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	op, err := r.client.CreateAntiAffinityGroup(ctx, exoscale.CreateAntiAffinityGroupRequest{
+	op, err := utils.WaitOperation(ctx, r.client)(r.client.CreateAntiAffinityGroup(ctx, exoscale.CreateAntiAffinityGroupRequest{
 		Name:        plan.Name.ValueString(),
 		Description: plan.Description.ValueString(),
-	})
+	}))
 	if err != nil {
 		resp.Diagnostics.AddError("unable to create anti-affinity group", err.Error())
-		return
-	}
-
-	op, err = r.client.Wait(ctx, op, exoscale.OperationStateSuccess)
-	if err != nil {
-		resp.Diagnostics.AddError("create anti-affinity group operation failed", err.Error())
 		return
 	}
 
@@ -159,6 +153,12 @@ func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *res
 	}
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
+
+	if state.ID.ValueString() == "" {
+		tflog.Info(ctx, "anti-affinity group has no ID, deleting from state to report drift")
+		resp.State.RemoveResource(ctx)
+		return
+	}
 
 	id, err := exoscale.ParseUUID(state.ID.ValueString())
 	if err != nil {
@@ -222,17 +222,11 @@ func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp 
 		return
 	}
 
-	op, err := r.client.DeleteAntiAffinityGroup(ctx, id)
-	if err != nil {
+	if err := utils.Wait(ctx, r.client)(r.client.DeleteAntiAffinityGroup(ctx, id)); err != nil {
 		if errors.Is(err, exoscale.ErrNotFound) {
 			return
 		}
 		resp.Diagnostics.AddError("unable to delete anti-affinity group", err.Error())
-		return
-	}
-
-	if _, err := r.client.Wait(ctx, op, exoscale.OperationStateSuccess); err != nil {
-		resp.Diagnostics.AddError("delete anti-affinity group operation failed", err.Error())
 		return
 	}
 

@@ -20,6 +20,8 @@ import (
 
 const markdownDescriptionDatasource = `Fetch Exoscale [Private Networks](https://community.exoscale.com/product/networking/private-network/) data.
 
+~> **Deprecated:** Private Networks are deprecated in favor of [VPC](https://community.exoscale.com/product/networking/vpc/). Use the [exoscale_vpc](./vpc.md) and [exoscale_vpc_subnet](./vpc_subnet.md) data sources instead.
+
 Corresponding resource: [exoscale_private_network](../resources/private_network.md).`
 
 var _ datasource.DataSourceWithConfigure = (*DataSource)(nil)
@@ -52,6 +54,7 @@ func (d *DataSource) Metadata(ctx context.Context, req datasource.MetadataReques
 func (d *DataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: markdownDescriptionDatasource,
+		DeprecationMessage:  "Private Networks are deprecated in favor of VPC. Use the exoscale_vpc and exoscale_vpc_subnet data sources instead.",
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{

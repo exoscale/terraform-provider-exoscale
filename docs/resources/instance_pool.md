@@ -59,7 +59,7 @@ directory for complete configuration examples.
 - `key_pair` (String) The [exoscale_ssh_key](./ssh_key.md) (name) to authorize in the managed instances.
 - `labels` (Map of String) A map of key/value labels.
 - `min_available` (Number) Minimum number of running Instances.
-- `network_ids` (Set of String) A list of [exoscale_private_network](./private_network.md) (IDs).
+- `network_ids` (Set of String) A list of [exoscale_private_network](./private_network.md) (IDs). Private Networks are deprecated in favor of [VPC](https://community.exoscale.com/product/networking/vpc/).
 - `security_group_ids` (Set of String) A list of [exoscale_security_group](./security_group.md) (IDs).
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `user_data` (String) [cloud-init](http://cloudinit.readthedocs.io/) configuration to apply to the managed instances.

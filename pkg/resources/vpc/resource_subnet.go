@@ -22,7 +22,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
-const markdownDescriptionSubnetResource = `Manage Exoscale [VPC](https://community.exoscale.ch/product/networking/vpc/) Subnets.
+const markdownDescriptionSubnetResource = `Manage Exoscale [VPC](https://community.exoscale.com/product/networking/vpc/) Subnets.
 
 Corresponding data source: [exoscale\_vpc\_subnet](../data-sources/vpc_subnet.md).
 `
@@ -202,15 +202,9 @@ func (r *ResourceSubnet) Create(ctx context.Context, req resource.CreateRequest,
 		request.Labels = labels
 	}
 
-	operation, err := client.CreateSubnet(ctx, vpcID, request)
+	operation, err := utils.WaitOperation(ctx, client)(client.CreateSubnet(ctx, vpcID, request))
 	if err != nil {
 		resp.Diagnostics.AddError("API returned an error when creating Subnet", err.Error())
-		return
-	}
-
-	operation, err = client.Wait(ctx, operation, exoscale.OperationStateSuccess)
-	if err != nil {
-		resp.Diagnostics.AddError("create Subnet operation failed", err.Error())
 		return
 	}
 

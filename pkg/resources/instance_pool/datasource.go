@@ -33,8 +33,10 @@ func NewDataSource() datasource.DataSource {
 	return &DataSource{}
 }
 
-// DataSourceModel defines the exoscale_instance_pool data source data model.
-type DataSourceModel struct {
+// PoolModel defines the attributes of an instance pool, shared by the
+// exoscale_instance_pool data source and the elements of the `pools` of
+// exoscale_instance_pool_list.
+type PoolModel struct {
 	ID                   types.String `tfsdk:"id"`
 	AffinityGroupIDs     types.Set    `tfsdk:"affinity_group_ids"`
 	AntiAffinityGroupIDs types.Set    `tfsdk:"anti_affinity_group_ids"`
@@ -57,6 +59,11 @@ type DataSourceModel struct {
 	TemplateID           types.String `tfsdk:"template_id"`
 	UserData             types.String `tfsdk:"user_data"`
 	Zone                 types.String `tfsdk:"zone"`
+}
+
+// DataSourceModel defines the exoscale_instance_pool data source data model.
+type DataSourceModel struct {
+	PoolModel
 
 	Timeouts timeouts.Value `tfsdk:"timeouts"`
 }
@@ -193,8 +200,8 @@ func (d *DataSource) Schema(ctx context.Context, req datasource.SchemaRequest, r
 				Computed:            true,
 			},
 			"network_ids": schema.SetAttribute{
-				Description:         "The list of attached exoscale_private_network (IDs).",
-				MarkdownDescription: "The list of attached [exoscale_private_network](../resources/private_network.md) (IDs).",
+				Description:         "The list of attached exoscale_private_network (IDs). Private Networks are deprecated in favor of VPC.",
+				MarkdownDescription: "The list of attached [exoscale_private_network](../resources/private_network.md) (IDs). Private Networks are deprecated in favor of [VPC](https://community.exoscale.com/product/networking/vpc/).",
 				ElementType:         types.StringType,
 				Computed:            true,
 			},
@@ -291,10 +298,18 @@ func (d *DataSource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 		return
 	}
 
-	resp.Diagnostics.Append(applyDataSourcePool(ctx, client, &data, pool)...)
+	instanceType, err := poolInstanceType(ctx, client, pool)
+	if err != nil {
+		resp.Diagnostics.AddError("unable to retrieve instance type", err.Error())
+		return
+	}
+
+	model, diags := poolModel(ctx, client, pool, data.Zone.ValueString(), instanceType)
+	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
+	data.PoolModel = model
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 
@@ -303,15 +318,19 @@ func (d *DataSource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 	})
 }
 
-// applyDataSourcePool fills in the data source model from the API. Values the
+// poolModel maps an API instance pool onto the data source model. Values the
 // SDKv2 implementation didn't set are null, as they were in its state.
-func applyDataSourcePool( //nolint:gocyclo
+func poolModel( //nolint:gocyclo
 	ctx context.Context,
 	client *exoscale.Client,
-	data *DataSourceModel,
 	pool *exoscale.InstancePool,
-) diag.Diagnostics {
-	var diags diag.Diagnostics
+	zone string,
+	instanceType string,
+) (PoolModel, diag.Diagnostics) {
+	var (
+		data  PoolModel
+		diags diag.Diagnostics
+	)
 
 	data.ID = types.StringValue(pool.ID.String())
 	data.Name = types.StringValue(pool.Name)
@@ -322,6 +341,8 @@ func applyDataSourcePool( //nolint:gocyclo
 	data.MinAvailable = types.Int64Value(pool.MinAvailable)
 	data.Size = types.Int64Value(pool.Size)
 	data.State = types.StringValue(string(pool.State))
+	data.InstanceType = types.StringValue(instanceType)
+	data.Zone = types.StringValue(zone)
 
 	data.DeployTargetID = types.StringNull()
 	if pool.DeployTarget != nil {
@@ -376,7 +397,7 @@ func applyDataSourcePool( //nolint:gocyclo
 	}
 
 	if diags.HasError() {
-		return diags
+		return data, diags
 	}
 
 	data.UserData = types.StringNull()
@@ -384,17 +405,10 @@ func applyDataSourcePool( //nolint:gocyclo
 		userData, err := utils.DecodeUserData(pool.UserData)
 		if err != nil {
 			diags.AddError("unable to decode user data", err.Error())
-			return diags
+			return data, diags
 		}
 		data.UserData = types.StringValue(userData)
 	}
-
-	instanceType, err := poolInstanceType(ctx, client, pool)
-	if err != nil {
-		diags.AddError("unable to retrieve instance type", err.Error())
-		return diags
-	}
-	data.InstanceType = types.StringValue(instanceType)
 
 	data.Instances = types.SetNull(instanceObjectType)
 	if pool.Instances != nil {
@@ -403,5 +417,5 @@ func applyDataSourcePool( //nolint:gocyclo
 		data.Instances = instances
 	}
 
-	return diags
+	return data, diags
 }

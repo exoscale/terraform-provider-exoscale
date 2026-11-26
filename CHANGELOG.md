@@ -4,7 +4,62 @@
 
 BUG FIXES:
 
-- Preserve the last HTTP status when egoscale v3 retries are exhausted.
+- Show the final HTTP status in Terraform errors when egoscale v3 exhausts retries on a 5xx response.
+
+## 0.78.1
+
+IMPROVEMENTS:
+
+- `exoscale_sks_nodepool` resource and data sources: `vpc.subnet_ids` is now a list instead of a set, so the subnet order is preserved. Expressions that need a set (e.g. `for_each`) must wrap it in `toset()`.
+
+## 0.78.0
+
+FEATURES:
+- `exoscale_sks_cluster` resource and data sources: new `allowed_networks` attribute to manage the cluster's IP allowlist (CIDR blocks allowed to access the Kubernetes API server endpoint). (#663)
+- `exoscale_compute_instance`: the `network_interface` block is deprecated in favor of the `vpc` block. Using it now shows a deprecation warning. (#647)
+- `exoscale_private_network` resource and data source: deprecated in favor of VPC (`exoscale_vpc`, `exoscale_vpc_subnet`). Using them now shows a deprecation warning. (#647)
+- `exoscale_compute_instance`: new `ip_forwarding` parameter, to let an instance route VPC traffic (#638)
+- `exoscale_nlb_service`: new `label_selector` attribute to forward traffic to the instances carrying all the listed key/value labels. `instance_pool_id` becomes optional, as at least one of the two is required. (#639)
+- `exoscale_sks_nodepool` resource and data sources: new `nvidia_dra_driver` attribute, to expose the GPUs with the NVIDIA DRA driver instead of the NVIDIA device plugin.
+- `exoscale_sks_nodepool` resource and data sources: new `vpc` attribute (`id` and `subnet_ids`) to attach the managed instances to VPC subnets, and new `ip_forwarding` attribute to let them route VPC traffic.
+
+IMPROVEMENTS:
+
+- `exoscale_sks_cluster` `oidc`: updating a cluster resource no longer resets the OIDC field (#649)
+- Document OpenTofu compatibility in README.md (#651)
+- `exoscale_compute_instance`: the empty values (`""`, `{}`, `[]`) that earlier versions stored for unset optional attributes are now normalised once, when the state is first loaded. A configuration that sets one of them explicitly (e.g. `reverse_dns = ""`, `labels = {}`) shows a one-time in-place update with no effect on the instance.
+
+DEPENDENCIES:
+- Upgrade `github.com/exoscale/egoscale/v3` to v3.1.63. (#639)
+- Build with Go 1.27.4 (#652)
+
+
+## 0.77.0
+
+FEATURES:
+
+- New `exoscale_kms_key_store` resource and data source (beta): manage KMS External Key Stores (XKS). The proxy secret key is write-only (`secret_key_wo`, requires Terraform 1.11 or later).
+- `exoscale_kms_key`: new `xks` attribute to create keys backed by an External Key Store, new `key_spec` attribute, read-only `source` attribute, and `usage = "sign-verify"`.
+- `exoscale_dbaas`: new `thanos` Database service type.
+
+IMPROVEMENTS:
+
+- chore(VPC): link the community docs for VPC correctly - #633
+- docs(vpc): add VPC section to examples README - #640
+
+BUG FIXES:
+
+- `exoscale_anti_affinity_group` and `exoscale_instance_pool`: refreshing a resource whose state has an empty ID removes it from the state instead of failing with `invalid UUID length: 0`, which broke resources created by Crossplane (upjet).
+- `exoscale_compute_instance`: an instance created with `state = "stopped"` is created stopped instead of being started then stopped, which could leave it running. It no longer boots at creation: cloud-init runs on its first start.
+- `exoscale_kms_key`: a key deleted outside of Terraform is now removed from the state, it used to make every plan fail.
+- `exoscale_kms_key`: changing only `timeouts` no longer fails the apply.
+- `exoscale_kms_key`: a change that replaces a key without changing its `name` now fails at plan time. The key used to be scheduled for deletion, then its replacement failed to be created because the name stays reserved during the deletion delay.
+- `exoscale_kms_key`: API errors now show their title and detail.
+
+DEPENDENCIES:
+
+- Upgrade `github.com/andybalholm/brotli` to v1.2.7 (#644)
+
 
 ## 0.76.0
 
@@ -26,6 +81,10 @@ IMPROVEMENTS:
 - The provider is now served by terraform-plugin-framework alone: the terraform-plugin-sdk provider server and the mux combining both are removed, as every resource and data source has been migrated. The User-Agent no longer reports a `Terraform-SDK/` version.
 - Documentation: links to the Exoscale documentation now point to the current pages on community.exoscale.com instead of legacy `/documentation/` URLs that only work through redirects.
 
+FEATURES:
+
+- New `exoscale_dbaas_kafka_topic_acl` and `exoscale_dbaas_kafka_schema_registry_acl` resources to manage the ACL entries of a Kafka DBaaS service. The API has no update for an entry: changing any argument replaces it.
+
 BREAKING CHANGES:
 
 - `exoscale_instance_pool`: the `service_offering` attribute, deprecated since 0.27.0, is removed and `instance_type` is now required: replace `service_offering = "<size>"` with `instance_type = "standard.<size>"`, check the [migration guide](docs/guides/migration-of-instance-pool-from-v0_75_x-to-v0_76_x.md).
@@ -35,6 +94,7 @@ BREAKING CHANGES:
 DEPENDENCIES:
 
 - Remove `github.com/hashicorp/terraform-plugin-mux`
+- Bump `github.com/exoscale/egoscale/v3` to v3.1.59
 - Build the provider with Go 1.27.3 to reject TLS certificate chains containing the compromised eMudhra intermediates (CVE-2026-111943). (#629)
 
 ## 0.75.0

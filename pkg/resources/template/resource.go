@@ -324,15 +324,9 @@ func (r *ResourceTemplate) Create(ctx context.Context, req resource.CreateReques
 		request.ApplicationConsistentSnapshotEnabled = new(plan.ApplicationConsistentSnapshotEnabled.ValueBool())
 	}
 
-	op, err := client.RegisterTemplate(ctx, request)
+	op, err := utils.WaitOperation(ctx, client)(client.RegisterTemplate(ctx, request))
 	if err != nil {
 		resp.Diagnostics.AddError("unable to register template", err.Error())
-		return
-	}
-
-	op, err = client.Wait(ctx, op, exoscale.OperationStateSuccess)
-	if err != nil {
-		resp.Diagnostics.AddError("failed to register template", err.Error())
 		return
 	}
 
@@ -433,18 +427,11 @@ func (r *ResourceTemplate) Update(ctx context.Context, req resource.UpdateReques
 	}
 
 	if !plan.Name.Equal(state.Name) || !plan.Description.Equal(state.Description) {
-		op, err := client.UpdateTemplate(ctx, id, exoscale.UpdateTemplateRequest{
+		if err := utils.Wait(ctx, client)(client.UpdateTemplate(ctx, id, exoscale.UpdateTemplateRequest{
 			Name:        plan.Name.ValueString(),
 			Description: plan.Description.ValueString(),
-		})
-		if err != nil {
+		})); err != nil {
 			resp.Diagnostics.AddError("unable to update template", err.Error())
-			return
-		}
-
-		_, err = client.Wait(ctx, op, exoscale.OperationStateSuccess)
-		if err != nil {
-			resp.Diagnostics.AddError("failed to update template", err.Error())
 			return
 		}
 	}
@@ -492,18 +479,11 @@ func (r *ResourceTemplate) Delete(ctx context.Context, req resource.DeleteReques
 		return
 	}
 
-	op, err := client.DeleteTemplate(ctx, id)
-	if err != nil {
+	if err := utils.Wait(ctx, client)(client.DeleteTemplate(ctx, id)); err != nil {
 		if errors.Is(err, exoscale.ErrNotFound) {
 			return
 		}
 		resp.Diagnostics.AddError("unable to delete template", err.Error())
-		return
-	}
-
-	_, err = client.Wait(ctx, op, exoscale.OperationStateSuccess)
-	if err != nil {
-		resp.Diagnostics.AddError("failed to delete template", err.Error())
 		return
 	}
 

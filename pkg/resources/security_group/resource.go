@@ -158,24 +158,16 @@ func (r *Resource) Create(
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	op, err := r.client.CreateSecurityGroup(
+	op, err := utils.WaitOperation(ctx, r.client)(r.client.CreateSecurityGroup(
 		ctx,
 		exoscale.CreateSecurityGroupRequest{
 			Name:        plan.Name.ValueString(),
 			Description: plan.Description.ValueString(),
 		},
-	)
+	))
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"API returned error when creating security group",
-			err.Error(),
-		)
-		return
-	}
-
-	if _, err := r.client.Wait(ctx, op, exoscale.OperationStateSuccess); err != nil {
-		resp.Diagnostics.AddError(
-			"create security group operation failed",
 			err.Error(),
 		)
 		return
@@ -211,27 +203,18 @@ func (r *Resource) Create(
 	stateElems := []attr.Value{}
 	for _, elem := range planElems {
 		cidr := elem.(basetypes.StringValue).ValueString()
-		op, err := r.client.AddExternalSourceToSecurityGroup(
+		if err := utils.Wait(ctx, r.client)(r.client.AddExternalSourceToSecurityGroup(
 			ctx,
 			exoscale.UUID(plan.ID.ValueString()),
 			exoscale.AddExternalSourceToSecurityGroupRequest{
 				Cidr: cidr,
 			},
-		)
-		if err != nil {
+		)); err != nil {
 			resp.Diagnostics.AddError(
 				fmt.Sprintf(
 					"API returned error when adding external source %q",
 					cidr,
 				),
-				err.Error(),
-			)
-			return
-		}
-
-		if _, err := r.client.Wait(ctx, op, exoscale.OperationStateSuccess); err != nil {
-			resp.Diagnostics.AddError(
-				"add external source to operation failed",
 				err.Error(),
 			)
 			return
@@ -377,31 +360,19 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 	newElems, delElems := diffExternalSources(stateElems, planElems)
 
 	for _, deleted := range delElems {
-		op, err := r.client.RemoveExternalSourceFromSecurityGroup(
+		err := utils.Wait(ctx, r.client)(r.client.RemoveExternalSourceFromSecurityGroup(
 			ctx,
 			id,
 			exoscale.RemoveExternalSourceFromSecurityGroupRequest{
 				Cidr: deleted.(basetypes.StringValue).ValueString(),
 			},
-		)
-		if err != nil {
-			if !errors.Is(err, exoscale.ErrNotFound) { // proceed on 404
-				resp.Diagnostics.AddError(
-					fmt.Sprintf(
-						"API returned error when removing external source %q",
-						deleted.String(),
-					),
-					err.Error(),
-				)
-				return
-			}
-		} else if _, err := r.client.Wait(
-			ctx,
-			op,
-			exoscale.OperationStateSuccess,
-		); err != nil {
+		))
+		if err != nil && !errors.Is(err, exoscale.ErrNotFound) { // proceed on 404
 			resp.Diagnostics.AddError(
-				"remove external source operation failed",
+				fmt.Sprintf(
+					"API returned error when removing external source %q",
+					deleted.String(),
+				),
 				err.Error(),
 			)
 			return
@@ -439,26 +410,18 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 	}
 
 	for _, added := range newElems {
-		op, err := r.client.AddExternalSourceToSecurityGroup(
+		if err := utils.Wait(ctx, r.client)(r.client.AddExternalSourceToSecurityGroup(
 			ctx,
 			id,
 			exoscale.AddExternalSourceToSecurityGroupRequest{
 				Cidr: added.(basetypes.StringValue).ValueString(),
 			},
-		)
-		if err != nil {
+		)); err != nil {
 			resp.Diagnostics.AddError(
 				fmt.Sprintf(
 					"API returned error when adding external source %q",
 					added.String(),
 				),
-				err.Error(),
-			)
-			return
-		}
-		if _, err := r.client.Wait(ctx, op, exoscale.OperationStateSuccess); err != nil {
-			resp.Diagnostics.AddError(
-				"add external source operation failed",
 				err.Error(),
 			)
 			return
@@ -514,8 +477,7 @@ func (r *Resource) Delete(
 		return
 	}
 
-	op, err := r.client.DeleteSecurityGroup(ctx, id)
-	if err != nil {
+	if err := utils.Wait(ctx, r.client)(r.client.DeleteSecurityGroup(ctx, id)); err != nil {
 		if errors.Is(err, exoscale.ErrNotFound) {
 			tflog.Info(
 				ctx,
@@ -530,15 +492,6 @@ func (r *Resource) Delete(
 			err.Error(),
 		)
 
-		return
-	}
-
-	_, err = r.client.Wait(ctx, op, exoscale.OperationStateSuccess)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"delete security group operation failed",
-			err.Error(),
-		)
 		return
 	}
 }

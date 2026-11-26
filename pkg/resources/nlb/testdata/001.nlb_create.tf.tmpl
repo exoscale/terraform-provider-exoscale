@@ -37,6 +37,11 @@ resource "exoscale_nlb_service" "test_service" {
   port             = 80
   target_port      = 8080
 
+  label_selector = {
+    role                      = "web"
+    "exoscale.com/managed-by" = "terraform"
+  }
+
   healthcheck {
     mode     = "https"
     port     = 8080
@@ -45,6 +50,22 @@ resource "exoscale_nlb_service" "test_service" {
     interval = 10
     timeout  = 5
     retries  = 1
+  }
+}
+
+resource "exoscale_nlb_service" "test_service_labels" {
+  zone        = "{{ .Zone }}"
+  name        = "terraform-provider-test-labels-{{ .ID }}"
+  nlb_id      = exoscale_nlb.test_nlb6.id
+  port        = 443
+  target_port = 8443
+
+  label_selector = {
+    role = "web"
+  }
+
+  healthcheck {
+    port = 8443
   }
 }
 
@@ -70,4 +91,11 @@ data "exoscale_nlb_service_list" "test_service_list_by_name" {
   nlb_name = exoscale_nlb.test_nlb.name
 
   depends_on = [exoscale_nlb_service.test_service]
+}
+
+data "exoscale_nlb_service_list" "test_service_list_labels" {
+  zone   = "{{ .Zone }}"
+  nlb_id = exoscale_nlb.test_nlb6.id
+
+  depends_on = [exoscale_nlb_service.test_service_labels]
 }

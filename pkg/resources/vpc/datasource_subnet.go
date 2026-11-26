@@ -17,7 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-const markdownDescriptionSubnetDatasource = `Fetch Exoscale [VPC](https://community.exoscale.ch/product/networking/vpc/) Subnet data.
+const markdownDescriptionSubnetDatasource = `Fetch Exoscale [VPC](https://community.exoscale.com/product/networking/vpc/) Subnet data.
 
 Corresponding resource: [exoscale_vpc_subnet](../resources/vpc_subnet.md).`
 

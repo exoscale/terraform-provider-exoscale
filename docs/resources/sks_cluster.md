@@ -40,6 +40,7 @@ directory for complete configuration examples.
 
 ### Optional
 
+- `allowed_networks` (Set of String) The IP allowlist of the cluster: a list of CIDR blocks allowed to access the Kubernetes API server endpoint.
 - `audit` (Block List) Parameters for Kubernetes Audit configuration (may only be enabled at creation time) (see [below for nested schema](#nestedblock--audit))
 - `auto_upgrade` (Boolean) Enable automatic upgrading of the control plane version.
 - `cni` (String) The CNI plugin that is to be used. Available options are "calico" or "cilium". Defaults to "calico". Setting empty string will result in a cluster with no CNI.

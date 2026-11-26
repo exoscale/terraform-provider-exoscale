@@ -9,6 +9,7 @@ import (
 
 	exoscale "github.com/exoscale/egoscale/v3"
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
+	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -69,6 +70,18 @@ func kubeletGCAttrTypes() map[string]attr.Type {
 	}
 }
 
+type vpcModel struct {
+	ID        types.String `tfsdk:"id"`
+	SubnetIDs types.List   `tfsdk:"subnet_ids"`
+}
+
+func vpcAttrTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"id":         types.StringType,
+		"subnet_ids": types.ListType{ElemType: types.StringType},
+	}
+}
+
 type ResourceNodepoolModel struct {
 	ID                   types.String `tfsdk:"id"`
 	ClusterID            types.String `tfsdk:"cluster_id"`
@@ -81,9 +94,11 @@ type ResourceNodepoolModel struct {
 	InstancePoolID       types.String `tfsdk:"instance_pool_id"`
 	InstancePrefix       types.String `tfsdk:"instance_prefix"`
 	InstanceType         types.String `tfsdk:"instance_type"`
+	IPForwarding         types.Bool   `tfsdk:"ip_forwarding"`
 	KubeletMaxPods       types.Int64  `tfsdk:"kubelet_max_pods"`
 	Labels               types.Map    `tfsdk:"labels"`
 	Name                 types.String `tfsdk:"name"`
+	NvidiaDraDriver      types.Bool   `tfsdk:"nvidia_dra_driver"`
 	NvidiaMigProfile     types.String `tfsdk:"nvidia_mig_profile"`
 	IPv6                 types.Bool   `tfsdk:"ipv6"`
 	PrivateNetworkIDs    types.Set    `tfsdk:"private_network_ids"`
@@ -96,6 +111,7 @@ type ResourceNodepoolModel struct {
 	Version              types.String `tfsdk:"version"`
 
 	KubeletImageGC types.Object `tfsdk:"kubelet_image_gc"`
+	VPC            types.Object `tfsdk:"vpc"`
 
 	Timeouts timeouts.Value `tfsdk:"timeouts"`
 }
@@ -189,6 +205,13 @@ func (r *ResourceNodepool) Schema(ctx context.Context, req resource.SchemaReques
 					stringvalidator.RegexMatches(regexp.MustCompile(`\.`), `invalid value, expected format "FAMILY.SIZE"`),
 				},
 			},
+			"ip_forwarding": schema.BoolAttribute{
+				Description:         "Allow the managed instances to act as routers in their VPC (boolean; default: 'false'). A change only applies to the instances created afterwards.",
+				MarkdownDescription: "Allow the managed instances to act as routers in their VPC (boolean; default: `false`). A change only applies to the instances created afterwards.",
+				Optional:            true,
+				Computed:            true,
+				Default:             booldefault.StaticBool(false),
+			},
 			"kubelet_image_gc": schema.SingleNestedAttribute{
 				Description:         "Configuration for this nodepool's kubelet image garbage collector.",
 				MarkdownDescription: "Configuration for this nodepool's kubelet image garbage collector.",
@@ -238,6 +261,13 @@ func (r *ResourceNodepool) Schema(ctx context.Context, req resource.SchemaReques
 				MarkdownDescription: "The SKS node pool name.",
 				Required:            true,
 			},
+			"nvidia_dra_driver": schema.BoolAttribute{
+				Description:         "Expose the managed GPUs with the NVIDIA Dynamic Resource Allocation (DRA) driver instead of the NVIDIA device plugin (boolean; default: 'false'). Requires a GPU instance type and Kubernetes 1.34 or later.",
+				MarkdownDescription: "Expose the managed GPUs with the NVIDIA [Dynamic Resource Allocation (DRA)](https://kubernetes.io/docs/concepts/scheduling-eviction/dynamic-resource-allocation/) driver instead of the NVIDIA device plugin (boolean; default: `false`). Requires a GPU instance type and Kubernetes 1.34 or later.",
+				Optional:            true,
+				Computed:            true,
+				Default:             booldefault.StaticBool(false),
+			},
 			"nvidia_mig_profile": schema.StringAttribute{
 				Description: "The NVIDIA Multi-Instance GPU (MIG) profile to enable on the managed GPUs. " +
 					"The GPU family is inferred from 'instance_type': 'gpua30.*' accepts '2g.12gb', '1g.6gb+me', '1g.6gb', '2g.12gb+me', '4g.24gb'; " +
@@ -255,8 +285,8 @@ func (r *ResourceNodepool) Schema(ctx context.Context, req resource.SchemaReques
 				Default:             booldefault.StaticBool(false),
 			},
 			"private_network_ids": schema.SetAttribute{
-				Description:         "A list of exoscale_private_network (IDs) to be attached to the managed instances.",
-				MarkdownDescription: "A list of [exoscale_private_network](./private_network.md) (IDs) to be attached to the managed instances.",
+				Description:         "A list of exoscale_private_network (IDs) to be attached to the managed instances. Private Networks are deprecated in favor of VPC.",
+				MarkdownDescription: "A list of [exoscale_private_network](./private_network.md) (IDs) to be attached to the managed instances. Private Networks are deprecated in favor of [VPC](https://community.exoscale.com/product/networking/vpc/).",
 				ElementType:         types.StringType,
 				Optional:            true,
 			},
@@ -296,6 +326,28 @@ func (r *ResourceNodepool) Schema(ctx context.Context, req resource.SchemaReques
 				Description:         "The managed instances version.",
 				MarkdownDescription: "The managed instances version.",
 				Computed:            true,
+			},
+			"vpc": schema.SingleNestedAttribute{
+				Description:         "The VPC to attach the managed instances to. Removing it detaches them from the VPC.",
+				MarkdownDescription: "The [VPC](https://community.exoscale.com/product/networking/vpc/) to attach the managed instances to. Removing it detaches them from the VPC.",
+				Optional:            true,
+				Attributes: map[string]schema.Attribute{
+					"id": schema.StringAttribute{
+						Description:         "The exoscale_vpc (ID) the subnets belong to.",
+						MarkdownDescription: "The [exoscale_vpc](./vpc.md) (ID) the subnets belong to.",
+						Required:            true,
+					},
+					"subnet_ids": schema.ListAttribute{
+						Description:         "A list of exoscale_vpc_subnet (IDs) to attach the managed instances to, in this order.",
+						MarkdownDescription: "A list of [exoscale_vpc_subnet](./vpc_subnet.md) (IDs) to attach the managed instances to, in this order.",
+						ElementType:         types.StringType,
+						Required:            true,
+						Validators: []validator.List{
+							listvalidator.SizeAtLeast(1),
+							listvalidator.UniqueValues(),
+						},
+					},
+				},
 			},
 		},
 
@@ -356,6 +408,7 @@ func (r *ResourceNodepool) ImportState(ctx context.Context, req resource.ImportS
 		PrivateNetworkIDs:    types.SetNull(types.StringType),
 		SecurityGroupIDs:     types.SetNull(types.StringType),
 		KubeletImageGC:       types.ObjectNull(kubeletGCAttrTypes()),
+		VPC:                  types.ObjectNull(vpcAttrTypes()),
 		Timeouts:             t,
 	})...)
 }
@@ -470,6 +523,7 @@ func (r *ResourceNodepool) UpgradeState(ctx context.Context) map[int64]resource.
 					Taints:               priorState.Taints,
 					TemplateID:           priorState.TemplateID,
 					Version:              priorState.Version,
+					VPC:                  types.ObjectNull(vpcAttrTypes()),
 					Timeouts:             priorState.Timeouts,
 				}
 
@@ -557,6 +611,8 @@ func (r *ResourceNodepool) Create(ctx context.Context, req resource.CreateReques
 	}
 	createReq.InstanceType = &exoscale.InstanceType{ID: instanceType.ID}
 
+	createReq.IPForwarding = plan.IPForwarding.ValueBoolPointer()
+
 	if b, ok := r.kubeletGCBlock(ctx, plan, &resp.Diagnostics); ok {
 		createReq.KubeletImageGC = &exoscale.KubeletImageGC{
 			MinAge:        b.MinAge.ValueString(),
@@ -583,6 +639,8 @@ func (r *ResourceNodepool) Create(ctx context.Context, req resource.CreateReques
 	}
 
 	createReq.Name = plan.Name.ValueString()
+
+	createReq.NvidiaDraDriver = plan.NvidiaDraDriver.ValueBoolPointer()
 
 	if profile := plan.NvidiaMigProfile.ValueString(); profile != "" {
 		profiles, err := sksNodepoolMIGProfiles(sksNodepoolInstanceTypeFamily(plan.InstanceType.ValueString()), profile)
@@ -647,14 +705,14 @@ func (r *ResourceNodepool) Create(ctx context.Context, req resource.CreateReques
 		createReq.Taints = taints
 	}
 
-	op, err := client.CreateSKSNodepool(ctx, cluster.ID, createReq)
-	if err != nil {
-		resp.Diagnostics.AddError("API returned an error when creating SKS nodepool", err.Error())
+	createReq.Vpc = r.vpcRef(ctx, plan, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
 		return
 	}
-	op, err = client.Wait(ctx, op, exoscale.OperationStateSuccess)
+
+	op, err := utils.WaitOperation(ctx, client)(client.CreateSKSNodepool(ctx, cluster.ID, createReq))
 	if err != nil {
-		resp.Diagnostics.AddError("create SKS nodepool operation failed", err.Error())
+		resp.Diagnostics.AddError("API returned an error when creating SKS nodepool", err.Error())
 		return
 	}
 
@@ -782,14 +840,18 @@ func (r *ResourceNodepool) Update(ctx context.Context, req resource.UpdateReques
 		DiskSize:           nodepool.DiskSize,
 		InstancePrefix:     nodepool.InstancePrefix,
 		InstanceType:       nodepool.InstanceType,
+		IPForwarding:       nodepool.IPForwarding,
 		KubeletMaxPods:     nodepool.KubeletMaxPods,
 		Labels:             nodepool.Labels,
 		Name:               nodepool.Name,
+		NvidiaDraDriver:    nodepool.NvidiaDraDriver,
 		NvidiaMigProfiles:  nodepool.NvidiaMigProfiles,
 		PrivateNetworks:    nodepool.PrivateNetworks,
 		PublicIPAssignment: exoscale.UpdateSKSNodepoolRequestPublicIPAssignment(nodepool.PublicIPAssignment),
 		SecurityGroups:     nodepool.SecurityGroups,
 		Taints:             nodepool.Taints,
+		// The API detaches the nodepool from its VPC when "vpc" is null.
+		Vpc: (*exoscale.UpdateSKSNodepoolRequestVpc)(nodepool.Vpc),
 	}
 
 	var updated bool
@@ -840,6 +902,11 @@ func (r *ResourceNodepool) Update(ctx context.Context, req resource.UpdateReques
 		updated = true
 	}
 
+	if !plan.IPForwarding.Equal(state.IPForwarding) {
+		updateReq.IPForwarding = plan.IPForwarding.ValueBoolPointer()
+		updated = true
+	}
+
 	if !plan.Labels.Equal(state.Labels) {
 		labels := map[string]string{}
 		if !plan.Labels.IsNull() && !plan.Labels.IsUnknown() {
@@ -870,6 +937,11 @@ func (r *ResourceNodepool) Update(ctx context.Context, req resource.UpdateReques
 		} else {
 			updateReq.NvidiaMigProfiles = nil
 		}
+		updated = true
+	}
+
+	if !plan.NvidiaDraDriver.Equal(state.NvidiaDraDriver) {
+		updateReq.NvidiaDraDriver = plan.NvidiaDraDriver.ValueBoolPointer()
 		updated = true
 	}
 
@@ -959,33 +1031,31 @@ func (r *ResourceNodepool) Update(ctx context.Context, req resource.UpdateReques
 		updated = true
 	}
 
-	if updated {
-		op, err := client.UpdateSKSNodepool(ctx, cluster.ID, nodepool.ID, updateReq)
-		if err != nil {
-			resp.Diagnostics.AddError("API returned an error when updating SKS nodepool", err.Error())
+	if !plan.VPC.Equal(state.VPC) {
+		updateReq.Vpc = (*exoscale.UpdateSKSNodepoolRequestVpc)(r.vpcRef(ctx, plan, &resp.Diagnostics))
+		if resp.Diagnostics.HasError() {
 			return
 		}
-		if _, err := client.Wait(ctx, op, exoscale.OperationStateSuccess); err != nil {
-			resp.Diagnostics.AddError("update SKS nodepool operation failed", err.Error())
+		updated = true
+	}
+
+	if updated {
+		if err := utils.Wait(ctx, client)(client.UpdateSKSNodepool(ctx, cluster.ID, nodepool.ID, updateReq)); err != nil {
+			resp.Diagnostics.AddError("API returned an error when updating SKS nodepool", err.Error())
 			return
 		}
 	}
 
 	if !plan.Size.Equal(state.Size) {
-		op, err := client.ScaleSKSNodepool(
+		if err := utils.Wait(ctx, client)(client.ScaleSKSNodepool(
 			ctx,
 			cluster.ID,
 			nodepool.ID,
 			exoscale.ScaleSKSNodepoolRequest{
 				Size: plan.Size.ValueInt64(),
 			},
-		)
-		if err != nil {
+		)); err != nil {
 			resp.Diagnostics.AddError("API returned an error when scaling SKS nodepool", err.Error())
-			return
-		}
-		if _, err = client.Wait(ctx, op, exoscale.OperationStateSuccess); err != nil {
-			resp.Diagnostics.AddError("scale SKS nodepool operation failed", err.Error())
 			return
 		}
 	}
@@ -1044,13 +1114,8 @@ func (r *ResourceNodepool) Delete(ctx context.Context, req resource.DeleteReques
 		return
 	}
 
-	op, err := client.DeleteSKSNodepool(ctx, cluster.ID, exoscale.UUID(state.ID.ValueString()))
-	if err != nil {
+	if err := utils.Wait(ctx, client)(client.DeleteSKSNodepool(ctx, cluster.ID, exoscale.UUID(state.ID.ValueString()))); err != nil {
 		resp.Diagnostics.AddError("API returned an error when deleting SKS nodepool", err.Error())
-		return
-	}
-	if _, err := client.Wait(ctx, op, exoscale.OperationStateSuccess); err != nil {
-		resp.Diagnostics.AddError("delete SKS nodepool operation failed", err.Error())
 		return
 	}
 
@@ -1069,6 +1134,49 @@ func (r *ResourceNodepool) kubeletGCBlock(ctx context.Context, m ResourceNodepoo
 	}
 
 	return block, true
+}
+
+// vpcRef decodes the "vpc" nested object from a model, nil if it is not set.
+func (r *ResourceNodepool) vpcRef(ctx context.Context, m ResourceNodepoolModel, diags *diag.Diagnostics) *exoscale.VpcRef {
+	if m.VPC.IsNull() || m.VPC.IsUnknown() {
+		return nil
+	}
+
+	var vpc vpcModel
+	diags.Append(m.VPC.As(ctx, &vpc, basetypes.ObjectAsOptions{})...)
+	var subnetIDs []string
+	diags.Append(vpc.SubnetIDs.ElementsAs(ctx, &subnetIDs, false)...)
+	if diags.HasError() {
+		return nil
+	}
+
+	ref := &exoscale.VpcRef{ID: exoscale.UUID(vpc.ID.ValueString())}
+	for _, id := range subnetIDs {
+		ref.Subnets = append(ref.Subnets, exoscale.VpcSubnetRef{ID: exoscale.UUID(id)})
+	}
+
+	return ref
+}
+
+// sksNodepoolVPC converts the nodepool VPC returned by the API to a "vpc" object.
+func sksNodepoolVPC(ctx context.Context, ref *exoscale.VpcRef) (types.Object, diag.Diagnostics) {
+	if ref == nil {
+		return types.ObjectNull(vpcAttrTypes()), nil
+	}
+
+	subnetIDs := make([]string, len(ref.Subnets))
+	for i, s := range ref.Subnets {
+		subnetIDs[i] = s.ID.String()
+	}
+	subnets, diags := types.ListValueFrom(ctx, types.StringType, subnetIDs)
+
+	obj, d := types.ObjectValueFrom(ctx, vpcAttrTypes(), vpcModel{
+		ID:        types.StringValue(ref.ID.String()),
+		SubnetIDs: subnets,
+	})
+	diags.Append(d...)
+
+	return obj, diags
 }
 
 // findSKSNodepool returns the nodepool with the given ID from cluster.Nodepools,
@@ -1211,11 +1319,8 @@ func (r *ResourceNodepool) applyNodepool(
 		diags.AddError("error retrieving instance type", err.Error())
 		return diags
 	}
-	model.InstanceType = types.StringValue(fmt.Sprintf(
-		"%s.%s",
-		strings.ToLower(string(instanceType.Family)),
-		strings.ToLower(string(instanceType.Size)),
-	))
+	model.InstanceType = types.StringValue(utils.InstanceTypeName(instanceType))
+	model.IPForwarding = types.BoolValue(nodepool.IPForwarding != nil && *nodepool.IPForwarding)
 
 	model.KubeletImageGC = types.ObjectNull(kubeletGCAttrTypes())
 	if nodepool.KubeletImageGC != nil {
@@ -1242,6 +1347,7 @@ func (r *ResourceNodepool) applyNodepool(
 	model.Labels = labels
 
 	model.Name = types.StringValue(nodepool.Name)
+	model.NvidiaDraDriver = types.BoolValue(nodepool.NvidiaDraDriver != nil && *nodepool.NvidiaDraDriver)
 	model.NvidiaMigProfile = optionalString(sksNodepoolMIGProfile(nodepool.NvidiaMigProfiles))
 
 	model.PrivateNetworkIDs = types.SetNull(types.StringType)
@@ -1295,6 +1401,10 @@ func (r *ResourceNodepool) applyNodepool(
 	}
 
 	model.IPv6 = types.BoolValue(nodepool.PublicIPAssignment == exoscale.SKSNodepoolPublicIPAssignmentDual)
+
+	vpc, d := sksNodepoolVPC(ctx, nodepool.Vpc)
+	diags.Append(d...)
+	model.VPC = vpc
 
 	return diags
 }

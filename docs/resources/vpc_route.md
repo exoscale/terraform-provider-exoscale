@@ -3,14 +3,14 @@
 page_title: "exoscale_vpc_route Resource - terraform-provider-exoscale"
 subcategory: ""
 description: |-
-  Manage Exoscale VPC Subnet routes https://community.exoscale.com/product/networking/vpc/how-to/using-routing-rules/.
+  Manage Exoscale VPC https://community.exoscale.com/product/networking/vpc/ Subnet routes.
   Routes are immutable: any change to their attributes forces re-creation.
   Parent resource: exoscalevpcsubnet ./vpc_subnet.md.
 ---
 
 # exoscale_vpc_route (Resource)
 
-Manage Exoscale [VPC Subnet routes](https://community.exoscale.com/product/networking/vpc/how-to/using-routing-rules/).
+Manage Exoscale [VPC](https://community.exoscale.com/product/networking/vpc/) Subnet routes.
 
 Routes are immutable: any change to their attributes forces re-creation.
 
