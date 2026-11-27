@@ -3,6 +3,7 @@ package instance_pool
 import (
 	"context"
 	"errors"
+	"maps"
 	"regexp"
 	"strings"
 
@@ -21,12 +22,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-go/tftypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
@@ -42,6 +45,7 @@ var _ resource.Resource = (*Resource)(nil)
 var _ resource.ResourceWithImportState = (*Resource)(nil)
 var _ resource.ResourceWithModifyPlan = (*Resource)(nil)
 var _ resource.ResourceWithUpgradeState = (*Resource)(nil)
+var _ resource.ResourceWithValidateConfig = (*Resource)(nil)
 
 type Resource struct {
 	client *exoscale.Client
@@ -70,6 +74,7 @@ type ResourceModel struct {
 	MinAvailable         types.Int64  `tfsdk:"min_available"`
 	Name                 types.String `tfsdk:"name"`
 	NetworkIDs           types.Set    `tfsdk:"network_ids"`
+	Private              types.Bool   `tfsdk:"private"`
 	SecurityGroupIDs     types.Set    `tfsdk:"security_group_ids"`
 	Size                 types.Int64  `tfsdk:"size"`
 	State                types.String `tfsdk:"state"`
@@ -89,8 +94,8 @@ func (r *Resource) Metadata(ctx context.Context, req resource.MetadataRequest, r
 // Schema defines the resource attributes.
 func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		// Version 1: SDKv2 to framework migration, see UpgradeState.
-		Version: 1,
+		// Version 1: SDKv2 to framework migration; version 2: `private`. See UpgradeState.
+		Version: 2,
 
 		Description:         "Manage Exoscale Instance Pools.",
 		MarkdownDescription: markdownDescriptionResource,
@@ -236,6 +241,18 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 				ElementType:         types.StringType,
 				Optional:            true,
 			},
+			"private": schema.BoolAttribute{
+				Description:         "Whether the managed instances are private, without public IP address (boolean; default: 'false'). Changing it replaces the pool. Cannot be 'true' together with 'ipv6'.",
+				MarkdownDescription: "❗ Whether the managed instances are private, without public IP address (boolean; default: `false`). Cannot be `true` together with `ipv6`.",
+				Optional:            true,
+				Computed:            true,
+				Default:             booldefault.StaticBool(false),
+				PlanModifiers: []planmodifier.Bool{
+					// TODO: update in place, as for instances, once the API allows it: a pool
+					// update rejects `none` and a private pool rejects any assignment change.
+					boolplanmodifier.RequiresReplace(),
+				},
+			},
 			"security_group_ids": schema.SetAttribute{
 				Description:         "A list of exoscale_security_group (IDs).",
 				MarkdownDescription: "A list of [exoscale_security_group](./security_group.md) (IDs).",
@@ -300,6 +317,12 @@ type resourceModelV0 struct {
 }
 
 func (r *Resource) UpgradeState(ctx context.Context) map[int64]resource.StateUpgrader {
+	var current resource.SchemaResponse
+	r.Schema(ctx, resource.SchemaRequest{}, &current)
+	priorSchemaV1 := current.Schema
+	priorSchemaV1.Attributes = maps.Clone(current.Schema.Attributes)
+	delete(priorSchemaV1.Attributes, "private")
+
 	return map[int64]resource.StateUpgrader{
 		// SDKv2 to framework migration: the SDKv2 wrote "" / {} for an unset
 		// description and labels, they are normalised to null here, once,
@@ -324,6 +347,7 @@ func (r *Resource) UpgradeState(ctx context.Context) map[int64]resource.StateUpg
 					"min_available":           schema.Int64Attribute{Optional: true, Computed: true},
 					"name":                    schema.StringAttribute{Required: true},
 					"network_ids":             schema.SetAttribute{ElementType: types.StringType, Optional: true},
+					"private":                 schema.BoolAttribute{Optional: true}, // Not in the SDKv2 state, declared for the embedded ResourceModel.
 					"security_group_ids":      schema.SetAttribute{ElementType: types.StringType, Optional: true},
 					"service_offering":        schema.StringAttribute{Optional: true, Computed: true},
 					"size":                    schema.Int64Attribute{Required: true},
@@ -363,8 +387,24 @@ func (r *Resource) UpgradeState(ctx context.Context) map[int64]resource.StateUpg
 				if len(state.Labels.Elements()) == 0 {
 					state.Labels = types.MapNull(types.StringType)
 				}
+				// Pools managed by the SDKv2 implementation could only be public.
+				state.Private = types.BoolValue(false)
 
 				resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+			},
+		},
+		// `private` added: without it, a -refresh=false plan shows an update.
+		1: {
+			PriorSchema: &priorSchemaV1,
+			StateUpgrader: func(ctx context.Context, req resource.UpgradeStateRequest, resp *resource.UpgradeStateResponse) {
+				var attrs map[string]tftypes.Value
+				if err := req.State.Raw.As(&attrs); err != nil {
+					resp.Diagnostics.AddError("Unable to Upgrade Resource State", err.Error())
+					return
+				}
+				// Pools managed before `private` existed could only be public.
+				attrs["private"] = tftypes.NewValue(tftypes.Bool, false)
+				resp.State.Raw = tftypes.NewValue(resp.State.Schema.Type().TerraformType(ctx), attrs)
 			},
 		},
 	}
@@ -376,6 +416,26 @@ func (r *Resource) Configure(ctx context.Context, req resource.ConfigureRequest,
 	}
 
 	r.client = req.ProviderData.(*providerConfig.ExoscaleProviderConfig).ClientV3
+}
+
+// ValidateConfig compares values, not presence: private = true next to
+// ipv6 = false is valid.
+func (r *Resource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	var private, ipv6 types.Bool
+
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("private"), &private)...)
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("ipv6"), &ipv6)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if private.ValueBool() && ipv6.ValueBool() {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("ipv6"),
+			"invalid value",
+			"ipv6 cannot be enabled on a private instance pool",
+		)
+	}
 }
 
 // ModifyPlan keeps the computed attributes an update does not touch from
@@ -442,14 +502,21 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 	}
 
 	request := exoscale.CreateInstancePoolRequest{
-		Name:           plan.Name.ValueString(),
-		Description:    plan.Description.ValueString(),
-		DiskSize:       plan.DiskSize.ValueInt64(),
-		InstancePrefix: plan.InstancePrefix.ValueString(),
-		Ipv6Enabled:    exoscale.Ptr(plan.IPv6.ValueBool()),
-		MinAvailable:   plan.MinAvailable.ValueInt64(),
-		Size:           plan.Size.ValueInt64(),
-		Template:       &exoscale.Template{ID: exoscale.UUID(plan.TemplateID.ValueString())},
+		Name:               plan.Name.ValueString(),
+		Description:        plan.Description.ValueString(),
+		DiskSize:           plan.DiskSize.ValueInt64(),
+		InstancePrefix:     plan.InstancePrefix.ValueString(),
+		MinAvailable:       plan.MinAvailable.ValueInt64(),
+		PublicIPAssignment: exoscale.CreateInstancePoolRequestPublicIPAssignmentInet4,
+		Size:               plan.Size.ValueInt64(),
+		Template:           &exoscale.Template{ID: exoscale.UUID(plan.TemplateID.ValueString())},
+	}
+
+	switch {
+	case plan.Private.ValueBool():
+		request.PublicIPAssignment = exoscale.CreateInstancePoolRequestPublicIPAssignmentNone
+	case plan.IPv6.ValueBool():
+		request.PublicIPAssignment = exoscale.CreateInstancePoolRequestPublicIPAssignmentDual
 	}
 
 	if v := plan.DeployTargetID.ValueString(); v != "" {

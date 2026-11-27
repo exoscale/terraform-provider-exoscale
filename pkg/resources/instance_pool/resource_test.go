@@ -2,10 +2,12 @@ package instance_pool_test
 
 import (
 	"fmt"
+	"regexp"
 	"testing"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/stretchr/testify/require"
 
@@ -16,7 +18,15 @@ import (
 	"github.com/exoscale/terraform-provider-exoscale/pkg/utils"
 )
 
-const poolResource = "exoscale_instance_pool.test"
+const (
+	poolResource   = "exoscale_instance_pool.test"
+	poolDataSource = "data.exoscale_instance_pool.test"
+)
+
+type privateTestdataSpec struct {
+	testutils.TestdataSpec
+	Private bool
+}
 
 func testResource(t *testing.T) {
 	t.Parallel()
@@ -28,21 +38,95 @@ func testResource(t *testing.T) {
 			ID:   time.Now().UnixNano(),
 			Zone: testutils.TestZoneName,
 		}
+		privateSpec = privateTestdataSpec{TestdataSpec: testdataSpec, Private: true}
+		publicSpec  = privateTestdataSpec{TestdataSpec: testdataSpec}
 		name        = testutils.ResourceName(testdataSpec.ID)
 		description = fmt.Sprintf("description-%d", testdataSpec.ID)
 		label       = fmt.Sprintf("label-%d", testdataSpec.ID)
 		userData    = fmt.Sprintf("user-data-%d", testdataSpec.ID)
 		aagResource = "exoscale_anti_affinity_group.test"
+
+		current = testutils.TestAccProtoV6ProviderFactories
 	)
 
+	release := func(version string) map[string]resource.ExternalProvider {
+		return map[string]resource.ExternalProvider{
+			"exoscale": {Source: "exoscale/exoscale", VersionConstraint: version},
+		}
+	}
+
+	checkPublicIPAssignment := func(expected v3.PublicIPAssignment) resource.TestCheckFunc {
+		return func(s *terraform.State) error {
+			require.Equal(t, expected, instancePool.PublicIPAssignment)
+			return nil
+		}
+	}
+
+	importStep := resource.TestStep{
+		ProtoV6ProviderFactories: current,
+		ResourceName:             poolResource,
+		ImportStateIdFunc: func(s *terraform.State) (string, error) {
+			return fmt.Sprintf(
+				"%s@%s",
+				s.RootModule().Resources[poolResource].Primary.ID,
+				testdataSpec.Zone,
+			), nil
+		},
+		ImportState:       true,
+		ImportStateVerify: true,
+		ImportStateVerifyIgnore: []string{
+			// The pool may still be scaling when the test imports it.
+			"state",
+			"timeouts",
+		},
+	}
+
+	createConfig := testutils.ParseTestdataConfig("./testdata/001.resource_create.tf.tmpl", &testdataSpec)
+
 	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { testutils.AccPreCheck(t) },
-		ProtoV6ProviderFactories: testutils.TestAccProtoV6ProviderFactories,
-		CheckDestroy:             testutils.CheckInstancePoolDestroy(&instancePool),
+		PreCheck:     func() { testutils.AccPreCheck(t) },
+		CheckDestroy: testutils.CheckInstancePoolDestroy(&instancePool),
 		Steps: []resource.TestStep{
-			// 1 Create
+			// 1 A private pool cannot have IPv6.
 			{
-				Config: testutils.ParseTestdataConfig("./testdata/001.resource_create.tf.tmpl", &testdataSpec),
+				ProtoV6ProviderFactories: current,
+				Config:                   testutils.ParseTestdataConfig("./testdata/010.resource_private_ipv6.tf.tmpl", &testdataSpec),
+				PlanOnly:                 true,
+				ExpectError:              regexp.MustCompile("ipv6 cannot be enabled on a private instance pool"),
+			},
+
+			// 2 Create with the last SDKv2 release.
+			{
+				ExternalProviders: release("0.75.0"),
+				Config:            createConfig,
+				Check:             testutils.CheckInstancePoolExists(poolResource, &instancePool),
+			},
+
+			// 3 The upgraded SDKv2 state plans no change (PlanOnly plans with
+			// -refresh=false first).
+			{
+				ProtoV6ProviderFactories: current,
+				Config:                   createConfig,
+				PlanOnly:                 true,
+			},
+
+			// 4 Write a state without `private` with the last release.
+			{
+				ExternalProviders: release("0.78.1"),
+				Config:            createConfig,
+			},
+
+			// 5 A state without `private` plans no change.
+			{
+				ProtoV6ProviderFactories: current,
+				Config:                   createConfig,
+				PlanOnly:                 true,
+			},
+
+			// 6 Create
+			{
+				ProtoV6ProviderFactories: current,
+				Config:                   createConfig,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testutils.CheckInstancePoolExists(poolResource, &instancePool),
 					func(s *terraform.State) error {
@@ -75,6 +159,7 @@ func testResource(t *testing.T) {
 					resource.TestCheckResourceAttr(poolResource, "description", description),
 					resource.TestCheckResourceAttr(poolResource, "disk_size", "10"),
 					resource.TestCheckResourceAttr(poolResource, "ipv6", "true"),
+					resource.TestCheckResourceAttr(poolResource, "private", "false"),
 					resource.TestCheckResourceAttr(poolResource, "instance_prefix", "test"),
 					resource.TestCheckResourceAttr(poolResource, "instance_type", "standard.tiny"),
 					resource.TestCheckResourceAttr(poolResource, "labels.%", "1"),
@@ -95,9 +180,10 @@ func testResource(t *testing.T) {
 				),
 			},
 
-			// 2 Update
+			// 7 Update
 			{
-				Config: testutils.ParseTestdataConfig("./testdata/002.resource_update.tf.tmpl", &testdataSpec),
+				ProtoV6ProviderFactories: current,
+				Config:                   testutils.ParseTestdataConfig("./testdata/002.resource_update.tf.tmpl", &testdataSpec),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testutils.CheckInstancePoolExists(poolResource, &instancePool),
 					func(s *terraform.State) error {
@@ -149,9 +235,10 @@ func testResource(t *testing.T) {
 				),
 			},
 
-			// 3 Clear the optional attributes.
+			// 8 Clear the optional attributes.
 			{
-				Config: testutils.ParseTestdataConfig("./testdata/003.resource_clear.tf.tmpl", &testdataSpec),
+				ProtoV6ProviderFactories: current,
+				Config:                   testutils.ParseTestdataConfig("./testdata/003.resource_clear.tf.tmpl", &testdataSpec),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testutils.CheckInstancePoolExists(poolResource, &instancePool),
 					func(s *terraform.State) error {
@@ -176,23 +263,49 @@ func testResource(t *testing.T) {
 				),
 			},
 
-			// 4 Import: <ID>@<ZONE>.
+			// 9 Import: <ID>@<ZONE>.
+			importStep,
+
+			// 10 Making the pool private replaces it.
 			{
-				ResourceName: poolResource,
-				ImportStateIdFunc: func(s *terraform.State) (string, error) {
-					return fmt.Sprintf(
-						"%s@%s",
-						s.RootModule().Resources[poolResource].Primary.ID,
-						testdataSpec.Zone,
-					), nil
+				ProtoV6ProviderFactories: current,
+				Config:                   testutils.ParseTestdataConfig("./testdata/009.resource_private.tf.tmpl", &privateSpec),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(poolResource, plancheck.ResourceActionReplace),
+					},
 				},
-				ImportState:       true,
-				ImportStateVerify: true,
-				ImportStateVerifyIgnore: []string{
-					// The pool may still be scaling when the test imports it.
-					"state",
-					"timeouts",
+				Check: resource.ComposeAggregateTestCheckFunc(
+					testutils.CheckInstancePoolExists(poolResource, &instancePool),
+					checkPublicIPAssignment(v3.PublicIPAssignmentNone),
+					resource.TestCheckResourceAttr(poolResource, "private", "true"),
+					resource.TestCheckResourceAttr(poolResource, "ipv6", "false"),
+					resource.TestCheckResourceAttr(poolResource, "instances.#", "2"),
+					resource.TestCheckResourceAttr(poolResource, "instances.0.public_ip_address", ""),
+					resource.TestCheckResourceAttr(poolResource, "instances.1.public_ip_address", ""),
+					resource.TestCheckResourceAttr(poolDataSource, "private", "true"),
+				),
+			},
+
+			// 11 Import the private pool.
+			importStep,
+
+			// 12 Making it public again replaces it.
+			{
+				ProtoV6ProviderFactories: current,
+				Config:                   testutils.ParseTestdataConfig("./testdata/009.resource_private.tf.tmpl", &publicSpec),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(poolResource, plancheck.ResourceActionReplace),
+					},
 				},
+				Check: resource.ComposeAggregateTestCheckFunc(
+					testutils.CheckInstancePoolExists(poolResource, &instancePool),
+					checkPublicIPAssignment(v3.PublicIPAssignmentInet4),
+					resource.TestCheckResourceAttr(poolResource, "private", "false"),
+					resource.TestCheckResourceAttrSet(poolResource, "instances.0.public_ip_address"),
+					resource.TestCheckResourceAttr(poolDataSource, "private", "false"),
+				),
 			},
 		},
 	})

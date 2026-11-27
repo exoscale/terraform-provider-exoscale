@@ -53,6 +53,7 @@ type PoolModel struct {
 	MinAvailable         types.Int64  `tfsdk:"min_available"`
 	Name                 types.String `tfsdk:"name"`
 	NetworkIDs           types.Set    `tfsdk:"network_ids"`
+	Private              types.Bool   `tfsdk:"private"`
 	SecurityGroupIDs     types.Set    `tfsdk:"security_group_ids"`
 	Size                 types.Int64  `tfsdk:"size"`
 	State                types.String `tfsdk:"state"`
@@ -205,6 +206,11 @@ func (d *DataSource) Schema(ctx context.Context, req datasource.SchemaRequest, r
 				ElementType:         types.StringType,
 				Computed:            true,
 			},
+			"private": schema.BoolAttribute{
+				Description:         "Whether the managed instances are private, without public IP address.",
+				MarkdownDescription: "Whether the managed instances are private, without public IP address.",
+				Computed:            true,
+			},
 			"security_group_ids": schema.SetAttribute{
 				Description:         "The list of attached exoscale_security_group (IDs).",
 				MarkdownDescription: "The list of attached [exoscale_security_group](../resources/security_group.md) (IDs).",
@@ -338,6 +344,7 @@ func poolModel( //nolint:gocyclo
 	data.DiskSize = types.Int64Value(pool.DiskSize)
 	data.InstancePrefix = types.StringValue(pool.InstancePrefix)
 	data.IPv6 = types.BoolValue(utils.DefaultBool(pool.Ipv6Enabled, false))
+	data.Private = types.BoolValue(pool.PublicIPAssignment == exoscale.PublicIPAssignmentNone)
 	data.MinAvailable = types.Int64Value(pool.MinAvailable)
 	data.Size = types.Int64Value(pool.Size)
 	data.State = types.StringValue(string(pool.State))
