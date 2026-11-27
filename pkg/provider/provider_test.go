@@ -4,10 +4,12 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 
 	exov2 "github.com/exoscale/egoscale/v2"
+	exov3 "github.com/exoscale/egoscale/v3"
 	frameworkprovider "github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
@@ -47,9 +49,8 @@ func recordV2Request(t *testing.T, client *exov2.Client) *http.Request {
 	return transport.request
 }
 
-func TestExoscaleProviderConfigureHonoursV2APIEndpoint(t *testing.T) {
-	t.Setenv("EXOSCALE_API_ENDPOINT", testV2APIEndpoint)
-
+func configureTestProvider(t *testing.T) *providerConfig.ExoscaleProviderConfig {
+	t.Helper()
 	ctx := context.Background()
 	p := new(ExoscaleProvider)
 	schemaResp := new(frameworkprovider.SchemaResponse)
@@ -81,12 +82,38 @@ func TestExoscaleProviderConfigureHonoursV2APIEndpoint(t *testing.T) {
 	if !ok {
 		t.Fatalf("provider data type = %T, want *config.ExoscaleProviderConfig", configureResp.ResourceData)
 	}
+	return providerData
+}
 
+func TestExoscaleProviderConfigureHonoursV2APIEndpoint(t *testing.T) {
+	t.Setenv("EXOSCALE_API_ENDPOINT", testV2APIEndpoint)
+
+	providerData := configureTestProvider(t)
 	req := recordV2Request(t, providerData.ClientV2)
 	if got, want := req.URL.String(), testV2APIEndpoint+"/ssh-key"; got != want {
 		t.Errorf("request URL = %q, want %q", got, want)
 	}
 	if got, want := req.Host, "gateway.internal:8443"; got != want {
 		t.Errorf("request host = %q, want %q", got, want)
+	}
+}
+
+func TestExoscaleProviderConfigurePreservesV3RetryError(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Retry-After", "0")
+		http.Error(w, "unavailable", http.StatusServiceUnavailable)
+	}))
+	defer server.Close()
+
+	t.Setenv("EXOSCALE_API_ENDPOINT", server.URL)
+
+	_, err := configureTestProvider(t).ClientV3.CreateInstancePool(context.Background(), exov3.CreateInstancePoolRequest{})
+	if err == nil {
+		t.Fatal("expected request to fail")
+	}
+
+	const want = "giving up after 5 attempt(s): unexpected HTTP status 503 Service Unavailable"
+	if !strings.Contains(err.Error(), want) {
+		t.Fatalf("expected error to contain %q, got %q", want, err)
 	}
 }

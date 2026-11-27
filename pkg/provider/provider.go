@@ -209,6 +209,11 @@ func (p *ExoscaleProvider) Configure(ctx context.Context, req provider.Configure
 		opts = append(opts, exov3.ClientOptWithEndpoint(exov3.Endpoint(ep)), exov3.ClientOptWithUserAgent(UserAgent))
 	}
 
+	rc := retryablehttp.NewClient()
+	rc.Logger = nil
+	rc.CheckRetry = retryablehttp.ErrorPropagatedRetryPolicy
+	opts = append(opts, exov3.ClientOptWithHTTPClient(rc.StandardClient()))
+
 	clv3, err := exov3.NewClient(creds, opts...)
 	if err != nil {
 		resp.Diagnostics.AddError(err.Error(), "unable to initialize Exoscale API V3 client")

@@ -9,6 +9,7 @@ FEATURES:
 BUG FIXES:
 
 - `exoscale_security_group`: state written by 0.69.0 and 0.69.1 no longer fails to load with "Unable to Upgrade Resource State". (#670)
+- Show the final HTTP status in Terraform errors when egoscale v3 exhausts retries on a 5xx response.
 
 ## 0.78.1
 
