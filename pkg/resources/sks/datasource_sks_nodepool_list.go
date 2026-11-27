@@ -242,7 +242,7 @@ func (d *DataSourceNodepoolList) Schema(ctx context.Context, req datasource.Sche
 									MarkdownDescription: "The [exoscale_vpc](../resources/vpc.md) (ID) the subnets belong to.",
 									Computed:            true,
 								},
-								"subnet_ids": schema.SetAttribute{
+								"subnet_ids": schema.ListAttribute{
 									Description:         "A list of exoscale_vpc_subnet (IDs) the managed instances are attached to.",
 									MarkdownDescription: "A list of [exoscale_vpc_subnet](../resources/vpc_subnet.md) (IDs) the managed instances are attached to.",
 									ElementType:         types.StringType,

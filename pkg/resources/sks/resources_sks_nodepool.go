@@ -9,7 +9,7 @@ import (
 
 	exoscale "github.com/exoscale/egoscale/v3"
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
-	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -72,13 +72,13 @@ func kubeletGCAttrTypes() map[string]attr.Type {
 
 type vpcModel struct {
 	ID        types.String `tfsdk:"id"`
-	SubnetIDs types.Set    `tfsdk:"subnet_ids"`
+	SubnetIDs types.List   `tfsdk:"subnet_ids"`
 }
 
 func vpcAttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"id":         types.StringType,
-		"subnet_ids": types.SetType{ElemType: types.StringType},
+		"subnet_ids": types.ListType{ElemType: types.StringType},
 	}
 }
 
@@ -337,13 +337,14 @@ func (r *ResourceNodepool) Schema(ctx context.Context, req resource.SchemaReques
 						MarkdownDescription: "The [exoscale_vpc](./vpc.md) (ID) the subnets belong to.",
 						Required:            true,
 					},
-					"subnet_ids": schema.SetAttribute{
-						Description:         "A list of exoscale_vpc_subnet (IDs) to attach the managed instances to.",
-						MarkdownDescription: "A list of [exoscale_vpc_subnet](./vpc_subnet.md) (IDs) to attach the managed instances to.",
+					"subnet_ids": schema.ListAttribute{
+						Description:         "A list of exoscale_vpc_subnet (IDs) to attach the managed instances to, in this order.",
+						MarkdownDescription: "A list of [exoscale_vpc_subnet](./vpc_subnet.md) (IDs) to attach the managed instances to, in this order.",
 						ElementType:         types.StringType,
 						Required:            true,
-						Validators: []validator.Set{
-							setvalidator.SizeAtLeast(1),
+						Validators: []validator.List{
+							listvalidator.SizeAtLeast(1),
+							listvalidator.UniqueValues(),
 						},
 					},
 				},
@@ -1167,7 +1168,7 @@ func sksNodepoolVPC(ctx context.Context, ref *exoscale.VpcRef) (types.Object, di
 	for i, s := range ref.Subnets {
 		subnetIDs[i] = s.ID.String()
 	}
-	subnets, diags := types.SetValueFrom(ctx, types.StringType, subnetIDs)
+	subnets, diags := types.ListValueFrom(ctx, types.StringType, subnetIDs)
 
 	obj, d := types.ObjectValueFrom(ctx, vpcAttrTypes(), vpcModel{
 		ID:        types.StringValue(ref.ID.String()),

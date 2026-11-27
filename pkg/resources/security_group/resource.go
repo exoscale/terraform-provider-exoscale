@@ -35,6 +35,7 @@ Corresponding data source: [exoscale_security_group](../data_sources/security_gr
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &Resource{}
 var _ resource.ResourceWithImportState = &Resource{}
+var _ resource.ResourceWithUpgradeState = &Resource{}
 
 // ResourceModel defines the resource data model.
 type ResourceModel struct {
@@ -120,6 +121,36 @@ func (r *Resource) Schema(
 		},
 		Blocks: map[string]schema.Block{
 			"timeouts": timeouts.BlockAll(ctx),
+		},
+	}
+}
+
+// UpgradeState reads the state of 0.69.0 and 0.69.1, written without schema
+// version: its attributes are the same.
+func (r *Resource) UpgradeState(ctx context.Context) map[int64]resource.StateUpgrader {
+	return map[int64]resource.StateUpgrader{
+		0: {
+			PriorSchema: &schema.Schema{
+				Attributes: map[string]schema.Attribute{
+					"id":               schema.StringAttribute{Computed: true},
+					"name":             schema.StringAttribute{Required: true},
+					"description":      schema.StringAttribute{Optional: true, Computed: true},
+					"external_sources": schema.SetAttribute{ElementType: types.StringType, Optional: true},
+				},
+				Blocks: map[string]schema.Block{
+					"timeouts": timeouts.BlockAll(ctx),
+				},
+			},
+			StateUpgrader: func(ctx context.Context, req resource.UpgradeStateRequest, resp *resource.UpgradeStateResponse) {
+				var state ResourceModel
+
+				resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+				if resp.Diagnostics.HasError() {
+					return
+				}
+
+				resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+			},
 		},
 	}
 }
