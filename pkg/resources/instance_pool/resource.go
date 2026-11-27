@@ -3,6 +3,7 @@ package instance_pool
 import (
 	"context"
 	"errors"
+	"maps"
 	"regexp"
 	"strings"
 
@@ -28,6 +29,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-go/tftypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
@@ -92,8 +94,8 @@ func (r *Resource) Metadata(ctx context.Context, req resource.MetadataRequest, r
 // Schema defines the resource attributes.
 func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		// Version 1: SDKv2 to framework migration, see UpgradeState.
-		Version: 1,
+		// Version 1: SDKv2 to framework migration; version 2: `private`. See UpgradeState.
+		Version: 2,
 
 		Description:         "Manage Exoscale Instance Pools.",
 		MarkdownDescription: markdownDescriptionResource,
@@ -246,16 +248,9 @@ func (r *Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp 
 				Computed:            true,
 				Default:             booldefault.StaticBool(false),
 				PlanModifiers: []planmodifier.Bool{
-					// A pool created before `private` existed has none in its
-					// state until refreshed, which isn't a change (e.g. with
-					// -refresh=false): it is public.
-					boolplanmodifier.RequiresReplaceIf(
-						func(_ context.Context, req planmodifier.BoolRequest, resp *boolplanmodifier.RequiresReplaceIfFuncResponse) {
-							resp.RequiresReplace = req.PlanValue.ValueBool() != req.StateValue.ValueBool()
-						},
-						"The public IP assignment of a pool can't be changed: changing private replaces the pool.",
-						"The public IP assignment of a pool can't be changed: changing `private` replaces the pool.",
-					),
+					// TODO: update in place, as for instances, once the API allows it: a pool
+					// update rejects `none` and a private pool rejects any assignment change.
+					boolplanmodifier.RequiresReplace(),
 				},
 			},
 			"security_group_ids": schema.SetAttribute{
@@ -322,6 +317,12 @@ type resourceModelV0 struct {
 }
 
 func (r *Resource) UpgradeState(ctx context.Context) map[int64]resource.StateUpgrader {
+	var current resource.SchemaResponse
+	r.Schema(ctx, resource.SchemaRequest{}, &current)
+	priorSchemaV1 := current.Schema
+	priorSchemaV1.Attributes = maps.Clone(current.Schema.Attributes)
+	delete(priorSchemaV1.Attributes, "private")
+
 	return map[int64]resource.StateUpgrader{
 		// SDKv2 to framework migration: the SDKv2 wrote "" / {} for an unset
 		// description and labels, they are normalised to null here, once,
@@ -390,6 +391,20 @@ func (r *Resource) UpgradeState(ctx context.Context) map[int64]resource.StateUpg
 				state.Private = types.BoolValue(false)
 
 				resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+			},
+		},
+		// `private` added: without it, a -refresh=false plan shows an update.
+		1: {
+			PriorSchema: &priorSchemaV1,
+			StateUpgrader: func(ctx context.Context, req resource.UpgradeStateRequest, resp *resource.UpgradeStateResponse) {
+				var attrs map[string]tftypes.Value
+				if err := req.State.Raw.As(&attrs); err != nil {
+					resp.Diagnostics.AddError("Unable to Upgrade Resource State", err.Error())
+					return
+				}
+				// Pools managed before `private` existed could only be public.
+				attrs["private"] = tftypes.NewValue(tftypes.Bool, false)
+				resp.State.Raw = tftypes.NewValue(resp.State.Schema.Type().TerraformType(ctx), attrs)
 			},
 		},
 	}

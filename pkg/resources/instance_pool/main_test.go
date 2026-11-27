@@ -8,5 +8,4 @@ func TestInstancePool(t *testing.T) {
 	t.Run("DataSource", testDataSource)
 	t.Run("DataSourceList", testListDataSource)
 	t.Run("Resource", testResource)
-	t.Run("ResourcePrivate", testResourcePrivate)
 }

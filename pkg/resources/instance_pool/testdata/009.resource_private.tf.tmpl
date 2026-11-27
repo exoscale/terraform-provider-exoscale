@@ -1,16 +1,23 @@
-data "exoscale_template" "ubuntu" {
+data "exoscale_template" "debian" {
   zone = "{{ .Zone }}"
-  name = "Linux Ubuntu 22.04 LTS 64-bit"
+  name = "Linux Debian 12 (Bookworm) 64-bit"
 }
 
+resource "exoscale_anti_affinity_group" "test" {
+  name = "terraform-provider-test-{{ .ID }}"
+}
+
+# The 003 pool, with private set and without IPv6.
 resource "exoscale_instance_pool" "test" {
-  zone          = "{{ .Zone }}"
-  name          = "terraform-provider-test-{{ .ID }}"
-  template_id   = data.exoscale_template.ubuntu.id
-  instance_type = "standard.tiny"
-  size          = 1
-  disk_size     = 10
-  private       = {{ .Private }}
+  zone                    = "{{ .Zone }}"
+  name                    = "terraform-provider-test-{{ .ID }}-updated"
+  template_id             = data.exoscale_template.debian.id
+  instance_type           = "standard.small"
+  size                    = 2
+  min_available           = 1
+  disk_size               = 20
+  private                 = {{ .Private }}
+  anti_affinity_group_ids = [exoscale_anti_affinity_group.test.id]
 
   timeouts {
     delete = "10m"
