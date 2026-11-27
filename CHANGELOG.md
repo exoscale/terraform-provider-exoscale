@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+BUG FIXES:
+
+- `exoscale_security_group`: state written by 0.69.0 and 0.69.1 no longer fails to load with "Unable to Upgrade Resource State". (#670)
+
 ## 0.78.1
 
 IMPROVEMENTS:
