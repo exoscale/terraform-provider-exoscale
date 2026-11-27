@@ -244,6 +244,23 @@ func applyPool( //nolint:gocyclo
 		}
 	}
 
+	// Subnets with public IPv4 addresses are left alone unless in the state.
+	_, current, dg := vpcSubnets(ctx, model.VPC)
+	diags.Append(dg...)
+	visible, _, err := splitVPCSubnets(pool.Vpc, containsAny(current), subnetLookupFor(ctx, client, pool.Vpc))
+	if err != nil {
+		diags.AddError("unable to retrieve the VPC subnets of the instance pool", err.Error())
+		return diags
+	}
+
+	vpc, dg := vpcFromAPI(ctx, pool.Vpc, visible)
+	diags.Append(dg...)
+	if diags.HasError() {
+		return diags
+	}
+
+	model.VPC = vpc
+
 	instances, ids, dg := poolInstances(ctx, client, pool)
 	diags.Append(dg...)
 	if diags.HasError() {
