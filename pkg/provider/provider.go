@@ -202,10 +202,17 @@ func (p *ExoscaleProvider) Configure(ctx context.Context, req provider.Configure
 		secret,
 	)
 
-	opts := []exov3.ClientOpt{}
+	opts := []exov3.ClientOpt{
+		exov3.ClientOptWithLogHandler(&TflogHandler{}),
+	}
 	if ep := os.Getenv("EXOSCALE_API_ENDPOINT"); ep != "" {
 		opts = append(opts, exov3.ClientOptWithEndpoint(exov3.Endpoint(ep)), exov3.ClientOptWithUserAgent(UserAgent))
 	}
+
+	rc := retryablehttp.NewClient()
+	rc.Logger = nil
+	rc.CheckRetry = retryablehttp.ErrorPropagatedRetryPolicy
+	opts = append(opts, exov3.ClientOptWithHTTPClient(rc.StandardClient()))
 
 	clv3, err := exov3.NewClient(creds, opts...)
 	if err != nil {
