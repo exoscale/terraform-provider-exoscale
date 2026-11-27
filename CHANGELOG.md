@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+FEATURES:
+
+- Integration of egoscale logs with tflog (#668)
+
 ## 0.78.1
 
 IMPROVEMENTS:
